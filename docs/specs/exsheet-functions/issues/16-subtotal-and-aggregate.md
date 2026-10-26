@@ -193,3 +193,5 @@ README's and the Formulas page's sentences are proposed in `docs/agents/proposal
 Excel 16.0.20430.20182) asked AGGREGATE-069: Excel's `AGGREGATE(9,6,B1:B2)` over a cell ExSheet refuses is 7,
 passing over Excel's own answer for MROUND, where the engine refuses the Formula by decision (ADR-0047,
 2026-10-12). The case is `observed` with Excel's answer as `excelExpect`. No case of this ticket's files is open.
+
+2026-10-26: the xUnit tests this ticket names (`IndirectTests`) moved to the shared cases, `tests/cases/sheet/indirect.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim.

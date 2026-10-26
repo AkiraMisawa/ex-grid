@@ -30,6 +30,11 @@ export class HeldSelection {
         return currentRowSequenceVersion === this.rowSequenceVersion ? this : HeldSelection.empty(currentRowSequenceVersion);
     }
 
+    /** `selection`, held under `rowSequenceVersion`: a view handed back, taken with the version it is shown under. */
+    static of(rowSequenceVersion: number, selection: Selection): HeldSelection {
+        return new HeldSelection(rowSequenceVersion, selection);
+    }
+
     /** Replaces the selection under the same version: the ordinary result of a gesture. */
     with(selection: Selection): HeldSelection {
         return new HeldSelection(this.rowSequenceVersion, selection);

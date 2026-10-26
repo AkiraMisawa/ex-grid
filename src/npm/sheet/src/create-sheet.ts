@@ -8,9 +8,9 @@
 // carry none (ADR-0050 item 12).
 
 import {
-    createGrid, type CellPosition,
+    createGrid, formulaBarHeight, type CellPosition, type GridDirection,
     type GridClearIntent, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridHandle, type GridOptions,
-    type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type EditDiscardReason, type SelectionRange,
+    type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
     type ViewportSize,
 } from '@ex-grid/core';
 import {
@@ -24,7 +24,10 @@ import { SheetHistory, type SheetOperationStepped } from './sheet-history';
 import type { SheetRow } from './sheet-row';
 import { SheetSource } from './sheet-source';
 import { readNameBoxPlace } from './name-box-text';
+import { SheetEdges } from './sheet-edges';
 import { SheetWords, type SheetLabel } from './sheet-words';
+import { SheetTabs } from './sheet-tabs';
+import { sheetTabKeys, sheetTabStepOf } from './sheet-tab-keys';
 
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
@@ -37,6 +40,9 @@ export interface SheetOptions {
     readonly locale?: string;
     /** Shows the Formula Bar and its Name Box above the columns (ADR-0051); shown unless `false`. */
     readonly showFormulaBar?: boolean;
+    /** Shows the Sheet Tabs at the Sheet's foot, one per Sheet of the Workbook, as Excel does (ADR-0331); shown unless
+     * `false`. Their band, as tall as the Formula Bar, comes off `viewportHeight`. */
+    readonly showSheetTabs?: boolean;
     /** ExSheet's Japanese words in place of its English (ADR-0370, section 10), chosen in one line, never by the
      * locale. */
     readonly japanese?: boolean;
@@ -83,6 +89,7 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
 class SheetView {
     readonly #element: HTMLElement;
     readonly #gridElement: HTMLElement;
+    readonly #tabs: SheetTabs;
     readonly #notice: HTMLElement;
     readonly #history = new SheetHistory();
     #options: SheetOptions;
@@ -102,7 +109,15 @@ class SheetView {
     // A resize of several whole columns, reported a column at a time: its first step, and the columns still to
     // come, which join that step on the undo stack (FN-12c, ADR-0048).
     #resizing: { readonly first: WorkbookStep; readonly pending: Set<number> } | undefined;
+    // Where Ctrl+arrow stops on the Sheet shown: its filled cells, indexed on the first Ctrl+arrow and kept in step
+    // with every change after (ADR-0050, item 2).
+    #edges: SheetEdges | undefined;
     #destroyed = false;
+    // Each Sheet's view as it was left: its Selection and scroll offsets, given back when its tab is selected
+    // again (ADR-0331 §1). A Sheet not yet shown has none, and opens on A1.
+    readonly #views = new WeakMap<Sheet, GridViewRead>();
+    // The style properties the Sheet set on its element (#frame), each with the value the Consumer had given it.
+    readonly #framed = new Map<string, { readonly value: string; readonly priority: string }>();
     // The documents this Sheet handed out: one handed back as `document`, as a controlled component's state comes
     // back, is the Sheet's own state, and is not opened again over its undo stack.
     readonly #raised = new WeakSet<object>();
@@ -117,6 +132,9 @@ class SheetView {
         this.#columns = new SheetColumns(this.#options.density ?? 'compact', error => this.#words.formulaUnreadable(error)); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
         this.#columns.read(this.#workbook.shown);
         this.#appearance = appearanceLookup(this.#reading);
+        // Everything a refusal could come from is asked before the element is touched, so a refused Sheet leaves it as
+        // it was.
+        const gridOptions = this.#gridOptions();
 
         element.classList.add('ex-sheet');
         element.setAttribute('data-ex-input-root', '');
@@ -124,8 +142,13 @@ class SheetView {
         this.#notice = document.createElement('div');
         this.#notice.className = 'ex-sheet-notice';
         this.#notice.setAttribute('role', 'status');
+        this.#tabs = new SheetTabs(document, { pressed: this.#onTabPressed, added: this.#onTabAdded, listKey: this.#onTabListKey });
         element.replaceChildren(this.#gridElement, this.#notice);
-        this.#grid = createGrid(this.#gridElement, this.#gridOptions());
+        // Excel's keys for the Sheet Tabs, heard on the Sheet before its grid hears them, wherever in it the keyboard
+        // is, so the browser does not move among its own tabs (ADR-0331 §4).
+        element.addEventListener('keydown', this.#onSheetKey, { capture: true });
+        this.#grid = createGrid(this.#gridElement, gridOptions);
+        this.#paintFrame();
     }
 
     get workbook(): Workbook { return this.#workbook; }
@@ -133,6 +156,8 @@ class SheetView {
     update(options: SheetOptions): void {
         this.#alive();
         const next = SheetView.#checked(options);
+        // A height too short for the bands is refused before anything changes, so the Sheet keeps the options it had.
+        this.#gridHeight(next);
         // Judged by the culture the Sheet holds, so a locale naming that culture again changes nothing; with a document,
         // the document's culture is the one, as the option says.
         if (next.document === undefined && this.#document === undefined && Culture.of(next.locale ?? navigator.language) !== this.#source.sheet.culture) {
@@ -154,6 +179,7 @@ class SheetView {
             return;
         }
         this.#grid?.update(this.#gridOptions());
+        this.#paintFrame();
     }
 
     undo(): boolean {
@@ -191,15 +217,18 @@ class SheetView {
         this.#destroyed = true;
         this.#grid?.destroy();
         this.#grid = undefined;
+        this.#element.removeEventListener('keydown', this.#onSheetKey, { capture: true });
         this.#element.replaceChildren();
         this.#element.classList.remove('ex-sheet');
         this.#element.removeAttribute('data-ex-input-root');
+        this.#frame({});
     }
 
     // ---- The grid ---------------------------------------------------------------------------------------------
 
     #gridOptions(): GridOptions<SheetRow> {
-        const { rowHeight, viewportWidth, viewportHeight, density } = this.#options;
+        const { rowHeight, viewportWidth, density } = this.#options;
+        const viewportHeight = this.#gridHeight(this.#options);
         return {
             columns: this.#columns.all,
             source: this.#source,
@@ -213,6 +242,7 @@ class SheetView {
             showFormulaBar: this.#options.showFormulaBar !== false,
             nameBoxLabel,
             onNameBoxEntered: this.#onNameBoxEntered,
+            dataEdge: this.#dataEdge,
             hideColumnMenu: true,
             hideCopyWithHeaders: true,
             pasteMaySpill: true,
@@ -384,6 +414,13 @@ class SheetView {
         this.#select(place.range);
     };
 
+    readonly #dataEdge = (from: CellPosition, direction: GridDirection): CellPosition => {
+        const sheet = this.#source.sheet;
+        this.#edges ??= SheetEdges.of(sheet);
+        const at = this.#edges.find(new CellAddress(from.row, from.column), direction);
+        return { row: at.row, column: at.column };
+    };
+
     // Places the Selection on `range`, its Focus on the first cell, against the rows shown now (ADR-0050, item 4).
     #select(range: CellRange): void {
         const first = range.first;
@@ -433,6 +470,164 @@ class SheetView {
         const address = new CellAddress(notice.cell.row, notice.cell.column).toString();
         this.#tell(this.#words.overwritten(address, notice.seenText, notice.replacedText), { outlivesMove: true });
     };
+
+    // ---- The Sheet Tabs (ADR-0331 §4) ------------------------------------------------------------------------
+
+    // The tabs' band: the Formula Bar's height, so the two read as bands of one frame, as the C# Sheet draws them.
+    get #tabsHeightPx(): number {
+        return SheetView.#tabsHeightOf(this.#options);
+    }
+
+    static #tabsHeightOf(options: SheetOptions): number {
+        if (options.showSheetTabs === false) return 0;
+        return formulaBarHeight(options.density ?? 'compact', options.rowHeight); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
+    }
+
+    // The Sheet's box and its tabs. Without the tabs the element lays out as if they were not there. With them, it
+    // holds the grid and the tabs: at the declared width, or under a stretched height as a column as tall as its
+    // parent, in which the grid takes what the tabs leave.
+    #paintFrame(): void {
+        if (this.#options.showSheetTabs === false) {
+            this.#frame({});
+            if (this.#tabs.area.isConnected) this.#tabs.area.remove();
+            return;
+        }
+        const { viewportWidth, viewportHeight } = this.#options;
+        const width = typeof viewportWidth === 'number' ? { width: `${String(viewportWidth)}px` } : { 'min-width': '0' };
+        this.#frame(viewportHeight === 'stretch'
+            ? { display: 'flex', 'flex-direction': 'column', height: '100%', flex: '1 1 auto', 'min-height': '0', ...width }
+            : { display: 'block', ...width });
+        if (!this.#tabs.area.isConnected) this.#gridElement.after(this.#tabs.area);
+        this.#tabs.paint({
+            sheets: this.#workbook.sheets, shown: this.#source.sheet, heightPx: this.#tabsHeightPx,
+            listName: this.#words.sheetTabsName, addName: this.#words.newSheetName,
+        });
+    }
+
+    // The properties of the element's style the Sheet sets, and only those: one it stops setting gets back the value
+    // the Consumer had given it, so what the Consumer set there stays theirs.
+    #frame(properties: Readonly<Record<string, string>>): void {
+        const style = this.#element.style;
+        for (const [name, given] of this.#framed) {
+            if (name in properties) continue;
+            this.#framed.delete(name);
+            if (given.value === '') style.removeProperty(name);
+            else style.setProperty(name, given.value, given.priority);
+        }
+        for (const [name, value] of Object.entries(properties)) {
+            if (!this.#framed.has(name)) this.#framed.set(name, { value: style.getPropertyValue(name), priority: style.getPropertyPriority(name) });
+            if (style.getPropertyValue(name) !== value) style.setProperty(name, value);
+        }
+    }
+
+    // The grid's height under `options`: the Sheet's, less the tabs' band. A Sheet too short to hold the band is
+    // refused by name.
+    #gridHeight(options: SheetOptions): ViewportSize | undefined {
+        const height = options.viewportHeight;
+        if (typeof height !== 'number') return height;
+        const tabs = SheetView.#tabsHeightOf(options);
+        if (height <= tabs) throw new RangeError(`A Sheet of ${String(height)}px cannot hold its Sheet Tabs' ${String(tabs)}px band and a grid (ADR-0331).`);
+        return height - tabs;
+    }
+
+    // A press on a tab shows its Sheet; the keyboard stays in the grid, where the next key acts on it.
+    readonly #onTabPressed = (sheet: Sheet): void => {
+        if (!this.#workbook.sheets.includes(sheet) || this.#refusedSwitch()) return;
+        this.#clearNotice();
+        if (sheet !== this.#source.sheet) {
+            this.#showSheet(sheet);
+            this.#raiseDocument();
+        }
+        // Pressed while the keyboard is on the tab list, it moves with the selection, as the list's keys move it.
+        if (this.#tabs.holdsKeyboard) this.#tabs.focus(sheet);
+    };
+
+    // + adds a Sheet after the one shown, as Excel's button does.
+    readonly #onTabAdded = (): void => { this.#addSheet(false); };
+
+    // The keys on the tab list, where Tab put the keyboard: ← and → select the tab before or after, Home and End the
+    // first and the last, the keyboard staying on the tab selected; Escape or Enter gives it back to the grid.
+    readonly #onTabListKey = (event: KeyboardEvent): boolean => {
+        if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return false;
+        const sheets = this.#workbook.sheets;
+        const at = sheets.indexOf(this.#source.sheet);
+        switch (event.key) {
+            case 'ArrowLeft':
+            case 'ArrowRight':
+            case 'Home':
+            case 'End': {
+                if (this.#refusedSwitch()) return true;
+                const to = event.key === 'Home' ? 0 : event.key === 'End' ? sheets.length - 1 : at + (event.key === 'ArrowLeft' ? -1 : 1);
+                const sheet = sheets[to];
+                if (sheet === undefined) return true;
+                this.#clearNotice();
+                if (sheet !== this.#source.sheet) {
+                    this.#showSheet(sheet);
+                    this.#raiseDocument();
+                }
+                this.#tabs.focus(sheet);
+                return true;
+            }
+            case 'Escape':
+            case 'Enter':
+                this.#grid?.focus();
+                return true;
+            default:
+                return false;
+        }
+    };
+
+    // Ctrl+PageUp and Ctrl+PageDown show the Sheet before or after the one shown, never past the first or the last;
+    // Shift+F11 adds a Sheet before it. Claimed from the browser wherever in the Sheet the keyboard is.
+    readonly #onSheetKey = (event: KeyboardEvent): void => {
+        const grid = this.#grid;
+        if (event.isComposing || grid === undefined) return;
+        const key = grid.keyName(event);
+        const step = sheetTabStepOf(key);
+        if (step === undefined && key !== sheetTabKeys.insert) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (step === undefined) {
+            this.#addSheet(true);
+            return;
+        }
+        if (this.#refusedSwitch()) return;
+        const sheets = this.#workbook.sheets;
+        const sheet = sheets[sheets.indexOf(this.#source.sheet) + step];
+        if (sheet === undefined) return;
+        this.#clearNotice();
+        const onTabs = this.#tabs.holdsKeyboard;
+        this.#showSheet(sheet);
+        this.#raiseDocument();
+        if (onTabs) this.#tabs.focus(sheet);
+    };
+
+    // While an edit is open no other Sheet is shown, and the notice says why: the edit is typed on this one. Showing
+    // another to point at its cells, as Excel does for a Formula, waits on Pointing across Sheets (ADR-0331 §5).
+    #refusedSwitch(): boolean {
+        if (!this.#editing) return false;
+        this.#tell(this.#words.sheetSwitchWhileEditing);
+        return true;
+    }
+
+    // A new, empty Sheet beside the one shown, named as Excel names it, and shown, as Excel shows the Sheet it adds:
+    // one step on the undo stack, whose undo shows the Sheet it was added from (ADR-0331 §3).
+    #addSheet(before: boolean): void {
+        if (this.#editing) {
+            this.#tell(this.#words.sheetOperationWhileEditing);
+            return;
+        }
+        const from = this.#source.sheet;
+        this.#resizing = undefined;
+        const onTabs = this.#tabs.holdsKeyboard;
+        const step = this.#workbook.do(from.name, SheetEdit.insertSheet(undefined, before));
+        this.#history.record([step], from);
+        this.#showSheet(step.sheet);
+        this.#raiseDocument();
+        // The tabs moved to make room lose the keyboard: one on the list goes to the new Sheet's tab, selected now.
+        if (onTabs) this.#tabs.focus(step.sheet);
+        this.#tell(this.#words.sheetAdded(step.sheet.name), { outlivesMove: true });
+    }
 
     // ---- Operations ------------------------------------------------------------------------------------------
 
@@ -507,11 +702,14 @@ class SheetView {
             return;
         }
         this.#sheetChanged(changes.map(change => change.for(sheet)));
+        if (changes.some(change => change.changesSheets)) this.#paintFrame();
         this.#raiseDocument();
     }
 
     #sheetChanged(changes: readonly SheetChange[]): void {
         this.#clearNotice();
+        const edges = this.#edges;
+        if (edges !== undefined) for (const change of changes) edges.update(this.#source.sheet, change);
         let options = false;
         // A whole row's or column's Cell Format reaches cells that hold nothing, which the engine names no row of:
         // every painted row is read again, and the grid repaints those whose look changed (ADR-0071).
@@ -527,14 +725,24 @@ class SheetView {
     }
 
     #showSheet(sheet: Sheet): void {
+        const grid = this.#grid;
+        const leaving = this.#source.sheet;
+        if (grid !== undefined && leaving !== sheet) this.#views.set(leaving, grid.readView());
         // The Workbook records the Sheet shown: its document reopens on it, and its volatile functions recalculate
         // there (ADR-0331).
         this.#workbook.shown = sheet;
         this.#resizing = undefined;
+        this.#edges = undefined;
         this.#columns.read(sheet);
         this.#appearance = appearanceLookup(++this.#reading);
         this.#source.show(sheet);
-        this.#grid?.update(this.#gridOptions());
+        // The view it was left with comes with its rows, under the version they are shown with.
+        const view = this.#views.get(sheet);
+        if (grid !== undefined && view !== undefined) grid.showViewWith(view, this.#source.snapshot().rowSequenceVersion);
+        grid?.update(this.#gridOptions());
+        this.#paintFrame();
+        // A Sheet shown for the first time opens on A1, scrolled to it, as Excel's does.
+        if (view === undefined) this.#select(new CellRange(new CellAddress(0, 0)));
     }
 
     #raiseDocument(): void {

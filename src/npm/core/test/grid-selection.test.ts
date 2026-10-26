@@ -483,3 +483,39 @@ describe('the Selection in the grid', () => {
         expect(root.hasAttribute('data-ex-settled')).toBe(true);
     });
 });
+
+describe('dataEdge (ADR-0050, item 2)', () => {
+    it('ADR-0050 item 2: Ctrl+arrow and Ctrl+Shift+arrow stop where the Consumer says the data ends; Home and End keep the grid\'s edge', async () => {
+        const asked: string[] = [];
+        const listener = heard();
+        const { root } = mount({
+            columns, rows: trades(100), rowHeight: 24, viewportHeight: 480, ...listener,
+            dataEdge: (from, direction) => {
+                asked.push(`${String(from.row)} ${direction}`);
+                return direction === 'down' ? { row: from.row + 5, column: from.column } : { row: from.row, column: 0 };
+            },
+        });
+        await painted();
+        press(root, 10, rowY(0));
+        await painted();
+        key(root, 'ArrowDown', { ctrlKey: true });
+        await painted();
+        expect(root.getAttribute('aria-activedescendant')).toBe(`${prefix(root)}r5c0`);
+        key(root, 'ArrowDown', { ctrlKey: true, shiftKey: true });
+        await painted();
+        expect(defined(listener.selections.at(-1), 'a Selection').ranges).toEqual([{ topRow: 5, leftColumn: 0, rowCount: 6, columnCount: 1 }]);
+        // Ctrl+End is the grid's last cell, whatever the Consumer would answer.
+        key(root, 'End', { ctrlKey: true });
+        await painted();
+        expect(root.getAttribute('aria-activedescendant')).toBe(`${prefix(root)}r99c1`);
+        expect(asked).toEqual(['0 down', '5 down']);
+    });
+
+    it('ADR-0050 item 2: an answer off the Focus\'s line is refused by name', async () => {
+        const { root } = mount({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480, dataEdge: from => ({ row: from.row + 1, column: 1 }) });
+        await painted();
+        press(root, 10, rowY(0));
+        await painted();
+        expect(() => key(root, 'ArrowDown', { ctrlKey: true })).toThrow(/line|dataEdge|edge/u);
+    });
+});

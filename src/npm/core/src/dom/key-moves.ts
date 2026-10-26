@@ -6,7 +6,7 @@ import type { GridKeyAction, GridKeyKind } from '../keys/grid-keys';
 import { unreachable } from '../must';
 import { cell, type CellPosition, type GridExtent } from '../selection/cell';
 import type { SelectionRange } from '../selection/range';
-import type { Selection } from '../selection/selection';
+import type { EdgeAnswer, Selection } from '../selection/selection';
 
 /** What a move asks the grid to keep in view (ADR-0012, ADR-0052). */
 export interface KeyReveal {
@@ -45,6 +45,7 @@ const extending: ReadonlySet<GridKeyKind> = new Set<GridKeyKind>(['extend', 'ext
  */
 export function moveByKey(
     action: GridKeyAction, current: Selection, extent: GridExtent, start: CellPosition | undefined, viewportRows: number,
+    edge?: EdgeAnswer,
 ): KeyMove | undefined {
     if (extent.rowCount <= 0 || extent.columnCount <= 0) return undefined;
     let from = current;
@@ -64,7 +65,7 @@ export function moveByKey(
     const rows = action.direction === 'up' ? -viewportRows : viewportRows;
     // A key that moves the Focus, pressed with no Focus, only places one (ADR-0012): the first Down selects
     // the first cell, not the second. A key that names a whole region needs no start and does what it says.
-    const next = fromEmpty && movesTheFocus.has(action.kind) ? from : step(action, from, extent, rows);
+    const next = fromEmpty && movesTheFocus.has(action.kind) ? from : step(action, from, extent, rows, edge);
     if (next.equals(current)) return undefined;
 
     const extendsRange = extending.has(action.kind);
@@ -89,12 +90,12 @@ function focusOf(selection: Selection): CellPosition {
     return focus;
 }
 
-function step(action: GridKeyAction, current: Selection, extent: GridExtent, rows: number): Selection {
+function step(action: GridKeyAction, current: Selection, extent: GridExtent, rows: number, edge: EdgeAnswer | undefined): Selection {
     switch (action.kind) {
         case 'move': return current.move(action.direction, extent);
         case 'extend': return current.extend(action.direction, extent);
-        case 'moveToEdge': return current.moveToEdge(action.direction, extent);
-        case 'extendToEdge': return current.extendToEdge(action.direction, extent);
+        case 'moveToEdge': return current.moveToEdge(action.direction, extent, edge);
+        case 'extendToEdge': return current.extendToEdge(action.direction, extent, edge);
         case 'cycle': return current.cycleFocus(action.order, action.backward, extent);
         case 'selectAll': return current.selectAll(extent);
         case 'selectWholeColumns': return current.selectWholeColumns(extent);

@@ -1,0 +1,1305 @@
+{
+  "about": "A blank among SORT's and SORTBY's keys and in UNIQUE's array, and an Error Value key (ADR-0125, ADR-0047, ADR-0202): withABlank is A1 a, A2 blank, A3 b, B1:B3 the keys 3, 2, 1, C1:C3 x, blank, y; withNumbersAndABlank is D1 5, D2 blank, D3 7; withKeysAndABlankValue is A1:A3 the keys 1, 2, 3 and B1 10, B2 blank, B3 30. The cases Excel answered are in ExcelCases' sort, sortby, unique, filter and transpose; the rule across the forms is here. Transcribed from ExSheet.Engine.Tests' SortAndUniqueBlankTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "setups": {
+    "withABlank": [
+      {"enter": {"A1": "a", "A3": "b", "B1": "3", "B2": "2", "B3": "1", "C1": "x", "C3": "y"}}
+    ],
+    "withNumbersAndABlank": [
+      {"enter": {"D1": "5", "D3": "7"}}
+    ],
+    "withKeysAndABlankValue": [
+      {"enter": {"A1": "1", "A2": "2", "A3": "3", "B1": "10", "B3": "30"}}
+    ]
+  },
+  "cases": [
+    {
+      "name": "ADR-0125 (SORT-011 to 014, 016 to 019, 024, 025; SORT-040 asks): a blank key sorts after numbers and text in either order and after a boolean ascending, as Excel's did, and after a boolean descending, by generalisation; it spills as 0 ('7', '', '3'): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "7", "A3": "3"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 7, "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-011 to 014, 016 to 019, 024, 025; SORT-040 asks): a blank key sorts after numbers and text in either order and after a boolean ascending, as Excel's did, and after a boolean descending, by generalisation; it spills as 0 ('7', '', '3'): =SORT(A1:A3,1,-1)",
+      "steps": [
+        {"enter": {"A1": "7", "A3": "3"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3,1,-1)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": 3, "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-011 to 014, 016 to 019, 024, 025; SORT-040 asks): a blank key sorts after numbers and text in either order and after a boolean ascending, as Excel's did, and after a boolean descending, by generalisation; it spills as 0 ('b', '', 'a'): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "b", "A3": "a"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": "b", "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-011 to 014, 016 to 019, 024, 025; SORT-040 asks): a blank key sorts after numbers and text in either order and after a boolean ascending, as Excel's did, and after a boolean descending, by generalisation; it spills as 0 ('b', '', 'a'): =SORT(A1:A3,1,-1)",
+      "steps": [
+        {"enter": {"A1": "b", "A3": "a"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3,1,-1)"}, "expect": {"values": {"ZZ1000": "b", "ZZ1001": "a", "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-011 to 014, 016 to 019, 024, 025; SORT-040 asks): a blank key sorts after numbers and text in either order and after a boolean ascending, as Excel's did, and after a boolean descending, by generalisation; it spills as 0 ('1', '', 'TRUE'): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "1", "A3": "TRUE"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": true, "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-011 to 014, 016 to 019, 024, 025; SORT-040 asks): a blank key sorts after numbers and text in either order and after a boolean ascending, as Excel's did, and after a boolean descending, by generalisation; it spills as 0 ('1', '', 'TRUE'): =SORT(A1:A3,1,-1)",
+      "steps": [
+        {"enter": {"A1": "1", "A3": "TRUE"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3,1,-1)"}, "expect": {"values": {"ZZ1000": true, "ZZ1001": 1, "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-011 to 014, 016 to 019, 024, 025; SORT-040 asks): a blank key sorts after numbers and text in either order and after a boolean ascending, as Excel's did, and after a boolean descending, by generalisation; it spills as 0 ('', '0', ''): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A2": "0"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 0, "ZZ1001": 0, "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, 014): a blank key is neither 0 nor empty text, either of which would sort first",
+      "steps": [
+        {"enter": {"A2": "0", "A3": "=\"\""}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 0, "ZZ1001": "", "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-023; SORT-041 asks): blank keys keep their order, as Excel's did in a descending sort, and ascending as Excel kept equal keys (SORT-004), by generalisation; the rest of each row moves with its key: =SORT(A1:B3)",
+      "steps": [
+        {"enter": {"B1": "x", "B2": "y", "A3": "1", "B3": "z"}},
+        {"enter": {"ZZ1000": "=SORT(A1:B3)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 0, "ZZ1002": 0, "AAA1000": "z", "AAA1001": "x", "AAA1002": "y"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-023; SORT-041 asks): blank keys keep their order, as Excel's did in a descending sort, and ascending as Excel kept equal keys (SORT-004), by generalisation; the rest of each row moves with its key: =SORT(A1:B3,1,-1)",
+      "steps": [
+        {"enter": {"B1": "x", "B2": "y", "A3": "1", "B3": "z"}},
+        {"enter": {"ZZ1000": "=SORT(A1:B3,1,-1)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 0, "ZZ1002": 0, "AAA1000": "z", "AAA1001": "x", "AAA1002": "y"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-020): by_col, a blank key in the row sorts its column last",
+      "steps": [
+        {"enter": {"A1": "2", "C1": "1"}},
+        {"enter": {"ZZ1000": "=SORT(A1:C1,1,1,TRUE)"}, "expect": {"values": {"ZZ1000": 1, "AAA1000": 2, "AAB1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORTBY-007; SORTBY-014 asks): SORTBY sorts a blank key last, as Excel's did in an ascending key, and in a descending one as SORT's does, by generalisation: =SORTBY(A1:A2,B1:B2)",
+      "steps": [
+        {"enter": {"A1": "10", "A2": "20", "B2": "7"}},
+        {"enter": {"ZZ1000": "=SORTBY(A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": 20, "ZZ1001": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORTBY-007; SORTBY-014 asks): SORTBY sorts a blank key last, as Excel's did in an ascending key, and in a descending one as SORT's does, by generalisation: =SORTBY(A1:A2,B1:B2,-1)",
+      "steps": [
+        {"enter": {"A1": "10", "A2": "20", "B2": "7"}},
+        {"enter": {"ZZ1000": "=SORTBY(A1:A2,B1:B2,-1)"}, "expect": {"values": {"ZZ1000": 20, "ZZ1001": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORTBY-008; SORTBY-014 asks): among equal first keys, a blank second key sorts last, as Excel's did ascending, and descending by generalisation; a blank first key sorts its line last whatever the second key, descending by generalisation too: =SORTBY(A1:A3,B1:B3,1,C1:C3,1)",
+      "steps": [
+        {"enter": {"A1": "10", "A2": "20", "A3": "30", "B1": "x", "B2": "x", "C2": "5", "C3": "1"}},
+        {"enter": {"ZZ1000": "=SORTBY(A1:A3,B1:B3,1,C1:C3,1)"}, "expect": {"values": {"ZZ1000": 20, "ZZ1001": 10, "ZZ1002": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORTBY-008; SORTBY-014 asks): among equal first keys, a blank second key sorts last, as Excel's did ascending, and descending by generalisation; a blank first key sorts its line last whatever the second key, descending by generalisation too: =SORTBY(A1:A3,B1:B3,1,C1:C3,-1)",
+      "steps": [
+        {"enter": {"A1": "10", "A2": "20", "A3": "30", "B1": "x", "B2": "x", "C2": "5", "C3": "1"}},
+        {"enter": {"ZZ1000": "=SORTBY(A1:A3,B1:B3,1,C1:C3,-1)"}, "expect": {"values": {"ZZ1000": 20, "ZZ1001": 10, "ZZ1002": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORTBY-008; SORTBY-014 asks): among equal first keys, a blank second key sorts last, as Excel's did ascending, and descending by generalisation; a blank first key sorts its line last whatever the second key, descending by generalisation too: =SORTBY(A1:A3,C1:C3,1,B1:B3,1)",
+      "steps": [
+        {"enter": {"A1": "10", "A2": "20", "A3": "30", "B1": "x", "B2": "x", "C2": "5", "C3": "1"}},
+        {"enter": {"ZZ1000": "=SORTBY(A1:A3,C1:C3,1,B1:B3,1)"}, "expect": {"values": {"ZZ1000": 30, "ZZ1001": 20, "ZZ1002": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORTBY-008; SORTBY-014 asks): among equal first keys, a blank second key sorts last, as Excel's did ascending, and descending by generalisation; a blank first key sorts its line last whatever the second key, descending by generalisation too: =SORTBY(A1:A3,C1:C3,-1,B1:B3,1)",
+      "steps": [
+        {"enter": {"A1": "10", "A2": "20", "A3": "30", "B1": "x", "B2": "x", "C2": "5", "C3": "1"}},
+        {"enter": {"ZZ1000": "=SORTBY(A1:A3,C1:C3,-1,B1:B3,1)"}, "expect": {"values": {"ZZ1000": 20, "ZZ1001": 30, "ZZ1002": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORTBY-009): two blank first keys are equal, so the second key orders them, as Excel's did in a descending second key, and in an ascending one by generalisation: =SORTBY(A1:A3,B1:B3,1,C1:C3,-1)",
+      "steps": [
+        {"enter": {"A1": "10", "A2": "20", "A3": "30", "B3": "1", "C1": "1", "C2": "2"}},
+        {"enter": {"ZZ1000": "=SORTBY(A1:A3,B1:B3,1,C1:C3,-1)"}, "expect": {"values": {"ZZ1000": 30, "ZZ1001": 20, "ZZ1002": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORTBY-009): two blank first keys are equal, so the second key orders them, as Excel's did in a descending second key, and in an ascending one by generalisation: =SORTBY(A1:A3,B1:B3,1,C1:C3,1)",
+      "steps": [
+        {"enter": {"A1": "10", "A2": "20", "A3": "30", "B3": "1", "C1": "1", "C2": "2"}},
+        {"enter": {"ZZ1000": "=SORTBY(A1:A3,B1:B3,1,C1:C3,1)"}, "expect": {"values": {"ZZ1000": 30, "ZZ1001": 10, "ZZ1002": 20}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SORT-015, 027): SORT answers an Error Value key that already follows every number, where sorting it after the numbers and keeping its place give the one order (7, 3, =NA()): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "7", "A2": "3", "A3": "=NA()"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 7, "ZZ1002": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SORT-015, 027): SORT answers an Error Value key that already follows every number, where sorting it after the numbers and keeping its place give the one order (7, =NA(), =NA()): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "7", "A2": "=NA()", "A3": "=NA()"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": {"error": "#N/A"}, "ZZ1002": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SORT-015, 027): SORT answers an Error Value key that already follows every number, where sorting it after the numbers and keeping its place give the one order (=NA(), =NA(), =NA()): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "=NA()", "A3": "=NA()"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#N/A"}, "ZZ1001": {"error": "#N/A"}, "ZZ1002": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SORT-015, 027): SORT answers an Error Value key that already follows every number, where sorting it after the numbers and keeping its place give the one order (=1/0, =1/0, =1/0): =SORT(A1:A3,1,-1)",
+      "steps": [
+        {"enter": {"A1": "=1/0", "A2": "=1/0", "A3": "=1/0"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3,1,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}, "ZZ1001": {"error": "#DIV/0!"}, "ZZ1002": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SORT-015, 027): SORT answers an Error Value key that already follows every number, where sorting it after the numbers and keeping its place give the one order (7, 3, =NA()): =SORT(A1:B3)",
+      "steps": [
+        {"enter": {"A1": "7", "A2": "3", "A3": "=NA()"}},
+        {"enter": {"ZZ1000": "=SORT(A1:B3)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 7, "ZZ1002": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SORT-015): the rest of an Error Value key's line goes with it, and the lines of the numbers before it are sorted",
+      "steps": [
+        {"enter": {"A1": "9", "B1": "x", "A2": "3", "B2": "y", "A3": "=NA()", "B3": "z"}},
+        {"enter": {"ZZ1000": "=SORT(A1:B3)"}, "expect": {"values": {"AAA1000": "y", "AAA1001": "x", "AAA1002": "z"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (=NA(), 7, ): =SORT(A1:A2)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "7", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (7, =NA(), 3): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "7", "A2": "=NA()", "A3": "3", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 7, "ZZ1002": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (=NA(), 7, =NA()): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "7", "A3": "=NA()", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": {"error": "#N/A"}, "ZZ1002": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (7, =NA(), ): =SORT(A1:A2,1,-1)",
+      "steps": [
+        {"enter": {"A1": "7", "A2": "=NA()", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2,1,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#N/A"}, "ZZ1001": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (a, =NA(), ): =SORT(A1:A2)",
+      "steps": [
+        {"enter": {"A1": "a", "A2": "=NA()", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2)"}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (=NA(), TRUE, ): =SORT(A1:A2)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "TRUE", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2)"}, "expect": {"values": {"ZZ1000": true, "ZZ1001": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (=NA(), , ): =SORT(A1:A2)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2)"}, "expect": {"values": {"ZZ1000": {"error": "#N/A"}, "ZZ1001": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (7, =NA(), =1/0): =SORT(A1:A3)",
+      "steps": [
+        {"enter": {"A1": "7", "A2": "=NA()", "A3": "=1/0", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A3)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": {"error": "#DIV/0!"}, "ZZ1002": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (=NA(), 7, ): =SORTBY(B1:B2,A1:A2)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "7", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORTBY(B1:B2,A1:A2)"}, "expect": {"values": {"ZZ1000": 2, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (7, =NA(), ): =SORTBY(B1:B2,A1:A2,-1)",
+      "steps": [
+        {"enter": {"A1": "7", "A2": "=NA()", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORTBY(B1:B2,A1:A2,-1)"}, "expect": {"values": {"ZZ1000": 2, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike (=NA(), 7, ): =SORTBY(B1:B2,C1:C2,1,A1:A2,1)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "7", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORTBY(B1:B2,C1:C2,1,A1:A2,1)"}, "expect": {"values": {"ZZ1000": 2, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-032 leaves two readings of two different Error Values, ERROR.TYPE's numbers and their texts): refused with #VALUE! where the two order them differently, in a descending sort, and beside an Error Value ERROR.TYPE does not number (#REF!, #NAME?): =SORT(A1:A2)",
+      "steps": [
+        {"enter": {"A1": "#REF!", "A2": "#NAME?", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-032 leaves two readings of two different Error Values, ERROR.TYPE's numbers and their texts): refused with #VALUE! where the two order them differently, in a descending sort, and beside an Error Value ERROR.TYPE does not number (#NULL!, #DIV/0!): =SORT(A1:A2)",
+      "steps": [
+        {"enter": {"A1": "#NULL!", "A2": "#DIV/0!", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-032 leaves two readings of two different Error Values, ERROR.TYPE's numbers and their texts): refused with #VALUE! where the two order them differently, in a descending sort, and beside an Error Value ERROR.TYPE does not number (=NA(), =1/0): =SORT(A1:A2,1,-1)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "=1/0", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2,1,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-032 leaves two readings of two different Error Values, ERROR.TYPE's numbers and their texts): refused with #VALUE! where the two order them differently, in a descending sort, and beside an Error Value ERROR.TYPE does not number (=NA(), #SPILL!): =SORT(A1:A2)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "#SPILL!", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:A2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-032 leaves two readings of two different Error Values, ERROR.TYPE's numbers and their texts): refused with #VALUE! where the two order them differently, in a descending sort, and beside an Error Value ERROR.TYPE does not number (#VALUE!, #NUM!): =SORTBY(B1:B2,A1:A2)",
+      "steps": [
+        {"enter": {"A1": "#VALUE!", "A2": "#NUM!", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORTBY(B1:B2,A1:A2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: SORT-032 leaves two readings of two different Error Values, ERROR.TYPE's numbers and their texts): refused with #VALUE! where the two order them differently, in a descending sort, and beside an Error Value ERROR.TYPE does not number (=NA(), =1/0): =SORTBY(B1:B2,A1:A2,-1)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "=1/0", "B1": "1", "B2": "2", "C1": "x", "C2": "x"}},
+        {"enter": {"ZZ1000": "=SORTBY(B1:B2,A1:A2,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: the refusal of an Error Value key is the Formula's, so nothing around it reads it as an answer: IFERROR would show one 0 where SORT spills two Values, and COUNTA would count one of SORT's two: =IFERROR(SORT(A1:A2),0)",
+      "steps": [
+        {"enter": {"A1": "#REF!", "A2": "#NAME?", "B1": "1", "B2": "2"}},
+        {"enter": {"ZZ1000": "=IFERROR(SORT(A1:A2),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: the refusal of an Error Value key is the Formula's, so nothing around it reads it as an answer: IFERROR would show one 0 where SORT spills two Values, and COUNTA would count one of SORT's two: =IFERROR(INDEX(SORT(A1:A2),1),0)",
+      "steps": [
+        {"enter": {"A1": "#REF!", "A2": "#NAME?", "B1": "1", "B2": "2"}},
+        {"enter": {"ZZ1000": "=IFERROR(INDEX(SORT(A1:A2),1),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: the refusal of an Error Value key is the Formula's, so nothing around it reads it as an answer: IFERROR would show one 0 where SORT spills two Values, and COUNTA would count one of SORT's two: =ISERROR(SORT(A1:A2))",
+      "steps": [
+        {"enter": {"A1": "#REF!", "A2": "#NAME?", "B1": "1", "B2": "2"}},
+        {"enter": {"ZZ1000": "=ISERROR(SORT(A1:A2))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: the refusal of an Error Value key is the Formula's, so nothing around it reads it as an answer: IFERROR would show one 0 where SORT spills two Values, and COUNTA would count one of SORT's two: =COUNTA(SORT(A1:A2))",
+      "steps": [
+        {"enter": {"A1": "#REF!", "A2": "#NAME?", "B1": "1", "B2": "2"}},
+        {"enter": {"ZZ1000": "=COUNTA(SORT(A1:A2))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: the refusal of an Error Value key is the Formula's, so nothing around it reads it as an answer: IFERROR would show one 0 where SORT spills two Values, and COUNTA would count one of SORT's two: =IFERROR(SORTBY(B1:B2,A1:A2),0)",
+      "steps": [
+        {"enter": {"A1": "#REF!", "A2": "#NAME?", "B1": "1", "B2": "2"}},
+        {"enter": {"ZZ1000": "=IFERROR(SORTBY(B1:B2,A1:A2),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an Error Value in a column SORT does not sort by is no key, so it is answered as any Value is",
+      "steps": [
+        {"enter": {"A1": "2", "B1": "=NA()", "A2": "1", "B2": "x"}},
+        {"enter": {"ZZ1000": "=SORT(A1:B2)"}, "expect": {"values": {"AAA1000": "x", "AAA1001": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-011 to 013): a blank is one of a kind only with another blank, never with 0 or empty text ('', '0'): =ROWS(UNIQUE(A1:A2))",
+      "steps": [
+        {"enter": {"A2": "0"}},
+        {"enter": {"ZZ1000": "=ROWS(UNIQUE(A1:A2))"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-011 to 013): a blank is one of a kind only with another blank, never with 0 or empty text ('0', ''): =ROWS(UNIQUE(A1:A2))",
+      "steps": [
+        {"enter": {"A1": "0"}},
+        {"enter": {"ZZ1000": "=ROWS(UNIQUE(A1:A2))"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-011 to 013): a blank is one of a kind only with another blank, never with 0 or empty text ('', '=\"\"'): =ROWS(UNIQUE(A1:A2))",
+      "steps": [
+        {"enter": {"A2": "=\"\""}},
+        {"enter": {"ZZ1000": "=ROWS(UNIQUE(A1:A2))"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-011 to 013): a blank is one of a kind only with another blank, never with 0 or empty text ('', ''): =ROWS(UNIQUE(A1:A2))",
+      "steps": [
+        {"enter": {"ZZ1000": "=ROWS(UNIQUE(A1:A2))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-009, 010, 012): UNIQUE keeps a blank where it first appears, and it spills as 0: =UNIQUE(A1:A5)",
+      "steps": [
+        {"enter": {"A1": "7", "A3": "7", "A5": "3"}},
+        {"enter": {"ZZ1000": "=UNIQUE(A1:A5)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": 0, "ZZ1002": 3, "ZZ1003": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-015): rows are compared whole, a blank against a blank only",
+      "steps": [
+        {"enter": {"A1": "a", "A2": "a", "B2": "0", "A3": "a"}},
+        {"enter": {"ZZ1000": "=ROWS(UNIQUE(A1:B3))", "ZZ999": "=COLUMNS(UNIQUE(A1:B3))"}, "expect": {"values": {"ZZ1000": 2, "ZZ999": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-014): exactly_once counts blanks as one kind, so two blanks are left out",
+      "steps": [
+        {"enter": {"A3": "1"}},
+        {"enter": {"ZZ1000": "=UNIQUE(A1:A3,,TRUE)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": null}}},
+        {"enter": {"ZZ1000": "=UNIQUE(A1:A2,,TRUE)"}, "expect": {"values": {"ZZ1000": {"error": "#CALC!"}}}},
+        {"enter": {"ZZ1000": "=UNIQUE(A2:A3,,TRUE)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-016): one blank cell spills as 0, in UNIQUE and in SORT: =UNIQUE(A1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=UNIQUE(A1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-016): one blank cell spills as 0, in UNIQUE and in SORT: =SORT(A1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SORT(A1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(UNIQUE(A1:A3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(UNIQUE(A1:A3))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(SORT(A1:A3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(SORT(A1:A3))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(SORTBY(A1:A3,B1:B3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(SORTBY(A1:A3,B1:B3))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(FILTER(A1:A3,B1:B3>0))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(FILTER(A1:A3,B1:B3>0))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(FILTER(A1:C3,B1:B3<3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(FILTER(A1:C3,B1:B3<3))"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(TRANSPOSE(A1:A3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(TRANSPOSE(A1:A3))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(TRANSPOSE(B1:C3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(TRANSPOSE(B1:C3))"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(UNIQUE(B1:C3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(UNIQUE(B1:C3))"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(SORT(A1:A3),A1:A3)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(SORT(A1:A3),A1:A3)"}, "expect": {"values": {"ZZ1000": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =LET(x,UNIQUE(A1:A3),COUNTA(x))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,UNIQUE(A1:A3),COUNTA(x))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017; SORTBY-011, FILTER-012, TRANSPOSE-005 ask): COUNTA counts a blank kept in the array, as Excel counted SORT's and UNIQUE's: =COUNTA(INDEX(SORT(A1:C3),0,1))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(INDEX(SORT(A1:C3),0,1))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISBLANK(INDEX(SORT(A1:A3),3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(SORT(A1:A3),3))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISBLANK(INDEX(UNIQUE(A1:A3),2))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(UNIQUE(A1:A3),2))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISBLANK(INDEX(SORTBY(A1:A3,B1:B3),2))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(SORTBY(A1:A3,B1:B3),2))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISBLANK(INDEX(FILTER(A1:A3,B1:B3>0),2))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(FILTER(A1:A3,B1:B3>0),2))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISBLANK(INDEX(TRANSPOSE(A1:A3),1,2))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(TRANSPOSE(A1:A3),1,2))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =INDEX(FILTER(C1:C3,B1:B3>0),2)&\"x\"",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(FILTER(C1:C3,B1:B3>0),2)&\"x\""}, "expect": {"values": {"ZZ1000": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =LEN(INDEX(TRANSPOSE(A1:A3),1,2))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=LEN(INDEX(TRANSPOSE(A1:A3),1,2))"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =INDEX(UNIQUE(A1:A3),2)=\"\"",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(UNIQUE(A1:A3),2)=\"\""}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =INDEX(UNIQUE(A1:A3),2)=0",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(UNIQUE(A1:A3),2)=0"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISTEXT(INDEX(SORT(A1:A3),3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISTEXT(INDEX(SORT(A1:A3),3))"}, "expect": {"values": {"ZZ1000": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISNUMBER(INDEX(SORT(A1:A3),3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISNUMBER(INDEX(SORT(A1:A3),3))"}, "expect": {"values": {"ZZ1000": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISERROR(INDEX(UNIQUE(A1:A3),2))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISERROR(INDEX(UNIQUE(A1:A3),2))"}, "expect": {"values": {"ZZ1000": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =LEN(INDEX(UNIQUE(A1:A3),2))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=LEN(INDEX(UNIQUE(A1:A3),2))"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =INDEX(SORT(A1:A3),3)+1",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(A1:A3),3)+1"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =INDEX(SORT(A1:A3),3)&\"x\"",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(A1:A3),3)&\"x\""}, "expect": {"values": {"ZZ1000": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =INDEX(SORT(A1:A3),3)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(A1:A3),3)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =INDEX(SORT(A1:A3),1)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(A1:A3),1)"}, "expect": {"values": {"ZZ1000": "a"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =INDEX(SORT(B1:C3),1,2)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(B1:C3),1,2)"}, "expect": {"values": {"ZZ1000": "y"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISBLANK(INDEX(SORT(B1:C3),2,2))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(SORT(B1:C3),2,2))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =ISBLANK(INDEX(UNIQUE(A2),1))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(UNIQUE(A2),1))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =MATCH(INDEX(SORT(A1:A3),3),A1:A3,0)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=MATCH(INDEX(SORT(A1:A3),3),A1:A3,0)"}, "expect": {"values": {"ZZ1000": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-022, UNIQUE-018; UNIQUE-020, SORTBY-012, FILTER-013, TRANSPOSE-006 ask): taken out by INDEX, the kept blank is the empty value a blank cell holds, and the one-Value readers that read through FunctionCall.OneValue, MATCH's and VLOOKUP's lookup value among them, read it so, by generalisation: =VLOOKUP(INDEX(SORT(A1:A3),3),A1:B3,2,FALSE)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(INDEX(SORT(A1:A3),3),A1:B3,2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-018, 019, 024): an operator reads each Value of the array, the kept blank as a blank cell's: =SUM(--(UNIQUE(A1:A3)=\"\"))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(--(UNIQUE(A1:A3)=\"\"))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-018, 019, 024): an operator reads each Value of the array, the kept blank as a blank cell's: =SUM(--(SORT(A1:A3)=0))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(--(SORT(A1:A3)=0))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-018, 019, 024): an operator reads each Value of the array, the kept blank as a blank cell's: =SUMPRODUCT(--(SORTBY(A1:A3,B1:B3)<>\"\"))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUMPRODUCT(--(SORTBY(A1:A3,B1:B3)<>\"\"))"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (UNIQUE-024): & reads the kept blank as empty text, element by element, and the result spills",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=UNIQUE(A1:A3)&\"\""}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": "", "ZZ1002": "b"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =SUM(UNIQUE(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(UNIQUE(D1:D3))"}, "expect": {"values": {"ZZ1000": 12}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =SUM(SORT(D1:D3),1)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(SORT(D1:D3),1)"}, "expect": {"values": {"ZZ1000": 13}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =SUM(INDEX(SORT(D1:D3),3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(INDEX(SORT(D1:D3),3))"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =SUM(UNIQUE(D2))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(UNIQUE(D2))"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =SUMPRODUCT(SORT(D1:D3),SORT(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUMPRODUCT(SORT(D1:D3),SORT(D1:D3))"}, "expect": {"values": {"ZZ1000": 74}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =CONCAT(SORTBY(D1:D3,D1:D3,-1))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=CONCAT(SORTBY(D1:D3,D1:D3,-1))"}, "expect": {"values": {"ZZ1000": "75"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =SUM(FILTER(D1:D3,D1:D3<>1))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(FILTER(D1:D3,D1:D3<>1))"}, "expect": {"values": {"ZZ1000": 12}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =SUMPRODUCT(TRANSPOSE(D1:D3),TRANSPOSE(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUMPRODUCT(TRANSPOSE(D1:D3),TRANSPOSE(D1:D3))"}, "expect": {"values": {"ZZ1000": 74}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-033): SUMPRODUCT and CONCAT add nothing for a kept blank whichever way they read it, and SUM nothing where both readings give the one sum, so they take it there: =CONCAT(FILTER(D1:D3,D1:D3<>1))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=CONCAT(FILTER(D1:D3,D1:D3<>1))"}, "expect": {"values": {"ZZ1000": "57"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047 (2026-10-14, after run 18a: SORT-037): SUM passes over a kept blank as over a blank cell, so a sum that nearly cancels in its last number is 0, not the sum with the blank added last as 0: =SUM(SORT(E1:E4))",
+      "steps": [
+        {"enter": {"E1": "0.1", "E2": "0.2", "E3": "-0.3", "F1": "2", "F2": "3", "F3": "1", "F4": "0"}},
+        {"enter": {"ZZ1000": "=SUM(SORT(E1:E4))"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047 (2026-10-14, after run 18a: SORT-037): SUM passes over a kept blank as over a blank cell, so a sum that nearly cancels in its last number is 0, not the sum with the blank added last as 0: =SUM(SORT(E1:E4,1,-1))",
+      "steps": [
+        {"enter": {"E1": "0.1", "E2": "0.2", "E3": "-0.3", "F1": "2", "F2": "3", "F3": "1", "F4": "0"}},
+        {"enter": {"ZZ1000": "=SUM(SORT(E1:E4,1,-1))"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047 (2026-10-14, after run 18a: SORT-037): SUM passes over a kept blank as over a blank cell, so a sum that nearly cancels in its last number is 0, not the sum with the blank added last as 0: =SUM(SORT(E1:E4),0)",
+      "steps": [
+        {"enter": {"E1": "0.1", "E2": "0.2", "E3": "-0.3", "F1": "2", "F2": "3", "F3": "1", "F4": "0"}},
+        {"enter": {"ZZ1000": "=SUM(SORT(E1:E4),0)"}, "expect": {"values": {"ZZ1000": 2.7755575615628914e-17}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047 (2026-10-14, after run 18a: SORT-037): SUM passes over a kept blank as over a blank cell, so a sum that nearly cancels in its last number is 0, not the sum with the blank added last as 0: =SUM(SORTBY(E1:E4,F1:F4))",
+      "steps": [
+        {"enter": {"E1": "0.1", "E2": "0.2", "E3": "-0.3", "F1": "2", "F2": "3", "F3": "1", "F4": "0"}},
+        {"enter": {"ZZ1000": "=SUM(SORTBY(E1:E4,F1:F4))"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047 (2026-10-14, after run 18a: SORT-037): SUM passes over a kept blank as over a blank cell, so a sum that nearly cancels in its last number is 0, not the sum with the blank added last as 0: =SUM(E1:E4)",
+      "steps": [
+        {"enter": {"E1": "0.1", "E2": "0.2", "E3": "-0.3", "F1": "2", "F2": "3", "F3": "1", "F4": "0"}},
+        {"enter": {"ZZ1000": "=SUM(E1:E4)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047 (2026-10-14, after run 18a: SORT-037): SUM passes over a kept blank as over a blank cell, so a sum that nearly cancels in its last number is 0, not the sum with the blank added last as 0: =SUM(SORT(E1:E3))",
+      "steps": [
+        {"enter": {"E1": "0.1", "E2": "0.2", "E3": "-0.3", "F1": "2", "F2": "3", "F3": "1", "F4": "0"}},
+        {"enter": {"ZZ1000": "=SUM(SORT(E1:E3))"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =AVERAGE(UNIQUE(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=AVERAGE(UNIQUE(D1:D3))"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =MIN(SORT(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=MIN(SORT(D1:D3))"}, "expect": {"values": {"ZZ1000": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =MAX(SORTBY(D1:D3,D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=MAX(SORTBY(D1:D3,D1:D3))"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =COUNT(UNIQUE(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNT(UNIQUE(D1:D3))"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =PRODUCT(SORT(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=PRODUCT(SORT(D1:D3))"}, "expect": {"values": {"ZZ1000": 35}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =COUNTA(INDEX(SORT(D1:D3),3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(INDEX(SORT(D1:D3),3))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =COUNTA(UNIQUE(D2))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(UNIQUE(D2))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =AVERAGE(INDEX(SORT(D1:D3),3),1)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=AVERAGE(INDEX(SORT(D1:D3),3),1)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =AVERAGE(FILTER(D1:D3,D1:D3<>1))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=AVERAGE(FILTER(D1:D3,D1:D3<>1))"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =MIN(TRANSPOSE(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=MIN(TRANSPOSE(D1:D3))"}, "expect": {"values": {"ZZ1000": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =COUNT(FILTER(D1:D3,D1:D3<>1))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNT(FILTER(D1:D3,D1:D3<>1))"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =ISBLANK(INDEX(IF(TRUE,SORT(D1:D3)),3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(IF(TRUE,SORT(D1:D3)),3))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =IFERROR(AVERAGE(UNIQUE(D1:D3)),0)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=IFERROR(AVERAGE(UNIQUE(D1:D3)),0)"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =ISERROR(MIN(SORT(D1:D3)))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISERROR(MIN(SORT(D1:D3)))"}, "expect": {"values": {"ZZ1000": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =IFNA(COUNT(SORTBY(D1:D3,D1:D3)),\"x\")",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=IFNA(COUNT(SORTBY(D1:D3,D1:D3)),\"x\")"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =IF(ISERROR(COUNTA(INDEX(SORT(D1:D3),3))),1,2)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=IF(ISERROR(COUNTA(INDEX(SORT(D1:D3),3))),1,2)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =INDEX(SORT(UNIQUE(D1:D3)),2)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(UNIQUE(D1:D3)),2)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =COUNTA(SORT(FILTER(D1:D3,D1:D3<>1)))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(SORT(FILTER(D1:D3,D1:D3<>1)))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =INDEX(SORT(TRANSPOSE(D1:D3),1,1,TRUE),1,2)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(TRANSPOSE(D1:D3),1,1,TRUE),1,2)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation: =ISBLANK(INDEX(SORT(FILTER(D1:D3,D1:D3<>1)),3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(INDEX(SORT(FILTER(D1:D3,D1:D3<>1)),3))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =AND(SORT(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=AND(SORT(D1:D3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =TEXTJOIN(\",\",FALSE,SORT(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXTJOIN(\",\",FALSE,SORT(D1:D3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =MATCH(7,SORT(D1:D3),0)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=MATCH(7,SORT(D1:D3),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =XLOOKUP(7,D1:D3,SORT(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=XLOOKUP(7,D1:D3,SORT(D1:D3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =UNIQUE(SORT(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=UNIQUE(SORT(D1:D3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =TRANSPOSE(UNIQUE(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=TRANSPOSE(UNIQUE(D1:D3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =FILTER(SORT(D1:D3),D1:D3>0)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=FILTER(SORT(D1:D3),D1:D3>0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =MATCH(7,TRANSPOSE(D1:D3),0)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=MATCH(7,TRANSPOSE(D1:D3),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =XLOOKUP(7,FILTER(D1:D3,D1:D3<>1),D1:D3)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=XLOOKUP(7,FILTER(D1:D3,D1:D3<>1),D1:D3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =CHOOSE(1,UNIQUE(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=CHOOSE(1,UNIQUE(D1:D3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =LEN(UNIQUE(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=LEN(UNIQUE(D1:D3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!: =ISBLANK(SORT(D1:D3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ISBLANK(SORT(D1:D3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a function that reads its one Value through FunctionCall.Operand refuses a kept blank given as that Value, where MATCH's lookup value, read through FunctionCall.OneValue, reads it as a blank cell's: XLOOKUP's and XMATCH's lookup value, ROUND's arguments, ERROR.TYPE's and a criterion of the conditional aggregates: =XLOOKUP(INDEX(SORT(D1:D3),3),D1:D3,D1:D3)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=XLOOKUP(INDEX(SORT(D1:D3),3),D1:D3,D1:D3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a function that reads its one Value through FunctionCall.Operand refuses a kept blank given as that Value, where MATCH's lookup value, read through FunctionCall.OneValue, reads it as a blank cell's: XLOOKUP's and XMATCH's lookup value, ROUND's arguments, ERROR.TYPE's and a criterion of the conditional aggregates: =XMATCH(INDEX(SORT(D1:D3),3),D1:D3)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=XMATCH(INDEX(SORT(D1:D3),3),D1:D3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a function that reads its one Value through FunctionCall.Operand refuses a kept blank given as that Value, where MATCH's lookup value, read through FunctionCall.OneValue, reads it as a blank cell's: XLOOKUP's and XMATCH's lookup value, ROUND's arguments, ERROR.TYPE's and a criterion of the conditional aggregates: =ROUND(INDEX(SORT(D1:D3),3),0)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ROUND(INDEX(SORT(D1:D3),3),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a function that reads its one Value through FunctionCall.Operand refuses a kept blank given as that Value, where MATCH's lookup value, read through FunctionCall.OneValue, reads it as a blank cell's: XLOOKUP's and XMATCH's lookup value, ROUND's arguments, ERROR.TYPE's and a criterion of the conditional aggregates: =ROUND(1.5,INDEX(SORT(D1:D3),3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ROUND(1.5,INDEX(SORT(D1:D3),3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a function that reads its one Value through FunctionCall.Operand refuses a kept blank given as that Value, where MATCH's lookup value, read through FunctionCall.OneValue, reads it as a blank cell's: XLOOKUP's and XMATCH's lookup value, ROUND's arguments, ERROR.TYPE's and a criterion of the conditional aggregates: =ERROR.TYPE(INDEX(SORT(D1:D3),3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ERROR.TYPE(INDEX(SORT(D1:D3),3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a function that reads its one Value through FunctionCall.Operand refuses a kept blank given as that Value, where MATCH's lookup value, read through FunctionCall.OneValue, reads it as a blank cell's: XLOOKUP's and XMATCH's lookup value, ROUND's arguments, ERROR.TYPE's and a criterion of the conditional aggregates: =COUNTIF(D1:D3,INDEX(SORT(D1:D3),3))",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTIF(D1:D3,INDEX(SORT(D1:D3),3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: the refusal is the Formula's, so IFERROR cannot catch it, nor ISERROR or ISBLANK read it as an answer: =IFERROR(LEN(UNIQUE(D1:D3)),0)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=IFERROR(LEN(UNIQUE(D1:D3)),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: the refusal is the Formula's, so IFERROR cannot catch it, nor ISERROR or ISBLANK read it as an answer: =IFERROR(INDEX(SORT(D1:D3),3),0)",
+      "setup": "withNumbersAndABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=IFERROR(INDEX(SORT(D1:D3),3),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a lookup over an array that holds a kept blank answers where it never reads the blank, every reading of it giving the one answer: =VLOOKUP(1,SORT(A1:B3),2,FALSE)",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(1,SORT(A1:B3),2,FALSE)"}, "expect": {"values": {"ZZ1000": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a lookup over an array that holds a kept blank answers where it never reads the blank, every reading of it giving the one answer: =VLOOKUP(3,SORT(A1:B3),2,TRUE)",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(3,SORT(A1:B3),2,TRUE)"}, "expect": {"values": {"ZZ1000": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a lookup over an array that holds a kept blank answers where it never reads the blank, every reading of it giving the one answer: =HLOOKUP(3,TRANSPOSE(A1:B3),2,FALSE)",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=HLOOKUP(3,TRANSPOSE(A1:B3),2,FALSE)"}, "expect": {"values": {"ZZ1000": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a lookup over an array that holds a kept blank answers where it never reads the blank, every reading of it giving the one answer: =XLOOKUP(3,A1:A3,FILTER(B1:B3,A1:A3>0))",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=XLOOKUP(3,A1:A3,FILTER(B1:B3,A1:A3>0))"}, "expect": {"values": {"ZZ1000": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a lookup over an array that holds a kept blank answers where it never reads the blank, every reading of it giving the one answer: =SUM(XLOOKUP(1,A1:A3,FILTER(A1:B3,A1:A3>0)))",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(XLOOKUP(1,A1:A3,FILTER(A1:B3,A1:A3>0)))"}, "expect": {"values": {"ZZ1000": 11}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a lookup is refused where the kept blank is what it returns, or among the keys it searches: how either reads it no run has read: =VLOOKUP(2,SORT(A1:B3),2,FALSE)",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(2,SORT(A1:B3),2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a lookup is refused where the kept blank is what it returns, or among the keys it searches: how either reads it no run has read: =HLOOKUP(2,TRANSPOSE(A1:B3),2,FALSE)",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=HLOOKUP(2,TRANSPOSE(A1:B3),2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a lookup is refused where the kept blank is what it returns, or among the keys it searches: how either reads it no run has read: =VLOOKUP(30,SORT(B1:B3),1,FALSE)",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(30,SORT(B1:B3),1,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a lookup is refused where the kept blank is what it returns, or among the keys it searches: how either reads it no run has read: =XLOOKUP(2,A1:A3,FILTER(B1:B3,A1:A3>0))",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=XLOOKUP(2,A1:A3,FILTER(B1:B3,A1:A3>0))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a lookup is refused where the kept blank is what it returns, or among the keys it searches: how either reads it no run has read: =SUM(XLOOKUP(2,A1:A3,FILTER(A1:B3,A1:A3>0)))",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(XLOOKUP(2,A1:A3,FILTER(A1:B3,A1:A3>0)))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a lookup is refused where the kept blank is what it returns, or among the keys it searches: how either reads it no run has read: =XLOOKUP(30,FILTER(B1:B3,A1:A3>0),A1:A3)",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=XLOOKUP(30,FILTER(B1:B3,A1:A3>0),A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0202: a lookup is refused where the kept blank is what it returns, or among the keys it searches: how either reads it no run has read: =VLOOKUP(1,UNIQUE(B2),1,FALSE)",
+      "setup": "withKeysAndABlankValue",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(1,UNIQUE(B2),1,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-021, UNIQUE-017): what the verifier found contradicting itself now agrees: COUNTA counts the spilled 0 and the kept blank alike",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"D1": "=UNIQUE(A1:A3)", "E1": "=COUNTA(D1#)", "E2": "=COUNTA(UNIQUE(A1:A3))"}, "expect": {"values": {"D2": 0, "E1": 3, "E2": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, 011): the spill, and the extent ROWS and COLUMNS read, are answered as the area pass read them: =ROWS(UNIQUE(A1:A3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ROWS(UNIQUE(A1:A3))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, 011): the spill, and the extent ROWS and COLUMNS read, are answered as the area pass read them: =ROWS(SORT(A1:A3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ROWS(SORT(A1:A3))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, 011): the spill, and the extent ROWS and COLUMNS read, are answered as the area pass read them: =COLUMNS(SORTBY(A1:A3,B1:B3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COLUMNS(SORTBY(A1:A3,B1:B3))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, 011): the spill, and the extent ROWS and COLUMNS read, are answered as the area pass read them: =ROWS(UNIQUE(A1:A3))+1",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ROWS(UNIQUE(A1:A3))+1"}, "expect": {"values": {"ZZ1000": 4}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, 011): the spill, and the extent ROWS and COLUMNS read, are answered as the area pass read them: =ROWS((UNIQUE(A1:A3)))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=ROWS((UNIQUE(A1:A3)))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, 011): the spill, and the extent ROWS and COLUMNS read, are answered as the area pass read them: =IF(TRUE,ROWS(SORT(A1:A3)))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=IF(TRUE,ROWS(SORT(A1:A3)))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, SORTBY-013): the Formula's whole expression spills its blank as 0, parentheses or a LET around it or not: =UNIQUE(A1:A3)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=UNIQUE(A1:A3)"}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": 0, "ZZ1002": "b"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, SORTBY-013): the Formula's whole expression spills its blank as 0, parentheses or a LET around it or not: =(UNIQUE(A1:A3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=(UNIQUE(A1:A3))"}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": 0, "ZZ1002": "b"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, SORTBY-013): the Formula's whole expression spills its blank as 0, parentheses or a LET around it or not: =((SORT(A1:A3)))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=((SORT(A1:A3)))"}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": "b", "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, SORTBY-013): the Formula's whole expression spills its blank as 0, parentheses or a LET around it or not: =SORTBY(A1:A3,B1:B3)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=SORTBY(A1:A3,B1:B3)"}, "expect": {"values": {"ZZ1000": "b", "ZZ1001": 0, "ZZ1002": "a"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, SORTBY-013): the Formula's whole expression spills its blank as 0, parentheses or a LET around it or not: =LET(x,SORT(A1:A3),x)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,SORT(A1:A3),x)"}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": "b", "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (SORT-012, UNIQUE-010, SORTBY-013): the Formula's whole expression spills its blank as 0, parentheses or a LET around it or not: =INDEX(SORT(A1:C3),0,3)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(A1:C3),0,3)"}, "expect": {"values": {"ZZ1000": "x", "ZZ1001": "y", "ZZ1002": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a result without a blank has nothing to refuse, a blank key among SORTBY's included, which orders the lines and is not in what SORTBY gives: =INDEX(SORTBY(B1:B3,C1:C3),3)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORTBY(B1:B3,C1:C3),3)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a result without a blank has nothing to refuse, a blank key among SORTBY's included, which orders the lines and is not in what SORTBY gives: =INDEX(UNIQUE(B1:B3),2)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(UNIQUE(B1:B3),2)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a result without a blank has nothing to refuse, a blank key among SORTBY's included, which orders the lines and is not in what SORTBY gives: =INDEX(SORT(A1:A2&\"\"),1)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=INDEX(SORT(A1:A2&\"\"),1)"}, "expect": {"values": {"ZZ1000": ""}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a result without a blank has nothing to refuse, a blank key among SORTBY's included, which orders the lines and is not in what SORTBY gives: =COUNTA(UNIQUE(A1:A3&\"\"))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(UNIQUE(A1:A3&\"\"))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a result without a blank has nothing to refuse, a blank key among SORTBY's included, which orders the lines and is not in what SORTBY gives: =AVERAGE(SORT(B1:B3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=AVERAGE(SORT(B1:B3))"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a result without a blank has nothing to refuse, a blank key among SORTBY's included, which orders the lines and is not in what SORTBY gives: =MIN(UNIQUE(B1:B3))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=MIN(UNIQUE(B1:B3))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0181: a call never evaluated reads nothing, so it refuses nothing: =IF(FALSE,AVERAGE(UNIQUE(A1:A3)),1)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=IF(FALSE,AVERAGE(UNIQUE(A1:A3)),1)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0181: a call never evaluated reads nothing, so it refuses nothing: =LET(x,SORT(A1:A3),y,MIN(x),1)",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,SORT(A1:A3),y,MIN(x),1)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0181: a call never evaluated reads nothing, so it refuses nothing: =IFERROR(1,COUNT(SORT(A1:A3)))",
+      "setup": "withABlank",
+      "steps": [
+        {"enter": {"ZZ1000": "=IFERROR(1,COUNT(SORT(A1:A3)))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0124: a Formula computed on demand inside another keeps its own refusal, and the refusal it shows refuses the one that reads it; ISERROR does not catch A6's refusal read through INDIRECT (ADR-0047; 2026-10-12, decided with the user: a refusal is never caught, anywhere), and B2's own refusal, made before it computes A7 on demand, is not A7's",
+      "steps": [
+        {"enter": {"D1": "1", "D3": "2", "A6": "=MATCH(2,SORT(D1:D3),0)", "A7": "=ROWS(UNIQUE(D1:D3))", "A8": "=UNIQUE(D1:D3)", "B1": "=ROWS(UNIQUE(D1:D3))+ISERROR(INDIRECT(\"A6\"))", "B2": "=MATCH(2,SORT(D1:D3),0)+INDIRECT(\"A7\")", "B3": "=INDIRECT(\"A7\")+ROWS(INDIRECT(\"A8#\"))"}},
+        {"enter": {"D1": "3"}, "expect": {"values": {"A6": {"error": "#VALUE!", "refused": true}, "A7": 3, "A9": 0, "B1": {"error": "#VALUE!", "refused": true}, "B2": {"error": "#VALUE!", "refused": true}, "B3": 6}}}
+      ]
+    }
+  ]
+}
