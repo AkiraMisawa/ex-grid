@@ -1404,9 +1404,8 @@ export class GridView<Row> {
         // Checked first, and before anything changes: a place outside the grid is the Consumer's mistake, whatever
         // else holds, and commits nothing.
         this.#held.selection.place(range, focus, extent);
-        // The source's own version, which is the one a Consumer reads; the grid's written one carries an offset
-        // past every change of source.
-        if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
+        // The version the grid hands, which is the source's own and the one a Consumer reads.
+        if (rowSequenceVersion !== this.#handedVersion()) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
@@ -1432,7 +1431,7 @@ export class GridView<Row> {
             this.#onRefused?.({ kind: 'placement', reason: 'columnsMoved' });
             return false;
         }
-        if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
+        if (rowSequenceVersion !== this.#handedVersion()) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
@@ -1829,8 +1828,8 @@ export class GridView<Row> {
     #commit(taken: Taken<Row>): void {
         const { source } = taken;
         if (source !== this.#sourceIfAny()) {
-            // The Row Sequence Version the grid shows moves on whenever its source is another one: every
-            // position may now name another row (ADR-0011). Each source counts from where it stood.
+            // The order the grid judges its gestures under moves on whenever its source is another one: every
+            // position may now name another row (ADR-0011), whatever version the new source counts from.
             const shown = this.#unsubscribe === undefined ? undefined : this.#sequence();
             this.#unsubscribe?.();
             this.#source = source;
@@ -1927,9 +1926,19 @@ export class GridView<Row> {
         }
     }
 
-    // The Row Sequence Version the grid writes: its source's, carried past every change of source.
+    // The order the grid's own gestures are judged under: the source's Row Sequence Version, carried past every
+    // change of source, so a gesture taken under one source is never taken as under the next. Never handed to a
+    // Consumer, who is handed the source's own (`#state.rowSequenceVersion`), the one its `snapshot()` says and
+    // `placeSelection` and `showViewWith` take (ADR-0050, ADR-0142, ADR-0331), as the C# grid hands it. Rows handed
+    // as a new array are a source of their own, which counts from 0 as any new source does.
     #sequence(): number {
         return this.#state.rowSequenceVersion + this.#sequenceOffset;
+    }
+
+    // The Row Sequence Version every value handed to a Consumer carries: an intent, the Context Menu's context, a
+    // view read, the copy request and the viewport's `data-ex-sequence` (ADR-0011, ADR-0050). Never `#sequence()`.
+    #handedVersion(): number {
+        return this.#state.rowSequenceVersion;
     }
 
     readonly #onSource = (): void => {
@@ -2213,7 +2222,7 @@ export class GridView<Row> {
         // A view handed ahead is taken with the version it names, so the Selection and the version arrive together
         // and nothing between them meets an empty one (ADR-0331). One that does not fit the rows shown is not.
         const ahead = this.#viewAhead;
-        if (ahead !== undefined && ahead.version === this.#state.rowSequenceVersion) {
+        if (ahead !== undefined && ahead.version === this.#handedVersion()) {
             this.#viewAhead = undefined;
             const extent = this.#extent;
             if (!columnsMoved && ahead.selection.ranges.every(range => bottomRow(range) < extent.rowCount && range.leftColumn + range.columnCount <= extent.columnCount)) {
@@ -3467,7 +3476,7 @@ export class GridView<Row> {
             return;
         }
         this.#supersedeFill();
-        const intent = new GridPasteIntent(decision.plan, [[text]], [['shownText']], edit.sequence, undefined, edit.cell);
+        const intent = new GridPasteIntent(decision.plan, [[text]], [['shownText']], this.#handedVersion(), undefined, edit.cell);
         // The fill lands over its target as entered (ADR-0142, LV-13). The edited cell lay under the editor: a
         // change there is told once the fill lands (LV-11).
         const seen = edit.seenText;
@@ -3527,7 +3536,7 @@ export class GridView<Row> {
         this.#reconcileSelection();
         const selection = this.#held.selection;
         const view: GridViewRead = Object.freeze({
-            rowSequenceVersion: this.#state.rowSequenceVersion, selection, scrollTopPx: this.#scrollTopPx, scrollLeftPx: this.#scrollLeftPx,
+            rowSequenceVersion: this.#handedVersion(), selection, scrollTopPx: this.#scrollTopPx, scrollLeftPx: this.#scrollLeftPx,
         });
         this.#viewsRead.set(view, selection);
         return view;
@@ -3781,7 +3790,7 @@ export class GridView<Row> {
         const written = this.#noteUserWrite(decision.plan.targets);
         let returned = false;
         try {
-            heard(new GridClearIntent(decision.plan.targets, this.#sequence()));
+            heard(new GridClearIntent(decision.plan.targets, this.#handedVersion()));
             returned = true;
         } finally {
             // What the source gathered while the Consumer wrote is put out as its handler returns (D5).
@@ -3854,7 +3863,7 @@ export class GridView<Row> {
         // Raw values are written in the invariant notation, and read so (ADR-0050, item 10): never shown text,
         // which a Consumer reads under its own culture, `1234.5` becoming 12345 under de-DE.
         const intent = new GridPasteIntent(plan.paste, values, values.map(row => row.map(() => 'invariant' as const)),
-            this.#sequence(), undefined, undefined, source);
+            this.#handedVersion(), undefined, undefined, source);
         const written = this.#noteUserWrite(plan.paste.targets);
         let returned = false;
         try {
@@ -3929,7 +3938,7 @@ export class GridView<Row> {
         const version = this.#sequence();
         const context: GridContextMenuContext<Row> = Object.freeze({
             row: itemAt(window, slice), column: column.name, columnType: column.type,
-            selection: this.#held.selection.ranges, rowSequenceVersion: version, commands: Object.freeze(core),
+            selection: this.#held.selection.ranges, rowSequenceVersion: this.#handedVersion(), commands: Object.freeze(core),
         });
         const commands = this.#contextCommands === undefined ? core : [...core, ...checkedCommands(this.#contextCommands(context))];
         this.#closePopover(false);
@@ -4824,7 +4833,7 @@ export class GridView<Row> {
     // The Consumer's answer to an approved copy (ADR-0050, item 9), or nothing where it refused, which is said in its
     // own sentence.
     #answeredCopy(plan: CopyPlan, withHeaders: boolean): { readonly text: string; readonly html: string } | undefined {
-        const answer = checkedCopyAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#state.rowSequenceVersion }));
+        const answer = checkedCopyAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#handedVersion() }));
         if (answer.kind === 'write') return answer;
         this.#sayRefusal(answer.sentence);
         this.#onRefused?.({ kind: 'copy', reason: 'refusedByConsumer' });
@@ -5057,7 +5066,7 @@ export class GridView<Row> {
         const { plan } = decision;
         const version = this.#sequence();
         this.#supersedeFill();
-        const intent = new GridPasteIntent(plan, block.values, block.origins, version, block.marks);
+        const intent = new GridPasteIntent(plan, block.values, block.origins, this.#handedVersion(), block.marks);
         const noted = this.#noteUserWrite(plan.targets);
         let returned = false;
         try {
@@ -6417,7 +6426,7 @@ export class GridView<Row> {
         const transform = `transform: translateY(round(nearest, ${topPx}px, var(--ex-dp, 1px)))`;
         this.#write(viewport, 'viewport', 'style', this.#headerLayout.tierCount === 0 ? transform : `top: ${this.#bandHeightPx}px; ${transform}`);
         this.#write(viewport, 'viewport', 'data-ex-first-row', visible === undefined ? undefined : String(visible.start));
-        this.#write(viewport, 'viewport', 'data-ex-sequence', String(this.#sequence()));
+        this.#write(viewport, 'viewport', 'data-ex-sequence', String(this.#handedVersion()));
         this.#write(viewport, 'viewport', 'data-ex-layout', String(this.#layoutId));
 
         const layers = this.#paintLayers();

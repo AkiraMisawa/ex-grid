@@ -182,13 +182,16 @@ describe('createGrid', () => {
         expect(q(root, '.ex-viewport .ex-cell').textContent).toBe('Book-99');
     });
 
-    it('ADR-0011: rows handed as a new array are another sequence, and the Row Sequence Version moves on', async () => {
+    it('ADR-0011: rows handed as a new array are another sequence, whose source counts from 0 as any new one does', async () => {
         const { root, view } = mount({ columns, rows: trades(100), rowHeight: 24, viewportHeight: 480 });
         await painted();
-        const before = Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence'));
+        view.placeSelection({ topRow: 3, leftColumn: 0, rowCount: 2, columnCount: 1 }, { row: 3, column: 0 }, 0);
+        await painted();
         view.update({ columns, rows: trades(100).toReversed(), rowHeight: 24, viewportHeight: 480 });
         await painted();
-        expect(Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence'))).toBeGreaterThan(before);
+        // The positions named the rows of the old array, so the Selection goes, though the version a Consumer is
+        // handed, the new source's own, is the one the old source began at.
+        expect([view.readView().selection.isEmpty, q(root, '.ex-viewport').getAttribute('data-ex-sequence')]).toEqual([true, '0']);
     });
 
     it('ADR-0350: a grid that cannot be drawn leaves nothing listening, and the source it was handed unsubscribed', () => {

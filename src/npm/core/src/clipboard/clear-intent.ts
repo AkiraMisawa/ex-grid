@@ -17,7 +17,8 @@ export class GridClearIntent {
     /** The ranges to clear: the Selection as it stood, in creation order. Ranges may overlap; a cell covered
      * twice is cleared once. */
     readonly targets: readonly SelectionRange[];
-    /** The order these positions are written in (ADR-0011). */
+    /** The order these positions are written in (ADR-0011): the source's own Row Sequence Version, the one its
+     * `snapshot()` says and `placeSelection` takes. */
     readonly rowSequenceVersion: number;
 
     /** @internal */
