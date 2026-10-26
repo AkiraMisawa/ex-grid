@@ -4,13 +4,22 @@
 
 ```ts
 
+import type { GridColumn } from '@ex-grid/core';
 import { GridOptions } from '@ex-grid/core';
+import type { GridTemplateCell } from '@ex-grid/core';
 import { ReactElement } from 'react';
+import { ReactNode } from 'react';
 
 // @public
 export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement;
 
 // @public
 export type ExGridProps<Row> = GridOptions<Row>;
+
+// @public
+export function templateColumn<Row>(column: TemplateColumnOptions<Row>, render: (cell: GridTemplateCell<Row>) => ReactNode): GridColumn<Row>;
+
+// @public
+export type TemplateColumnOptions<Row> = Omit<GridColumn<Row>, 'template' | 'actions'>;
 
 ```

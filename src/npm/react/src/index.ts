@@ -6,3 +6,5 @@
  */
 export { ExGrid } from './ex-grid';
 export type { ExGridProps } from './ex-grid';
+export { templateColumn } from './template-column';
+export type { TemplateColumnOptions } from './template-column';

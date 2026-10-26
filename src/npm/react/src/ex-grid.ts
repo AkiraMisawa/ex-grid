@@ -3,8 +3,9 @@
 // instance root, and decides nothing. The rows are never React's: a component per row would repeat,
 // through `memo`, the fight with re-rendering that ADR-0003 measured.
 
-import { createElement, useLayoutEffect, useRef, type ReactElement } from 'react';
+import { createElement, Fragment, useLayoutEffect, useRef, type ReactElement } from 'react';
 import { createGrid, type GridHandle, type GridOptions } from '@ex-grid/core';
+import { holdPortals, useTemplatePortals } from './template-column';
 
 /**
  * An ExGrid's props: the Script Core's options, whole. `locale` is the browser's language where not given,
@@ -27,22 +28,28 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
     const element = useRef<HTMLDivElement>(null);
     const grid = useRef<GridHandle<Row> | undefined>(undefined);
     const browserLocale = useRef<string | undefined>(undefined);
+    // The Template cells' content, rendered by this component into the slots the core keeps (ADR-0020).
+    const portals = useTemplatePortals();
     // Drawn before the browser paints, so a mounted grid is never seen empty.
     useLayoutEffect(() => {
         const root = element.current;
         if (root === null) throw new Error('Internal: React mounted no element for the grid to draw into.');
+        holdPortals(root, portals);
         browserLocale.current ??= navigator.language;
         const options = withLocale(props, browserLocale.current);
         if (grid.current === undefined) {
+            portals.begin();
             grid.current = createGrid(root, options);
         } else {
             grid.current.update(options);
         }
     });
     useLayoutEffect(() => () => {
+        // The content goes with the grid, and nothing renders for it again.
+        portals.end();
         grid.current?.destroy();
         grid.current = undefined;
         browserLocale.current = undefined;
-    }, []);
-    return createElement('div', { ref: element });
+    }, [portals]);
+    return createElement(Fragment, null, createElement('div', { ref: element }), ...portals.elements());
 }

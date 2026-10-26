@@ -10,7 +10,7 @@ export type { GridSelection } from './selection/selection';
 export { createGrid } from './dom/create-grid';
 export type { GridHandle } from './dom/create-grid';
 export type { GridHeaderGroup, GridOptions, ViewportSize } from './dom/grid-view';
-export type { FindRefusalReason, GridRefusal } from './dom/grid-refusal';
+export type { ActionRefusalReason, FindRefusalReason, GridRefusal } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { gridCommandIds } from './chrome/command-ids';
@@ -19,7 +19,10 @@ export type { PasteFieldOrigin } from './clipboard/clipboard-parse';
 export type { GridPasteIntent } from './clipboard/paste-intent';
 export type { GridClearIntent } from './clipboard/clear-intent';
 export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent, GridOverwriteNotice } from './cells/edit-intent';
-export type { AutoColumnWidth, FixedColumnWidth, GridColumn, GridColumnWidth } from './dom/grid-column';
+export { actionColumn } from './dom/grid-column';
+export type {
+    AutoColumnWidth, FixedColumnWidth, GridAction, GridActionEvent, GridColumn, GridColumnWidth, GridTemplate, GridTemplateCell,
+} from './dom/grid-column';
 export type { FilterUi } from './dom/filter-panel';
 export type { TemporalLike } from './chrome/operand-reading';
 export { GridSource } from './source/grid-source';

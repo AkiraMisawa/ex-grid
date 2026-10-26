@@ -1,0 +1,2174 @@
+{
+  "about": "What a chart shows as files (ticket 07, ADR-0275): the long and the wide CSV and the table, after the Chart Filters, every point before Thinning, invariant digits and empty fields, Interpolated and extrapolated columns (ADR-0257), Interval bounds (ADR-0303, ADR-0304), a Price Range's rows (ADR-0300, ADR-0302), an Observation's points with its colour, size and tooltip columns and its edges (ADR-0290, ADR-0320, ADR-0321), from tests/ExChart.Engine.Tests (CsvTests, ComponentSupportTests, IntervalTests, PriceRangeTests, ScatterTests, ObservationIntervalTests, PointScaleTests, EdgeTests, ChartSpecTests).",
+  "kind": "chart",
+  "definitions": {
+    "exposure": {
+      "axis": {
+        "values": "numbers",
+        "title": "Years"
+      },
+      "series": [
+        {
+          "id": "epe-before",
+          "name": "EPE · Before",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              9
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "Before"
+          }
+        },
+        {
+          "id": "epe-after",
+          "name": "EPE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              8
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "After"
+          }
+        },
+        {
+          "id": "ene-after",
+          "name": "ENE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              -1
+            ],
+            [
+              1,
+              -3
+            ],
+            [
+              2,
+              -2
+            ]
+          ],
+          "panel": "ENE",
+          "keys": {
+            "colour": "After"
+          }
+        }
+      ]
+    },
+    "curve": {
+      "axis": {
+        "values": "numbers"
+      },
+      "series": [
+        {
+          "id": "q",
+          "name": "USD",
+          "kind": "level",
+          "points": [
+            [
+              1,
+              3.1
+            ],
+            [
+              30,
+              3.5
+            ]
+          ],
+          "keys": {
+            "colour": "USD"
+          }
+        },
+        {
+          "id": "c",
+          "name": "USD",
+          "kind": "level",
+          "keys": {
+            "colour": "USD"
+          },
+          "interpolated": true,
+          "segments": [
+            {
+              "from": 1,
+              "to": 30,
+              "method": "Log-linear"
+            },
+            {
+              "from": 30,
+              "to": 40,
+              "method": "Flat",
+              "extrapolated": true
+            }
+          ],
+          "sampler": {
+            "from": 1,
+            "to": 40,
+            "value": {
+              "line": [
+                3,
+                0.01
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "interval": {
+      "axis": {
+        "values": "numbers"
+      },
+      "series": [
+        {
+          "id": "2y",
+          "name": "2Y",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              3.0
+            ],
+            [
+              1,
+              3.01
+            ],
+            [
+              2,
+              3.02
+            ]
+          ],
+          "fromZero": false,
+          "interval": {
+            "meaning": "95% CI",
+            "bounds": [
+              [
+                0,
+                2.9,
+                3.1
+              ],
+              [
+                1,
+                null,
+                3.11
+              ],
+              [
+                2,
+                2.92,
+                3.12
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "candles": {
+      "axis": {
+        "values": "dates"
+      },
+      "series": [
+        {
+          "id": "idx",
+          "name": "Index",
+          "kind": "priceRange",
+          "bars": [
+            [
+              {
+                "date": "2026-10-13"
+              },
+              39000,
+              39200,
+              38900,
+              39100.5,
+              5
+            ],
+            [
+              {
+                "date": "2026-10-14"
+              },
+              39120,
+              39480,
+              38950,
+              39310,
+              null
+            ]
+          ]
+        }
+      ]
+    },
+    "spreads": {
+      "axis": {
+        "values": "numbers",
+        "title": "Leverage"
+      },
+      "series": [
+        {
+          "id": "names",
+          "name": "Names",
+          "kind": "observation",
+          "points": [
+            [
+              1,
+              150,
+              "A"
+            ],
+            [
+              3,
+              200,
+              "C"
+            ],
+            [
+              3,
+              260,
+              "D"
+            ]
+          ],
+          "interval": {
+            "meaning": "95% CI",
+            "bounds": [
+              [
+                1,
+                140,
+                160
+              ],
+              [
+                3,
+                190,
+                215
+              ],
+              [
+                3,
+                240,
+                290
+              ]
+            ]
+          },
+          "xInterval": {
+            "meaning": "±1σ",
+            "bounds": [
+              [
+                1,
+                0.5,
+                1.5
+              ],
+              [
+                3,
+                2.8,
+                3.4
+              ],
+              [
+                3,
+                2.5,
+                3.1
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "tree": {
+      "axis": {
+        "values": "numbers",
+        "title": "Step"
+      },
+      "series": [
+        {
+          "id": "tree",
+          "name": "Tree",
+          "kind": "observation",
+          "points": [
+            {
+              "x": 0,
+              "y": 100,
+              "row": "0,0"
+            },
+            {
+              "x": 1,
+              "y": 90,
+              "row": "1,0"
+            },
+            {
+              "x": 1,
+              "y": 110,
+              "row": "1,1"
+            },
+            {
+              "x": 2,
+              "y": 81,
+              "row": "2,0"
+            },
+            {
+              "x": 2,
+              "y": 99,
+              "row": "2,1"
+            },
+            {
+              "x": 2,
+              "y": 121,
+              "row": "2,2"
+            }
+          ],
+          "edges": [
+            [
+              "0,0",
+              "1,0"
+            ],
+            [
+              "0,0",
+              "1,1"
+            ],
+            [
+              "1,0",
+              "2,0"
+            ],
+            [
+              "1,0",
+              "2,1"
+            ],
+            [
+              "1,1",
+              "2,1"
+            ],
+            [
+              "1,1",
+              "2,2"
+            ]
+          ]
+        }
+      ]
+    },
+    "crowd": {
+      "axis": {
+        "values": "numbers",
+        "title": "Leverage"
+      },
+      "series": [
+        {
+          "id": "names",
+          "name": "Names",
+          "kind": "observation",
+          "points": [
+            {
+              "generate": {
+                "count": 50,
+                "x": {
+                  "from": 1,
+                  "step": 1e-07
+                },
+                "y": 100,
+                "name": "N"
+              }
+            },
+            [
+              5,
+              300,
+              "Far"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "Ticket 07: the long form is invariant with every digit, a byte-order mark first, a missing value empty and never zero",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "e",
+            "name": "EPE, Before",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-10-19"
+                },
+                1234567.89
+              ],
+              [
+                {
+                  "date": "2026-10-20"
+                },
+                null
+              ]
+            ]
+          }
+        ]
+      },
+      "csv": {
+        "form": "long",
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "\ufeffSeries,Date,Value,Kind,Method\r\n\"EPE, Before\",2026-10-19,1234567.89,quoted,\r\n\"EPE, Before\",2026-10-20,,quoted,\r\n"
+        }
+      ]
+    },
+    {
+      "name": "Ticket 07: the files follow the Chart Filters — hidden series and positions outside the range are left out",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Years"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                5,
+                2
+              ],
+              [
+                10,
+                3
+              ]
+            ]
+          },
+          {
+            "id": "b",
+            "name": "B",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                4
+              ]
+            ]
+          }
+        ]
+      },
+      "csv": {
+        "form": "wide",
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "b"
+          ],
+          "to": 5
+        }
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "\ufeffYears,A\r\n0,1\r\n5,2\r\n"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0254: the files carry every point, never the thinned ones",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5000,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      0,
+                      1
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 200,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "rows.length",
+          "is": 5000
+        },
+        {
+          "at": "rows.4999",
+          "is": [
+            "4999",
+            "4999"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257 (Q5): the long form says quoted, interpolated or extrapolated, and the method; the wide form a column for each",
+      "build": {
+        "long": {
+          "definition": "curve",
+          "csv": {
+            "form": "long",
+            "metrics": {
+              "width": 120,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "wide": {
+          "definition": "curve",
+          "csv": {
+            "form": "wide",
+            "metrics": {
+              "width": 120,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "table": {
+          "definition": "curve",
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 120,
+              "height": 400
+            },
+            "view": {}
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "long",
+          "has": "\r\nUSD,1,3.1,quoted,\r\n"
+        },
+        {
+          "at": "long",
+          "has": ",interpolated,Log-linear\r\n"
+        },
+        {
+          "at": "long",
+          "has": ",extrapolated,Flat\r\n"
+        },
+        {
+          "at": "wide",
+          "startsWith": "\ufeffX,USD,USD (interpolated),USD (extrapolated)\r\n"
+        },
+        {
+          "at": "table.header",
+          "is": [
+            "X",
+            "USD",
+            "USD (interpolated)",
+            "USD (extrapolated)"
+          ]
+        },
+        {
+          "at": "table.rows.0",
+          "is": [
+            "1",
+            "3.1",
+            "3.01",
+            ""
+          ]
+        },
+        {
+          "at": "table.rows.-1",
+          "is": [
+            "40",
+            "",
+            "",
+            "3.4"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275, CH-8: the table holds the wide form's content",
+      "build": {
+        "long": {
+          "definition": "exposure",
+          "csv": {
+            "form": "long",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {
+              "hidden": [
+                "ene-after"
+              ]
+            }
+          }
+        },
+        "wide": {
+          "definition": "exposure",
+          "csv": {
+            "form": "wide",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {
+              "hidden": [
+                "ene-after"
+              ]
+            }
+          }
+        },
+        "table": {
+          "definition": "exposure",
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {
+              "hidden": [
+                "ene-after"
+              ]
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "table.header",
+          "is": [
+            "Years",
+            "EPE · Before",
+            "EPE · After"
+          ]
+        },
+        {
+          "at": "table.rows",
+          "is": [
+            [
+              "0",
+              "1",
+              "2"
+            ],
+            [
+              "1",
+              "5",
+              "4"
+            ],
+            [
+              "2",
+              "9",
+              "8"
+            ]
+          ]
+        },
+        {
+          "at": "wide",
+          "is": "\ufeffYears,EPE · Before,EPE · After\r\n0,1,2\r\n1,5,4\r\n2,9,8\r\n"
+        },
+        {
+          "at": "long",
+          "is": "\ufeffSeries,Years,Value,Kind,Method\r\nEPE · Before,0,1,quoted,\r\nEPE · Before,1,5,quoted,\r\nEPE · Before,2,9,quoted,\r\nEPE · After,0,2,quoted,\r\nEPE · After,1,4,quoted,\r\nEPE · After,2,8,quoted,\r\n"
+        }
+      ]
+    },
+    {
+      "name": "Ticket 07: a field holding a comma, a quote or a line break is quoted, its quotes doubled",
+      "build": {
+        "wide": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Tenor, years"
+            },
+            "series": [
+              {
+                "id": "a",
+                "name": "Say \"hi\"",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ]
+                ]
+              },
+              {
+                "id": "b",
+                "name": "Two\nlines",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    2
+                  ]
+                ]
+              }
+            ]
+          },
+          "csv": {
+            "form": "wide",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "table": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Tenor, years"
+            },
+            "series": [
+              {
+                "id": "a",
+                "name": "Say \"hi\"",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ]
+                ]
+              },
+              {
+                "id": "b",
+                "name": "Two\nlines",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    2
+                  ]
+                ]
+              }
+            ]
+          },
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "wide",
+          "is": "\ufeff\"Tenor, years\",\"Say \"\"hi\"\"\",\"Two\nlines\"\r\n0,1,2\r\n"
+        },
+        {
+          "at": "table.header",
+          "is": [
+            "Tenor, years",
+            "Say \"hi\"",
+            "Two\nlines"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ticket 07: a category is written by its label",
+      "definition": {
+        "axis": {
+          "values": "labels",
+          "labels": [
+            "1Y",
+            "2Y",
+            "5Y"
+          ]
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                3
+              ]
+            ]
+          }
+        ]
+      },
+      "csv": {
+        "form": "wide",
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "\ufeffX,A\r\n1Y,1\r\n2Y,2\r\n5Y,3\r\n"
+        }
+      ]
+    },
+    {
+      "name": "Ticket 07: a position is written as a number, never as the axis names it",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "named": [
+            [
+              0.5,
+              "6M"
+            ]
+          ]
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0.5,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "csv": {
+        "form": "wide",
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "\ufeffX,A\r\n0.5,1\r\n1,2\r\n"
+        }
+      ]
+    },
+    {
+      "name": "Ticket 07: a position no series shares is a row of its own, empty where a series has no point",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                2,
+                3
+              ]
+            ]
+          },
+          {
+            "id": "b",
+            "name": "B",
+            "kind": "level",
+            "points": [
+              [
+                1,
+                5
+              ],
+              [
+                2,
+                6
+              ]
+            ]
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "rows",
+          "is": [
+            [
+              "0",
+              "1",
+              ""
+            ],
+            [
+              "1",
+              "",
+              "5"
+            ],
+            [
+              "2",
+              "3",
+              "6"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: points past the quotes have an extrapolated column of their own, and the long form names each method",
+      "build": {
+        "long": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "s",
+                "name": "S",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    2
+                  ],
+                  [
+                    2,
+                    3
+                  ],
+                  [
+                    3,
+                    4
+                  ],
+                  [
+                    4,
+                    5
+                  ]
+                ],
+                "segments": [
+                  {
+                    "from": 0,
+                    "to": 2,
+                    "method": "Linear"
+                  },
+                  {
+                    "from": 2,
+                    "to": 4,
+                    "method": "Flat",
+                    "extrapolated": true
+                  }
+                ]
+              }
+            ]
+          },
+          "csv": {
+            "form": "long",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "table": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "s",
+                "name": "S",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    2
+                  ],
+                  [
+                    2,
+                    3
+                  ],
+                  [
+                    3,
+                    4
+                  ],
+                  [
+                    4,
+                    5
+                  ]
+                ],
+                "segments": [
+                  {
+                    "from": 0,
+                    "to": 2,
+                    "method": "Linear"
+                  },
+                  {
+                    "from": 2,
+                    "to": 4,
+                    "method": "Flat",
+                    "extrapolated": true
+                  }
+                ]
+              }
+            ]
+          },
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "table.header",
+          "is": [
+            "X",
+            "S",
+            "S (extrapolated)"
+          ]
+        },
+        {
+          "at": "table.rows",
+          "is": [
+            [
+              "0",
+              "1",
+              ""
+            ],
+            [
+              "1",
+              "2",
+              ""
+            ],
+            [
+              "2",
+              "",
+              "3"
+            ],
+            [
+              "3",
+              "",
+              "4"
+            ],
+            [
+              "4",
+              "",
+              "5"
+            ]
+          ]
+        },
+        {
+          "at": "long",
+          "is": "\ufeffSeries,X,Value,Kind,Method\r\nS,0,1,quoted,Linear\r\nS,1,2,quoted,Linear\r\nS,2,3,extrapolated,Flat\r\nS,3,4,extrapolated,Flat\r\nS,4,5,extrapolated,Flat\r\n"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: the files name an Interval's bounds by their meaning, a missing bound an empty field",
+      "build": {
+        "long": {
+          "definition": "interval",
+          "csv": {
+            "form": "long",
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "table": {
+          "definition": "interval",
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            },
+            "view": {}
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "table.header",
+          "is": [
+            "X",
+            "2Y",
+            "2Y lower (95% CI)",
+            "2Y upper (95% CI)"
+          ]
+        },
+        {
+          "at": "table.rows",
+          "is": [
+            [
+              "0",
+              "3",
+              "2.9",
+              "3.1"
+            ],
+            [
+              "1",
+              "3.01",
+              "",
+              "3.11"
+            ],
+            [
+              "2",
+              "3.02",
+              "2.92",
+              "3.12"
+            ]
+          ]
+        },
+        {
+          "at": "long",
+          "is": "\ufeffSeries,X,Value,Kind,Method\r\n2Y,0,3,quoted,\r\n2Y,1,3.01,quoted,\r\n2Y,2,3.02,quoted,\r\n2Y lower (95% CI),0,2.9,interval,\r\n2Y lower (95% CI),1,,interval,\r\n2Y lower (95% CI),2,2.92,interval,\r\n2Y upper (95% CI),0,3.1,interval,\r\n2Y upper (95% CI),1,3.11,interval,\r\n2Y upper (95% CI),2,3.12,interval,\r\n"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: a point the Interval has no bounds at is empty in both bound columns",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                3.0
+              ],
+              [
+                1,
+                3.01
+              ]
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  0,
+                  2.9,
+                  3.1
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "rows",
+          "is": [
+            [
+              "0",
+              "3",
+              "2.9",
+              "3.1"
+            ],
+            [
+              "1",
+              "3.01",
+              "",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a Price Range's every row, its open, high, low, close and volume, a missing volume empty",
+      "build": {
+        "long": {
+          "definition": "candles",
+          "csv": {
+            "form": "long",
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "table": {
+          "definition": "candles",
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            },
+            "view": {}
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "table.header",
+          "is": [
+            "Date",
+            "Index open",
+            "Index high",
+            "Index low",
+            "Index close",
+            "Index volume"
+          ]
+        },
+        {
+          "at": "table.rows",
+          "is": [
+            [
+              "2026-10-13",
+              "39000",
+              "39200",
+              "38900",
+              "39100.5",
+              "5"
+            ],
+            [
+              "2026-10-14",
+              "39120",
+              "39480",
+              "38950",
+              "39310",
+              ""
+            ]
+          ]
+        },
+        {
+          "at": "long",
+          "is": "\ufeffSeries,Date,Value,Kind,Method\r\nIndex open,2026-10-13,39000,price range,\r\nIndex open,2026-10-14,39120,price range,\r\nIndex high,2026-10-13,39200,price range,\r\nIndex high,2026-10-14,39480,price range,\r\nIndex low,2026-10-13,38900,price range,\r\nIndex low,2026-10-14,38950,price range,\r\nIndex close,2026-10-13,39100.5,price range,\r\nIndex close,2026-10-14,39310,price range,\r\nIndex volume,2026-10-13,5,price range,\r\nIndex volume,2026-10-14,,price range,\r\n"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a High-Low-Close series has no open column, and one with no volume no volume column",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2,
+                "withoutOpen": true
+              }
+            }
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "header",
+          "is": [
+            "Date",
+            "Index high",
+            "Index low",
+            "Index close"
+          ]
+        },
+        {
+          "at": "rows",
+          "is": [
+            [
+              "2026-01-05",
+              "102",
+              "95",
+              "97"
+            ],
+            [
+              "2026-01-06",
+              "99",
+              "93",
+              "95"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a row missing a value is written with its empty field",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2,
+                "set": {
+                  "1": {
+                    "close": null
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "rows.1",
+          "is": [
+            "2026-01-06",
+            "97",
+            "99",
+            "93",
+            ""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: where candles merge, the files keep every row",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2450,
+                "volume": true
+              }
+            }
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "rows.length",
+          "is": 2450
+        },
+        {
+          "at": "header.length",
+          "is": 6
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: the files carry every point, merged or not, with its name",
+      "build": {
+        "long": {
+          "definition": "crowd",
+          "csv": {
+            "form": "long",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "table": {
+          "definition": "crowd",
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "table.header",
+          "is": [
+            "Series",
+            "Point",
+            "Leverage",
+            "Value"
+          ]
+        },
+        {
+          "at": "table.rows.length",
+          "is": 51
+        },
+        {
+          "at": "table.rows.-1",
+          "is": [
+            "Names",
+            "Far",
+            "5",
+            "300"
+          ]
+        },
+        {
+          "at": "long",
+          "has": "\r\nNames,N49,"
+        },
+        {
+          "at": "long",
+          "startsWith": "\ufeffSeries,Point,Leverage,Value,Kind,Method\r\nNames,N0,1,100,observed,\r\n"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: the table and the long form say what each interval means",
+      "build": {
+        "long": {
+          "definition": "spreads",
+          "csv": {
+            "form": "long",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "table": {
+          "definition": "spreads",
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "table.header",
+          "is": [
+            "Series",
+            "Point",
+            "Leverage",
+            "Value",
+            "Value lower (95% CI)",
+            "Value upper (95% CI)",
+            "Leverage lower (±1σ)",
+            "Leverage upper (±1σ)"
+          ]
+        },
+        {
+          "at": "table.rows.2",
+          "is": [
+            "Names",
+            "D",
+            "3",
+            "260",
+            "240",
+            "290",
+            "2.5",
+            "3.1"
+          ]
+        },
+        {
+          "at": "long",
+          "is": "\ufeffSeries,Point,Leverage,Value,Kind,Method\r\nNames,A,1,150,observed,\r\nNames y lower (95% CI),A,1,140,interval,\r\nNames y upper (95% CI),A,1,160,interval,\r\nNames x lower (±1σ),A,1,0.5,interval,\r\nNames x upper (±1σ),A,1,1.5,interval,\r\nNames,C,3,200,observed,\r\nNames y lower (95% CI),C,3,190,interval,\r\nNames y upper (95% CI),C,3,215,interval,\r\nNames x lower (±1σ),C,3,2.8,interval,\r\nNames x upper (±1σ),C,3,3.4,interval,\r\nNames,D,3,260,observed,\r\nNames y lower (95% CI),D,3,240,interval,\r\nNames y upper (95% CI),D,3,290,interval,\r\nNames x lower (±1σ),D,3,2.5,interval,\r\nNames x upper (±1σ),D,3,3.1,interval,\r\n"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: a lone vertical interval's long rows do not name its direction",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  null,
+                  160
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "csv": {
+        "form": "long",
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "\ufeffSeries,Point,Leverage,Value,Kind,Method\r\nNames,A,1,150,observed,\r\nNames lower (95% CI),A,1,,interval,\r\nNames upper (95% CI),A,1,160,interval,\r\n"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: series whose intervals mean different things put the meaning in a column of its own",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "P"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ]
+              ]
+            }
+          },
+          {
+            "id": "b",
+            "name": "B",
+            "kind": "observation",
+            "points": [
+              [
+                2,
+                250,
+                "Q"
+              ]
+            ],
+            "interval": {
+              "meaning": "±1σ",
+              "bounds": [
+                [
+                  2,
+                  240,
+                  260
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "header",
+          "is": [
+            "Series",
+            "Point",
+            "Leverage",
+            "Value",
+            "Value lower",
+            "Value upper",
+            "Value interval"
+          ]
+        },
+        {
+          "at": "rows",
+          "is": [
+            [
+              "A",
+              "P",
+              "1",
+              "150",
+              "140",
+              "160",
+              "95% CI"
+            ],
+            [
+              "B",
+              "Q",
+              "2",
+              "250",
+              "240",
+              "260",
+              "±1σ"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: a series with no interval beside one with an interval leaves its bounds and meaning empty",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "P"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ]
+              ]
+            }
+          },
+          {
+            "id": "b",
+            "name": "B",
+            "kind": "observation",
+            "points": [
+              [
+                2,
+                250,
+                "Q"
+              ]
+            ]
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "header",
+          "is": [
+            "Series",
+            "Point",
+            "Leverage",
+            "Value",
+            "Value lower",
+            "Value upper",
+            "Value interval"
+          ]
+        },
+        {
+          "at": "rows.1",
+          "is": [
+            "B",
+            "Q",
+            "2",
+            "250",
+            "",
+            "",
+            ""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: the table carries the colour's and the size's values, a missing one empty",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                2,
+                "Acme"
+              ],
+              [
+                2,
+                3,
+                "Beta"
+              ]
+            ],
+            "colourBy": {
+              "title": "P&L",
+              "values": [
+                -3,
+                null
+              ]
+            },
+            "sizeBy": {
+              "title": "Notional",
+              "values": [
+                5,
+                6
+              ]
+            }
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "header",
+          "is": [
+            "Series",
+            "Point",
+            "X",
+            "Value",
+            "P&L",
+            "Notional"
+          ]
+        },
+        {
+          "at": "rows",
+          "is": [
+            [
+              "Names",
+              "Acme",
+              "1",
+              "2",
+              "-3",
+              "5"
+            ],
+            [
+              "Names",
+              "Beta",
+              "2",
+              "3",
+              "",
+              "6"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: the table carries the tooltip's columns, once each, a missing value empty",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Nodes",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1,
+                "a"
+              ],
+              [
+                2,
+                2,
+                "b"
+              ]
+            ],
+            "colourBy": {
+              "title": "probability",
+              "values": [
+                1,
+                0.5
+              ]
+            },
+            "details": [
+              {
+                "title": "probability",
+                "values": [
+                  "1",
+                  "0.5"
+                ]
+              },
+              {
+                "title": "exercise",
+                "values": [
+                  "yes",
+                  null
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "header",
+          "is": [
+            "Series",
+            "Point",
+            "X",
+            "Value",
+            "probability",
+            "exercise"
+          ]
+        },
+        {
+          "at": "rows.1",
+          "is": [
+            "Nodes",
+            "b",
+            "2",
+            "2",
+            "0.5",
+            ""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: the table lists a node series' edges after its nodes",
+      "definition": "tree",
+      "csv": {
+        "form": "table",
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "rows.length",
+          "is": 12
+        },
+        {
+          "at": "rows.6",
+          "is": [
+            "Tree",
+            "edge 0,0 → 1,0",
+            "",
+            ""
+          ]
+        },
+        {
+          "at": "rows.0",
+          "is": [
+            "Tree",
+            "",
+            "0",
+            "100"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a series of points beside an Observation is written a row a point, with an empty name",
+      "build": {
+        "long": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "n",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  [
+                    1,
+                    2,
+                    "Acme"
+                  ]
+                ],
+                "interval": {
+                  "meaning": "95% CI",
+                  "bounds": [
+                    [
+                      1,
+                      1,
+                      3
+                    ]
+                  ]
+                }
+              },
+              {
+                "id": "l",
+                "name": "Line",
+                "kind": "level",
+                "points": [
+                  [
+                    1,
+                    1
+                  ],
+                  [
+                    2,
+                    2
+                  ]
+                ]
+              }
+            ]
+          },
+          "csv": {
+            "form": "long",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "table": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "n",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  [
+                    1,
+                    2,
+                    "Acme"
+                  ]
+                ],
+                "interval": {
+                  "meaning": "95% CI",
+                  "bounds": [
+                    [
+                      1,
+                      1,
+                      3
+                    ]
+                  ]
+                }
+              },
+              {
+                "id": "l",
+                "name": "Line",
+                "kind": "level",
+                "points": [
+                  [
+                    1,
+                    1
+                  ],
+                  [
+                    2,
+                    2
+                  ]
+                ]
+              }
+            ]
+          },
+          "csv": {
+            "form": "table",
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "table.rows",
+          "is": [
+            [
+              "Names",
+              "Acme",
+              "1",
+              "2",
+              "1",
+              "3"
+            ],
+            [
+              "Line",
+              "",
+              "1",
+              "1",
+              "",
+              ""
+            ],
+            [
+              "Line",
+              "",
+              "2",
+              "2",
+              "",
+              ""
+            ]
+          ]
+        },
+        {
+          "at": "long",
+          "has": "\r\nLine,,2,2,quoted,\r\n"
+        }
+      ]
+    }
+  ]
+}

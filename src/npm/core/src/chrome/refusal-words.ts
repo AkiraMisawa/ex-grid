@@ -47,3 +47,12 @@ export const pasteRefusalWords: Readonly<Record<PasteRefusalReason, string>> = O
  * (ADR-0050 item 3, ADR-0203). */
 export const shapeMismatchMaySpillWords = 'Nothing was pasted: the selection is not a whole multiple of the copied block. '
     + 'Select a range of the copied block\'s shape, one it repeats over exactly, or a single cell.';
+
+/** The id of what an action says when the row it was pressed on is gone (ADR-0142, A11Y-16), as the C# core's
+ * KeyRefusalLabelIds names it: resolved through the grid's `commandLabel`, as the menus' words are. */
+export const rowCommandRefusalId = 'key-refusal-row-command-target-left';
+
+/** The built-in English for {@link rowCommandRefusalId}, as the C# core's built-in labels say it. */
+export const rowCommandRefusalWords: readonly (readonly [string, string])[] = Object.freeze([
+    [rowCommandRefusalId, 'The row is no longer available. Repeat the command on the current data.'],
+]);

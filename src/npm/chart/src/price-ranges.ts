@@ -3,6 +3,7 @@
 import { dateOf, dayNumber, dayOfWeek, wholeDay } from './day-numbers';
 import type { CandlePeriod, ChartAxis, ChartSeries, PriceBar } from './model';
 import { elementAt, unreachable } from './must';
+import { percentTwoPlaces } from './invariant-text';
 import { greatest, least } from './numbers';
 import { toNumber, writePosition, writeValue } from './values';
 
@@ -121,6 +122,11 @@ export function candlesOf(series: ChartSeries, from: number, to: number, period:
         }));
     }
     return candles;
+}
+
+/** A candle's change from the previous close as a percentage, in brackets after its amount; nothing where the previous close is zero. */
+export function percentChange(change: number, previous: number): string {
+    return previous === 0 ? '' : ` (${change >= 0 ? '+' : ''}${percentTwoPlaces(change / previous)})`;
 }
 
 function must<T>(value: T | null): T {

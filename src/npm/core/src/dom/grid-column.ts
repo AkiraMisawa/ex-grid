@@ -33,6 +33,75 @@ export interface FixedColumnWidth {
 /** A column's declared width: a Fixed number of pixels, a Fixed width with its bounds, or Auto (ADR-0016). */
 export type GridColumnWidth = number | FixedColumnWidth | AutoColumnWidth;
 
+/**
+ * One action an Action Column's cells carry (ADR-0020). The Consumer gives what it looks like, a label or a
+ * class naming an icon, and the core holds what pressing it means: the grid reports the press and does
+ * nothing else. How many actions a cell carries is declared, never counted from what is painted, because
+ * Space means something else at one action and at several.
+ */
+export interface GridAction {
+    /** How the Consumer tells this action from the others when a press is reported back. */
+    readonly name: string;
+    /** The button's text, and its accessible name where `className` paints an icon instead. Required: an
+     * icon-only control without a name is unreachable by anything but a mouse. */
+    readonly label: string;
+    /** An extra class on the button, for a theme's icon. Appearance only: with it the label is the button's
+     * `aria-label` and title, and the button shows no text. */
+    readonly className?: string;
+}
+
+/** An action pressed (ADR-0020): by pointer on its button, or by Space on its cell. The grid reports it and
+ * does nothing else, not even move the keyboard (ADR-0037, amended 2026-09-26): what it opens is the
+ * Consumer's. */
+export interface GridActionEvent<Row> {
+    /** The row it was pressed on, as the Window holds that row now (ADR-0142). */
+    readonly row: Row;
+    /** The Action Column's `name`. */
+    readonly column: string;
+    /** The action's `name`. */
+    readonly action: string;
+}
+
+/**
+ * What a Template cell's content is handed when it is mounted (ADR-0020, ADR-0037): the row it paints, its
+ * column, and the core's request for the keyboard.
+ */
+export interface GridTemplateCell<Row> {
+    /** The row the cell is painted for, as the Window held it when the cell was mounted. A control that writes
+     * checks it against the row now before writing: the grid does not judge what such a control writes
+     * (ADR-0142). */
+    readonly row: Row;
+    /** The column's `name`. */
+    readonly column: string;
+    /**
+     * Non-zero on exactly one mount of exactly one cell: Space on a Template cell asks its content to take the
+     * keyboard, and the content's control answers through `takeKeyboard`, acting once per number (ADR-0037).
+     * Every other mount, and every later one of that cell, is handed zero, so a row recycled by
+     * virtualisation never steals the keyboard.
+     */
+    readonly focusRequest: number;
+    /**
+     * Hands the keyboard to `control`, granted only while it is still the grid's: DOM focus inside its root
+     * or on nothing (ADR-0204). A control that is not itself focusable names its first enabled text field,
+     * with that field's text selected, or else its first enabled control. Moves neither the Focus nor the
+     * Selection. A control that wants the keyboard carries `tabindex="-1"`, or the grid stops being one tab
+     * stop, and `ex-interactive`, which turns its pointer events on (ADR-0020).
+     */
+    readonly takeKeyboard: (control: HTMLElement) => void;
+}
+
+/**
+ * A Template Column's content (ADR-0020, ADR-0350 section 16): mounts what the Consumer paints into `slot`, the
+ * cell's own element, empty, and answers how to take it away. The core mounts a cell's content once it is in
+ * the DOM, keeps the slot while the cell stays painted, its row rebuilt or not, and mounts it again, into the
+ * same slot, when a focus request is handed over or a new version of its row arrives: a Framework Adapter keyed
+ * by the slot keeps its component's state across that. A new version is the same row only under a Row Key;
+ * without one a new instance is another row (ADR-0140), whose cell is a new slot. The core writes the slot's own attributes, and nothing
+ * inside it. Hold it on the column, never made per render: a new function is a new column, and every row
+ * paints again (ADR-0003).
+ */
+export type GridTemplate<Row> = (slot: HTMLElement, cell: GridTemplateCell<Row>) => () => void;
+
 /** A column of a grid: what the query semantics read, and what the grid paints. */
 export interface GridColumn<Row> extends QueryColumn<Row> {
     /** The header's text; the column's name unless given. */
@@ -53,6 +122,12 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
      * never asks the source for the column's values; `valueList`, a list of its distinct values to tick,
      * degraded to the condition form where the source answers TooMany; or `both`. */
     readonly filterUi?: FilterUi;
+    /** The actions its cells carry, in order, painted as the grid's own buttons (ADR-0020). Made by
+     * {@link actionColumn}, which declares the column's other half: no value, so no sort, filter or copy. */
+    readonly actions?: readonly GridAction[];
+    /** What its cells paint in place of their value's text (ADR-0020). The value is still read for sorting,
+     * filtering, Find and copy, never the template; and `####` is not the template's business. */
+    readonly template?: GridTemplate<Row>;
 }
 
 /** A column with what its declaration resolves to, checked once, where the Consumer handed it over. */
@@ -69,6 +144,13 @@ export interface ResolvedColumn<Row> {
     readonly editable: boolean;
     /** What its filter panel lays out (ADR-0009). */
     readonly filterUi: FilterUi;
+    /** The actions its cells carry; none for every column but an Action Column (ADR-0020). */
+    readonly actions: readonly GridAction[];
+    /** What its cells paint, for a Template Column (ADR-0020). */
+    readonly template: GridTemplate<Row> | undefined;
+    /** Whether its cells paint their value as text: false for an Action or Template Column, which takes them
+     * out of the overflow decision, the Auto width's observation and Size to fit (ADR-0016). */
+    readonly paintsValue: boolean;
 }
 
 const aligns: ReadonlySet<string> = new Set<CellAlign>(['auto', 'left', 'center', 'right']);
@@ -81,9 +163,10 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
     const names = new Set<string>();
     return Object.freeze(columns.map((column, index) => {
         // Checked as an untyped caller may hand it, where it arrives (CONVENTIONS.md).
-        const { name, value, align, header, type, editable, validate, filterUi }: {
+        const { name, value, align, header, type, editable, validate, filterUi, actions, template, queryable }: {
             readonly name: unknown; readonly value: unknown; readonly align?: unknown; readonly header?: unknown; readonly type: unknown;
-            readonly editable?: unknown; readonly validate?: unknown; readonly filterUi?: unknown;
+            readonly editable?: unknown; readonly validate?: unknown; readonly filterUi?: unknown; readonly actions?: unknown;
+            readonly template?: unknown; readonly queryable?: unknown;
         } = column;
         if (typeof name !== 'string' || name === '') {
             throw new TypeError(`The column at ${index} has no name: a column is named by a non-empty string.`);
@@ -113,6 +196,18 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
         if (filterUi !== undefined && (typeof filterUi !== 'string' || !filterUis.has(filterUi))) {
             throw new RangeError(`Column '${name}': filterUi is one of ${[...filterUis].join(', ')}, not ${JSON.stringify(filterUi)} (ADR-0009).`);
         }
+        if (template !== undefined && typeof template !== 'function') {
+            throw new TypeError(`Column '${name}': a template is a function of the slot and the cell, answering how to take its content away (ADR-0020).`);
+        }
+        const declaredActions = actions === undefined ? [] : checkedActions(name, actions);
+        if (actions !== undefined && (queryable !== false || template !== undefined)) {
+            throw new TypeError(`Column '${name}' carries actions and ${template === undefined ? 'a value to sort and filter by' : 'a template'}: `
+                + 'an Action Column carries no value and paints only its buttons, so it is made by actionColumn (ADR-0020).');
+        }
+        if (editable === true && (actions !== undefined || template !== undefined)) {
+            throw new TypeError(`Column '${name}' is editable and paints ${actions === undefined ? 'a template' : 'actions'}: the Cell Editor `
+                + 'opens over a value painted as text, and these cells paint none (ADR-0020).');
+        }
         return Object.freeze({
             column,
             header: header ?? name,
@@ -120,7 +215,53 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
             numeric: hashesWhenOverflowing(type),
             editable: editable === true,
             filterUi: column.filterUi ?? 'condition', // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0009: the condition form is the safe default, which never enumerates
+            actions: declaredActions,
+            template: column.template,
+            paintsValue: actions === undefined && template === undefined,
         });
+    }));
+}
+
+/**
+ * An Action Column (ADR-0020): cells that carry `actions` and no value, painted as the grid's own buttons. It
+ * is unsortable and unfilterable, and copies as an empty cell, rather than order every row by nothing. Its
+ * header is empty unless given, and an Auto width is measured from the labels.
+ */
+export function actionColumn<Row>(name: string, actions: readonly GridAction[],
+    options: { readonly header?: string; readonly width?: GridColumnWidth } = {}): GridColumn<Row> {
+    const { header = '', width } = options;
+    const checked = checkedActions(name, actions);
+    return Object.freeze({
+        name, type: 'text', value: () => undefined, queryable: false, header, actions: checked,
+        ...(width === undefined ? {} : { width }),
+    });
+}
+
+// The actions a column declares, checked as an untyped caller may hand them (CONVENTIONS.md), and frozen.
+function checkedActions(column: unknown, actions: unknown): readonly GridAction[] {
+    if (!Array.isArray(actions) || actions.length === 0) {
+        throw new TypeError(`Action Column '${String(column)}' declares no actions: it is a non-empty array of { name, label } (ADR-0020).`);
+    }
+    const names = new Set<string>();
+    return Object.freeze((actions as readonly unknown[]).map(action => {
+        if (typeof action !== 'object' || action === null) {
+            throw new TypeError(`Action Column '${String(column)}' declares an action that is not { name, label } (ADR-0020).`);
+        }
+        const { name, label, className } = action as { readonly name?: unknown; readonly label?: unknown; readonly className?: unknown };
+        if (typeof name !== 'string' || name === '') {
+            throw new TypeError(`Action Column '${String(column)}' declares an action with no name: the name is how a press is reported back.`);
+        }
+        if (names.has(name)) {
+            throw new TypeError(`Action Column '${String(column)}' declares two actions named '${name}': the name is how one is told from another when it is reported back.`);
+        }
+        names.add(name);
+        if (typeof label !== 'string' || label === '') {
+            throw new TypeError(`Action '${name}' of column '${String(column)}' has no label: it is the button's accessible name, even where an icon paints it.`);
+        }
+        if (className !== undefined && typeof className !== 'string') {
+            throw new TypeError(`Action '${name}' of column '${String(column)}': className is a string.`);
+        }
+        return Object.freeze(className === undefined ? { name, label } : { name, label, className });
     }));
 }
 

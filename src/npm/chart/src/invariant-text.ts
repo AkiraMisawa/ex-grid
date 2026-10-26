@@ -83,8 +83,36 @@ export function upToPlaces(value: number, places: number): string {
     if (value === 0) {
         return negative ? '-0' : '0';
     }
-    const d = fifteenDigits(value);
-    // Keep the digits up to `places` decimals; the next one rounds the kept ones half away from zero.
+    const r = rounded(fifteenDigits(value), places);
+    const digits = r.digits.replace(/0+$/, '');
+    const text = digits === '' ? '0' : placed(digits, r.point);
+    return (negative ? '-' : '') + text;
+}
+
+/**
+ * C#'s custom format `0.00%`: the number as a percentage — its point moved two places, as .NET moves it,
+ * never multiplied — taken to fifteen significant digits, rounded to two decimals with a half going away
+ * from zero, both decimals kept. A negative number that rounds to nothing is written `-0.00%`, as .NET
+ * writes it.
+ */
+export function percentTwoPlaces(value: number): string {
+    finite(value, '0.00%');
+    const negative = value < 0 || Object.is(value, -0);
+    let text = '0.00';
+    if (value !== 0) {
+        const d = fifteenDigits(value);
+        const r = rounded({ ...d, point: d.point + 2 }, 2);
+        if (r.digits !== '') {
+            const whole = r.point <= 0 ? '0' : r.digits.slice(0, r.point).padEnd(r.point, '0');
+            const fraction = r.point <= 0 ? '0'.repeat(-r.point) + r.digits : r.digits.slice(r.point);
+            text = `${whole}.${fraction.padEnd(2, '0')}`;
+        }
+    }
+    return `${negative ? '-' : ''}${text}%`;
+}
+
+// The digits kept up to `places` decimals; the next one rounds the kept ones half away from zero.
+function rounded(d: Digits, places: number): { readonly digits: string; readonly point: number } {
     const keep = d.point + places;
     let digits = d.digits;
     let point = d.point;
@@ -99,9 +127,7 @@ export function upToPlaces(value: number, places: number): string {
             digits = carried;
         }
     }
-    digits = digits.replace(/0+$/, '');
-    const text = digits === '' ? '0' : placed(digits, point);
-    return (negative ? '-' : '') + text;
+    return { digits, point };
 }
 
 // The number to fifteen significant digits as .NET takes it for a custom format: a tie goes to the even
