@@ -195,6 +195,35 @@ internal static class SheetCases
         ["right"] = Line(borders.Right),
     };
 
+    /// <summary>Text a case types: a string, or <c>{"parts": [...]}</c>, each part a string or <c>[string, times]</c>, for a Formula too long to write out.</summary>
+    internal static string Typed(JsonNode? node)
+    {
+        if (node is JsonValue value && value.GetValueKind() == JsonValueKind.String)
+            return (string)value!;
+        if (node is not JsonObject { Count: 1 } built || built["parts"] is not JsonArray parts)
+            throw new InvalidDataException($"'{node?.ToJsonString()}' is no text to type: a string, or {{\"parts\": [...]}}.");
+        var text = new System.Text.StringBuilder();
+        foreach (var part in parts)
+        {
+            switch (part)
+            {
+                case JsonValue piece when piece.GetValueKind() == JsonValueKind.String:
+                    text.Append((string)piece!);
+                    break;
+                case JsonArray { Count: 2 } repeated when repeated[0] is JsonValue p && p.GetValueKind() == JsonValueKind.String && repeated[1] is JsonValue n && n.GetValueKind() == JsonValueKind.Number:
+                    text.Insert(text.Length, (string)p!, n.GetValue<int>());
+                    break;
+                default:
+                    throw new InvalidDataException($"'{part?.ToJsonString()}' is no part of a text: a string, or [string, times].");
+            }
+        }
+        return text.ToString();
+    }
+
+    /// <summary>A per-cell reading of texts with each built text (<see cref="Typed"/>) written out; a <c>null</c> stays one.</summary>
+    internal static JsonNode? Texts(JsonNode? expected) =>
+        new JsonObject([.. expected!.AsObject().Select(p => new KeyValuePair<string, JsonNode?>(p.Key, p.Value is JsonObject ? Typed(p.Value) : p.Value?.DeepClone()))]);
+
     internal static JsonNode? EntryOf(Entry? entry) => entry switch
     {
         null => null,
@@ -463,7 +492,7 @@ internal sealed class Run(CultureInfo culture)
 
     private static JsonObject Thrown(Exception e) => e switch
     {
-        FormulaSyntaxException => new JsonObject { ["refusal"] = "formulaSyntax", ["saying"] = e.Message },
+        FormulaSyntaxException f => new JsonObject { ["refusal"] = "formulaSyntax", ["reason"] = f.Reason, ["beyondLimit"] = f.IsBeyondLimit, ["saying"] = e.Message },
         SheetRefusedException r => new JsonObject { ["refusal"] = "refused", ["reason"] = SheetCases.Camel(r.Refusal.Reason), ["saying"] = r.Refusal.Message },
         RepeatedKeyException => new JsonObject { ["refusal"] = "repeatedKey", ["saying"] = e.Message },
         SheetDocumentException document => new JsonObject { ["refusal"] = "document", ["saying"] = e.Message, ["documentVersion"] = document.DocumentVersion },
@@ -489,10 +518,10 @@ internal sealed class Run(CultureInfo culture)
         {
             case "enter":
                 foreach (var (address, typed) in argument.AsObject())
-                    outcome.Change = sheet.Enter(CellAddress.Parse(address), (string)typed!);
+                    outcome.Change = sheet.Enter(CellAddress.Parse(address), SheetCases.Typed(typed));
                 break;
             case "enterAll":
-                outcome.Change = sheet.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), (string)p.Value!))]);
+                outcome.Change = sheet.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), SheetCases.Typed(p.Value)))]);
                 break;
             case "enterRun":
             {
@@ -654,7 +683,7 @@ internal sealed class Run(CultureInfo culture)
         switch (name)
         {
             case "enter":
-                return SheetEdit.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), (string)p.Value!))]);
+                return SheetEdit.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), SheetCases.Typed(p.Value)))]);
             case "setEntries":
                 return SheetEdit.SetEntries([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse(p.Key), Entry(p.Value)))]);
             case "setNumberFormat":
@@ -756,6 +785,8 @@ internal sealed class Run(CultureInfo culture)
 
     private void Read(string where, string key, JsonNode? expected, Outcome outcome)
     {
+        if (key is "formulas" or "entryTexts")
+            expected = SheetCases.Texts(expected);
         var sheet = outcome.Sheet;
         JsonNode? actual;
         switch (key)

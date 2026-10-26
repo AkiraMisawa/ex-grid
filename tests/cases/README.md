@@ -666,7 +666,8 @@ name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat
 Linked Table; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clock that starts `from` a
 moment written `yyyy-MM-ddTHH:mm:ss` and moves on a finite `step` of seconds each time it is read; and
 `getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect; and `show`, the Sheet
-shown, by its name. An edit is an object
+shown, by its name. Text a step types, and a text a reading of `formulas` or `entryTexts` expects, may be built
+from `{"parts": [...]}`, each part a string or `[string, times]`, for a Formula too long to write out. An edit is an object
 of one key, the factory, and its arguments, as `SheetEdit` takes them; `pasteFields` is the Script Core's name for the
 forms of `PasteText` that take `typed` fields cell by cell, with exact `entries` or without.
 
@@ -688,7 +689,7 @@ exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
 
 A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type
 on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaSyntaxException`,
-`FormulaSyntaxError`), `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
+`FormulaSyntaxError`) with its `reason` and whether it is `beyondLimit`, `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
 `repeatedKey`, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
 `RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
 (`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's

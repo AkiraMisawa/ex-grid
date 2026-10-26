@@ -171,6 +171,27 @@ function sorted(nodes: readonly Json[]): Json[] {
     return nodes.map(n => [JSON.stringify(n), n] as const).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, n]) => n);
 }
 
+/** Text a case types: a string, or `{"parts": [...]}`, each part a string or `[string, times]`, for a Formula too long to write out. */
+function typedText(node: Json | undefined, what: string): string {
+    if (typeof node === 'string') return node;
+    if (!isObject(node) || Object.keys(node).length !== 1 || !Array.isArray(node['parts'])) {
+        throw new CaseError(`${what}: '${JSON.stringify(node)}' is no text to type: a string, or {"parts": [...]}.`);
+    }
+    return list(node['parts'], 'parts').map(part => {
+        if (typeof part === 'string') return part;
+        const [piece, times] = list(part, 'a part');
+        if (typeof piece !== 'string' || typeof times !== 'number' || list(part, 'a part').length !== 2) {
+            throw new CaseError(`${what}: '${JSON.stringify(part)}' is no part of a text: a string, or [string, times].`);
+        }
+        return piece.repeat(times);
+    }).join('');
+}
+
+/** A per-cell reading of texts with each built text (`typedText`) written out; a `null` stays one. */
+function texts(expected: Json, what: string): JsonObject {
+    return Object.fromEntries(Object.entries(object(expected, what)).map(([a, t]) => [a, isObject(t) ? typedText(t, a) : t]));
+}
+
 function entryJson(entry: Entry | undefined): Json {
     if (entry === undefined) return null;
     return entry.formula === undefined ? { constant: encode(entry.constant) } : { formula: entry.formula };
@@ -364,7 +385,7 @@ class CaseError extends Error {}
  */
 function thrown(e: unknown): JsonObject {
     if (e instanceof CaseError) throw e;
-    if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', saying: e.message };
+    if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', reason: e.reason, beyondLimit: e.isBeyondLimit, saying: e.message };
     if (e instanceof SheetRefusedError) return { refusal: 'refused', reason: e.refusal.reason, saying: e.refusal.message };
     if (e instanceof RepeatedKeyError) return { refusal: 'repeatedKey', saying: e.message };
     if (e instanceof SheetDocumentError) return { refusal: 'document', saying: e.message, documentVersion: orNull(e.documentVersion) };
@@ -446,11 +467,11 @@ class Run {
         switch (verb) {
             case 'enter':
                 for (const [address, typed] of Object.entries(object(argument, 'enter'))) {
-                    outcome.change = sheet.enter(CellAddress.parse(address), text(typed, address));
+                    outcome.change = sheet.enter(CellAddress.parse(address), typedText(typed, address));
                 }
                 break;
             case 'enterAll':
-                outcome.change = sheet.enterMany(Object.entries(object(argument, 'enterAll')).map(([a, t]) => [CellAddress.parse(a), text(t, a)] as const));
+                outcome.change = sheet.enterMany(Object.entries(object(argument, 'enterAll')).map(([a, t]) => [CellAddress.parse(a), typedText(t, a)] as const));
                 break;
             case 'enterRun': {
                 // One batch over a range, each cell typed from a template naming its row: {row} or {row-1}.
@@ -608,7 +629,7 @@ class Run {
         const args = (): JsonObject => object(argument, name);
         switch (name) {
             case 'enter':
-                return SheetEdit.enterMany(Object.entries(args()).map(([a, t]) => [CellAddress.parse(a), text(t, a)] as const));
+                return SheetEdit.enterMany(Object.entries(args()).map(([a, t]) => [CellAddress.parse(a), typedText(t, a)] as const));
             case 'setEntries':
                 return SheetEdit.setEntries(Object.entries(args()).map(([a, e]) => [CellAddress.parse(a), entryOf(e)] as const));
             case 'setNumberFormat': {
@@ -694,7 +715,8 @@ class Run {
         return `${this.workbook.toDocument().toJson()}\n${values.join('\n')}`;
     }
 
-    #read(where: string, key: string, expected: Json, outcome: Outcome): void {
+    #read(where: string, key: string, written: Json, outcome: Outcome): void {
+        const expected = key === 'formulas' || key === 'entryTexts' ? texts(written, key) : written;
         const sheet = outcome.sheet;
         const perCell = (read: (address: CellAddress) => Json): JsonObject =>
             Object.fromEntries(Object.keys(object(expected, key)).map(a => [a, read(CellAddress.parse(a))]));

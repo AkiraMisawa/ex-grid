@@ -31,6 +31,16 @@ describe('the engine surface', () => {
         expect(Entry.fromFormula('=A1+1').equals(Entry.fromFormula('= A1+1'))).toBe(false);
     });
 
+    // ADR-0047, third run: text after a sign without '=' that is a Formula past the limits (refused, formula-depth.json)
+    // spells a signed Formula, so text that spells one keeps its apostrophe.
+    it.each([
+        ['-', 'ABS(', '1', ')', 65],
+        ['-', '(', '1', ')', 300],
+        ['+', '-', '1', '', 300],
+    ] as const)('reads %s%s past the limits as a signed Formula', (sign, open, inner, close, levels) => {
+        expect(Entry.isSignedFormula(sign + open.repeat(levels) + inner + close.repeat(levels))).toBe(true);
+    });
+
     // ADR-0047 (2026-10-10), SH-68: SUBTOTAL's 101 to 111 and AGGREGATE's options 1, 3, 5 and 7 were admitted only while
     // no row can be hidden, and give what 1 to 11 and options 0, 2, 4 and 6 give (tests/cases/sheet/subtotal.json). The
     // day the package's surface can hide a row, this fails: open ADR-0047's note of 2026-10-10 and decide with the user
