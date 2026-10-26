@@ -43,4 +43,14 @@ public sealed record ColumnInfo<TRow>(
     /// and derives both its text and its tone from it.</summary>
     internal string TextFor(object? value)
         => value is null ? "" : Format is { } format ? format(value) : DisplayText.Of(value);
+
+    /// <summary>The entry a cell's editor opens on where the Consumer gives none, which Replace
+    /// rewrites too: <see cref="TextOf(TRow)"/>, but a <see cref="double"/> in a column with no
+    /// <see cref="Format"/> whole (ADR-0006, note of 2026-10-26).</summary>
+    internal string EntryOf(TRow row) => Value(row) switch
+    {
+        null => "",
+        var value when Format is null => DisplayText.EntryOf(value),
+        var value => TextFor(value),
+    };
 }

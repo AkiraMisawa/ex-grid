@@ -5,10 +5,13 @@
 // and a Find matches what the user reads (ADR-0055).
 //
 // A value's own text is C#'s where the two can agree: a boolean reads `True` or `False`, as C#'s does, so
-// a column reads alike on either core. A number is JavaScript's own shortest text for it, which holds no
-// trailing zeros, since a `number` keeps none; a column that wants a fixed number of places says so with a
-// `format`. A date is read through its own members, never the global Temporal, and shows the ISO day it
-// names in whatever calendar it is held, the day its filter and sort read (see dates.ts).
+// a column reads alike on either core. A number reads as Excel's General does: rounded to 15 significant
+// digits, then JavaScript's shortest text for that, so 0.1 + 0.2 shows 0.3 and not the 0.30000000000000004
+// a binary fraction leaves (decided with the user, 2026-10-26; ADR-0350 section 16). It holds no trailing
+// zeros, since a `number` keeps none; a column that wants a fixed number of places says so with a `format`.
+// A `bigint` is exact and shows every digit. The clipboard's raw form keeps the number whole (rawText). A
+// date is read through its own members, never the global Temporal, and shows the ISO day it names in whatever
+// calendar it is held, the day its filter and sort read (see dates.ts).
 
 import type { QueryColumn } from '../query/columns';
 import { isoDay, whole as wholeMember } from '../query/dates';
@@ -16,14 +19,15 @@ import { isoDay, whole as wholeMember } from '../query/dates';
 /** The text a value shows when its column declares no format: empty for a Blank, `yyyy-MM-dd` for a
  * `Temporal.PlainDate`, `yyyy-MM-dd HH:mm:ss` for a `Temporal.PlainDateTime`, `yyyy-MM-dd HH:mm:ss ±hh:mm`
  * for a `Temporal.ZonedDateTime` in its own offset and for a `Temporal.Instant` or a `Date` in UTC's,
- * `HH:mm:ss` for a `Temporal.PlainTime`, `True` or `False` for a boolean, and the value's own text for
- * anything else but a function, which has none and is refused. */
+ * `HH:mm:ss` for a `Temporal.PlainTime`, `True` or `False` for a boolean, a `number` in at most 15 significant
+ * digits as Excel's General shows it, and the value's own text for anything else but a function, which has none
+ * and is refused. */
 export function displayText(value: unknown): string {
     if (value === null || value === undefined) return '';
     switch (typeof value) {
         case 'string': return value;
         case 'boolean': return value ? 'True' : 'False';
-        case 'number':
+        case 'number': return generalText(value);
         case 'bigint':
         case 'symbol': return value.toString();
         case 'function': throw new TypeError('A cell\'s value is a function, which has no text to show; a column reads a value.');
@@ -64,6 +68,13 @@ export function textFor<Row>(column: Pick<QueryColumn<Row>, 'name' | 'format'>, 
     return formatted;
 }
 
+/** The entry a cell's editor opens on where the Consumer gives none, which the Formula Bar shows and Replace
+ * rewrites: the shown text, but a `number` in a column with no format whole, so an edit committed unchanged, or a
+ * Replace of other digits, never writes the 15 digits it shows back over the value (ADR-0006, note of 2026-10-26). */
+export function entryFor<Row>(column: Pick<QueryColumn<Row>, 'name' | 'format'>, value: unknown): string {
+    return column.format === undefined && typeof value === 'number' ? value.toString() : textFor(column, value);
+}
+
 /**
  * The raw, locale-free text of a value, for the clipboard's `text/html` flavour (ADR-0005): what a spreadsheet
  * reads back as the same value, never the displayed format, whose separators are a locale trap. Empty for a
@@ -75,6 +86,8 @@ export function textFor<Row>(column: Pick<QueryColumn<Row>, 'name' | 'format'>, 
 export function rawText(value: unknown): string {
     if (value === null || value === undefined) return '';
     if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+    // Whole: a spreadsheet pasted into reads back the value the source holds, not the 15 digits it shows.
+    if (typeof value === 'number') return value.toString();
     if (typeof value !== 'object') return displayText(value);
     switch (Object.prototype.toString.call(value)) {
         case '[object Temporal.PlainDateTime]': return `${day(value)}T${time(value)}`;
@@ -83,6 +96,12 @@ export function rawText(value: unknown): string {
         case '[object Date]': return displayText(value).replace(' ', 'T').replace(' ', '');
         default: return displayText(value);
     }
+}
+
+/** Excel's General for a number: at most 15 significant digits, the precision Excel holds and shows, written
+ * as the shortest text of the number they round to. NaN and the infinities have no digits to round. */
+function generalText(value: number): string {
+    return Number.isFinite(value) ? Number(value.toPrecision(15)).toString() : value.toString();
 }
 
 function day(value: object): string {

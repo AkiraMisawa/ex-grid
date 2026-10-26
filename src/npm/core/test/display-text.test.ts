@@ -30,6 +30,17 @@ describe('displayText', () => {
         expect(displayText(10n ** 20n)).toBe('100000000000000000000');
     });
 
+    it('ADR-0350: a number reads as Excel\'s General, 15 significant digits; a bigint every digit, and the raw form the whole number', () => {
+        expect(displayText(0.1 + 0.2)).toBe('0.3');
+        expect(displayText(-0)).toBe('0');
+        // Past 1e21 and below 1e-6 JavaScript writes an exponent, as before, now of the rounded number.
+        expect(displayText(1 / 3 * 1e22)).toBe('3.33333333333333e+21');
+        expect(displayText(2 ** 53 + 2)).toBe('9007199254740990');
+        expect(displayText(9007199254740993n)).toBe('9007199254740993');
+        expect([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY].map(displayText)).toEqual(['NaN', 'Infinity', '-Infinity']);
+        expect(rawText(0.1 + 0.2)).toBe('0.30000000000000004');
+    });
+
     it('ADR-0350: a year outside 0 to 9999 is written as ISO\'s extended year, rather than four digits that drop one', () => {
         expect(displayText(value({ dateOnly: '+012345-01-02' }))).toBe('+012345-01-02');
         expect(displayText(value({ dateOnly: '-000001-01-02' }))).toBe('-000001-01-02');
