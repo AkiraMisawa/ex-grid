@@ -7,26 +7,26 @@
 | ExPivot | 94.4% | 86.5% |
 | ExChart | 91.8% | 86.2% |
 | ExBoard | 93.8% | 86.9% |
-| Data | 94% | 88.8% |
+| Data | 94.2% | 89.4% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 17:10:54 |
+| Generated on: | 10/26/2026 - 17:23:32 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1199 |
 | Files: | 609 |
-| **Line coverage:** | 94.6% (83537 of 88218) |
-| Covered lines: | 83537 |
-| Uncovered lines: | 4681 |
-| Coverable lines: | 88218 |
-| Total lines: | 140834 |
-| **Branch coverage:** | 87.6% (50590 of 57722) |
-| Covered branches: | 50590 |
-| Total branches: | 57722 |
+| **Line coverage:** | 94.7% (83561 of 88220) |
+| Covered lines: | 83561 |
+| Uncovered lines: | 4659 |
+| Coverable lines: | 88220 |
+| Total lines: | 140839 |
+| **Branch coverage:** | 87.7% (50631 of 57728) |
+| Covered branches: | 50631 |
+| Total branches: | 57728 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -524,11 +524,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 95%</summary>
+<details><summary>ExGrid.Data - 95.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**95%**|**90.5%**|
+|**ExGrid.Data**|**95.3%**|**91.5%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -539,20 +539,20 @@
 |ExGrid.Data.ChangeBatch|89.4%|79.1%|
 |ExGrid.Data.ColumnBuilder|100%|100%|
 |ExGrid.Data.Csv.BooleanFieldReader|97.9%|96.5%|
-|ExGrid.Data.Csv.ByteTextCache|84.6%|84%|
+|ExGrid.Data.Csv.ByteTextCache|84.6%|86.3%|
 |ExGrid.Data.Csv.CsvLoad|95.7%|100%|
 |ExGrid.Data.Csv.CsvPlan|94.7%|90.3%|
-|ExGrid.Data.Csv.CsvRead|95.1%|89.8%|
+|ExGrid.Data.Csv.CsvRead|100%|99.1%|
 |ExGrid.Data.Csv.CsvRecords|100%||
 |ExGrid.Data.Csv.CsvSuggester|92.4%|87.2%|
 |ExGrid.Data.Csv.CsvSuggester.Proposal|100%||
-|ExGrid.Data.Csv.CsvText|90.9%|90%|
-|ExGrid.Data.Csv.CsvTokenizer|98%|96.5%|
+|ExGrid.Data.Csv.CsvText|90.9%|100%|
+|ExGrid.Data.Csv.CsvTokenizer|99%|97.6%|
 |ExGrid.Data.Csv.DateFieldReader|97.9%|96.1%|
-|ExGrid.Data.Csv.DateFormat|92.6%|84.2%|
+|ExGrid.Data.Csv.DateFormat|97.5%|93.4%|
 |ExGrid.Data.Csv.DateFormat.Piece|100%||
-|ExGrid.Data.Csv.DecimalFieldReader|100%|94.4%|
-|ExGrid.Data.Csv.DoubleFieldReader|96%|87.5%|
+|ExGrid.Data.Csv.DecimalFieldReader|100%|100%|
+|ExGrid.Data.Csv.DoubleFieldReader|96%|91.6%|
 |ExGrid.Data.Csv.FieldReader|98.4%|97.1%|
 |ExGrid.Data.Csv.IntegerFieldReader|100%|100%|
 |ExGrid.Data.Csv.NumberReading|96.7%|96.1%|
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1046,12 +1046,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
