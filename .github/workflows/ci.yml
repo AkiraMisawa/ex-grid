@@ -213,6 +213,19 @@ jobs:
           EXGRID_PIVOT_SEED: 20261025
         run: EXGRID_PIVOT_ORACLE="$PIVOT_DOTNET ${{ github.workspace }}/tools/pivot-oracle/bin/Release/net10.0/ExPivot.Oracle.dll serve" npm run differential
 
+      # ExSheet's formula engine held to the C# engine on random Sheets the same way (ADR-0370, section 2):
+      # tools/sheet-oracle answers what ExSheet.Engine gives, on the same flake .NET, under a fixed seed
+      # (src/npm/sheet-engine/differential/README.md).
+      - name: Build the sheet oracle on the flake's .NET
+        working-directory: .
+        run: nix develop -c dotnet build tools/sheet-oracle -c Release
+
+      - name: ExSheet's engine against the C# engine (differential)
+        working-directory: src/npm/sheet-engine
+        env:
+          EXGRID_SHEET_SEED: 20261026
+        run: EXGRID_SHEET_ORACLE="$PIVOT_DOTNET ${{ github.workspace }}/tools/sheet-oracle/bin/Release/net10.0/ExSheet.Oracle.dll serve" npm run differential
+
   # The hosts layer 3 drives, published once in Release and handed to every runner that drives
   # them: the WebAssembly DemoHost, the Server host and the demo API server (ADR-0069), as
   # `dotnet publish -c Release` writes them, which is how a Consumer deploys. The suite starts

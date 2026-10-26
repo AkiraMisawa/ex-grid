@@ -1,0 +1,474 @@
+{
+  "about": "The engine's answers for formula entry (ExSheet tickets 10 and 11; ADR-0051): completion, the hint, the Point predicate, the pointed Reference and the Reference text. Transcribed from ExSheet.Engine.Tests' FormulaEntryTests.",
+  "kind": "sheetCalls",
+  "cases": [
+    {
+      "name": "ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case: '=SU|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=SU", 3, []],
+      "is": {"candidates": [{"name": "SUBSTITUTE"}, {"name": "SUBTOTAL"}, {"name": "SUM"}, {"name": "SUMIF"}, {"name": "SUMIFS"}, {"name": "SUMPRODUCT"}]}
+    },
+    {
+      "name": "ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case: '=su|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=su", 3, []],
+      "is": {"candidates": [{"name": "SUBSTITUTE"}, {"name": "SUBTOTAL"}, {"name": "SUM"}, {"name": "SUMIF"}, {"name": "SUMIFS"}, {"name": "SUMPRODUCT"}]}
+    },
+    {
+      "name": "ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case: '=I|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=I", 2, []],
+      "is": {"candidates": [{"name": "IF"}, {"name": "IFERROR"}, {"name": "IFNA"}, {"name": "IFS"}, {"name": "INDEX"}, {"name": "INDIRECT"}, {"name": "INT"}, {"name": "ISBLANK"}, {"name": "ISERROR"}, {"name": "ISNA"}, {"name": "ISNUMBER"}, {"name": "ISTEXT"}]}
+    },
+    {
+      "name": "ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case: '=IFE|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=IFE", 4, []],
+      "is": {"candidates": [{"name": "IFERROR"}]}
+    },
+    {
+      "name": "ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case: '=1+co|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=1+co", 5, []],
+      "is": {"candidates": [{"name": "COLUMN"}, {"name": "COLUMNS"}, {"name": "CONCAT"}, {"name": "CONCATENATE"}, {"name": "COS"}, {"name": "COSH"}, {"name": "COT"}, {"name": "COTH"}, {"name": "COUNT"}, {"name": "COUNTA"}, {"name": "COUNTBLANK"}, {"name": "COUNTIF"}, {"name": "COUNTIFS"}]}
+    },
+    {
+      "name": "ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case: '=SUM(A1,m|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=SUM(A1,m", 9, []],
+      "is": {"candidates": [{"name": "MATCH"}, {"name": "MAX"}, {"name": "MAXIFS"}, {"name": "MEDIAN"}, {"name": "MID"}, {"name": "MIN"}, {"name": "MINIFS"}, {"name": "MINUTE"}, {"name": "MOD"}, {"name": "MONTH"}, {"name": "MROUND"}]}
+    },
+    {
+      "name": "ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case: '=IF(A1>0,x|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=IF(A1>0,x", 10, []],
+      "is": {"candidates": [{"name": "XLOOKUP"}, {"name": "XMATCH"}, {"name": "XNPV"}, {"name": "XOR"}]}
+    },
+    {
+      "name": "ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case: '=LOG1|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=LOG1", 5, []],
+      "is": {"candidates": [{"name": "LOG10"}]}
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=F|3'",
+      "call": "FormulaEntry.complete",
+      "args": ["=F3", 2, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=SUM(F|3)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=SUM(F3)", 6, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=", 1, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=SUM(|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=SUM(", 5, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=\"SU|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=\"SU", 4, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=$A|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=$A", 3, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=1|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=1", 2, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=QQ|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=QQ", 3, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: 'SU|'",
+      "call": "FormulaEntry.complete",
+      "args": ["SU", 2, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=A1 SU|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=A1 SU", 6, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no completion where no name is being typed, or nothing matches: '=Positions[P|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=Positions[P", 12, ["Positions"]],
+      "is": null
+    },
+    {
+      "name": "ADR-0049/0051: Linked Tables' names are offered beside the functions, in one alphabetical list: '=a|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=a", 2, ["Positions", "Accounts"]],
+      "is": {"candidates": [{"name": "ABS"}, {"name": "Accounts"}, {"name": "ACOS"}, {"name": "ACOSH"}, {"name": "ACOT"}, {"name": "ACOTH"}, {"name": "AGGREGATE"}, {"name": "AND"}, {"name": "ASIN"}, {"name": "ASINH"}, {"name": "ATAN"}, {"name": "ATAN2"}, {"name": "ATANH"}, {"name": "AVERAGE"}, {"name": "AVERAGEIF"}, {"name": "AVERAGEIFS"}]}
+    },
+    {
+      "name": "ADR-0049/0051: Linked Tables' names are offered beside the functions, in one alphabetical list: '=SUM(pos|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=SUM(pos", 8, ["Positions", "Accounts"]],
+      "is": {"candidates": [{"name": "Positions"}]}
+    },
+    {
+      "name": "ADR-0051: accepting a candidate replaces the whole name at the caret with the candidate's text",
+      "call": "FormulaEntry.complete",
+      "args": ["=1+SUM(A1)", 6, []],
+      "is": {"start": 3, "length": 3, "candidates": [{"name": "SUM", "insertText": "SUM(", "kind": "function", "description": "Adds its arguments."}, {"name": "SUMIF"}, {"name": "SUMIFS"}, {"name": "SUMPRODUCT"}]}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=SUM(|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=SUM(", 5],
+      "is": {"function": {"name": "SUM"}, "argumentIndex": 0, "currentArgument": "number1"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=SUM(1,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=SUM(1,", 7],
+      "is": {"function": {"name": "SUM"}, "argumentIndex": 1, "currentArgument": "[number2]"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=SUM(1,2,3,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=SUM(1,2,3,", 11],
+      "is": {"function": {"name": "SUM"}, "argumentIndex": 3, "currentArgument": "[number2]"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=IF(A1>0,SUM(1,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=IF(A1>0,SUM(1,", 15],
+      "is": {"function": {"name": "SUM"}, "argumentIndex": 1, "currentArgument": "[number2]"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=IF(A1>0,SUM(1,2),|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=IF(A1>0,SUM(1,2),", 18],
+      "is": {"function": {"name": "IF"}, "argumentIndex": 2, "currentArgument": "[value_if_false]"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=IF(A1>0,(1+|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=IF(A1>0,(1+", 12],
+      "is": {"function": {"name": "IF"}, "argumentIndex": 1, "currentArgument": "value_if_true"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=IF(\"a,b\",|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=IF(\"a,b\",", 10],
+      "is": {"function": {"name": "IF"}, "argumentIndex": 1, "currentArgument": "value_if_true"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=IF(\"a,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=IF(\"a,", 7],
+      "is": {"function": {"name": "IF"}, "argumentIndex": 0, "currentArgument": "logical_test"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=if(1,2,3,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=if(1,2,3,", 10],
+      "is": {"function": {"name": "IF"}, "argumentIndex": 3, "currentArgument": null}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=XLOOKUP(A1,Positions[Id],|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(A1,Positions[Id],", 26],
+      "is": {"function": {"name": "XLOOKUP"}, "argumentIndex": 2, "currentArgument": "return_array"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=SUM(1,|2,3)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=SUM(1,2,3)", 7],
+      "is": {"function": {"name": "SUM"}, "argumentIndex": 1, "currentArgument": "[number2]"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=SUMIFS(A1:A3,B1:B3,1,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=SUMIFS(A1:A3,B1:B3,1,", 22],
+      "is": {"function": {"name": "SUMIFS"}, "argumentIndex": 3, "currentArgument": "criteria_range1"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=SUMIFS(A1:A3,B1:B3,1,C1:C3,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=SUMIFS(A1:A3,B1:B3,1,C1:C3,", 28],
+      "is": {"function": {"name": "SUMIFS"}, "argumentIndex": 4, "currentArgument": "criteria1"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=COUNTIFS(A1:A3,1,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=COUNTIFS(A1:A3,1,", 18],
+      "is": {"function": {"name": "COUNTIFS"}, "argumentIndex": 2, "currentArgument": "criteria_range1"}
+    },
+    {
+      "name": "ADR-0051: the hint names the function whose argument list holds the caret, and the argument: '=COUNTIFS(A1:A3,1,B1:B3,|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=COUNTIFS(A1:A3,1,B1:B3,", 24],
+      "is": {"function": {"name": "COUNTIFS"}, "argumentIndex": 3, "currentArgument": "criteria1"}
+    },
+    {
+      "name": "ADR-0051: no hint outside a call, after it closes, or for a function that is not declared: '=|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=", 1],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no hint outside a call, after it closes, or for a function that is not declared: '=SUM(1)|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=SUM(1)", 7],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no hint outside a call, after it closes, or for a function that is not declared: '=(1+|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=(1+", 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no hint outside a call, after it closes, or for a function that is not declared: '=FOO(|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=FOO(", 5],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no hint outside a call, after it closes, or for a function that is not declared: '=SUM (|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=SUM (", 6],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: no hint outside a call, after it closes, or for a function that is not declared: 'SUM(|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["SUM(", 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=", 1],
+      "is": {"start": 1, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=A1+|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=A1+", 4],
+      "is": {"start": 4, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=A1*|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=A1*", 4],
+      "is": {"start": 4, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=A1&|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=A1&", 4],
+      "is": {"start": 4, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=A1<>|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=A1<>", 5],
+      "is": {"start": 5, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=-|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=-", 2],
+      "is": {"start": 2, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=SUM(|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=SUM(", 5],
+      "is": {"start": 5, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=SUM(A1,|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=SUM(A1,", 8],
+      "is": {"start": 8, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=SUM(|)'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=SUM()", 5],
+      "is": {"start": 5, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=SUM(A1, |)'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=SUM(A1, )", 9],
+      "is": {"start": 9, "length": 0}
+    },
+    {
+      "name": "ADR-0051: a Reference can go after =, an operator, ( or ,: '=|+A1'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=+A1", 1],
+      "is": {"start": 1, "length": 0}
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '=A1|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=A1", 3],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '=SUM(A1)|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=SUM(A1)", 8],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '=5%|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=5%", 3],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '=\"a+|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=\"a+", 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '=\"a+|\"'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=\"a+\"", 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '=A1+|B2'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=A1+B2", 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '=SU|M('",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=SUM(", 3],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '=Positions[|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=Positions[", 11],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '42|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["42", 2],
+      "is": null
+    },
+    {
+      "name": "ADR-0051/0012: anywhere else the arrows keep their meaning: '|='",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=", 0],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: while pointing, the Reference just written is what a further arrow replaces: '=A3|'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=A3", 3],
+      "is": {"start": 1, "length": 2}
+    },
+    {
+      "name": "ADR-0051: while pointing, the Reference just written is what a further arrow replaces: '=SUM(A1:B2|'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=SUM(A1:B2", 10],
+      "is": {"start": 5, "length": 5}
+    },
+    {
+      "name": "ADR-0051: while pointing, the Reference just written is what a further arrow replaces: '=A1+$B$2|'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=A1+$B$2", 8],
+      "is": {"start": 4, "length": 4}
+    },
+    {
+      "name": "ADR-0051: while pointing, the Reference just written is what a further arrow replaces: '=SUM(A1:B2|)'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=SUM(A1:B2)", 10],
+      "is": {"start": 5, "length": 5}
+    },
+    {
+      "name": "ADR-0051: what is not a Reference in a Reference's place is not replaced: '=SUM|'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=SUM", 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: what is not a Reference in a Reference's place is not replaced: '=A1+|'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=A1+", 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: what is not a Reference in a Reference's place is not replaced: '=5%|'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=5%", 3],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: what is not a Reference in a Reference's place is not replaced: '=Sheet2!A1|'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=Sheet2!A1", 10],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: what is not a Reference in a Reference's place is not replaced: '=A1|B'",
+      "call": "FormulaEntry.pointedReferenceAt",
+      "args": ["=A1B", 3],
+      "is": null
+    },
+    {
+      "name": "ADR-0051: the Reference text for a pointed range is Excel's, from its top-left: A3",
+      "call": "FormulaEntry.referenceText",
+      "args": [{"range": "A3"}],
+      "is": "A3"
+    },
+    {
+      "name": "ADR-0051: the Reference text for a pointed range is Excel's, from its top-left: C9:B7",
+      "call": "FormulaEntry.referenceText",
+      "args": [{"range": "C9:B7"}],
+      "is": "B7:C9"
+    },
+    {
+      "name": "ADR-0051: the Reference text for a pointed range is Excel's, from its top-left: B9:C7",
+      "call": "FormulaEntry.referenceText",
+      "args": [{"range": "B9:C7"}],
+      "is": "B7:C9"
+    },
+    {
+      "name": "ADR-0051: a caret outside the text is an argument error: Point at 4 in '=A1'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=A1", 4],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0051: a caret outside the text is an argument error: the hint at -1 in '=A1'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=A1", -1],
+      "throws": {"refusal": "argument"}
+    }
+  ]
+}

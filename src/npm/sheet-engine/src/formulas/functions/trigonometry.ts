@@ -3,6 +3,7 @@
 import { fusedProductError, roundHalfToEven } from '../../dotnet';
 import type { FunctionCall } from '../function-definition';
 import { Operand } from '../operand';
+import * as portable from '../portable-math';
 import { numberArgument, numberResult } from './shared';
 
 /**
@@ -30,7 +31,7 @@ export function log(call: FunctionCall): Operand {
     }
     if (number <= 0 || base <= 0) return Operand.ofError('#NUM!');
     if (base === 1) return Operand.ofError('#DIV/0!');
-    return numberResult(base === 10 ? Math.log10(number) : Math.log(number) / Math.log(base));
+    return numberResult(base === 10 ? portable.log10(number) : portable.log(number) / portable.log(base));
 }
 
 // ---- SIN, COS, TAN, COT, CSC, SEC ----------------------------------------------------------------------------
@@ -225,17 +226,17 @@ class DoubleDouble {
 
 /** COTH: the hyperbolic cotangent; at 0 `#DIV/0!`. Microsoft documents a limit of 2^27 on the argument, but Excel answers past it: `COTH(2^27)` is 1 (COTH-002). */
 export function coth(call: FunctionCall): Operand {
-    return hyperbolic(call, n => 1 / Math.tanh(n), true);
+    return hyperbolic(call, n => 1 / portable.tanh(n), true);
 }
 
 /** CSCH: 1/SINH; at 0 `#DIV/0!`; past what SINH holds, 0, as Excel's (CSCH-002, CSCH-004). */
 export function csch(call: FunctionCall): Operand {
-    return hyperbolic(call, n => 1 / Math.sinh(n), true);
+    return hyperbolic(call, n => 1 / portable.sinh(n), true);
 }
 
 /** SECH: 1/COSH; past what COSH holds, 0, as Excel's (SECH-003). */
 export function sech(call: FunctionCall): Operand {
-    return hyperbolic(call, n => 1 / Math.cosh(n), false);
+    return hyperbolic(call, n => 1 / portable.cosh(n), false);
 }
 
 /** A hyperbolic function of any number; where it has a pole at 0, 0 is `#DIV/0!`. */
@@ -252,22 +253,22 @@ const anyNumber = (): boolean => true;
 
 /** ASIN: a number outside -1 to 1 is `#NUM!`. */
 export function asin(call: FunctionCall): Operand {
-    return bounded(call, n => Math.abs(n) <= 1, Math.asin);
+    return bounded(call, n => Math.abs(n) <= 1, portable.asin);
 }
 
 /** ACOS: a number outside -1 to 1 is `#NUM!`. */
 export function acos(call: FunctionCall): Operand {
-    return bounded(call, n => Math.abs(n) <= 1, Math.acos);
+    return bounded(call, n => Math.abs(n) <= 1, portable.acos);
 }
 
 /** ATAN: the angle whose tangent is the number. */
 export function atan(call: FunctionCall): Operand {
-    return bounded(call, anyNumber, Math.atan);
+    return bounded(call, anyNumber, portable.atan);
 }
 
 /** ACOT: an angle from 0 to pi. */
 export function acot(call: FunctionCall): Operand {
-    return bounded(call, anyNumber, n => Math.PI / 2 - Math.atan(n));
+    return bounded(call, anyNumber, n => Math.PI / 2 - portable.atan(n));
 }
 
 /** ATAN2: the angle of the point (`x_num`, `y_num`), above -pi and up to pi. Excel takes x first, the reverse of `Math.atan2`. Both 0 is `#DIV/0!`, as documented. */
@@ -277,39 +278,39 @@ export function atan2(call: FunctionCall): Operand {
     const y = numberArgument(call, 1);
     if (y instanceof Operand) return y;
     if (x === 0 && y === 0) return Operand.ofError('#DIV/0!');
-    return numberResult(Math.atan2(y, x));
+    return numberResult(portable.atan2(y, x));
 }
 
 // ---- SINH, COSH, TANH, ASINH, ACOSH, ATANH, ACOTH ------------------------------------------------------------
 
 /** SINH: past what a double holds, `#NUM!`. */
 export function sinh(call: FunctionCall): Operand {
-    return bounded(call, anyNumber, Math.sinh);
+    return bounded(call, anyNumber, portable.sinh);
 }
 
 /** COSH: past what a double holds, `#NUM!`. */
 export function cosh(call: FunctionCall): Operand {
-    return bounded(call, anyNumber, Math.cosh);
+    return bounded(call, anyNumber, portable.cosh);
 }
 
 /** TANH: the hyperbolic tangent. */
 export function tanh(call: FunctionCall): Operand {
-    return bounded(call, anyNumber, Math.tanh);
+    return bounded(call, anyNumber, portable.tanh);
 }
 
 /** ASINH: the inverse hyperbolic sine. */
 export function asinh(call: FunctionCall): Operand {
-    return bounded(call, anyNumber, Math.asinh);
+    return bounded(call, anyNumber, portable.asinh);
 }
 
 /** ACOSH: a number below 1 is `#NUM!`. */
 export function acosh(call: FunctionCall): Operand {
-    return bounded(call, n => n >= 1, Math.acosh);
+    return bounded(call, n => n >= 1, portable.acosh);
 }
 
 /** ATANH: a number not strictly between -1 and 1 is `#NUM!`. */
 export function atanh(call: FunctionCall): Operand {
-    return bounded(call, n => Math.abs(n) < 1, Math.atanh);
+    return bounded(call, n => Math.abs(n) < 1, portable.atanh);
 }
 
 /**
@@ -317,7 +318,7 @@ export function atanh(call: FunctionCall): Operand {
  * a smaller one; Excel gives `#NUM!` (ACOTH-003, observed by the seventeenth Windows run).
  */
 export function acoth(call: FunctionCall): Operand {
-    return bounded(call, n => Math.abs(n) > 1, n => 0.5 * Math.log((n + 1) / (n - 1)));
+    return bounded(call, n => Math.abs(n) > 1, n => 0.5 * portable.log((n + 1) / (n - 1)));
 }
 
 // ---- DEGREES, RADIANS ----------------------------------------------------------------------------------------

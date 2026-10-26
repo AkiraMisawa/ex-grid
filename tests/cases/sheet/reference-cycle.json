@@ -1,0 +1,666 @@
+{
+  "about": "FormulaEntry.CycleReference, F4 cycling the Reference at the caret (ADR-0051, 2026-09-29; SH-28): the engine's rewrite of the text being edited, as Excel does it (the seventeenth Windows run, Part C), and the span of what it rewrote. Where the grid leaves a caret at the span's end (typing left the caret, or while pointing), a case writes only selectionEnd; a run of presses is a case per press, each starting from the last one's answer. Transcribed from ExSheet.Engine.Tests' ReferenceCycleTests.",
+  "kind": "sheetCalls",
+  "cases": [
+    {
+      "name": "ADR-0051 / SH-28: A1 to $A$1 to A$1 to $A1 to A1, the span of the rewritten Reference answered (Part C, case 1): '=B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=B2", 3, 3],
+      "is": {"text": "=$B$2", "selectionStart": 1, "selectionEnd": 5}
+    },
+    {
+      "name": "ADR-0051 / SH-28: A1 to $A$1 to A$1 to $A1 to A1, the span of the rewritten Reference answered (Part C, case 1): '=$B$2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$B$2", 5, 5],
+      "is": {"text": "=B$2", "selectionStart": 1, "selectionEnd": 4}
+    },
+    {
+      "name": "ADR-0051 / SH-28: A1 to $A$1 to A$1 to $A1 to A1, the span of the rewritten Reference answered (Part C, case 1): '=B$2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=B$2", 4, 4],
+      "is": {"text": "=$B2", "selectionStart": 1, "selectionEnd": 4}
+    },
+    {
+      "name": "ADR-0051 / SH-28: A1 to $A$1 to A$1 to $A1 to A1, the span of the rewritten Reference answered (Part C, case 1): '=$B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$B2", 4, 4],
+      "is": {"text": "=B2", "selectionStart": 1, "selectionEnd": 3}
+    },
+    {
+      "name": "ADR-0051 / SH-28: four presses bring the Reference back to where it started, the caret after each in Enter mode (Part C, case 1), press 1: '=B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=B2", 3, 3],
+      "is": {"text": "=$B$2", "selectionEnd": 5}
+    },
+    {
+      "name": "ADR-0051 / SH-28: four presses bring the Reference back to where it started, the caret after each in Enter mode (Part C, case 1), press 2: '=$B$2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$B$2", 5, 5],
+      "is": {"text": "=B$2", "selectionEnd": 4}
+    },
+    {
+      "name": "ADR-0051 / SH-28: four presses bring the Reference back to where it started, the caret after each in Enter mode (Part C, case 1), press 3: '=B$2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=B$2", 4, 4],
+      "is": {"text": "=$B2", "selectionEnd": 4}
+    },
+    {
+      "name": "ADR-0051 / SH-28: four presses bring the Reference back to where it started, the caret after each in Enter mode (Part C, case 1), press 4: '=$B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$B2", 4, 4],
+      "is": {"text": "=B2", "selectionEnd": 3}
+    },
+    {
+      "name": "ADR-0051 / SH-28: the Reference at the caret is the one it is inside or touching, on either side, and its span is answered (Part C, cases 2 to 4: $A$1 selected, 1 to 5): '=A1|+B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+B2", 3, 3],
+      "is": {"text": "=$A$1+B2", "selectionStart": 1, "selectionEnd": 5}
+    },
+    {
+      "name": "ADR-0051 / SH-28: the Reference at the caret is the one it is inside or touching, on either side, and its span is answered (Part C, cases 2 to 4: $A$1 selected, 1 to 5): '=|A1+B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+B2", 1, 1],
+      "is": {"text": "=$A$1+B2", "selectionStart": 1, "selectionEnd": 5}
+    },
+    {
+      "name": "ADR-0051 / SH-28: the Reference at the caret is the one it is inside or touching, on either side, and its span is answered (Part C, cases 2 to 4: $A$1 selected, 1 to 5): '=A|1+B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+B2", 2, 2],
+      "is": {"text": "=$A$1+B2", "selectionStart": 1, "selectionEnd": 5}
+    },
+    {
+      "name": "ADR-0051 / SH-28: the Reference at the caret is the one it is inside or touching, on either side, and its span is answered (Part C, cases 2 to 4: $A$1 selected, 1 to 5): '=$|A1+B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$A1+B2", 2, 2],
+      "is": {"text": "=A1+B2", "selectionStart": 1, "selectionEnd": 3}
+    },
+    {
+      "name": "ADR-0051 / SH-28: the Reference at the caret is the one it is inside or touching, on either side, and its span is answered (Part C, cases 2 to 4: $A$1 selected, 1 to 5): '=A1+|B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+B2", 4, 4],
+      "is": {"text": "=A1+$B$2", "selectionStart": 4, "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28: the Reference at the caret is the one it is inside or touching, on either side, and its span is answered (Part C, cases 2 to 4: $A$1 selected, 1 to 5): '=SUM(|A1)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1)", 5, 5],
+      "is": {"text": "=SUM($A$1)", "selectionStart": 5, "selectionEnd": 9}
+    },
+    {
+      "name": "ADR-0051 / SH-28: the Reference at the caret is the one it is inside or touching, on either side, and its span is answered (Part C, cases 2 to 4: $A$1 selected, 1 to 5): '=-A1|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=-A1", 4, 4],
+      "is": {"text": "=-$A$1", "selectionStart": 2, "selectionEnd": 6}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: the two ends of a range are References of their own: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone, selected in Edit mode (Part C, case 5: 8-12, 8-11, 8-11, 8-10), press 1: '=SUM(A1:B2|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 10, 10],
+      "is": {"text": "=SUM(A1:$B$2)", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: the two ends of a range are References of their own: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone, selected in Edit mode (Part C, case 5: 8-12, 8-11, 8-11, 8-10), press 2: '=SUM(A1:|$B$2|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:$B$2)", 8, 12],
+      "is": {"text": "=SUM(A1:B$2)", "selectionStart": 8, "selectionEnd": 11}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: the two ends of a range are References of their own: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone, selected in Edit mode (Part C, case 5: 8-12, 8-11, 8-11, 8-10), press 3: '=SUM(A1:|B$2|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B$2)", 8, 11],
+      "is": {"text": "=SUM(A1:$B2)", "selectionStart": 8, "selectionEnd": 11}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: the two ends of a range are References of their own: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone, selected in Edit mode (Part C, case 5: 8-12, 8-11, 8-11, 8-10), press 4: '=SUM(A1:|$B2|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:$B2)", 8, 11],
+      "is": {"text": "=SUM(A1:B2)", "selectionStart": 8, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: A1|:B2 touches A1, A1:|B2 touches B2; each end takes its own next form: '=SUM(|A1:B2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 5, 5],
+      "is": {"text": "=SUM($A$1:B2)", "selectionStart": 5, "selectionEnd": 9}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: A1|:B2 touches A1, A1:|B2 touches B2; each end takes its own next form: '=SUM(A1|:B2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 7, 7],
+      "is": {"text": "=SUM($A$1:B2)", "selectionStart": 5, "selectionEnd": 9}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: A1|:B2 touches A1, A1:|B2 touches B2; each end takes its own next form: '=SUM(A|1:B2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 6, 6],
+      "is": {"text": "=SUM($A$1:B2)", "selectionStart": 5, "selectionEnd": 9}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: A1|:B2 touches A1, A1:|B2 touches B2; each end takes its own next form: '=SUM(A1:|B2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 8, 8],
+      "is": {"text": "=SUM(A1:$B$2)", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: A1|:B2 touches A1, A1:|B2 touches B2; each end takes its own next form: '=SUM(A1:B|2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 9, 9],
+      "is": {"text": "=SUM(A1:$B$2)", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: A1|:B2 touches A1, A1:|B2 touches B2; each end takes its own next form: '=SUM($A$1:$B$2|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM($A$1:$B$2)", 14, 14],
+      "is": {"text": "=SUM($A$1:B$2)", "selectionStart": 10, "selectionEnd": 13}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-4: A1|:B2 touches A1, A1:|B2 touches B2; each end takes its own next form: '=SUM(|$A$1:$B$2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM($A$1:$B$2)", 5, 5],
+      "is": {"text": "=SUM(A$1:$B$2)", "selectionStart": 5, "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-5, C-diff-6: the end at the caret takes its own next form and the other end is left (Part C, case 6: =$A1:B2 gives =$A1:$B$2; case 22: =B2:A1 gives =B2:$A$1): '=$A1:B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$A1:B2", 7, 7],
+      "is": {"text": "=$A1:$B$2", "selectionEnd": 9}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-5, C-diff-6: the end at the caret takes its own next form and the other end is left (Part C, case 6: =$A1:B2 gives =$A1:$B$2; case 22: =B2:A1 gives =B2:$A$1): '=B2:A1|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=B2:A1", 6, 6],
+      "is": {"text": "=B2:$A$1", "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-5, C-diff-6: the end at the caret takes its own next form and the other end is left (Part C, case 6: =$A1:B2 gives =$A1:$B$2; case 22: =B2:A1 gives =B2:$A$1): '=A1:$B$2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1:$B$2", 8, 8],
+      "is": {"text": "=A1:B$2", "selectionEnd": 7}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-5, C-diff-6: the end at the caret takes its own next form and the other end is left (Part C, case 6: =$A1:B2 gives =$A1:$B$2; case 22: =B2:A1 gives =B2:$A$1): '=$A$1:B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$A$1:B2", 8, 8],
+      "is": {"text": "=$A$1:$B$2", "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-5, C-diff-6: the end at the caret takes its own next form and the other end is left (Part C, case 6: =$A1:B2 gives =$A1:$B$2; case 22: =B2:A1 gives =B2:$A$1): '=|$A1:B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$A1:B2", 1, 1],
+      "is": {"text": "=A1:B2", "selectionEnd": 3}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a Sheet qualifier stands before the first end: a caret in it cycles the first end, and a caret at the second end leaves it; the span answered starts after the qualifier (observed, run 18a: =Sheet2!A1+1 with the caret after A1 gave $A$1 selected): '=Sheet2!A1:B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=Sheet2!A1:B2", 13, 13],
+      "is": {"text": "=Sheet2!A1:$B$2", "selectionStart": 11, "selectionEnd": 15}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a Sheet qualifier stands before the first end: a caret in it cycles the first end, and a caret at the second end leaves it; the span answered starts after the qualifier (observed, run 18a: =Sheet2!A1+1 with the caret after A1 gave $A$1 selected): '=She|et2!A1:B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=Sheet2!A1:B2", 4, 4],
+      "is": {"text": "=Sheet2!$A$1:B2", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a Sheet qualifier stands before the first end: a caret in it cycles the first end, and a caret at the second end leaves it; the span answered starts after the qualifier (observed, run 18a: =Sheet2!A1+1 with the caret after A1 gave $A$1 selected): '=Sheet2!|A1:B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=Sheet2!A1:B2", 8, 8],
+      "is": {"text": "=Sheet2!$A$1:B2", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=|A1+B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+B2", 1, 6],
+      "is": {"text": "=$A$1+$B$2", "selectionStart": 1, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=A1|+|B1'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+B1", 3, 4],
+      "is": {"text": "=$A$1+$B$1", "selectionStart": 1, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=A1|+2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+2", 3, 5],
+      "is": {"text": "=$A$1+2", "selectionStart": 1, "selectionEnd": 5}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=|1+|A1'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=1+A1", 1, 3],
+      "is": {"text": "=1+$A$1", "selectionStart": 3, "selectionEnd": 7}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=SUM(A1|,|B2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1,B2)", 7, 8],
+      "is": {"text": "=SUM($A$1,$B$2)", "selectionStart": 5, "selectionEnd": 14}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=|$A1+B$2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$A1+B$2", 1, 8],
+      "is": {"text": "=A1+B2", "selectionStart": 1, "selectionEnd": 6}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=A|1+B|2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+B2", 2, 5],
+      "is": {"text": "=$A$1+$B$2", "selectionStart": 1, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=SUM(|A1,B2:C3,$D$4|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1,B2:C3,$D$4)", 5, 18],
+      "is": {"text": "=SUM($A$1,$B$2:$C$3,$D$4)", "selectionStart": 5, "selectionEnd": 24}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '|=A1*2+B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1*2+B2", 0, 8],
+      "is": {"text": "=$A$1*2+$B$2", "selectionStart": 1, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=|A1+B:B|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1+B:B", 1, 7],
+      "is": {"text": "=$A$1+$B:$B", "selectionStart": 1, "selectionEnd": 11}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=1+|A1|*2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=1+A1*2", 3, 5],
+      "is": {"text": "=1+$A$1*2", "selectionStart": 3, "selectionEnd": 7}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=SUM(|$A1:B2|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM($A1:B2)", 5, 11],
+      "is": {"text": "=SUM(A1:B2)", "selectionStart": 5, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=SUM(A1|:|B2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 7, 8],
+      "is": {"text": "=SUM($A$1:$B$2)", "selectionStart": 5, "selectionEnd": 14}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=SUM(A1:|B2|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 8, 10],
+      "is": {"text": "=SUM(A1:$B$2)", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=SUM(|A1|:B2)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)", 5, 7],
+      "is": {"text": "=SUM($A$1:B2)", "selectionStart": 5, "selectionEnd": 9}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a selection cycles every Reference (every end of a range) it covers, overlaps or touches at either end, each to the next form of the first, and covers what was rewritten (Part C, cases 7, 18 to 20): '=SUM(A1:B|2)+|C3'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1:B2)+C3", 9, 12],
+      "is": {"text": "=SUM(A1:$B$2)+$C$3", "selectionStart": 8, "selectionEnd": 18}
+    },
+    {
+      "name": "ADR-0051 / SH-28: whole columns and whole rows are one Reference of two forms, the whole of it answered (Part C, cases 8 and 9: $A:$A selected, 5 to 10): '=SUM(A:A|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A:A)", 8, 8],
+      "is": {"text": "=SUM($A:$A)", "selectionStart": 5, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: whole columns and whole rows are one Reference of two forms, the whole of it answered (Part C, cases 8 and 9: $A:$A selected, 5 to 10): '=SUM($A:$A|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM($A:$A)", 10, 10],
+      "is": {"text": "=SUM(A:A)", "selectionStart": 5, "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28: whole columns and whole rows are one Reference of two forms, the whole of it answered (Part C, cases 8 and 9: $A:$A selected, 5 to 10): '=SUM(A|:A)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A:A)", 6, 6],
+      "is": {"text": "=SUM($A:$A)", "selectionStart": 5, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: whole columns and whole rows are one Reference of two forms, the whole of it answered (Part C, cases 8 and 9: $A:$A selected, 5 to 10): '=SUM(A:C|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A:C)", 8, 8],
+      "is": {"text": "=SUM($A:$C)", "selectionStart": 5, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: whole columns and whole rows are one Reference of two forms, the whole of it answered (Part C, cases 8 and 9: $A:$A selected, 5 to 10): '=SUM($A:C|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM($A:C)", 9, 9],
+      "is": {"text": "=SUM(A:C)", "selectionStart": 5, "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28: whole columns and whole rows are one Reference of two forms, the whole of it answered (Part C, cases 8 and 9: $A:$A selected, 5 to 10): '=SUM(1:1|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(1:1)", 8, 8],
+      "is": {"text": "=SUM($1:$1)", "selectionStart": 5, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: whole columns and whole rows are one Reference of two forms, the whole of it answered (Part C, cases 8 and 9: $A:$A selected, 5 to 10): '=SUM($1:$1|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM($1:$1)", 10, 10],
+      "is": {"text": "=SUM(1:1)", "selectionStart": 5, "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28: whole columns and whole rows are one Reference of two forms, the whole of it answered (Part C, cases 8 and 9: $A:$A selected, 5 to 10): '=SUM(2:5|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(2:5)", 8, 8],
+      "is": {"text": "=SUM($2:$5)", "selectionStart": 5, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a pointed range is asked as a selection over the whole of it, and both ends cycle together, press after press (observed, the readings of 2026-10-12, R1 (vi): =, Down, Shift+Down, F4 in D10 gave =$D$11:$D$12), press 1: '=|D11:D12|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=D11:D12", 1, 8],
+      "is": {"text": "=$D$11:$D$12", "selectionStart": 1, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a pointed range is asked as a selection over the whole of it, and both ends cycle together, press after press (observed, the readings of 2026-10-12, R1 (vi): =, Down, Shift+Down, F4 in D10 gave =$D$11:$D$12), press 2: '=|$D$11:$D$12|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$D$11:$D$12", 1, 12],
+      "is": {"text": "=D$11:D$12", "selectionStart": 1, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a pointed range is asked as a selection over the whole of it, and both ends cycle together, press after press (observed, the readings of 2026-10-12, R1 (vi): =, Down, Shift+Down, F4 in D10 gave =$D$11:$D$12), press 3: '=|D$11:D$12|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=D$11:D$12", 1, 10],
+      "is": {"text": "=$D11:$D12", "selectionStart": 1, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a pointed range is asked as a selection over the whole of it, and both ends cycle together, press after press (observed, the readings of 2026-10-12, R1 (vi): =, Down, Shift+Down, F4 in D10 gave =$D$11:$D$12), press 4: '=|$D11:$D12|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=$D11:$D12", 1, 10],
+      "is": {"text": "=D11:D12", "selectionStart": 1, "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-7: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A, $A:$A, a cycle of two (Part C, cases 8 and 9), from '=SUM(A:A|)', press 1: '=SUM(A:A|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A:A)", 8, 8],
+      "is": {"text": "=SUM($A:$A)", "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-7: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A, $A:$A, a cycle of two (Part C, cases 8 and 9), from '=SUM(A:A|)', press 2: '=SUM($A:$A|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM($A:$A)", 10, 10],
+      "is": {"text": "=SUM(A:A)", "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-7: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A, $A:$A, a cycle of two (Part C, cases 8 and 9), from '=SUM(A:A|)', press 3: '=SUM(A:A|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A:A)", 8, 8],
+      "is": {"text": "=SUM($A:$A)", "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-7: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A, $A:$A, a cycle of two (Part C, cases 8 and 9), from '=SUM(1:1|)', press 1: '=SUM(1:1|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(1:1)", 8, 8],
+      "is": {"text": "=SUM($1:$1)", "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-7: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A, $A:$A, a cycle of two (Part C, cases 8 and 9), from '=SUM(1:1|)', press 2: '=SUM($1:$1|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM($1:$1)", 10, 10],
+      "is": {"text": "=SUM(1:1)", "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-7: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A, $A:$A, a cycle of two (Part C, cases 8 and 9), from '=SUM(1:1|)', press 3: '=SUM(1:1|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(1:1)", 8, 8],
+      "is": {"text": "=SUM($1:$1)", "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a Sheet qualifier is kept, and only the cell part cycles (Part C, case 10); the span answered starts after the qualifier, at $A$1 (observed, run 18a, answer 4): '=Sheet2!A1|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=Sheet2!A1", 10, 10],
+      "is": {"text": "=Sheet2!$A$1", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a Sheet qualifier is kept, and only the cell part cycles (Part C, case 10); the span answered starts after the qualifier, at $A$1 (observed, run 18a, answer 4): '=Sheet2!$A$1|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=Sheet2!$A$1", 12, 12],
+      "is": {"text": "=Sheet2!A$1", "selectionStart": 8, "selectionEnd": 11}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a Sheet qualifier is kept, and only the cell part cycles (Part C, case 10); the span answered starts after the qualifier, at $A$1 (observed, run 18a, answer 4): '=She|et2!A1'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=Sheet2!A1", 4, 4],
+      "is": {"text": "=Sheet2!$A$1", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a Sheet qualifier is kept, and only the cell part cycles (Part C, case 10); the span answered starts after the qualifier, at $A$1 (observed, run 18a, answer 4): \"='My Sheet'!B2:C3|\"",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["='My Sheet'!B2:C3", 17, 17],
+      "is": {"text": "='My Sheet'!B2:$C$3", "selectionStart": 15, "selectionEnd": 19}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a Sheet qualifier is kept, and only the cell part cycles (Part C, case 10); the span answered starts after the qualifier, at $A$1 (observed, run 18a, answer 4): '=SUM(Sheet2!A:A|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(Sheet2!A:A)", 15, 15],
+      "is": {"text": "=SUM(Sheet2!$A:$A)", "selectionStart": 12, "selectionEnd": 17}
+    },
+    {
+      "name": "ADR-0051, run 18a answer 4: with F2 first, =Sheet2!A1+1 and the caret after A1, F4 gave =Sheet2!$A$1+1 with $A$1 selected (8-12): the span starts at $A$1, not at Sheet2!",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=Sheet2!A1+1", 10, 10],
+      "is": {"text": "=Sheet2!$A$1+1", "selectionStart": 8, "selectionEnd": 12}
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=SUM(Positions[PV]|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(Positions[PV])", 18, 18],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=SUM(Positions[P|V])'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(Positions[PV])", 16, 16],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=S|UM(A1)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1)", 2, 2],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=SUM|(A1)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(A1)", 4, 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=LOG10|(100)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=LOG10(100)", 6, 6],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=1+2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=1+2", 4, 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=1|+2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=1+2", 2, 2],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=\"A1\"|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=\"A1\"", 5, 5],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=\"A|1\"'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=\"A1\"", 3, 3],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=A1&\"B|2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1&\"B2", 6, 6],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=#REF!|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=#REF!", 6, 6],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=Sheet1!#REF!|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=Sheet1!#REF!", 13, 13],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=TRUE|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=TRUE", 5, 5],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '=ZZZ1|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=ZZZ1", 5, 5],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: 'B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["B2", 2, 2],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '|B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["B2", 0, 0],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '|B2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["B2", 0, 2],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged: '|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["", 0, 0],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering, overlapping and touching none: '=|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=", 1, 1],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering, overlapping and touching none: '|=A1'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1", 0, 0],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering, overlapping and touching none: '=SUM(|)'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM()", 5, 5],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering, overlapping and touching none: '=A1 |+ B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1 + B2", 4, 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering, overlapping and touching none: '=A1%|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1%", 4, 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering, overlapping and touching none: '=A1 |+| B2'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1 + B2", 4, 5],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: a caret touching no Reference changes nothing, nor does a selection covering, overlapping and touching none: '=|1+2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=1+2", 1, 4],
+      "is": null
+    },
+    {
+      "name": "ADR-0051 / SH-28: only the Reference moves; every other character of unfinished text stays where it was: '=SUM(  1, B2|  ,\"x\"'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=SUM(  1, B2  ,\"x\"", 12, 12],
+      "is": {"text": "=SUM(  1, $B$2  ,\"x\"", "selectionEnd": 14}
+    },
+    {
+      "name": "ADR-0051 / SH-28: only the Reference moves; every other character of unfinished text stays where it was: '=IF(A1>0,C3|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=IF(A1>0,C3", 11, 11],
+      "is": {"text": "=IF(A1>0,$C$3", "selectionEnd": 13}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-8: the rewritten Reference's column letters are written in upper case, and the rest of the text (a Sheet qualifier, the other end of a range) as typed, in the order typed (Part C, cases 21 and 22): '=b2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=b2", 3, 3],
+      "is": {"text": "=$B$2", "selectionEnd": 5}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-8: the rewritten Reference's column letters are written in upper case, and the rest of the text (a Sheet qualifier, the other end of a range) as typed, in the order typed (Part C, cases 21 and 22): '=B2:A1|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=B2:A1", 6, 6],
+      "is": {"text": "=B2:$A$1", "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-8: the rewritten Reference's column letters are written in upper case, and the rest of the text (a Sheet qualifier, the other end of a range) as typed, in the order typed (Part C, cases 21 and 22): '=b2:a1|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=b2:a1", 6, 6],
+      "is": {"text": "=b2:$A$1", "selectionEnd": 8}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-8: the rewritten Reference's column letters are written in upper case, and the rest of the text (a Sheet qualifier, the other end of a range) as typed, in the order typed (Part C, cases 21 and 22): '=sheet2!a:a|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=sheet2!a:a", 11, 11],
+      "is": {"text": "=sheet2!$A:$A", "selectionEnd": 13}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-8: the rewritten Reference's column letters are written in upper case, and the rest of the text (a Sheet qualifier, the other end of a range) as typed, in the order typed (Part C, cases 21 and 22): '=sheet2!ab3|+c1'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=sheet2!ab3+c1", 11, 11],
+      "is": {"text": "=sheet2!$AB$3+c1", "selectionEnd": 13}
+    },
+    {
+      "name": "ADR-0051 / SH-28 / C-diff-8: the rewritten Reference's column letters are written in upper case, and the rest of the text (a Sheet qualifier, the other end of a range) as typed, in the order typed (Part C, cases 21 and 22): '=|a1+b2|'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=a1+b2", 1, 6],
+      "is": {"text": "=$A$1+$B$2", "selectionStart": 1, "selectionEnd": 10}
+    },
+    {
+      "name": "ADR-0051: a selection outside the text is an argument error, not a guess: -1 to 2 in '=A1'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1", -1, 2],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0051: a selection outside the text is an argument error, not a guess: 1 to 4 in '=A1'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1", 1, 4],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0051: a selection outside the text is an argument error, not a guess: 3 to 2 in '=A1'",
+      "call": "FormulaEntry.cycleReference",
+      "args": ["=A1", 3, 2],
+      "throws": {"refusal": "argument"}
+    }
+  ]
+}

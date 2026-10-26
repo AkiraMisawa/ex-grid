@@ -465,11 +465,8 @@ internal sealed class Run(CultureInfo culture)
         {
             Act(verb, argument!, sheet, outcome);
         }
-        catch (Exception e) when (e is FormulaSyntaxException or SheetRefusedException or InvalidOperationException
-            or ArgumentException or FormatException or RepeatedKeyException or SheetDocumentException)
+        catch (Exception e) when (IsRefusal(e))
         {
-            // The runner's own reading of a malformed case throws the same types; it is the case's defect, never a refusal.
-            if (ThrownByTheRunner(e)) throw;
             if (expect?["throws"] is not { } throws)
             {
                 Differences.Add($"{where} ({verb}) threw {e.GetType().Name}: {e.Message}");
@@ -494,7 +491,6 @@ internal sealed class Run(CultureInfo culture)
             Read(where, key, value, outcome);
     }
 
-    /// <summary>What a step did, for its readings: the change it reported, the refusal it was checked for, its step.</summary>
     /// <summary>A Linked Table's columns as <c>readTable</c> read them: <c>null</c> while it waits.</summary>
     private sealed record TableRead(IReadOnlyList<IReadOnlyList<Value?>>? Columns);
 
@@ -502,6 +498,7 @@ internal sealed class Run(CultureInfo culture)
         ? null
         : new JsonArray([.. columns.Select(c => (JsonNode)new JsonArray([.. c.Select(SheetCases.Encode)]))]);
 
+    /// <summary>What a step did, for its readings: the change it reported, the refusal it was checked for, its step.</summary>
     private sealed class Outcome(Sheet sheet)
     {
         public Sheet Sheet { get; set; } = sheet;
@@ -528,6 +525,17 @@ internal sealed class Run(CultureInfo culture)
         ["reformatsUnnamedRows"] = change.ReformatsUnnamedRows,
     };
 
+    /// <summary>
+    /// Whether the exception is the engine refusing, by a type a case reads as one. The runner's own reading of a
+    /// malformed case throws the same types, and the engine's broken invariants say "Internal", as the Script Core's
+    /// do: each is a defect, never a refusal.
+    /// </summary>
+    internal static bool IsRefusal(Exception e) =>
+        e is FormulaSyntaxException or SheetRefusedException or InvalidOperationException or ArgumentException or FormatException
+            or RepeatedKeyException or SheetDocumentException
+        && !e.Message.StartsWith("Internal", StringComparison.Ordinal)
+        && !ThrownByTheRunner(e);
+
     /// <summary>Whether the innermost frame outside .NET's own libraries is this runner's rather than the engine's.</summary>
     private static bool ThrownByTheRunner(Exception e)
     {
@@ -540,7 +548,7 @@ internal sealed class Run(CultureInfo culture)
         return false;
     }
 
-    private static JsonObject Thrown(Exception e) => e switch
+    internal static JsonObject Thrown(Exception e) => e switch
     {
         FormulaSyntaxException f => new JsonObject { ["refusal"] = "formulaSyntax", ["reason"] = f.Reason, ["beyondLimit"] = f.IsBeyondLimit, ["saying"] = e.Message },
         SheetRefusedException r => new JsonObject { ["refusal"] = "refused", ["reason"] = SheetCases.Camel(r.Refusal.Reason), ["saying"] = r.Refusal.Message },
@@ -994,6 +1002,38 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "spilledFrom":
                 actual = PerCell(expected, a => sheet.SpilledFrom(a)?.ToString());
+                break;
+            case "completions":
+                // Per text being typed, its caret marked |, the Sheet's completion there: what it replaces and each candidate.
+                actual = new JsonObject([.. expected!.AsObject().Select(p =>
+                {
+                    var caret = p.Key.IndexOf('|', StringComparison.Ordinal);
+                    if (caret < 0 || p.Key.IndexOf('|', caret + 1) >= 0)
+                        throw new InvalidDataException($"'{p.Key}' marks no caret: one | is the caret.");
+                    var completion = sheet.Complete(p.Key.Remove(caret, 1), caret);
+                    return KeyValuePair.Create(p.Key, (JsonNode?)(completion is null ? null : new JsonObject
+                    {
+                        ["start"] = completion.Start,
+                        ["length"] = completion.Length,
+                        ["candidates"] = new JsonArray([.. completion.Candidates.Select(c => (JsonNode)new JsonObject
+                        {
+                            ["name"] = c.Name,
+                            ["kind"] = SheetCases.Camel(c.Kind),
+                            ["insertText"] = c.InsertText,
+                            ["description"] = c.Description,
+                        })]),
+                    }));
+                })]);
+                break;
+            case "references":
+                // Per text being edited, the References the Sheet answers in it: each span, and its cells or its Linked Table's column.
+                actual = new JsonObject([.. expected!.AsObject().Select(p => KeyValuePair.Create(p.Key, (JsonNode?)new JsonArray([.. sheet.References(p.Key).Select(r => (JsonNode)new JsonObject
+                {
+                    ["start"] = r.Start,
+                    ["length"] = r.Length,
+                    ["cells"] = r.Cells?.ToString(),
+                    ["linkedColumn"] = r.LinkedColumn is { } column ? new JsonObject { ["table"] = column.Table, ["column"] = column.Column } : null,
+                })])))]);
                 break;
             case "columnWidths":
             {

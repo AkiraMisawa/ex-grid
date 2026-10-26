@@ -22,6 +22,12 @@
         Where the engine cannot give Excel's answer for an argument, it gives an Error Value rather than a different
         answer: see <a href="exsheet/formulas#supported-functions">Formulas</a>.
     </p>
+    <p class="docs-muted">
+        The functions a platform's math library would answer (EXP, LN, LOG, LOG10, POWER with a whole power, the
+        trigonometric and the hyperbolic functions) are computed by the engine itself. Each gives the exact value rounded
+        once to the nearest double, so a workbook shows the same last digit in every browser and on the server, where
+        each library rounds a few arguments its own way.
+    </p>
 
     @foreach (var (category, functions) in FunctionCatalogue.Supported)
     {

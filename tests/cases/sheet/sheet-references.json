@@ -1,0 +1,26 @@
+{
+  "about": "Sheet.References, the References a Sheet answers in the text being edited (ADR-0057; SH-30): FormulaEntry's answers (formula-references.json) read against the Sheet's own name and the Linked Tables it declares. Transcribed from ExSheet.Engine.Tests' FormulaReferencesTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0046/0057: this Sheet's own qualifier is the name the Sheet has now",
+      "steps": [
+        {"read": true, "expect": {"references": {"=Sheet1!A1": [{"start": 1, "length": 9, "cells": "A1", "linkedColumn": null}]}}},
+        {"rename": "Risk", "expect": {"references": {"=Sheet1!A1": [], "=risk!A1": [{"start": 1, "length": 7, "cells": "A1", "linkedColumn": null}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0057 reading: a structured reference is coloured only when its table and column are declared; one naming neither names anything, as a Reference to another Sheet does not (decided with the user, 2026-09-29)",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"references": {"=SUM(Nope[PV])": [], "=SUM(Positions[Nope])": [], "=SUM(Nope[PV])+SUM(positions[pv])+A1": [{"start": 19, "length": 13, "cells": null, "linkedColumn": {"table": "positions", "column": "pv"}}, {"start": 34, "length": 2, "cells": "A1", "linkedColumn": null}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0057 reading: a declared table still waiting for its data is coloured; it names a column that exists",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"references": {"=SUM(Positions[PV])": [{"start": 5, "length": 13, "cells": null, "linkedColumn": {"table": "Positions", "column": "PV"}}]}}}
+      ]
+    }
+  ]
+}

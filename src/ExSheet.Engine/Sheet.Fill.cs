@@ -348,10 +348,7 @@ public sealed partial class Sheet
         private const int Digits = 15;
 
         /// <summary><paramref name="number"/> rounded to 15 significant digits, as the nearest double.</summary>
-        public static double Round(double number) =>
-            double.IsFinite(number) && number != 0
-                ? double.Parse(number.ToString("E" + (Digits - 1).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture), CultureInfo.InvariantCulture)
-                : number;
+        public static double Round(double number) => Formulas.Arithmetic.AtFifteenDigits(number);
 
         /// <summary>
         /// <paramref name="first"/> plus <paramref name="count"/> steps, rounded to 15 significant
@@ -373,7 +370,7 @@ public sealed partial class Sheet
         private static decimal? Exact(double number)
         {
             if (!Inside(number)) return null;
-            return number == 0 ? 0m : decimal.Parse(number.ToString("E" + (Digits - 1).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture);
+            return number == 0 ? 0m : decimal.Parse(Round(number).ToString("E" + (Digits - 1).ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture);
         }
 
         // Decimal keeps 15 significant digits from 1e-13 (its 28 places) up to 1e15 (a whole number of 15 digits).

@@ -26,6 +26,7 @@
     "build": "node ../scripts/build.mjs",
     "api": "node ../scripts/build.mjs --local",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "differential": "vitest run --config vitest.differential.config.ts"
   }
 }

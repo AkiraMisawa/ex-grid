@@ -77,3 +77,5 @@ written `XLOOKUP(...)` lies on the grey ground as a whole.
   an operator, and a lookup after `=` then Enter. SH-31's tests in `declarations.spec.mjs` and
   `sheets.spec.mjs` pass with the pages' wiring gone.
 
+
+2026-10-26: the xUnit tests this ticket names (`PointedTextTests`) moved to the shared cases, `tests/cases/sheet/pointed-text.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `PointedTextTests` keeps what is written read back as the pressed cell, mirrored in `surface.test.ts`.

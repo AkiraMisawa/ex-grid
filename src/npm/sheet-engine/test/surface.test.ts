@@ -1,13 +1,16 @@
-// The calls a sheet case does not make, held here as EngineSurfaceTests.cs holds them on ExSheet.Engine until the
-// shared cases have a kind that makes them (ADR-0370 section 2): a name asked about, a Sheet renamed directly, two
-// Entries compared, and the package's surface read for a row that can be hidden.
+// The calls a shared case does not make, held here as EngineSurfaceTests.cs, CellAddressTests.cs,
+// CompletionTriggerTests.cs and FormulaReferencesTests.cs hold them on ExSheet.Engine (ADR-0370 section 2): a name asked about, a Sheet renamed
+// directly, two Entries or two keys compared, a walk over every column, prefix or declared function, a list read for
+// one name in it, what one call writes read back by another, and the package's surface read for a row that can be hidden.
 import { describe, expect, it } from 'vitest';
 import * as engine from '../src/index';
 import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
+import { DeclaredFunction } from '../src/declared-function';
 import { Entry } from '../src/entry';
 import { NumberFormat, numberFormatColourRgb } from '../src/number-format';
-import { CellAddress } from '../src/cell-address';
+import { CellAddress, columnCount } from '../src/cell-address';
+import { formulaReferences, lookupText, structuredReferenceText } from '../src/formula-entry';
 import { Sheet } from '../src/sheet';
 import { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
@@ -69,18 +72,6 @@ describe('the engine surface', () => {
         expect(names.filter(name => hiding.test(name))).toEqual([]);
     });
 
-    // ADR-0047: whole columns and rows are written as Excel writes them.
-    it.each([
-        ['B:D', true, false],
-        ['3:4', false, true],
-        ['A:XFD', true, true],
-        ['A1:B2', false, false],
-    ] as const)('reads %s as whole columns %s and whole rows %s', (text, columns, rows) => {
-        const range = CellRange.parse(text);
-        expect(range.isWholeColumns).toBe(columns);
-        expect(range.isWholeRows).toBe(rows);
-    });
-
     // ADR-0331: the Sheet shown is one of the Workbook's, and a Sheet of another is refused.
     it('refuses to show a Sheet of another Workbook', () => {
         const workbook = new Workbook(Culture.of('en-US'), ['Sheet1', 'Sheet2']);
@@ -90,16 +81,10 @@ describe('the engine surface', () => {
         }).toThrow(RangeError);
     });
 
-    // ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet.
-    it.each([[['Sheet1', 'SHEET1']], [['a:b']], [[]]] as const)('refuses a Workbook of the names %j', names => {
-        expect(() => new Workbook(Culture.of('en-US'), names)).toThrow(RangeError);
-    });
-
-    // ADR-0331: every Sheet is under the Workbook's culture, and a name no Sheet has finds none.
-    it('puts every Sheet under the Workbook\'s culture, and finds no missing name', () => {
+    // ADR-0331: every Sheet is under the Workbook's culture.
+    it('puts every Sheet under the Workbook\'s culture', () => {
         const workbook = new Workbook(Culture.of('en-US'), ['Inputs', 'Totals']);
         for (const sheet of workbook.sheets) expect(sheet.culture).toBe(workbook.culture);
-        expect(workbook.find('Missing')).toBeUndefined();
     });
 
     // ADR-0331: an edit naming no Sheet of the Workbook is refused, and changes nothing.
@@ -191,5 +176,137 @@ describe('the engine surface', () => {
     // ADR-0071, ticket 103: d-mmm-yy typed under en-GB, which spells built-in 15 otherwise, is a code of its own.
     it('reads d-mmm-yy under en-GB as a code of its own', () => {
         expect(NumberFormat.tryParseLocal('d-mmm-yy', Culture.of('en-GB')).format?.code).toBe('d\\-mmm\\-yy');
+    });
+
+    // ADR-0046: Columns A to XFD are the Column Headings.
+    it('reads every column name back as its column', () => {
+        for (let column = 0; column < columnCount; column++) {
+            expect(CellAddress.tryParseColumn(CellAddress.columnName(column))).toBe(column);
+        }
+        expect(CellAddress.columnName(columnCount - 1)).toBe('XFD');
+    });
+
+    // ADR-0046: addresses order row by row, as the rows a change repaints.
+    it('orders addresses row by row', () => {
+        const sorted = ['B2', 'A2', 'C1', 'A1'].map(a => CellAddress.parse(a)).toSorted((a, b) => a.compareTo(b));
+        expect(sorted.map(a => a.toString())).toEqual(['A1', 'C1', 'A2', 'B2']);
+    });
+
+    // ADR-0057 / SH-30: a structured reference's key compares equal however the table and the column were cased.
+    it('keys a structured reference alike however it is cased', () => {
+        const columns = formulaReferences('=SUM(Positions[PV])+SUM(positions[pv])+SUM(POSITIONS[[Pv]])', 'Sheet1').map(r => r.linkedColumn);
+        expect(columns).toHaveLength(3);
+        const [first] = columns;
+        if (first === undefined) throw new Error('The first answer names no column.');
+        for (const column of columns) {
+            if (column === undefined) throw new Error('An answer names no column.');
+            expect(column.equals(first)).toBe(true);
+            expect(column.key).toBe(first.key);
+        }
+    });
+
+    // ADR-0057 / SH-30: another column, or another table's column of the same name, is another key.
+    it.each(['=SUM(Positions[PV])+SUM(Positions[Id])', '=SUM(Positions[PV])+SUM(Accounts[PV])'])('keys %s apart', text => {
+        const [first, second] = formulaReferences(text, 'Sheet1').map(r => r.linkedColumn);
+        if (first === undefined || second === undefined) throw new Error(`${text} names fewer than two columns.`);
+        expect(first.equals(second)).toBe(false);
+        expect(first.key).not.toBe(second.key);
+    });
+
+    // ADR-0057 reading: an unfinished Formula is coloured as far as it goes: every prefix of a Formula as it is typed
+    // is answered, and none throws.
+    it('answers every prefix of a Formula being typed', () => {
+        const formulas = [
+            '=SUM(A1,Sheet1!B2:C3,"x""y",Positions[[PV]],LOG10(D4))+\'Sheet 1\'!E5*$F$6%-G:G&1:1',
+            "=IF(Sheet2!A1<>#N/A,XLOOKUP(A1,Positions[Id],Positions[a'[b]),'It''s'!B2)",
+            '=-$XFD$1048576^2/Sheet1!#REF!',
+        ];
+        for (const formula of formulas) {
+            for (let typed = 0; typed <= formula.length; typed++) {
+                const text = formula.slice(0, typed);
+                for (const sheetName of ['Sheet1', 'Sheet 1', "It's"]) {
+                    let end = 1;
+                    for (const answer of formulaReferences(text, sheetName)) {
+                        // In the text, after the =, in the order written, none overlapping another, and either cells or a column.
+                        expect(answer.start).toBeGreaterThanOrEqual(end);
+                        expect(answer.length).toBeGreaterThanOrEqual(1);
+                        expect(answer.start + answer.length).toBeLessThanOrEqual(text.length);
+                        expect(answer.cells === undefined).not.toBe(answer.linkedColumn === undefined);
+                        end = answer.start + answer.length;
+                    }
+                }
+            }
+        }
+    });
+
+    // ADR-0058, SH-36: unrestricted arguments do not declare a choice list.
+    it('declares no values for an unrestricted argument', () => {
+        const listing = new Set(['XLOOKUP', 'VLOOKUP', 'HLOOKUP', 'MATCH', 'YEARFRAC', 'SUBTOTAL', 'AGGREGATE']);
+        for (const declared of DeclaredFunction.all.filter(f => !listing.has(f.name))) {
+            for (let index = 0; index < 8; index++) expect(declared.valuesOf(index)).toEqual([]);
+        }
+    });
+
+    // ADR-0058 (Q54), SH-36: outside a value-list argument a letter lists the functions and Linked Tables it begins, as
+    // before: at another argument, after an operator, inside a call of its own, and inside a grouping parenthesis,
+    // which holds an expression of its own (decided with the user 2026-10-01, not asked of Excel).
+    it.each([
+        ['=A|', 'AVERAGE'],
+        ['=1+A|', 'AVERAGE'],
+        ['=SUM(A|', 'AVERAGE'],
+        ['=XLOOKUP(1,A|', 'AVERAGE'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,P|', 'Positions'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,,0,1,P|', 'Positions'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,,SUM(A|', 'AVERAGE'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,,(A|', 'AVERAGE'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,,ROUND(1,X|', 'XLOOKUP'],
+    ] as const)('lists names for %s outside a value-list argument', (marked, listed) => {
+        const workbook = new Workbook(Culture.of('en-US'));
+        workbook.declareLinkedTable('Positions', ['Id', 'PV']);
+        const caret = marked.indexOf('|');
+        const completion = workbook.shown.complete(marked.replace('|', ''), caret);
+        if (completion === undefined) throw new Error(`${marked} lists nothing.`);
+        expect(completion.candidates.map(c => c.name)).toContain(listed);
+        expect(completion.candidates.filter(c => c.kind === 'argumentValue')).toEqual([]);
+    });
+
+    // ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind (PointedTextTests.cs).
+    it('reads back what a Pointing Scope writes as the pressed cell', () => {
+        const workbook = new Workbook(Culture.of('en-US'));
+        workbook.declareLinkedTable('T', ['Key', 'Rate#', 'PV'], 'Key');
+        workbook.pushLinkedTable('T', [
+            [Value.fromText('R-"5"'), Value.fromNumber(1), Value.fromNumber(10)],
+            [Value.fromNumber(0.1), Value.fromNumber(2), Value.fromNumber(20)],
+            [Value.fromBoolean(true), Value.fromNumber(3), Value.fromNumber(30)],
+            [Value.fromText('1250'), Value.fromNumber(4), Value.fromNumber(40)],
+        ]);
+        const sheet = workbook.shown;
+        const at = CellAddress.parse('ZZ1000');
+        const evaluate = (formula: string): number | undefined => {
+            sheet.enter(at, formula);
+            return sheet.getValue(at)?.number;
+        };
+        expect(evaluate(`=${lookupText('T', 'Key', Value.fromText('R-"5"'), 'PV')}`)).toBe(10);
+        expect(evaluate(`=${lookupText('T', 'Key', Value.fromNumber(0.1), 'Rate#')}`)).toBe(2);
+        expect(evaluate(`=${lookupText('T', 'Key', Value.fromBoolean(true), 'PV')}`)).toBe(30);
+        expect(evaluate(`=${lookupText('T', 'Key', Value.fromText('1250'), 'PV')}`)).toBe(40);
+        expect(evaluate(`=SUM(${structuredReferenceText('T', 'PV')})`)).toBe(100);
+    });
+
+    // ADR-0058 / ADR-0047, SH-36: a column whose name holds a character the grammar reads specially is written escaped,
+    // and reads back as that column (CompletionTriggerTests.cs).
+    it('reads back what completion writes for a column as that column', () => {
+        const workbook = new Workbook(Culture.of('en-US'));
+        const columns = ['Id', 'Rate #1', "O'Brien", '[Old]'];
+        workbook.declareLinkedTable('Positions', columns);
+        const completion = workbook.shown.complete('=SUM(Positions[', 15);
+        if (completion === undefined) throw new Error('Nothing is listed after Positions[.');
+        expect(completion.candidates).toHaveLength(columns.length);
+        completion.candidates.forEach((candidate, i) => {
+            const references = formulaReferences(`=SUM(Positions[${candidate.insertText}])`, 'Sheet1');
+            expect(references).toHaveLength(1);
+            expect(references[0]?.linkedColumn?.table).toBe('Positions');
+            expect(references[0]?.linkedColumn?.column).toBe(columns[i]);
+        });
     });
 });

@@ -29,6 +29,8 @@ interface Constants {
     readonly ln2High: number;
     readonly ln2Low: number;
     readonly ln2Lowest: number;
+    /** 1/ln 10 as a double-double. */
+    readonly inverseLn10: Wide;
     /** 2/(2j+1), j = 0 to 24. */
     readonly atanhCoefficients: readonly Wide[];
 }
@@ -45,9 +47,13 @@ function constantsOf(): Constants {
     const ln2Low = roundToDouble(rest, -scale);
     rest -= exactly(ln2Low, scale);
     const ln2Lowest = roundToDouble(rest, -scale);
+    // ln 10 = 3 ln 2 + ln(5/4), and ln(5/4) = 2 atanh(1/9).
+    const fixedInverseLn10 = (fixedOne << BigInt(scale)) / (3n * fixedLn2 + atanh2(1n, 9n));
+    const inverseHigh = roundToDouble(fixedInverseLn10, -scale);
+    const inverseLn10 = new Wide(inverseHigh, roundToDouble(fixedInverseLn10 - exactly(inverseHigh, scale), -scale));
     const atanhCoefficients: Wide[] = [];
     for (let j = 0; j < 25; j++) atanhCoefficients.push(new Wide(2).dividedBy(2 * j + 1));
-    constants = { fixedLn2, ln2High, ln2Low, ln2Lowest, atanhCoefficients };
+    constants = { fixedLn2, ln2High, ln2Low, ln2Lowest, inverseLn10, atanhCoefficients };
     return constants;
 }
 
@@ -76,6 +82,22 @@ export function log(x: number): number {
     if (x === Infinity) return x;
     if (x === 1) return 0;
     if (x < minNormal) return logExact(x);
+    const rounded = roundedOf(wideLog(x));
+    return rounded === undefined ? logExact(x) : rounded;
+}
+
+/**
+ * log10 `x`, correctly rounded, where the double-double path rounds it surely; `undefined` for a subnormal x and the
+ * rare argument near a rounding boundary, which portable-math.ts's `log10` computes again.
+ */
+export function tryLog10(x: number): number | undefined {
+    if (x === 1) return 0;
+    if (!(x >= minNormal) || !Number.isFinite(x)) return undefined;
+    return roundedOf(wideLog(x).times(constantsOf().inverseLn10));
+}
+
+/** ln `x` in double-double, for a normal, finite x above 0. */
+function wideLog(x: number): Wide {
     const { ln2High, ln2Low, ln2Lowest, atanhCoefficients } = constantsOf();
     // x = m * 2^e with m in [sqrt(1/2), sqrt(2)]; ln m = 2 atanh(s), s = (m-1)/(m+1), |s| < 0.172.
     const bits = doubleBits(x);
@@ -89,9 +111,7 @@ export function log(x: number): number {
     const t = s.times(s);
     let series = atanhCoefficients[atanhCoefficients.length - 1] as Wide; // oxlint-disable-line typescript/no-unsafe-type-assertion -- 25 coefficients
     for (let j = atanhCoefficients.length - 2; j >= 0; j--) series = (atanhCoefficients[j] as Wide).plus(t.times(series)); // oxlint-disable-line typescript/no-unsafe-type-assertion -- j is within them
-    const logarithm = s.times(series).plus(new Wide(e * ln2High)).plus(Wide.product(e, ln2Low)).plus(new Wide(e * ln2Lowest));
-    const rounded = roundedOf(logarithm);
-    return rounded === undefined ? logExact(x) : rounded;
+    return s.times(series).plus(new Wide(e * ln2High)).plus(Wide.product(e, ln2Low)).plus(new Wide(e * ln2Lowest));
 }
 
 /** The double nearest `value`, when every number within `bound` of it rounds to that same double; `undefined` where a boundary lies so close that the error could cross it. */

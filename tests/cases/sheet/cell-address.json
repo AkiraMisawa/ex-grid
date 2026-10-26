@@ -1,0 +1,202 @@
+{
+  "about": "CellAddress, called directly (ADR-0046). Transcribed from ExSheet.Engine.Tests' CellAddressTests; the walk over every column and the row-major order stay there and in surface.test.ts.",
+  "kind": "sheetCalls",
+  "cases": [
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: A1",
+      "call": "CellAddress.parse",
+      "args": ["A1"],
+      "is": {"row": 0, "column": 0},
+      "then": [{"call": "toString", "args": [], "is": "A1"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: B7",
+      "call": "CellAddress.parse",
+      "args": ["B7"],
+      "is": {"row": 6, "column": 1},
+      "then": [{"call": "toString", "args": [], "is": "B7"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: Z1",
+      "call": "CellAddress.parse",
+      "args": ["Z1"],
+      "is": {"row": 0, "column": 25},
+      "then": [{"call": "toString", "args": [], "is": "Z1"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: AA1",
+      "call": "CellAddress.parse",
+      "args": ["AA1"],
+      "is": {"row": 0, "column": 26},
+      "then": [{"call": "toString", "args": [], "is": "AA1"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: AZ1",
+      "call": "CellAddress.parse",
+      "args": ["AZ1"],
+      "is": {"row": 0, "column": 51},
+      "then": [{"call": "toString", "args": [], "is": "AZ1"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: BA1",
+      "call": "CellAddress.parse",
+      "args": ["BA1"],
+      "is": {"row": 0, "column": 52},
+      "then": [{"call": "toString", "args": [], "is": "BA1"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: ZZ1",
+      "call": "CellAddress.parse",
+      "args": ["ZZ1"],
+      "is": {"row": 0, "column": 701},
+      "then": [{"call": "toString", "args": [], "is": "ZZ1"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: AAA1",
+      "call": "CellAddress.parse",
+      "args": ["AAA1"],
+      "is": {"row": 0, "column": 702},
+      "then": [{"call": "toString", "args": [], "is": "AAA1"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: XFD1048576",
+      "call": "CellAddress.parse",
+      "args": ["XFD1048576"],
+      "is": {"row": 1048575, "column": 16383},
+      "then": [{"call": "toString", "args": [], "is": "XFD1048576"}]
+    },
+    {
+      "name": "ADR-0046: a Sheet is Excel's extent, addressed A1 to XFD1048576: xfd1048576",
+      "call": "CellAddress.parse",
+      "args": ["xfd1048576"],
+      "is": {"row": 1048575, "column": 16383},
+      "then": [{"call": "toString", "args": [], "is": "XFD1048576"}]
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse 'XFE1'",
+      "call": "CellAddress.tryParse",
+      "args": ["XFE1"],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse 'XFE1'",
+      "call": "CellAddress.parse",
+      "args": ["XFE1"],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse 'A0'",
+      "call": "CellAddress.tryParse",
+      "args": ["A0"],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse 'A0'",
+      "call": "CellAddress.parse",
+      "args": ["A0"],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse 'A1048577'",
+      "call": "CellAddress.tryParse",
+      "args": ["A1048577"],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse 'A1048577'",
+      "call": "CellAddress.parse",
+      "args": ["A1048577"],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse 'A01'",
+      "call": "CellAddress.tryParse",
+      "args": ["A01"],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse 'A01'",
+      "call": "CellAddress.parse",
+      "args": ["A01"],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse '$A$1'",
+      "call": "CellAddress.tryParse",
+      "args": ["$A$1"],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse '$A$1'",
+      "call": "CellAddress.parse",
+      "args": ["$A$1"],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse '1A'",
+      "call": "CellAddress.tryParse",
+      "args": ["1A"],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse '1A'",
+      "call": "CellAddress.parse",
+      "args": ["1A"],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse 'AAAA1'",
+      "call": "CellAddress.tryParse",
+      "args": ["AAAA1"],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse 'AAAA1'",
+      "call": "CellAddress.parse",
+      "args": ["AAAA1"],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse ''",
+      "call": "CellAddress.tryParse",
+      "args": [""],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse ''",
+      "call": "CellAddress.parse",
+      "args": [""],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: tryParse 'A'",
+      "call": "CellAddress.tryParse",
+      "args": ["A"],
+      "is": null
+    },
+    {
+      "name": "ADR-0046: nothing outside the extent is an address; it is refused, never clamped: parse 'A'",
+      "call": "CellAddress.parse",
+      "args": ["A"],
+      "throws": {"refusal": "format"}
+    },
+    {
+      "name": "ADR-0046: the extent is 1,048,576 rows by 16,384 columns: (1048576, 0)",
+      "call": "new CellAddress",
+      "args": [1048576, 0],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0046: the extent is 1,048,576 rows by 16,384 columns: (0, 16384)",
+      "call": "new CellAddress",
+      "args": [0, 16384],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0046: the extent is 1,048,576 rows by 16,384 columns: (-1, 0)",
+      "call": "new CellAddress",
+      "args": [-1, 0],
+      "throws": {"refusal": "argument"}
+    }
+  ]
+}

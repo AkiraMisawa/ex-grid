@@ -1,0 +1,732 @@
+{
+  "about": "FormulaEntry.References, the References in the text being edited (ADR-0057, \"Who decides what\"; SH-30): each answer's span (start and length in the whole text) and what it names, its cells or a Linked Table's column. Transcribed from ExSheet.Engine.Tests' FormulaReferencesTests; the walk over every prefix of a Formula being typed stays there and in surface.test.ts.",
+  "kind": "sheetCalls",
+  "cases": [
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=$A$1'",
+      "call": "FormulaEntry.references",
+      "args": ["=$A$1", "Sheet1"],
+      "is": [{"start": 1, "length": 4, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=A$1+$B2'",
+      "call": "FormulaEntry.references",
+      "args": ["=A$1+$B2", "Sheet1"],
+      "is": [{"start": 1, "length": 3, "cells": "A1", "linkedColumn": null}, {"start": 5, "length": 3, "cells": "B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=A1:B2'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1:B2", "Sheet1"],
+      "is": [{"start": 1, "length": 5, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=$A$1:$B$2'",
+      "call": "FormulaEntry.references",
+      "args": ["=$A$1:$B$2", "Sheet1"],
+      "is": [{"start": 1, "length": 9, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=a1'",
+      "call": "FormulaEntry.references",
+      "args": ["=a1", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=-A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=-A1", "Sheet1"],
+      "is": [{"start": 2, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=SUM(A1,B2:C3)*D4%'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1,B2:C3)*D4%", "Sheet1"],
+      "is": [{"start": 5, "length": 2, "cells": "A1", "linkedColumn": null}, {"start": 8, "length": 5, "cells": "B2:C3", "linkedColumn": null}, {"start": 15, "length": 2, "cells": "D4", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=IF(A1>0,B1,\"no\")'",
+      "call": "FormulaEntry.references",
+      "args": ["=IF(A1>0,B1,\"no\")", "Sheet1"],
+      "is": [{"start": 4, "length": 2, "cells": "A1", "linkedColumn": null}, {"start": 9, "length": 2, "cells": "B1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '= A1 +\\nB1'",
+      "call": "FormulaEntry.references",
+      "args": ["= A1 +\nB1", "Sheet1"],
+      "is": [{"start": 2, "length": 2, "cells": "A1", "linkedColumn": null}, {"start": 7, "length": 2, "cells": "B1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: every Reference in the Formula is answered, with its span and the cells it names, in the order written: '=XFD1048576'",
+      "call": "FormulaEntry.references",
+      "args": ["=XFD1048576", "Sheet1"],
+      "is": [{"start": 1, "length": 10, "cells": "XFD1048576", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =B2:A1 outlines A1:B2: '=B2:A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=B2:A1", "Sheet1"],
+      "is": [{"start": 1, "length": 5, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =B2:A1 outlines A1:B2: '=B1:A2'",
+      "call": "FormulaEntry.references",
+      "args": ["=B1:A2", "Sheet1"],
+      "is": [{"start": 1, "length": 5, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =B2:A1 outlines A1:B2: '=A2:B1'",
+      "call": "FormulaEntry.references",
+      "args": ["=A2:B1", "Sheet1"],
+      "is": [{"start": 1, "length": 5, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =B2:A1 outlines A1:B2: '=$B$2:A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=$B$2:A1", "Sheet1"],
+      "is": [{"start": 1, "length": 7, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =B2:A1 outlines A1:B2: '=A1:A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1:A1", "Sheet1"],
+      "is": [{"start": 1, "length": 5, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: a structured reference is answered with its span and a key naming the table and the column: '=SUM(Positions[PV])'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[PV])", "Sheet1"],
+      "is": [{"start": 5, "length": 13, "cells": null, "linkedColumn": {"table": "Positions", "column": "PV"}}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: a structured reference is answered with its span and a key naming the table and the column: '=SUM(Positions[[PV]])'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[[PV]])", "Sheet1"],
+      "is": [{"start": 5, "length": 15, "cells": null, "linkedColumn": {"table": "Positions", "column": "PV"}}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: a structured reference is answered with its span and a key naming the table and the column: '=SUM(Positions[Market Value])'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[Market Value])", "Sheet1"],
+      "is": [{"start": 5, "length": 23, "cells": null, "linkedColumn": {"table": "Positions", "column": "Market Value"}}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: a structured reference is answered with its span and a key naming the table and the column: \"=SUM(Positions[a'[b])\"",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[a'[b])", "Sheet1"],
+      "is": [{"start": 5, "length": 15, "cells": null, "linkedColumn": {"table": "Positions", "column": "a[b"}}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: a structured reference is answered with its span and a key naming the table and the column: '=SUM(Positions[PV])+A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[PV])+A1", "Sheet1"],
+      "is": [{"start": 5, "length": 13, "cells": null, "linkedColumn": {"table": "Positions", "column": "PV"}}, {"start": 20, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: a structured reference is answered with its span and a key naming the table and the column: '=XLOOKUP(A1,Positions[Id],Positions[PV])'",
+      "call": "FormulaEntry.references",
+      "args": ["=XLOOKUP(A1,Positions[Id],Positions[PV])", "Sheet1"],
+      "is": [{"start": 9, "length": 2, "cells": "A1", "linkedColumn": null}, {"start": 12, "length": 13, "cells": null, "linkedColumn": {"table": "Positions", "column": "Id"}}, {"start": 26, "length": 13, "cells": null, "linkedColumn": {"table": "Positions", "column": "PV"}}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: a structured reference is answered with its span and a key naming the table and the column: '=AB1[PV]'",
+      "call": "FormulaEntry.references",
+      "args": ["=AB1[PV]", "Sheet1"],
+      "is": [{"start": 1, "length": 7, "cells": null, "linkedColumn": {"table": "AB1", "column": "PV"}}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=SUM(A1,'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1,", "Sheet1"],
+      "is": [{"start": 5, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=A1+'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1+", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=SUM(A1:B2'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1:B2", "Sheet1"],
+      "is": [{"start": 5, "length": 5, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=IF(A1>0,C3'",
+      "call": "FormulaEntry.references",
+      "args": ["=IF(A1>0,C3", "Sheet1"],
+      "is": [{"start": 4, "length": 2, "cells": "A1", "linkedColumn": null}, {"start": 9, "length": 2, "cells": "C3", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=A1&\"B2'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1&\"B2", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=SUM(A1,\"x\",B2,\"C3'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1,\"x\",B2,\"C3", "Sheet1"],
+      "is": [{"start": 5, "length": 2, "cells": "A1", "linkedColumn": null}, {"start": 12, "length": 2, "cells": "B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=SUM(Positions[PV]'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[PV]", "Sheet1"],
+      "is": [{"start": 5, "length": 13, "cells": null, "linkedColumn": {"table": "Positions", "column": "PV"}}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=A1+SUM(Positions[P'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1+SUM(Positions[P", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: \"=A1+'Sheet 1'!B\"",
+      "call": "FormulaEntry.references",
+      "args": ["=A1+'Sheet 1'!B", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=A1+SUM('",
+      "call": "FormulaEntry.references",
+      "args": ["=A1+SUM(", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: =SUM(A1, colours A1: '=A1)'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1)", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading): '=SUM(A1:'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1:", "Sheet1"],
+      "is": [{"start": 5, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading): '=B1+A1:'",
+      "call": "FormulaEntry.references",
+      "args": ["=B1+A1:", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "B1", "linkedColumn": null}, {"start": 4, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading): '=SUM(A1:B'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1:B", "Sheet1"],
+      "is": [{"start": 5, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading): '=SUM(Sheet1!A1:'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Sheet1!A1:", "Sheet1"],
+      "is": [{"start": 5, "length": 9, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading): '=SUM($A$1:'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM($A$1:", "Sheet1"],
+      "is": [{"start": 5, "length": 4, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading): '=SUM(A1:B2'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1:B2", "Sheet1"],
+      "is": [{"start": 5, "length": 5, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading): '=SUM(A:'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A:", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057, cases 24-32 of the eighth Windows run: a range typed as far as its colon answers its first corner, the colon left out (case 26); an incomplete second corner likewise (a reading): '=SUM(Sheet2!A1:'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Sheet2!A1:", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: nothing inside a string is coloured: '=\"A1\"&B1'",
+      "call": "FormulaEntry.references",
+      "args": ["=\"A1\"&B1", "Sheet1"],
+      "is": [{"start": 6, "length": 2, "cells": "B1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: nothing inside a string is coloured: '=\"A1:B2\"'",
+      "call": "FormulaEntry.references",
+      "args": ["=\"A1:B2\"", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: nothing inside a string is coloured: '=\"say \"\"A1\"\" \"&C3'",
+      "call": "FormulaEntry.references",
+      "args": ["=\"say \"\"A1\"\" \"&C3", "Sheet1"],
+      "is": [{"start": 15, "length": 2, "cells": "C3", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: nothing inside a string is coloured: '=\"Sheet1!A1\"'",
+      "call": "FormulaEntry.references",
+      "args": ["=\"Sheet1!A1\"", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: nothing inside a string is coloured: '=\"Positions[PV]\"'",
+      "call": "FormulaEntry.references",
+      "args": ["=\"Positions[PV]\"", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: nothing inside a string is coloured: '=\"A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=\"A1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: no function name is coloured, even where the name reads as a cell (LOG10): '=LOG10(A1)'",
+      "call": "FormulaEntry.references",
+      "args": ["=LOG10(A1)", "Sheet1"],
+      "is": [{"start": 7, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: no function name is coloured, even where the name reads as a cell (LOG10): '=log10(A1)'",
+      "call": "FormulaEntry.references",
+      "args": ["=log10(A1)", "Sheet1"],
+      "is": [{"start": 7, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: no function name is coloured, even where the name reads as a cell (LOG10): '=LOG10('",
+      "call": "FormulaEntry.references",
+      "args": ["=LOG10(", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: no function name is coloured, even where the name reads as a cell (LOG10): '=SUM(LOG10(B2),C3)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(LOG10(B2),C3)", "Sheet1"],
+      "is": [{"start": 11, "length": 2, "cells": "B2", "linkedColumn": null}, {"start": 15, "length": 2, "cells": "C3", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: no function name is coloured, even where the name reads as a cell (LOG10): '=SUM(A1)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1)", "Sheet1"],
+      "is": [{"start": 5, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-25 of the eighth Windows run: text beginning with + or - is coloured as a Formula is, as Excel colours it and ExSheet enters it (=+A1, =-B2): '+A1'",
+      "call": "FormulaEntry.references",
+      "args": ["+A1", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-25 of the eighth Windows run: text beginning with + or - is coloured as a Formula is, as Excel colours it and ExSheet enters it (=+A1, =-B2): '-B2'",
+      "call": "FormulaEntry.references",
+      "args": ["-B2", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-25 of the eighth Windows run: text beginning with + or - is coloured as a Formula is, as Excel colours it and ExSheet enters it (=+A1, =-B2): '-B2*C3:D4'",
+      "call": "FormulaEntry.references",
+      "args": ["-B2*C3:D4", "Sheet1"],
+      "is": [{"start": 1, "length": 2, "cells": "B2", "linkedColumn": null}, {"start": 4, "length": 5, "cells": "C3:D4", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-25 of the eighth Windows run: text beginning with + or - is coloured as a Formula is, as Excel colours it and ExSheet enters it (=+A1, =-B2): '+SUM(A1,'",
+      "call": "FormulaEntry.references",
+      "args": ["+SUM(A1,", "Sheet1"],
+      "is": [{"start": 5, "length": 2, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057, cases 24-25 of the eighth Windows run: text beginning with + or - is coloured as a Formula is, as Excel colours it and ExSheet enters it (=+A1, =-B2): '+1'",
+      "call": "FormulaEntry.references",
+      "args": ["+1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057, cases 24-25 of the eighth Windows run: text beginning with + or - is coloured as a Formula is, as Excel colours it and ExSheet enters it (=+A1, =-B2): '-'",
+      "call": "FormulaEntry.references",
+      "args": ["-", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: '=Sheet1!A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet1!A1", "Sheet1"],
+      "is": [{"start": 1, "length": 9, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: '=sheet1!a1'",
+      "call": "FormulaEntry.references",
+      "args": ["=sheet1!a1", "Sheet1"],
+      "is": [{"start": 1, "length": 9, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: \"='Sheet1'!A1\"",
+      "call": "FormulaEntry.references",
+      "args": ["='Sheet1'!A1", "Sheet1"],
+      "is": [{"start": 1, "length": 11, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: '=Sheet1!$B$2:A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet1!$B$2:A1", "Sheet1"],
+      "is": [{"start": 1, "length": 14, "cells": "A1:B2", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: '=Sheet1!A:A'",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet1!A:A", "Sheet1"],
+      "is": [{"start": 1, "length": 10, "cells": "A1:A1048576", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: '=Sheet1!1:1'",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet1!1:1", "Sheet1"],
+      "is": [{"start": 1, "length": 10, "cells": "A1:XFD1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: \"='Sheet 1'!A1\" on Sheet 1",
+      "call": "FormulaEntry.references",
+      "args": ["='Sheet 1'!A1", "Sheet 1"],
+      "is": [{"start": 1, "length": 12, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: \"='sheet 1'!A1\" on Sheet 1",
+      "call": "FormulaEntry.references",
+      "args": ["='sheet 1'!A1", "Sheet 1"],
+      "is": [{"start": 1, "length": 12, "cells": "A1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: \"='It''s'!B3\" on It's",
+      "call": "FormulaEntry.references",
+      "args": ["='It''s'!B3", "It's"],
+      "is": [{"start": 1, "length": 10, "cells": "B3", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: Sheet1!A1, with this Sheet's own name, is outlined; its span holds the qualifier: '=Positions!C4' on Positions",
+      "call": "FormulaEntry.references",
+      "args": ["=Positions!C4", "Positions"],
+      "is": [{"start": 1, "length": 12, "cells": "C4", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: a Reference qualified with another name names no cells (#REF!, ADR-0046) and is not coloured: '=Sheet2!A1+B1'",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet2!A1+B1", "Sheet1"],
+      "is": [{"start": 11, "length": 2, "cells": "B1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: a Reference qualified with another name names no cells (#REF!, ADR-0046) and is not coloured: '=Sheet2!A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet2!A1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: a Reference qualified with another name names no cells (#REF!, ADR-0046) and is not coloured: \"='Sheet 2'!A1:B2\"",
+      "call": "FormulaEntry.references",
+      "args": ["='Sheet 2'!A1:B2", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: a Reference qualified with another name names no cells (#REF!, ADR-0046) and is not coloured: '=SUM(Sheet2!A:A)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Sheet2!A:A)", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: a Reference qualified with another name names no cells (#REF!, ADR-0046) and is not coloured: '=Sheet1!A1' on Sheet 1",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet1!A1", "Sheet 1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 reading: a Reference qualified with another name names no cells (#REF!, ADR-0046) and is not coloured: \"='Sheet1 '!A1\"",
+      "call": "FormulaEntry.references",
+      "args": ["='Sheet1 '!A1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: a span is its start and length in the whole text, the = at 0, a Sheet qualifier included",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1, Sheet1!B2:C3)", "Sheet1"],
+      "is": [{"start": 5, "length": 2}, {"start": 9, "length": 12}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =A1+A1 and =A1+$A$1 each name A1 alike: '=A1+A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1+A1", "Sheet1"],
+      "is": [{"cells": "A1"}, {"cells": "A1"}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =A1+A1 and =A1+$A$1 each name A1 alike: '=A1+$A$1'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1+$A$1", "Sheet1"],
+      "is": [{"cells": "A1"}, {"cells": "A1"}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =A1+A1 and =A1+$A$1 each name A1 alike: '=a1+$A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=a1+$A1", "Sheet1"],
+      "is": [{"cells": "A1"}, {"cells": "A1"}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =A1+A1 and =A1+$A$1 each name A1 alike: '=A1:B2+B2:A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1:B2+B2:A1", "Sheet1"],
+      "is": [{"cells": "A1:B2"}, {"cells": "A1:B2"}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =A1+A1 and =A1+$A$1 each name A1 alike: '=Sheet1!A1+A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet1!A1+A1", "Sheet1"],
+      "is": [{"cells": "A1"}, {"cells": "A1"}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =A1+A1 and =A1+$A$1 each name A1 alike: '=A:A+A1:A1048576'",
+      "call": "FormulaEntry.references",
+      "args": ["=A:A+A1:A1048576", "Sheet1"],
+      "is": [{"cells": "A1:A1048576"}, {"cells": "A1:A1048576"}]
+    },
+    {
+      "name": "ADR-0057 reading: the same cells share a colour however they are written: =A1+A1 and =A1+$A$1 each name A1 alike: '=1:1+A1:XFD1'",
+      "call": "FormulaEntry.references",
+      "args": ["=1:1+A1:XFD1", "Sheet1"],
+      "is": [{"cells": "A1:XFD1"}, {"cells": "A1:XFD1"}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: different cells are answered apart, a cell inside a range included (=A1:B2+B2)",
+      "call": "FormulaEntry.references",
+      "args": ["=A1:B2+B2", "Sheet1"],
+      "is": [{"cells": "A1:B2"}, {"cells": "B2"}]
+    },
+    {
+      "name": "ADR-0057 reading: a whole column or row (A:A, 1:1) is outlined across the whole of it: '=SUM(A:A)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A:A)", "Sheet1"],
+      "is": [{"start": 5, "length": 3, "cells": "A1:A1048576", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: a whole column or row (A:A, 1:1) is outlined across the whole of it: '=SUM($A:$A)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM($A:$A)", "Sheet1"],
+      "is": [{"start": 5, "length": 5, "cells": "A1:A1048576", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: a whole column or row (A:A, 1:1) is outlined across the whole of it: '=SUM(C:A)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(C:A)", "Sheet1"],
+      "is": [{"start": 5, "length": 3, "cells": "A1:C1048576", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: a whole column or row (A:A, 1:1) is outlined across the whole of it: '=SUM(1:1)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(1:1)", "Sheet1"],
+      "is": [{"start": 5, "length": 3, "cells": "A1:XFD1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: a whole column or row (A:A, 1:1) is outlined across the whole of it: '=SUM($2:$5)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM($2:$5)", "Sheet1"],
+      "is": [{"start": 5, "length": 5, "cells": "A2:XFD5", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 reading: a whole column or row (A:A, 1:1) is outlined across the whole of it: '=SUM(5:2)'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(5:2)", "Sheet1"],
+      "is": [{"start": 5, "length": 3, "cells": "A2:XFD5", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: a structured reference's key compares equal however the table and the column were cased, each spelled as written",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[PV])+SUM(positions[pv])+SUM(POSITIONS[[Pv]])", "Sheet1"],
+      "is": [{"linkedColumn": {"table": "Positions", "column": "PV"}}, {"linkedColumn": {"table": "positions", "column": "pv"}}, {"linkedColumn": {"table": "POSITIONS", "column": "Pv"}}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: another column, or another table's column of the same name, is another key: '=SUM(Positions[PV])+SUM(Positions[Id])'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[PV])+SUM(Positions[Id])", "Sheet1"],
+      "is": [{"linkedColumn": {"table": "Positions", "column": "PV"}}, {"linkedColumn": {"table": "Positions", "column": "Id"}}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: another column, or another table's column of the same name, is another key: '=SUM(Positions[PV])+SUM(Accounts[PV])'",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Positions[PV])+SUM(Accounts[PV])", "Sheet1"],
+      "is": [{"linkedColumn": {"table": "Positions", "column": "PV"}}, {"linkedColumn": {"table": "Accounts", "column": "PV"}}]
+    },
+    {
+      "name": "ADR-0057: the text alone does not say which tables are declared, so FormulaEntry answers every structured reference and the Sheet keeps the declared ones",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(Nope[PV])", "Sheet1"],
+      "is": [{"cells": null, "linkedColumn": {"table": "Nope", "column": "PV"}}]
+    },
+    {
+      "name": "ADR-0057 reading: an unfinished Formula is coloured as far as it goes: the whole of a Formula typed in full",
+      "call": "FormulaEntry.references",
+      "args": ["=SUM(A1,Sheet1!B2:C3,\"x\"\"y\",Positions[[PV]],LOG10(D4))+'Sheet 1'!E5*$F$6%-G:G&1:1", "Sheet1"],
+      "is": [{"start": 5, "length": 2, "cells": "A1", "linkedColumn": null}, {"start": 8, "length": 12, "cells": "B2:C3", "linkedColumn": null}, {"start": 28, "length": 15, "cells": null, "linkedColumn": {"table": "Positions", "column": "PV"}}, {"start": 50, "length": 2, "cells": "D4", "linkedColumn": null}, {"start": 68, "length": 4, "cells": "F6", "linkedColumn": null}, {"start": 74, "length": 3, "cells": "G1:G1048576", "linkedColumn": null}, {"start": 78, "length": 3, "cells": "A1:XFD1", "linkedColumn": null}]
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=1+2'",
+      "call": "FormulaEntry.references",
+      "args": ["=1+2", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=1.5E3'",
+      "call": "FormulaEntry.references",
+      "args": ["=1.5E3", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=TRUE'",
+      "call": "FormulaEntry.references",
+      "args": ["=TRUE", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=#REF!'",
+      "call": "FormulaEntry.references",
+      "args": ["=#REF!", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=Sheet1!#REF!'",
+      "call": "FormulaEntry.references",
+      "args": ["=Sheet1!#REF!", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=#DIV/0!'",
+      "call": "FormulaEntry.references",
+      "args": ["=#DIV/0!", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=ZZZ1'",
+      "call": "FormulaEntry.references",
+      "args": ["=ZZZ1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=A0'",
+      "call": "FormulaEntry.references",
+      "args": ["=A0", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=A1048577'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1048577", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=A1B2'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1B2", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=1A1'",
+      "call": "FormulaEntry.references",
+      "args": ["=1A1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=A1.5'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1.5", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=A1:B2:C3'",
+      "call": "FormulaEntry.references",
+      "args": ["=A1:B2:C3", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=Positions'",
+      "call": "FormulaEntry.references",
+      "args": ["=Positions", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=Positions[#All]'",
+      "call": "FormulaEntry.references",
+      "args": ["=Positions[#All]", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=Positions[@PV]'",
+      "call": "FormulaEntry.references",
+      "args": ["=Positions[@PV]", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=Positions[]'",
+      "call": "FormulaEntry.references",
+      "args": ["=Positions[]", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '=Positions[PV]x'",
+      "call": "FormulaEntry.references",
+      "args": ["=Positions[PV]x", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057 / SH-30: what the formula grammar does not read as a Reference is not answered: '='",
+      "call": "FormulaEntry.references",
+      "args": ["=", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057: text that is not a Formula is answered with nothing; a Formula begins with =, or with + or - as Excel colours it (cases 24, 25): ''",
+      "call": "FormulaEntry.references",
+      "args": ["", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057: text that is not a Formula is answered with nothing; a Formula begins with =, or with + or - as Excel colours it (cases 24, 25): 'A1'",
+      "call": "FormulaEntry.references",
+      "args": ["A1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057: text that is not a Formula is answered with nothing; a Formula begins with =, or with + or - as Excel colours it (cases 24, 25): 'A1:B2'",
+      "call": "FormulaEntry.references",
+      "args": ["A1:B2", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057: text that is not a Formula is answered with nothing; a Formula begins with =, or with + or - as Excel colours it (cases 24, 25): \"'=A1\"",
+      "call": "FormulaEntry.references",
+      "args": ["'=A1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057: text that is not a Formula is answered with nothing; a Formula begins with =, or with + or - as Excel colours it (cases 24, 25): \"'+A1\"",
+      "call": "FormulaEntry.references",
+      "args": ["'+A1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057: text that is not a Formula is answered with nothing; a Formula begins with =, or with + or - as Excel colours it (cases 24, 25): ' =A1'",
+      "call": "FormulaEntry.references",
+      "args": [" =A1", "Sheet1"],
+      "is": []
+    },
+    {
+      "name": "ADR-0057: text that is not a Formula is answered with nothing; a Formula begins with =, or with + or - as Excel colours it (cases 24, 25): 'SUM(A1)'",
+      "call": "FormulaEntry.references",
+      "args": ["SUM(A1)", "Sheet1"],
+      "is": []
+    }
+  ]
+}
