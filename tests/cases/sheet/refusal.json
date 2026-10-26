@@ -1,0 +1,727 @@
+{
+  "about": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere). Where ExSheet cannot answer as Excel, it refuses with #VALUE!, and the refusal is the Formula's: IFERROR, ISERROR, ERROR.TYPE, IFNA, COUNT, COUNTA and the aggregates that pass over Error Values do not turn it into an answer, in its own Formula or in any Formula that reads the refused cell, directly, through a range, a LET name, INDIRECT, OFFSET, a Spill Range or a Linked Table, as a Formula that reads a cycle is #CIRC!. A #VALUE! that is Excel's own answer, =1+\"a\"'s, stays an Error Value any Formula can catch. Every Value written \"refused\": true is the fact; what the corpus says of each refused #VALUE! and #NAME? stays in RefusalTests, which reads it. Transcribed from ExSheet.Engine.Tests' RefusalTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a range where one Value is wanted (ADR-0125): LEN(A1:A2)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=LEN(A1:A2)", "B3": "=IFERROR(LEN(A1:A2),0)", "B4": "=ISERROR(LEN(A1:A2))", "B5": "=ERROR.TYPE(LEN(A1:A2))", "B6": "=COUNTA(LEN(A1:A2),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a range where one Value is wanted (ADR-0125): LEN(A1:A2)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=LEN(A1:A2)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a kept blank read where no run settled how (ADR-0125): MATCH(2,SORT(D1:D3),0)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=MATCH(2,SORT(D1:D3),0)", "B3": "=IFERROR(MATCH(2,SORT(D1:D3),0),0)", "B4": "=ISERROR(MATCH(2,SORT(D1:D3),0))", "B5": "=ERROR.TYPE(MATCH(2,SORT(D1:D3),0))", "B6": "=COUNTA(MATCH(2,SORT(D1:D3),0),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a kept blank read where no run settled how (ADR-0125): MATCH(2,SORT(D1:D3),0)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=MATCH(2,SORT(D1:D3),0)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a fractional multiple (MROUND-001): MROUND(6.05,0.1)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=MROUND(6.05,0.1)", "B3": "=IFERROR(MROUND(6.05,0.1),0)", "B4": "=ISERROR(MROUND(6.05,0.1))", "B5": "=ERROR.TYPE(MROUND(6.05,0.1))", "B6": "=COUNTA(MROUND(6.05,0.1),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a fractional multiple (MROUND-001): MROUND(6.05,0.1)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a quotient integral at 15 digits only: CEILING.MATH(0.3,0.1)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=CEILING.MATH(0.3,0.1)", "B3": "=IFERROR(CEILING.MATH(0.3,0.1),0)", "B4": "=ISERROR(CEILING.MATH(0.3,0.1))", "B5": "=ERROR.TYPE(CEILING.MATH(0.3,0.1))", "B6": "=COUNTA(CEILING.MATH(0.3,0.1),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a quotient integral at 15 digits only: CEILING.MATH(0.3,0.1)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=CEILING.MATH(0.3,0.1)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a fractional bound (ADR-0180): RANDBETWEEN(1.1,1.9)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=RANDBETWEEN(1.1,1.9)", "B3": "=IFERROR(RANDBETWEEN(1.1,1.9),0)", "B4": "=ISERROR(RANDBETWEEN(1.1,1.9))", "B5": "=ERROR.TYPE(RANDBETWEEN(1.1,1.9))", "B6": "=COUNTA(RANDBETWEEN(1.1,1.9),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a fractional bound (ADR-0180): RANDBETWEEN(1.1,1.9)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=RANDBETWEEN(1.1,1.9)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a culture-sensitive criterion: COUNTIF(A1:A2,\">1,5\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=COUNTIF(A1:A2,\">1,5\")", "B3": "=IFERROR(COUNTIF(A1:A2,\">1,5\"),0)", "B4": "=ISERROR(COUNTIF(A1:A2,\">1,5\"))", "B5": "=ERROR.TYPE(COUNTIF(A1:A2,\">1,5\"))", "B6": "=COUNTA(COUNTIF(A1:A2,\">1,5\"),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a culture-sensitive criterion: COUNTIF(A1:A2,\">1,5\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=COUNTIF(A1:A2,\">1,5\")", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a character outside the observed casing domain: UPPER(\"𐐨\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=UPPER(\"𐐨\")", "B3": "=IFERROR(UPPER(\"𐐨\"),0)", "B4": "=ISERROR(UPPER(\"𐐨\"))", "B5": "=ERROR.TYPE(UPPER(\"𐐨\"))", "B6": "=COUNTA(UPPER(\"𐐨\"),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a character outside the observed casing domain: UPPER(\"𐐨\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=UPPER(\"𐐨\")", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: the same, searched: SEARCH(\"𐐨\",\"a𐐨\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=SEARCH(\"𐐨\",\"a𐐨\")", "B3": "=IFERROR(SEARCH(\"𐐨\",\"a𐐨\"),0)", "B4": "=ISERROR(SEARCH(\"𐐨\",\"a𐐨\"))", "B5": "=ERROR.TYPE(SEARCH(\"𐐨\",\"a𐐨\"))", "B6": "=COUNTA(SEARCH(\"𐐨\",\"a𐐨\"),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: the same, searched: SEARCH(\"𐐨\",\"a𐐨\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=SEARCH(\"𐐨\",\"a𐐨\")", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a code outside the cell formats' subset (TEXTFN-019): TEXT(4.34,\"# ?/?\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=TEXT(4.34,\"# ?/?\")", "B3": "=IFERROR(TEXT(4.34,\"# ?/?\"),0)", "B4": "=ISERROR(TEXT(4.34,\"# ?/?\"))", "B5": "=ERROR.TYPE(TEXT(4.34,\"# ?/?\"))", "B6": "=COUNTA(TEXT(4.34,\"# ?/?\"),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a code outside the cell formats' subset (TEXTFN-019): TEXT(4.34,\"# ?/?\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=TEXT(4.34,\"# ?/?\")", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: DATEDIF's MD: DATEDIF(1,40,\"MD\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=DATEDIF(1,40,\"MD\")", "B3": "=IFERROR(DATEDIF(1,40,\"MD\"),0)", "B4": "=ISERROR(DATEDIF(1,40,\"MD\"))", "B5": "=ERROR.TYPE(DATEDIF(1,40,\"MD\"))", "B6": "=COUNTA(DATEDIF(1,40,\"MD\"),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: DATEDIF's MD: DATEDIF(1,40,\"MD\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=DATEDIF(1,40,\"MD\")", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: DATEDIF's YD after a completed anniversary: DATEDIF(1,400,\"YD\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=DATEDIF(1,400,\"YD\")", "B3": "=IFERROR(DATEDIF(1,400,\"YD\"),0)", "B4": "=ISERROR(DATEDIF(1,400,\"YD\"))", "B5": "=ERROR.TYPE(DATEDIF(1,400,\"YD\"))", "B6": "=COUNTA(DATEDIF(1,400,\"YD\"),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: DATEDIF's YD after a completed anniversary: DATEDIF(1,400,\"YD\")",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=DATEDIF(1,400,\"YD\")", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a boolean typed among the holidays: WORKDAY(1,1,TRUE)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=WORKDAY(1,1,TRUE)", "B3": "=IFERROR(WORKDAY(1,1,TRUE),0)", "B4": "=ISERROR(WORKDAY(1,1,TRUE))", "B5": "=ERROR.TYPE(WORKDAY(1,1,TRUE))", "B6": "=COUNTA(WORKDAY(1,1,TRUE),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a boolean typed among the holidays: WORKDAY(1,1,TRUE)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=WORKDAY(1,1,TRUE)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: PMT's readings magnify their roundings (PMT-049): PMT(0.1,2,1000,-1210)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=PMT(0.1,2,1000,-1210)", "B3": "=IFERROR(PMT(0.1,2,1000,-1210),0)", "B4": "=ISERROR(PMT(0.1,2,1000,-1210))", "B5": "=ERROR.TYPE(PMT(0.1,2,1000,-1210))", "B6": "=COUNTA(PMT(0.1,2,1000,-1210),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: PMT's readings magnify their roundings (PMT-049): PMT(0.1,2,1000,-1210)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=PMT(0.1,2,1000,-1210)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: an nper past 2^53 at a rate other than 0: PV(0.05,2^53+2,-100)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=PV(0.05,2^53+2,-100)", "B3": "=IFERROR(PV(0.05,2^53+2,-100),0)", "B4": "=ISERROR(PV(0.05,2^53+2,-100))", "B5": "=ERROR.TYPE(PV(0.05,2^53+2,-100))", "B6": "=COUNTA(PV(0.05,2^53+2,-100),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: an nper past 2^53 at a rate other than 0: PV(0.05,2^53+2,-100)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=PV(0.05,2^53+2,-100)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: text among XNPV's values: XNPV(0.1,A1:A2,K1:K2)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=XNPV(0.1,A1:A2,K1:K2)", "B3": "=IFERROR(XNPV(0.1,A1:A2,K1:K2),0)", "B4": "=ISERROR(XNPV(0.1,A1:A2,K1:K2))", "B5": "=ERROR.TYPE(XNPV(0.1,A1:A2,K1:K2))", "B6": "=COUNTA(XNPV(0.1,A1:A2,K1:K2),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: text among XNPV's values: XNPV(0.1,A1:A2,K1:K2)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=XNPV(0.1,A1:A2,K1:K2)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a binary search over unsorted data: XLOOKUP(25,G1:G5,H1:H5,,0,2)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=XLOOKUP(25,G1:G5,H1:H5,,0,2)", "B3": "=IFERROR(XLOOKUP(25,G1:G5,H1:H5,,0,2),0)", "B4": "=ISERROR(XLOOKUP(25,G1:G5,H1:H5,,0,2))", "B5": "=ERROR.TYPE(XLOOKUP(25,G1:G5,H1:H5,,0,2))", "B6": "=COUNTA(XLOOKUP(25,G1:G5,H1:H5,,0,2),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a binary search over unsorted data: XLOOKUP(25,G1:G5,H1:H5,,0,2)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=XLOOKUP(25,G1:G5,H1:H5,,0,2)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: an approximate search over unsorted data: MATCH(25,G1:G5,1)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=MATCH(25,G1:G5,1)", "B3": "=IFERROR(MATCH(25,G1:G5,1),0)", "B4": "=ISERROR(MATCH(25,G1:G5,1))", "B5": "=ERROR.TYPE(MATCH(25,G1:G5,1))", "B6": "=COUNTA(MATCH(25,G1:G5,1),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: an approximate search over unsorted data: MATCH(25,G1:G5,1)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=MATCH(25,G1:G5,1)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): each kind of refusal is the Formula's, which nothing in it can catch: a function number the engine does not support: AGGREGATE(16,6,G1:G5,0.5)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B2": "=AGGREGATE(16,6,G1:G5,0.5)", "B3": "=IFERROR(AGGREGATE(16,6,G1:G5,0.5),0)", "B4": "=ISERROR(AGGREGATE(16,6,G1:G5,0.5))", "B5": "=ERROR.TYPE(AGGREGATE(16,6,G1:G5,0.5))", "B6": "=COUNTA(AGGREGATE(16,6,G1:G5,0.5),1)"}, "expect": {"values": {"B2": {"error": "#VALUE!", "refused": true}, "B3": {"error": "#VALUE!", "refused": true}, "B4": {"error": "#VALUE!", "refused": true}, "B5": {"error": "#VALUE!", "refused": true}, "B6": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it: a function number the engine does not support: AGGREGATE(16,6,G1:G5,0.5)",
+      "steps": [
+        {"setSeed": 20261012},
+        {"enterAll": {"A1": "a", "A2": "b", "D1": "1", "D3": "2", "G1": "30", "G2": "10", "G3": "20", "G4": "50", "G5": "40", "H1": "1", "H2": "2", "H3": "3", "H4": "4", "H5": "5", "J1": "100", "J2": "200", "K1": "45000", "K2": "45100"}},
+        {"enter": {"B1": "=AGGREGATE(16,6,G1:G5,0.5)", "C1": "=IFERROR(B1,0)", "C2": "=ISERROR(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =B1",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=B1"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =B1+1",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=B1+1"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IFERROR(B1,0)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IFERROR(B1,0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IFERROR(B1+1,0)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IFERROR(B1+1,0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =ISERROR(B1)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=ISERROR(B1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =ISNUMBER(B1)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=ISNUMBER(B1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =ISBLANK(B1)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=ISBLANK(B1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =ISNA(B1)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=ISNA(B1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =ERROR.TYPE(B1)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=ERROR.TYPE(B1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IFNA(B1,0)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IFNA(B1,0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IF(ISERROR(B1),0,1)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IF(ISERROR(B1),0,1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IF(TRUE,1,B1)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IF(TRUE,1,B1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =COUNT(B1:B2)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=COUNT(B1:B2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =COUNTA(B1:B2)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=COUNTA(B1:B2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =COUNTBLANK(B1:B2)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=COUNTBLANK(B1:B2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =SUM(B1:B2)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=SUM(B1:B2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =SUM(A1:C9)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=SUM(A1:C9)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =AGGREGATE(9,6,B1:B2)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=AGGREGATE(9,6,B1:B2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =AGGREGATE(14,6,B1:B2,1)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=AGGREGATE(14,6,B1:B2,1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =SUBTOTAL(9,B1:B2)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=SUBTOTAL(9,B1:B2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =SUMIF(B1:B2,\">0\")",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=SUMIF(B1:B2,\">0\")"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =COUNTIF(B1:B2,\"#VALUE!\")",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=COUNTIF(B1:B2,\"#VALUE!\")"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =ROWS(B1:B2)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=ROWS(B1:B2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =XLOOKUP(1,B2:B3,B1:B2,0)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=XLOOKUP(1,B2:B3,B1:B2,0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =LET(x,B1,IFERROR(x,0))",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=LET(x,B1,IFERROR(x,0))"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IFERROR(INDIRECT(\"B1\"),0)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IFERROR(INDIRECT(\"B1\"),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =COUNT(INDIRECT(\"B1:B2\"))",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=COUNT(INDIRECT(\"B1:B2\"))"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IFERROR(OFFSET(B2,-1,0),0)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IFERROR(OFFSET(B2,-1,0),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IFERROR(INDEX(B1:B2,1),0)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IFERROR(INDEX(B1:B2,1),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): no Formula catches a refused cell, directly, through a range, a name, INDIRECT, OFFSET, INDEX or a Spill Range: =IFERROR(SUM(B1#),0)",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "Z1": "=IFERROR(SUM(B1#),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): the refusal is carried along a chain of three cells, and lifted when its cause goes",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "C1": "=IFERROR(B1,0)", "D1": "=IFERROR(C1,1)", "E1": "=COUNTA(D1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}, "C1": {"error": "#VALUE!", "refused": true}, "D1": {"error": "#VALUE!", "refused": true}, "E1": {"error": "#VALUE!", "refused": true}}, "texts": {"E1": "#VALUE!"}}},
+        {"enter": {"B1": "=MROUND(6,2)"}, "expect": {"values": {"B1": 6, "C1": 6, "D1": 6, "E1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a #VALUE! that is Excel's own answer stays an Error Value a Formula can catch, here and in another cell",
+      "steps": [
+        {"enter": {"B1": "=1+\"a\"", "C1": "=IFERROR(1+\"a\",0)", "C2": "=IFERROR(B1,0)", "C3": "=ISERROR(B1)", "C4": "=ERROR.TYPE(B1)", "C5": "=COUNTA(B1)"}, "expect": {"values": {"B1": {"error": "#VALUE!"}, "C1": 0, "C2": 0, "C3": true, "C4": 3, "C5": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): a Formula that reads a refused cell on demand, through INDIRECT, is refused; one that refused first does not refuse the cell it computes on demand",
+      "steps": [
+        {"enter": {"C1": "=ISERROR(INDIRECT(\"B1\"))", "C2": "=MROUND(6.05,0.1)+INDIRECT(\"B2\")", "B1": "=MROUND(6.05,0.1)", "B2": "=1+1"}, "expect": {"values": {"C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}, "B2": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0049 (2026-10-12): a refusal the Consumer pushes into a Linked Table refuses every Formula that reads its column",
+      "note": "C4 reads a column that holds none, as ever.",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"], "key": "Id"}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", {"error": "#VALUE!", "refused": true}], ["R-2", 5]]}},
+        {"enter": {"C1": "=COUNTA(Positions[PV])", "C2": "=IFERROR(XLOOKUP(\"R-2\",Positions[Id],Positions[PV]),0)", "C3": "=COUNT(INDIRECT(\"Positions[PV]\"))", "C4": "=COUNTA(Positions[Id])"}, "expect": {"values": {"C1": {"error": "#VALUE!", "refused": true}, "C2": {"error": "#VALUE!", "refused": true}, "C3": {"error": "#VALUE!", "refused": true}, "C4": 2}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 4], ["R-2", 5]]}, "expect": {"values": {"C1": 2, "C2": 5, "C3": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0049 (2026-10-12): a cycle comes before a refusal, and a wait before a refusal",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "D1": "=D2", "D2": "=D1"}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
+        {"enter": {"Z1": "=B1+D1", "Z2": "=B1+SUM(Rates[Mid])"}, "expect": {"values": {"Z1": {"error": "#CIRC!"}, "Z2": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-12): outside the engine a refusal is #VALUE!: shown and written as one",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)"}, "expect": {"values": {"B1": {"error": "#VALUE!", "refused": true}}, "texts": {"B1": "#VALUE!"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13, decided with the user): a refused Anchor whose array's shape its text settles spills refusals over that shape, and every cell of it reads as refused: =B1:B3*2",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "E1": "=B1:B3*2"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": {"error": "#VALUE!", "refused": true}, "E3": {"error": "#VALUE!", "refused": true}}, "spilledFrom": {"E2": "E1", "E3": "E1"}}},
+        {"enter": {"Z1": "=E2+1", "Z2": "=ISBLANK(E2)", "Z3": "=IFERROR(E2,0)", "H9": "=ISBLANK(E2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}, "Z2": {"error": "#VALUE!", "refused": true}, "Z3": {"error": "#VALUE!", "refused": true}, "H9": {"error": "#VALUE!", "refused": true}}}},
+        {"enter": {"B2": "2"}, "expect": {"values": {"E1": 2, "E2": 4, "E3": 6, "H9": false}}, "note": "Its cause gone, the Anchor spills Values again."}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13, decided with the user): a refused Anchor whose array's shape its text settles spills refusals over that shape, and every cell of it reads as refused: =-B1:B3",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "E1": "=-B1:B3"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": {"error": "#VALUE!", "refused": true}, "E3": {"error": "#VALUE!", "refused": true}}, "spilledFrom": {"E2": "E1", "E3": "E1"}}},
+        {"enter": {"Z1": "=E2+1", "Z2": "=ISBLANK(E2)", "Z3": "=IFERROR(E2,0)", "H9": "=ISBLANK(E2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}, "Z2": {"error": "#VALUE!", "refused": true}, "Z3": {"error": "#VALUE!", "refused": true}, "H9": {"error": "#VALUE!", "refused": true}}}},
+        {"enter": {"B2": "2"}, "expect": {"values": {"E1": -1, "E2": -2, "E3": -3, "H9": false}}, "note": "Its cause gone, the Anchor spills Values again."}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13, decided with the user): a refused Anchor whose array's shape its text settles spills refusals over that shape, and every cell of it reads as refused: =B1:B3&C1:D1",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "E1": "=B1:B3&C1:D1"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "F1": {"error": "#VALUE!", "refused": true}, "E2": {"error": "#VALUE!", "refused": true}, "F2": {"error": "#VALUE!", "refused": true}, "E3": {"error": "#VALUE!", "refused": true}, "F3": {"error": "#VALUE!", "refused": true}}, "spilledFrom": {"F1": "E1", "E2": "E1", "F2": "E1", "E3": "E1", "F3": "E1"}}},
+        {"enter": {"Z1": "=F1+1", "Z2": "=ISBLANK(F1)", "Z3": "=IFERROR(F1,0)", "H9": "=ISBLANK(F1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}, "Z2": {"error": "#VALUE!", "refused": true}, "Z3": {"error": "#VALUE!", "refused": true}, "H9": {"error": "#VALUE!", "refused": true}}}},
+        {"enter": {"B2": "2"}, "expect": {"values": {"E1": "1", "F1": "1", "E2": "2", "F2": "2", "E3": "3", "F3": "3", "H9": false}}, "note": "Its cause gone, the Anchor spills Values again."}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13, decided with the user): a refused Anchor whose array's shape its text settles spills refusals over that shape, and every cell of it reads as refused: =TRANSPOSE(B1:B3)",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "E1": "=TRANSPOSE(B1:B3)"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "F1": {"error": "#VALUE!", "refused": true}, "G1": {"error": "#VALUE!", "refused": true}}, "spilledFrom": {"F1": "E1", "G1": "E1"}}},
+        {"enter": {"Z1": "=F1+1", "Z2": "=ISBLANK(F1)", "Z3": "=IFERROR(F1,0)", "H9": "=ISBLANK(F1)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}, "Z2": {"error": "#VALUE!", "refused": true}, "Z3": {"error": "#VALUE!", "refused": true}, "H9": {"error": "#VALUE!", "refused": true}}}},
+        {"enter": {"B2": "2"}, "expect": {"values": {"E1": 1, "F1": 2, "G1": 3, "H9": false}}, "note": "Its cause gone, the Anchor spills Values again."}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13, decided with the user): a refused Anchor whose array's shape its text settles spills refusals over that shape, and every cell of it reads as refused: =(B1:B3>0)",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "E1": "=(B1:B3>0)"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": {"error": "#VALUE!", "refused": true}, "E3": {"error": "#VALUE!", "refused": true}}, "spilledFrom": {"E2": "E1", "E3": "E1"}}},
+        {"enter": {"Z1": "=E2+1", "Z2": "=ISBLANK(E2)", "Z3": "=IFERROR(E2,0)", "H9": "=ISBLANK(E2)"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}, "Z2": {"error": "#VALUE!", "refused": true}, "Z3": {"error": "#VALUE!", "refused": true}, "H9": {"error": "#VALUE!", "refused": true}}}},
+        {"enter": {"B2": "2"}, "expect": {"values": {"E1": true, "E2": true, "E3": true, "H9": false}}, "note": "Its cause gone, the Anchor spills Values again."}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =FILTER(G1:G3,B1:B3>0)",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=FILTER(G1:G3,B1:B3>0)"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =UNIQUE(B1:B3)",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=UNIQUE(B1:B3)"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =SORT(B1:B3)",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=SORT(B1:B3)"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =INDIRECT(\"B1:B3\")*2",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=INDIRECT(\"B1:B3\")*2"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =LEN(B1:B3)",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=LEN(B1:B3)"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =SEQUENCE(B2)",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=SEQUENCE(B2)"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =IF(B2,G1:G3,G1:G2)",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=IF(B2,G1:G3,G1:G2)"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =SEQUENCE(B2)+G1:G3",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=SEQUENCE(B2)+G1:G3"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): where the shape could depend on a Value the refusal hides, nothing spills, and the cells below read as blank (a Known limitation): =INDIRECT(\"B1:B3\")+G1:G2",
+      "steps": [
+        {"enter": {"B1": "1", "B2": "=MROUND(6.05,0.1)", "B3": "3", "G1": "1", "G2": "2", "G3": "3", "H1": "4", "H2": "5", "H3": "6", "E1": "=INDIRECT(\"B1:B3\")+G1:G2"}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E2": null}, "spilledFrom": {"E2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125 (2026-10-13): a refused Anchor of known shape whose Spill Range is in the way shows #SPILL!, which Excel's array of that shape would",
+      "steps": [
+        {"enter": {"B2": "=MROUND(6.05,0.1)", "E3": "x", "E1": "=B1:B3*2"}, "expect": {"values": {"E1": {"error": "#SPILL!"}, "E2": null}}},
+        {"enter": {"E3": ""}, "expect": {"values": {"E1": {"error": "#VALUE!", "refused": true}, "E3": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, the verifier's finding): a #VALUE! that turns from Excel's own into a refusal, or back, is a change of Value: equal as Values, but every Formula that reads it answers otherwise",
+      "steps": [
+        {"enter": {"B1": "#VALUE!", "B2": "#VALUE!", "C1": "=B1", "E1": "=B1:B2"}, "expect": {"values": {"E2": {"error": "#VALUE!"}}}},
+        {"do": {"enter": {"B1": "=MROUND(6.05,0.1)"}}, "expect": {"values": {"C1": {"error": "#VALUE!", "refused": true}, "E2": {"error": "#VALUE!", "refused": true}}, "change": {"valueChanges": ["B1", "C1", "E1", "E2"]}}},
+        {"do": {"enter": {"B1": "#VALUE!"}}, "expect": {"values": {"C1": {"error": "#VALUE!"}, "E2": {"error": "#VALUE!"}}, "change": {"valueChanges": ["B1", "C1", "E1", "E2"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13): a mode outside Excel's lists is Excel's own #VALUE!, observed at XLOOKUP's search_mode 3 (XLOOKUP-058) and by generalisation from it elsewhere, which IFERROR catches: XLOOKUP(2,G1:G3,G1:G3,,0,3)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "Z1": "=XLOOKUP(2,G1:G3,G1:G3,,0,3)", "Z2": "=IFERROR(XLOOKUP(2,G1:G3,G1:G3,,0,3),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!"}, "Z2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13): a mode outside Excel's lists is Excel's own #VALUE!, observed at XLOOKUP's search_mode 3 (XLOOKUP-058) and by generalisation from it elsewhere, which IFERROR catches: XLOOKUP(2,G1:G3,G1:G3,,4)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "Z1": "=XLOOKUP(2,G1:G3,G1:G3,,4)", "Z2": "=IFERROR(XLOOKUP(2,G1:G3,G1:G3,,4),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!"}, "Z2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13): a mode outside Excel's lists is Excel's own #VALUE!, observed at XLOOKUP's search_mode 3 (XLOOKUP-058) and by generalisation from it elsewhere, which IFERROR catches: XLOOKUP(2,G1:G3,G1:G3,,-2)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "Z1": "=XLOOKUP(2,G1:G3,G1:G3,,-2)", "Z2": "=IFERROR(XLOOKUP(2,G1:G3,G1:G3,,-2),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!"}, "Z2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13): a mode outside Excel's lists is Excel's own #VALUE!, observed at XLOOKUP's search_mode 3 (XLOOKUP-058) and by generalisation from it elsewhere, which IFERROR catches: XMATCH(2,G1:G3,5)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "Z1": "=XMATCH(2,G1:G3,5)", "Z2": "=IFERROR(XMATCH(2,G1:G3,5),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!"}, "Z2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13): a mode outside Excel's lists is Excel's own #VALUE!, observed at XLOOKUP's search_mode 3 (XLOOKUP-058) and by generalisation from it elsewhere, which IFERROR catches: XMATCH(2,G1:G3,0,0)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "Z1": "=XMATCH(2,G1:G3,0,0)", "Z2": "=IFERROR(XMATCH(2,G1:G3,0,0),0)"}, "expect": {"values": {"Z1": {"error": "#VALUE!"}, "Z2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0048 (2026-10-12): a copy writes a refused cell as #VALUE!, and carries its Formula, which a paste refuses again where it still refuses",
+      "steps": [
+        {"enter": {"B1": "=MROUND(6.05,0.1)", "B2": "=IFERROR($B$1,0)"}},
+        {"copy": {"range": "B1:B2", "as": "block"}, "expect": {"copies": {"block": {"text": "#VALUE!\r\n#VALUE!\r\n"}}}},
+        {"do": {"paste": {"copy": "block", "at": "D1"}}, "expect": {"formulas": {"D1": "=MROUND(6.05,0.1)"}, "values": {"D1": {"error": "#VALUE!", "refused": true}, "D2": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): a call of a function Excel has and ExSheet does not declare is a Refused Formula: it shows #NAME?, as before, and nothing catches it, in its cell or in a cell that reads it: NPV(0.1,1,2)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "B1": "=NPV(0.1,1,2)", "C1": "=IFERROR(NPV(0.1,1,2),0)", "C2": "=ISERROR(NPV(0.1,1,2))", "C3": "=IF(TRUE,1,NPV(0.1,1,2))", "C4": "=IFERROR(B1,0)", "C5": "=ISNA(B1)"}, "expect": {"values": {"B1": {"error": "#NAME?", "refused": true}, "C1": {"error": "#NAME?", "refused": true}, "C2": {"error": "#NAME?", "refused": true}, "C3": 1, "C4": {"error": "#VALUE!", "refused": true}, "C5": {"error": "#VALUE!", "refused": true}}, "texts": {"B1": "#NAME?"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): a call of a function Excel has and ExSheet does not declare is a Refused Formula: it shows #NAME?, as before, and nothing catches it, in its cell or in a cell that reads it: IRR(G1:G3)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "B1": "=IRR(G1:G3)", "C1": "=IFERROR(IRR(G1:G3),0)", "C2": "=ISERROR(IRR(G1:G3))", "C3": "=IF(TRUE,1,IRR(G1:G3))", "C4": "=IFERROR(B1,0)", "C5": "=ISNA(B1)"}, "expect": {"values": {"B1": {"error": "#NAME?", "refused": true}, "C1": {"error": "#NAME?", "refused": true}, "C2": {"error": "#NAME?", "refused": true}, "C3": 1, "C4": {"error": "#VALUE!", "refused": true}, "C5": {"error": "#VALUE!", "refused": true}}, "texts": {"B1": "#NAME?"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): a call of a function Excel has and ExSheet does not declare is a Refused Formula: it shows #NAME?, as before, and nothing catches it, in its cell or in a cell that reads it: npv(0.1,1,2)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "B1": "=npv(0.1,1,2)", "C1": "=IFERROR(npv(0.1,1,2),0)", "C2": "=ISERROR(npv(0.1,1,2))", "C3": "=IF(TRUE,1,npv(0.1,1,2))", "C4": "=IFERROR(B1,0)", "C5": "=ISNA(B1)"}, "expect": {"values": {"B1": {"error": "#NAME?", "refused": true}, "C1": {"error": "#NAME?", "refused": true}, "C2": {"error": "#NAME?", "refused": true}, "C3": 1, "C4": {"error": "#VALUE!", "refused": true}, "C5": {"error": "#VALUE!", "refused": true}}, "texts": {"B1": "#NAME?"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): a call of a function Excel has and ExSheet does not declare is a Refused Formula: it shows #NAME?, as before, and nothing catches it, in its cell or in a cell that reads it: LOOKUP(2,G1:G3)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "B1": "=LOOKUP(2,G1:G3)", "C1": "=IFERROR(LOOKUP(2,G1:G3),0)", "C2": "=ISERROR(LOOKUP(2,G1:G3))", "C3": "=IF(TRUE,1,LOOKUP(2,G1:G3))", "C4": "=IFERROR(B1,0)", "C5": "=ISNA(B1)"}, "expect": {"values": {"B1": {"error": "#NAME?", "refused": true}, "C1": {"error": "#NAME?", "refused": true}, "C2": {"error": "#NAME?", "refused": true}, "C3": 1, "C4": {"error": "#VALUE!", "refused": true}, "C5": {"error": "#VALUE!", "refused": true}}, "texts": {"B1": "#NAME?"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): a call of a function Excel has and ExSheet does not declare is a Refused Formula: it shows #NAME?, as before, and nothing catches it, in its cell or in a cell that reads it: N(1)",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "B1": "=N(1)", "C1": "=IFERROR(N(1),0)", "C2": "=ISERROR(N(1))", "C3": "=IF(TRUE,1,N(1))", "C4": "=IFERROR(B1,0)", "C5": "=ISNA(B1)"}, "expect": {"values": {"B1": {"error": "#NAME?", "refused": true}, "C1": {"error": "#NAME?", "refused": true}, "C2": {"error": "#NAME?", "refused": true}, "C3": 1, "C4": {"error": "#VALUE!", "refused": true}, "C5": {"error": "#VALUE!", "refused": true}}, "texts": {"B1": "#NAME?"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): a call of a function Excel has and ExSheet does not declare is a Refused Formula: it shows #NAME?, as before, and nothing catches it, in its cell or in a cell that reads it: TEXTSPLIT(\"a,b\",\",\")",
+      "steps": [
+        {"enter": {"G1": "1", "G2": "2", "G3": "3", "B1": "=TEXTSPLIT(\"a,b\",\",\")", "C1": "=IFERROR(TEXTSPLIT(\"a,b\",\",\"),0)", "C2": "=ISERROR(TEXTSPLIT(\"a,b\",\",\"))", "C3": "=IF(TRUE,1,TEXTSPLIT(\"a,b\",\",\"))", "C4": "=IFERROR(B1,0)", "C5": "=ISNA(B1)"}, "expect": {"values": {"B1": {"error": "#NAME?", "refused": true}, "C1": {"error": "#NAME?", "refused": true}, "C2": {"error": "#NAME?", "refused": true}, "C3": 1, "C4": {"error": "#VALUE!", "refused": true}, "C5": {"error": "#VALUE!", "refused": true}}, "texts": {"B1": "#NAME?"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a name Excel does not have, a typo, is Excel's own #NAME?, which IFERROR catches (REF-003 to REF-005): =NOSUCHFUNCTION(1)",
+      "steps": [
+        {"enter": {"B1": "=NOSUCHFUNCTION(1)", "C1": "=IFERROR(NOSUCHFUNCTION(1),0)", "C2": "=IFERROR(B1,0)"}, "expect": {"values": {"B1": {"error": "#NAME?"}, "C1": 0, "C2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a name Excel does not have, a typo, is Excel's own #NAME?, which IFERROR catches (REF-003 to REF-005): =SUMM(1,2)",
+      "steps": [
+        {"enter": {"B1": "=SUMM(1,2)", "C1": "=IFERROR(SUMM(1,2),0)", "C2": "=IFERROR(B1,0)"}, "expect": {"values": {"B1": {"error": "#NAME?"}, "C1": 0, "C2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a name Excel does not have, a typo, is Excel's own #NAME?, which IFERROR catches (REF-003 to REF-005): =profit",
+      "steps": [
+        {"enter": {"B1": "=profit", "C1": "=IFERROR(profit,0)", "C2": "=IFERROR(B1,0)"}, "expect": {"values": {"B1": {"error": "#NAME?"}, "C1": 0, "C2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0049 (2026-10-13, decided with the user): a declared Linked Table's bare name typed is refused, #NAME? as it showed (TABLE-024), and refused once the table is declared after the Formula",
+      "steps": [
+        {"enter": {"A1": "=IFERROR(COLUMNS(Positions),0)", "A2": "=IFERROR(Positions,0)"}, "expect": {"values": {"A1": 0}}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"], "key": "Id"}, "expect": {"values": {"A1": {"error": "#NAME?", "refused": true}, "A2": {"error": "#NAME?", "refused": true}}, "change": {"valueChanges": ["A1", "A2"]}}},
+        {"enter": {"Z1": "=IFERROR(LET(Positions,1,Positions),0)", "Z2": "=IFERROR(Others,0)"}, "expect": {"values": {"Z1": 1, "Z2": 0}}}
+      ]
+    }
+  ]
+}

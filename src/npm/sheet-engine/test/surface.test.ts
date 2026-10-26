@@ -9,8 +9,15 @@ import { Entry } from '../src/entry';
 import { NumberFormat, numberFormatColourRgb } from '../src/number-format';
 import { CellAddress } from '../src/cell-address';
 import { Sheet } from '../src/sheet';
+import { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
+import { Value } from '../src/value';
 import { Workbook } from '../src/workbook';
+
+/** The serial number of 26 September of the year. */
+function twentySixthOfSeptember(year: number): number {
+    return (Date.UTC(year, 8, 26) - Date.UTC(1899, 11, 30)) / 86_400_000;
+}
 
 describe('the engine surface', () => {
     // ADR-0046: Excel's rules for a Sheet's name, asked about and refused by a direct rename.
@@ -100,6 +107,59 @@ describe('the engine surface', () => {
         const workbook = new Workbook(Culture.of('en-US'), ['Sheet1', 'Sheet2']);
         expect(() => workbook.do('Sheet3', SheetEdit.enter(CellAddress.parse('A1'), '1'))).toThrow(RangeError);
         for (const sheet of workbook.sheets) expect([...sheet.entryAddresses]).toEqual([]);
+    });
+
+    // ADR-0046: a width that is no finite number is refused, as one outside Excel's range is.
+    it.each([Number.NaN, Number.POSITIVE_INFINITY])('refuses the column width %s', width => {
+        const sheet = new Workbook(Culture.of('en-US')).shown;
+        const columns = CellRange.parse('B:B');
+        expect(() => SheetEdit.setColumnWidth(columns, width)).toThrow(RangeError);
+        expect(() => sheet.setColumnWidth(columns, width)).toThrow(RangeError);
+        expect(() => SheetEdit.setAutomaticColumnWidth(columns, width)).toThrow(RangeError);
+        expect(() => sheet.setAutomaticColumnWidth(columns, width)).toThrow(RangeError);
+        expect(sheet.getColumnWidth(1)).toBeUndefined();
+    });
+
+    // ADR-0046 (2026-09-28)/0048: an older document's widths read as custom, as Excel marks the user's and an entry's
+    // alike; a Sheet opens them by their kind (column-width.json).
+    it.each([
+        '{"version":4,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":20}],"cells":[]}',
+        '{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"custom":true},{"at":"C:C","width":11,"custom":false}],"cells":[]}',
+    ])('reads the widths of %s as custom', json => {
+        const widths = SheetDocument.fromJson(json).columnWidths;
+        expect(widths.length).toBeGreaterThan(0);
+        for (const width of widths) expect(width.isCustom).toBe(true);
+    });
+
+    // ADR-0047 (2026-10-13): a refusal is #VALUE! outside the engine, equal to Excel's own as a Value; a refused cell's
+    // #VALUE! is no constant, which a Formula could catch, and Excel's own #VALUE! is one.
+    it('keeps a refusal equal to #VALUE! and refuses it as a constant', () => {
+        const sheet = new Workbook(Culture.of('en-US')).shown;
+        sheet.enter(CellAddress.parse('B1'), '=MROUND(6.05,0.1)');
+        const refused = sheet.getValue(CellAddress.parse('B1'));
+        if (refused === undefined) throw new Error('B1 holds no Value.');
+        expect(refused.isRefused).toBe(true);
+        expect(refused.equals(Value.fromError('#VALUE!'))).toBe(true);
+        expect(() => Entry.fromValue(refused)).toThrow(RangeError);
+        expect(Entry.fromValue(Value.fromError('#VALUE!')).constant?.error).toBe('#VALUE!');
+    });
+
+    // ADR-0047/0048: a day and a month name without a year is that day of the current year, as Excel reads it
+    // (TYPED-022). The year is the machine's clock's, which a sheet case does not set.
+    it.each([
+        ['en-US', '26-Sep'],
+        ['en-US', 'Sep 26'],
+        ['en-US', '9/26'],
+        ['de-DE', '26-Sep'],
+    ] as const)('reads %s %s as 26 September of the current year', (culture, typed) => {
+        const sheet = new Workbook(Culture.of(culture)).shown;
+        const a1 = CellAddress.parse('A1');
+        // The year is read on both sides of the entry, so a run across New Year's midnight holds either way.
+        const before = new Date().getFullYear();
+        sheet.enter(a1, typed);
+        const after = new Date().getFullYear();
+        expect([twentySixthOfSeptember(before), twentySixthOfSeptember(after)]).toContain(sheet.getValue(a1)?.number);
+        expect(sheet.getNumberFormat(a1).code).toBe('d-mmm');
     });
 
     // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette.
