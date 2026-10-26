@@ -8,8 +8,9 @@
 // carry none (ADR-0050 item 12).
 
 import {
-    createGrid, formulaBarHeight, type CellPosition, type GridDirection,
-    type GridClearIntent, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridHandle, type GridOptions,
+    createGrid, formulaBarHeight, refusedCells, replacedCells, type CellPosition, type GridDirection,
+    type GridClearIntent, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
+    type GridReplaceRequest, type GridReplaceResult,
     type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
     type ViewportSize,
 } from '@ex-grid/core';
@@ -21,7 +22,8 @@ import { unreachable } from './must';
 import { exactNumberFor, isTooNarrowToShow, refusedIn, typedFor } from './sheet-clipboard';
 import { appearanceLookup, charactersOfColumn, SheetColumns, sheetCellPaint } from './sheet-columns';
 import { SheetHistory, type SheetOperationStepped } from './sheet-history';
-import type { SheetRow } from './sheet-row';
+import { SheetRow } from './sheet-row';
+import { planSheetReplace, positionsOf, sheetCellMatches } from './sheet-find';
 import { SheetSource } from './sheet-source';
 import { readNameBoxPlace } from './name-box-text';
 import { SheetEdges } from './sheet-edges';
@@ -245,6 +247,11 @@ class SheetView {
             dataEdge: this.#dataEdge,
             hideColumnMenu: true,
             hideCopyWithHeaders: true,
+            // Find matches the text a cell is shown with, by the Sheet's rule; the column letters are addresses,
+            // not content, and Excel's Find never stops on them (ADR-0332 §4, ADR-0333 §2).
+            findMatch: sheetFindMatch,
+            findsHeaders: false,
+            onReplace: this.#onReplace,
             pasteMaySpill: true,
             onEdit: this.#onEdit,
             onPaste: this.#onPaste,
@@ -277,14 +284,15 @@ class SheetView {
         try {
             this.#perform(SheetEdit.enter(address, intent.value), undefined, [new CellRange(address)]);
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the engine's refusal and an unreadable Formula are answers told to the user; anything else is rethrown
-            // The column's verdict rejects an unreadable Formula before the intent is raised (ADR-0034); this is
-            // the net under it, and it changes nothing either.
+            // Refused, so the grid holds the edit with the reason, or a Replace names the cell, rather than taking a
+            // write that did not happen as made. The column's verdict rejects an unreadable Formula before the intent
+            // is raised (ADR-0034); this is the net under it.
             if (error instanceof FormulaSyntaxError) {
-                this.#tell(this.#words.formulaUnreadable(error), { outlivesMove: true });
+                intent.refuse(this.#words.formulaUnreadable(error));
                 return;
             }
             if (error instanceof SheetRefusedError) {
-                this.#tell(this.#words.refused(error.refusal), { outlivesMove: true });
+                intent.refuse(this.#words.refused(error.refusal));
                 return;
             }
             throw error;
@@ -373,6 +381,39 @@ class SheetView {
         }
     };
 
+    /**
+     * The grid's Replace Request (ADR-0332 §3): Replace All over the Sheet shown, inside the Selection when more than
+     * one cell is selected, matched on each cell's Entry. All or nothing: a replaced Formula the engine cannot read
+     * refuses it all, naming every such cell. Otherwise one step on the undo stack, as typing the replaced Entries
+     * would be, which widens the columns a number no longer fits, and the count.
+     */
+    readonly #onReplace = (request: GridReplaceRequest): GridReplaceResult => {
+        const version = this.#source.snapshot().rowSequenceVersion;
+        // A Sheet's rows are places, so a request on another version names nothing here (ADR-0046): answered under the
+        // version shown, which the grid refuses as the order having moved, and nothing is written.
+        if (request.rowSequenceVersion !== version) return replacedCells(0, version);
+        const sheet = this.#source.sheet;
+        const positions = positionsOf(request.columns);
+        const plan = planSheetReplace(sheet, request, request.replacement, positions, request.scope, (address, text) => {
+            const verdict = new SheetRow(sheet, address.row).judge(text, error => this.#words.formulaUnreadable(error));
+            return verdict.kind === 'reject' ? verdict.message : undefined;
+        });
+        const cellAt = (address: CellAddress, position: number, message: string): { readonly row: number; readonly column: string; readonly message: string } =>
+            ({ row: address.row, column: request.columns[position] ?? unreachableColumn(position), message });
+        if (plan.refused.length > 0) return refusedCells(plan.refused.map(cell => cellAt(cell.address, cell.position, cell.reason)), version);
+        if (plan.writes.length === 0) return replacedCells(0, version);
+        const written = plan.writes.map(write => new CellRange(write.address));
+        try {
+            this.#perform(SheetEdit.enterMany(plan.writes.map(write => [write.address, write.text] as const)), undefined, written);
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the engine's refusal and an unreadable Formula are answers told to the user; anything else is rethrown
+            const message = error instanceof FormulaSyntaxError ? this.#words.formulaUnreadable(error)
+                : error instanceof SheetRefusedError ? this.#words.refused(error.refusal) : undefined;
+            if (message === undefined) throw error;
+            return refusedCells(plan.writes.map(write => cellAt(write.address, positions.get(write.address.column) ?? unreachableColumn(write.address.column), message)), version);
+        }
+        return replacedCells(plan.writes.length, version);
+    };
+
     readonly #onUndo = (): void => { this.undo(); };
 
     readonly #onRedo = (): void => { this.redo(); };
@@ -448,8 +489,8 @@ class SheetView {
             case 'commit':
                 this.#tell(this.#words.commitRefused(new CellAddress(refusal.cell.row, refusal.cell.column).toString(), refusal.reason), { saidByGrid: true });
                 return;
-            // A Sheet offers no Find yet, so Ctrl+F opens nothing (ADR-0055); it has no Action Column (ADR-0037) and no
-            // Mark Column (ADR-0043) to refuse.
+            // The find panel says its own outcomes (ADR-0332 §5); a Sheet has no Action Column (ADR-0037) and no Mark
+            // Column (ADR-0043) to refuse.
             case 'find':
             case 'action':
             case 'mark': return;
@@ -792,6 +833,17 @@ class SheetView {
         if (onWorkbookChanged !== undefined && typeof onWorkbookChanged !== 'function') throw new TypeError('onWorkbookChanged is a function.');
         return options;
     }
+}
+
+// The Match Mark's rule (ADR-0332 §4): the one a step finds by, so a mark is never a match no step reaches.
+const sheetFindMatch = (row: SheetRow, column: GridColumn<SheetRow>, pattern: GridFindPattern): boolean => {
+    const at = CellAddress.tryParseColumn(column.name);
+    if (at === undefined) throw new Error(`Internal: '${column.name}' is not one of the Sheet's columns.`);
+    return sheetCellMatches(row.sheet, new CellAddress(row.index, at), pattern, row.at(at)?.text);
+};
+
+function unreachableColumn(position: number): never {
+    throw new Error(`Internal: no column of the request stands at ${String(position)}.`);
 }
 
 // The Name Box names the Focus as A1 does (ADR-0051).

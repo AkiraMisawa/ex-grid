@@ -433,3 +433,69 @@ describe('the Sheet Tabs (ADR-0331)', () => {
         expect(element.querySelector<HTMLElement>('.ex-scroller')?.style.height).toBe(`${String(300 - Number.parseFloat(bar.style.height))}px`);
     });
 });
+
+const settle = async (): Promise<void> => {
+    for (let i = 0; i < 4; i++) await new Promise(resolve => { setTimeout(resolve, 0); });
+};
+
+function findField(element: HTMLElement, selector: string): HTMLInputElement {
+    const field = element.querySelector<HTMLInputElement>(`.ex-popover-find ${selector}`);
+    if (field === null) throw new Error(`The find panel has no ${selector}.`);
+    return field;
+}
+
+function typeInFind(element: HTMLElement, selector: string, text: string): void {
+    const field = findField(element, selector);
+    field.value = text;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+describe('Find and Replace (ADR-0055, ADR-0332)', () => {
+    it('ADR-0055: Ctrl+F finds the text a cell is shown with, a Formula\'s Value, and selects it', async () => {
+        const { element } = sheetOf({ document: documentOf({ A1: 'apple', B3: '=40+2', C5: '42 apples' }) });
+        await vi.waitFor(() => { expect(textAt(element, 2, 1)).toBe('42'); });
+        press(element, 0, 0);
+        key('f', { ctrlKey: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-popover-find')).not.toBeNull(); });
+        typeInFind(element, 'input.ex-find-field', '42');
+        findField(element, 'input.ex-find-field').closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        await settle();
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('B3'); });
+        findField(element, 'input.ex-find-field').closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        await settle();
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('C5'); });
+    });
+
+    it('ADR-0332 §3: Replace All rewrites the Entries that match, Formulas included, as one step on the undo stack', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '2', A2: '=A1*10', B1: 'rate 2' }) });
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('20'); });
+        press(element, 0, 0);
+        key('h', { ctrlKey: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-popover-find input.ex-find-replace-field')).not.toBeNull(); });
+        typeInFind(element, 'input.ex-find-field', '10');
+        typeInFind(element, 'input.ex-find-replace-field', '100');
+        element.querySelector<HTMLElement>('.ex-popover-find button.ex-find-replace-all')?.click();
+        await settle();
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('200'); });
+        expect(sheet.workbook.shown.getEntryText(CellAddress.parse('A2'))).toBe('=A1*100');
+        expect(sheet.undo()).toBe(true);
+        expect(sheet.workbook.shown.getEntryText(CellAddress.parse('A2'))).toBe('=A1*10');
+    });
+    it('ADR-0332 §2: Replace writes into the Entry of the match the Value found, so a Formula stays a Formula', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '=B1*2', B1: '1' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('2'); });
+        press(element, 2, 2);
+        key('h', { ctrlKey: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-popover-find input.ex-find-replace-field')).not.toBeNull(); });
+        typeInFind(element, 'input.ex-find-field', '2');
+        typeInFind(element, 'input.ex-find-replace-field', '5');
+        const replace = (): void => { element.querySelector<HTMLElement>('.ex-popover-find button.ex-find-replace')?.click(); };
+        replace();
+        await settle();
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A1'); });
+        replace();
+        await settle();
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('5'); });
+        expect(sheet.workbook.shown.getEntryText(CellAddress.parse('A1'))).toBe('=B1*5');
+    });
+});
