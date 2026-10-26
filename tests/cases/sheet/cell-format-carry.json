@@ -1,0 +1,416 @@
+{
+  "about": "Font, Fill and Borders follow every rule the Number Format and the Alignment follow (ADR-0071, SH-38): insertion and deletion move them, an inserted row or column copies the one before it but for its Borders, an ExSheet-to-ExSheet copy, Ctrl+D, Ctrl+R and the fill handle carry them, Delete keeps them, and each operation is one undo step that puts them back exactly. A copy writes the target's own four sides and a structural edit moves each cell with its own, and the edge two cells share shows the upper or left cell's line where both record one (the twelfth Windows run, cases 12-1 to 12-13). Transcribed from CellFormatCarryTests.cs.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0071 (SH-38): insertion and deletion move Font, Fill and Borders with their cells, rows and columns",
+      "steps": [
+        {"enter": {"B5": "1"}},
+        {"setCellFormat": {"ranges": ["B5"], "change": {"bold": true, "fill": "#FFFF00", "borders": {"outline": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["7:7"], "change": {"fill": "#0000FF"}}},
+        {"setCellFormat": {"ranges": ["D:D"], "change": {"italic": true}}},
+        {"do": {"insertRows": [0, 2]}},
+        {"do": {"insertColumns": [0, 1]}, "expect": {"fonts": {"C7": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "E1": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "D1": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}}, "fills": {"C7": "#FFFF00", "A9": "#0000FF"}, "borders": {"C7": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "thin", "colour": "Automatic"}, "left": {"style": "thin", "colour": "Automatic"}, "right": {"style": "thin", "colour": "Automatic"}}}, "numberFormats": {"C7": "General"}, "alignments": {"C7": "general"}}},
+        {"do": {"deleteRows": [0, 2]}},
+        {"do": {"deleteColumns": [0, 1]}, "expect": {"fonts": {"B5": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "D1": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}}, "fills": {"B5": "#FFFF00", "A7": "#0000FF"}, "borders": {"B5": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "thin", "colour": "Automatic"}, "left": {"style": "thin", "colour": "Automatic"}, "right": {"style": "thin", "colour": "Automatic"}}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), cases 11-12 and 12-12: an inserted row takes the Fill and the Font of the row above and not its Borders; its top edge is the one it shares with that row, so it shows that row's bottom, and undo puts back both",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["2:2"], "change": {"italic": true}}},
+        {"remember": "before", "expect": {"borders": {"B3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}}}},
+        {"do": {"insertRows": [2, 1]}, "expect": {"fills": {"B3": "#FFFF00", "B4": "none"}, "borders": {"B3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "B2": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": "none"}, "B4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, "entries": {"B3": null}, "fonts": {"B3": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "C3": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}}, "document": {"cells": [{"address": "B2", "entry": null, "numberFormat": null, "alignment": null, "font": null, "fill": "#FFFF00", "borders": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": "none"}}, {"address": "B3", "entry": null, "numberFormat": null, "alignment": null, "font": null, "fill": "#FFFF00", "borders": null}], "cellAddresses": ["B2", "B3"], "columns": [], "rows": [{"first": 1, "last": 2, "numberFormat": null, "alignment": null, "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "fill": null, "borders": null}], "columnWidths": []}}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "borders": {"B3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}}}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-12: an inserted row takes the Font of the cell above as it takes the Fill, and the cells beside it stay plain",
+      "steps": [
+        {"enter": {"B2": "abc"}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"bold": true, "italic": true, "fontColour": "#FF0000", "fill": "#FFFF00"}}},
+        {"do": {"insertRows": [2, 1]}, "expect": {"fonts": {"B3": {"colour": "#FF0000", "bold": true, "italic": true, "underline": false, "strikethrough": false}, "B4": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "A3": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "C3": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}}, "fills": {"B3": "#FFFF00", "B4": "none", "A3": "none", "C3": "none"}, "entries": {"B3": null}, "borders": {"B4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "A3": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "C3": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, "numberFormats": {"B4": "General", "A3": "General", "C3": "General"}, "alignments": {"B4": "general", "A3": "general", "C3": "general"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-11: of two inserted rows the first shows the line of the row above on its top, the edges between and below them are empty, and both take the Fill",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"fill": "#FFFF00", "borders": {"bottom": {"style": "thick"}}}}},
+        {"do": {"insertRows": [2, 2]}, "expect": {"borders": {"B3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "B4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "B5": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, "fills": {"B3": "#FFFF00", "B4": "#FFFF00", "B5": "none"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-10: a row inserted at row 1 takes nothing, and a line on row 1's top moves down with its cell, so it shows between the new row 1 and row 2",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B1"], "change": {"borders": {"top": {"style": "thick"}}}}},
+        {"do": {"insertRows": [0, 1]}, "expect": {"borders": {"B1": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": "none"}, "B2": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}}, "document": {"cells": [{"address": "B2", "entry": null, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}}], "cellAddresses": ["B2"], "columns": [], "rows": [], "columnWidths": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 11-12: recorded on whole rows and whole columns, an inserted row takes no Borders, a column's line runs on through it, and its top shows the bottom of the row above; undo puts back both",
+      "note": "A2's left, column A's on row 2 (case 12-14), is not taken either.",
+      "steps": [
+        {"setCellFormat": {"ranges": ["2:2"], "change": {"fill": "#FFFF00", "borders": {"outline": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"borders": {"left": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"insertRows": [2, 1]}, "expect": {"fills": {"E3": "#FFFF00"}, "borders": {"E3": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "E4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "C3": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": "none", "left": {"style": "thick", "colour": "Automatic"}, "right": "none"}, "B3": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": {"style": "thick", "colour": "Automatic"}}, "C4": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "Automatic"}, "right": "none"}, "B4": {"top": "none", "bottom": "none", "left": "none", "right": {"style": "thick", "colour": "Automatic"}}, "A2": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "thin", "colour": "Automatic"}, "left": {"style": "thin", "colour": "Automatic"}, "right": "none"}, "A3": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}}}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "borders": {"C3": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": "none", "left": {"style": "thick", "colour": "Automatic"}, "right": "none"}}}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-13: an inserted column takes the Fill of the one to its left and not its Borders; its left edge shows that column's right line, its right edge is empty, and the cells beside it stay plain",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"fill": "#FFFF00", "borders": {"right": {"style": "thick"}}}}},
+        {"do": {"insertColumns": [2, 1]}, "expect": {"fills": {"C2": "#FFFF00", "D2": "none", "C1": "none", "C3": "none"}, "borders": {"C2": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "Automatic"}, "right": "none"}, "D2": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-13 at every level: an inserted column takes the Fill and Font of the one to its left, cell and column, and not its Borders; its left edge shows that column's right line, and the column that moved right shows none on its left; undo puts back both",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B:B"], "change": {"italic": true, "fill": "#0000FF", "borders": {"outline": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["B4"], "change": {"fill": "#FFFF00", "borders": {"right": {"style": "thin"}}}}},
+        {"remember": "before"},
+        {"do": {"insertColumns": [2, 2]}, "expect": {"fills": {"C4": "#FFFF00", "D4": "#FFFF00", "C9": "#0000FF", "D9": "#0000FF"}, "fonts": {"C9": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "D9": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "E9": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}}, "borders": {"C9": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "Automatic"}, "right": "none"}, "C4": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "Automatic"}, "right": "none"}, "D9": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "D4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "E9": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "E4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "B9": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "Automatic"}, "right": {"style": "thick", "colour": "Automatic"}}}}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), cases 12-6 and 12-8: two rows brought together by a deletion keep their own sides; where both record a line the upper row's is shown, and the lower row's own stays under it; undo puts the row back: the lower row records line",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"bottom": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["B4"], "change": {"borders": {"top": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"remember": "before"},
+        {"do": {"deleteRows": [2, 1]}, "expect": {"borders": {"B2": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": "none"}, "B3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "B4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), cases 12-6 and 12-8: two rows brought together by a deletion keep their own sides; where both record a line the upper row's is shown, and the lower row's own stays under it; undo puts the row back: the lower row records no line",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"bottom": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"deleteRows": [2, 1]}, "expect": {"borders": {"B2": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": "none"}, "B3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "B4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-7: two columns brought together by a deletion show the left column's line where both record one",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"right": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["D2"], "change": {"borders": {"left": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"do": {"deleteColumns": [2, 1]}, "expect": {"borders": {"B2": {"top": "none", "bottom": "none", "left": "none", "right": {"style": "thick", "colour": "Automatic"}}, "C2": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "Automatic"}, "right": "none"}, "D2": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-9: where the upper row records no line, the line the lower row records stays, from either side",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B3"], "change": {"borders": {"top": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"do": {"deleteRows": [1, 1]}, "expect": {"borders": {"B1": {"top": "none", "bottom": {"style": "thin", "colour": "#0000FF"}, "left": "none", "right": "none"}, "B2": {"top": {"style": "thin", "colour": "#0000FF"}, "bottom": "none", "left": "none", "right": "none"}, "B3": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): undoing an insertion or deletion puts Font, Fill and Borders back exactly: insert rows",
+      "steps": [
+        {"enter": {"B5": "1"}},
+        {"setCellFormat": {"ranges": ["B5"], "change": {"bold": true, "fill": "#FFFF00", "borders": {"outline": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["7:7"], "change": {"fill": "#0000FF"}}},
+        {"setCellFormat": {"ranges": ["D:D"], "change": {"italic": true}}},
+        {"remember": "before"},
+        {"do": {"insertRows": [5, 3]}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): undoing an insertion or deletion puts Font, Fill and Borders back exactly: insert columns",
+      "steps": [
+        {"enter": {"B5": "1"}},
+        {"setCellFormat": {"ranges": ["B5"], "change": {"bold": true, "fill": "#FFFF00", "borders": {"outline": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["7:7"], "change": {"fill": "#0000FF"}}},
+        {"setCellFormat": {"ranges": ["D:D"], "change": {"italic": true}}},
+        {"remember": "before"},
+        {"do": {"insertColumns": [2, 1]}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): undoing an insertion or deletion puts Font, Fill and Borders back exactly: delete rows",
+      "steps": [
+        {"enter": {"B5": "1"}},
+        {"setCellFormat": {"ranges": ["B5"], "change": {"bold": true, "fill": "#FFFF00", "borders": {"outline": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["7:7"], "change": {"fill": "#0000FF"}}},
+        {"setCellFormat": {"ranges": ["D:D"], "change": {"italic": true}}},
+        {"remember": "before"},
+        {"do": {"deleteRows": [4, 3]}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): undoing an insertion or deletion puts Font, Fill and Borders back exactly: delete columns",
+      "steps": [
+        {"enter": {"B5": "1"}},
+        {"setCellFormat": {"ranges": ["B5"], "change": {"bold": true, "fill": "#FFFF00", "borders": {"outline": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["7:7"], "change": {"fill": "#0000FF"}}},
+        {"setCellFormat": {"ranges": ["D:D"], "change": {"italic": true}}},
+        {"remember": "before"},
+        {"do": {"deleteColumns": [1, 3]}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): an ExSheet-to-ExSheet copy carries Font, Fill and Borders as the cells show them, from any level",
+      "steps": [
+        {"enter": {"B2": "1", "B3": "2"}},
+        {"setCellFormat": {"ranges": ["B:B"], "change": {"borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#FFFF00"}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"bold": true}}},
+        {"copy": {"range": "B2:B3", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "E5"}}, "expect": {"fonts": {"E5": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "E6": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}}, "fills": {"E5": "none", "E6": "#FFFF00"}, "borders": {"E5": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "Automatic"}, "right": "none"}, "E6": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "Automatic"}, "right": "none"}}, "values": {"E5": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38): a pasted cell records nothing its row or column already gives it",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B:B"], "change": {"borders": {"left": {"style": "thin"}}, "fill": "#FFFF00"}}},
+        {"enter": {"B2": "1"}},
+        {"copy": {"range": "B2", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "B10"}}},
+        {"do": {"paste": {"copy": "block", "at": "D10"}}, "expect": {"document": {"cells": [{"address": "B2", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": null}, {"address": "B10", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": null}, {"address": "D10", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": "#FFFF00", "borders": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "Automatic"}, "right": "none"}}], "cellAddresses": ["B2", "B10", "D10"], "columns": [{"first": 1, "last": 1, "numberFormat": null, "alignment": null, "font": null, "fill": "#FFFF00", "borders": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "Automatic"}, "right": "none"}}], "rows": [], "columnWidths": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38, SH-23): Ctrl+D and Ctrl+R carry Font, Fill and Borders with the Entries: down",
+      "steps": [
+        {"enter": {"B2": "1"}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"italic": true, "fill": "#FFFF00", "borders": {"outline": {"style": "thick"}}}}},
+        {"do": {"fillCopy": {"source": "B2", "target": "B3:B4", "direction": "down"}}, "expect": {"cellFormats": {"B4": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": {"style": "thick", "colour": "Automatic"}, "right": {"style": "thick", "colour": "Automatic"}}}], "B2": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": {"style": "thick", "colour": "Automatic"}, "right": {"style": "thick", "colour": "Automatic"}}}]}, "values": {"B4": 1}}},
+        {"undo": "last", "expect": {"fonts": {"B4": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}}, "fills": {"B4": "none"}, "borders": {"B4": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, "numberFormats": {"B4": "General"}, "alignments": {"B4": "general"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38, SH-23): Ctrl+D and Ctrl+R carry Font, Fill and Borders with the Entries: right",
+      "steps": [
+        {"enter": {"B2": "1"}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"italic": true, "fill": "#FFFF00", "borders": {"outline": {"style": "thick"}}}}},
+        {"do": {"fillCopy": {"source": "B2", "target": "C2:D2", "direction": "right"}}, "expect": {"cellFormats": {"D2": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": {"style": "thick", "colour": "Automatic"}, "right": {"style": "thick", "colour": "Automatic"}}}], "B2": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": {"style": "thick", "colour": "Automatic"}, "right": {"style": "thick", "colour": "Automatic"}}}]}, "values": {"D2": 1}}},
+        {"undo": "last", "expect": {"fonts": {"D2": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}}, "fills": {"D2": "none"}, "borders": {"D2": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, "numberFormats": {"D2": "General"}, "alignments": {"D2": "general"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-1: a paste writes the target's own four sides and touches no neighbour; where both cells then record a line on an edge, the left cell's is shown",
+      "note": "C2 still records its own line under B2's: the paste did not touch it.",
+      "steps": [
+        {"setCellFormat": {"ranges": ["C2"], "change": {"borders": {"left": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"enter": {"E5": "1"}},
+        {"setCellFormat": {"ranges": ["E5"], "change": {"borders": {"right": {"style": "thick", "colour": "#FF0000"}}}}},
+        {"copy": {"range": "E5", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "B2"}}, "expect": {"values": {"B2": 1}, "borders": {"B2": {"top": "none", "bottom": "none", "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}, "C2": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "#FF0000"}, "right": "none"}}, "document": {"cells": [{"address": "B2", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": "none", "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}, {"address": "C2", "entry": null, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "#0000FF"}, "right": "none"}}, {"address": "E5", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": "none", "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}], "cellAddresses": ["B2", "C2", "E5"], "columns": [], "rows": [], "columnWidths": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38), case 12-2: a paste of a cell with no Borders takes away the line its target recorded, from either side",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"right": {"style": "thick", "colour": "#FF0000"}}}}},
+        {"enter": {"E5": "1"}},
+        {"copy": {"range": "E5", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "B2"}}, "expect": {"borders": {"B2": {"top": "none", "bottom": "none", "left": "none", "right": "none"}, "C2": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38, SH-23), cases 12-3 and 12-5: Ctrl+D and the fill handle write the source's own four sides on each target and touch no neighbour; the edge the source shares with its first target shows the source's bottom, and a target's right line is shown over the one the cell to its right records: Ctrl+D",
+      "note": "Each target records the source's own sides, which have no top, and C3 keeps its own.",
+      "steps": [
+        {"enter": {"B2": "1"}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"right": {"style": "thick", "colour": "#FF0000"}, "bottom": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["C3"], "change": {"borders": {"left": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"do": {"fillCopy": {"source": "B2", "target": "B3:B4", "direction": "down"}}, "expect": {"values": {"B4": 1}, "borders": {"B2": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}, "B3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}, "B4": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}, "B5": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "C3": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "#FF0000"}, "right": "none"}, "C4": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "#FF0000"}, "right": "none"}}, "document": {"cells": [{"address": "B2", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}, {"address": "B3", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}, {"address": "C3", "entry": null, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "#0000FF"}, "right": "none"}}, {"address": "B4", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}], "cellAddresses": ["B2", "B3", "C3", "B4"], "columns": [], "rows": [], "columnWidths": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38, SH-23), cases 12-3 and 12-5: Ctrl+D and the fill handle write the source's own four sides on each target and touch no neighbour; the edge the source shares with its first target shows the source's bottom, and a target's right line is shown over the one the cell to its right records: the fill handle",
+      "note": "Each target records the source's own sides, which have no top, and C3 keeps its own.",
+      "steps": [
+        {"enter": {"B2": "1"}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"right": {"style": "thick", "colour": "#FF0000"}, "bottom": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["C3"], "change": {"borders": {"left": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"do": {"fill": {"source": "B2", "target": "B3:B4", "direction": "down"}}, "expect": {"values": {"B4": 1}, "borders": {"B2": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}, "B3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}, "B4": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}, "B5": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "C3": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "#FF0000"}, "right": "none"}, "C4": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "#FF0000"}, "right": "none"}}, "document": {"cells": [{"address": "B2", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}, {"address": "B3", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}, {"address": "C3", "entry": null, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "#0000FF"}, "right": "none"}}, {"address": "B4", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}], "cellAddresses": ["B2", "B3", "C3", "B4"], "columns": [], "rows": [], "columnWidths": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38, SH-23), case 12-4: Ctrl+R writes the source's own four sides on each target and touches no neighbour; the right line of the last target is shown over the one the cell to its right records",
+      "steps": [
+        {"enter": {"B2": "1"}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"bottom": {"style": "thick"}, "right": {"style": "thick", "colour": "#FF0000"}}}}},
+        {"setCellFormat": {"ranges": ["E2"], "change": {"borders": {"left": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"do": {"fillCopy": {"source": "B2", "target": "C2:D2", "direction": "right"}}, "expect": {"borders": {"C2": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": {"style": "thick", "colour": "#FF0000"}, "right": {"style": "thick", "colour": "#FF0000"}}, "D2": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": {"style": "thick", "colour": "#FF0000"}, "right": {"style": "thick", "colour": "#FF0000"}}, "C3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "D3": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "E2": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "#FF0000"}, "right": "none"}}, "document": {"cells": [{"address": "B2", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}, {"address": "C2", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}, {"address": "D2", "entry": {"constant": 1}, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": {"style": "thick", "colour": "#FF0000"}}}, {"address": "E2", "entry": null, "numberFormat": null, "alignment": null, "font": null, "fill": null, "borders": {"top": "none", "bottom": "none", "left": {"style": "thin", "colour": "#0000FF"}, "right": "none"}}], "cellAddresses": ["B2", "C2", "D2", "E2"], "columns": [], "rows": [], "columnWidths": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38): the fill handle carries Font, Fill and Borders with the series it continues",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2"}},
+        {"setCellFormat": {"ranges": ["A1:A2"], "change": {"bold": true, "borders": {"bottom": {"style": "thin"}}}}},
+        {"do": {"fill": {"source": "A1:A2", "target": "A3:A4", "direction": "down"}}, "expect": {"values": {"A4": 4}, "fonts": {"A4": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}}, "borders": {"A4": {"top": "none", "bottom": {"style": "thin", "colour": "Automatic"}, "left": "none", "right": "none"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38, SH-24): Delete clears the Entries and keeps Font, Fill and Borders; undo puts the Entries back",
+      "steps": [
+        {"enter": {"B2": "1"}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"bold": true, "fill": "#FFFF00", "borders": {"outline": {"style": "thin"}}}}},
+        {"do": {"setEntries": {"B2": null}}, "expect": {"values": {"B2": null}, "fonts": {"B2": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}}, "fills": {"B2": "#FFFF00"}, "borders": {"B2": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "thin", "colour": "Automatic"}, "left": {"style": "thin", "colour": "Automatic"}, "right": {"style": "thin", "colour": "Automatic"}}}, "document": {"cells": [{"address": "B2", "entry": null, "numberFormat": null, "alignment": null, "font": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "thin", "colour": "Automatic"}, "left": {"style": "thin", "colour": "Automatic"}, "right": {"style": "thin", "colour": "Automatic"}}}], "cellAddresses": ["B2"], "columns": [], "rows": [], "columnWidths": []}}},
+        {"undo": "last", "expect": {"values": {"B2": 1}, "fonts": {"B2": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}}, "fills": {"B2": "#FFFF00"}, "borders": {"B2": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "thin", "colour": "Automatic"}, "left": {"style": "thin", "colour": "Automatic"}, "right": {"style": "thin", "colour": "Automatic"}}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: B2:C3, E5:F6",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["B2:C3", "E5:F6"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: B:B, 3:4",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["B:B", "3:4"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: 3:4, B:B",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["3:4", "B:B"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: B2:C3, C:C, 2:2",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["B2:C3", "C:C", "2:2"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: A:XFD, D5",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["A:XFD", "D5"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: 2:4, B2:C3",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["2:4", "B2:C3"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: B2:C3, D2:E3",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["B2:C3", "D2:E3"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: B:B, C:C",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["B:B", "C:C"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly, the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range: 1:1, B2, D:D",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"italic": true, "borders": {"left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#0000FF", "underline": true}}},
+        {"setCellFormat": {"ranges": ["B2"], "change": {"strikethrough": true, "borders": {"outline": {"style": "thick"}}}}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["1:1", "B2", "D:D"], "change": {"numberFormat": "0.00", "bold": true, "fontColour": "#C00000", "fill": "#FFFF00", "borders": {"top": {"style": "thin"}, "bottom": {"style": "thin"}, "left": {"style": "thin"}, "right": {"style": "thin"}, "insideHorizontal": "none"}}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    }
+  ]
+}
