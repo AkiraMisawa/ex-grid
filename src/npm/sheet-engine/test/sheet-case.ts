@@ -280,6 +280,12 @@ export function compare(where: string, expected: Json | undefined, actual: Json 
         }
         return;
     }
+    // An Error Value compares in full: one written without "refused" is Excel's own, and a refusal is not it.
+    if (isObject(expected) && isObject(actual) && 'error' in expected && 'error' in actual
+        && Object.keys(expected).length !== Object.keys(actual).length) {
+        differences.push(`${where}: expected ${show(expected)}, got ${show(actual)}`);
+        return;
+    }
     if (isObject(expected) && isObject(actual)) {
         for (const [key, value] of Object.entries(expected)) compare(`${where}.${key}`, value, orNull(actual[key]), differences);
         return;

@@ -1084,13 +1084,13 @@
     {
       "name": "ADR-0120, ADR-0202 (TEXTFN-019, 020): fractions and conditions stay outside the cell formats' subset: =TEXT(4.34,\"# ?/?\")",
       "steps": [
-        {"enter": {"ZZ1000": "=TEXT(4.34,\"# ?/?\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=TEXT(4.34,\"# ?/?\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0120, ADR-0202 (TEXTFN-019, 020): fractions and conditions stay outside the cell formats' subset: =TEXT(5,\"[<=9]0;0.0\")",
       "steps": [
-        {"enter": {"ZZ1000": "=TEXT(5,\"[<=9]0;0.0\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=TEXT(5,\"[<=9]0;0.0\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     }
   ]

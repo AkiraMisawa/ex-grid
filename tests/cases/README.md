@@ -671,7 +671,8 @@ of one key, the factory, and its arguments, as `SheetEdit` takes them; `pasteFie
 forms of `PasteText` that take `typed` fields cell by cell, with exact `entries` or without.
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
-Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value), `displays`, `texts`, `formulas`, `entryTexts`,
+Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in full, so that one written without
+`"refused": true` is never a refusal), `displays`, `texts`, `formulas`, `entryTexts`,
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
 range, `cellFormats` (the Cell Formats it shows, each once) and `edgeLines` (the lines along each outer edge),
 each a set written in the ordinal order of its members' JSON text; of

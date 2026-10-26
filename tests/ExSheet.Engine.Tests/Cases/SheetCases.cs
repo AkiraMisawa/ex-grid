@@ -309,6 +309,12 @@ internal static class SheetCases
                 differences.Add($"{path}: expected {Number(centre).ToString("R", CultureInfo.InvariantCulture)} within {Number(within).ToString("R", CultureInfo.InvariantCulture)}, got {Show(actual)}");
             return;
         }
+        // An Error Value compares in full: one written without "refused" is Excel's own, and a refusal is not it.
+        if (expected is JsonObject error && actual is JsonObject other && error.ContainsKey("error") && other.ContainsKey("error") && error.Count != other.Count)
+        {
+            differences.Add($"{path}: expected {Show(expected)}, got {Show(actual)}");
+            return;
+        }
         switch (expected)
         {
             case JsonObject e when actual is JsonObject a:
