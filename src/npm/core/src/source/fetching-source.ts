@@ -7,9 +7,12 @@
 // ("nothing to show is not a range", ADR-0001), so a source that starts with nothing breaks its own cold
 // start, when the grid binds its columns.
 //
+// Given a Row Mark adapter it keeps Row Marks (ADR-0043) as keys and snapshots, and asks the server for their
+// counts whenever what they are made of may have moved: the Filter, the marks, or the size of the result.
+//
 // Live data under a Row Key (ADR-0141: a notice that the data moved on, the server's order token judged
-// against a change, the Change Highlight) and Row Marks (ADR-0043) are C#'s still; this source takes a Row
-// Key only to refuse an answer that repeats one, so it vouches that no Window holds a row twice.
+// against a change, the Change Highlight) is C#'s still; this source takes a Row Key only to refuse an answer
+// that repeats one, so it vouches that no Window holds a row twice.
 
 import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
@@ -18,6 +21,7 @@ import { defined } from '../must';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import type { GridFindRequest, GridFindResult } from '../finding/find';
 import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
+import { checkedAdapter, FetchingRowMarks, type FetchingMarksHost, type RowMarkAdapter } from './fetching-row-marks';
 import { filtersEqual, filterWithout, snapshotFilter } from './filters';
 import type { DistinctValues, GridSource, GridSourceState } from './grid-source';
 import { checkedKey, quoted, type RowKey, type RowKeyOf } from './row-key';
@@ -83,8 +87,13 @@ export interface FetchingSourceOptions<Row> {
      * over that result, or declined. Without it the source does not summarise. */
     readonly summarize?: (request: GridSummaryRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridSummaryResult>;
     /** The Row Key (ADR-0140): given one, every answer is checked for a repeated or missing key and refused
-     * by name, so the source vouches that no Window holds a row twice (ADR-0141). */
+     * by name, so the source vouches that no Window holds a row twice (ADR-0141). The Row Mark adapter's key
+     * is one, and serves when this is left out; both given must be the same function. */
     readonly rowKey?: RowKeyOf<Row>;
+    /** What the source needs from the Consumer to keep Row Marks (ADR-0043): a row's key, and the server's
+     * answers about snapshots and counts. Without it the source keeps none, and a Mark Column bound to it is
+     * refused by name. */
+    readonly marks?: RowMarkAdapter<Row>;
     /** Hears a failed fetch. Without it a failure is not swallowed: the grid that asked for the rows has
      * its promise rejected, and a fetch nobody asked for, the cold start and a restart, rejects unheard,
      * which reaches the host's own error path. Either way `lastError` holds it until an answer lands. A
@@ -107,6 +116,13 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     readonly #onFetchFailed: FetchingSourceOptions<Row>['onFetchFailed'];
     readonly #rowKey: RowKeyOf<Row> | undefined;
     readonly #listeners = new Set<() => void>();
+    readonly #marks: FetchingRowMarks<Row> | undefined;
+    // Aborted on dispose: what the marks ask the server for belongs to no one question, so it lives as long as
+    // the source does.
+    readonly #lifetime = new AbortController();
+    // The failure the marks last reported, so the marks' next success can let go of it, and only it: a failed
+    // fetch stays until an answer lands.
+    #marksFailure: unknown;
     #state: FetchingSourceState<Row>;
 
     // The question in flight: what it asked for, its promise, the answer it waits for, and how to call it
@@ -136,15 +152,23 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
 
     private constructor(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options: FetchingSourceOptions<Row>) {
         if (typeof fetch !== 'function') throw new TypeError('GridSource.fetch takes a function that answers a Query with a page.');
-        const { readAheadRows = defaultReadAheadRows, distinctValues, find, summarize, rowKey, onFetchFailed } = options;
+        const { readAheadRows = defaultReadAheadRows, distinctValues, find, summarize, rowKey, marks, onFetchFailed } = options;
         if (!Number.isSafeInteger(readAheadRows) || readAheadRows < 0) {
             throw new RangeError(`readAheadRows is a whole number of at least 0, not ${readAheadRows}.`);
+        }
+        if (marks !== undefined) checkedAdapter(marks);
+        // The adapter's key is a Row Key (ADR-0140): one value names a row for its marks, for a source and for the
+        // grid. Two different ones would let the marks follow one key and the grid pair rows by another.
+        if (rowKey !== undefined && marks !== undefined && rowKey !== marks.key) {
+            throw new TypeError('A Row Key and a Row Mark adapter with a key of its own were both given. The adapter\'s key is the '
+                + 'Row Key (ADR-0140): give it once, as the adapter\'s, or hand the same function to both.');
         }
         this.#fetch = fetch;
         this.#readAheadRows = readAheadRows;
         this.#distinctValues = distinctValues;
         this.#onFetchFailed = onFetchFailed;
-        this.#rowKey = rowKey;
+        this.#rowKey = rowKey ?? marks?.key;
+        this.#marks = marks === undefined ? undefined : new FetchingRowMarks(this.#marksHost(), marks);
         if (find !== undefined) {
             this.find = async (request, signal) => {
                 this.#requireUndisposed();
@@ -187,6 +211,13 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         return this.#rowKey !== undefined;
     }
 
+    /** The Row Marks of this source, where it was given a `RowMarkAdapter` (ADR-0043); otherwise `undefined`,
+     * and a Mark Column bound to it is refused by name: the source receives new objects with every answer and
+     * cannot count beyond its Window, so without the Consumer's key and server it could only guess. */
+    get marks(): FetchingRowMarks<Row> | undefined {
+        return this.#marks;
+    }
+
     /** Hears every change to the snapshot; the answer stops hearing. */
     subscribe(listener: () => void): () => void {
         this.#listeners.add(listener);
@@ -207,6 +238,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         this.#started = true;
         const first = rowRange(0, this.#pageRows);
         this.#startDetached(first, first, false);
+        this.#recount();
     }
 
     /** Takes a new Sort. One equal to the Sort in force is no change; any other drops the Window, moves the
@@ -250,8 +282,11 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         // The grid asks for what is on screen, so this is also how the source learns how tall the Viewport
         // is: what a restart fetches to fill it.
         this.#pageRows = Math.max(this.#pageRows, needed.count);
+        const cold = !this.#started;
         this.#started = true;
         if (this.#disposed || this.#covers(needed)) return Promise.resolve();
+        // A grid that asks for rows before it binds its columns starts the source here, and the counts with it.
+        if (cold) this.#recount();
         const wanted = this.#expand(needed);
         if (this.#inFlight !== undefined && this.#inFlight.start === wanted.start && this.#inFlight.count === wanted.count) {
             this.#inFlightNeeded = needed;
@@ -267,8 +302,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
      * the Query in force, trimmed to the range, and kept nowhere, so it cannot go stale as a Window can. */
     async rows(range: RowRange, signal: AbortSignal): Promise<readonly Row[]> {
         const asked = rowRange(range.start, range.count);
-        this.#requireUndisposed();
-        const page = checkedPage(await this.#fetch(Object.freeze({ range: asked, ...this.#inForce() }), signal));
+        const page = await this.#fetchOnce(asked, signal);
         // A server free to widen its page is not free to make the caller guess which rows were asked for, nor
         // to answer from elsewhere: a copy of the wrong rows would look like the right ones. An answer with no
         // rows because the result ended before the range is the truth, and a short one is the caller's to
@@ -293,6 +327,75 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         if (this.#disposed) return;
         this.#disposed = true;
         this.#controller?.abort();
+        this.#lifetime.abort();
+    }
+
+    /** One fetch under the Query in force, kept nowhere: for a copy beyond the Window, and for the marks. */
+    async #fetchOnce(range: RowRange, signal: AbortSignal): Promise<GridPage<Row>> {
+        this.#requireUndisposed();
+        return checkedPage(await this.#fetch(Object.freeze({ range, ...this.#inForce() }), signal));
+    }
+
+    /** What the marks read of this source, and report to it. */
+    #marksHost(): FetchingMarksHost<Row> {
+        return {
+            current: () => this.#state,
+            fetchRange: async (range, signal) => {
+                const page = await this.#fetchOnce(range, signal);
+                // Rows the marks name by key are held to the key as a Window is: two rows under one would be marked
+                // as one (ADR-0141).
+                if (this.#rowKey !== undefined) checkKeys(page, this.#rowKey);
+                // Trimmed to the asked range: a server free to widen its page is not free to make the caller guess
+                // which of its rows were the ones asked for. One that does not reach the range answered none of it,
+                // which the marks refuse as a short answer, naming how many it needed.
+                const skip = range.start - page.start;
+                const rows = skip < 0 || skip > page.rows.length ? [] : page.rows.slice(skip, skip + range.count);
+                return Object.freeze({ rows: Object.freeze(rows), totalCount: page.totalCount });
+            },
+            signal: this.#lifetime.signal,
+            reportFailure: error => this.#reportMarksFailure(error),
+            marksFailure: () => this.#marksFailure,
+            clearMarksFailure: seenAtStart => this.#clearMarksFailure(seenAtStart),
+        };
+    }
+
+    /** The counts depend on the Filter and on what the server holds: asked for again, detached, whenever either
+     * may have moved. A failure surfaces as a fetch's does, and the counts stay unknown rather than stale. */
+    #recount(): void {
+        const marks = this.#marks;
+        if (marks === undefined || this.#disposed) return;
+        void (async () => {
+            try {
+                await marks.recount();
+            } catch (error) { // oxlint-disable-line ex-grid/no-catch -- ADR-0025: a failed count is reported as a failed fetch is; after dispose it is nobody's
+                if (this.#disposed) return;
+                if (!this.#reportMarksFailure(error)) throw error;
+            }
+        })();
+    }
+
+    /** A failure of the Consumer's server met while keeping the marks, reported as a failed fetch is: held in
+     * `lastError` either way, and handed to `onFetchFailed`. False when nobody hears it, and the caller throws it:
+     * the failure must reach the host rather than vanish (ADR-0025). */
+    #reportMarksFailure(error: unknown): boolean {
+        if (this.#disposed) return false;
+        this.#marksFailure = error;
+        this.#state = Object.freeze({ ...this.#state, lastError: error });
+        this.#notify();
+        if (this.#onFetchFailed === undefined) return false;
+        this.#onFetchFailed(Object.freeze({ error }));
+        return true;
+    }
+
+    /** A marking went through: the failure the marks had reported when it began no longer describes the source.
+     * Only that one: a failure reported while this marking was still counting is newer than its success, and
+     * stands. */
+    #clearMarksFailure(seenAtStart: unknown): void {
+        if (seenAtStart === undefined || this.#marksFailure !== seenAtStart) return;
+        this.#marksFailure = undefined;
+        if (this.#state.lastError !== seenAtStart) return;
+        this.#state = Object.freeze({ ...this.#state, lastError: undefined });
+        this.#notify();
     }
 
     #inForce(): QueryInForce {
@@ -339,6 +442,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         });
         const first = rowRange(0, this.#pageRows);
         this.#startDetached(first, first, true);
+        this.#recount();
     }
 
     /** A fetch nobody awaits, the source's own. A failure nobody hears rejects unheard, and so reaches the
@@ -402,6 +506,9 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         // (ADR-0011); growing is safe. Only the server knows whether the order of the whole result moved,
         // and its order token says so (ADR-0141).
         let moved = this.#state.totalCount !== undefined && page.totalCount < this.#state.totalCount;
+        // Only between answers to one Query: the first answer after a start or a restart moves the total off the 0
+        // the restart left, and the restart has asked for the counts already.
+        const totalMoved = this.#answered && this.#state.totalCount !== page.totalCount;
         if (this.#answered && page.orderToken !== this.#orderToken) moved = true;
         this.#orderToken = page.orderToken;
         this.#answered = true;
@@ -417,6 +524,8 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
             rowSequenceVersion: moved ? this.#state.rowSequenceVersion + 1 : this.#state.rowSequenceVersion,
         });
         this.#notify();
+        // A result that grew or shrank changed what the counts are made of.
+        if (totalMoved) this.#recount();
     }
 
     #notify(): void {
