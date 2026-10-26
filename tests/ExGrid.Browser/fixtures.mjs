@@ -492,6 +492,7 @@ class FileApp {
         this.options = asked;
         this.context = widened(await browser.newContext({ ...contextOptions, baseURL: BASE_URL, viewport }));
         this.page = await this.context.newPage();
+        await watchForHang(this.page);
         listen(this.page, () => this.sink);
     }
 
@@ -722,12 +723,66 @@ function holdForcedPresses(page) {
     }
 }
 
+// A session of the harness's own on each page it opens, attached while the page still answers: a page
+// whose main thread a script holds for good answers nothing, a session attached then included, but a
+// session attached before can still end that script (endHungScript).
+const hangSessions = new WeakMap();
+async function watchForHang(page) {
+    hangSessions.set(page, await page.context().newCDPSession(page).then(
+        (session) => ({ session }),
+        (error) => ({ refused: `its session could not be attached when the page opened: ${error.message}` })));
+}
+
+/**
+ * Whether the page has stopped answering, and if it has, ends the script that holds it. A script that
+ * never returns — a loop in the app's JavaScript or in its WebAssembly — holds the page's main thread, so
+ * no reading comes back, and an assertion waiting on one reports what it last saw, or nothing: seen in CI
+ * on WebAssembly (PR #348), where a page stopped answering after a click and its teardown then waited five
+ * minutes more for nothing. Ended, the script lets the page answer again, and the input journal says which
+ * inputs led there. Answers null for a page that answers, and otherwise what was done. How long a page may
+ * take to answer bounds this diagnosis only, never an outcome: it is asked only of a test that has timed
+ * out already.
+ */
+async function endHungScript(page, { wait = 5_000 } = {}) {
+    const answers = async () => {
+        let timer;
+        const late = new Promise((resolve) => { timer = setTimeout(() => resolve(false), wait); });
+        const answered = await Promise.race([page.evaluate(() => true).then(() => true, () => true), late]);
+        clearTimeout(timer);
+        return answered;
+    };
+    if (await answers()) {
+        return null;
+    }
+    const watched = hangSessions.get(page) ?? { refused: 'the harness did not open it, and has no session on it' };
+    if (watched.session === undefined) {
+        return `the page stopped answering, and the script holding it could not be ended: ${watched.refused}`;
+    }
+    // Its answer is not awaited: it is the page's to give, once the script has ended; the page answering
+    // again is what is read.
+    const ended = watched.session.send('Runtime.terminateExecution').then(() => '', (error) => `: ${error.message}`);
+    return await answers()
+        ? 'the page stopped answering, and the script holding it was ended'
+        : `the page stopped answering, and the script holding it could not be ended${await Promise.race([ended, ''])}`;
+}
+
 // A failed test carries the Input Journal of every grid on its page (ADR-0240 section 10): what the
 // script numbered, held, let go and called the core with, and what the stamp answered, read from each
 // root as the test ends, before anything navigates away. A passing test reads nothing.
 async function readJournals(page, testInfo) {
     if (testInfo.status === testInfo.expectedStatus || testInfo.status === 'skipped' || page.isClosed()) {
         return null;
+    }
+    // A test that timed out may have timed out on a page that no longer answers: every reading of it,
+    // the journal's included, would then wait until the teardown timed out too, and say nothing.
+    const hung = testInfo.status === 'timedOut' ? await endHungScript(page) : null;
+    if (hung !== null) {
+        console.log(`hung-page ${hung}`);
+        expect.soft(hung, 'the page still answers once the test has timed out').toBeNull();
+        if (hung.includes('could not be ended')) {
+            await page.close({ runBeforeUnload: false }).catch(() => { });
+            return [{ unread: hung }];
+        }
     }
     return page.evaluate(() => [...document.querySelectorAll('.ex-grid')].map((root) => ({
         root: root.id,
@@ -751,6 +806,7 @@ async function attachJournals(testInfo, journals, hostLog) {
 
 // A test with a document of its own (ADR-0056): a context of its own, every navigation real.
 async function ownPage(app, page, use, options, testInfo) {
+    await watchForHang(page);
     holdForcedPresses(page);
     app.startHostLog();
     const sink = newSink();

@@ -4014,23 +4014,40 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The entry whose turn has come, while it waits for the inputs before it: still a press held, which a
     // press made meanwhile supersedes and the keys typed meanwhile wait behind (pressHeld).
     let draggableInTurn = null;
+    // What a press gives DOM focus to: the nearest of these around what it pressed.
+    const pressFocusable = 'input, button, select, textarea, a[href], [tabindex]';
     const answerDraggablePress = async (k) => {
         draggableInTurn = k;
         try {
             await answeredUpTo(k.upTo);
             await editorSettled();
+            if (pressFocusHeld === k) {
+                pressFocusHeld = null;
+            }
+            // The press as the product hears it, kept from it when it was made (onOuterPress): told, if its
+            // control claims it, and handed on, now that every input sent before it has been answered. Still
+            // in its turn while that is answered: a press made meanwhile supersedes it, and its release waits.
+            await replayClaimed({ press: 'mousedown', target: k.target, init: k.init });
         } finally {
             draggableInTurn = null;
         }
         // The control the press gave DOM focus: the one its label names — a Field List entry's caption is its
         // tick's label — or the one pressed. The label first: a focusable box around it is not what was pressed.
-        const control = k.target.closest('label')?.control
-            ?? k.target.closest('input, button, select, textarea, a[href], [tabindex]') ?? null;
+        const control = k.target.closest('label')?.control ?? k.target.closest(pressFocusable) ?? null;
         const active = document.activeElement;
         if (!k.superseded && control instanceof HTMLElement && control.isConnected && active !== control
             && (!active || active === document.body || active === document.documentElement
                 || (active instanceof Element && instanceHolds(active)))) {
             control.focus({ preventScroll: true });
+        } else if (k.focusIn && k.focusIn.target.isConnected && document.activeElement === k.focusIn.target) {
+            // The focus its default moved, kept from the product (onOuterFocusIn), told where it still is. A
+            // focus moved since by something else was told as that moved it.
+            replaying = true;
+            try {
+                k.focusIn.target.dispatchEvent(new FocusEvent('focusin', { bubbles: true, relatedTarget: k.focusIn.relatedTarget }));
+            } finally {
+                replaying = false;
+            }
         }
     };
     // A press that goes on as it comes while a press let through for its drag waits for its turn has put
@@ -4468,6 +4485,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         heldPress = null;
+        pressFocusHeld = null;
         if ((answering || held.length > 0) && holdsClaimedPress(event.target) && !startsDrag(event.target)) {
             event.preventDefault();
             event.stopPropagation();
@@ -4481,15 +4499,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // gone made slowly, and at the press's turn it goes back to what was pressed. The keys typed after
         // it are held behind it (onOuterKey). Only the primary button presses what it lands on; with nothing
         // held and no hold standing, nothing waits that it could overtake.
+        // Its default goes on, but the product hears the press, its release and the focus its default moved
+        // in its turn too (pressFocusHeld, answerDraggablePress): heard as it came, ExPivot's dismissal of an
+        // open field menu ran ahead of a click on that menu's command still held, which then reached a
+        // button already gone, and every input behind it waited for an answer that never came (ADR-0362's
+        // note of 2026-10-26).
         if (event.button === 0 && startsDrag(event.target) && pressesClaimant(event.target)
             && (answering || held.length > 0)) {
-            held.push({ draggablePress: true, target: event.target, upTo: inputsSent });
+            event.stopPropagation();
+            const k = { draggablePress: true, target: event.target, init: mouseInit(event), upTo: inputsSent };
+            held.push(k);
+            heldPress = k;
+            pressFocusHeld = k;
             if (!answering) {
                 startHold();
             }
-        } else {
-            supersedeDraggablePresses();
+            return;
         }
+        supersedeDraggablePresses();
         if (claimOf(event.target, 'mousedown') !== null) {
             tellClaim('mousedown');
         }
@@ -4497,6 +4524,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The last press made, held on a control that claims its events (onPress, onOuterPress), while its
     // release is still to come: null once that release has been heard, or another press has been made.
     let heldPress = null;
+    // A press let through for its drag while it waits for its turn (onOuterPress), until its release: the
+    // focus its default moves meanwhile is kept from the product's handlers, and heard in the press's turn
+    // (onOuterFocusIn, answerDraggablePress).
+    let pressFocusHeld = null;
     const onPress = (event) => {
         lookSettled();
         // A press while the Keyboard Field composes (ADR-0080): the press would end the
@@ -4510,6 +4541,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         if (!replaying) {
             heldPress = null;
+            pressFocusHeld = null;
         }
         // A press inside one of this grid's popovers keeps the keyboard there from its opening focus
         // (openingOvertaken).
@@ -4769,9 +4801,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // while that press is still held. Any other release there — of a press the gate let through, on a
     // Consumer's control on the toolbar band or a design system's — is left to go as it came, whatever
     // the gate holds: held, it never reached its handler.
+    // The focus a press let through for its drag moved by its default, while the press waits for its turn
+    // (pressFocusHeld): kept from the product's handlers until then — ExPivot's dismissal of an open field
+    // menu hears it — and noted on the press, which tells it in its turn (answerDraggablePress). Reads the
+    // event's target; no layout is read.
+    // Only a focus on the control a press there focuses — what was pressed, or the nearest box around it
+    // that takes focus — is the press's default's: a hand-off the earlier inputs made meanwhile, to a
+    // menu's command or to a box further out, goes on as it comes.
+    const onOuterFocusIn = (event) => {
+        const k = pressFocusHeld;
+        if (k === null || replaying || !(k.target instanceof Element) || event.target !== k.target.closest(pressFocusable)) {
+            return;
+        }
+        event.stopPropagation();
+        k.focusIn = { target: event.target, relatedTarget: event.relatedTarget };
+        pressFocusHeld = null;
+    };
     const onOuterRelease = (event) => {
         lookSettled();
-        if (core && !replaying && heldPress !== null && held.includes(heldPress)) {
+        pressFocusHeld = null;
+        if (core && !replaying && heldPress !== null && (held.includes(heldPress) || draggableInTurn === heldPress)) {
             heldPress = null;
             event.stopPropagation();
             held.push({ press: 'mouseup', claim: true, target: event.target, init: mouseInit(event) });
@@ -5152,7 +5201,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // its place in this instance's order (onOuterKey, onOuterPress, onOuterRelease, onClaimedEvent). The
     // keyboard crossing the Input Root's edge is told from here (tellCrossing). An ExGrid on its own is
     // its own Input Root, and nothing is added. No new kind of event is heard (ADR-0021's entries for the
-    // capture-phase keys, presses, clicks and focus).
+    // capture-phase keys, presses, clicks and focus; the focus a press let through for its drag moves, as
+    // `focusin`, under ADR-0362's note of 2026-10-26).
     const outer = (listener) => (event) => {
         if (outsideRootWithin(event.target)) {
             listener(event);
@@ -5169,10 +5219,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const onOuterPressed = outer(onOuterPress);
     const onOuterReleased = outer(onOuterRelease);
     const onOuterClaimed = outer(onClaimedEvent);
+    const onOuterFocusedIn = outer(onOuterFocusIn);
     const outerListeners = inputRoot === root ? [] : [
         ['keydown', onOuterKeyDown], ['keyup', onOuterKeyUp], ['mousedown', onOuterPressed], ['mouseup', onOuterReleased],
         ['click', onOuterClaimed], ['dblclick', onOuterClaimed], ['contextmenu', onOuterClaimed],
-        ['focus', tellCrossing], ['focusout', tellCrossing],
+        ['focus', tellCrossing], ['focusin', onOuterFocusedIn], ['focusout', tellCrossing],
     ];
     for (const [type, listener] of outerListeners) {
         inputRoot.addEventListener(type, listener, true);
@@ -5190,7 +5241,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ['keydown', outer(onJoinedKey), true], ['keydown', outer(onJoinedKeyClaim), false], ['keyup', onJoinedKeyUp, true],
         ['mousedown', onOuterPressed, true], ['mouseup', onOuterReleased, true],
         ['click', onOuterClaimed, true], ['dblclick', onOuterClaimed, true], ['contextmenu', onOuterClaimed, true],
-        ['focus', tellCrossing, true], ['focusout', tellCrossing, true],
+        ['focus', tellCrossing, true], ['focusin', onOuterFocusedIn, true], ['focusout', tellCrossing, true],
     ];
     // The surface `element` names, or the nearest element around it that `around` matches — the box a
     // design system draws around a Chrome's content and gives it no reference to, such as a MudDialog's
