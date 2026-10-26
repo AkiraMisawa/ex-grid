@@ -66,3 +66,5 @@ Layer 1: `CompletionTriggerTests` (68 cases). Layer 2: `CompletionTriggerWiringT
 list and its texts, ↑/↓, Tab writing `-1` and replacing a typed `-`, Escape then ↓ pointing, a
 press pointing while the list is open, nothing at another argument, `Table[`, Backspace, F3.
 Layer 3 for SH-36 is not written or run here.
+
+2026-10-26: the xUnit tests this ticket names (`CompletionTriggerTests`) moved to the shared cases, `tests/cases/sheet/completion-trigger.json` and `completion-trigger-sheet.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `CompletionTriggerTests` keeps the walk over every declared function and the lists read for one name, both mirrored in `surface.test.ts`.

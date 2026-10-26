@@ -195,3 +195,5 @@ passing over Excel's own answer for MROUND, where the engine refuses the Formula
 2026-10-12). The case is `observed` with Excel's answer as `excelExpect`. No case of this ticket's files is open.
 
 2026-10-26: the xUnit tests this ticket names (`IndirectTests`) moved to the shared cases, `tests/cases/sheet/indirect.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim.
+
+2026-10-26: the xUnit tests this ticket names (`CompletionTriggerTests`) moved to the shared cases, `tests/cases/sheet/completion-trigger.json` and `completion-trigger-sheet.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `CompletionTriggerTests` keeps the walk over every declared function and the lists read for one name, both mirrored in `surface.test.ts`.

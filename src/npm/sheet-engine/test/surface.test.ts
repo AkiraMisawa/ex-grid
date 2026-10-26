@@ -1,11 +1,12 @@
-// The calls a shared case does not make, held here as EngineSurfaceTests.cs, CellAddressTests.cs and
-// FormulaReferencesTests.cs hold them on ExSheet.Engine (ADR-0370 section 2): a name asked about, a Sheet renamed
-// directly, two Entries or two keys compared, a walk over every column or every prefix, and the package's surface
-// read for a row that can be hidden.
+// The calls a shared case does not make, held here as EngineSurfaceTests.cs, CellAddressTests.cs,
+// CompletionTriggerTests.cs and FormulaReferencesTests.cs hold them on ExSheet.Engine (ADR-0370 section 2): a name asked about, a Sheet renamed
+// directly, two Entries or two keys compared, a walk over every column, prefix or declared function, a list read for
+// one name in it, and the package's surface read for a row that can be hidden.
 import { describe, expect, it } from 'vitest';
 import * as engine from '../src/index';
 import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
+import { DeclaredFunction } from '../src/declared-function';
 import { Entry } from '../src/entry';
 import { NumberFormat, numberFormatColourRgb } from '../src/number-format';
 import { CellAddress, columnCount } from '../src/cell-address';
@@ -254,5 +255,36 @@ describe('the engine surface', () => {
                 }
             }
         }
+    });
+
+    // ADR-0058, SH-36: unrestricted arguments do not declare a choice list.
+    it('declares no values for an unrestricted argument', () => {
+        const listing = new Set(['XLOOKUP', 'VLOOKUP', 'HLOOKUP', 'MATCH', 'YEARFRAC', 'SUBTOTAL', 'AGGREGATE']);
+        for (const declared of DeclaredFunction.all.filter(f => !listing.has(f.name))) {
+            for (let index = 0; index < 8; index++) expect(declared.valuesOf(index)).toEqual([]);
+        }
+    });
+
+    // ADR-0058 (Q54), SH-36: outside a value-list argument a letter lists the functions and Linked Tables it begins, as
+    // before: at another argument, after an operator, inside a call of its own, and inside a grouping parenthesis,
+    // which holds an expression of its own (decided with the user 2026-10-01, not asked of Excel).
+    it.each([
+        ['=A|', 'AVERAGE'],
+        ['=1+A|', 'AVERAGE'],
+        ['=SUM(A|', 'AVERAGE'],
+        ['=XLOOKUP(1,A|', 'AVERAGE'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,P|', 'Positions'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,,0,1,P|', 'Positions'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,,SUM(A|', 'AVERAGE'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,,(A|', 'AVERAGE'],
+        ['=XLOOKUP(1,A2:A4,B2:B4,,ROUND(1,X|', 'XLOOKUP'],
+    ] as const)('lists names for %s outside a value-list argument', (marked, listed) => {
+        const workbook = new Workbook(Culture.of('en-US'));
+        workbook.declareLinkedTable('Positions', ['Id', 'PV']);
+        const caret = marked.indexOf('|');
+        const completion = workbook.shown.complete(marked.replace('|', ''), caret);
+        if (completion === undefined) throw new Error(`${marked} lists nothing.`);
+        expect(completion.candidates.map(c => c.name)).toContain(listed);
+        expect(completion.candidates.filter(c => c.kind === 'argumentValue')).toEqual([]);
     });
 });

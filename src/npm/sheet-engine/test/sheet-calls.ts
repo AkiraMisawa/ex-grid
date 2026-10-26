@@ -4,6 +4,7 @@
 // each one here, as the Script Core spells it.
 import { CellAddress } from '../src/cell-address';
 import { CellRange } from '../src/cell-range';
+import { DeclaredFunction } from '../src/declared-function';
 import {
     completeFormula, constantText, cycleReference, formulaHintAt, formulaPointAt, formulaReferences, lookupFinds, lookupText,
     pointedReferenceAt, referenceText, structuredReferenceText,
@@ -17,6 +18,7 @@ type Callable = (...args: unknown[]) => unknown;
 const subjects: Readonly<Record<string, object>> = {
     CellAddress,
     CellRange,
+    DeclaredFunction,
     // C#'s FormulaEntry is a static class: its members are the module's functions here, under the C# names.
     FormulaEntry: {
         complete: completeFormula,

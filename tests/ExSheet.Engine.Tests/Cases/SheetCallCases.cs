@@ -22,6 +22,7 @@ public class SheetCallCaseTests
     {
         ["CellAddress"] = typeof(CellAddress),
         ["CellRange"] = typeof(CellRange),
+        ["DeclaredFunction"] = typeof(DeclaredFunction),
         ["FormulaEntry"] = typeof(FormulaEntry),
     };
 

@@ -92,3 +92,5 @@ headless on macOS with `--project=chrome` and `--grep "SH-36|DC-19|DC-28|DC-31|E
 WebAssembly and 28 of 28 on the Server host. The first run failed x4 under both Chromes on the
 outline's layer, which the test had looked for in the scrolling layer; the assertion was corrected.
 Edge and the full run are CI's.
+
+2026-10-26: the xUnit tests this ticket names (`CompletionTriggerTests`) moved to the shared cases, `tests/cases/sheet/completion-trigger.json` and `completion-trigger-sheet.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `CompletionTriggerTests` keeps the walk over every declared function and the lists read for one name, both mirrored in `surface.test.ts`.

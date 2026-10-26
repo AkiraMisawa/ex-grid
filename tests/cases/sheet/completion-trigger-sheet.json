@@ -1,0 +1,415 @@
+{
+  "about": "Completion's triggers as a Sheet answers them with its own Linked Tables (ExSheet ticket 39, ADR-0058, SH-36): the columns after Table[, the list again after Backspace, and the values each list writes, evaluated. Transcribed from ExSheet.Engine.Tests' CompletionTriggerTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0058 / ADR-0047 (2026-10-10): SUBTOTAL's and AGGREGATE's lists write only a number the engine evaluates, never one it refuses (each number and option the lists in completion-trigger.json write, over 1, 2 and 4)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "F1": "=SUBTOTAL(1,A1:A3)", "F2": "=SUBTOTAL(2,A1:A3)", "F3": "=SUBTOTAL(3,A1:A3)", "F4": "=SUBTOTAL(4,A1:A3)", "F5": "=SUBTOTAL(5,A1:A3)", "F6": "=SUBTOTAL(6,A1:A3)", "F7": "=SUBTOTAL(7,A1:A3)", "F8": "=SUBTOTAL(8,A1:A3)", "F9": "=SUBTOTAL(9,A1:A3)", "F10": "=SUBTOTAL(10,A1:A3)", "F11": "=SUBTOTAL(11,A1:A3)", "F12": "=SUBTOTAL(101,A1:A3)", "F13": "=SUBTOTAL(102,A1:A3)", "F14": "=SUBTOTAL(103,A1:A3)", "F15": "=SUBTOTAL(104,A1:A3)", "F16": "=SUBTOTAL(105,A1:A3)", "F17": "=SUBTOTAL(106,A1:A3)", "F18": "=SUBTOTAL(107,A1:A3)", "F19": "=SUBTOTAL(108,A1:A3)", "F20": "=SUBTOTAL(109,A1:A3)", "F21": "=SUBTOTAL(110,A1:A3)", "F22": "=SUBTOTAL(111,A1:A3)", "F23": "=AGGREGATE(1,0,A1:A3)", "F24": "=AGGREGATE(1,1,A1:A3)", "F25": "=AGGREGATE(1,2,A1:A3)", "F26": "=AGGREGATE(1,3,A1:A3)", "F27": "=AGGREGATE(1,4,A1:A3)", "F28": "=AGGREGATE(1,5,A1:A3)", "F29": "=AGGREGATE(1,6,A1:A3)", "F30": "=AGGREGATE(1,7,A1:A3)", "F31": "=AGGREGATE(2,0,A1:A3)", "F32": "=AGGREGATE(2,1,A1:A3)", "F33": "=AGGREGATE(2,2,A1:A3)", "F34": "=AGGREGATE(2,3,A1:A3)", "F35": "=AGGREGATE(2,4,A1:A3)", "F36": "=AGGREGATE(2,5,A1:A3)", "F37": "=AGGREGATE(2,6,A1:A3)", "F38": "=AGGREGATE(2,7,A1:A3)", "F39": "=AGGREGATE(3,0,A1:A3)", "F40": "=AGGREGATE(3,1,A1:A3)", "F41": "=AGGREGATE(3,2,A1:A3)", "F42": "=AGGREGATE(3,3,A1:A3)", "F43": "=AGGREGATE(3,4,A1:A3)", "F44": "=AGGREGATE(3,5,A1:A3)", "F45": "=AGGREGATE(3,6,A1:A3)", "F46": "=AGGREGATE(3,7,A1:A3)", "F47": "=AGGREGATE(4,0,A1:A3)", "F48": "=AGGREGATE(4,1,A1:A3)", "F49": "=AGGREGATE(4,2,A1:A3)", "F50": "=AGGREGATE(4,3,A1:A3)", "F51": "=AGGREGATE(4,4,A1:A3)", "F52": "=AGGREGATE(4,5,A1:A3)", "F53": "=AGGREGATE(4,6,A1:A3)", "F54": "=AGGREGATE(4,7,A1:A3)", "F55": "=AGGREGATE(5,0,A1:A3)", "F56": "=AGGREGATE(5,1,A1:A3)", "F57": "=AGGREGATE(5,2,A1:A3)", "F58": "=AGGREGATE(5,3,A1:A3)", "F59": "=AGGREGATE(5,4,A1:A3)", "F60": "=AGGREGATE(5,5,A1:A3)", "F61": "=AGGREGATE(5,6,A1:A3)", "F62": "=AGGREGATE(5,7,A1:A3)", "F63": "=AGGREGATE(6,0,A1:A3)", "F64": "=AGGREGATE(6,1,A1:A3)", "F65": "=AGGREGATE(6,2,A1:A3)", "F66": "=AGGREGATE(6,3,A1:A3)", "F67": "=AGGREGATE(6,4,A1:A3)", "F68": "=AGGREGATE(6,5,A1:A3)", "F69": "=AGGREGATE(6,6,A1:A3)", "F70": "=AGGREGATE(6,7,A1:A3)", "F71": "=AGGREGATE(7,0,A1:A3)", "F72": "=AGGREGATE(7,1,A1:A3)", "F73": "=AGGREGATE(7,2,A1:A3)", "F74": "=AGGREGATE(7,3,A1:A3)", "F75": "=AGGREGATE(7,4,A1:A3)", "F76": "=AGGREGATE(7,5,A1:A3)", "F77": "=AGGREGATE(7,6,A1:A3)", "F78": "=AGGREGATE(7,7,A1:A3)", "F79": "=AGGREGATE(8,0,A1:A3)", "F80": "=AGGREGATE(8,1,A1:A3)", "F81": "=AGGREGATE(8,2,A1:A3)", "F82": "=AGGREGATE(8,3,A1:A3)", "F83": "=AGGREGATE(8,4,A1:A3)", "F84": "=AGGREGATE(8,5,A1:A3)", "F85": "=AGGREGATE(8,6,A1:A3)", "F86": "=AGGREGATE(8,7,A1:A3)", "F87": "=AGGREGATE(9,0,A1:A3)", "F88": "=AGGREGATE(9,1,A1:A3)", "F89": "=AGGREGATE(9,2,A1:A3)", "F90": "=AGGREGATE(9,3,A1:A3)", "F91": "=AGGREGATE(9,4,A1:A3)", "F92": "=AGGREGATE(9,5,A1:A3)", "F93": "=AGGREGATE(9,6,A1:A3)", "F94": "=AGGREGATE(9,7,A1:A3)", "F95": "=AGGREGATE(10,0,A1:A3)", "F96": "=AGGREGATE(10,1,A1:A3)", "F97": "=AGGREGATE(10,2,A1:A3)", "F98": "=AGGREGATE(10,3,A1:A3)", "F99": "=AGGREGATE(10,4,A1:A3)", "F100": "=AGGREGATE(10,5,A1:A3)", "F101": "=AGGREGATE(10,6,A1:A3)", "F102": "=AGGREGATE(10,7,A1:A3)", "F103": "=AGGREGATE(11,0,A1:A3)", "F104": "=AGGREGATE(11,1,A1:A3)", "F105": "=AGGREGATE(11,2,A1:A3)", "F106": "=AGGREGATE(11,3,A1:A3)", "F107": "=AGGREGATE(11,4,A1:A3)", "F108": "=AGGREGATE(11,5,A1:A3)", "F109": "=AGGREGATE(11,6,A1:A3)", "F110": "=AGGREGATE(11,7,A1:A3)", "F111": "=AGGREGATE(12,0,A1:A3)", "F112": "=AGGREGATE(12,1,A1:A3)", "F113": "=AGGREGATE(12,2,A1:A3)", "F114": "=AGGREGATE(12,3,A1:A3)", "F115": "=AGGREGATE(12,4,A1:A3)", "F116": "=AGGREGATE(12,5,A1:A3)", "F117": "=AGGREGATE(12,6,A1:A3)", "F118": "=AGGREGATE(12,7,A1:A3)", "F119": "=AGGREGATE(14,0,A1:A3,1)", "F120": "=AGGREGATE(14,1,A1:A3,1)", "F121": "=AGGREGATE(14,2,A1:A3,1)", "F122": "=AGGREGATE(14,3,A1:A3,1)", "F123": "=AGGREGATE(14,4,A1:A3,1)", "F124": "=AGGREGATE(14,5,A1:A3,1)", "F125": "=AGGREGATE(14,6,A1:A3,1)", "F126": "=AGGREGATE(14,7,A1:A3,1)", "F127": "=AGGREGATE(15,0,A1:A3,1)", "F128": "=AGGREGATE(15,1,A1:A3,1)", "F129": "=AGGREGATE(15,2,A1:A3,1)", "F130": "=AGGREGATE(15,3,A1:A3,1)", "F131": "=AGGREGATE(15,4,A1:A3,1)", "F132": "=AGGREGATE(15,5,A1:A3,1)", "F133": "=AGGREGATE(15,6,A1:A3,1)", "F134": "=AGGREGATE(15,7,A1:A3,1)"}, "expect": {"values": {"F1": 2.3333333333333335, "F2": 3, "F3": 3, "F4": 4, "F5": 1, "F6": 8, "F7": 1.5275252316519465, "F8": 1.247219128924647, "F9": 7, "F10": 2.333333333333333, "F11": 1.5555555555555554, "F12": 2.3333333333333335, "F13": 3, "F14": 3, "F15": 4, "F16": 1, "F17": 8, "F18": 1.5275252316519465, "F19": 1.247219128924647, "F20": 7, "F21": 2.333333333333333, "F22": 1.5555555555555554, "F23": 2.3333333333333335, "F24": 2.3333333333333335, "F25": 2.3333333333333335, "F26": 2.3333333333333335, "F27": 2.3333333333333335, "F28": 2.3333333333333335, "F29": 2.3333333333333335, "F30": 2.3333333333333335, "F31": 3, "F32": 3, "F33": 3, "F34": 3, "F35": 3, "F36": 3, "F37": 3, "F38": 3, "F39": 3, "F40": 3, "F41": 3, "F42": 3, "F43": 3, "F44": 3, "F45": 3, "F46": 3, "F47": 4, "F48": 4, "F49": 4, "F50": 4, "F51": 4, "F52": 4, "F53": 4, "F54": 4, "F55": 1, "F56": 1, "F57": 1, "F58": 1, "F59": 1, "F60": 1, "F61": 1, "F62": 1, "F63": 8, "F64": 8, "F65": 8, "F66": 8, "F67": 8, "F68": 8, "F69": 8, "F70": 8, "F71": 1.5275252316519465, "F72": 1.5275252316519465, "F73": 1.5275252316519465, "F74": 1.5275252316519465, "F75": 1.5275252316519465, "F76": 1.5275252316519465, "F77": 1.5275252316519465, "F78": 1.5275252316519465, "F79": 1.247219128924647, "F80": 1.247219128924647, "F81": 1.247219128924647, "F82": 1.247219128924647, "F83": 1.247219128924647, "F84": 1.247219128924647, "F85": 1.247219128924647, "F86": 1.247219128924647, "F87": 7, "F88": 7, "F89": 7, "F90": 7, "F91": 7, "F92": 7, "F93": 7, "F94": 7, "F95": 2.333333333333333, "F96": 2.333333333333333, "F97": 2.333333333333333, "F98": 2.333333333333333, "F99": 2.333333333333333, "F100": 2.333333333333333, "F101": 2.333333333333333, "F102": 2.333333333333333, "F103": 1.5555555555555554, "F104": 1.5555555555555554, "F105": 1.5555555555555554, "F106": 1.5555555555555554, "F107": 1.5555555555555554, "F108": 1.5555555555555554, "F109": 1.5555555555555554, "F110": 1.5555555555555554, "F111": 2, "F112": 2, "F113": 2, "F114": 2, "F115": 2, "F116": 2, "F117": 2, "F118": 2, "F119": 4, "F120": 4, "F121": 4, "F122": 4, "F123": 4, "F124": 4, "F125": 4, "F126": 4, "F127": 1, "F128": 1, "F129": 1, "F130": 1, "F131": 1, "F132": 1, "F133": 1, "F134": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: each value the lists write is a mode the engine evaluates, not the #VALUE! of a mode it does not know (a binary search over data sorted as it says, 1, 2 ascending in A and 2, 1 descending in C)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "B1": "10", "B2": "20", "C1": "2", "C2": "1", "D1": "20", "D2": "10", "F1": "=XLOOKUP(2,A1:A2,B1:B2,,0)", "F2": "=XLOOKUP(2,A1:A2,B1:B2,,-1)", "F3": "=XLOOKUP(2,A1:A2,B1:B2,,1)", "F4": "=XLOOKUP(2,A1:A2,B1:B2,,2)", "F5": "=XLOOKUP(2,A1:A2,B1:B2,,3)", "F6": "=XLOOKUP(2,A1:A2,B1:B2,,0,1)", "F7": "=XLOOKUP(2,A1:A2,B1:B2,,0,-1)", "F8": "=XLOOKUP(2,A1:A2,B1:B2,,0,2)", "F9": "=XLOOKUP(2,C1:C2,D1:D2,,0,-2)"}, "expect": {"values": {"F1": 20, "F2": 20, "F3": 20, "F4": 20, "F5": 20, "F6": 20, "F7": 20, "F8": 20, "F9": 20}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,A1|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,A1|": {"start": 24, "length": 2, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,1+|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,1+|": {"start": 24, "length": 2, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,X|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,X|": {"start": 24, "length": 1, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,AV|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,AV|": {"start": 24, "length": 2, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,Positions|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,Positions|": {"start": 24, "length": 9, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,\"|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,\"|": {"start": 24, "length": 1, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,0,A|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,0,A|": {"start": 26, "length": 1, "candidates": [{"name": "1 - Search first-to-last", "kind": "argumentValue"}, {"name": "-1 - Search last-to-first", "kind": "argumentValue"}, {"name": "2 - Binary search (sorted ascending order)", "kind": "argumentValue"}, {"name": "-2 - Binary search (sorted descending order)", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,x|)'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,x|)": {"start": 24, "length": 1, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,- |'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,- |": {"start": 24, "length": 2, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,\"a,b|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,\"a,b|": {"start": 24, "length": 4, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,SUM(1)|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,SUM(1)|": {"start": 24, "length": 6, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,--1|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,--1|": {"start": 24, "length": 3, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,- 1|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,- 1|": {"start": 24, "length": 3, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,50%|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,50%|": {"start": 24, "length": 3, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54), SH-36: at a value-list argument, text that is not a number lists every value, the first selected (letters list the values, not the functions or tables they begin, Positions declared), and accepting one writes it over the whole of what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,1e|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,1e|": {"start": 24, "length": 2, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (Q49, Q54), SH-36: what stands inside the argument after the caret is of it, text in quotes and its commas too, and a letter there is no name being typed: '=XLOOKUP(1,A2:A4,B2:B4,,\"a|,b\")'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,\"a|,b\")": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (Q49, Q54), SH-36: what stands inside the argument after the caret is of it, text in quotes and its commas too, and a letter there is no name being typed: '=XLOOKUP(1,A2:A4,B2:B4,,\"a|,b'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,\"a|,b": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (Q49, Q54), SH-36: what stands inside the argument after the caret is of it, text in quotes and its commas too, and a letter there is no name being typed: '=XLOOKUP(1,A2:A4,B2:B4,,AV|ERAGE)'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,AV|ERAGE)": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (Q49, Q54), SH-36: what stands inside the argument after the caret is of it, text in quotes and its commas too, and a letter there is no name being typed: '=XLOOKUP(1,A2:A4,B2:B4,,|X)'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,|X)": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=1+|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=1+|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=SUM(|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=SUM(1,|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(1,|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=XLOOKUP(|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=XLOOKUP(1,|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=XLOOKUP(1,A2:A4,|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=XLOOKUP(1,A2:A4,B2:B4,|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=XLOOKUP(1,A2:A4,B2:B4,,0,1,|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,0,1,|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=XLOOKUP(1,A2:A4,B2:B4,,(|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,(|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=IF(XLOOKUP(1,A2:A4,B2:B4),|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=IF(XLOOKUP(1,A2:A4,B2:B4),|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=IF(A1,|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=IF(A1,|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there: '=ROUND(A1,|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=ROUND(A1,|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (decided with the user 2026-10-01, not asked of Excel), SH-36: at a value-list argument Table[ lists the table's columns, as anywhere else ([ opens a structured reference, a context of its own as a grouping parenthesis is) and nothing else inside its brackets, not the values: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,Positions[|": {"start": 34, "length": 0, "candidates": [{"name": "Id", "kind": "linkedTableColumn"}, {"name": "PV", "kind": "linkedTableColumn"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (decided with the user 2026-10-01, not asked of Excel), SH-36: at a value-list argument Table[ lists the table's columns, as anywhere else ([ opens a structured reference, a context of its own as a grouping parenthesis is) and nothing else inside its brackets, not the values: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[P|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,Positions[P|": {"start": 34, "length": 1, "candidates": [{"name": "PV", "kind": "linkedTableColumn"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (decided with the user 2026-10-01, not asked of Excel), SH-36: at a value-list argument Table[ lists the table's columns, as anywhere else ([ opens a structured reference, a context of its own as a grouping parenthesis is) and nothing else inside its brackets, not the values: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[P|V])'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,Positions[P|V])": {"start": 34, "length": 2, "candidates": [{"name": "PV", "kind": "linkedTableColumn"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (decided with the user 2026-10-01, not asked of Excel), SH-36: at a value-list argument Table[ lists the table's columns, as anywhere else ([ opens a structured reference, a context of its own as a grouping parenthesis is) and nothing else inside its brackets, not the values: '=XLOOKUP(1,A2:A4,B2:B4,,1+Positions[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,1+Positions[|": {"start": 36, "length": 0, "candidates": [{"name": "Id", "kind": "linkedTableColumn"}, {"name": "PV", "kind": "linkedTableColumn"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (decided with the user 2026-10-01, not asked of Excel), SH-36: at a value-list argument Table[ lists the table's columns, as anywhere else ([ opens a structured reference, a context of its own as a grouping parenthesis is) and nothing else inside its brackets, not the values: '=XLOOKUP(1,A2:A4,B2:B4,,0,Positions[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,0,Positions[|": {"start": 36, "length": 0, "candidates": [{"name": "Id", "kind": "linkedTableColumn"}, {"name": "PV", "kind": "linkedTableColumn"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (decided with the user 2026-10-01), SH-36: inside the brackets at a value-list argument, what lists no column lists nothing, not the values: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[Q|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,Positions[Q|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (decided with the user 2026-10-01), SH-36: inside the brackets at a value-list argument, what lists no column lists nothing, not the values: '=XLOOKUP(1,A2:A4,B2:B4,,Trades[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,Trades[|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (decided with the user 2026-10-01), SH-36: inside the brackets at a value-list argument, what lists no column lists nothing, not the values: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[#|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,Positions[#|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (Q54, and the decisions of 2026-10-01), SH-36: once a structured reference's bracket or a grouping parenthesis closes, the caret is back at the argument, and what it holds is text that is not a number: every value is listed: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[Id]|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,Positions[Id]|": {"start": 24, "length": 13, "candidates": [{"name": "0 - Exact match"}, {"name": "-1 - Exact match or next smaller item"}, {"name": "1 - Exact match or next larger item"}, {"name": "2 - Wildcard character match"}, {"name": "3 - Regex match"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (Q54, and the decisions of 2026-10-01), SH-36: once a structured reference's bracket or a grouping parenthesis closes, the caret is back at the argument, and what it holds is text that is not a number: every value is listed: '=XLOOKUP(1,A2:A4,B2:B4,,(1)|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,A2:A4,B2:B4,,(1)|": {"start": 24, "length": 3, "candidates": [{"name": "0 - Exact match"}, {"name": "-1 - Exact match or next smaller item"}, {"name": "1 - Exact match or next larger item"}, {"name": "2 - Wildcard character match"}, {"name": "3 - Regex match"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: after Table[ the table's columns are listed, in the table's order, and nothing else (not @, #All, #Data, #Headers, #Totals): '=SUM(Positions[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["PV", "Id", "Book"]}, "expect": {"completions": {"=SUM(Positions[|": {"start": 15, "length": 0, "candidates": [{"name": "PV", "kind": "linkedTableColumn", "insertText": "PV"}, {"name": "Id", "kind": "linkedTableColumn", "insertText": "Id"}, {"name": "Book", "kind": "linkedTableColumn", "insertText": "Book"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: the column typed so far narrows the list, without regard to case, and is what accepting replaces: '=SUM(Positions[p|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[p|": {"start": 15, "length": 1, "candidates": [{"name": "PV", "insertText": "PV"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: the column typed so far narrows the list, without regard to case, and is what accepting replaces: '=SUM(positions[P|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(positions[P|": {"start": 15, "length": 1, "candidates": [{"name": "PV", "insertText": "PV"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: the column typed so far narrows the list, without regard to case, and is what accepting replaces: '=XLOOKUP(1,Positions[Id],Positions[P|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,Positions[Id],Positions[P|": {"start": 35, "length": 1, "candidates": [{"name": "PV", "insertText": "PV"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: the column typed so far narrows the list, without regard to case, and is what accepting replaces: '=SUM(Positions[P|V])'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[P|V])": {"start": 15, "length": 2, "candidates": [{"name": "PV", "insertText": "PV"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: the column typed so far narrows the list, without regard to case, and is what accepting replaces: '=SUM(Positions[|PV])'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[|PV])": {"start": 15, "length": 2, "candidates": [{"name": "Id"}, {"name": "PV", "insertText": "PV"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: the column typed so far narrows the list, without regard to case, and is what accepting replaces: '=SUM(Positions[P|, 3)'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[P|, 3)": {"start": 15, "length": 1, "candidates": [{"name": "PV", "insertText": "PV"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Positions[#|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[#|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Positions[@|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[@|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Positions[[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[[|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Positions[[P|V]])'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[[P|V]])": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Positions[PV]|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[PV]|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Positions[PV])|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[PV])|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Positions[Q|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[Q|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Trades[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Trades[|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(\"Positions[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(\"Positions[|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(Positions|[PV])'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions|[PV])": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: nothing inside brackets the grammar refuses, after the bracket closes, or for a table that is not declared: '=SUM(A1 Positions[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(A1 Positions[|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 / ADR-0047, SH-36: a column whose name holds a character the grammar reads specially is written escaped, and reads back as that column: '=SUM(Positions[|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "Rate #1", "O'Brien", "[Old]"]}, "expect": {"completions": {"=SUM(Positions[|": {"candidates": [{"insertText": "Id"}, {"insertText": "Rate '#1"}, {"insertText": "O''Brien"}, {"insertText": "'[Old']"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: an escape typed before the caret is read as the character it escapes: \"=SUM(Positions[O''|\"",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "O'Brien"]}, "expect": {"completions": {"=SUM(Positions[O''|": {"candidates": [{"name": "O'Brien"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: an escape typed before the caret is read as the character it escapes: \"=SUM(Positions[O'|\"",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "O'Brien"]}, "expect": {"completions": {"=SUM(Positions[O'|": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: Backspace back into a name lists again, as Excel does (the ninth Windows run, case 11): '=Posit|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=Posit|": {"candidates": [{"name": "Positions"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: Backspace back into a name lists again, as Excel does (the ninth Windows run, case 11): '=Posi|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=Posi|": {"candidates": [{"name": "Positions"}]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058, SH-36: Backspace back into a name lists again, as Excel does (the ninth Windows run, case 11): '=SUM(Positions[P|'",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=SUM(Positions[P|": {"candidates": [{"name": "PV"}]}}}}
+      ]
+    }
+  ]
+}

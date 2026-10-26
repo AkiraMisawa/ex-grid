@@ -719,8 +719,8 @@ own reading of a malformed case, an engine defect, and what JavaScript throws by
 
 A file of kind `sheetCalls` holds calls of the engine's surface made directly, outside a Workbook: a `call` of
 `Subject.member` (a static method, or a property read when the case writes no `args`) or `new Subject`, its `args`,
-and what it answers (`is`) or refuses (`throws`, a refusal as above). The subjects are `CellAddress`, `CellRange` and
-`FormulaEntry`; a member is named as the Script Core spells it, and xUnit finds it as C# spells it, `parse` as
+and what it answers (`is`) or refuses (`throws`, a refusal as above). The subjects are `CellAddress`, `CellRange`,
+`DeclaredFunction` and `FormulaEntry`; a member is named as the Script Core spells it, and xUnit finds it as C# spells it, `parse` as
 `Parse`. An argument is JSON as it stands, or one of the engine's own values tagged: `{"value": v}` as a sheet case
 writes a Value, `{"address": "A1"}`, `{"range": "A1:B2"}`, `{"culture": name}`, and `{"lookup": {name: [...]}}`,
 a function from a name, found without regard to case, to what the map holds for it, or nothing. A C# method that
@@ -728,4 +728,5 @@ answers through a trailing `out` parameter answers what it holds, and `null` whe
 Core's `tryParse` does. An answer is read in the shape the case writes it: a Value as a sheet case writes one, an
 address or a range as its text unless the case writes an object of its members, a list element by element, an
 object by the keys written. `then` reads members of the answer the same way, each `{"call", "args"}` or
-`{"get"}` with its own `is` or `throws`.
+`{"get"}` with its own `is` or `throws`. A case, or its file, may name the `culture` xUnit runs the call with the thread in, so
+that a call that leaked the thread's culture would show; the Script Core has no thread culture to set.
