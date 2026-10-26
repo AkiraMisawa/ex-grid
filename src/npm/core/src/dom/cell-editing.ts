@@ -5,7 +5,7 @@
 
 import type { ColumnGeometry } from '../columns/column-geometry';
 import { cellRange, pinned, scrollable } from '../paint/selection-styles';
-import { cell as cellPosition, type CellPosition } from '../selection/cell';
+import type { CellPosition } from '../selection/cell';
 import type { RowRange } from '../viewport/row-range';
 
 /** A box over one cell: its inline style, and whether it rides the pinned layer's sticky anchor. */
@@ -52,10 +52,4 @@ export function keyFieldBox(at: CellPosition | undefined, columns: ColumnGeometr
  * does not scroll to follow it, and the editor stays open there, unseen (ADR-0011's note of 2026-10-07). */
 export function editorAway(at: CellPosition, painted: RowRange): boolean {
     return at.row < painted.start - 1 || at.row > painted.start + painted.count;
-}
-
-/** The cell whose box the editor takes: its own, or, while it is away, its column's on the first painted row,
- * where it holds the keyboard but is neither seen nor pressed (ADR-0011's note of 2026-10-07). */
-export function editorCell(at: CellPosition, painted: RowRange): CellPosition {
-    return editorAway(at, painted) ? cellPosition(painted.start, at.column) : at;
 }

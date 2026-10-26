@@ -112,6 +112,31 @@ describe('createGrid', () => {
         expect(root.childElementCount).toBe(0);
     });
 
+    it('ADR-0220 ADR-0013: scroll content written is laid out and its box told before the grid is settled', async () => {
+        const root = document.createElement('div');
+        document.body.append(root);
+        const told = new Told();
+        told.holdLayout = true;
+        const view = new GridView(root, { columns, rows: trades(10), rowHeight: 24, viewportHeight: 480 }, told);
+        told.viewport();
+        told.ceiling();
+        await painted();
+        // The rows' content is written: overflowing, it would show a scrollbar, told in the frame that lays it out.
+        expect(root.hasAttribute('data-ex-settled')).toBe(false);
+        told.laidOut();
+        expect(root.hasAttribute('data-ex-settled')).toBe(true);
+
+        // More rows lengthen the content, which is laid out again; the same content written again owes nothing.
+        view.update({ columns, rows: trades(100), rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        expect(root.hasAttribute('data-ex-settled')).toBe(false);
+        told.viewport({ gutterWidthPx: 12, contentWidthPx: 788 });
+        told.laidOut();
+        await painted();
+        expect(root.hasAttribute('data-ex-settled')).toBe(true);
+        view.destroy();
+    });
+
     it('ADR-0013: the Scrollbar Gutter comes out of the declared Viewport before the rows are counted', async () => {
         const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480 });
         await painted();

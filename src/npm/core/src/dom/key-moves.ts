@@ -42,10 +42,11 @@ const extending: ReadonlySet<GridKeyKind> = new Set<GridKeyKind>(['extend', 'ext
  * Answers a key of {@link movingKinds}, or `undefined` when it changes nothing. `start` is where a key
  * pressed with nothing selected starts: the first cell on screen, which the view answers, not the
  * Selection; `undefined` when nothing is painted. `viewportRows` is how many rows PageUp and PageDown move.
+ * `selectAllContext` is the page Ctrl+A selects under a pager (ADR-0015); with none it selects every row.
  */
 export function moveByKey(
     action: GridKeyAction, current: Selection, extent: GridExtent, start: CellPosition | undefined, viewportRows: number,
-    edge?: EdgeAnswer,
+    edge?: EdgeAnswer, selectAllContext?: { readonly firstRow: number; readonly rowCount: number },
 ): KeyMove | undefined {
     if (extent.rowCount <= 0 || extent.columnCount <= 0) return undefined;
     let from = current;
@@ -65,7 +66,7 @@ export function moveByKey(
     const rows = action.direction === 'up' ? -viewportRows : viewportRows;
     // A key that moves the Focus, pressed with no Focus, only places one (ADR-0012): the first Down selects
     // the first cell, not the second. A key that names a whole region needs no start and does what it says.
-    const next = fromEmpty && movesTheFocus.has(action.kind) ? from : step(action, from, extent, rows, edge);
+    const next = fromEmpty && movesTheFocus.has(action.kind) ? from : step(action, from, extent, rows, edge, selectAllContext);
     if (next.equals(current)) return undefined;
 
     const extendsRange = extending.has(action.kind);
@@ -90,14 +91,17 @@ function focusOf(selection: Selection): CellPosition {
     return focus;
 }
 
-function step(action: GridKeyAction, current: Selection, extent: GridExtent, rows: number, edge: EdgeAnswer | undefined): Selection {
+function step(
+    action: GridKeyAction, current: Selection, extent: GridExtent, rows: number, edge: EdgeAnswer | undefined,
+    selectAllContext: { readonly firstRow: number; readonly rowCount: number } | undefined,
+): Selection {
     switch (action.kind) {
         case 'move': return current.move(action.direction, extent);
         case 'extend': return current.extend(action.direction, extent);
         case 'moveToEdge': return current.moveToEdge(action.direction, extent, edge);
         case 'extendToEdge': return current.extendToEdge(action.direction, extent, edge);
         case 'cycle': return current.cycleFocus(action.order, action.backward, extent);
-        case 'selectAll': return current.selectAll(extent);
+        case 'selectAll': return current.selectAll(extent, selectAllContext);
         case 'selectWholeColumns': return current.selectWholeColumns(extent);
         case 'selectWholeRows': return current.selectWholeRows(extent);
         case 'moveToCorner':

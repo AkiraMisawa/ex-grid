@@ -5,10 +5,16 @@ export const selectionLabelIds = Object.freeze({
     selectedOutsideView: 'selected-outside-view',
     /** The button that brings the Selection's Focus back into view. */
     goToSelection: 'go-to-selection',
+    /** Under a pager, how many cells are selected, at `{count}`, while some are in view (ADR-0015). */
+    selectedCells: 'selected-cells',
+    /** Under a pager, the button that selects every row of the result, past the page, at `{count}` (ADR-0015). */
+    selectAllRows: 'select-all-rows',
 } as const);
 
 /** The built-in English for those ids, as the C# core says them. */
 export const selectionWords: readonly (readonly [string, string])[] = Object.freeze([
     [selectionLabelIds.selectedOutsideView, '{count} cells selected (outside the visible range)'],
     [selectionLabelIds.goToSelection, 'Go to selection'],
+    [selectionLabelIds.selectedCells, '{count} cells selected'],
+    [selectionLabelIds.selectAllRows, 'Select all {count} rows'],
 ]);

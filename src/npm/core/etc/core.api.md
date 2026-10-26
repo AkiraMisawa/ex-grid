@@ -652,6 +652,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onSummarize?: (request: GridSummaryRequest, signal: AbortSignal) => GridSummaryResult | Promise<GridSummaryResult>;
     readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
     readonly onUndo?: () => void;
+    readonly pageSize?: number;
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
@@ -1036,6 +1037,7 @@ export const markLabelIds: Readonly<{
     readonly markAllRows: 'mark-all-rows';
     readonly marked: 'mark-count';
     readonly markedOutside: 'mark-count-outside-filter';
+    readonly markAllResultRows: 'mark-all-result-rows';
 }>;
 
 // @public
@@ -1218,6 +1220,8 @@ export function sameGridQuery(a: GridQuery, b: GridQuery): boolean;
 export const selectionLabelIds: Readonly<{
     readonly selectedOutsideView: 'selected-outside-view';
     readonly goToSelection: 'go-to-selection';
+    readonly selectedCells: 'selected-cells';
+    readonly selectAllRows: 'select-all-rows';
 }>;
 
 // @public

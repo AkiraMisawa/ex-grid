@@ -66,11 +66,12 @@ import { isSummaryFigure, summaryFigureOrder, defaultSummaryFigures, type Summar
 import { keyOf, type RowKey } from '../source/row-key';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import { ViewportBox } from '../viewport/viewport-box';
+import { PageGeometry } from '../viewport/page-geometry';
 import { ViewportGeometry } from '../viewport/viewport-geometry';
 import type { BrowserReports, ViewportReport } from './browser-reports';
 import { ClipboardLedger, type LedgerWrite } from './clipboard-ledger';
 import { ColumnStyles } from './column-styles';
-import { cellBox, editorAway, editorCell, keyFieldBox, opensAnEdit } from './cell-editing';
+import { cellBox, editorAway, keyFieldBox, opensAnEdit } from './cell-editing';
 import {
     boundaryLeftPx, columnsResizedWith, dragThresholdPx, dropBoundaries, grabbedAt, guideLeftPx, nearestBoundary, type ColumnGesture, type GridColumnWidthChange,
 } from './column-gestures';
@@ -269,6 +270,13 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * Placeholder; Row Kind and Cell State paint over it, and the overlays above it. The colour is
      * `--ex-row-stripe-background`. */
     readonly stripeRows?: boolean;
+    /**
+     * Rows per page: a pager exists when this is given, and its absence is continuous scrolling (ADR-0015). The
+     * page is the context the grid shows: the scrollbar spans the page, a drag stops at its edge, and Ctrl+A and the
+     * corner select it, while the keyboard crosses pages and the status line offers the whole result. A page turned
+     * raises the same Range Request a scroll does. At least one.
+     */
+    readonly pageSize?: number;
     /** What role each row plays, detail, group or total (ADR-0024): none, and every row is a detail row. Asked once
      * per row painted, and by the Row Marks of every row of the result when they count or mark all, so it is a cheap
      * read of the row; its identity is the change signal: a new function paints the rows again, and the same one
@@ -687,6 +695,7 @@ interface Taken<Row> {
     readonly declaredKeys: ReadonlySet<string>;
     readonly onDeclaredKey: ((press: GridDeclaredKeyPress) => void) | undefined;
     readonly stripeRows: boolean;
+    readonly pageSize: number | undefined;
     readonly rowKind: ((row: Row) => RowKind) | undefined;
     readonly pasteByteCap: number;
     readonly onClear: ((intent: GridClearIntent) => void) | undefined;
@@ -1063,6 +1072,18 @@ function stretchRootStyle(width: ViewportSize, height: ViewportSize): string {
  * One grid in one element. Made by `createGrid`, which hands back its handle; nothing outside the core
  * holds it.
  */
+/** A press on a mark of the grid's own, held to the order and source it was taken against (MK-9). */
+interface MarkPress {
+    readonly sequence: number;
+    readonly source: unknown;
+}
+
+/** A press on the header's checkbox: under a pager, the page it was pressed on too (ADR-0015). */
+interface HeaderMarkPress extends MarkPress {
+    readonly paged: boolean;
+    readonly page: RowRange | undefined;
+}
+
 export class GridView<Row> {
     readonly #root: HTMLElement;
     readonly #reports: BrowserReports;
@@ -1131,7 +1152,9 @@ export class GridView<Row> {
     readonly #rowMarks: GridMarks<Row>;
     readonly #markBoxes = new WeakMap<Element, boolean>();
     #markPress: { readonly box: Element; readonly pressed: PressedRow<Row> } | undefined;
-    #headerMarkPress: { readonly sequence: number; readonly source: unknown } | undefined;
+    // The order and source a press on the header's checkbox was made under, and, while a pager stood, the page it
+    // named: `paged` with no `page` is a page that held no row (ADR-0043, ADR-0015).
+    #headerMarkPress: HeaderMarkPress | undefined;
     // The status line after the rows (ADR-0014): the marks' count and the Selection Summary, standing while either
     // has its place in it.
     readonly #status: HTMLElement;
@@ -1158,6 +1181,26 @@ export class GridView<Row> {
     #highlightFocusRow = false;
     #highlightHoverRow = false;
     #stripeRows = false;
+    // The pager (ADR-0015): the rows a page holds while one stands, and the page shown, transient view state as the
+    // scroll offset is. The geometry runs over that page alone. The pager's buttons and count, the status line's offer
+    // of the whole result, and the Mark Column's, one each for the grid's life.
+    #pageSize: number | undefined;
+    #pageIndex = 0;
+    readonly #pager: HTMLElement;
+    readonly #pageBack: HTMLButtonElement;
+    readonly #pageOn: HTMLButtonElement;
+    readonly #pageShown: HTMLElement;
+    readonly #selectWholeResult: HTMLElement;
+    readonly #markResult: HTMLElement;
+    #markResultPress: MarkPress | undefined;
+    // How many times the marks have said they changed, and the page's checkbox state with what it was asked over, so a
+    // pass that changed none of it asks no row again (ADR-0027).
+    #marksStamp = 0;
+    #pageMarkedMemo: {
+        readonly window: readonly Row[]; readonly windowStart: number; readonly start: number; readonly count: number;
+        readonly rowKind: ((row: Row) => RowKind) | undefined; readonly marks: RowMarks<Row> | undefined; readonly stamp: number;
+        readonly checked: 'false' | 'true' | 'mixed';
+    } | undefined;
     #rowKind: ((row: Row) => RowKind) | undefined;
     // The row under the pointer, while the hover band is on and the pointer is over a row (ADR-0029).
     #hoverRow: number | undefined;
@@ -1252,6 +1295,11 @@ export class GridView<Row> {
     #announcedRanges: readonly SelectionRange[] = [];
     #describesSelection = false;
     #cancelAnnounce: (() => void) | undefined;
+    // Owed while the browser may yet tell a box the last written scroll content changed (ADR-0220).
+    #cancelBoxTold: (() => void) | undefined;
+    // The root's, the scroller's and the scroll content's boxes as last written, and the root's parts, whose change
+    // is what may change the box the browser tells.
+    #laidOut: string | undefined;
 
     // What the browser told (ADR-0013, ADR-0028, ADR-0053, ADR-0090).
     #viewportReport: ViewportReport | undefined;
@@ -1406,6 +1454,8 @@ export class GridView<Row> {
     #viewAhead: { readonly selection: Selection; readonly version: number; readonly topPx: number; readonly leftPx: number } | undefined;
     // Whether the offsets taken from a view are still to be kept inside the rows shown, as the browser keeps them.
     #viewScrollUnclamped = false;
+    // The row a new page size brings to the top of the view, once the geometry over it is made (ADR-0015).
+    #topRowOwed: number | undefined;
     #layerInputs: Readonly<Record<string, unknown>> | undefined;
     #shadeHolds = false;
 
@@ -1489,6 +1539,7 @@ export class GridView<Row> {
         // which the editor is described by. Not a live region: the root's says it once.
         this.#message = element('div', { class: 'ex-message', id: `${this.#ids}message`, role: 'tooltip' });
         this.#rowMarks = new GridMarks(doc, () => {
+            this.#marksStamp += 1;
             this.#invalidate();
         });
         // The status line sits where the C# core's holds it (ADR-0014, ADR-0043, ADR-0130): after the rows, outside
@@ -1497,6 +1548,24 @@ export class GridView<Row> {
         this.#offScreen = element('span', {});
         this.#goToSelection = element('button', { type: 'button', 'data-ex-claims': 'click' });
         this.#goToSelection.addEventListener('click', this.#onGoToSelection);
+        this.#selectWholeResult = element('button', { type: 'button', 'data-ex-claims': 'click' });
+        this.#selectWholeResult.addEventListener('click', this.#onSelectWholeResult);
+        this.#markResult = element('button', { type: 'button', class: 'ex-mark-result', 'data-ex-claims': 'click' });
+        this.#markResult.addEventListener('mousedown', this.#onMarkResultPress);
+        this.#markResult.addEventListener('click', this.#onMarkResult);
+        // The pager stands after the rows, ahead of the status line, as the C# core's does (ADR-0015).
+        this.#pager = element('div', { class: 'ex-pager', role: 'presentation' });
+        const pagerButton = (text: string, turned: () => void): HTMLButtonElement => {
+            const button = doc.createElement('button');
+            Object.assign(button, { type: 'button', textContent: text });
+            button.setAttribute('data-ex-claims', 'click');
+            button.addEventListener('click', turned);
+            return button;
+        };
+        this.#pageBack = pagerButton('‹', this.#onPageBack);
+        this.#pageShown = element('span', {});
+        this.#pageOn = pagerButton('›', this.#onPageOn);
+        this.#pager.append(this.#pageBack, this.#pageShown, this.#pageOn);
         this.#summary = new SummaryQuestions(() => {
             this.#invalidate();
         });
@@ -1704,6 +1773,7 @@ export class GridView<Row> {
         this.#destroyed = true;
         this.#cancelSettle?.();
         this.#cancelAnnounce?.();
+        this.#cancelBoxTold?.();
         this.#cancelFollow?.();
         this.#cancelMessage?.();
         this.#cancelRest?.();
@@ -1853,6 +1923,10 @@ export class GridView<Row> {
         }
         const { stripeRows, rowKind }: { readonly stripeRows?: unknown; readonly rowKind?: unknown } = options;
         if (stripeRows !== undefined && typeof stripeRows !== 'boolean') throw new TypeError('stripeRows is true or false.');
+        const { pageSize }: { readonly pageSize?: unknown } = options;
+        if (pageSize !== undefined && (typeof pageSize !== 'number' || !Number.isInteger(pageSize) || pageSize < 1)) {
+            throw new RangeError('A page holds at least one row; continuous scrolling is pageSize left unset (ADR-0015).');
+        }
         if (rowKind !== undefined && typeof rowKind !== 'function') throw new TypeError('rowKind is a function of the row (ADR-0024).');
         if (onClear !== undefined && typeof onClear !== 'function') {
             throw new TypeError('onClear is a function of the clear\'s intent.');
@@ -1982,7 +2056,7 @@ export class GridView<Row> {
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             cellMessage: options.cellMessage, declaredKeys, onDeclaredKey: options.onDeclaredKey,
-            stripeRows: options.stripeRows === true, rowKind: options.rowKind,
+            stripeRows: options.stripeRows === true, pageSize: options.pageSize, rowKind: options.rowKind,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick, onLeave: options.onLeave,
@@ -2159,6 +2233,21 @@ export class GridView<Row> {
         this.#onRefused = taken.onRefused;
         this.#onAction = taken.onAction;
         this.#rowMarks.bind(taken.marks, taken.rowKind);
+        if (taken.pageSize !== this.#pageSize) {
+            // A new size shows the first row shown before — the page's first, or the first painted without a pager —
+            // at the top of the page that holds it, kept inside the pages there are as the geometry is made.
+            // Nothing painted yet shows no row, and the first page is shown from its top.
+            const first = this.#pageSize === undefined ? this.#visible?.start : this.#pageIndex * this.#pageSize;
+            this.#pageIndex = taken.pageSize === undefined || first === undefined ? 0 : Math.floor(first / taken.pageSize);
+            this.#topRowOwed = first;
+            this.#pageSize = taken.pageSize;
+            this.#viewScrollUnclamped = true;
+            if (taken.pageSize === undefined) {
+                this.#pager.remove();
+            } else if (!this.#pager.isConnected) {
+                this.#root.insertBefore(this.#pager, this.#status.isConnected ? this.#status : this.#announce);
+            }
+        }
         if (taken.stripeRows !== this.#stripeRows) {
             this.#stripeRows = taken.stripeRows;
             // A Placeholder wears its stripe too, and is painted again with it.
@@ -2356,6 +2445,7 @@ export class GridView<Row> {
         const revealed = this.#stageReveal();
         this.#stageFollow();
         this.#paint();
+        this.#lookForNewLayout();
         const stepped = this.#scrollOwed;
         this.#scrollOwed = false;
         if (revealed || stepped) {
@@ -2378,6 +2468,7 @@ export class GridView<Row> {
     // holds no row waits on the browser to grow the box, which nothing the grid does brings, so it is not owed.
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
+            && this.#cancelBoxTold === undefined
             && this.#repaint === undefined && this.#cancelMessage === undefined
             && (this.#followArmed === undefined || this.#visible === undefined)
             && this.#cancelFollow === undefined
@@ -2451,19 +2542,38 @@ export class GridView<Row> {
             return;
         }
         // The rows share the scroll content with the header band, so they get what it leaves, under the
-        // ceiling less the band (ADR-0013, ADR-0053).
-        this.#geometry = new ViewportGeometry({
+        // ceiling less the band (ADR-0013, ADR-0053). Under a pager the arithmetic runs over the page alone: the
+        // scrollbar spans the page, and the page's edge is where a drag stops (ADR-0015).
+        const size = this.#pageSize;
+        if (size !== undefined && this.#pageIndex > this.#pageCount - 1) {
+            // The result shrank under the page shown: its new last page is shown from its top, as a turn shows it.
+            this.#pageIndex = this.#pageCount - 1;
+            this.#scrollTopPx = 0;
+            this.#scrollOwed = true;
+            this.#hoverRow = undefined;
+            this.#dropRest();
+        }
+        const firstRow = size === undefined ? 0 : this.#pageIndex * size;
+        const rows = {
             rowHeightPx: this.#metrics.rowHeightPx,
             viewportHeightPx: visibleHeightPx - band,
-            totalRowCount: total,
+            totalRowCount: size === undefined ? total : Math.min(Math.max(total - firstRow, 0), size),
             scrollRoomPx: Math.max(1, (this.#ceilingPx ?? ViewportGeometry.maxScrollHeightPx) - band),
-        });
+        };
+        const geometry = size === undefined ? new ViewportGeometry(rows) : new PageGeometry(firstRow, rows);
+        this.#geometry = geometry;
+        const top = this.#topRowOwed;
+        this.#topRowOwed = undefined;
+        if (top !== undefined && top >= firstRow && top < firstRow + rows.totalRowCount) {
+            this.#scrollTopPx = geometry.scrollTopAt(geometry.offsetPxOf(top));
+            this.#scrollOwed = true;
+        }
         // Offsets from a view of other rows may lie past these rows' end. They are kept inside here, as the browser
         // keeps the ones written, from the arithmetic and never read back (ADR-0331, ADR-0021).
         const clampView = this.#viewScrollUnclamped;
         this.#viewScrollUnclamped = false;
-        if (clampView) this.#scrollTopPx = Math.min(Math.max(this.#scrollTopPx, 0), this.#geometry.maxScrollTopPx);
-        this.#visible = this.#geometry.sliceAt(this.#scrollTopPx);
+        if (clampView) this.#scrollTopPx = Math.min(Math.max(this.#scrollTopPx, 0), geometry.maxScrollTopPx);
+        this.#visible = geometry.sliceAt(this.#scrollTopPx);
         this.#observeAutoWidths();
         this.#resolveColumnGeometry(visibleWidthPx);
         if (clampView) this.#scrollLeftPx = Math.min(Math.max(this.#scrollLeftPx, 0), this.#styles.geometry.maxScrollLeftPx);
@@ -2957,7 +3067,8 @@ export class GridView<Row> {
         // The Consumer's edge is asked on the arrows only: Home and End resolve to the same moves and keep ADR-0012's
         // meaning (ADR-0050, item 2).
         const edge = this.#dataEdge !== undefined && key.startsWith('Arrow') ? this.#dataEdge : undefined;
-        const move = moveByKey(action, this.#held.selection, this.#extent, start, viewportRows, edge);
+        const extent = this.#extent;
+        const move = moveByKey(action, this.#held.selection, extent, start, viewportRows, edge, this.#selectAllContext(extent));
         if (move === undefined) return;
         this.#apply(move.selection);
         this.#revealOwed = move.reveal;
@@ -3058,11 +3169,16 @@ export class GridView<Row> {
     // stood at the press: made on what a source since replaced painted, or under an order that has moved since,
     // it marks nothing and is refused once, for the Consumer to word (MK-9). A click no press came before, one a
     // script made, names what the header names now.
-    #pressHeaderMark(press: { readonly sequence: number; readonly source: unknown } | undefined): void {
+    // Under a pager it lines up the page's rows instead, as positions, since a single gesture does not vault past the
+    // page, and the whole result is offered beside the count (ADR-0015). A press names what was in force at it: the
+    // page it was made on, though turned, resized or the pager removed since, or the whole result, though a pager
+    // was added since.
+    #pressHeaderMark(press: HeaderMarkPress | undefined): void {
         const marks = this.#rowMarks.marks;
-        if (marks === undefined) return;
-        if (press !== undefined && (press.source !== this.#source || press.sequence !== this.#sequence())) {
-            this.#onRefused?.({ kind: 'mark', reason: press.source === this.#source ? 'orderMoved' : 'sourceChanged' });
+        if (marks === undefined || !this.#markPressHolds(press)) return;
+        if (press === undefined ? this.#pageSize !== undefined : press.paged) {
+            const page = press === undefined ? this.#pageRows() : press.page;
+            if (page !== undefined) this.#raiseMark(marks, { kind: 'positions', ranges: [page], rowSequenceVersion: this.#state.rowSequenceVersion });
             return;
         }
         const { counts } = marks;
@@ -3070,6 +3186,15 @@ export class GridView<Row> {
             kind: 'allRows', marked: rowMarkHeaderPress(counts === undefined ? 'some' : rowMarkHeaderState(counts)),
             rowSequenceVersion: this.#state.rowSequenceVersion,
         });
+    }
+
+    // Whether a press on a mark that names rows by position still names them: made on what a source since replaced
+    // painted, or under an order that has moved since, it marks nothing and is refused once, for the Consumer to word
+    // (MK-9). A click no press came before names what is there now.
+    #markPressHolds(press: MarkPress | undefined): boolean {
+        if (press === undefined || (press.source === this.#source && press.sequence === this.#sequence())) return true;
+        this.#onRefused?.({ kind: 'mark', reason: press.source === this.#source ? 'orderMoved' : 'sourceChanged' });
+        return false;
     }
 
     // Space aimed with a Selection an order move or a replaced source has dropped since (ADR-0142, LV-12,
@@ -4798,8 +4923,16 @@ export class GridView<Row> {
     #openContextMenuAtFocus(): void {
         this.#reconcileSelection();
         const focus = this.#held.selection.focus;
-        const geometry = this.#geometry;
-        if (focus === undefined || geometry === undefined) return;
+        if (focus === undefined || this.#geometry === undefined) return;
+        // Under a pager the Focus may stand on another page, which the menu turns to and reveals the Focus on, as a
+        // key that reveals it does (ADR-0015): the menu opens over the page that holds its cell.
+        const size = this.#pageSize;
+        if (size !== undefined && this.#turnPageTo(Math.floor(focus.row / size))) {
+            this.#scrollTopPx = defined(this.#geometry, 'the geometry a page turn resolves').scrollTopToReveal(focus.row, 0);
+            this.#resolve();
+            this.#invalidate();
+        }
+        const geometry = defined(this.#geometry, 'the geometry a page turn resolves');
         this.#openContextMenu(focus, this.#cellLeftPx(focus.column), geometry.viewportTopPxOf(focus.row, this.#scrollTopPx));
     }
 
@@ -6123,6 +6256,7 @@ export class GridView<Row> {
         this.#actionPress = undefined;
         this.#markPress = undefined;
         this.#headerMarkPress = undefined;
+        this.#markResultPress = undefined;
         // Ended before the press is marked: the field left says the keyboard has gone (#onFocusLeft).
         if (this.#composing && event.button === 0) this.#keyField.blur();
         this.#keyboardByPress = true;
@@ -6148,6 +6282,7 @@ export class GridView<Row> {
     // (#releaseMarkPress), since it may stand over the checkbox a pass put in the pressed one's place.
     readonly #onRootRelease = (event: MouseEvent): void => {
         if (event.target !== this.#rowMarks.headerBox) this.#headerMarkPress = undefined;
+        if (event.target !== this.#markResult) this.#markResultPress = undefined;
         if (!(event.target instanceof Node && this.#viewport.contains(event.target))) this.#markPress = undefined;
     };
 
@@ -6314,7 +6449,9 @@ export class GridView<Row> {
         // keyboard, and notes the order and source it was made under for its click (ADR-0043, MK-9).
         if (event.target === this.#rowMarks.headerBox) {
             event.preventDefault();
-            if (event.button === 0) this.#headerMarkPress = { sequence: this.#sequence(), source: this.#source };
+            if (event.button === 0) {
+                this.#headerMarkPress = { sequence: this.#sequence(), source: this.#source, paged: this.#pageSize !== undefined, page: this.#pageRows() };
+            }
             return;
         }
         if (event.button !== 0) return;
@@ -6636,7 +6773,7 @@ export class GridView<Row> {
     #selectAllFromCorner(): void {
         const extent = this.#extent;
         if (extent.rowCount <= 0 || extent.columnCount <= 0) return;
-        let all = this.#held.selection.selectAll(extent);
+        let all = this.#held.selection.selectAll(extent, this.#selectAllContext(extent));
         const [whole] = all.ranges;
         const topLeft = this.#firstVisibleCell();
         if (whole !== undefined && topLeft !== undefined && rangeContains(whole, topLeft)) all = all.place(whole, topLeft, extent);
@@ -6865,10 +7002,9 @@ export class GridView<Row> {
     // Moves the model to where a key's reveal is going, and resolves the slice there, so the pass paints
     // the rows at the offset it then writes (ADR-0012, 2026-09-29). Whether there is an offset to write.
     #stageReveal(): boolean {
-        const geometry = this.#geometry;
         // A box too small for a row has no offset to reveal at: the reveal stays owed for the pass that has one,
         // so a key that moved the Focus meanwhile brings it into view once the box grows back (ADR-0040).
-        if (geometry === undefined) return false;
+        if (this.#geometry === undefined) return false;
         const reveal = this.#revealOwed;
         this.#revealOwed = undefined;
         const across = this.#revealHeaderOwed;
@@ -6885,25 +7021,31 @@ export class GridView<Row> {
         if (reveal === undefined) return false;
         const { target } = reveal;
         if (target.row >= this.#totalRows || target.column >= columns.count) return false;
-        // PageUp and PageDown scroll by the rows the Focus moved, through the mapping, so a compressed grid
-        // moves by rows (ADR-0053); the reveal still runs over the stepped offset.
-        const stepped = reveal.stepRows === 0
-            ? this.#scrollTopPx
-            : geometry.scrollTopStepped(this.#scrollTopPx, reveal.stepRows * this.#metrics.rowHeightPx);
-        let top = geometry.scrollTopToReveal(target.row, stepped);
-        // "Go to the beginning" is not "make this cell visible": with Pinned Columns the two come apart.
-        let left = reveal.rowStart ? 0 : columns.scrollLeftToReveal(target.column, this.#scrollLeftPx);
         // While extending, an axis the range spans end to end is not scrolled for (ADR-0052, 2026-09-29).
         const range = reveal.extending;
-        if (range !== undefined) {
-            const extent = this.#extent;
-            if (spansEveryRow(range, extent)) {
-                top = this.#scrollTopPx;
-                const follow = this.#followArmed;
-                if (follow !== undefined) this.#followArmed = { ...follow, rowsKept: true };
-            }
-            if (spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
+        const extent = this.#extent;
+        const keepsRows = range !== undefined && spansEveryRow(range, extent);
+        // The keyboard crosses pages; dragging does not (ADR-0015): a cell carried past the page's edge turns the
+        // page, and the reveal then places it in the new one. A page turn is the pager's scroll, so an extension the
+        // view does not scroll down for turns none.
+        const size = this.#pageSize;
+        if (size !== undefined && !keepsRows) this.#turnPageTo(Math.floor(target.row / size));
+        const geometry = defined(this.#geometry, 'the geometry a page turn resolves');
+        let top = this.#scrollTopPx;
+        if (keepsRows) {
+            const follow = this.#followArmed;
+            if (follow !== undefined) this.#followArmed = { ...follow, rowsKept: true };
+        } else {
+            // PageUp and PageDown scroll by the rows the Focus moved, through the mapping, so a compressed grid
+            // moves by rows (ADR-0053); the reveal still runs over the stepped offset.
+            const stepped = reveal.stepRows === 0
+                ? this.#scrollTopPx
+                : geometry.scrollTopStepped(this.#scrollTopPx, reveal.stepRows * this.#metrics.rowHeightPx);
+            top = geometry.scrollTopToReveal(target.row, stepped);
         }
+        // "Go to the beginning" is not "make this cell visible": with Pinned Columns the two come apart.
+        let left = reveal.rowStart ? 0 : columns.scrollLeftToReveal(target.column, this.#scrollLeftPx);
+        if (range !== undefined && spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
         return this.#revealAt(top, left);
     }
 
@@ -7126,13 +7268,45 @@ export class GridView<Row> {
         }
     }
 
+    // A box or scroll content written may change the box the browser tells: content that comes to overflow shows a
+    // scrollbar, which takes its strip out of the Viewport (ADR-0013). Until the browser has laid it out and told
+    // any such change the grid is not settled: a reading taken before would see a band built again (ADR-0220).
+    #lookForNewLayout(): void {
+        const layout = `${this.#root.getAttribute('style')}|${this.#scroller.getAttribute('style')}|${this.#spacer.getAttribute('style')}|`
+            + [...this.#root.children].map(child => child.className).join(' ');
+        if (layout === this.#laidOut) return;
+        this.#laidOut = layout;
+        this.#awaitBoxTold();
+    }
+
+    #awaitBoxTold(): void {
+        this.#cancelBoxTold?.();
+        this.#cancelBoxTold = undefined;
+        const ask = { open: true };
+        const cancel = this.#reports.afterLayout(this.#root, () => {
+            const owed = ask.open && this.#cancelBoxTold !== undefined;
+            ask.open = false;
+            if (!owed) return;
+            this.#cancelBoxTold = undefined;
+            this.#lookSettled();
+        });
+        // Told as it was asked, where nothing is laid out: nothing is owed.
+        if (ask.open) {
+            this.#cancelBoxTold = () => {
+                ask.open = false;
+                cancel();
+            };
+        }
+    }
+
     #paint(): void {
         // What is painted now is what the next key is aimed at.
         this.#droppedAim = undefined;
         const metrics = this.#metrics;
         const geometry = this.#styles.geometry;
         const root = this.#root;
-        this.#write(root, 'root', 'class', this.#state.loading ? 'ex-grid ex-loading' : 'ex-grid');
+        // ex-loading while rows are on their way, and ex-editing while the Cell Editor stands (ADR-0029).
+        this.#write(root, 'root', 'class', `ex-grid${this.#state.loading ? ' ex-loading' : ''}${this.#edit === undefined ? '' : ' ex-editing'}`);
         // The Geometry Tokens, inline on the root from the same resolved metrics the arithmetic reads
         // (ADR-0027, ADR-0028), and the Device Pixel once told (ADR-0090).
         this.#write(root, 'root', 'style', `--ex-row-height: ${metrics.rowHeightPx}px; --ex-header-height: ${metrics.headerHeightPx}px; `
@@ -7170,8 +7344,8 @@ export class GridView<Row> {
         // or peel the Copied Range (ADR-0230 section 1, ADR-0037, ADR-0170).
         this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves',
             choice === undefined && this.#copied === undefined && this.#edit === undefined && this.#popover === undefined ? '' : undefined);
-        this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
+        this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);
         // A current match the user has moved off is no longer marked as one (ADR-0332 §4).
         this.#forgetCurrentMatchOffFocus();
@@ -7217,10 +7391,24 @@ export class GridView<Row> {
     // Summary, standing whenever the grid can summarise, figures or none, so the strip does not come and go with
     // every selection (ADR-0130).
     #paintStatus(): void {
-        const count = this.#rowMarks.marks === undefined ? undefined : this.#rowMarks.paint(id => this.#labelOf(id));
+        this.#paintPager();
+        const paged = this.#pageSize !== undefined;
+        const count = this.#rowMarks.marks === undefined ? undefined
+            : this.#rowMarks.paint(id => this.#labelOf(id), paged ? this.#pageMarked() : undefined);
         this.#reviewSummary();
-        const shown: HTMLElement[] = [...this.#offScreenStatus()];
+        const shown: HTMLElement[] = [...this.#selectionStatus()];
         if (count !== undefined) shown.push(count);
+        // Under a pager the header's checkbox lines up the page, and the whole result is the explicit step past it
+        // (ADR-0015, ADR-0043).
+        if (paged && this.#rowMarks.marks !== undefined) {
+            const counts = this.#rowMarks.marks.counts;
+            // The rows the marks count in the result, and until they have counted, the result's rows, as the C# core
+            // says it (MarkableRows): the button is offered before the Consumer's first answer.
+            const rows = counts === undefined ? this.#totalRows : counts.rowsInResult;
+            const said = this.#labelOf(markLabelIds.markAllResultRows).replaceAll('{count}', String(rows));
+            if (this.#markResult.textContent !== said) this.#markResult.textContent = said;
+            shown.push(this.#markResult);
+        }
         if (this.#showSelectionSummary && this.canSummarize) {
             const summary = this.#summary.summary;
             const focus = this.#held.selection.focus;
@@ -7254,15 +7442,72 @@ export class GridView<Row> {
 
     // The off-screen indicator (ADR-0014, ADR-0015): a Selection none of whose rectangles meets what is painted is
     // said, with its size, so a paste into it is never made unseen and unannounced, and a button brings it back.
-    // Judged against the offset the scroller is going to (ADR-0012), and with no row data.
-    #offScreenStatus(): readonly HTMLElement[] {
+    // Judged against the offset the scroller is going to (ADR-0012), and with no row data. Under a pager the count
+    // stands whenever anything is selected, with the offer of the whole result, the explicit way past the page's
+    // context (ADR-0015).
+    #selectionStatus(): readonly HTMLElement[] {
         const { ranges } = this.#held.selection;
-        if (ranges.length === 0 || this.#selectionInView(ranges)) return [];
-        const said = this.#labelOf(selectionLabelIds.selectedOutsideView).replaceAll('{count}', String(this.#held.selection.cellCount));
+        const paged = this.#pageSize !== undefined;
+        if (ranges.length === 0) return [];
+        const inView = this.#selectionInView(ranges);
+        if (inView && !paged) return [];
+        const said = this.#labelOf(inView ? selectionLabelIds.selectedCells : selectionLabelIds.selectedOutsideView)
+            .replaceAll('{count}', String(this.#held.selection.cellCount));
         if (this.#offScreen.textContent !== said) this.#offScreen.textContent = said;
-        const go = this.#labelOf(selectionLabelIds.goToSelection);
-        if (this.#goToSelection.textContent !== go) this.#goToSelection.textContent = go;
-        return [this.#offScreen, this.#goToSelection];
+        const shown = [this.#offScreen];
+        if (!inView) {
+            const go = this.#labelOf(selectionLabelIds.goToSelection);
+            if (this.#goToSelection.textContent !== go) this.#goToSelection.textContent = go;
+            shown.push(this.#goToSelection);
+        }
+        if (paged) {
+            const all = this.#labelOf(selectionLabelIds.selectAllRows).replaceAll('{count}', String(this.#totalRows));
+            if (this.#selectWholeResult.textContent !== all) this.#selectWholeResult.textContent = all;
+            shown.push(this.#selectWholeResult);
+        }
+        return shown;
+    }
+
+    // The pager's count and its buttons, each disabled at its end (ADR-0015).
+    #paintPager(): void {
+        if (this.#pageSize === undefined) return;
+        const count = this.#pageCount;
+        const said = `${this.#pageIndex + 1} / ${count}`;
+        if (this.#pageShown.textContent !== said) this.#pageShown.textContent = said;
+        if (this.#pageBack.disabled !== (this.#pageIndex === 0)) this.#pageBack.disabled = this.#pageIndex === 0;
+        if (this.#pageOn.disabled !== (this.#pageIndex >= count - 1)) this.#pageOn.disabled = this.#pageIndex >= count - 1;
+    }
+
+    // What the header's checkbox shows under a pager (ADR-0043, ADR-0015): the page's rows, asked one by one, so
+    // nothing is guessed, as the C# core asks them. A page row not in hand claims neither none nor all; Group and Total
+    // rows take no mark. Asked again only when the page, the Window, the Row Kind or the marks moved.
+    #pageMarked(): 'false' | 'true' | 'mixed' {
+        const page = this.#pageRows();
+        if (page === undefined) return 'false';
+        const { window, windowStart } = this.#state;
+        const memo = this.#pageMarkedMemo;
+        const marks = this.#rowMarks.marks;
+        if (memo !== undefined && memo.window === window && memo.windowStart === windowStart && memo.start === page.start
+            && memo.count === page.count && memo.rowKind === this.#rowKind && memo.marks === marks && memo.stamp === this.#marksStamp) {
+            return memo.checked;
+        }
+        const checked = this.#askPageMarked(page, window, windowStart);
+        this.#pageMarkedMemo = { window, windowStart, start: page.start, count: page.count, rowKind: this.#rowKind, marks, stamp: this.#marksStamp, checked };
+        return checked;
+    }
+
+    #askPageMarked(page: RowRange, window: readonly Row[], windowStart: number): 'false' | 'true' | 'mixed' {
+        let marked = 0;
+        let rows = 0;
+        for (let row = page.start; row < page.start + page.count; row++) {
+            const slice = row - windowStart;
+            if (slice < 0 || slice >= window.length) return 'mixed';
+            const data = itemAt(window, slice);
+            if (this.#rowKind !== undefined && this.#rowKind(data) !== 'detail') continue;
+            rows += 1;
+            if (this.#rowMarks.isMarked(data)) marked += 1;
+        }
+        return marked === 0 ? 'false' : marked === rows ? 'true' : 'mixed';
     }
 
     // Whether any rectangle meets the painted rows and, on them, a pinned column or the painted slice of the others.
@@ -7277,7 +7522,96 @@ export class GridView<Row> {
                 || (scrollable !== undefined && range.leftColumn < scrollable.start + scrollable.count && rightColumn(range) >= scrollable.start)));
     }
 
-    // Go to selection: the Focus is revealed, and the keyboard is the grid's again (ADR-0014).
+    // "Mark all N rows" under a pager (ADR-0015, ADR-0043): the explicit step past the page, every row of the result
+    // marked, judged against the order and source of its press as the header's is (MK-9).
+    readonly #onMarkResultPress = (event: MouseEvent): void => {
+        if (event.button === 0) this.#markResultPress = { sequence: this.#sequence(), source: this.#source };
+    };
+
+    readonly #onMarkResult = (): void => {
+        const press = this.#markResultPress;
+        this.#markResultPress = undefined;
+        const marks = this.#rowMarks.marks;
+        if (this.#destroyed || marks === undefined || !this.#commitEdit()) return;
+        this.#takeKeyboard();
+        if (!this.#markPressHolds(press)) return;
+        this.#raiseMark(marks, { kind: 'allRows', marked: true, rowSequenceVersion: this.#state.rowSequenceVersion });
+    };
+
+    // "Select all N rows" under a pager (ADR-0015): what Ctrl+A does without one, the explicit way past the page.
+    // An open edit is committed first, as a press on the corner commits it, and a Reject keeps the Selection.
+    readonly #onSelectWholeResult = (): void => {
+        if (this.#destroyed || !this.#commitEdit()) return;
+        this.#reconcileSelection();
+        const extent = this.#extent;
+        if (extent.rowCount <= 0 || extent.columnCount <= 0) return;
+        this.#apply(this.#held.selection.selectAll(extent));
+        this.#takeKeyboard();
+        this.#invalidate();
+    };
+
+    readonly #onPageBack = (): void => {
+        this.#turnPageBy(-1);
+    };
+
+    readonly #onPageOn = (): void => {
+        this.#turnPageBy(1);
+    };
+
+    // A page turned by the pager (ADR-0015): the same machinery as a scroll, the new page's slice resolved at its top
+    // and the Range Request raised if the Window does not cover it. The keyboard comes back to the grid, so an open
+    // edit is committed first: left standing, it would hold no keyboard on a page that does not show it, and a Reject
+    // keeps the page.
+    #turnPageBy(delta: number): void {
+        if (this.#destroyed || this.#pageSize === undefined || !this.#commitEdit()) return;
+        this.#turnPageTo(this.#pageIndex + delta);
+        this.#takeKeyboard();
+        this.#invalidate();
+    }
+
+    // Shows another page from its top, whether it turned. The offset is written with the rows the pass paints, and
+    // the pointer's band and rest go with the rows that moved from under it.
+    #turnPageTo(index: number): boolean {
+        const size = this.#pageSize;
+        if (size === undefined) return false;
+        const target = Math.min(Math.max(index, 0), this.#pageCount - 1);
+        if (target === this.#pageIndex) return false;
+        this.#pageIndex = target;
+        this.#scrollTopPx = 0;
+        this.#scrollOwed = true;
+        this.#hoverRow = undefined;
+        this.#dropRest();
+        this.#resolve();
+        return true;
+    }
+
+    get #pageCount(): number {
+        const size = this.#pageSize;
+        return size === undefined ? 1 : Math.max(1, Math.ceil(this.#totalRows / size));
+    }
+
+    // The rows of the page shown, as positions in the whole result: none while no pager stands or the page is empty.
+    #pageRows(): RowRange | undefined {
+        const size = this.#pageSize;
+        if (size === undefined) return undefined;
+        const first = this.#pageIndex * size;
+        const count = Math.min(size, this.#totalRows - first);
+        return count > 0 ? rowRange(first, count) : undefined;
+    }
+
+    // What Ctrl+A and the corner select under a pager (ADR-0015): the page, which reads as the world; with none, every
+    // row.
+    #selectAllContext(extent: GridExtent): { readonly firstRow: number; readonly rowCount: number } | undefined {
+        const size = this.#pageSize;
+        if (size === undefined) return undefined;
+        // The page the next pass shows: a result that shrank since the last keeps its last page.
+        const index = Math.min(this.#pageIndex, Math.max(0, Math.ceil(extent.rowCount / size) - 1));
+        const firstRow = Math.min(index * size, extent.rowCount - 1);
+        return { firstRow, rowCount: Math.min(extent.rowCount - firstRow, size) };
+    }
+
+    // Go to selection: the Focus is revealed, on its page under a pager, and the keyboard is the grid's again
+    // (ADR-0014, ADR-0015).
     readonly #onGoToSelection = (): void => {
         const focus = this.#held.selection.focus;
         if (this.#destroyed || focus === undefined) return;
@@ -7944,10 +8278,13 @@ export class GridView<Row> {
         const { element } = edit;
         const visible = this.#visible;
         if (visible !== undefined) {
-            const at = editorCell(edit.cell, visible);
+            // Away, it takes its column's box on the first painted row, where it holds the keyboard but is neither
+            // seen nor pressed (ADR-0011's note of 2026-10-07).
+            const away = this.#editorAway(edit.cell, visible);
+            const at = away ? cellPosition(visible.start, edit.cell.column) : edit.cell;
             const box = defined(cellBox(at, this.#styles.geometry, this.#metrics.rowHeightPx, visible), 'the box of a cell among the painted rows');
             const look = this.#editorLook(edit.cell, edit.openedOn);
-            const base = editorAway(edit.cell, visible) ? 'ex-editor ex-editor-away' : 'ex-editor';
+            const base = away ? 'ex-editor ex-editor-away' : 'ex-editor';
             setAttribute(element, 'class', look === undefined ? base : `${base} ${look}`);
             setAttribute(element, 'style', box.style);
             setAttribute(element, 'data-ex-cell', `${at.row} ${at.column}`);
@@ -7960,6 +8297,13 @@ export class GridView<Row> {
             return [this.#editorPinned];
         }
         return [element];
+    }
+
+    // Whether the editor, or a message, is away from the rows painted (ADR-0011), or under a pager from the page: the
+    // row just before a page is on the page before, and never scrolls into this one (ADR-0015).
+    #editorAway(at: CellPosition, painted: RowRange): boolean {
+        const page = this.#pageRows();
+        return editorAway(at, painted) || (page !== undefined && (at.row < page.start || at.row >= page.start + page.count));
     }
 
     // The message an editor is held with, or the one a flagged cell says while no edit is open (ADR-0034): below
@@ -7975,7 +8319,7 @@ export class GridView<Row> {
             this.#shownMessage = undefined;
         }
         const said = edit === undefined ? this.#shownMessage : edit.error === undefined ? undefined : { cell: edit.cell, text: edit.error };
-        if (said === undefined || geometry === undefined || visible === undefined || editorAway(said.cell, visible)) {
+        if (said === undefined || geometry === undefined || visible === undefined || this.#editorAway(said.cell, visible)) {
             this.#message.remove();
             return;
         }
