@@ -2,12 +2,13 @@
 // The adapter's own tests (ADR-0350 section 13): React Testing Library mounts it. What the grid paints is
 // the core's, tested there; here, that the adapter mounts the core once, hands it each render's props, and
 // destroys it with the component.
-import { createElement } from 'react';
+import { createElement, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { StrictMode } from 'react';
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridColumn } from '@ex-grid/core';
+import { GridSource, type GridColumn, type GridTemplateCell } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
+import { templateColumn } from '../src/template-column';
 
 interface Trade {
     readonly book: string;
@@ -70,5 +71,80 @@ describe('ExGrid', () => {
         expect(root?.querySelectorAll('.ex-scroller')).toHaveLength(1);
         unmount();
         expect(root?.childElementCount).toBe(0);
+    });
+});
+
+interface Position {
+    readonly book: string;
+    readonly limit: number;
+}
+
+// A control that keeps state of its own, and answers a focus request from a layout effect, as ADR-0037 asks.
+function Note({ cell }: { readonly cell: GridTemplateCell<Position> }): ReactElement {
+    const input = useRef<HTMLInputElement>(null);
+    const [mounts] = useState(() => { noteMounts += 1; return noteMounts; });
+    useLayoutEffect(() => {
+        if (cell.focusRequest !== 0 && input.current !== null) cell.takeKeyboard(input.current);
+    }, [cell]);
+    return createElement('input', {
+        ref: input, className: 'ex-interactive', tabIndex: -1, 'aria-label': `Note for ${cell.row.book}`, 'data-limit': cell.row.limit,
+        'data-mount': mounts, readOnly: true,
+    });
+}
+let noteMounts = 0;
+
+const positionColumns: readonly GridColumn<Position>[] = [
+    { name: 'Book', type: 'text', value: row => row.book, width: 120 },
+    templateColumn<Position>({ name: 'Note', type: 'text', value: row => row.book, width: 140 }, cell => createElement(Note, { cell })),
+];
+
+/** Lets the core's pass, and the render it asks of React, run. */
+async function settled(): Promise<void> {
+    await act(async () => {
+        for (let turn = 0; turn < 4; turn++) await Promise.resolve();
+    });
+}
+
+describe('templateColumn', () => {
+    it('ADR-0020: React renders a Template cell\'s content into the slot the core keeps, a new version of its row under a Row Key keeping its state', async () => {
+        const rows = [{ book: 'Rates', limit: 1 }, { book: 'Credit', limit: 2 }];
+        const source = GridSource.from(rows, { rowKey: row => row.book });
+        const { container, unmount } = render(createElement(StrictMode, null, createElement(ExGrid<Position>, { columns: positionColumns, source })));
+        await settled();
+        const note = (book: string): HTMLInputElement | null => container.querySelector<HTMLInputElement>(`input[aria-label="Note for ${book}"]`);
+        const rates = note('Rates');
+        expect(rates?.closest('[role="gridcell"]')?.getAttribute('aria-colindex')).toBe('2');
+        const mount = rates?.getAttribute('data-mount');
+        await act(async () => { source.replaceRow(rows[0] as Position, { book: 'Rates', limit: 9 }); });
+        await settled();
+        expect(note('Rates')).toBe(rates);
+        expect([rates?.getAttribute('data-limit'), rates?.getAttribute('data-mount')]).toEqual(['9', mount]);
+        unmount();
+        expect(container.querySelector('input')).toBeNull();
+    });
+
+    it('ADR-0037: Space hands one render a focus request, and the control takes the keyboard before the next input', async () => {
+        const rows = [{ book: 'Rates', limit: 1 }];
+        const { container } = render(createElement(ExGrid<Position>, { columns: positionColumns, rows }));
+        await settled();
+        const root = container.firstElementChild as HTMLElement;
+        const cell = container.querySelector<HTMLElement>('[aria-colindex="2"][role="gridcell"]');
+        const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, buttons: 1 });
+        Object.defineProperty(press, 'offsetX', { value: 130 });
+        Object.defineProperty(press, 'offsetY', { value: 5 });
+        root.querySelector('.ex-viewport')?.dispatchEvent(press);
+        await settled();
+        root.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+        await settled();
+        expect(document.activeElement).toBe(cell?.querySelector('input'));
+    });
+
+    it('ADR-0020: a React Template Column renders only inside an ExGrid of @ex-grid/react', () => {
+        const [, note] = positionColumns;
+        const slot = document.createElement('div');
+        document.body.append(slot);
+        expect(() => note?.template?.(slot, { row: { book: 'Rates', limit: 1 }, column: 'Note', focusRequest: 0, takeKeyboard: () => undefined }))
+            .toThrow(/only inside an ExGrid/);
+        slot.remove();
     });
 });
