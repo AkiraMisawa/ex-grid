@@ -132,7 +132,7 @@ const rowKeys = ['views', 'widths', 'height'];
 type Shapes = (name: string) => DataShape | undefined;
 
 /**
- * Reads a Board's JSON (ADR-0340). What it refuses, with a {@link BoardRefusedError} naming the path and the reason
+ * Reads a Board's JSON (ADR-0340). What it refuses, with a {@link @ex-grid/data#BoardRefusedError} naming the path and the reason
  * in one sentence: text that is not JSON, or a member written twice; a version missing, or other than
  * {@link boardVersion}; a member the Board does not have; an input's declaration; a view with no id, an id twice, or
  * other than one of grid, pivot and chart; a view naming an input the Board does not declare, or a column or field the

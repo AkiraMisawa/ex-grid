@@ -32,7 +32,7 @@ export function shapedRows(snapshot: Snapshot): readonly ShapedRow[] {
 
 /**
  * The grid's columns for `spec` over `snapshot`, in the spec's order, at the View State's widths, writing their
- * text in `locale` (`invariant` by default, ADR-0370 section 10). Refused, with a {@link BoardRefusedError} naming
+ * text in `locale` (`invariant` by default, ADR-0370 section 10). Refused, with a {@link @ex-grid/data#BoardRefusedError} naming
  * the input: a column the Snapshot does not hold, or holds as another kind than the input declares; and a Decimal
  * with more significant digits than a grid's number shows, which it would show rounded (spine rule 1).
  */
@@ -47,7 +47,7 @@ export function shapedColumns(snapshot: Snapshot, spec: GridViewSpecReading, loc
         }
         const state = spec.viewState.columns.find(column => column.column === shown.column);
         if (state === undefined) throw new Error(`Internal: the View State does not size column '${shown.column}'.`);
-        return shapedColumn(shown, held, snapshot.rowCount, state.width.isAuto ? { auto: true } : { px: state.width.fixedPx }, locale);
+        return shapedColumn(shown, held, snapshot.rowCount, state.width, locale);
     }));
 }
 

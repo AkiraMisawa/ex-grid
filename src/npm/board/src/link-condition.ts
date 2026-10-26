@@ -54,7 +54,7 @@ export class LinkCondition {
         return true;
     }
 
-    /** Whether `tuple`, the values of {@link on} in their order, is let through. */
+    /** Whether `tuple`, the values of {@link LinkCondition.on} in their order, is let through. */
     matches(tuple: readonly BoardValue[]): boolean {
         return this.#keys.has(tupleKey(tuple));
     }
@@ -74,7 +74,11 @@ function valueKey(value: BoardValue): string {
         case 'number': return `d${String(value)}`;
         case 'bigint': return `i${value}`;
         case 'boolean': return value ? 'b1' : 'b0';
-        default: return `m${decimalText(value)}`;
+        case 'object': return `m${decimalText(value)}`;
+        case 'function':
+        case 'symbol':
+        case 'undefined': throw new TypeError(`A ${typeof value} is no value a Snapshot holds.`);
+        default: throw new Error(`Internal: typeof gave a type the Board does not know (${typeof value}).`);
     }
 }
 

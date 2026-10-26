@@ -33,7 +33,7 @@ export class BoardOutput {
     }
 
     /**
-     * The rows of `data` the values chosen name, in its order. Refused, with a {@link BoardRefusedError} at
+     * The rows of `data` the values chosen name, in its order. Refused, with a {@link @ex-grid/data#BoardRefusedError} at
      * `outputs.<name>`: data of another version than the one the values were taken against, or, at version 0,
      * which names none, any data but that same Snapshot; and data missing a column handed on, or holding it as
      * another kind.
@@ -90,6 +90,10 @@ function written(value: BoardValue, kind: SnapshotKind | undefined): string {
             const text = ticksText(value);
             return JSON.stringify(text.endsWith('T00:00:00') ? text.slice(0, -'T00:00:00'.length) : text);
         }
-        default: return decimalText(value);
+        case 'object': return decimalText(value);
+        case 'function':
+        case 'symbol':
+        case 'undefined': throw new TypeError(`A ${typeof value} is no value a Snapshot holds.`);
+        default: throw new Error(`Internal: typeof gave a type the Board does not know (${typeof value}).`);
     }
 }

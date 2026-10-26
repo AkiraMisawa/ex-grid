@@ -8,7 +8,8 @@ One directory per package:
 |---|---|---|
 | `core/` | `@ex-grid/core` | The Script Core: the grid's state and what each input means, free of any UI framework |
 | `chart/` | `@ex-grid/chart` | ExChart's layout: scales, ticks, Thinning, each Series Kind's steps and gaps, the scene a chart is drawn from, and the 3D surface with its slices and mesh, and the Chart Spec's reader, held to the C# engine by the shared cases of `tests/cases/chart/` ([ADR-0370](../../docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md), section 2) |
-| `data/` | `@ex-grid/data` | The Snapshot in TypeScript, read from and written to Apache Arrow as `ExGrid.Data.Arrow` does, on the same cases (ADR-0370, section 3) |
+| `data/` | `@ex-grid/data` | The Snapshot in TypeScript, read from and written to Apache Arrow as `ExGrid.Data.Arrow` does, on the same cases (ADR-0370, section 3), the family's JSON reader, and a Board Input's declaration |
+| `board/` | `@ex-grid/board` | ExBoard's Script Core: the Board Spec's reader, held to ExBoard's by the shared cases of `tests/cases/board/`, a grid built from an input's shape, and a Board bound to Snapshots, its links narrowing the views they reach and its outputs raised by a confirm (ADR-0370, section 3) |
 
 `@ex-grid/react` and `@ex-grid/mui` join it as they are built (ADR-0350, sections 3 and 11).
 

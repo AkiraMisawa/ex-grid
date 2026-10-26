@@ -1,7 +1,7 @@
 // A Board's grid view read (ADR-0342): C#'s GridViewSpec, with the View State's reader from @ex-grid/core reading
 // the widths, the pinning, the sort and the filter, so that a Board's grid and a saved view never mean two things.
 
-import { FormatCode, GridViewStateJsonError, gridViewStateJsonVersion, readGridViewStateJson, type GridViewState } from '@ex-grid/core';
+import { FormatCode, GridViewStateJsonError, GridViewStateJson, readGridViewStateJson, type GridViewState } from '@ex-grid/core';
 import {
     BoardRefusedError, isJsonArray, isJsonObject, jsonMember, jsonRawText, shapeColumn, type DataShape, type JsonValue, type SnapshotKind,
 } from '@ex-grid/data';
@@ -40,7 +40,7 @@ const leastWidth = 40;
 
 /**
  * Reads `spec`, standing at `path` in a Board (`views[0].grid`), taking each input's shape from `inputs`, which
- * answers undefined for an input the Board does not declare. Refused, with a {@link BoardRefusedError} naming the
+ * answers undefined for an input the Board does not declare. Refused, with a {@link @ex-grid/data#BoardRefusedError} naming the
  * path: a member the spec does not have; an input the Board does not declare; a column the input does not
  * declare, or one shown twice; a decimal or double column with no format, its places being the composer's to
  * choose; a format outside the subset a grid shows, or a date format on a number and the reverse; a format on
@@ -96,7 +96,7 @@ export function readGridViewSpec(spec: JsonValue, inputs: (name: string) => Data
     // The rest is the View State's, read by its own reader.
     const sorts = jsonMember(spec, 'sorts');
     const filter = jsonMember(spec, 'filter');
-    const view = `{"version":${gridViewStateJsonVersion},"columns":[${viewColumns.join(',')}],"sorts":${sorts === undefined ? '[]' : jsonRawText(sorts)}`
+    const view = `{"version":${GridViewStateJson.version},"columns":[${viewColumns.join(',')}],"sorts":${sorts === undefined ? '[]' : jsonRawText(sorts)}`
         + `${filter === undefined ? '' : `,"filter":${jsonRawText(filter)}`}}`;
     let viewState: GridViewState;
     try {
@@ -108,9 +108,9 @@ export function readGridViewSpec(spec: JsonValue, inputs: (name: string) => Data
         throw new BoardRefusedError(where === '' ? path : at(where), error.message);
     }
     for (const shown of viewState.columns) {
-        if (!shown.width.isAuto && shown.width.fixedPx < leastWidth) {
+        if ('px' in shown.width && shown.width.px < leastWidth) {
             throw new BoardRefusedError(at('columns'),
-                `Column '${shown.column}': a width of ${shown.width.fixedPx} is below the least a column is drawn at (${leastWidth}).`);
+                `Column '${shown.column}': a width of ${shown.width.px} is below the least a column is drawn at (${leastWidth}).`);
         }
     }
     return Object.freeze({ data, columns: Object.freeze(columns), viewState });

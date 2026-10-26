@@ -29,8 +29,12 @@ function text(value: Json): string {
     return value;
 }
 
+function isList(value: Json): value is readonly Json[] {
+    return Array.isArray(value);
+}
+
 function list(value: Json): readonly Json[] {
-    if (!Array.isArray(value)) throw new Error(`Expected a list, not ${JSON.stringify(value)}.`);
+    if (!isList(value)) throw new Error(`Expected a list, not ${JSON.stringify(value)}.`);
     return value;
 }
 
@@ -38,7 +42,7 @@ function view(shown: BoardView): Json {
     const base = { id: shown.id, kind: shown.kind, title: shown.title, data: [...shown.data] };
     switch (shown.kind) {
         case 'grid':
-            return { ...base, columns: shown.grid.columns.map(c => ({ column: c.column, kind: c.kind, header: c.header, format: c.format ?? null })) };
+            return { ...base, columns: shown.grid.columns.map(c => ({ column: c.column, kind: c.kind, header: c.header, format: c.format === undefined ? null : c.format })) };
         case 'pivot':
             return {
                 ...base, rows: shown.layout.rows.map(f => f.field), columns: shown.layout.columns.map(f => f.field), values: shown.layout.values.map(f => f.field),

@@ -7,6 +7,7 @@ import { InMemoryGridSource, type GridColumn, type GridColumnWidth, type GridSel
 import { BoardRefusedError, type BoardInput, type Snapshot } from '@ex-grid/data';
 import { pivotItemKeyAt, publicKeyId, SnapshotPivotSource, type PivotFieldItem, type PivotLayout } from '@ex-grid/pivot-engine';
 import { BoardOutput } from './board-output';
+import { engineFilter } from './engine-filter';
 import type { BoardChartView, BoardGridView, BoardLink, BoardPivotView, BoardReading } from './board-spec';
 import { LinkCondition, narrowedPositions, narrowedSnapshot, valueAt, type BoardValue } from './link-condition';
 import { resized, shapedColumns, shapedRows, type ShapedRow } from './shaped-grid';
@@ -21,10 +22,10 @@ export interface PivotCellItems {
     readonly column: readonly PivotFieldItem[];
 }
 
-/** How a Board is bound. */
-/** What a grid's selection is read by: its rectangles, in the rows the grid shows; a {@link GridSelection} is one. */
+/** What a grid's selection is read by: its rectangles, in the rows the grid shows; a {@link @ex-grid/core#GridSelection} is one. */
 export type SelectedRows = Pick<GridSelection, 'ranges'>;
 
+/** How a Board is bound. */
 export interface BindBoardOptions {
     /** The locale a grid's text is written in, a BCP 47 tag or `invariant`, the default (ADR-0370 section 10). */
     readonly locale?: string;
@@ -36,7 +37,7 @@ export type BoundView = BoundGridView | BoundPivotView | BoundChartView;
 /**
  * Binds each of `board`'s inputs to the Snapshot `data` holds under its name, and makes each view. Nothing is
  * drawn unless every input binds and every view can be made: an input with no data, a Snapshot whose shape is not
- * the declaration, and a chart its spec cannot draw from the data are refused, with a {@link BoardRefusedError}
+ * the declaration, and a chart its spec cannot draw from the data are refused, with a {@link @ex-grid/data#BoardRefusedError}
  * naming the input or the path. Data for a name the Board does not declare is not read.
  */
 export function bindBoard(board: BoardReading, data: Readonly<Record<string, Snapshot>>, options: BindBoardOptions = {}): BoundBoard {
@@ -50,7 +51,7 @@ export function bindBoard(board: BoardReading, data: Readonly<Record<string, Sna
     const inputs = new Map(board.inputs.map(input => [input.name, input]));
     const views = board.views.map((view, i): BoundView => {
         switch (view.kind) {
-            case 'grid': return new BoundGridView(view, held(bound, view.grid.data), locale);
+            case 'grid': return new BoundGridView(view, held(bound, view.grid.data), locale, `views[${i}].grid.filter`);
             case 'pivot': return new BoundPivotView(view, held(bound, view.input));
             case 'chart': return new BoundChartView(view, readChart(view, bound, inputs, `views[${i}].chart`, undefined));
             default: throw new Error(`Internal: ${String(view satisfies never)} is not a view.`);
@@ -223,7 +224,7 @@ export class BoundBoard {
     }
 
     #tell(): void {
-        for (const listener of [...this.#listeners]) listener();
+        for (const listener of this.#listeners) listener();
     }
 
     // Records the link's condition; false when it is the one already held, which narrows nothing again.
@@ -232,8 +233,8 @@ export class BoundBoard {
         if (condition !== undefined && (condition.on.length !== link.on.length || condition.on.some((name, i) => link.on[i] !== name))) {
             throw new RangeError(`The link compares ${link.on.join(', ')}, and the condition ${condition.on.join(', ')}.`);
         }
-        const held = this.#conditions.get(link);
-        if (held === undefined ? condition === undefined : held.letsThroughAs(condition)) return false;
+        const was = this.#conditions.get(link);
+        if (was === undefined ? condition === undefined : was.letsThroughAs(condition)) return false;
         if (condition === undefined) this.#conditions.delete(link);
         else this.#conditions.set(link, condition);
         return true;
@@ -267,7 +268,7 @@ export class BoundBoard {
                 try {
                     view.read(readChart(view.view, this.data, this.#inputs, path,
                         conditions.length === 0 ? undefined : name => narrowedPositions(held(this.data, name), conditions)));
-                } catch (error) {
+                } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a chart its spec cannot draw from the rows let through says why in its place (spine rule 1)
                     if (!(error instanceof BoardRefusedError)) throw error;
                     view.refuse(`${error.path}: ${error.message}`);
                 }
@@ -306,14 +307,14 @@ export class BoundGridView {
     columns: readonly GridColumn<ShapedRow>[];
 
     /** @internal Made by {@link bindBoard}. */
-    constructor(view: BoardGridView, snapshot: Snapshot, locale: string) {
+    constructor(view: BoardGridView, snapshot: Snapshot, locale: string, path: string) {
         this.view = view;
         this.snapshot = snapshot;
         const columns = shapedColumns(snapshot, view.grid, locale);
         this.#declared = new Map(columns.map(column => [column.name, column]));
         this.#shown = view.grid.viewState.columns.map(state => ({
             column: state.column,
-            width: state.width.isAuto ? { auto: true } : { px: state.width.fixedPx },
+            width: state.width,
             pinned: state.pinned,
         }));
         this.columns = columns;
@@ -323,7 +324,7 @@ export class BoundGridView {
         this.source.gatherInterval = 0;
         this.source.setColumns(columns);
         this.source.setSorts(view.grid.viewState.sorts);
-        this.source.setFilter(view.grid.viewState.filter);
+        this.source.setFilter(engineFilter(view.grid.viewState.filter, view.grid.columns, path));
     }
 
     /** How many leading columns are pinned. */
@@ -476,7 +477,7 @@ export class BoundChartView {
     /** The chart's title and definition, read from the rows its links let through; a new reading each time. */
     reading: ChartSpecReading;
     /** Why the chart is not drawn, naming the path, when its spec cannot draw the rows its links let through;
-     * undefined while it is drawn. {@link reading} is then of other rows, and not shown. */
+     * undefined while it is drawn. {@link BoundChartView.reading} is then of other rows, and not shown. */
     refusal: string | undefined;
 
     /** @internal Made by {@link bindBoard}. */

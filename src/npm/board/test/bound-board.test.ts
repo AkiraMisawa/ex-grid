@@ -1,7 +1,7 @@
 // A bound Board's links and outputs (ADR-0340, Q5 and Q6), as ExBoard.Tests' BoardLinkTests and BoardOutputTests
 // hold the C# BoundBoard to them.
 import { describe, expect, it } from 'vitest';
-import { BoardRefusedError, createSnapshot, type Snapshot } from '@ex-grid/data';
+import { BoardRefusedError, createSnapshot, ticksFromText, type Snapshot } from '@ex-grid/data';
 import { textItemKey } from '@ex-grid/pivot-engine';
 import {
     bindBoard, boardInput, LinkCondition, readBoard, type BoardReading, type BoundBoard, type BoundView, type SelectedRows,
@@ -20,7 +20,7 @@ const chart = '{"id": "curve", "chart": {"version": 1, "axis": {"values": "dates
 
 function board(links: string, outputs = ''): BoardReading {
     return readBoard(`{"version": 1, ${inputs}, "views": [${blotter}, ${other}, ${limits}, ${pivot}, ${chart}],
-      "layout": [{"views": ["blotter", "other", "limits", "byDesk", "curve"]}], "links": [${links}]${outputs === '' ? '' : `, "outputs": [${outputs}]`}}`);
+      "layout": [{"views": ["blotter", "other", "limits", "byDesk", "curve"]}], "links": [${links}]${outputs === '' ? '' : `, "outputs": {${outputs}}`}}`);
 }
 
 function data(reading: BoardReading): Record<string, Snapshot> {
@@ -155,13 +155,13 @@ describe('a link (ADR-0340 Q5)', () => {
     });
 
     it('narrows by the rows under a pivot\'s cells: a subtotal stands for every Item below it, a grand total for all', () => {
-        const reading = board('{"from": "byDesk", "to": ["other"], "on": ["desk", "month"]}');
+        const reading = board('{"from": "byDesk", "to": ["other"], "on": ["desk"]}');
         const bound = bindBoard(reading, data(reading));
         const narrowing = link(reading);
         const rates = { row: [{ field: 'desk', item: textItemKey('RATES') }], column: [] };
 
-        expect(bound.cellCondition(narrowing, [rates])?.values).toEqual([['Rates', 'Jan'], ['Rates', 'Feb']]);
-        expect(bound.cellCondition(narrowing, [{ row: [], column: [] }])?.values).toHaveLength(5);
+        expect(bound.cellCondition(narrowing, [rates])?.values).toEqual([['Rates']]);
+        expect(bound.cellCondition(narrowing, [{ row: [], column: [] }])?.values).toEqual([['Rates'], ['Credit'], ['FX']]);
         expect(bound.cellCondition(narrowing, [])).toBeUndefined();
 
         expect(bound.selectCells('byDesk', [rates])).toBe(true);
@@ -192,7 +192,7 @@ describe('a link (ADR-0340 Q5)', () => {
 });
 
 describe('an output (ADR-0340 Q6)', () => {
-    const chosen = '{"name": "chosen", "from": "blotter", "on": ["desk", "month"], "confirm": "Use these"}';
+    const chosen = '"chosen": {"from": "blotter", "on": ["desk", "month"], "confirm": "Use these"}';
 
     it('is raised by no selection; a confirm hands on its values with the version', () => {
         const reading = board('', chosen);
@@ -218,7 +218,7 @@ describe('an output (ADR-0340 Q6)', () => {
             version: 3,
             columns: [
                 { name: 'desk', kind: 'text', values: ['Rates', 'FX'] }, { name: 'month', kind: 'text', values: ['Jan', 'Jan'] },
-                { name: 'pnl', kind: 'decimal', values: [null, null] }, { name: 'day', kind: 'date', values: [null, null] },
+                { name: 'pnl', kind: 'decimal', values: [null, null] }, { name: 'day', kind: 'date', values: [ticksFromText('2026-01-05'), ticksFromText('2026-01-06')] },
             ],
         });
         const bound = bindBoard(reading, { ...data(reading), trades });

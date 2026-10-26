@@ -192,6 +192,9 @@ export interface FixedColumnWidth {
 }
 
 // @public
+export function foldCase(text: string): string;
+
+// @public
 export class FormatCode {
     get code(): string;
     format(value: FormatCodeValue, locale: string): string;
