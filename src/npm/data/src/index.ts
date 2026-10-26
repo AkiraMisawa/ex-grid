@@ -21,3 +21,5 @@ export { SnapshotError } from './snapshot-error';
 export type { DataShape, DataShapeColumn, SnapshotProgress, SnapshotReadOptions } from './arrow/reader';
 export { arrowStreamMediaType, readArrowShape, readArrowSnapshot, snapshotArrowMetadata } from './arrow/reader';
 export { writeArrowSnapshot } from './arrow/writer';
+export type { JsonObject, JsonValue } from './json';
+export { JsonNumber, JsonTextError, isJsonArray, isJsonObject, jsonMember, jsonMemberNames, jsonRawText, readJsonText } from './json';

@@ -65,10 +65,50 @@ export interface DoubleColumn extends SnapshotColumnBase<'double', number> {
 export type IntegerColumn = SnapshotColumnBase<'integer', bigint>;
 
 // @public
+export function isJsonArray(value: JsonValue | undefined): value is readonly JsonValue[];
+
+// @public
+export function isJsonObject(value: JsonValue | undefined): value is JsonObject;
+
+// @public
+export function jsonMember(object: JsonObject, name: string): JsonValue | undefined;
+
+// @public
+export function jsonMemberNames(object: JsonObject): readonly string[];
+
+// @public
+export class JsonNumber {
+    constructor(raw: string);
+    get double(): number;
+    get int32(): number | undefined;
+    get integer(): number | undefined;
+    readonly raw: string;
+}
+
+// @public
+export type JsonObject = {
+    readonly [key: string]: JsonValue;
+};
+
+// @public
+export function jsonRawText(value: JsonValue): string;
+
+// @public
+export class JsonTextError extends Error {
+    constructor(message: string, options?: ErrorOptions);
+}
+
+// @public
+export type JsonValue = null | boolean | JsonNumber | string | readonly JsonValue[] | JsonObject;
+
+// @public
 export function readArrowShape(arrow: Uint8Array | ArrayBuffer): DataShape;
 
 // @public
 export function readArrowSnapshot(arrow: Uint8Array | ArrayBuffer, options?: SnapshotReadOptions): Promise<Snapshot>;
+
+// @public
+export function readJsonText(text: string): JsonValue;
 
 // @public
 export interface Snapshot {
