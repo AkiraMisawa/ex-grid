@@ -58,4 +58,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'sheet', title: 'Sheet', group: 'ExSheet',
         description: 'ExSheet drawn by ExGrid: Formulas, editing, paste, Delete, the fill keys and undo, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0370).',
     },
+    {
+        route: 'board', title: 'A Board', group: 'ExBoard',
+        description: 'A Board read from JSON: a blotter, a pivot by trader and a chart by day over one checked input, and a limits grid over a second; the blotter\'s selected rows narrow the other three by desk, and a dropped selection restores them (ADR-0340).',
+    },
 ]);

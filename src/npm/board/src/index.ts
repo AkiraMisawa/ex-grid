@@ -20,3 +20,5 @@ export type { BindBoardOptions, BoundView, PivotCellItems, SelectedRows } from '
 export { BoundBoard, BoundChartView, BoundGridView, BoundPivotView, bindBoard } from './bound-board';
 export type { BoardColumnKinds, BoardDiffParts, BoardDiffReading } from './board-diff';
 export { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange } from './board-diff';
+export type { BoardHandle, BoardOptions } from './create-board';
+export { boardGap, boardTitleHeight, createBoard } from './create-board';
