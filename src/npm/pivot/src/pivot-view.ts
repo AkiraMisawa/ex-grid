@@ -21,8 +21,10 @@ import {
 } from '@ex-grid/pivot-engine';
 import { entryMenuCommands, entryOfField, type EntryMenuCommand, type EntryPanel } from './entry-menu';
 import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMove } from './field-list';
+import { ItemFilterPanel } from './item-filter';
+import { ItemListings, pendingFirst, searchItems, type FieldItems, type ItemsUnder } from './items';
 import { PivotMenuFrame, type PivotMenuCommand } from './menu';
-import { defined, elementAt } from './must';
+import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
 import { layoutChoiceId, PivotScreenWords } from './words';
@@ -263,6 +265,8 @@ export class PivotView {
     #rows: FetchingGridSource<PivotDisplayRow> | undefined;
     #dropRemoveShown = false;
     #open: OpenSurface | undefined;
+    // The Items Filter… lists, asked of the source under the report on screen (ADR-0066).
+    readonly #items = new ItemListings(() => { this.#draw(); });
     // A field menu the pane left while it held the keyboard: the keyboard goes to its field's entry once drawn.
     #keyboardAfterDraw: EntrySurface | undefined;
     #destroyed = false;
@@ -439,6 +443,8 @@ export class PivotView {
         if (this.#destroyed) return;
         this.#destroyed = true;
         this.#listening.abort();
+        this.#takeDown();
+        this.#items.dispose();
         this.#generation++;
         this.#asked?.controller.abort();
         this.#asked = undefined;
@@ -462,6 +468,12 @@ export class PivotView {
     /** The layout the report on screen was laid out under. */
     get shownLayout(): PivotLayout {
         return this.#shown.layout;
+    }
+
+    // Whether the report on screen is drawn as a grid: one was answered, and its layout shows something. A layout with
+    // fields in Filters alone is answered, for their Items, and the box says how to start.
+    get #reportDrawn(): boolean {
+        return this.#shown.answer !== undefined && !showsNothing(this.#shown.layout);
     }
 
     // The pane's layout: the one the newest question asks for, or the one the report shows.
@@ -536,8 +548,10 @@ export class PivotView {
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
         const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...(moved === undefined ? [] : [moved])];
         const generation = ++this.#generation;
-        if (showsNothing(layout)) {
-            // Nothing to compute: the report is the empty box that says how to start.
+        if (showsNothing(layout) && layout.filters.length === 0) {
+            // Nothing to compute: the report is the empty box that says how to start. A layout with fields in Filters
+            // alone is asked for still, as the Razor component asks every layout: Filter… lists their Items under its
+            // Report Version (ADR-0066).
             this.#asked = undefined;
             this.#showLayout(layout, undefined, raise);
             return;
@@ -683,7 +697,7 @@ export class PivotView {
         const before = this.#shownReportSource;
         this.#shownReportSource = answered?.question.reportSource;
         this.#release(before);
-        if (answered === undefined) {
+        if (answered === undefined || !this.#reportDrawn) {
             this.#grid?.destroy();
             this.#grid = undefined;
             return;
@@ -854,6 +868,7 @@ export class PivotView {
     #takeDown(): OpenSurface | undefined {
         const open = this.#open;
         this.#open = undefined;
+        if (open?.kind === 'panel') open.popup.close?.();
         open?.popup.element.remove();
         return open;
     }
@@ -877,6 +892,7 @@ export class PivotView {
     #finish(open: OpenSurface, run: () => PivotEntry | undefined): void {
         if (this.#open !== open) return;
         this.#open = undefined;
+        if (open.kind === 'panel') open.popup.close?.();
         this.#returnKeyboard(open, run());
         open.popup.element.remove();
     }
@@ -943,24 +959,44 @@ export class PivotView {
         const words = this.#words;
         const fields = this.#options.source.fields;
         const captions = pivotValueCaptions(against, fields, { locale: this.#locale, ...(words.label === undefined ? {} : { label: words.label }) });
-        const popup = panel === 'field-settings'
-            ? fieldSettingsPanel(document, {
-                layout: against,
-                placement: elementAt(placementsIn(against, entry.area), entry.index),
-                caption: this.#entryCaption(entry, captions),
-                valueCaptions: captions,
-                words: this.#words,
-            }, handlers)
-            : valueFieldSettingsPanel(document, {
-                layout: against,
-                index: entry.index,
-                fieldCaption: this.#captionOf(fieldOf(against, entry)),
-                caption: elementAt(captions, entry.index),
-                fields: this.#options.source.fields,
-                features: this.#options.source.features,
-                locale: this.#locale,
-                words: this.#words,
-            }, handlers);
+        let popup: PivotPanel;
+        switch (panel) {
+            case 'filter-items': {
+                const field = fieldOf(against, entry);
+                // Opened again on Items that could not be listed, it asks for them again.
+                this.#items.retry(field);
+                popup = new ItemFilterPanel(document, { layout: against, field, caption: this.#captionOf(field), locale: this.#locale, words }, {
+                    ...handlers,
+                    items: () => this.#itemsOf(field),
+                    // Asked from the panel's draw, it says a problem in a later turn, never in the middle of that draw.
+                    search: (search, signal) => Promise.resolve().then(() => searchItems(field, search, defined(this.#itemsUnder(field), 'a report to search the Items of'), signal)),
+                });
+                break;
+            }
+            case 'field-settings':
+                popup = fieldSettingsPanel(document, {
+                    layout: against,
+                    placement: elementAt(placementsIn(against, entry.area), entry.index),
+                    caption: this.#entryCaption(entry, captions),
+                    valueCaptions: captions,
+                    words,
+                }, handlers);
+                break;
+            case 'value-field-settings':
+                popup = valueFieldSettingsPanel(document, {
+                    layout: against,
+                    index: entry.index,
+                    fieldCaption: this.#captionOf(fieldOf(against, entry)),
+                    caption: elementAt(captions, entry.index),
+                    fields,
+                    features: this.#options.source.features,
+                    locale: this.#locale,
+                    words,
+                }, handlers);
+                break;
+            default:
+                unreachable(panel);
+        }
         const surface: EntrySurface = { kind: 'panel', entry, field: open.field, against, popup };
         this.#openSurface(surface);
     }
@@ -993,6 +1029,28 @@ export class PivotView {
             shown.popup.draw(this.#words.fill('field-menu', this.#entryCaption(entry, valueCaptions)),
                 commands.map(command => this.#entryCommand(shown, command)));
         }
+        if (shown?.kind === 'panel') shown.popup.redraw?.();
+    }
+
+    // What a field's Items are listed under: the report on screen, and the field's order in it. None while no report
+    // is shown.
+    #itemsUnder(field: string): ItemsUnder | undefined {
+        const { answer, question, layout } = this.#shown;
+        if (answer === undefined || question === undefined) return undefined;
+        const at = placementOf(layout, field);
+        return Object.freeze({
+            reportSource: question.reportSource,
+            version: answer.metadata.version,
+            sourceVersion: answer.metadata.sourceVersion,
+            settings: question.settings,
+            sort: at === undefined ? undefined : elementAt(placementsIn(layout, at.area), at.index).sort,
+        });
+    }
+
+    // A field's Items as they stand for the report on screen; on their way while the first report is.
+    #itemsOf(field: string): FieldItems {
+        const under = this.#itemsUnder(field);
+        return under === undefined ? pendingFirst : this.#items.of(field, under);
     }
 
     // ---- Drawing ---------------------------------------------------------------------------------------
@@ -1032,7 +1090,7 @@ export class PivotView {
         if (this.#notice.textContent !== (this.#refusal ?? '')) this.#notice.textContent = this.#refusal ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- no refusal is an empty notice, which takes no room
         this.#notice.hidden = this.#refusal === undefined;
         this.#sheet.setAttribute('style', stretch ? 'display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0' : '');
-        const answered = this.#shown.answer !== undefined;
+        const answered = this.#reportDrawn;
         // The report or the box that says why there is none, and over the report, while a placed field is
         // dragged, the mark that a drop there removes it (ADR-0061). Elements come and go rather than hide, since
         // the stylesheet gives the box a display of its own.

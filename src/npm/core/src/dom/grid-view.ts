@@ -9,7 +9,7 @@
 // microtask, so a burst of changes in one task paints once.
 
 import { AutoWidth } from '../columns/auto-width';
-import { assembleCopy, type CopyFlavours } from '../clipboard/clipboard-data';
+import { assembleCopy, checkedCopyAnswer, type CopyFlavours, type GridCopyAnswer, type GridCopyRequest } from '../clipboard/clipboard-data';
 import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
 import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, rowCommandRefusalId, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
@@ -152,6 +152,13 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * rather than copy a part. A million unless given; at least one, since the cap may be raised but not
      * used to switch copying off. */
     readonly copyCellCap?: number;
+    /**
+     * Answers each copy the grid's own rules approved, in place of the grid's assembly (ADR-0050, item 9): the two
+     * flavours to write, exactly as given, or a refusal in the Consumer's own sentence, which the grid says, raising
+     * `onRefused` with `refusedByConsumer`, and writes nothing. A Consumer that holds what it copies, as a Sheet
+     * holds Entries, answers from it however far the copy runs past the rows in hand.
+     */
+    readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
     /** Hears every gesture the grid refused, by kind and reason (ADR-0005): nothing it would have done was
      * done, and the grid has said why through its live region. */
     readonly onRefused?: (refusal: GridRefusal<Row>) => void;
@@ -518,6 +525,7 @@ interface Taken<Row> {
     readonly headerLayout: HeaderGroupLayout;
     readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     readonly copyCellCap: number;
+    readonly copyAnswer: ((request: GridCopyRequest) => GridCopyAnswer) | undefined;
     readonly onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
     readonly onAction: ((event: GridActionEvent<Row>) => void) | undefined;
     /** Who holds the marks of the Mark Column, while one is declared. */
@@ -648,8 +656,9 @@ interface Repaint {
 // where the browser can say the clipboard changed (ADR-0170).
 interface GatheredCopy<Row> {
     readonly flavours: CopyFlavours;
-    /** Made once the write lands, so the cells' text is read again off the write's path. */
-    readonly outline: () => CopiedRange<Row>;
+    /** Made once the write lands, so the cells' text is read again off the write's path; none where the copy is
+     * not outlined, which still replaces the outline before. */
+    readonly outline: () => CopiedRange<Row> | undefined;
 }
 
 // A write of the grid's own by the asynchronous route (ADR-0170): what was gathered, once in hand; the write as
@@ -871,6 +880,7 @@ export class GridView<Row> {
     #headerLayout = HeaderGroupLayout.empty;
     #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     #copyCellCap = defaultCellCap;
+    #copyAnswer: ((request: GridCopyRequest) => GridCopyAnswer) | undefined;
     #onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
     #onAction: ((event: GridActionEvent<Row>) => void) | undefined;
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the action chosen in it.
@@ -1517,6 +1527,8 @@ export class GridView<Row> {
             throw new TypeError('headerClickSelects and onColumnOrderChanged both claim a press on a header: declare one of them.');
         }
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
+        const { copyAnswer }: { readonly copyAnswer?: unknown } = options;
+        if (copyAnswer !== undefined && typeof copyAnswer !== 'function') throw new TypeError('copyAnswer is a function of the copy asked (ADR-0050, item 9).');
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
                 + 'not used to switch copying off (ADR-0005).');
@@ -1543,7 +1555,8 @@ export class GridView<Row> {
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
-            onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused, onAction: options.onAction, marks,
+            onSelectionChanged: options.onSelectionChanged, copyCellCap, copyAnswer: options.copyAnswer, onRefused: options.onRefused, onAction: options.onAction,
+            marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             onUndo: options.onUndo, onRedo: options.onRedo,
@@ -1581,7 +1594,7 @@ export class GridView<Row> {
         const marks = options.marks ?? source.marks;
         if (marks === undefined) {
             throw new TypeError(`Column '${column.column.name}' is a Mark Column, but nobody holds the marks. Give marks, or a source `
-                + 'that keeps them, as GridSource.from does (ADR-0043).');
+                + 'that keeps them: GridSource.from does, and GridSource.fetch does given a marks adapter (ADR-0043).');
         }
         return marks;
     }
@@ -1670,6 +1683,7 @@ export class GridView<Row> {
         this.#headerLayout = taken.headerLayout;
         this.#onSelectionChanged = taken.onSelectionChanged;
         this.#copyCellCap = taken.copyCellCap;
+        this.#copyAnswer = taken.copyAnswer;
         this.#onRefused = taken.onRefused;
         this.#onAction = taken.onAction;
         this.#rowMarks.bind(taken.marks);
@@ -4498,24 +4512,31 @@ export class GridView<Row> {
         const state = this.#state;
         const columns = this.#columns;
         const data = event.clipboardData;
-        if (data !== null && windowCovers(plan, state)) {
+        // The Consumer's flavours where it answers copies (ADR-0050, item 9), or nothing where it refused, which it
+        // has said.
+        const answered = this.#copyAnswer === undefined ? undefined : this.#answeredCopy(plan, false);
+        if (this.#copyAnswer !== undefined && answered === undefined) return;
+        const covered = windowCovers(plan, state);
+        if (data !== null && (answered !== undefined || covered)) {
             // Both flavours in one operation: what was on screen in text/plain, and the raw value in
             // text/html, which Excel prefers and reads with its precision and type (ADR-0005).
-            const { text, html } = assembleCopy(plan, copyValues(columns, windowRowAt(state)));
+            const { text, html } = answered === undefined ? assembleCopy(plan, copyValues(columns, windowRowAt(state))) : answered;
             event.preventDefault();
             data.setData('text/plain', text);
             data.setData('text/html', html);
-            // Set here, the write cannot fail: it is the grid's own, and it has landed (ADR-0170). Made while a
-            // write by the asynchronous route is in flight, it may land on either side of it, and is not outlined.
+            // Set here, the write cannot fail: it is the grid's own, and it has landed (ADR-0170). Outlined where the
+            // Window holds every row it copied, and not when made while a write by the asynchronous route is in
+            // flight, which it may land on either side of.
             if (this.#clipboardWatched) {
                 const counted = this.#ledger.count(this);
-                this.#land(counted.uncertain ? undefined : CopiedRange.of(plan, this.#sequence(), columns, windowRowAt(state)));
+                this.#land(covered && !counted.uncertain ? CopiedRange.of(plan, this.#sequence(), columns, windowRowAt(state)) : undefined);
             }
             return;
         }
         // Started before the event is taken from the browser: a write that cannot start leaves the clipboard
         // as the default copy leaves it, untouched.
-        this.#writeCopy(plan, false);
+        if (answered === undefined) this.#writeCopy(plan, false);
+        else this.#writeAnswered(plan, answered);
         event.preventDefault();
     };
 
@@ -4531,17 +4552,50 @@ export class GridView<Row> {
             this.#refuse({ kind: 'copy', reason: decision.reason });
             return;
         }
+        if (this.#copyAnswer !== undefined) {
+            const answer = this.#answeredCopy(decision.plan, withHeaders);
+            if (answer !== undefined) this.#writeAnswered(decision.plan, answer);
+            return;
+        }
         this.#writeCopy(decision.plan, withHeaders);
     }
 
-    // The asynchronous write of a copy (ADR-0005): the rows gathered while the browser waits, and the copy held
-    // as the one a newer copy supersedes.
+    // The Consumer's answer to an approved copy (ADR-0050, item 9), or nothing where it refused, which is said in its
+    // own sentence.
+    #answeredCopy(plan: CopyPlan, withHeaders: boolean): { readonly text: string; readonly html: string } | undefined {
+        const answer = checkedCopyAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#state.rowSequenceVersion }));
+        if (answer.kind === 'write') return answer;
+        this.#sayRefusal(answer.sentence);
+        this.#onRefused?.({ kind: 'copy', reason: 'refusedByConsumer' });
+        return undefined;
+    }
+
+    // The Consumer's flavours written where no copy event carries them: the menu's copy, or a copy event without
+    // its data. Held as a gathered copy is: handed over a microtask later, when a newer copy has superseded it,
+    // nothing is written, and its outline, where the Window holds every row it copied, lands with its write
+    // (ADR-0170).
+    #writeAnswered(plan: CopyPlan, answered: CopyFlavours): void {
+        const state = this.#state;
+        const columns = this.#columns;
+        const version = this.#sequence();
+        const outlined = windowCovers(plan, state);
+        this.#writeGathered(signal => Promise.resolve().then(() => (signal.aborted ? undefined : {
+            flavours: answered, outline: () => (outlined ? CopiedRange.of(plan, version, columns, windowRowAt(state)) : undefined),
+        })));
+    }
+
+    // The asynchronous write of a copy (ADR-0005): the rows gathered while the browser waits.
     #writeCopy(plan: CopyPlan, withHeaders: boolean): void {
+        this.#writeGathered(signal => this.#gatherCopy(plan, this.#state, this.#columns, this.#sequence(), withHeaders, signal));
+    }
+
+    // A copy written as `gather` hands it over, held as the one a newer copy supersedes.
+    #writeGathered(gather: (signal: AbortSignal) => Promise<GatheredCopy<Row> | undefined>): void {
         const copy = new AbortController();
         // Counted as the grid's own write the moment it is in hand, before the browser writes it, so the change
         // it causes finds it counted (ADR-0170).
         const own: OwnWrite<Row> = { gathered: undefined, counted: undefined, ended: false };
-        const flavours = this.#gatherCopy(plan, this.#state, this.#columns, this.#sequence(), withHeaders, copy.signal).then(gathered => {
+        const flavours = gather(copy.signal).then(gathered => {
             if (gathered === undefined) return undefined;
             own.gathered = gathered;
             if (this.#clipboardWatched && !own.ended) own.counted = this.#ledger.count(this, true);

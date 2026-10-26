@@ -7,7 +7,7 @@ import {
     engineFilterOf, GridViewState, GridViewStateJsonError, InMemoryGridSource, sameGridFilter, type ColumnViewState, type GridColumn, type GridFilter, type GridSelection,
 } from '@ex-grid/core';
 import { BoardRefusedError, type BoardInput, type DataShape, type Snapshot, type SnapshotKind } from '@ex-grid/data';
-import { pivotItemKeyAt, publicKeyId, SnapshotPivotSource, writePivotLayoutJson, type PivotFieldItem, type PivotLayout } from '@ex-grid/pivot-engine';
+import { pivotItemKeyAt, pivotItemKeyId, SnapshotPivotSource, writePivotLayoutJson, type PivotFieldItem, type PivotLayout } from '@ex-grid/pivot-engine';
 import { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange, kindsOf, placed } from './board-diff';
 import { BoardOutput } from './board-output';
 import { refusedAt } from './grid-view-spec';
@@ -688,7 +688,7 @@ function valuesUnder(pivot: BoundPivotView, on: readonly string[], cells: readon
     };
     const hidden = pivot.layout.rows.concat(pivot.layout.columns, pivot.layout.filters)
         .filter(field => field.hiddenItems.length > 0 && snapshot.columns.some(c => c.name === field.field))
-        .map(field => ({ column: column(field.field, 'A field names'), hidden: new Set(field.hiddenItems.map(publicKeyId)) }));
+        .map(field => ({ column: column(field.field, 'A field names'), hidden: new Set(field.hiddenItems.map(pivotItemKeyId)) }));
     const groups = new Map<string, { readonly columns: ReturnType<typeof column>[]; readonly items: Set<string> }>();
     for (const cell of cells) {
         const steps = [...cell.row, ...cell.column];
@@ -698,14 +698,14 @@ function valuesUnder(pivot: BoundPivotView, on: readonly string[], cells: readon
             group = { columns: steps.map(step => column(step.field, 'A cell names field')), items: new Set() };
             groups.set(fields, group);
         }
-        group.items.add(steps.map(step => publicKeyId(step.item)).join('\u001f'));
+        group.items.add(steps.map(step => pivotItemKeyId(step.item)).join('\u001f'));
     }
     const columns = on.map(name => column(name, 'The link compares column'));
     const groupList = [...groups.values()];
     const tuples: BoardValue[][] = [];
     for (let row = 0; row < snapshot.rowCount; row++) {
-        if (hidden.some(h => h.hidden.has(publicKeyId(pivotItemKeyAt(h.column, row))))) continue;
-        const under = groupList.some(g => g.items.has(g.columns.map(c => publicKeyId(pivotItemKeyAt(c, row))).join('\u001f')));
+        if (hidden.some(h => h.hidden.has(pivotItemKeyId(pivotItemKeyAt(h.column, row))))) continue;
+        const under = groupList.some(g => g.items.has(g.columns.map(c => pivotItemKeyId(pivotItemKeyAt(c, row))).join('\u001f')));
         if (under) tuples.push(columns.map(c => valueAt(c, row)));
     }
     return new LinkCondition(on, tuples);

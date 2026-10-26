@@ -449,6 +449,9 @@ export function pivotItemKey(kind: PivotItemKind, value?: string): PivotItemKey;
 export function pivotItemKeyAt(column: SnapshotColumn, row: number): PivotItemKey;
 
 // @public
+export function pivotItemKeyId(key: PivotItemKey): string;
+
+// @public
 export type PivotItemKind = 'number' | 'date' | 'text' | 'boolean' | 'error' | 'blank';
 
 // @public
@@ -1123,9 +1126,6 @@ export function placementsIn(layout: PivotLayout, area: PivotArea): readonly Piv
 
 // @public
 export function placesField(layout: PivotLayout, field: string): boolean;
-
-// @public
-export function publicKeyId(key: PivotItemKey): string;
 
 // @public
 export function queryForLayout(layout: PivotLayout, maxLeaves?: number): PivotQuery;
