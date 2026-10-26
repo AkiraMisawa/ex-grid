@@ -38,6 +38,12 @@ export interface PivotDetailItem {
 export type PivotDetailsView = 'tab' | 'dialog';
 
 // @public
+export interface PivotFailedEvent {
+    readonly error: unknown;
+    readonly stale: boolean;
+}
+
+// @public
 export interface PivotFieldListShownEvent {
     readonly shown: boolean;
 }
@@ -85,6 +91,7 @@ export interface PivotViewOptions {
     readonly layout?: PivotLayout;
     readonly locale?: string;
     readonly maxLeaves?: number;
+    readonly onFailed?: (event: PivotFailedEvent) => void;
     readonly onLayoutChanged?: (event: PivotLayoutChangedEvent) => void;
     readonly onRefused?: (event: PivotRefusedEvent) => void;
     readonly onSelectionChanged?: (event: PivotSelectionChangedEvent) => void;

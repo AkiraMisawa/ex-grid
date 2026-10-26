@@ -199,7 +199,13 @@ edit's or a paste's intent reaches .NET after the browser committed it, so a Con
 refused in turn, with an exception that says so: step 2 needs the core to ask before it commits, which on
 Blazor Server is a round trip, and that is the core's decision to make, not the adapter's. Until then the cell
 shows what its row held for that round trip after the commit, and the bridge holds what .NET sends while .NET
-handles the write, so the first Window the grid takes in after it is one that holds the write (ADR-0142, D1).)*
+handles the write, so the first Window the grid takes in after it is one that holds the write (ADR-0142, D1).
+The note below, from ADR-0380, takes back the refusal of `Validate` and of a refused edit once the core waits
+for a pending answer.)*
+
+*(2026-10-26: [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)
+section 5: Blazor's adapter carries `Validate`, `OnEdit`'s `Refuse`, `CellStateOf` and `CellMessageOf`.
+The first two cross as pending answers, which the Script Core waits for. It does not refuse them.)*
 
 ### 8. The engines stay in C#
 

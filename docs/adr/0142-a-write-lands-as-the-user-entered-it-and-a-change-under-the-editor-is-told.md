@@ -283,6 +283,11 @@ against, so the window is near zero.
   The default now is to land, so a Consumer that does nothing gets what the user wanted, and the edit's
   intent carries the texts for one that must refuse.
 
+*(2026-10-26: "One commit at a time" holds in the Script Core too.
+[ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md) lets
+`onEdit` return a promise there, `refuse` stand until it settles, and a verdict answered later wait the same
+way.)*
+
 ## Consequences
 
 - **The refusal reasons change.**

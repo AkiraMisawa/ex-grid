@@ -2530,6 +2530,13 @@ export class GridView<Row> {
             key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey,
             metaIsPrimary: this.#metaIsPrimary,
         };
+        // The page's text selection is never the grid's to copy (CP-10): a key on the root drops it before the
+        // browser runs the command it is the default of, so Ctrl+C fires its copy event on the root. Not from the
+        // Keyboard Field (ADR-0080), whose caret is the document's selection then, and which an IME needs.
+        if (event.target === this.#root) {
+            const selection = this.#root.ownerDocument.getSelection();
+            if (selection !== null && selection.rangeCount > 0) selection.removeAllRanges();
+        }
         const popover = this.#popover;
         const onGrid = event.target === this.#root || event.target === this.#keyField;
         const inPopover = popover !== undefined && event.target instanceof Node && popover.element.contains(event.target);

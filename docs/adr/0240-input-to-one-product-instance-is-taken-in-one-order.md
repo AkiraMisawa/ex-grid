@@ -493,6 +493,10 @@ says).
 
 ### 12. Escape cancels a paste still being read: the one input that acts ahead of its turn
 
+*(2026-10-26: [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)
+section 3 adds a second such input. An Escape cancels a Pending Commit, on this section's terms: it is
+decided by what the Escape's keydown sees, and both outcomes are said aloud.)*
+
 A paste whose streams are still being read or parsed is under way: the root says so (`aria-busy`) and
 the live region announces it once. **An Escape typed while it is under way cancels it.** The script
 numbers that Escape as a cancel and also tells the core at once, outside the order; the paste, if it
