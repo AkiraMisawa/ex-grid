@@ -1275,22 +1275,32 @@ export class GridView<Row> {
      * one range, with the Focus on `focus` inside it, and the grid then does what it does after a click: an open
      * edit commits first, a menu closes, and the Focus is scrolled into view. The Selection stays the grid's; the
      * Consumer asks and the grid places. Positions mean something only under the order they were written in, so
-     * a request under another Row Sequence Version than the grid's places nothing and is refused (`onRefused`,
-     * kind `placement`, reason `orderMoved`), as is one whose edit commit brought in another source
-     * (`sourceChanged`, ADR-0142). True once placed; false when refused, or when a Reject or a refusal held the
-     * open edit (ADR-0034), which says so itself. A range reaching outside the grid, or a Focus outside the
-     * range, throws a RangeError and changes nothing.
+     * a request under another Row Sequence Version than the one the grid's source says (its `snapshot()`) places
+     * nothing and is refused (`onRefused`, kind `placement`, reason `orderMoved`), as is one whose edit commit
+     * brought in another source (`sourceChanged`, ADR-0142) or moved the columns (`columnsMoved`, ADR-0011). The
+     * version is all a request carries, so one made after the source was replaced is taken as written for the
+     * new one, as the C# grid takes it. True once placed; false when refused, or when a Reject or a refusal held
+     * the open edit (ADR-0034), which says so itself. A range reaching outside the grid, a Focus outside the
+     * range, or a grid with no cells throws a RangeError and changes nothing.
      */
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
         if (this.#destroyed) throw new Error('This grid was destroyed: a grid destroyed places nothing.');
-        if (rowSequenceVersion !== this.#sequence()) {
+        // The source's own version, which is the one a Consumer reads; the grid's written one carries an offset
+        // past every change of source.
+        if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
-        // The source the request was made under: the version alone cannot tell a replaced one (ADR-0142).
+        const extent = this.#extent;
+        if (extent.rowCount === 0 || extent.columnCount === 0) {
+            throw new RangeError(`The grid has no cells to place a Selection on (${String(extent.rowCount)} rows × ${String(extent.columnCount)} columns) (ADR-0050).`);
+        }
+        // The source and the columns the request was made under: the version alone cannot tell a replaced source
+        // (ADR-0142), and column positions name other columns once the columns move (ADR-0011).
         const source = this.#source;
+        const names = this.#columns.map(({ column }) => column.name);
         // Checked before anything changes: a request that names cells the grid does not have commits nothing.
-        this.#held.selection.place(range, focus, this.#extent);
+        this.#held.selection.place(range, focus, extent);
         this.#answered += 1;
         this.#invalidate();
         if (!this.#commitEdit()) return false;
@@ -1302,7 +1312,11 @@ export class GridView<Row> {
             this.#onRefused?.({ kind: 'placement', reason: 'sourceChanged' });
             return false;
         }
-        if (rowSequenceVersion !== this.#sequence()) {
+        if (!sameItems(names, this.#columns.map(({ column }) => column.name))) {
+            this.#onRefused?.({ kind: 'placement', reason: 'columnsMoved' });
+            return false;
+        }
+        if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }

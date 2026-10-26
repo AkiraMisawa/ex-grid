@@ -19,6 +19,8 @@ export interface BridgeGridState<Row> {
     readonly windowStart: number;
     /** The rows of a run outside the Window, as many as there are; absent where nothing can be fetched. */
     readonly fetch?: (range: RowRange) => Promise<readonly Row[]>;
+    /** The source's Row Sequence Version as it stands now, read again once a fetch has answered. */
+    readonly versionNow: () => number;
 }
 
 /** A selection read: the chart it makes, or the sentence that says why it makes none. */
@@ -140,6 +142,7 @@ export async function readSelection<Row>(
 
     const positions = distinctOrdered(ranges.flatMap(r => range(r.topRow, r.rowCount)));
     const rows = await rowsAt(g, positions);
+    if (rows === 'moved') return refused(stale);
     if (rows === undefined) return refused('The grid could not hand over every selected row; select fewer rows.');
 
     const made = chosen === 'seriesInColumns'
@@ -176,7 +179,10 @@ function axisHeader<Row>(g: BridgeGridState<Row>, chart: GridChart): string {
     return column === undefined ? name : headerOf(column);
 }
 
-async function rowsAt<Row>(g: BridgeGridState<Row>, positions: readonly number[]): Promise<HeldRows<Row> | undefined> {
+// The rows at `positions`, from the Window or fetched; `undefined` where the source cannot hand them all over, and
+// `moved` where the order moved while a fetch was out, so the rows fetched and the Window's stand under two
+// orders and name rows the user never selected (spine rule 6).
+async function rowsAt<Row>(g: BridgeGridState<Row>, positions: readonly number[]): Promise<HeldRows<Row> | 'moved' | undefined> {
     const rows = new Map<number, { readonly row: Row }>();
     const end = g.windowStart + g.window.length;
     for (const run of runs(positions)) {
@@ -186,6 +192,7 @@ async function rowsAt<Row>(g: BridgeGridState<Row>, positions: readonly number[]
         }
         if (g.fetch === undefined) return undefined;
         const fetched = await g.fetch(run);
+        if (g.versionNow() !== g.rowSequenceVersion) return 'moved';
         if (fetched.length < run.count) return undefined;
         for (let i = 0; i < run.count; i++) rows.set(run.start + i, { row: itemAt(fetched, i) });
     }

@@ -68,7 +68,7 @@ class Fixture {
     }
 
     state(): BridgeGridState<Day> {
-        return { columns, groups, rowSequenceVersion: this.version, window: this.rows, windowStart: 0 };
+        return { columns, groups, rowSequenceVersion: this.version, window: this.rows, windowStart: 0, versionNow: () => this.version };
     }
 
     read(ranges: readonly SelectionRange[], options: {
@@ -332,7 +332,7 @@ describe('the selection bridge (ADR-0251, ADR-0258)', () => {
         const f = new Fixture();
         const charts: GridChart[] = [];
         const refused: string[] = [];
-        const source = GridSource.from(f.rows);
+        const source = GridSource.from(f.rows, { rowKey: row => keyOf(row.date) });
         const bridge = new GridChartBridge<Day>({
             declarations: f.declarations(),
             grid: () => ({ columns, headerGroups: groups, source }),
@@ -341,10 +341,40 @@ describe('the selection bridge (ADR-0251, ADR-0258)', () => {
         });
         const [chart] = bridge.commands(context(f, [r(0, 5, 2, 2)]));
         chart?.invoke();
-        const [stale] = bridge.commands(context(f, [r(0, 5, 2, 2)], 3));
-        stale?.invoke();
-        await expect.poll(() => charts.length + refused.length).toBe(2);
+        await expect.poll(() => charts.length).toBe(1);
         expect(charts[0]?.orientation).toBe('seriesInRows');
-        expect(refused).toEqual(['The rows were reordered after the selection was made. Select again.']);
+        // A command run after the order moved under the menu is refused: its Selection names other rows now.
+        const [stale] = bridge.commands(context(f, [r(0, 5, 2, 2)]));
+        source.replaceAll(f.rows.slice(1));
+        stale?.invoke();
+        await expect.poll(() => refused.length).toBe(1);
+        expect([charts.length, refused]).toEqual([1, ['The rows were reordered after the selection was made. Select again.']]);
+    });
+
+    it('ADR-0251, spine rule 6: an order that moves while rows outside the Window are fetched is refused, not read under two orders', async () => {
+        const f = new Fixture();
+        const held = { version: f.version };
+        const state: BridgeGridState<Day> = {
+            ...f.state(), window: f.rows.slice(0, 1),
+            fetch: range => { held.version += 1; return Promise.resolve(f.rows.slice(range.start, range.start + range.count)); },
+            versionNow: () => held.version,
+        };
+        const reading = await readSelection(state, [r(0, 0, 3, 3)], f.version, f.declarations(), undefined, undefined);
+        expect(refusalOf(reading)).toBe('The rows were reordered after the selection was made. Select again.');
+    });
+
+    it('ADR-0258: two targets of one name are thrown on, since a target is told apart by its name', async () => {
+        const f = new Fixture();
+        const target: ChartTarget = { name: 'Exposure', chart: chartOf(await f.read([r(0, 0, 3, 1), r(0, 3, 3, 1)])) };
+        expect(() => bridgeOver(f, { targets: [target, { ...target }] }).commands(context(f, [r(0, 0, 1, 1)]))).toThrow(/Two chart targets are named 'Exposure'/);
+    });
+
+    it('ADR-0258, M3-Q6: a point whose row has gone from the chart is refused by name, not quietly dropped', async () => {
+        const f = new Fixture();
+        const refused: string[] = [];
+        const bridge = bridgeOver(f, { refused });
+        const history = chartOf(await f.read([r(0, 0, 3, 1), r(0, 3, 3, 1)]));
+        expect(await bridge.showInGrid(history, { seriesId: 'ene', position: dayNumberOf(day(40)) })).toBe(false);
+        expect(refused).toEqual(['That point\'s row no longer exists, so it has no cell in the grid.']);
     });
 });

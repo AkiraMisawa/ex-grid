@@ -147,6 +147,45 @@ describe('a placement of the Selection', () => {
         expect(listener.refusals).toEqual([{ kind: 'placement', reason: 'sourceChanged' }]);
     });
 
+    it('ADR-0050, ADR-0011: an edit whose commit moves the columns makes the request stale, refused as the columns moved', async () => {
+        const listener = heard();
+        const held: { view?: ReturnType<typeof mount<Trade>>['view'] } = {};
+        const options: GridOptions<Trade> = {
+            columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, ...listener.options,
+            onEdit: intent => {
+                listener.edits.push(intent);
+                defined(held.view, 'the grid').update({ ...options, columns: columns.toReversed() });
+            },
+        };
+        const { root, view } = mount(options);
+        held.view = view;
+        await painted();
+        press(root, 10, rowY(1));
+        await painted();
+        key('N');
+        expect(view.placeSelection(range(5, 0, 1, 1), { row: 5, column: 0 }, 0)).toBe(false);
+        expect(listener.refusals).toEqual([{ kind: 'placement', reason: 'columnsMoved' }]);
+    });
+
+    it('ADR-0050, ADR-0142: after the source is replaced, a request carries the new source\'s own version', async () => {
+        const listener = heard();
+        const options: GridOptions<Trade> = { columns, source: GridSource.from(trades(20)), rowHeight: 24, viewportHeight: 480, ...listener.options };
+        const { view } = mount(options);
+        await painted();
+        const next = GridSource.from(trades(30));
+        view.update({ ...options, source: next });
+        await painted();
+        expect(view.placeSelection(range(25, 0, 1, 1), { row: 25, column: 0 }, next.snapshot().rowSequenceVersion)).toBe(true);
+        await painted();
+        expect([listener.refusals, defined(listener.selections.at(-1), 'the Selection heard').focus]).toEqual([[], { row: 25, column: 0 }]);
+    });
+
+    it('ADR-0050: a grid with no rows has no cell to place on, and says so', async () => {
+        const { view } = mount({ columns, rows: [], rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        expect(() => view.placeSelection(range(0, 0, 1, 1), { row: 0, column: 0 }, 0)).toThrow(/no cells/);
+    });
+
     it('ADR-0050: a destroyed grid places nothing, and says so', async () => {
         const { view } = mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480 });
         await painted();

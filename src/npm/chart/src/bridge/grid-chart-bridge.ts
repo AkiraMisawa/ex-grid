@@ -126,13 +126,23 @@ export class GridChartBridge<Row> {
         const g = this.#state();
         const both = this.declarations.orientation === undefined && g !== undefined
             && declaredOrientations(g, context.selection, this.declarations).length === 2;
+        // The order the menu opened under, as the source says it: the Selection in the context was taken against
+        // it, and a command run after it moved is refused (spine rule 6). The grid's own written version carries
+        // an offset past a change of source, which the source cannot be compared with.
+        const opened = g === undefined ? undefined : g.rowSequenceVersion;
         const command = (id: string, orientation: ChartOrientation | undefined, target: ChartTarget | undefined): GridCommand =>
-            Object.freeze({ id, enabled, invoke: () => { void this.#make(context, orientation, target); } });
+            Object.freeze({ id, enabled, invoke: () => { void this.#make(context.selection, opened, orientation, target); } });
         const commands = both
             ? [command(gridChartCommandIds.inColumns, 'seriesInColumns', undefined), command(gridChartCommandIds.inRows, 'seriesInRows', undefined)]
             : [command(gridChartCommandIds.chart, undefined, undefined)];
         const targets = this.#options.targets === undefined ? [] : this.#options.targets();
-        for (const target of targets) commands.push(command(addPrefix + target.name, undefined, target));
+        const names = new Set<string>();
+        for (const target of targets) {
+            // A target is told apart by its name, in the menu and in its command's id.
+            if (names.has(target.name)) throw new Error(`Two chart targets are named '${target.name}'; each target of "Add to chart" has a name of its own (ADR-0258).`);
+            names.add(target.name);
+            commands.push(command(addPrefix + target.name, undefined, target));
+        }
         return Object.freeze(commands);
     };
 
@@ -182,7 +192,11 @@ export class GridChartBridge<Row> {
      */
     async showInGrid(chart: GridChart, click: ChartPointClick): Promise<boolean> {
         const cell = this.cellOf(chart, click);
-        return cell === undefined ? false : this.showCellInGrid(cell);
+        if (cell === undefined) {
+            this.#refuse('That point\'s row no longer exists, so it has no cell in the grid.');
+            return false;
+        }
+        return this.showCellInGrid(cell);
     }
 
     /**
@@ -197,12 +211,17 @@ export class GridChartBridge<Row> {
             throw new Error('The bridge was given no placeSelection, so it cannot move the grid\'s Focus (ADR-0258, M3-Q6).');
         }
         const g = this.#state();
-        if (g === undefined) return false;
+        if (g === undefined) {
+            this.#refuse('The bridge has no grid to show the point in.');
+            return false;
+        }
         const column = g.columns.findIndex(c => c.name === cell.column);
         const at = g.window.findIndex(r => this.declarations.rowKey(r) === cell.rowKey);
         const row = at < 0 ? -1 : g.windowStart + at;
         if (row < 0 || column < 0) {
-            this.#refuse(row < 0 ? 'That row is not among the rows the grid shows: it may be filtered out.' : `${cell.column} is not among the grid's columns.`);
+            this.#refuse(row < 0
+                ? 'That row is not among the rows the grid holds now: it may be filtered out, or not yet loaded.'
+                : `${cell.column} is not among the grid's columns.`);
             return false;
         }
         return place(Object.freeze({
@@ -224,13 +243,18 @@ export class GridChartBridge<Row> {
             window: snapshot.window,
             windowStart: snapshot.windowStart,
             fetch: range => source.rows(range, new AbortController().signal),
+            versionNow: () => source.snapshot().rowSequenceVersion,
         };
     }
 
-    async #make(context: GridContextMenuContext<Row>, orientation: ChartOrientation | undefined, target: ChartTarget | undefined): Promise<void> {
+    async #make(selection: readonly SelectionRange[], opened: number | undefined, orientation: ChartOrientation | undefined,
+        target: ChartTarget | undefined): Promise<void> {
         const g = this.#state();
-        if (g === undefined) return;
-        const read = await readSelection(g, context.selection, context.rowSequenceVersion, this.declarations, orientation, target);
+        if (g === undefined || opened === undefined) {
+            this.#refuse('The bridge has no grid to read the selection from.');
+            return;
+        }
+        const read = await readSelection(g, selection, opened, this.declarations, orientation, target);
         if (read.chart === undefined) this.#refuse(read.refusal);
         else if (target !== undefined) this.#options.onAdded?.(target, read.chart);
         else this.#options.onChart?.(read.chart);

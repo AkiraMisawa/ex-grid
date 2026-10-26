@@ -20,10 +20,10 @@ export type ActionRefusalReason = 'rowLeftTheWindow' | 'orderMoved' | 'sourceCha
 
 /**
  * Why a Consumer's placement of the Selection placed nothing (ADR-0050 item 4, ADR-0011): it was asked under
- * another Row Sequence Version than the grid's, or the commit of an open edit it caused brought in another
- * source (ADR-0142).
+ * another Row Sequence Version than the source's, or the commit of an open edit it caused brought in another
+ * source (ADR-0142) or moved the columns.
  */
-export type PlacementRefusalReason = 'orderMoved' | 'sourceChanged';
+export type PlacementRefusalReason = 'orderMoved' | 'sourceChanged' | 'columnsMoved';
 
 /**
  * A gesture the grid refused, said by what was refused and why (ADR-0005, ADR-0350 section 16): one callback
