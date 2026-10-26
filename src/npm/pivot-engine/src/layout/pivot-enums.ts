@@ -23,6 +23,10 @@ export const pivotAggregations: readonly PivotAggregation[] = Object.freeze(
 /** How a Value Field's values are shown after aggregation (ADR-0060). */
 export type PivotShowValuesAs = 'noCalculation' | 'percentOfGrandTotal' | 'percentOfColumnTotal' | 'percentOfRowTotal';
 
+/** Every Show Values As, in the C# engine's order: what Value Field Settings… offers. */
+export const pivotShowValuesAsList: readonly PivotShowValuesAs[] = Object.freeze(
+    ['noCalculation', 'percentOfGrandTotal', 'percentOfColumnTotal', 'percentOfRowTotal']);
+
 /** How a report sets out its row labels: Excel's "Report Layout" (ADR-0060). */
 export type PivotReportForm = 'compact' | 'outline' | 'tabular';
 
