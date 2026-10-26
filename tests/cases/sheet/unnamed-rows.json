@@ -1,0 +1,96 @@
+{
+  "about": "A change says when it may have reformatted rows its Rows does not name (ADR-0071, ticket 48): a whole row's or column's Cell Format is shown by the cells that hold nothing as well, and rows or columns inserted or deleted bring two cells' sides together on a new edge. Transcribed from ExSheet.Engine.Tests' UnnamedRowsTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0071, ticket 48: a Fill on a whole column of empty cells names no row, and says it reformatted rows",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["F:F"], "change": {"fill": "#FFFF00"}}}, "expect": {"change": {"rows": [], "reformatsUnnamedRows": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: bold on whole rows names only the rows that hold a cell, and reaches the others",
+      "steps": [
+        {"enter": {"B4": "1"}},
+        {"do": {"setCellFormat": {"ranges": ["3:5"], "change": {"bold": true}}}, "expect": {"change": {"rows": [3], "reformatsUnnamedRows": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: undoing and redoing a level change reaches unnamed rows too",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["C:D"], "change": {"borders": {"outline": {"style": "thin"}}}}}},
+        {"undo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"redo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: a level change among several ranges reaches unnamed rows",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["B2:C3", "7:7"], "change": {"fill": "#FFFF00"}}}, "expect": {"change": {"rows": [1, 2], "reformatsUnnamedRows": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: a level set to what it already shows changes nothing, and reaches nothing",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["B:B"], "change": {"numberFormat": "General"}}}, "expect": {"change": {"rows": [], "reformatsUnnamedRows": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: a Cell Format on cells names their rows and the rows across their edges, and nothing beyond",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["B3:C4"], "change": {"fill": "#FFFF00", "borders": {"outline": {"style": "thin"}}}}}, "expect": {"change": {"rows": [1, 2, 3, 4], "reformatsUnnamedRows": false}}},
+        {"undo": "last", "expect": {"change": {"reformatsUnnamedRows": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: an entry reaches no row it does not name",
+      "steps": [
+        {"do": {"enter": {"A1": "5"}}, "expect": {"change": {"reformatsUnnamedRows": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: inserting or deleting rows or columns brings sides together on new edges, so it reaches unnamed rows: insert rows",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["A3"], "change": {"borders": {"top": {"style": "thin"}}}}}},
+        {"do": {"insertRows": [1]}, "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"undo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"redo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: inserting or deleting rows or columns brings sides together on new edges, so it reaches unnamed rows: delete rows",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["A3"], "change": {"borders": {"top": {"style": "thin"}}}}}},
+        {"do": {"deleteRows": [1]}, "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"undo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"redo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: inserting or deleting rows or columns brings sides together on new edges, so it reaches unnamed rows: insert columns",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["A3"], "change": {"borders": {"top": {"style": "thin"}}}}}},
+        {"do": {"insertColumns": [0]}, "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"undo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"redo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: inserting or deleting rows or columns brings sides together on new edges, so it reaches unnamed rows: delete columns",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["A3"], "change": {"borders": {"top": {"style": "thin"}}}}}},
+        {"do": {"deleteColumns": [1]}, "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"undo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}},
+        {"redo": "last", "expect": {"change": {"reformatsUnnamedRows": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 48: deleting the row between two edges changes the line an empty row shows, which Rows does not name",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["A2"], "change": {"borders": {"top": {"style": "thin"}}}}}, "expect": {"borders": {"A1": {"bottom": {"style": "thin", "colour": "Automatic"}}}}},
+        {"do": {"deleteRows": [1]}, "note": "A2's top was the edge A1 shows as its bottom; A1 holds nothing.", "expect": {"borders": {"A1": {"bottom": "none"}}, "change": {"rows": [1], "reformatsUnnamedRows": true}}}
+      ]
+    }
+  ]
+}

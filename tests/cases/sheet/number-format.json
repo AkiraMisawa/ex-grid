@@ -1,0 +1,260 @@
+{
+  "about": "What a Number Format shows a grid, what it refuses, and what it keeps of a code (ADR-0016, ADR-0046, ADR-0047, ADR-0071). What it paints in colour is NumberFormatColourTests' to say. Transcribed from ExSheet.Engine.Tests' NumberFormatTests; a refused code's reason is the refusal's saying.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0016/0047: a date that cannot exist cannot be shown, and shows ####: -1",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -1}}}},
+        {"setNumberFormat": {"A1": "yyyy-mm-dd"}, "expect": {"displays": {"A1": {"text": "", "cannotShow": true, "isNumber": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0016/0047: a date that cannot exist cannot be shown, and shows ####: 2958466",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 2958466}}}},
+        {"setNumberFormat": {"A1": "yyyy-mm-dd"}, "expect": {"displays": {"A1": {"text": "", "cannotShow": true, "isNumber": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0016 (SH-10): a number reports itself as a number, so a grid can show #### when it does not fit",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 1}, "A2": {"constant": 45292}, "A3": {"constant": "1"}}}},
+        {"setNumberFormat": {"A1": "0.00"}},
+        {"setNumberFormat": {"A2": "yyyy-mm-dd"}},
+        {"setNumberFormat": {"A3": "@"}, "expect": {"displays": {"A1": {"isNumber": true}, "A2": {"isNumber": true}, "A3": {"isNumber": false}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: General alignment puts numbers right, text left, booleans and errors in the centre",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "text", "A3": "TRUE", "A4": "=1/0"}, "expect": {"displays": {"A1": {"alignment": "right"}, "A2": {"alignment": "left"}, "A3": {"alignment": "center", "text": "TRUE"}, "A4": {"alignment": "center", "text": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: alignment is settable per cell, and changing it repaints the row without recomputing",
+      "steps": [
+        {"enter": {"B3": "1"}},
+        {"setAlignment": {"B3": "center"}, "expect": {"displays": {"B3": {"alignment": "center"}}, "change": {"rows": [2], "recalculated": [], "valueChanges": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a format set on a blank cell applies to what is typed there later",
+      "steps": [
+        {"setNumberFormat": {"A1": "0.00"}, "expect": {"change": {"rows": [0]}}},
+        {"enter": {"A1": "3"}, "expect": {"texts": {"A1": "3.00"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [<10]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[<10]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [$-409]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[$-409]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: 0[Red]",
+      "steps": [
+        {"setNumberFormat": {"A1": "0[Red]"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [Red][Blue]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Red][Blue]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [Color 57]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Color 57]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [Color 3]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Color 3]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [Color3]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Color3]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [Color56]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Color56]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: 0;[Color10]-0",
+      "steps": [
+        {"setNumberFormat": {"A1": "0;[Color10]-0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [color3]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[color3]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [Pink]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Pink]0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [Red0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Red0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: # ?/?",
+      "steps": [
+        {"setNumberFormat": {"A1": "# ?/?"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: *-0",
+      "steps": [
+        {"setNumberFormat": {"A1": "*-0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: [h]:mm",
+      "steps": [
+        {"setNumberFormat": {"A1": "[h]:mm"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: hh:mm:ss.00",
+      "steps": [
+        {"setNumberFormat": {"A1": "hh:mm:ss.00"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: abc",
+      "steps": [
+        {"setNumberFormat": {"A1": "abc"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: 0;0;0;0;0",
+      "steps": [
+        {"setNumberFormat": {"A1": "0;0;0;0;0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: \"open",
+      "steps": [
+        {"setNumberFormat": {"A1": "\"open"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: ##0.0E+0",
+      "steps": [
+        {"setNumberFormat": {"A1": "##0.0E+0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: 0@",
+      "steps": [
+        {"setNumberFormat": {"A1": "0@"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: @;0",
+      "steps": [
+        {"setNumberFormat": {"A1": "@;0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: 0;@;0",
+      "steps": [
+        {"setNumberFormat": {"A1": "0;@;0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a format code outside the supported subset is refused, not shown some other way: 0;0;@;0",
+      "steps": [
+        {"setNumberFormat": {"A1": "0;0;@;0"}, "expect": {"throws": {"refusal": "format"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact: [Red]0 for 5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 5}}}},
+        {"setNumberFormat": {"A1": "[Red]0"}, "expect": {"numberFormats": {"A1": "[Red]0"}, "texts": {"A1": "5"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact: [red]0 for 5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 5}}}},
+        {"setNumberFormat": {"A1": "[red]0"}, "expect": {"numberFormats": {"A1": "[red]0"}, "texts": {"A1": "5"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact: 0.00_);[Red](0.00) for -1.5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -1.5}}}},
+        {"setNumberFormat": {"A1": "0.00_);[Red](0.00)"}, "expect": {"numberFormats": {"A1": "0.00_);[Red](0.00)"}, "texts": {"A1": "(1.50)"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact: 0.00_);[Red](0.00) for 1.5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 1.5}}}},
+        {"setNumberFormat": {"A1": "0.00_);[Red](0.00)"}, "expect": {"numberFormats": {"A1": "0.00_);[Red](0.00)"}, "texts": {"A1": "1.50 "}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact: [Blue]0;[Magenta]-0;[Green]\"zero\" for 0",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0}}}},
+        {"setNumberFormat": {"A1": "[Blue]0;[Magenta]-0;[Green]\"zero\""}, "expect": {"numberFormats": {"A1": "[Blue]0;[Magenta]-0;[Green]\"zero\""}, "texts": {"A1": "zero"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact: 0;[Yellow]-0 for -7",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -7}}}},
+        {"setNumberFormat": {"A1": "0;[Yellow]-0"}, "expect": {"numberFormats": {"A1": "0;[Yellow]-0"}, "texts": {"A1": "-7"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 (the eleventh Windows run, case 3b): @ may end a format of two or three sections, kept as written: 0;[Red]@",
+      "steps": [
+        {"setNumberFormat": {"A1": "0;[Red]@"}, "expect": {"numberFormats": {"A1": "0;[Red]@"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 (the eleventh Windows run, case 3b): @ may end a format of two or three sections, kept as written: 0;@",
+      "steps": [
+        {"setNumberFormat": {"A1": "0;@"}, "expect": {"numberFormats": {"A1": "0;@"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 (the eleventh Windows run, case 3b): @ may end a format of two or three sections, kept as written: 0;-0;[Red]@",
+      "steps": [
+        {"setNumberFormat": {"A1": "0;-0;[Red]@"}, "expect": {"numberFormats": {"A1": "0;-0;[Red]@"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (TYPED-021): $5 typed is 5 with Excel's currency format, colour included",
+      "steps": [
+        {"enter": {"A1": "$5"}, "expect": {"values": {"A1": 5}, "numberFormats": {"A1": "$#,##0_);[Red]($#,##0)"}, "texts": {"A1": "$5 "}}}
+      ]
+    }
+  ]
+}

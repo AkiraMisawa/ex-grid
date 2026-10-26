@@ -53,7 +53,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": ">a"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -61,7 +61,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": ">"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -69,7 +69,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": ">TRUE"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -77,7 +77,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "é"}, "B1": {"constant": "é"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -85,7 +85,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "1%"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -93,7 +93,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "1/2"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -101,7 +101,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "$1"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -109,7 +109,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "1,5"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -117,7 +117,7 @@
       "culture": "de-DE",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "1.5"}, "B1": {"constant": "1.5"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -125,7 +125,7 @@
       "culture": "de-DE",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "1.5"}, "B1": {"constant": "1"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -133,7 +133,7 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "1.0000000000000001"}, "B1": {"constant": "1"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
@@ -141,14 +141,14 @@
       "culture": "en-US",
       "steps": [
         {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "1.0000000000000001"}}}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: Excel's long-criteria matching is not inferred from short strings: criteria longer than 255 characters are refused",
       "steps": [
         {"enter": {"A1": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},
-        {"enter": {"ZZ1000": "=COUNTIF(A1,A1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=COUNTIF(A1,A1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     }
   ]

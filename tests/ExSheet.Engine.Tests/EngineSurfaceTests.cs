@@ -75,4 +75,71 @@ public class EngineSurfaceTests
     {
         Assert.NotEqual(Entry.FromFormula("=A1+1"), Entry.FromFormula("= A1+1"));
     }
+
+    [Theory] // ADR-0047: whole columns and rows are written as Excel writes them
+    [InlineData("B:D", true, false)]
+    [InlineData("3:4", false, true)]
+    [InlineData("A:XFD", true, true)]
+    [InlineData("A1:B2", false, false)]
+    public void Whole_columns_and_rows_parse(string text, bool columns, bool rows)
+    {
+        var range = CellRange.Parse(text);
+
+        Assert.Equal(columns, range.IsWholeColumns);
+        Assert.Equal(rows, range.IsWholeRows);
+    }
+
+    [Fact] // ADR-0331: the Sheet shown is one of the Workbook's, and a Sheet of another is refused
+    public void Only_a_sheet_of_the_workbook_is_shown()
+    {
+        var workbook = new Workbook(EnUs, ["Sheet1", "Sheet2"]);
+
+        Assert.Throws<ArgumentException>(() => workbook.Shown = NewSheet());
+    }
+
+    [Theory] // ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet
+    [InlineData("Sheet1|SHEET1")]
+    [InlineData("a:b")]
+    [InlineData("")]
+    public void A_workbook_refuses_names_excel_refuses(string names) =>
+        Assert.Throws<ArgumentException>(() => new Workbook(EnUs, names.Length == 0 ? [] : names.Split('|')));
+
+    [Fact] // ADR-0331: every Sheet is under the Workbook's culture, and a name no Sheet has finds none
+    public void A_workbooks_sheets_share_its_culture_and_a_missing_name_finds_none()
+    {
+        var workbook = new Workbook(EnUs, ["Inputs", "Totals"]);
+
+        Assert.All(workbook.Sheets, s => Assert.Same(workbook.Culture, s.Culture));
+        Assert.Null(workbook.Find("Missing"));
+    }
+
+    [Fact] // ADR-0331: an edit naming no Sheet of the Workbook is refused, and changes nothing
+    public void An_edit_naming_no_sheet_is_refused()
+    {
+        var workbook = new Workbook(EnUs, ["Sheet1", "Sheet2"]);
+
+        Assert.Throws<ArgumentException>(() => workbook.Do("Sheet3", SheetEdit.Enter(CellAddress.Parse("A1"), "1")));
+        Assert.All(workbook.Sheets, s => Assert.Empty(s.EntryAddresses));
+    }
+
+    [Theory] // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette
+    [InlineData(NumberFormatColour.Black, 0x000000)]
+    [InlineData(NumberFormatColour.Blue, 0x0000FF)]
+    [InlineData(NumberFormatColour.Cyan, 0x00FFFF)]
+    [InlineData(NumberFormatColour.Green, 0x00FF00)]
+    [InlineData(NumberFormatColour.Magenta, 0xFF00FF)]
+    [InlineData(NumberFormatColour.Red, 0xFF0000)]
+    [InlineData(NumberFormatColour.White, 0xFFFFFF)]
+    [InlineData(NumberFormatColour.Yellow, 0xFFFF00)]
+    public void Each_name_is_painted_in_Excels_legacy_palette(NumberFormatColour colour, int rgb)
+    {
+        Assert.Equal(rgb, colour.Rgb());
+    }
+
+    [Fact] // ADR-0071, ticket 103: d-mmm-yy typed under en-GB, which spells built-in 15 otherwise, is a code of its own
+    public void A_local_code_that_is_no_built_in_of_the_culture_is_a_code_of_its_own()
+    {
+        Assert.True(NumberFormat.TryParseLocal("d-mmm-yy", CultureInfo.GetCultureInfo("en-GB"), out var own, out _));
+        Assert.Equal("d\\-mmm\\-yy", own.Code);
+    }
 }

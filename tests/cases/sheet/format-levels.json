@@ -1,0 +1,195 @@
+{
+  "about": "Formats at cell, row and column level (ADR-0047, SH-21): what is recorded, what a change reports, and that undoing puts every level back exactly. What Excel shows is in ExcelCases/format-levels.json. Row and column runs are numbered from 0. Transcribed from ExSheet.Engine.Tests' FormatLevelTests; how whole columns and rows parse is in the surface tests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047 (SH-21): formatting a whole column records one entry, not a million",
+      "steps": [
+        {"setNumberFormat": {"B:B": "0.00"}, "expect": {"document": {"cellAddresses": [], "columns": [{"first": 1, "last": 1, "numberFormat": "0.00"}]}, "numberFormats": {"B1": "0.00", "B1048576": "0.00", "C1": "General"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SH-21): the whole Sheet is whole columns, one run in the document",
+      "steps": [
+        {"setNumberFormat": {"A:XFD": "0.00"}, "expect": {"document": {"columns": [{"first": 0, "last": 16383}], "rows": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a Sheet formatted whole is written as A:XFD and opens again with the same format",
+      "steps": [
+        {"setNumberFormat": {"A:XFD": "0.00"}},
+        {"remember": "formatted"},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"numberFormats": {"A1": "0.00", "XFD1048576": "0.00"}, "picture": "formatted"}}
+      ]
+    },
+    {
+      "name": "ADR-0047: cell over row over column",
+      "steps": [
+        {"setNumberFormat": {"B:B": "0.00"}},
+        {"setNumberFormat": {"3:3": "0%"}},
+        {"setNumberFormat": {"B4": "#,##0"}},
+        {"read": true, "expect": {"numberFormats": {"B3": "0%", "B2": "0.00", "B4": "#,##0", "Z3": "0%"}, "document": {"rows": [{"first": 2, "last": 2, "numberFormat": "0%"}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a cell records only what differs from what its row or column gives it",
+      "steps": [
+        {"setNumberFormat": {"B:B": "0.00"}},
+        {"setNumberFormat": {"B2": "0.00"}},
+        {"setNumberFormat": {"C2": "General"}, "expect": {"document": {"cellAddresses": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a column's format repaints the rows that hold something in it, and changes no Value",
+      "steps": [
+        {"enter": {"B2": "1", "B9": "2", "C5": "3"}},
+        {"setNumberFormat": {"B:B": "0.00"}, "expect": {"change": {"rows": [1, 8], "valueChanges": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-21): undoing a format at any level puts the Sheet back exactly, and redoing sets it again: B:B",
+      "steps": [
+        {"enter": {"B2": "0.5", "B3": "0.25"}},
+        {"setNumberFormat": {"B2": "0%"}},
+        {"setNumberFormat": {"3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setNumberFormat": {"at": "B:B", "format": "0.00"}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [1, 2]}}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-21): undoing a format at any level puts the Sheet back exactly, and redoing sets it again: 3:4",
+      "steps": [
+        {"enter": {"B2": "0.5", "B3": "0.25"}},
+        {"setNumberFormat": {"B2": "0%"}},
+        {"setNumberFormat": {"3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setNumberFormat": {"at": "3:4", "format": "0.00"}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [2]}}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-21): undoing a format at any level puts the Sheet back exactly, and redoing sets it again: A:XFD",
+      "steps": [
+        {"enter": {"B2": "0.5", "B3": "0.25"}},
+        {"setNumberFormat": {"B2": "0%"}},
+        {"setNumberFormat": {"3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setNumberFormat": {"at": "A:XFD", "format": "0.00"}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [1, 2]}}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-21): undoing a format at any level puts the Sheet back exactly, and redoing sets it again: B2:C3",
+      "steps": [
+        {"enter": {"B2": "0.5", "B3": "0.25"}},
+        {"setNumberFormat": {"B2": "0%"}},
+        {"setNumberFormat": {"3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setNumberFormat": {"at": "B2:C3", "format": "0.00"}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [1, 2]}}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: an alignment on a range is one step, undone exactly",
+      "steps": [
+        {"enter": {"D2": "x"}},
+        {"remember": "before"},
+        {"do": {"setAlignment": {"at": "2:2", "alignment": "right"}}, "expect": {"alignments": {"D2": "right"}, "document": {"rows": [{"first": 1, "last": 1, "alignment": "right"}]}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048 (SH-21): an insertion or deletion moves row and column formats, and undoing it puts them back exactly: insertRows",
+      "steps": [
+        {"setNumberFormat": {"2:3": "0%"}},
+        {"setNumberFormat": {"5:5": "0.00"}},
+        {"setNumberFormat": {"B:C": "0%"}},
+        {"setAlignment": {"E:E": "center"}},
+        {"enter": {"E5": "1"}},
+        {"remember": "before"},
+        {"do": {"insertRows": [3, 2]}, "expect": {"document": {"rows": [{"first": 1, "last": 4, "numberFormat": "0%"}, {"first": 6, "last": 6, "numberFormat": "0.00"}]}}, "note": "Rows 4 and 5 are new and take row 3's format; row 5's moved to row 7."},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048 (SH-21): an insertion or deletion moves row and column formats, and undoing it puts them back exactly: deleteRows",
+      "steps": [
+        {"setNumberFormat": {"2:3": "0%"}},
+        {"setNumberFormat": {"5:5": "0.00"}},
+        {"setNumberFormat": {"B:C": "0%"}},
+        {"setAlignment": {"E:E": "center"}},
+        {"enter": {"E5": "1"}},
+        {"remember": "before"},
+        {"do": {"deleteRows": [2, 2]}, "expect": {"document": {"rows": [{"first": 1, "last": 1, "numberFormat": "0%"}, {"first": 2, "last": 2, "numberFormat": "0.00"}]}}, "note": "Row 2 survives, row 3 goes with row 4, row 5 moves to row 3."},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048 (SH-21): an insertion or deletion moves row and column formats, and undoing it puts them back exactly: insertColumns",
+      "steps": [
+        {"setNumberFormat": {"2:3": "0%"}},
+        {"setNumberFormat": {"5:5": "0.00"}},
+        {"setNumberFormat": {"B:C": "0%"}},
+        {"setAlignment": {"E:E": "center"}},
+        {"enter": {"E5": "1"}},
+        {"remember": "before"},
+        {"do": {"insertColumns": [2, 2]}, "expect": {"document": {"columns": [{"first": 1, "last": 4, "numberFormat": "0%"}, {"first": 6, "last": 6, "numberFormat": null, "alignment": "center"}]}, "alignments": {"G5": "center"}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048 (SH-21): an insertion or deletion moves row and column formats, and undoing it puts them back exactly: deleteColumns",
+      "steps": [
+        {"setNumberFormat": {"2:3": "0%"}},
+        {"setNumberFormat": {"5:5": "0.00"}},
+        {"setNumberFormat": {"B:C": "0%"}},
+        {"setAlignment": {"E:E": "center"}},
+        {"enter": {"E5": "1"}},
+        {"remember": "before"},
+        {"do": {"deleteColumns": [1, 2]}, "expect": {"document": {"columns": [{"first": 2, "last": 2, "numberFormat": null, "alignment": "center"}]}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a row format pushed off the bottom edge by an insertion is dropped, and undoing puts it back",
+      "steps": [
+        {"setNumberFormat": {"A1048576:XFD1048576": "0%"}},
+        {"remember": "before"},
+        {"do": {"insertRows": [0]}, "expect": {"document": {"rows": []}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the per-cell commands keep their meaning: one cell, its own format",
+      "steps": [
+        {"setNumberFormat": {"3:3": "0%"}},
+        {"do": {"setNumberFormat": {"at": ["B3"], "format": "0.00"}}},
+        {"do": {"setAlignment": {"at": ["B3"], "alignment": "left"}}},
+        {"read": true, "expect": {"numberFormats": {"B3": "0.00", "C3": "0%"}, "document": {"cells": [{"address": "B3", "numberFormat": "0.00", "alignment": "left"}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/0048: the format a Formula takes at entry is part of the entry's step, and undoing it puts General back",
+      "steps": [
+        {"enter": {"A1": "9/26/2026"}},
+        {"remember": "before"},
+        {"do": {"enter": {"B1": "=A1+1"}}, "expect": {"numberFormats": {"B1": "m/d/yyyy"}, "change": {"rows": [0]}}},
+        {"undo": "last", "expect": {"picture": "before", "numberFormats": {"B1": "General"}}}
+      ]
+    }
+  ]
+}

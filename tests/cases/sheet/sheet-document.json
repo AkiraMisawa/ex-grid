@@ -1,0 +1,429 @@
+{
+  "about": "A Sheet Document: what it carries, what it refuses of a version that does not define it, and what round-trips through its JSON, every bit of a number included (ADR-0046, ADR-0047, ADR-0048, SH-12, SH-21). A document's JSON is read as text. Transcribed from ExSheet.Engine.Tests' SheetDocumentTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0048 (SH-12), ADR-0046: the document carries its version, its culture and the Sheet's name",
+      "steps": [
+        {"read": true, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document of an unknown version is refused, not guessed at: {\"version\":10,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":10,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document", "documentVersion": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document of an unknown version is refused, not guessed at: {\"version\":0,\"culture\":\"en-US\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":0,\"culture\":\"en-US\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document", "documentVersion": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document of an unknown version is refused, not guessed at: {\"version\":10,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1}],\"sheets\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":10,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1}],\"sheets\":[]}"}, "expect": {"throws": {"refusal": "document", "documentVersion": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"culture\":\"en-US\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"culture\":\"en-US\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":\"1\",\"culture\":\"en-US\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":\"1\",\"culture\":\"en-US\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1.5,\"culture\":\"en-US\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1.5,\"culture\":\"en-US\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[],\"values\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[],\"values\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"value\":1}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"value\":1}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"text\":\"x\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"text\":\"x\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"number\":1}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"number\":1}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"XFE1\",\"number\":1}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"XFE1\",\"number\":1}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1},{\"at\":\"A1\",\"number\":2}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1},{\"at\":\"A1\",\"number\":2}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=1+\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=1+\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"error\":\"#CIRC!\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"error\":\"#CIRC!\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"format\":\"[<10]0\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"format\":\"[<10]0\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"align\":\"justify\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"align\":\"justify\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"xx-NOPE\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"xx-NOPE\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":1,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":2,\"culture\":\"en-US\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":2,\"culture\":\"en-US\",\"name\":1,\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":1,\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":2,\"culture\":\"en-US\",\"name\":\"\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":2,\"culture\":\"en-US\",\"name\":\"a/b\",\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"a/b\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[],\"values\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[],\"values\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"A:A\",\"format\":\"0\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"A:A\",\"format\":\"0\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"align\":\"general\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":1,\"align\":\"general\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"A:A\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"A:A\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"1:1\",\"format\":\"0\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"1:1\",\"format\":\"0\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"A:B\",\"format\":\"0\"},{\"at\":\"B:C\",\"format\":\"0\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"A:B\",\"format\":\"0\"},{\"at\":\"B:C\",\"format\":\"0\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"A:A\",\"format\":\"0\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"A:A\",\"format\":\"0\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"1:1\",\"format\":\"0\",\"colour\":\"red\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"1:1\",\"format\":\"0\",\"colour\":\"red\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"2:2\",\"align\":\"justify\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"2:2\",\"align\":\"justify\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"width\":20}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"width\":20}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"2:2\",\"width\":20}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"2:2\",\"width\":20}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B2\",\"width\":20}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B2\",\"width\":20}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":0}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":0}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":-1}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":-1}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":256}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":256}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":\"20\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":\"20\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:C\",\"width\":20},{\"at\":\"C:D\",\"width\":12}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:C\",\"width\":20},{\"at\":\"C:D\",\"width\":12}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"hidden\":true}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"hidden\":true}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":{\"B:B\":20},\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":{\"B:B\":20},\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":true}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":true}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":\"yes\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":\"yes\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":1}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":1}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":null}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":null}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"kind\":\"setByUser\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"kind\":\"setByUser\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":true}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":true}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"kind\":\"automatic\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"kind\":\"automatic\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: {\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"kind\":true}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"kind\":true}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: [1]",
+      "steps": [
+        {"reopen": {"sheetJson": "[1]"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): a document that does not say its version, or holds anything its version does not define, is refused: not json",
+      "steps": [
+        {"reopen": {"sheetJson": "not json"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12): number formats and alignment round-trip, a formatted blank cell included",
+      "steps": [
+        {"enter": {"A1": "1234.5"}},
+        {"setNumberFormat": {"A1": "#,##0.00"}},
+        {"setAlignment": {"A1": "center"}},
+        {"enter": {"B1": "9/26/2026"}},
+        {"setNumberFormat": {"C1": "0%"}},
+        {"setAlignment": {"D1": "right"}},
+        {"remember": "formatted"},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"picture": "formatted", "displays": {"A1": {"width": null, "text": "1,234.50", "cannotShow": false, "alignment": "center", "colour": null, "isNumber": true}, "B1": {"width": null, "text": "9/26/2026", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}, "C1": {"width": null, "text": "", "cannotShow": false, "alignment": "left", "colour": null, "isNumber": false}, "D1": {"width": null, "text": "", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": false}}, "texts": {"A1": "1,234.50"}}},
+        {"enter": {"C1": "25"}, "note": "A number typed into a percent cell is a percentage (ADR-0047, second run).", "expect": {"texts": {"C1": "25%"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-12, SH-17): a document holds no Values; the engine alone computes the same ones again",
+      "steps": [
+        {"enter": {"A1": "3", "A2": "4", "A3": "=SUM(A1:A2)*ROUND(1.25,1)", "A4": "=XLOOKUP(4,A1:A2,A1:A2)&\" found\""}, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":3},{\"at\":\"A2\",\"number\":4},{\"at\":\"A3\",\"formula\":\"=SUM(A1:A2)*ROUND(1.25,1)\"},{\"at\":\"A4\",\"formula\":\"=XLOOKUP(4,A1:A2,A1:A2)\\u0026\\u0022 found\\u0022\"}]}", "values": {"A3": 9.1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"values": {"A3": 9.1, "A4": "4 found"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a number round-trips exactly through the document, every bit",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0.30000000000000004}, "A2": {"constant": 0.3333333333333333}, "A3": {"constant": 5e-324}, "A4": {"constant": 1.7976931348623157e+308}, "A5": {"constant": -1.23456789e-195}}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"values": {"A1": 0.30000000000000004, "A2": 0.3333333333333333, "A3": 5e-324, "A4": 1.7976931348623157e+308, "A5": -1.23456789e-195}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: text with any characters round-trips",
+      "steps": [
+        {"enter": {"A1": "'=not a formula", "A2": "say \"hi\" \\ 日本語", "A3": "'"}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"values": {"A1": "=not a formula", "A2": "say \"hi\" \\ 日本語", "A3": ""}}}
+      ]
+    },
+    {
+      "name": "ADR-0048, ADR-0046: a version 1 document still opens, as a Sheet named Sheet1, and is written at the current version",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Sheet1"], "values": {"A2": 6}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0048, ADR-0047: a version 2 document still opens; its cells' formats are the cells' own",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Book\",\"cells\":[{\"at\":\"A1\",\"number\":0.25,\"format\":\"0%\",\"align\":\"center\"},{\"at\":\"B1\",\"format\":\"General\",\"align\":\"right\"}]}"}, "expect": {"texts": {"A1": "25%"}, "alignments": {"A1": "center"}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Book\",\"cells\":[{\"at\":\"A1\",\"number\":0.25,\"format\":\"0%\",\"align\":\"center\"},{\"at\":\"B1\",\"align\":\"right\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SH-21): formats on whole columns and rows are one entry each, adjacent ones one run, and round-trip",
+      "steps": [
+        {"setNumberFormat": {"B:D": "0.00"}},
+        {"setAlignment": {"F:F": "center"}},
+        {"setNumberFormat": {"3:4": "0%"}},
+        {"enter": {"C3": "50%", "C5": "0.5"}},
+        {"setNumberFormat": {"C5": "General"}, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:D\",\"format\":\"0.00\"},{\"at\":\"F:F\",\"align\":\"center\"}],\"rows\":[{\"at\":\"3:4\",\"format\":\"0%\"}],\"cells\":[{\"at\":\"C3\",\"number\":0.5},{\"at\":\"C5\",\"number\":0.5,\"format\":\"General\"}]}"}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"texts": {"C3": "50%", "C5": "0.5"}, "numberFormats": {"D1000": "0.00"}, "alignments": {"F7": "center"}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:D\",\"format\":\"0.00\"},{\"at\":\"F:F\",\"align\":\"center\"}],\"rows\":[{\"at\":\"3:4\",\"format\":\"0%\"}],\"cells\":[{\"at\":\"C3\",\"number\":0.5},{\"at\":\"C5\",\"number\":0.5,\"format\":\"General\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0046: the Sheet's name round-trips, and a Reference qualified with it reads the Sheet when reopened",
+      "sheets": ["Risk 'Q3' book"],
+      "steps": [
+        {"enter": {"A1": "7", "B1": "='Risk ''Q3'' book'!A1+1"}},
+        {"reopen": {"sheet": "Risk 'Q3' book"}, "expect": {"sheets": ["Risk 'Q3' book"], "values": {"B1": 8}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: the invariant culture can be declared and recorded too",
+      "culture": "invariant",
+      "steps": [
+        {"enter": {"A1": "1.5"}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"workbook": {"culture": ""}, "values": {"A1": 1.5}}}
+      ]
+    }
+  ]
+}

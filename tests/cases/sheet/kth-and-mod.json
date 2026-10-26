@@ -1,0 +1,604 @@
+{
+  "about": "LARGE and SMALL's k and MOD across their forms, as the seventeenth Windows run and the area passes of 2026-10-12 read them (ADR-0047); A1:A10 hold 1 to 10, so the k-th largest is 11 - k and the k-th smallest k. A number compares exactly, -0 apart from 0, and an Error Value refused is written so. The cases themselves are in ExcelCases/large.json, small.json, aggregate.json and mod.json. Transcribed from ExSheet.Engine.Tests' KthAndModTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "setups": {
+    "ten": [
+      {"enterAll": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "A5": "5", "A6": "6", "A7": "7", "A8": "8", "A9": "9", "A10": "10"}}
+    ]
+  },
+  "cases": [
+    {
+      "name": "ADR-0047 (LARGE-007, AGGREGATE-038): LARGE's k that is not whole is rounded up, in LARGE and in AGGREGATE's 14 alike, and checked against the count after: k = 1.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,1.5)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,1.5)"}, "expect": {"values": {"ZZ1000": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (LARGE-007, AGGREGATE-038): LARGE's k that is not whole is rounded up, in LARGE and in AGGREGATE's 14 alike, and checked against the count after: k = 1.2",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,1.2)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,1.2)"}, "expect": {"values": {"ZZ1000": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (LARGE-007, AGGREGATE-038): LARGE's k that is not whole is rounded up, in LARGE and in AGGREGATE's 14 alike, and checked against the count after: k = 2.0001",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,2.0001)"}, "expect": {"values": {"ZZ1000": 8}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,2.0001)"}, "expect": {"values": {"ZZ1000": 8}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (LARGE-007, AGGREGATE-038): LARGE's k that is not whole is rounded up, in LARGE and in AGGREGATE's 14 alike, and checked against the count after: k = 9.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,9.5)"}, "expect": {"values": {"ZZ1000": 1}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,9.5)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (LARGE-007, AGGREGATE-038): LARGE's k that is not whole is rounded up, in LARGE and in AGGREGATE's 14 alike, and checked against the count after: k = 1+2^-52",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,1+2^-52)"}, "expect": {"values": {"ZZ1000": 10}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,1+2^-52)"}, "expect": {"values": {"ZZ1000": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: LARGE-011): a k below 1 is #NUM!, whole or not, and rounded up past the count LARGE's k is #NUM! too: k = 10.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,10.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,10.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: LARGE-011): a k below 1 is #NUM!, whole or not, and rounded up past the count LARGE's k is #NUM! too: k = 0.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: LARGE-011): a k below 1 is #NUM!, whole or not, and rounded up past the count LARGE's k is #NUM! too: k = 0.99",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,0.99)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,0.99)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: LARGE-011): a k below 1 is #NUM!, whole or not, and rounded up past the count LARGE's k is #NUM! too: k = -0.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: LARGE-011): a k below 1 is #NUM!, whole or not, and rounded up past the count LARGE's k is #NUM! too: k = 0",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,0)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A10,0)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: SMALL-004, 005, 009, AGGREGATE-060, 066): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number: k = 1.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,1.5)"}, "expect": {"values": {"ZZ1000": 1}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,1.5)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: SMALL-004, 005, 009, AGGREGATE-060, 066): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number: k = 1.2",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,1.2)"}, "expect": {"values": {"ZZ1000": 1}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,1.2)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: SMALL-004, 005, 009, AGGREGATE-060, 066): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number: k = 2.9",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,2.9)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,2.9)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: SMALL-004, 005, 009, AGGREGATE-060, 066): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number: k = 9.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,9.5)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,9.5)"}, "expect": {"values": {"ZZ1000": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: SMALL-004, 005, 009, AGGREGATE-060, 066): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number: k = 9.99",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,9.99)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,9.99)"}, "expect": {"values": {"ZZ1000": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: SMALL-004, 005, 009, AGGREGATE-060, 066): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number: k = 1+2^-52",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,1+2^-52)"}, "expect": {"values": {"ZZ1000": 1}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,1+2^-52)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: SMALL-004, 005, 009, AGGREGATE-060, 066): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number: k = 2-2^-50",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,2-2^-50)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,2-2^-50)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: SMALL-004, 005, 009, AGGREGATE-060, 066): SMALL's k that is not whole is truncated, in SMALL and in AGGREGATE's 15 alike, and one a hair from a whole number is that number: k = 10+2^-49",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,10+2^-49)"}, "expect": {"values": {"ZZ1000": 10}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,10+2^-49)"}, "expect": {"values": {"ZZ1000": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: LARGE-011, SMALL-007, SMALL-008): SMALL's k below 1 is #NUM! as LARGE's is, and so is one above the count: k = 0.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: LARGE-011, SMALL-007, SMALL-008): SMALL's k below 1 is #NUM! as LARGE's is, and so is one above the count: k = 0.99",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,0.99)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,0.99)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: LARGE-011, SMALL-007, SMALL-008): SMALL's k below 1 is #NUM! as LARGE's is, and so is one above the count: k = -0.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: LARGE-011, SMALL-007, SMALL-008): SMALL's k below 1 is #NUM! as LARGE's is, and so is one above the count: k = 10.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,10.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,10.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: LARGE-011, SMALL-007, SMALL-008): SMALL's k below 1 is #NUM! as LARGE's is, and so is one above the count: k = 10.01",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,10.01)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,10.01)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: LARGE-011, SMALL-007, SMALL-008): SMALL's k below 1 is #NUM! as LARGE's is, and so is one above the count: k = 11",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,11)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,11)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area passes of 2026-10-12: LARGE-011, SMALL-007, SMALL-008): SMALL's k below 1 is #NUM! as LARGE's is, and so is one above the count: k = 11.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,11.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,A1:A10,11.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: LARGE's k rounded up and SMALL's truncated are one rule, the k-th largest being the (n+1-k)-th smallest with that index truncated: k = 1.2",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,11-1.2)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,1.2)"}, "expect": {"values": {"ZZ1000": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: LARGE's k rounded up and SMALL's truncated are one rule, the k-th largest being the (n+1-k)-th smallest with that index truncated: k = 1.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,11-1.5)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,1.5)"}, "expect": {"values": {"ZZ1000": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: LARGE's k rounded up and SMALL's truncated are one rule, the k-th largest being the (n+1-k)-th smallest with that index truncated: k = 4.7",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,11-4.7)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,4.7)"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: LARGE's k rounded up and SMALL's truncated are one rule, the k-th largest being the (n+1-k)-th smallest with that index truncated: k = 9.5",
+      "setup": "ten",
+      "steps": [
+        {"enter": {"ZZ1000": "=SMALL(A1:A10,11-9.5)"}, "expect": {"values": {"ZZ1000": 1}}},
+        {"enter": {"ZZ1000": "=LARGE(A1:A10,9.5)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-008, and MOD-010 to 016 in the area pass of 2026-10-12): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000: =MOD(2^27,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(2^27,1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-008, and MOD-010 to 016 in the area pass of 2026-10-12): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000: =MOD(2^27+1,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(2^27+1,2)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-008, and MOD-010 to 016 in the area pass of 2026-10-12): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000: =MOD(2^40,3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(2^40,3)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-008, and MOD-010 to 016 in the area pass of 2026-10-12): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000: =MOD(-(2^40),3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-(2^40),3)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-008, and MOD-010 to 016 in the area pass of 2026-10-12): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000: =MOD(1125899999999,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1125899999999,1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-008, and MOD-010 to 016 in the area pass of 2026-10-12): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000: =MOD(1125899999999.5,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1125899999999.5,1)"}, "expect": {"values": {"ZZ1000": 0.5}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-008, and MOD-010 to 016 in the area pass of 2026-10-12): MOD answers a quotient of 2^27 and on to the limit a Microsoft 365 user reported, 1125900000000: =MOD(3377699999997,3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(3377699999997,3)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: from a quotient of 1125900000000, either sign, MOD is #NUM!: =MOD(1125900000000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1125900000000,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: from a quotient of 1125900000000, either sign, MOD is #NUM!: =MOD(-1125900000000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-1125900000000,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: from a quotient of 1125900000000, either sign, MOD is #NUM!: =MOD(1125900000000,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1125900000000,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: from a quotient of 1125900000000, either sign, MOD is #NUM!: =MOD(3377700000000,3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(3377700000000,3)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: from a quotient of 1125900000000, either sign, MOD is #NUM!: =MOD(2^53,3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(2^53,3)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: from a quotient of 1125900000000, either sign, MOD is #NUM!: =MOD(1E+16,7)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1E+16,7)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-006, 007, 009, and MOD-017 to 019 in the area passes of 2026-10-12): the doubles Excel gave, which the identity in doubles misses at MOD-017 to 019: =MOD(123456789012,0.7)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(123456789012,0.7)"}, "expect": {"values": {"ZZ1000": 0.5000078322611261}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-006, 007, 009, and MOD-017 to 019 in the area passes of 2026-10-12): the doubles Excel gave, which the identity in doubles misses at MOD-017 to 019: =MOD(-123456789012,0.7)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-123456789012,0.7)"}, "expect": {"values": {"ZZ1000": 0.19999216773887385}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-006, 007, 009, and MOD-017 to 019 in the area passes of 2026-10-12): the doubles Excel gave, which the identity in doubles misses at MOD-017 to 019: =MOD(123456789012,-0.7)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(123456789012,-0.7)"}, "expect": {"values": {"ZZ1000": -0.19999216773887385}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-006, 007, 009, and MOD-017 to 019 in the area passes of 2026-10-12): the doubles Excel gave, which the identity in doubles misses at MOD-017 to 019: =MOD(0.3,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0.3,0.1)"}, "expect": {"values": {"ZZ1000": 0.09999999999999998}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-006, 007, 009, and MOD-017 to 019 in the area passes of 2026-10-12): the doubles Excel gave, which the identity in doubles misses at MOD-017 to 019: =MOD(5.5,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(5.5,2)"}, "expect": {"values": {"ZZ1000": 1.5}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (MOD-006, 007, 009, and MOD-017 to 019 in the area passes of 2026-10-12): the doubles Excel gave, which the identity in doubles misses at MOD-017 to 019: =MOD(-7.5,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-7.5,2)"}, "expect": {"values": {"ZZ1000": 0.5}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: where every evaluation that gives Excel's answers gives one double, MOD answers it: =MOD(-123456789012,-0.7)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-123456789012,-0.7)"}, "expect": {"values": {"ZZ1000": -0.5000078322611261}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: where every evaluation that gives Excel's answers gives one double, MOD answers it: =MOD(10,0.3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(10,0.3)"}, "expect": {"values": {"ZZ1000": 0.10000000000000037}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: where every evaluation that gives Excel's answers gives one double, MOD answers it: =MOD(-10,0.3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-10,0.3)"}, "expect": {"values": {"ZZ1000": 0.19999999999999962}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: where every evaluation that gives Excel's answers gives one double, MOD answers it: =MOD(-0.7,0.3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-0.7,0.3)"}, "expect": {"values": {"ZZ1000": 0.2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: where every evaluation that gives Excel's answers gives one double, MOD answers it: =MOD(45000.75,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(45000.75,1)"}, "expect": {"values": {"ZZ1000": 0.75}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: where every evaluation that gives Excel's answers gives one double, MOD answers it: =MOD(-1E-16,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-1E-16,1)"}, "expect": {"values": {"ZZ1000": 0.9999999999999999}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0202: where every evaluation that gives Excel's answers gives one double, MOD answers it: =MOD(1E-20,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1E-20,1)"}, "expect": {"values": {"ZZ1000": 1e-20}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(1,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1,0.1)"}, "expect": {"values": {"ZZ1000": 0.09999999999999995}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(5,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(5,0.1)"}, "expect": {"values": {"ZZ1000": 0.09999999999999973}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(-2.2,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-2.2,0.1)"}, "expect": {"values": {"ZZ1000": 0.09999999999999995}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(-1,-0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-1,-0.1)"}, "expect": {"values": {"ZZ1000": -0.09999999999999995}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(3.3,0.01)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(3.3,0.01)"}, "expect": {"values": {"ZZ1000": 0.009999999999999754}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(0.7,0.01)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0.7,0.01)"}, "expect": {"values": {"ZZ1000": 0.009999999999999941}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(100000000000,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(100000000000,0.1)"}, "expect": {"values": {"ZZ1000": 0.09999444888487688}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(123456789012,0.2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(123456789012,0.2)"}, "expect": {"values": {"ZZ1000": 0.19999314677151464}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(-693380,-93.7)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-693380,-93.7)"}, "expect": {"values": {"ZZ1000": -93.69999999997897}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(0.5,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0.5,0.1)"}, "expect": {"values": {"ZZ1000": 0.09999999999999998}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-020 to 028): where the double quotient rounds up onto a whole number the exact one is below, the remainder is still the exact one, about the divisor: =MOD(1,0.2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1,0.2)"}, "expect": {"values": {"ZZ1000": 0.19999999999999996}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-030, 031): a remainder that is not 0 but within 2^-49 of the number is itself: =MOD(1.1,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1.1,0.1)"}, "expect": {"values": {"ZZ1000": 2.7755575615628914e-17}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-030, 031): a remainder that is not 0 but within 2^-49 of the number is itself: =MOD(-0.9,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-0.9,0.1)"}, "expect": {"values": {"ZZ1000": 2.7755575615628914e-17}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-030, 031): a remainder that is not 0 but within 2^-49 of the number is itself: =MOD(-0.3,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-0.3,0.1)"}, "expect": {"values": {"ZZ1000": 2.7755575615628914e-17}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-030, 031): a remainder that is not 0 but within 2^-49 of the number is itself: =MOD(-1,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-1,0.1)"}, "expect": {"values": {"ZZ1000": 5.551115123125783e-17}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-030, 031): a remainder that is not 0 but within 2^-49 of the number is itself: =MOD(2^30+2^-22,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(2^30+2^-22,1)"}, "expect": {"values": {"ZZ1000": 2.384185791015625e-07}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-029): the divisor added to a remainder of the other sign is held at 64 bits and then stored as a double, which rounds twice here: =MOD(-0.087626,6630)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-0.087626,6630)"}, "expect": {"values": {"ZZ1000": 6629.9123739999995}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-029): the divisor added to a remainder of the other sign is held at 64 bits and then stored as a double, which rounds twice here: =MOD(0.087626,-6630)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0.087626,-6630)"}, "expect": {"values": {"ZZ1000": -6629.9123739999995}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-032): a sum of the remainder and the divisor stored as the divisor itself is 0, never -0: =MOD(-1E-20,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-1E-20,1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the second area pass of 2026-10-12: MOD-032): a sum of the remainder and the divisor stored as the divisor itself is 0, never -0: =MOD(1E-20,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1E-20,-1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-033): a sum the register holds below the divisor but stored as the divisor itself is 0, never -0, and not refused: =MOD(-1E-17,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-1E-17,1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-033): a sum the register holds below the divisor but stored as the divisor itself is 0, never -0, and not refused: =MOD(1E-17,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(1E-17,-1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-034 to 036): the divisor is added at 64 bits rounded to nearest, as an x87 register adds, not truncated, and the sum then stored as a double: =MOD(-0.084474,2270)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-0.084474,2270)"}, "expect": {"values": {"ZZ1000": 2269.915526}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-034 to 036): the divisor is added at 64 bits rounded to nearest, as an x87 register adds, not truncated, and the sum then stored as a double: =MOD(0.084474,-2270)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0.084474,-2270)"}, "expect": {"values": {"ZZ1000": -2269.915526}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-034 to 036): the divisor is added at 64 bits rounded to nearest, as an x87 register adds, not truncated, and the sum then stored as a double: =MOD(-0.008511,81200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-0.008511,81200)"}, "expect": {"values": {"ZZ1000": 81199.99148900001}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-034 to 036): the divisor is added at 64 bits rounded to nearest, as an x87 register adds, not truncated, and the sum then stored as a double: =MOD(0.071472,-276)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0.071472,-276)"}, "expect": {"values": {"ZZ1000": -275.92852800000003}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-039, 040): the sum held at 64 bits, not at the widths no hardware holds, which give another double: =MOD(-0.024901,2350)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-0.024901,2350)"}, "expect": {"values": {"ZZ1000": 2349.975099}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-039, 040): the sum held at 64 bits, not at the widths no hardware holds, which give another double: =MOD(0.024901,-2350)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0.024901,-2350)"}, "expect": {"values": {"ZZ1000": -2349.975099}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-039, 040): the sum held at 64 bits, not at the widths no hardware holds, which give another double: =MOD(-0.006664,5250)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-0.006664,5250)"}, "expect": {"values": {"ZZ1000": 5249.993336}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: MOD-039, 040): the sum held at 64 bits, not at the widths no hardware holds, which give another double: =MOD(0.006664,-5250)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0.006664,-5250)"}, "expect": {"values": {"ZZ1000": -5249.993336}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a remainder of 0 is 0, never -0, whatever the signs: =MOD(-4,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-4,2)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a remainder of 0 is 0, never -0, whatever the signs: =MOD(4,-2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(4,-2)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a remainder of 0 is 0, never -0, whatever the signs: =MOD(-4,-2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(-4,-2)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a remainder of 0 is 0, never -0, whatever the signs: =MOD(0,-3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MOD(0,-3)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    }
+  ]
+}

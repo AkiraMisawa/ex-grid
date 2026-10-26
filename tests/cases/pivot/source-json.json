@@ -736,6 +736,60 @@
         "refusal": "format",
         "saying": "'levels' is true or false."
       }
+    },
+    {
+      "name": "ADR-0370 (section 3): a question with a window crosses: a row field's order, the window's limit and where it starts under a parent",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Region\"},{\"field\":\"Book\"}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":30,\"levels\":{\"rows\":[{},{\"order\":{\"value\":0,\"aggregation\":\"sum\",\"descending\":true}}],\"columns\":[],\"window\":{\"limit\":3,\"starts\":[{\"rows\":[{\"kind\":\"text\",\"value\":\"East\"}],\"start\":3}]}}}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Region\"},{\"field\":\"Book\"}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":30,\"levels\":{\"rows\":[{},{\"order\":{\"value\":0,\"aggregation\":\"sum\",\"descending\":true}}],\"columns\":[],\"window\":{\"limit\":3,\"starts\":[{\"rows\":[{\"kind\":\"text\",\"value\":\"East\"}],\"start\":3}]}}}"
+    },
+    {
+      "name": "ADR-0370 (section 3): a question with a window that starts nowhere crosses, an ascending order written as one",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Region\"},{\"field\":\"Book\"}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":30,\"levels\":{\"rows\":[{},{\"order\":{\"value\":0,\"aggregation\":\"average\",\"descending\":false}}],\"columns\":[],\"window\":{\"limit\":3}}}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Region\"},{\"field\":\"Book\"}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":30,\"levels\":{\"rows\":[{},{\"order\":{\"value\":0,\"aggregation\":\"average\",\"descending\":false}}],\"columns\":[],\"window\":{\"limit\":3,\"starts\":[]}}}"
+    },
+    {
+      "name": "ADR-0370 (section 3): an order by an Aggregation the reader does not know is refused",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Region\"},{\"field\":\"Book\"}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":30,\"levels\":{\"rows\":[{},{\"order\":{\"value\":0,\"aggregation\":\"median\",\"descending\":true}}],\"columns\":[],\"window\":{\"limit\":3,\"starts\":[{\"rows\":[{\"kind\":\"text\",\"value\":\"East\"}],\"start\":3}]}}}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'median' is not an Aggregation this reader knows."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): an order says whether it descends",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Region\"},{\"field\":\"Book\"}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":30,\"levels\":{\"rows\":[{},{\"order\":{\"value\":0,\"aggregation\":\"sum\"}}],\"columns\":[],\"window\":{\"limit\":3,\"starts\":[{\"rows\":[{\"kind\":\"text\",\"value\":\"East\"}],\"start\":3}]}}}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'descending' is true or false, and is required."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a windowed answer crosses: each window's parent, the siblings on either side, and a rest code a cell",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"E01\"},{\"kind\":\"text\",\"value\":\"E02\"},{\"kind\":\"text\",\"value\":\"E03\"},{\"kind\":\"text\",\"value\":\"E04\"},{\"kind\":\"text\",\"value\":\"E05\"}],\"leaves\":[0,0,-1,-1,0,-1,1,1,2,2,3,3,4,4,4,-1,-1,-1]},{\"field\":\"Trader\",\"items\":[],\"leaves\":[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]}],\"columns\":[{\"field\":\"Live\",\"items\":[{\"kind\":\"boolean\",\"value\":\"TRUE\"},{\"kind\":\"boolean\",\"value\":\"FALSE\"}],\"leaves\":[0,-1,0,-1,1,1,0,-1,1,-1,0,-1,0,-1,1,1,-1,0]}],\"records\":[3,6,21,39,3,18,3,3,3,3,3,3,3,6,3,9,18,9],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,6,18,36,3,18,3,3,3,3,3,3,3,6,3,9,15,6],\"numbers\":[3,6,18,33,3,15,3,3,3,3,3,3,3,6,3,6,12,6],\"nonFinite\":[],\"sum\":[90,150,427.5,675,60,247.5,120,120,120,120,90,90,37.5,60,22.5,45,135,90],\"absoluteSum\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}],\"windows\":[{\"parent\":[],\"before\":1,\"after\":7}],\"rests\":[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"E01\"},{\"kind\":\"text\",\"value\":\"E02\"},{\"kind\":\"text\",\"value\":\"E03\"},{\"kind\":\"text\",\"value\":\"E04\"},{\"kind\":\"text\",\"value\":\"E05\"}],\"leaves\":[0,0,-1,-1,0,-1,1,1,2,2,3,3,4,4,4,-1,-1,-1]},{\"field\":\"Trader\",\"items\":[],\"leaves\":[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]}],\"columns\":[{\"field\":\"Live\",\"items\":[{\"kind\":\"boolean\",\"value\":\"TRUE\"},{\"kind\":\"boolean\",\"value\":\"FALSE\"}],\"leaves\":[0,-1,0,-1,1,1,0,-1,1,-1,0,-1,0,-1,1,1,-1,0]}],\"records\":[3,6,21,39,3,18,3,3,3,3,3,3,3,6,3,9,18,9],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,6,18,36,3,18,3,3,3,3,3,3,3,6,3,9,15,6],\"numbers\":[3,6,18,33,3,15,3,3,3,3,3,3,3,6,3,6,12,6],\"nonFinite\":[],\"sum\":[90,150,427.5,675,60,247.5,120,120,120,120,90,90,37.5,60,22.5,45,135,90],\"absoluteSum\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}],\"windows\":[{\"parent\":[],\"before\":1,\"after\":7}],\"rests\":[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1]}"
+    },
+    {
+      "name": "ADR-0370 (section 3): rest cells without windows are refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"E01\"},{\"kind\":\"text\",\"value\":\"E02\"},{\"kind\":\"text\",\"value\":\"E03\"},{\"kind\":\"text\",\"value\":\"E04\"},{\"kind\":\"text\",\"value\":\"E05\"}],\"leaves\":[0,0,-1,-1,0,-1,1,1,2,2,3,3,4,4,4,-1,-1,-1]},{\"field\":\"Trader\",\"items\":[],\"leaves\":[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]}],\"columns\":[{\"field\":\"Live\",\"items\":[{\"kind\":\"boolean\",\"value\":\"TRUE\"},{\"kind\":\"boolean\",\"value\":\"FALSE\"}],\"leaves\":[0,-1,0,-1,1,1,0,-1,1,-1,0,-1,0,-1,1,1,-1,0]}],\"records\":[3,6,21,39,3,18,3,3,3,3,3,3,3,6,3,9,18,9],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,6,18,36,3,18,3,3,3,3,3,3,3,6,3,9,15,6],\"numbers\":[3,6,18,33,3,15,3,3,3,3,3,3,3,6,3,6,12,6],\"nonFinite\":[],\"sum\":[90,150,427.5,675,60,247.5,120,120,120,120,90,90,37.5,60,22.5,45,135,90],\"absoluteSum\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}],\"rests\":[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The answer has 'rests' and no 'windows' (ADR-0370 section 3)."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a rest cell of a window the answer does not have is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"E01\"},{\"kind\":\"text\",\"value\":\"E02\"},{\"kind\":\"text\",\"value\":\"E03\"},{\"kind\":\"text\",\"value\":\"E04\"},{\"kind\":\"text\",\"value\":\"E05\"}],\"leaves\":[0,0,-1,-1,0,-1,1,1,2,2,3,3,4,4,4,-1,-1,-1]},{\"field\":\"Trader\",\"items\":[],\"leaves\":[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]}],\"columns\":[{\"field\":\"Live\",\"items\":[{\"kind\":\"boolean\",\"value\":\"TRUE\"},{\"kind\":\"boolean\",\"value\":\"FALSE\"}],\"leaves\":[0,-1,0,-1,1,1,0,-1,1,-1,0,-1,0,-1,1,1,-1,0]}],\"records\":[3,6,21,39,3,18,3,3,3,3,3,3,3,6,3,9,18,9],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,6,18,36,3,18,3,3,3,3,3,3,3,6,3,9,15,6],\"numbers\":[3,6,18,33,3,15,3,3,3,3,3,3,3,6,3,6,12,6],\"nonFinite\":[],\"sum\":[90,150,427.5,675,60,247.5,120,120,120,120,90,90,37.5,60,22.5,45,135,90],\"absoluteSum\":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}],\"windows\":[{\"parent\":[],\"before\":1,\"after\":7}],\"rests\":[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,5,5]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Cell 15 is a rest of window 2, and the answer has 1."
+      }
     }
   ]
 }

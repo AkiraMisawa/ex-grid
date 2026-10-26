@@ -6,55 +6,55 @@
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =UPPER(\"日本語\")",
       "steps": [
-        {"enter": {"ZZ1000": "=UPPER(\"日本語\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=UPPER(\"日本語\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =LOWER(\"Ω\")",
       "steps": [
-        {"enter": {"ZZ1000": "=LOWER(\"Ω\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=LOWER(\"Ω\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =LOWER(\"Σa\")",
       "steps": [
-        {"enter": {"ZZ1000": "=LOWER(\"Σa\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=LOWER(\"Σa\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =LOWER(\"Σ,\")",
       "steps": [
-        {"enter": {"ZZ1000": "=LOWER(\"Σ,\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=LOWER(\"Σ,\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =LOWER(\"Σσ\")",
       "steps": [
-        {"enter": {"ZZ1000": "=LOWER(\"Σσ\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=LOWER(\"Σσ\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =PROPER(\"ΣΣ\")",
       "steps": [
-        {"enter": {"ZZ1000": "=PROPER(\"ΣΣ\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=PROPER(\"ΣΣ\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =PROPER(\"Σa\")",
       "steps": [
-        {"enter": {"ZZ1000": "=PROPER(\"Σa\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=PROPER(\"Σa\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =SEARCH(\"a\",\"a日本語\")",
       "steps": [
-        {"enter": {"ZZ1000": "=SEARCH(\"a\",\"a日本語\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=SEARCH(\"a\",\"a日本語\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: text outside the admitted alphabet or context is refused: =SEARCH(\"\",\"a😀\")",
       "steps": [
-        {"enter": {"ZZ1000": "=SEARCH(\"\",\"a😀\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=SEARCH(\"\",\"a😀\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {

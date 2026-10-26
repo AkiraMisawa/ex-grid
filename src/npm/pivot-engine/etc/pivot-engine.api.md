@@ -150,9 +150,11 @@ export class PivotAnswer {
     recordsAt(leaf: number): number;
     readonly refusal: PivotSourceRefusal | undefined;
     static refused(refusal: PivotSourceRefusal): PivotAnswer;
+    restAt(cell: number): PivotAnswerRest | undefined;
     get rows(): readonly PivotAnswerAxis[];
     get sourceVersion(): string;
     get values(): readonly PivotAnswerValues[];
+    get windows(): readonly PivotAnswerWindow[];
 }
 
 // @public
@@ -169,6 +171,8 @@ export class PivotAnswerBuilder {
     constructor(query: PivotQuery, sourceVersion: string);
     addCell(rowItems: readonly PivotItemKey[], columnItems: readonly PivotItemKey[], records: number): number;
     addLeaf(items: readonly PivotItemKey[], records: number): number;
+    addRest(window: number, side: PivotRestSide, columnItems: readonly PivotItemKey[], records: number): number;
+    addWindow(parentRows: readonly PivotItemKey[], before: number, after: number): number;
     build(): PivotAnswer;
     get leafCount(): number;
     setCounts(leaf: number, value: number, values: number, numbers: number, nonFinite?: boolean): void;
@@ -177,6 +181,12 @@ export class PivotAnswerBuilder {
     setProduct(leaf: number, value: number, product: number): void;
     setSum(leaf: number, value: number, sum: PivotNumber): void;
     setVariance(leaf: number, value: number, mean: number, m2: number): void;
+}
+
+// @public
+export interface PivotAnswerRest {
+    readonly side: PivotRestSide;
+    readonly window: number;
 }
 
 // @public
@@ -193,6 +203,13 @@ export class PivotAnswerValues {
     productAt(leaf: number): number;
     sumAt(leaf: number): PivotNumber;
     valuesAt(leaf: number): number;
+}
+
+// @public
+export interface PivotAnswerWindow {
+    readonly after: number;
+    readonly before: number;
+    readonly parent: readonly number[];
 }
 
 // @public
@@ -531,8 +548,16 @@ export function pivotLeafBound(layout: PivotLayout, counts: PivotItemCounts): nu
 export const pivotLeafBoundMost: number;
 
 // @public
+export interface PivotLevelOrder {
+    readonly aggregation: PivotAggregation;
+    readonly descending: boolean;
+    readonly value: number;
+}
+
+// @public
 export interface PivotLevelRule {
     readonly collapsed: boolean;
+    readonly order?: PivotLevelOrder;
     readonly toggledItems: readonly PivotItemKey[];
 }
 
@@ -542,6 +567,7 @@ export function pivotLevelRule(input?: PivotLevelRuleInput): PivotLevelRule;
 // @public
 export interface PivotLevelRuleInput {
     readonly collapsed?: boolean;
+    readonly order?: PivotLevelOrder;
     readonly toggledItems?: readonly PivotItemKey[];
 }
 
@@ -549,6 +575,19 @@ export interface PivotLevelRuleInput {
 export interface PivotLevels {
     readonly columns: readonly PivotLevelRule[];
     readonly rows: readonly PivotLevelRule[];
+    readonly window?: PivotLevelWindow;
+}
+
+// @public
+export interface PivotLevelWindow {
+    readonly limit: number;
+    readonly starts: readonly PivotWindowStart[];
+}
+
+// @public
+export interface PivotLevelWindowInput {
+    readonly limit: number;
+    readonly starts?: readonly PivotWindowStart[];
 }
 
 // @public
@@ -619,6 +658,7 @@ export interface PivotQueryInput {
     readonly levels?: {
         readonly rows?: readonly PivotLevelRuleInput[];
         readonly columns?: readonly PivotLevelRuleInput[];
+        readonly window?: PivotLevelWindowInput;
     };
     readonly maxLeaves?: number;
     readonly rows?: readonly (string | {
@@ -886,6 +926,9 @@ export interface PivotReportWindow {
 }
 
 // @public
+export type PivotRestSide = 'before' | 'after';
+
+// @public
 export class PivotRowKey {
     constructor(role: PivotRowRole, valueField: number, items: readonly PivotItemKey[]);
     equals(other: PivotRowKey): boolean;
@@ -1002,6 +1045,12 @@ export interface PivotValueFieldInput {
 // @public
 export class PivotVersionError extends Error {
     constructor(message: string);
+}
+
+// @public
+export interface PivotWindowStart {
+    readonly rows: readonly PivotItemKey[];
+    readonly start: number;
 }
 
 // @public
