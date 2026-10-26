@@ -1,0 +1,117 @@
+{
+  "about": "ERROR.TYPE beyond Microsoft's table and Excel's numbers in ExcelCases' error-type (ADR-0047's note of 2026-10-10, docs/specs/exsheet-functions ticket 17): #GETTING_DATA and #CIRC! are states of a computation, given back and never numbered, and Excel's newer Error Values take the numbers the seventeenth Windows run read (SH-68). Transcribed from ExSheet.Engine.Tests' ErrorTypeTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047 (2026-10-10), ADR-0049: a Formula that calls ERROR.TYPE over a waiting Linked Table waits with it",
+      "steps": [
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
+        {"enter": {"A1": "=ERROR.TYPE(INDEX(Rates[Mid],1))", "A2": "=IF(TRUE,1,ERROR.TYPE(INDEX(Rates[Mid],1)))"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", {"error": "#N/A"}]]}, "expect": {"values": {"A1": 7, "A2": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10), ADR-0121: ERROR.TYPE never numbers a day that is not known yet",
+      "steps": [
+        {"enter": {"A1": "=ERROR.TYPE(TODAY())"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10): a Formula that reads a cycle through ERROR.TYPE shows #CIRC!, never a number",
+      "steps": [
+        {"enter": {"A1": "=B1", "B1": "=A1", "C1": "=ERROR.TYPE(A1)", "D1": "=ERROR.TYPE(OFFSET(D1,0,0))"}, "note": "A Reference computed while the Formula is evaluated reaches its own cell (ADR-0124).", "expect": {"values": {"C1": {"error": "#CIRC!"}, "D1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68: Excel's newer Error Values take the numbers Excel gave them in the seventeenth Windows run: #SPILL!",
+      "steps": [
+        {"enter": {"A1": "#SPILL!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68: Excel's newer Error Values take the numbers Excel gave them in the seventeenth Windows run: #CONNECT!",
+      "steps": [
+        {"enter": {"A1": "#CONNECT!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68: Excel's newer Error Values take the numbers Excel gave them in the seventeenth Windows run: #BLOCKED!",
+      "steps": [
+        {"enter": {"A1": "#BLOCKED!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 11}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68: Excel's newer Error Values take the numbers Excel gave them in the seventeenth Windows run: #UNKNOWN!",
+      "steps": [
+        {"enter": {"A1": "#UNKNOWN!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 12}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68: Excel's newer Error Values take the numbers Excel gave them in the seventeenth Windows run: #FIELD!",
+      "steps": [
+        {"enter": {"A1": "#FIELD!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 13}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68: Excel's newer Error Values take the numbers Excel gave them in the seventeenth Windows run: #CALC!",
+      "steps": [
+        {"enter": {"A1": "#CALC!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 14}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68: a #SPILL! or #CALC! the engine computes is numbered as one typed in is (ERRORTYPE-014, 015)",
+      "steps": [
+        {"enter": {"A1": "=SEQUENCE(2)", "A2": "x", "B1": "=ERROR.TYPE(A1)", "C1": "=ERROR.TYPE(FILTER(D1:D2,D1:D2>100))"}, "expect": {"values": {"A1": {"error": "#SPILL!"}, "B1": 9, "C1": 14}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (second run), SH-68: #BUSY! typed is text, as Excel keeps it, so ERROR.TYPE answers #N/A as for any Value that is no error",
+      "steps": [
+        {"enter": {"A1": "#BUSY!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"A1": "#BUSY!", "B1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10): Microsoft's table, #NULL! 1 to #N/A 7: #NULL!",
+      "steps": [
+        {"enter": {"A1": "#NULL!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10): Microsoft's table, #NULL! 1 to #N/A 7: #DIV/0!",
+      "steps": [
+        {"enter": {"A1": "#DIV/0!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10): Microsoft's table, #NULL! 1 to #N/A 7: #VALUE!",
+      "steps": [
+        {"enter": {"A1": "#VALUE!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10): Microsoft's table, #NULL! 1 to #N/A 7: #REF!",
+      "steps": [
+        {"enter": {"A1": "#REF!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 4}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10): Microsoft's table, #NULL! 1 to #N/A 7: #NAME?",
+      "steps": [
+        {"enter": {"A1": "#NAME?", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10): Microsoft's table, #NULL! 1 to #N/A 7: #NUM!",
+      "steps": [
+        {"enter": {"A1": "#NUM!", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10): Microsoft's table, #NULL! 1 to #N/A 7: #N/A",
+      "steps": [
+        {"enter": {"A1": "#N/A", "B1": "=ERROR.TYPE(A1)"}, "expect": {"values": {"B1": 7}}}
+      ]
+    }
+  ]
+}

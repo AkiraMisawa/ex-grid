@@ -1,0 +1,19 @@
+{
+  "about": "#CIRC! and #GETTING_DATA are states of a computation, never an Entry (ADR-0047, ADR-0049); how Error Values propagate is in ExcelCases' errors. Transcribed from ExSheet.Engine.Tests' ErrorPropagationTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047/0049: #CIRC! is a state of a computation, never an Entry",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": {"error": "#CIRC!"}}}}, "expect": {"throws": {"refusal": "argument"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/0049: #GETTING_DATA is a state of a computation, never an Entry",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": {"error": "#GETTING_DATA"}}}}, "expect": {"throws": {"refusal": "argument"}, "entries": {"A1": null}}}
+      ]
+    }
+  ]
+}

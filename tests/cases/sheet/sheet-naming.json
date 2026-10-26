@@ -1,0 +1,202 @@
+{
+  "about": "The name a new Sheet takes, as Excel's (ADR-0331, exsheet-workbook ticket 12's answer 13): each case is one Excel answered, in verification/2026-10-24-windows-workbook-12 (the names group) and verification/2026-10-25-windows-sheet-names (a workbook saved and opened again, copies, the undo of an insertion). A Sheet is added after the last. Transcribed from ExSheet.Engine.Tests' SheetNamingTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0331, ticket 12 answer 13 (add-after-gap): Sheet2 deleted, the next is Sheet4",
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"do": {"deleteSheet": true}, "on": "Sheet2"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet3", "Sheet4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ticket 12 answer 13: the count, not the names, numbers the next (Sheet1 renamed Sheet5)",
+      "steps": [
+        {"do": {"rename": "Sheet5"}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet5"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"read": true, "expect": {"sheets": ["Sheet5", "Sheet2", "Sheet3"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ticket 12 answer 13: the count, not the names, numbers the next (Sheet1 renamed Sheet3)",
+      "steps": [
+        {"do": {"rename": "Sheet3"}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"read": true, "expect": {"sheets": ["Sheet3", "Sheet2", "Sheet4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ticket 12 answer 13: the count, not the names, numbers the next (Sheet1 renamed Jan)",
+      "steps": [
+        {"do": {"rename": "Jan"}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Jan"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"read": true, "expect": {"sheets": ["Jan", "Sheet2", "Sheet3"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ticket 12 answer 13 (add-taken): Sheet2 added and renamed, Sheet1 renamed Sheet2, the next is Sheet3",
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"rename": "Sheet2x"}, "on": "Sheet2"},
+        {"do": {"rename": "Sheet2"}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2x"},
+        {"read": true, "expect": {"sheets": ["Sheet2", "Sheet2x", "Sheet3"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run: a copy uses a number, a move or a rename of one added does not give it back (nothing)",
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet2", "Sheet3"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run: a copy uses a number, a move or a rename of one added does not give it back (copy)",
+      "steps": [
+        {"do": {"copySheet": true}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1 (2)"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet1 (2)", "Sheet3", "Sheet4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run: a copy uses a number, a move or a rename of one added does not give it back (copy-twice)",
+      "steps": [
+        {"do": {"copySheet": true}, "on": "Sheet1"},
+        {"do": {"copySheet": true}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1 (2)"},
+        {"do": {"insertSheet": {}}, "on": "Sheet4"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet1 (3)", "Sheet1 (2)", "Sheet4", "Sheet5"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run: a copy uses a number, a move or a rename of one added does not give it back (add-delete)",
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"deleteSheet": true}, "on": "Sheet2"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet3", "Sheet4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run: a copy uses a number, a move or a rename of one added does not give it back (add-rename)",
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"rename": "Feb"}, "on": "Sheet2"},
+        {"do": {"insertSheet": {}}, "on": "Feb"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Feb", "Sheet3", "Sheet4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run: a copy uses a number, a move or a rename of one added does not give it back (move)",
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"moveSheet": 0}, "on": "Sheet2"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"read": true, "expect": {"sheets": ["Sheet2", "Sheet1", "Sheet3", "Sheet4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run (reopened.jsonl): opened from a document, the count starts at none (Sheet1, Sheet2, Sheet3)",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3"],
+      "steps": [
+        {"reopen": "document"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"do": {"insertSheet": {}}, "on": "Sheet4"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Sheet5"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run (reopened.jsonl): opened from a document, the count starts at none (Sheet1, Sheet3)",
+      "sheets": ["Sheet1", "Sheet3"],
+      "steps": [
+        {"reopen": "document"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet3", "Sheet2", "Sheet4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run (reopened.jsonl): opened from a document, the count starts at none (Sheet5)",
+      "sheets": ["Sheet5"],
+      "steps": [
+        {"reopen": "document"},
+        {"do": {"insertSheet": {}}, "on": "Sheet5"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"read": true, "expect": {"sheets": ["Sheet5", "Sheet1", "Sheet2"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run (reopened.jsonl): opened from a document, the count starts at none (Jan, Feb)",
+      "sheets": ["Jan", "Feb"],
+      "steps": [
+        {"reopen": "document"},
+        {"do": {"insertSheet": {}}, "on": "Feb"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"read": true, "expect": {"sheets": ["Jan", "Feb", "Sheet1", "Sheet2"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run (reopened.jsonl): opened from a document, the count starts at none (Sheet9)",
+      "sheets": ["Sheet9"],
+      "steps": [
+        {"reopen": "document"},
+        {"do": {"insertSheet": {}}, "on": "Sheet9"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"read": true, "expect": {"sheets": ["Sheet9", "Sheet1", "Sheet2"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run (reopened.jsonl): opened from a document, the count starts at none (Sheet1, Sheet2)",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"reopen": "document"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"do": {"insertSheet": {}}, "on": "Sheet3"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run (reopened.jsonl): opened from a document, the count starts at none (Sheet1)",
+      "sheets": ["Sheet1"],
+      "steps": [
+        {"reopen": "document"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet2", "Sheet3"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, 2026-10-25 run (keys-xs.jsonl): an insertion undone gives its number back",
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"undo": "last"},
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet2"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: ExSheet's own, where Excel's Ctrl+Y did nothing and Excel cannot undo a copy: a redo counts the Sheet again, and an undone copy gives its number back",
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1"},
+        {"undo": 0},
+        {"redo": 0},
+        {"do": {"copySheet": true}, "on": "Sheet1"},
+        {"undo": "last"},
+        {"do": {"insertSheet": {}}, "on": "Sheet2"},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Sheet2", "Sheet3"]}}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "about": "What AND, OR and XOR make of text typed as an argument (ADR-0047): the seventeenth Windows run read Excel's AND(\"abc\",TRUE) as TRUE (AND-011), so text that spells neither TRUE nor FALSE is passed over, as text inside a range is. Transcribed from ExSheet.Engine.Tests' LogicalArgumentTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047 (AND-011, the seventeenth Windows run): typed text that spells no truth is passed over: =AND(\"abc\",TRUE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AND(\"abc\",TRUE)"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, the seventeenth Windows run): typed text that spells no truth is passed over: =AND(TRUE,\"abc\",FALSE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AND(TRUE,\"abc\",FALSE)"}, "expect": {"values": {"ZZ1000": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, the seventeenth Windows run): typed text that spells no truth is passed over: =AND(\"\",1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AND(\"\",1)"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, the seventeenth Windows run): typed text that spells no truth is passed over: =OR(\"abc\",FALSE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=OR(\"abc\",FALSE)"}, "expect": {"values": {"ZZ1000": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, the seventeenth Windows run): typed text that spells no truth is passed over: =OR(\"abc\",TRUE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=OR(\"abc\",TRUE)"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, the seventeenth Windows run): typed text that spells no truth is passed over: =XOR(\"abc\",TRUE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=XOR(\"abc\",TRUE)"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, the seventeenth Windows run): typed text that spells no truth is passed over: =XOR(\"abc\",TRUE,TRUE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=XOR(\"abc\",TRUE,TRUE)"}, "expect": {"values": {"ZZ1000": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, AND-014): typed text alone leaves nothing that counts, which is #VALUE!: =AND(\"abc\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=AND(\"abc\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, AND-014): typed text alone leaves nothing that counts, which is #VALUE!: =OR(\"abc\",\"\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=OR(\"abc\",\"\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-011, AND-014): typed text alone leaves nothing that counts, which is #VALUE!: =XOR(\"abc\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=XOR(\"abc\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: typed text that spells TRUE or FALSE, in either case, counts (the engine's answer, waiting on AND-015 and OR-010): =AND(\"FALSE\",TRUE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AND(\"FALSE\",TRUE)"}, "expect": {"values": {"ZZ1000": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: typed text that spells TRUE or FALSE, in either case, counts (the engine's answer, waiting on AND-015 and OR-010): =OR(\"true\",FALSE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=OR(\"true\",FALSE)"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: typed text that spells TRUE or FALSE, in either case, counts (the engine's answer, waiting on AND-015 and OR-010): =XOR(\"True\",FALSE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=XOR(\"True\",FALSE)"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-013): passing text over never hides an Error Value, wherever it stands: =AND(\"abc\",1/0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AND(\"abc\",1/0)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-013): passing text over never hides an Error Value, wherever it stands: =OR(1/0,\"abc\",TRUE)",
+      "steps": [
+        {"enter": {"ZZ1000": "=OR(1/0,\"abc\",TRUE)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (AND-013): passing text over never hides an Error Value, wherever it stands: =XOR(\"abc\",TRUE,1/0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=XOR(\"abc\",TRUE,1/0)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    }
+  ]
+}
