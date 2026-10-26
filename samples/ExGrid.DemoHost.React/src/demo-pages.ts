@@ -38,4 +38,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'chart', title: 'Charts', group: 'ExChart',
         description: 'An exposure profile in two panels and a hazard curve drawn as steps: the tooltip lists every series at the pointer\'s date, the legend hides a series, a drag narrows the range, and Next run replaces the data keeping what the user changed (ADR-0252, ADR-0270 to ADR-0273).',
     },
+    {
+        route: 'chart-candles', title: 'Candles and intervals', group: 'ExChart',
+        description: 'Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers; strategies\' risk and return with intervals both ways (ADR-0300 to ADR-0304).',
+    },
 ]);

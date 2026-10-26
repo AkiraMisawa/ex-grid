@@ -39,6 +39,11 @@ export class DotNetRandom {
         return Math.trunc(this.#sample() * (second - first)) + first;
     }
 
+    /** `NextDouble()`: a number in [0, 1). */
+    nextDouble(): number {
+        return this.#sample();
+    }
+
     #sample(): number {
         let next = this.#next + 1;
         if (next >= 56) next = 1;
