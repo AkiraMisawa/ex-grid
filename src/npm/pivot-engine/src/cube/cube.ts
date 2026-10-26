@@ -7,10 +7,10 @@ import { PartColumns, emptyValue, type AggregateValue } from '../aggregates/part
 import { fromPublicKey, type ItemKey, type PivotItemKey } from '../items/item-key';
 import type { FieldMeta, PivotOrderKeyValue } from '../fields/pivot-field';
 import { sameKeys, hidingFilters, levelsOfLayout, placedFields, type PivotQuery, type PivotQueryField } from './query';
-import { answerColumns, type PivotAnswer, type PivotAnswerAxis } from './answer';
+import { answerColumns, type PivotAnswer, type PivotAnswerAxis, type PivotRestSide } from './answer';
 import type { PivotLayout, PivotFieldPlacement } from '../layout/pivot-layout';
 import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums';
-import { elementAt } from '../must';
+import { defined, elementAt } from '../must';
 import { inPieces, runWhole } from '../source/slicing';
 import { describe, levelExpander } from '../levels/level-shown';
 import { expandsBelow, levelSumsSteps } from '../levels/level-sums';
@@ -75,6 +75,11 @@ export class AxisNode {
         this.level = level;
         this.parent = parent;
         this.item = item;
+    }
+
+    /** The child of the Item at `index` among the next level's Items, where it has been made. */
+    childAt(index: number): AxisNode | undefined {
+        return this.#childIndex.get(index);
     }
 
     /** The child of the Item at `index` among the next level's Items, made on first asking. */
@@ -302,9 +307,6 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
     for (const field of [...placedFields(query).map(f => f.field), ...query.values.map(v => v.field)]) {
         if (!meta.has(field)) throw new Error(`The question names '${field}', and no Pivot Field of that name is declared (ADR-0060).`);
     }
-    if (answer.isLevels && answer.windows.length > 0) {
-        throw new Error('The answer holds windows of sibling sets, which this engine does not lay out yet; ask without a window (ADR-0370 section 3).');
-    }
     const leafCount = answer.leafCount;
     const rowTree = yield* tree(answer.rows, leafCount);
     const columnTree = yield* tree(answer.columns, leafCount);
@@ -324,11 +326,24 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
         values.push(columns);
     }
 
-    // The leaves are the first cells, as the source answered them; a level answer's cells are all of them.
+    // The leaves are the first cells, as the source answered them; a level answer's cells are all of them but
+    // its Rest Cells, which stand beside their parents' children and are no group of their own.
     const cells = new Map<number, number>();
+    const rests = answer.isLevels ? answer.windows.map(() => new Map<PivotRestSide, Map<AxisNode, number>>()) : [];
     let included = 0;
     yield* inPieces(leafCount, 2, (from, to) => {
         for (let leaf = from; leaf < to; leaf++) {
+            const rest = answer.isLevels ? answer.restAt(leaf) : undefined;
+            if (rest !== undefined) {
+                const sides = elementAt(rests, rest.window);
+                let side = sides.get(rest.side);
+                if (side === undefined) {
+                    side = new Map();
+                    sides.set(rest.side, side);
+                }
+                side.set(elementAt(columnLeaves, leaf), leaf);
+                continue;
+            }
             const key = cellKey(elementAt(rowLeaves, leaf).id, elementAt(columnLeaves, leaf).id);
             if (cells.has(key)) {
                 throw new Error(`The answer has two leaves for one cell (leaf ${leaf}); a source answers each combination of Items once (ADR-0066).`);
@@ -355,7 +370,18 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
             records: cell => answer.recordsAt(cell),
             values: values.map((columns, v) => ({ field: elementAt(sources, v), columns })),
             describe: cell => describe(answer, cell),
+            columnRoot: elementAt(columnTree.nodes, 0),
+            windows: answer.windows.map((window, w) => ({
+                parent: window.parent.reduce<AxisNode>((node, item) => defined(node.childAt(item), "a window's parent, as the answer was checked"), elementAt(rowTree.nodes, 0)),
+                before: window.before,
+                after: window.after,
+                rests: elementAt(rests, w),
+            })),
+            isRest: cell => answer.restAt(cell) !== undefined,
         });
+        if (answer.windows.length > 0) {
+            throw new Error('The answer holds windows of sibling sets, which this engine does not lay out yet; ask without a window (ADR-0370 section 3).');
+        }
     } else if (values.length > 0) {
         // Every total from its leaves (ADR-0060): each leaf is merged into every cell whose row and column
         // are its own or their ancestors. An ancestor's cell is never a leaf's, so nothing is counted twice.
