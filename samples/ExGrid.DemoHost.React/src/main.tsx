@@ -11,6 +11,7 @@ import { Cells } from './pages/cells';
 import { Chart } from './pages/chart';
 import { ChartBridge } from './pages/chart-bridge';
 import { ChartCandles } from './pages/chart-candles';
+import { ChartSpecPage } from './pages/chart-spec';
 import { Features } from './pages/features';
 import { Fetch } from './pages/fetch';
 import { FilterPanel } from './pages/filter-panel';
@@ -39,7 +40,7 @@ declare global {
 
 window.exDemo = Object.freeze({ navigateTo });
 
-const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-bridge': ChartBridge, 'chart-candles': ChartCandles, scatter: Scatter, surface: Surface,
+const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-bridge': ChartBridge, 'chart-candles': ChartCandles, scatter: Scatter, 'chart-spec': ChartSpecPage, surface: Surface,
     'chart-showcase/exposure': ExposureShowcase, 'chart-showcase/cds-spread': CdsSpreadShowcase,
     'chart-showcase/fx-volatility': FxVolatilityShowcase, 'chart-showcase/equity-index': EquityIndexShowcase,
     'chart-showcase/binomial-lattice': BinomialLatticeShowcase, 'chart-showcase/curves': CurvesShowcase,

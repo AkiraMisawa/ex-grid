@@ -16,6 +16,9 @@ import type { RowKeyOf } from '@ex-grid/core';
 import type { SelectionRange } from '@ex-grid/core';
 
 // @public
+export function answerChartSpec(text: string, tables: (handle: string) => ChartData | undefined, metrics?: ChartMetrics): ChartSpecAnswer;
+
+// @public
 export interface AppearanceKeys {
     readonly colour: string;
     readonly lineStyle?: string;
@@ -291,6 +294,17 @@ export interface ChartSeriesOptions {
     readonly thinned?: readonly PixelSummary[];
     readonly xInterval?: SeriesInterval;
 }
+
+// @public
+export type ChartSpecAnswer = {
+    readonly accepted: true;
+    readonly text: string;
+    readonly reading: ChartSpecReading;
+} | {
+    readonly accepted: false;
+    readonly text: string;
+    readonly reading: undefined;
+};
 
 // @public
 export class ChartSpecReading {
