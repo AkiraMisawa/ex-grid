@@ -500,6 +500,7 @@ export const PivotJson: Readonly<{
     writeDetailsQuery(query: PivotDetailsQuery): string;
     writeDetailPage(page: PivotDetailPage): string;
     writeSourceChanged(change: PivotSourceChanged): string;
+    writeChangeBatch(batch: PivotServerChangeBatch, fields: readonly PivotField[]): string;
     writeItemCounts(counts: PivotItemCounts): string;
     readQuery(json: string): PivotQuery;
     readAnswer(json: string): PivotAnswer;
@@ -508,6 +509,7 @@ export const PivotJson: Readonly<{
     readDetailsQuery(json: string): PivotDetailsQuery;
     readDetailPage(json: string): PivotDetailPage;
     readSourceChanged(json: string): PivotSourceChanged;
+    readServerNotice(json: string, fields: readonly PivotField[]): PivotServerNotice;
     readItemCounts(json: string): PivotItemCounts;
 }>;
 

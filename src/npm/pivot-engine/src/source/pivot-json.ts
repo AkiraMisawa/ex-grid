@@ -19,14 +19,18 @@ import { PivotFormatError, PivotVersionError } from '../errors';
 import { pivotField, type PivotField } from '../fields/pivot-field';
 import { dateItemKey, itemKeyText, numberOfText, pivotItemKey, publicKeyId, ticksOfKeyText, type PivotItemKey } from '../items/item-key';
 import { isDecimal } from '../items/record-value';
-import { pivotAggregations, pivotItemKinds, type PivotFieldType } from '../layout/pivot-enums';
+import { pivotAggregations, pivotItemKinds, type PivotDatePart, type PivotFieldType } from '../layout/pivot-enums';
 import { isArray, isObject, JsonNumber, jsonArray, jsonDouble, jsonObject, jsonString, member, memberNames, namesWrittenTwice, readJson, type Json, type JsonObject } from '../json/json-text';
 import { defined, elementAt } from '../must';
-import { PivotDetailPage, PivotItemCounts, PivotItemPage, type PivotDetailRecord, type PivotDetailValue, type PivotSourceChanged } from './pivot-source';
+import {
+    PivotDetailPage, PivotItemCounts, PivotItemPage, type PivotDetailRecord, type PivotDetailValue, type PivotServerChangeBatch, type PivotServerNotice,
+    type PivotSourceChanged,
+} from './pivot-source';
 
 const version = 1;
 const dateFormat = "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF";
 const fieldTypes: readonly PivotFieldType[] = ['text', 'number', 'date', 'boolean'];
+const dateParts: readonly PivotDatePart[] = ['year', 'quarter', 'month'];
 const refusalKinds: readonly PivotSourceRefusalKind[] = ['tooManyLeaves', 'unknownField', 'aggregationNotOffered', 'sourceVersionNotHeld'];
 
 type Members = [string, string][];
@@ -190,8 +194,28 @@ function detailValueJson(type: PivotFieldType, value: PivotDetailValue): string 
     if (isDecimal(value)) return jsonObject([['number', decimalText(value)]]);
     if (typeof value === 'number') return jsonObject([['double', jsonString(doubleText(value))]]);
     if (typeof value === 'bigint') return jsonObject([['date', jsonString(dateText(value))]]);
-    return jsonObject([['boolean', String(value)]]);
+    if (typeof value === 'boolean') return jsonObject([['boolean', String(value)]]);
+    throw new TypeError(`A value of type ${typeof value} is no detail value: text, a number, a SnapshotDecimal, a date by its ticks, a Boolean, or null.`);
 }
+
+// A batch's records, each value by its field's declared type.
+function batchRecordsJson(records: readonly (readonly PivotDetailValue[])[], fields: readonly PivotField[], side: string): string {
+    return jsonArray(records.map((record, r) => {
+        // Typed as an array, and checked as one: a batch may come from a script that never met the type.
+        const isRecord: boolean = Array.isArray(record);
+        if (!isRecord || record.length !== fields.length) {
+            throw new TypeError(`A Change Batch's ${side} record ${r + 1} carries ${isRecord ? String(record.length) : 'no array of'} values, and there are ${fields.length} fields.`);
+        }
+        return jsonArray(record.map((value, f) => {
+            const field = elementAt(fields, f);
+            // A date part crosses as its whole number, as the C# engine's decimal writes it.
+            if (field.datePart !== undefined && typeof value === 'number' && Number.isSafeInteger(value)) return jsonObject([['number', String(value)]]);
+            return detailValueJson(field.type, value);
+        }));
+    }));
+}
+
+const batchVersions = 'A Change Batch goes from one Source Version to another, each named with text.';
 
 function dateText(ticks: bigint): string {
     return defined(dateItemKey(ticks).value, 'a date key has its text');
@@ -200,9 +224,9 @@ function dateText(ticks: bigint): string {
 // ---- Reading ----------------------------------------------------------------------------------------
 
 // Opens a document: a JSON object naming its version — refused with a PivotVersionError when it is not one
-// this reader reads — and its type, refused with a PivotFormatError when it is not the one expected. A value
-// the model refuses is a document this reader cannot take.
-function read<T>(json: string, type: string, take: (root: JsonObject) => T): T {
+// this reader reads — and its type, refused with a PivotFormatError when it is not one expected. A value the
+// model refuses is a document this reader cannot take.
+function read<T>(json: string, type: string | readonly [string, string], take: (root: JsonObject, type: string) => T): T {
     if (typeof json !== 'string') throw new TypeError('A Pivot Source document is text.');
     try {
         JSON.parse(json);
@@ -217,15 +241,37 @@ function read<T>(json: string, type: string, take: (root: JsonObject) => T): T {
         throw new PivotVersionError(`A Pivot Source document of version ${written.raw} cannot be read; this reader reads version ${version}.`);
     }
     const actual = optionalString(root, 'type');
-    if (actual !== type) throw new PivotFormatError(`The document is a Pivot Source '${actual ?? '(untyped)'}' document, not a '${type}'.`); // oxlint-disable-line ex-grid/no-stand-in-default -- the refusal names a document that names no type
+    const types = typeof type === 'string' ? [type] : type;
+    if (actual === undefined || !types.includes(actual)) {
+        throw new PivotFormatError(`The document is a Pivot Source '${actual ?? '(untyped)'}' document, not a '${types.join("' or a '")}'.`); // oxlint-disable-line ex-grid/no-stand-in-default -- the refusal names a document that names no type
+    }
     try {
-        return take(root);
+        return take(root, actual);
     } catch (error) {
         if (error instanceof TypeError || error instanceof RangeError) {
             throw new PivotFormatError(`The document holds a value that cannot be: ${error.message}`, { cause: error });
         }
         throw error;
     }
+}
+
+function fieldList(fields: readonly { readonly name: string; readonly type: PivotFieldType; readonly datePart?: PivotDatePart | undefined }[]): string {
+    return fields.map(field => `${field.name} (${field.datePart === undefined ? field.type : `${field.type} ${field.datePart}`})`).join(', ');
+}
+
+// A batch's records, required: a batch that leaves out what its data lost or gained is not the batch.
+function batchRecordsOf(root: JsonObject, side: string, fields: readonly PivotField[]): (readonly PivotDetailValue[])[] {
+    if (member(root, side) === undefined) throw new PivotFormatError(`'${side}' is an array, and is required.`);
+    return entries(root, side).map(record => {
+        if (!isArray(record)) throw new PivotFormatError('A batch record is an array of values.');
+        if (record.length !== fields.length) throw new PivotFormatError(`A batch record carries ${record.length} values, and the batch has ${fields.length} fields.`);
+        return Object.freeze(record.map((value, f) => {
+            const field = elementAt(fields, f);
+            const taken = detailValueOf(value, field);
+            // A date part crosses as its whole number, which a decimal holds: read as the number it is.
+            return field.datePart !== undefined && isDecimal(taken) && taken.scale === 0 ? Number(taken.mantissa) : taken;
+        }));
+    });
 }
 
 function refusalOf(root: JsonObject): PivotSourceRefusal | undefined {
@@ -685,6 +731,25 @@ export const PivotJson = Object.freeze({
         return document('sourceChanged', change.sourceVersion === undefined ? [] : [['sourceVersion', jsonString(change.sourceVersion)]]);
     },
 
+    /**
+     * A server's Change Batch (ADR-0370 section 3), as JSON: the records its data lost and gained between two
+     * Source Versions, each value by its field's declared type, under the names and types of the fields they
+     * are in, so a reader whose fields differ refuses the batch rather than place its values in the wrong ones.
+     */
+    writeChangeBatch(batch: PivotServerChangeBatch, fields: readonly PivotField[]): string {
+        return document('changeBatch', [
+            ['from', jsonString(batch.from)],
+            ['to', jsonString(batch.to)],
+            ['fields', jsonArray(fields.map(field => {
+                const members: Members = [['name', jsonString(field.name)], ['type', jsonString(field.type)]];
+                if (field.datePart !== undefined) members.push(['datePart', jsonString(field.datePart)]);
+                return jsonObject(members);
+            }))],
+            ['removed', batchRecordsJson(batch.removed, fields, 'removed')],
+            ['added', batchRecordsJson(batch.added, fields, 'added')],
+        ]);
+    },
+
     /** Each field's count of Items (ADR-0370 section 3), as JSON: `counts` holds a member per counted field. */
     writeItemCounts(counts: PivotItemCounts): string {
         return document('itemCounts', [
@@ -790,6 +855,36 @@ export const PivotJson = Object.freeze({
         return read(json, 'sourceChanged', root => {
             const sourceVersion = optionalString(root, 'sourceVersion');
             return Object.freeze(sourceVersion === undefined ? {} : { sourceVersion });
+        });
+    },
+
+    /**
+     * A notice a server sent a fetching source (ADR-0370 section 3), read back from
+     * {@link PivotJson.writeSourceChanged}'s or {@link PivotJson.writeChangeBatch}'s JSON, to hand to the fetchers'
+     * `notify`. A batch is read against the source's `fields`: one written under other names or types, or in
+     * another order, is refused by name.
+     */
+    readServerNotice(json: string, fields: readonly PivotField[]): PivotServerNotice {
+        return read(json, ['sourceChanged', 'changeBatch'], (root, type): PivotServerNotice => {
+            if (type === 'sourceChanged') {
+                const sourceVersion = optionalString(root, 'sourceVersion');
+                return Object.freeze(sourceVersion === undefined ? { kind: 'changed' } : { kind: 'changed', sourceVersion });
+            }
+            const from = string(root, 'from');
+            const to = string(root, 'to');
+            if (from.length === 0 || to.length === 0 || from === to) throw new TypeError(batchVersions);
+            const written = objects(root, 'fields').map(field => {
+                const part = member(field, 'datePart');
+                return { name: string(field, 'name'), type: named(field, 'type', 'type', fieldTypes), datePart: part === undefined ? undefined : named(field, 'datePart', 'date part', dateParts) };
+            });
+            const differs = written.length !== fields.length || written.some((field, f) => {
+                const own = elementAt(fields, f);
+                return field.name !== own.name || field.type !== own.type || field.datePart !== own.datePart;
+            });
+            if (differs) throw new PivotFormatError(`The batch's fields are ${fieldList(written)}, and the source's are ${fieldList(fields)}.`);
+            const removed = Object.freeze(batchRecordsOf(root, 'removed', fields));
+            const added = Object.freeze(batchRecordsOf(root, 'added', fields));
+            return Object.freeze({ kind: 'changeBatch', from, to, removed, added });
         });
     },
 

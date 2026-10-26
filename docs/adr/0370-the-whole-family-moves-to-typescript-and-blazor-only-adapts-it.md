@@ -418,6 +418,13 @@ with one of two things:
   holds, and folds them into the answer it holds: held, less what was lost, plus what was gained, leaf by
   leaf — AG Grid's `applyServerSideTransaction`, with the totals made in the browser.
 
+Both cross as `PivotJson` documents, so a server on either engine and a page agree on the text to the byte
+(`tests/cases/pivot/source-json.json`): the notice as the `sourceChanged` document, the batch as a
+`changeBatch` document that names its fields' names, types and date parts, with its records' values written by type (a date part as its whole number), as
+a page of records is. The page reads either with `readServerNotice` against its source's fields, and a batch
+written under other fields, or in another order, is refused by name rather than read into the wrong ones.
+The transport that carries the text stays the Consumer's.
+
 What a fold keeps, and when the question is asked again instead:
 
 - **A part is folded only where subtraction and addition keep it as the server answers it**: the counts,

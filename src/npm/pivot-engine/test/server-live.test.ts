@@ -379,6 +379,34 @@ describe('ADR-0370: live server data', () => {
         const folded = foldServerBatches(query, builder.build(), [{ from: 'v1', to: 'v2', removed: [], added: [[null, 2026, decimalFromText('6')], [null, 2025, decimalFromText('1')]] }], dated);
         expect(folded === undefined ? [] : read(folded, [['sum']])).toEqual(['number:2025 1 | 1,1,false sum x1e-0', 'number:2026 2 | 2,2,false sum x10e-0']);
         expect(() => { checkBatchRecords([[null, 638_000_000_000_000_000n, null]], dated); }).toThrow("Row 1, column 'Year': The Year of a date travels as its number");
+        expect(() => { checkBatchRecords([[null, decimalFromText('2026'), null]], dated); }).toThrow('the record carries a decimal');
+    });
+
+    it('ADR-0370: a notice crosses as PivotJson, and a batch written under other fields is refused by name', async () => {
+        const server = new Server(trades(30, 6));
+        const source = server.source();
+        source.subscribe(() => undefined);
+        await source.aggregate(exactQuery);
+        const notify = server.notify;
+        if (notify === undefined) throw new Error('The transport runs.');
+        // The server's batch crosses the wire as text and is read against the source's fields.
+        server.notify = notice => {
+            const text = notice.kind === 'changeBatch' ? PivotJson.writeChangeBatch(notice, fields) : PivotJson.writeSourceChanged({});
+            notify(PivotJson.readServerNotice(text, source.fields));
+        };
+        server.change([withAmount(server).id], [{ id: 900, region: 'Moon', desk: null, amount: '12.5', price: 2 }]);
+        expect(read(await source.aggregate(exactQuery), exactParts)).toEqual(read(server.answer(exactQuery), exactParts));
+        expect(server.asked).toBe(1);
+        expect(PivotJson.readServerNotice(PivotJson.writeSourceChanged({ sourceVersion: 'v9' }), fields)).toEqual({ kind: 'changed', sourceVersion: 'v9' });
+        const reordered = fields.toReversed();
+        const written = PivotJson.writeChangeBatch({ kind: 'changeBatch', from: 'v1', to: 'v2', removed: [], added: [] }, reordered);
+        expect(() => PivotJson.readServerNotice(written, fields)).toThrow("The batch's fields are Price (number), Amount (number), Desk (text), Region (text), and the source's are Region (text), Desk (text), Amount (number), Price (number).");
+        expect(() => PivotJson.writeChangeBatch({ kind: 'changeBatch', from: 'v1', to: 'v2', removed: [['East']], added: [] }, fields)).toThrow("A Change Batch's removed record 1 carries 1 values, and there are 4 fields.");
+        const year = [datePartField('Year', 'Date', 'year')];
+        const asDate = PivotJson.writeChangeBatch({ kind: 'changeBatch', from: 'v1', to: 'v2', removed: [], added: [[638_000_000_000_000_000n]] }, [pivotField({ name: 'Year', type: 'date' })]);
+        expect(() => PivotJson.readServerNotice(asDate, year)).toThrow("The batch's fields are Year (date), and the source's are Year (date year).");
+        const asYear = PivotJson.writeChangeBatch({ kind: 'changeBatch', from: 'v1', to: 'v2', removed: [], added: [[2026]] }, year);
+        expect(PivotJson.readServerNotice(asYear, year)).toEqual({ kind: 'changeBatch', from: 'v1', to: 'v2', removed: [], added: [[2026]] });
     });
 
     it('ADR-0370: a report source over the server lays the batch out, tells its listeners, and Refresh asks the server', async () => {

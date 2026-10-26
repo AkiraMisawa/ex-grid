@@ -254,3 +254,75 @@ public sealed class PivotItemCounts
         return _counts.TryGetValue(field, out var count) ? count : null;
     }
 }
+
+/// <summary>
+/// A server's Change Batch (ADR-0370 section 3): the records its data lost and gained between two
+/// Source Versions, each record's values in <see cref="Fields"/>' order, as a record behind a cell
+/// carries them. A changed record is the old one removed and the new one added. A server writes it
+/// with <see cref="PivotJson.Write(PivotServerChangeBatch)"/> for the Script Core's fetching source,
+/// which finds the leaves the records fall in and folds them into the answer it holds.
+/// </summary>
+public sealed class PivotServerChangeBatch
+{
+    private readonly PivotField[] _fields;
+    private readonly PivotDetailRecord[] _removed;
+    private readonly PivotDetailRecord[] _added;
+
+    /// <summary>A batch from one Source Version to the next.</summary>
+    /// <param name="from">The Source Version the batch starts from.</param>
+    /// <param name="to">The Source Version the data is at once the batch is applied.</param>
+    /// <param name="fields">The fields each record's values are in, in order: the source's fields.</param>
+    /// <param name="removed">The records the data lost.</param>
+    /// <param name="added">The records the data gained.</param>
+    public PivotServerChangeBatch(string from, string to, IReadOnlyList<PivotField> fields,
+        IReadOnlyList<PivotDetailRecord> removed, IReadOnlyList<PivotDetailRecord> added)
+    {
+        ArgumentNullException.ThrowIfNull(from);
+        ArgumentNullException.ThrowIfNull(to);
+        ArgumentNullException.ThrowIfNull(fields);
+        ArgumentNullException.ThrowIfNull(removed);
+        ArgumentNullException.ThrowIfNull(added);
+        CheckVersions(from, to);
+        _fields = [.. fields];
+        foreach (var field in _fields)
+            ArgumentNullException.ThrowIfNull(field, nameof(fields));
+        _removed = [.. removed];
+        _added = [.. added];
+        CheckRecords(_removed, _fields.Length, nameof(removed));
+        CheckRecords(_added, _fields.Length, nameof(added));
+        From = from;
+        To = to;
+    }
+
+    /// <summary>The Source Version the batch starts from.</summary>
+    public string From { get; }
+
+    /// <summary>The Source Version the data is at once the batch is applied.</summary>
+    public string To { get; }
+
+    /// <summary>The fields each record's values are in, in order.</summary>
+    public IReadOnlyList<PivotField> Fields => _fields;
+
+    /// <summary>The records the data lost.</summary>
+    public IReadOnlyList<PivotDetailRecord> Removed => _removed;
+
+    /// <summary>The records the data gained.</summary>
+    public IReadOnlyList<PivotDetailRecord> Added => _added;
+
+    // From one Source Version to another, each named: the batch a fetching source takes.
+    internal static void CheckVersions(string from, string to)
+    {
+        if (from.Length == 0 || to.Length == 0 || from == to)
+            throw new ArgumentException("A Change Batch goes from one Source Version to another, each named with text.", nameof(to));
+    }
+
+    private static void CheckRecords(PivotDetailRecord[] records, int fields, string side)
+    {
+        foreach (var record in records)
+        {
+            ArgumentNullException.ThrowIfNull(record, side);
+            if (record.Values.Count != fields)
+                throw new ArgumentException($"A batch record carries {record.Values.Count} values, and the batch has {fields} fields.", side);
+        }
+    }
+}

@@ -41,6 +41,7 @@ public class PivotJsonCaseTests
                 "detailPage" => PivotJson.Write(PivotJson.ReadDetailPage(json)),
                 "sourceChanged" => PivotJson.Write(PivotJson.ReadSourceChanged(json)),
                 "itemCounts" => PivotJson.Write(PivotJson.ReadItemCounts(json)),
+                "changeBatch" => PivotJson.Write(PivotJson.ReadServerChangeBatch(json)),
                 _ => throw new InvalidOperationException($"'{document}' is no document the cases read."),
             });
         }

@@ -60,6 +60,13 @@ ExPivot.Engine.PivotQuery.Levels.init -> void
 ExPivot.Engine.PivotRestSide
 ExPivot.Engine.PivotRestSide.After = 1 -> ExPivot.Engine.PivotRestSide
 ExPivot.Engine.PivotRestSide.Before = 0 -> ExPivot.Engine.PivotRestSide
+ExPivot.Engine.PivotServerChangeBatch
+ExPivot.Engine.PivotServerChangeBatch.Added.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotDetailRecord!>!
+ExPivot.Engine.PivotServerChangeBatch.Fields.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField!>!
+ExPivot.Engine.PivotServerChangeBatch.From.get -> string!
+ExPivot.Engine.PivotServerChangeBatch.PivotServerChangeBatch(string! from, string! to, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField!>! fields, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotDetailRecord!>! removed, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotDetailRecord!>! added) -> void
+ExPivot.Engine.PivotServerChangeBatch.Removed.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotDetailRecord!>!
+ExPivot.Engine.PivotServerChangeBatch.To.get -> string!
 ExPivot.Engine.PivotSourceFeatures.AnswersLevels.get -> bool
 ExPivot.Engine.PivotSourceFeatures.CountsItems.get -> bool
 ExPivot.Engine.PivotSourceFeatures.PivotSourceFeatures(System.Collections.Generic.IEnumerable<ExPivot.Engine.PivotAggregation>! aggregations, bool canRefresh, bool countsItems) -> void
@@ -93,7 +100,9 @@ override ExPivot.Engine.SnapshotPivotSource.ItemCountsAsync(System.Threading.Can
 static ExPivot.Engine.PivotCellItems.operator !=(ExPivot.Engine.PivotCellItems? left, ExPivot.Engine.PivotCellItems? right) -> bool
 static ExPivot.Engine.PivotCellItems.operator ==(ExPivot.Engine.PivotCellItems? left, ExPivot.Engine.PivotCellItems? right) -> bool
 static ExPivot.Engine.PivotJson.ReadItemCounts(string! json) -> ExPivot.Engine.PivotItemCounts!
+static ExPivot.Engine.PivotJson.ReadServerChangeBatch(string! json) -> ExPivot.Engine.PivotServerChangeBatch!
 static ExPivot.Engine.PivotJson.Write(ExPivot.Engine.PivotItemCounts! counts) -> string!
+static ExPivot.Engine.PivotJson.Write(ExPivot.Engine.PivotServerChangeBatch! batch) -> string!
 static ExPivot.Engine.PivotLeafBound.Of(ExPivot.Engine.PivotLayout! layout, ExPivot.Engine.PivotItemCounts! counts) -> long?
 static ExPivot.Engine.PivotLevelRule.Expanded.get -> ExPivot.Engine.PivotLevelRule!
 static ExPivot.Engine.PivotLevelRule.Of(ExPivot.Engine.PivotFieldPlacement! placement) -> ExPivot.Engine.PivotLevelRule!

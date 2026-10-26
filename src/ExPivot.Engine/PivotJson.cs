@@ -10,7 +10,7 @@ namespace ExPivot.Engine;
 /// Every Pivot Source question and answer as JSON (ADR-0066), so it crosses to a server unchanged:
 /// <see cref="PivotQuery"/> and <see cref="PivotAnswer"/>, <see cref="PivotItemsQuery"/> and
 /// <see cref="PivotItemPage"/>, <see cref="PivotDetailsQuery"/> and <see cref="PivotDetailPage"/>,
-/// <see cref="PivotSourceChanged"/>, and <see cref="PivotItemCounts"/>. Each document names its format's <c>version</c> and its
+/// <see cref="PivotSourceChanged"/>, <see cref="PivotServerChangeBatch"/>, and <see cref="PivotItemCounts"/>. Each document names its format's <c>version</c> and its
 /// <c>type</c>, and a reader refuses a version it does not know rather than half-read it.
 ///
 /// <para>Written and read by hand, member by member, as <see cref="PivotLayoutJson"/> is, so that
@@ -37,6 +37,7 @@ public static class PivotJson
     private const string DetailPageType = "detailPage";
     private const string SourceChangedType = "sourceChanged";
     private const string ItemCountsType = "itemCounts";
+    private const string ChangeBatchType = "changeBatch";
 
     // ---- Writing -------------------------------------------------------------------------------
 
@@ -207,15 +208,7 @@ public static class PivotJson
             json.WriteEndArray();
             json.WriteNumber("start", page.Start);
             json.WriteNumber("total", page.Total);
-            json.WriteStartArray("records");
-            foreach (var record in page.Records)
-            {
-                json.WriteStartArray();
-                for (var f = 0; f < page.Fields.Count; f++)
-                    WriteDetailValue(json, page.Fields[f].Type, record.Values[f]);
-                json.WriteEndArray();
-            }
-            json.WriteEndArray();
+            WriteRecords(json, "records", page.Fields, page.Records);
         });
     }
 
@@ -229,6 +222,69 @@ public static class PivotJson
                 json.WriteString("sourceVersion", change.SourceVersion);
         });
     }
+
+    /// <summary>A server's Change Batch (ADR-0370 section 3), as JSON: its records, each value by its
+    /// field's declared type, under the names and types of the fields they are in, so that a reader
+    /// whose fields differ refuses the batch rather than place its values in the wrong ones.</summary>
+    public static string Write(PivotServerChangeBatch batch)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+        return Document(ChangeBatchType, json =>
+        {
+            json.WriteString("from", batch.From);
+            json.WriteString("to", batch.To);
+            json.WriteStartArray("fields");
+            foreach (var field in batch.Fields)
+            {
+                json.WriteStartObject();
+                json.WriteString("name", field.Name);
+                json.WriteString("type", Name(field.Type));
+                if (field.DatePart is { } part)
+                    json.WriteString("datePart", Name(part));
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+            WriteRecords(json, "removed", batch.Fields, batch.Removed);
+            WriteRecords(json, "added", batch.Fields, batch.Added);
+        });
+    }
+
+    private static string Name(PivotDatePart part) => part switch
+    {
+        PivotDatePart.Year => "year",
+        PivotDatePart.Quarter => "quarter",
+        PivotDatePart.Month => "month",
+        _ => throw new ArgumentOutOfRangeException(nameof(part), part, "Unknown PivotDatePart."),
+    };
+
+    private static PivotDatePart ParseDatePart(string text) => text switch
+    {
+        "year" => PivotDatePart.Year,
+        "quarter" => PivotDatePart.Quarter,
+        "month" => PivotDatePart.Month,
+        _ => throw new FormatException($"'{text}' is not a date part this reader knows."),
+    };
+
+    // Records, each value by its field's declared type.
+    private static void WriteRecords(Utf8JsonWriter json, string name, IReadOnlyList<PivotField> fields, IReadOnlyList<PivotDetailRecord> records)
+    {
+        json.WriteStartArray(name);
+        foreach (var record in records)
+        {
+            json.WriteStartArray();
+            for (var f = 0; f < fields.Count; f++)
+                WriteDetailValue(json, fields[f].Type, DatePartValue(fields[f], record.Values[f]));
+            json.WriteEndArray();
+        }
+        json.WriteEndArray();
+    }
+
+    // A date part crosses as its whole number, a decimal, however the record carries it, as the Script Core
+    // writes it: a year a double holds is the same year.
+    private static object? DatePartValue(PivotField field, object? value)
+        => field.DatePart is not null && value is double number && double.IsInteger(number) && Math.Abs(number) <= 9007199254740991
+            ? (decimal)number
+            : value;
 
     /// <summary>Each field's count of Items (ADR-0370 section 3), as JSON: <c>counts</c> holds a member
     /// per counted field.</summary>
@@ -614,21 +670,29 @@ public static class PivotJson
             Parse(field, "type", ParseType),
             OptionalString(field, "caption"),
             OptionalString(field, "format"))).ToArray();
-        var records = Array(root, "records").Select(record =>
-        {
-            if (record.ValueKind != JsonValueKind.Array)
-                throw new FormatException("A detail record is an array of values.");
-            var values = record.EnumerateArray().ToArray();
-            if (values.Length != fields.Length)
-                throw new FormatException($"A detail record carries {values.Length} values, and the page has {fields.Length} fields.");
-            return new PivotDetailRecord(values.Select((value, f) => ReadDetailValue(value, fields[f])).ToArray());
-        }).ToArray();
+        var records = ReadRecords(root, "records", fields, "page", required: false);
         return new PivotDetailPage(String(root, "sourceVersion"), fields, Int(root, "start"), Long(root, "total"), records);
     });
 
     /// <summary>A source's notice read back from <see cref="Write(PivotSourceChanged)"/>'s JSON.</summary>
     public static PivotSourceChanged ReadSourceChanged(string json)
         => Read(json, SourceChangedType, root => new PivotSourceChanged(OptionalString(root, "sourceVersion")));
+
+    /// <summary>A server's Change Batch read back from <see cref="Write(PivotServerChangeBatch)"/>'s JSON,
+    /// each value read by its field's declared type.</summary>
+    public static PivotServerChangeBatch ReadServerChangeBatch(string json) => Read(json, ChangeBatchType, root =>
+    {
+        var from = String(root, "from");
+        var to = String(root, "to");
+        PivotServerChangeBatch.CheckVersions(from, to);
+        var fields = Objects(root, "fields").Select(field => new PivotField(String(field, "name"), Parse(field, "type", ParseType))
+        {
+            DatePart = field.TryGetProperty("datePart", out _) ? Parse(field, "datePart", ParseDatePart) : null,
+        }).ToArray();
+        var removed = ReadRecords(root, "removed", fields, "batch", required: true);
+        var added = ReadRecords(root, "added", fields, "batch", required: true);
+        return new PivotServerChangeBatch(from, to, fields, removed, added);
+    });
 
     /// <summary>Each field's count of Items read back from <see cref="Write(PivotItemCounts)"/>'s JSON.</summary>
     public static PivotItemCounts ReadItemCounts(string json) => Read(json, ItemCountsType, root =>
@@ -1025,6 +1089,24 @@ public static class PivotJson
         => DateTime.TryParseExact(text, PivotItemKey.DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
             ? date
             : throw new FormatException($"'{text}' is not an ISO date ({PivotItemKey.DateFormat}).");
+
+    // Records, each value read by its field's declared type: a page's ("A detail record … the page has") or a
+    // batch's ("A batch record … the batch has"), whose sides are required.
+    private static PivotDetailRecord[] ReadRecords(JsonElement root, string name, PivotField[] fields, string holder, bool required)
+    {
+        if (required && !root.TryGetProperty(name, out _))
+            throw new FormatException($"'{name}' is an array, and is required.");
+        var record = holder == "page" ? "detail record" : "batch record";
+        return Array(root, name).Select(entry =>
+        {
+            if (entry.ValueKind != JsonValueKind.Array)
+                throw new FormatException($"A {record} is an array of values.");
+            var values = entry.EnumerateArray().ToArray();
+            if (values.Length != fields.Length)
+                throw new FormatException($"A {record} carries {values.Length} values, and the {holder} has {fields.Length} fields.");
+            return new PivotDetailRecord(values.Select((value, f) => ReadDetailValue(value, fields[f])).ToArray());
+        }).ToArray();
+    }
 
     private static IEnumerable<JsonElement> Array(JsonElement element, string name)
     {

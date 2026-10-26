@@ -213,6 +213,25 @@ public class PivotJsonTests
         }
     }
 
+    [Fact] // ADR-0370 (section 3): a server's Change Batch round-trips, a date part as the whole number its record carries
+    public void A_server_change_batch_round_trips()
+    {
+        PivotField[] fields = [new("Desk", PivotFieldType.Text), new("Amount", PivotFieldType.Number), new("Date", PivotFieldType.Date), new("Year", PivotFieldType.Date)];
+        var batch = new PivotServerChangeBatch("v1", "v2", fields,
+            removed: [new PivotDetailRecord(["Rates", 100.5m, new DateTime(2026, 1, 2), 2026])],
+            added: [new PivotDetailRecord(["Rates", 120m, new DateTime(2026, 1, 2, 13, 45, 0), 2026]), new PivotDetailRecord([null, 7.25, null, null])]);
+
+        var json = PivotJson.Write(batch);
+        var read = PivotJson.ReadServerChangeBatch(json);
+
+        Assert.Equal(json, PivotJson.Write(read));
+        Assert.Contains("{\"number\":2026}", json, StringComparison.Ordinal);
+        Assert.Equal(["v1", "v2"], [read.From, read.To]);
+        Assert.Equal(2026m, read.Added[0].Values[3]);
+        Assert.Contains("1 values, and the batch has 4 fields",
+            Assert.Throws<ArgumentException>(() => new PivotServerChangeBatch("v1", "v2", fields, [new PivotDetailRecord(["Rates"])], [])).Message, StringComparison.Ordinal);
+    }
+
     [Fact] // ADR-0066: a document of another type, or one that cannot be, is refused by name rather than half-read
     public async Task A_document_that_cannot_be_is_refused()
     {
