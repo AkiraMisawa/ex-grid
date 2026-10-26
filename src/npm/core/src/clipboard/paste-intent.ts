@@ -18,8 +18,9 @@ import type { PastePlan } from './clipboard-rules';
  * other rows (ADR-0011).
  *
  * The grid writes nothing: the screen changes when the source hands over new row instances. A Consumer
- * that will not write it calls {@link GridPasteIntent.refuse} before its `onPaste` returns, and the
- * Selection stays where it was (ADR-0050, item 3).
+ * that will not write it calls {@link GridPasteIntent.refuse} before its `onPaste` returns, or before the
+ * promise `onPaste` returns settles (ADR-0380 section 2), and the Selection stays where it was (ADR-0050,
+ * item 3).
  */
 export class GridPasteIntent {
     /** The approved plan: the target ranges, and how the block tiles onto them (ADR-0014). */
@@ -44,6 +45,9 @@ export class GridPasteIntent {
      * than values, such as a Sheet's formulas, copies from this range rather than parse `values`, as Excel's
      * fill keys do (ADR-0050, item 5). */
     readonly fillSource: SelectionRange | undefined;
+    /** Aborted when the user cancels the paste with Escape while `onPaste`'s promise is out (ADR-0380 section 3):
+     * nothing is to be written then, and a refusal after it throws. */
+    readonly signal: AbortSignal;
     readonly #marks: readonly (readonly (string | undefined)[])[] | undefined;
     #refused = false;
     #sealed = false;
@@ -51,8 +55,8 @@ export class GridPasteIntent {
     /** @internal */
     constructor(
         plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[],
-        rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, enteredAt?: CellPosition,
-        fillSource?: SelectionRange,
+        rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, signal: AbortSignal,
+        enteredAt?: CellPosition, fillSource?: SelectionRange,
     ) {
         this.plan = plan;
         this.values = values;
@@ -61,6 +65,7 @@ export class GridPasteIntent {
         this.#marks = marks;
         this.enteredAt = enteredAt;
         this.fillSource = fillSource;
+        this.signal = signal;
     }
 
     /** Whether the Consumer refused the paste. */
@@ -69,12 +74,15 @@ export class GridPasteIntent {
     }
 
     /** The Consumer's answer that it does not write this paste (ADR-0050, item 3). Called before `onPaste`
-     * returns, it leaves the Selection where it was; telling the user why is the Consumer's, since the grid
-     * knows only that it was refused. Called after, it throws: the grid has already taken the paste as
-     * written, and a refusal it never heard would leave the Selection saying otherwise. */
+     * returns, or before the promise it returned settles (ADR-0380), it leaves the Selection where it was; telling
+     * the user why is the Consumer's, since the grid knows only that it was refused. Called after, it throws: the
+     * grid has already taken the paste as written, and a refusal it never heard would leave the Selection saying
+     * otherwise. Called once the user has cancelled the paste, it throws too: nothing was to be written. */
     refuse(): void {
         if (this.#sealed) {
-            throw new Error('This paste was answered when onPaste returned: refuse it before then (ADR-0050, item 3).');
+            throw new Error(this.signal.aborted
+                ? 'This paste was cancelled while onPaste was answering it: nothing is to be written (ADR-0380).'
+                : 'This paste was answered when onPaste returned, or when its promise settled: refuse it before then (ADR-0050, item 3, ADR-0380).');
         }
         this.#refused = true;
     }

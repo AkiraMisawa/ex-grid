@@ -134,7 +134,10 @@ export type CommitRefusalReason =
 'rowLeftTheWindow'
 /** No Row Key is in force and the Row Sequence Version moved while the editor was open: its position
 * names another row now. */
-| 'orderMoved';
+| 'orderMoved'
+/** Escape was typed while the commit was pending, its verdict or its `onEdit` not yet answered (ADR-0380
+* section 3): the signal they were handed is aborted, and nothing is written. */
+| 'cancelled';
 
 // @public
 export interface CopyFlavours {
@@ -432,7 +435,7 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly mark?: boolean;
     readonly template?: GridTemplate<Row>;
     readonly tone?: (value: unknown) => CellTone;
-    readonly validate?: (row: Row, text: string) => EditVerdict;
+    readonly validate?: (row: Row, text: string, signal: AbortSignal) => EditVerdict | PromiseLike<EditVerdict>;
     readonly width?: GridColumnWidth;
 }
 
@@ -501,7 +504,7 @@ export type GridDirection = 'up' | 'down' | 'left' | 'right';
 // @public
 export class GridEditIntent<Row> {
     // @internal
-    constructor(row: Row, column: string, value: string, seenText: string, replacedText: string);
+    constructor(row: Row, column: string, value: string, seenText: string, replacedText: string, signal: AbortSignal);
     readonly column: string;
     get refusalMessage(): string | undefined;
     refuse(message: string): void;
@@ -511,6 +514,7 @@ export class GridEditIntent<Row> {
     // @internal
     seal(): void;
     readonly seenText: string;
+    readonly signal: AbortSignal;
     readonly value: string;
 }
 
@@ -622,12 +626,12 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onColumnHidden?: (column: string) => void;
     readonly onColumnOrderChanged?: (order: readonly string[]) => void;
     readonly onColumnWidthChanged?: (change: GridColumnWidthChange) => void;
-    readonly onEdit?: (intent: GridEditIntent<Row>) => void;
+    readonly onEdit?: (intent: GridEditIntent<Row>) => void | PromiseLike<void>;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
     readonly onLeave?: () => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
-    readonly onPaste?: (intent: GridPasteIntent) => void;
+    readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
     readonly onPinnedCountChanged?: (count: number) => void;
     readonly onRedo?: () => void;
     readonly onRefused?: (refusal: GridRefusal<Row>) => void;
@@ -674,7 +678,7 @@ export interface GridPage<Row> {
 // @public
 export class GridPasteIntent {
     // @internal
-    constructor(plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[], rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, enteredAt?: CellPosition, fillSource?: SelectionRange);
+    constructor(plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[], rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, signal: AbortSignal, enteredAt?: CellPosition, fillSource?: SelectionRange);
     get cellCount(): number;
     readonly enteredAt: CellPosition | undefined;
     readonly fillSource: SelectionRange | undefined;
@@ -687,6 +691,7 @@ export class GridPasteIntent {
     readonly rowSequenceVersion: number;
     // @internal
     seal(): void;
+    readonly signal: AbortSignal;
     valueFor(target: CellPosition): string;
     readonly values: readonly (readonly string[])[];
 }
