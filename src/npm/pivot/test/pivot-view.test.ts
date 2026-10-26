@@ -1445,8 +1445,12 @@ describe('ExPivot\'s Defer Layout Update (ADR-0061)', () => {
         updateButton(root).click();
         await settled();
         expect(refused).toEqual([['Region']]);
-        // The pending layout is the user's work in the pane, and stays.
+        // The pending layout is the user's work in the pane, and stays, with the moves it names.
         expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Region']);
+        expect(updateButton(root).disabled).toBe(false);
+        setDeferred(root, false);
+        await settled();
+        expect(refused).toEqual([['Region'], ['Region']]);
     });
 
     it('ADR-0061: a new source without a field the pending layout places takes the pane back to the report\'s layout', async () => {

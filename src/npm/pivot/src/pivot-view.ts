@@ -328,10 +328,9 @@ export class PivotView {
     #layoutGiven: PivotLayout | undefined;
     #shown: Shown;
     #asked: Question | undefined;
-    // While Defer Layout Update is ticked, the layout the pane builds and Update applies (ADR-0061), and what the
-    // pane moved into it, which a refusal of that layout names.
-    #pending: PivotLayout | undefined;
-    #pendingMoves: readonly FieldListMove[] = [];
+    // While Defer Layout Update is ticked (ADR-0061): the layout the pane built, which Update applies, or none while the
+    // pane shows the report's own; and what the pane moved into it, which a refusal of that layout names.
+    #deferred: Deferred | undefined;
     #generation = 0;
     #requests = 0;
     #refusal: string | undefined;
@@ -520,15 +519,17 @@ export class PivotView {
             ? options.layout
             : undefined;
         const asked = consumerLayout ?? (sourceMoved ? this.#layoutAhead : undefined);
+        const declared = this.#declared(options.source);
         // Checked against the source it will be asked of before anything changes.
-        if (asked !== undefined) validateLayout(asked, this.#declared(options.source));
+        if (asked !== undefined) validateLayout(asked, declared);
         this.#options = options;
         if (layoutMoved) this.#layoutGiven = options.layout;
         // The Consumer's layout replaces the user's, a pending one too. A pending layout placing a field the new source
-        // does not have goes back to the report's, which is checked against it above.
-        if (this.#pending !== undefined && (consumerLayout !== undefined || (sourceMoved && !placesOnly(this.#pending, this.#declared(options.source))))) {
-            this.#pending = asked ?? this.#layoutAhead;
-            this.#pendingMoves = [];
+        // does not have goes back to the report's, which is checked against it above: the rest of what a layout is
+        // checked for does not depend on the source, and the pending one was made by the pane's own edits.
+        const pending = this.#deferred?.layout;
+        if (pending !== undefined && (consumerLayout !== undefined || (sourceMoved && !placesOnly(pending, declared)))) {
+            this.#deferred = noneDeferred;
         }
         const densityMoved = options.density !== before.density;
         const settingsMoved = options.locale !== before.locale || options.label !== before.label || densityMoved;
@@ -611,7 +612,7 @@ export class PivotView {
 
     // The pane's layout: the pending one while Defer Layout Update is ticked, otherwise the report's.
     get #paneLayout(): PivotLayout {
-        return this.#pending ?? this.#layoutAhead;
+        return this.#deferred?.layout ?? this.#layoutAhead;
     }
 
     get #maxLeaves(): number {
@@ -663,9 +664,13 @@ export class PivotView {
         }
         // While Defer Layout Update is ticked the pane builds the pending layout, and the report and the source are
         // left alone (ADR-0061).
-        if (this.#pending !== undefined) {
-            this.#pending = edit.layout;
-            if (edit.moved !== undefined) this.#pendingMoves = [...this.#pendingMoves, edit.moved];
+        const deferred = this.#deferred;
+        if (deferred !== undefined) {
+            const { moved } = edit;
+            // A field moved into an Area again is named once.
+            const moves = moved === undefined ? deferred.moves
+                : [...deferred.moves.filter(move => move.field !== moved.field || move.area !== moved.area), moved];
+            this.#deferred = Object.freeze({ layout: edit.layout, moves: Object.freeze(moves) });
             this.#refusal = undefined;
             this.#draw();
             return;
@@ -675,41 +680,39 @@ export class PivotView {
 
     // A gesture on the report or the Pivot Toolbar, made to the layout the report is on. While Defer Layout Update
     // holds a pending layout, it reaches that one too, so Update does not take it back; where the pending layout does
-    // not hold what the gesture was for, it stays as it is. A gesture that would change nothing now asks nothing.
+    // not hold what the gesture was for, it stays as it is. A pane that shows the report's own layout goes on showing
+    // it, refused or not. A gesture that would change nothing now asks nothing.
     #reportEdit(edit: (layout: PivotLayout) => PivotLayout | undefined, toggled?: ToggledItem): void {
+        const deferred = this.#deferred;
+        if (deferred?.layout !== undefined) this.#deferred = Object.freeze({ ...deferred, layout: edit(deferred.layout) ?? deferred.layout });
         const now = this.#layoutAhead;
         const next = edit(now);
-        const pending = this.#pending;
-        // A pending layout that is the report's own holds nothing to apply, and goes on holding nothing.
-        if (pending !== undefined) this.#pending = pending === now ? next ?? pending : edit(pending) ?? pending;
         if (next === undefined || next === now) this.#draw();
         else this.#move(next, [], toggled);
     }
 
     // Defer Layout Update ticked holds the pane's changes from here on; unticked, it applies them, as Excel does.
     #setDeferred(deferred: boolean): void {
-        if (deferred === (this.#pending !== undefined)) return;
+        const held = this.#deferred;
+        if (deferred === (held !== undefined)) return;
         if (deferred) {
-            this.#pending = this.#layoutAhead;
-            this.#pendingMoves = [];
+            this.#deferred = noneDeferred;
             this.#draw();
             return;
         }
-        const pending = defined(this.#pending, 'a pending layout');
-        const moves = this.#pendingMoves;
-        this.#pending = undefined;
-        this.#pendingMoves = [];
-        if (pending === this.#layoutAhead) this.#draw();
-        else this.#move(pending, moves);
+        this.#deferred = undefined;
+        const pending = held?.layout;
+        if (held === undefined || pending === undefined || pending === this.#layoutAhead) this.#draw();
+        else this.#move(pending, held.moves);
     }
 
-    // Update applies the pending layout in one change, and Defer Layout Update stays ticked.
+    // Update applies the pending layout in one change, and Defer Layout Update stays ticked. The layout stays the
+    // pane's until its report is shown: a refused one is still the user's work, with the moves it names.
     #applyPending(): void {
-        const pending = this.#pending;
-        if (pending === undefined || pending === this.#layoutAhead) return;
-        const moves = this.#pendingMoves;
-        this.#pendingMoves = [];
-        this.#move(pending, moves);
+        const held = this.#deferred;
+        const pending = held?.layout;
+        if (held === undefined || pending === undefined || pending === this.#layoutAhead) return;
+        this.#move(pending, held.moves);
     }
 
     #move(layout: PivotLayout, moved: readonly FieldListMove[], toggled?: ToggledItem): void {
@@ -792,6 +795,8 @@ export class PivotView {
     #showLayout(layout: PivotLayout, answered: { readonly answer: PivotReportState; readonly question: Question } | undefined, raise: boolean): void {
         const answer = answered?.answer;
         this.#shown = { layout, answer, question: answered?.question };
+        // The pending layout, applied and shown, is the report's own now: nothing is left to apply.
+        if (this.#deferred?.layout === layout) this.#deferred = noneDeferred;
         this.#showReport(answered);
         if (answer !== undefined && this.#counts !== undefined && this.#counts.sourceVersion !== answer.metadata.sourceVersion) {
             // Counted under another Source Version: asked again, so the marks follow the data (ADR-0370 section 3).
@@ -1114,10 +1119,10 @@ export class PivotView {
     }
 
     // An outer Item's button pressed, or its label double clicked: the Item is collapsed or expanded (ADR-0063).
-    // The press does what the button it was taken on said, against the pane's layout, the one the newest question
+    // The press does what the button it was taken on said, against the report's layout, the one the newest question
     // asks for; where that layout no longer holds the Item as the button painted it, a press already moved it, or
-    // its field left the pane, and the press is refused rather than turned into its opposite (spine rule 6). Two
-    // presses of one painted button collapse once, as the Razor component's do.
+    // its field left the layout, and the press is refused rather than turned into its opposite (spine rule 6). Two
+    // presses of one painted button collapse once, as the Razor component's do. A pending layout follows it.
     // An Item toggled on a row, as it keeps the Focus in the report the toggle brings.
     #toggledItemOf(row: PivotDisplayRow, toggled: PivotFieldItem): ToggledItem {
         const level = row.rowPath.findIndex(step => step.field === toggled.field && itemKeysEqual(step.item, toggled.item));
@@ -1624,8 +1629,8 @@ export class PivotView {
                 maxLeaves: this.#maxLeaves,
                 locale: this.#locale,
                 words,
-                deferred: this.#pending !== undefined,
-                canUpdate: this.#pending !== undefined && this.#pending !== this.#layoutAhead,
+                deferred: this.#deferred !== undefined,
+                canUpdate: this.#deferred?.layout !== undefined && this.#deferred.layout !== this.#layoutAhead,
                 popup: this.#open?.kind === 'entry' || this.#open?.kind === 'panel' ? { entry: this.#open.entry, frame: this.#open.popup.element } : undefined,
             });
         }
@@ -1634,6 +1639,15 @@ export class PivotView {
         if (left !== undefined) this.#returnKeyboard(left, this.#entryNow(left));
     }
 }
+
+/** Defer Layout Update ticked: the layout the pane built, or none while it shows the report's own, and the moves into
+ * it. */
+interface Deferred {
+    readonly layout: PivotLayout | undefined;
+    readonly moves: readonly FieldListMove[];
+}
+
+const noneDeferred: Deferred = Object.freeze({ layout: undefined, moves: Object.freeze([]) });
 
 // Whether every field `layout` places is one of `declared`.
 function placesOnly(layout: PivotLayout, declared: ReadonlyMap<string, unknown>): boolean {

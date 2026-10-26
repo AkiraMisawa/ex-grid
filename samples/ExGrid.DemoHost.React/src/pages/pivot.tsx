@@ -97,7 +97,14 @@ export function Pivot(): ReactElement {
         if (detailsAsked !== 'page') return undefined;
         const show = async (event: PivotShowDetailsEvent): Promise<void> => {
             const asked = ++detailsAsks.current;
-            const page = await event.records(0, Number.MAX_SAFE_INTEGER);
+            let page;
+            try {
+                page = await event.records(0, Number.MAX_SAFE_INTEGER);
+            } catch (error) {
+                // The records the page showed answered another cell: they go, and the failure is said, and raised.
+                if (asked === detailsAsks.current) setDetails({ caption: `The trades could not be read: ${String(error)}`, trades: [] });
+                throw error;
+            }
             if (asked !== detailsAsks.current) return;
             if (page.refusal !== undefined) {
                 setDetails({ caption: page.refusal.message, trades: [] });
