@@ -15,6 +15,7 @@
 
 import type { SnapshotDecimal } from '@ex-grid/data';
 import { decimalCompare, decimalToNumber, doubleOfWide, scaledTo } from '../aggregates/exact-decimal';
+import type { PartColumns } from '../aggregates/parts';
 import type { PivotNumber } from '../cube/answer';
 import { elementAt } from '../must';
 
@@ -40,6 +41,29 @@ export interface LevelParts {
     readonly mean?: number;
     /** The running sum of squared deviations from the mean. */
     readonly m2?: number;
+}
+
+/** One cell's parts of one Value Field as {@link levelMismatch} reads them: every part its columns carry, but
+ * for a cell of no numbers or of #NUM!, whose parts are not read. */
+export function levelPartsAt(columns: PartColumns, cell: number): LevelParts {
+    const counts = elementAt(columns.counts, cell);
+    const held = { values: counts.values, numbers: counts.numbers, nonFinite: counts.nonFinite };
+    if (counts.numbers === 0 || counts.nonFinite) return held;
+    const sum = columns.sums?.[cell];
+    const extremes = columns.extremes?.[cell];
+    const product = columns.products?.[cell];
+    const variance = columns.variances?.[cell];
+    const absoluteSum = columns.absolutes?.[cell];
+    return {
+        ...held,
+        ...(sum === undefined ? {} : { sum: sum.inexact ? { kind: 'double', value: sum.double } : { kind: 'exact', value: sum.exact } }),
+        ...(sum !== undefined && sum.inexact && absoluteSum !== undefined ? { absoluteSum } : {}),
+        ...(extremes === undefined ? {} : extremes.inexact
+            ? { min: { kind: 'double', value: extremes.min }, max: { kind: 'double', value: extremes.max } }
+            : { min: { kind: 'exact', value: extremes.exactMin }, max: { kind: 'exact', value: extremes.exactMax } }),
+        ...(product === undefined ? {} : { product }),
+        ...(variance === undefined ? {} : { mean: variance.mean, m2: variance.m2 }),
+    };
 }
 
 /** The part of a group that does not add up from its children, named as a refusal says it. */

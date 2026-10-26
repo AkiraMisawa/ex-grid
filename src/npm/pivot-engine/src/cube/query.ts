@@ -113,7 +113,8 @@ function sameRules(one: readonly PivotLevelRule[], other: readonly PivotLevelRul
         });
 }
 
-function sameLevels(a: PivotLevels | undefined, b: PivotLevels | undefined): boolean {
+/** Whether two questions' levels show the same groups: both none, or the same rules. */
+export function sameLevels(a: PivotLevels | undefined, b: PivotLevels | undefined): boolean {
     if (a === undefined || b === undefined) return a === b;
     return sameRules(a.rows, b.rows) && sameRules(a.columns, b.columns);
 }

@@ -256,6 +256,13 @@ that does, a layout past `MaxLeaves` is not refused:
   answer says which it is; a level answer to a question that asked for none, or a cell the rules do not
   show, or a shown cell without its parent, is refused as another question's answer (ADR-0066). The
   records of a cell are checked like its parts: its children's add up to it, exactly.
+
+  *(Built on 2026-10-25 in `@ex-grid/pivot-engine`.)* A report source asks every question of a source
+  that declares Level Aggregates with the levels, not only one whose bound passes the cap: the source
+  answers with the leaves whenever they fit, so the bound would decide nothing the answer does not, and
+  it stays the drag hint above. A cube made from leaves holds every collapse of its layout; one made from
+  Level Aggregates holds only the groups it was asked for: a layout that collapses some of them is laid
+  out from it, and one that shows a group below them is asked again.
 - **Excel's rules stay in the engine.** Averages, variances, Show Values As, subtotals and the layout
   are computed from the parts in the browser, by the same code as Leaf Aggregates.
 - **Every group shown is checked against its parent.** The engine composes each sibling set's parts and
