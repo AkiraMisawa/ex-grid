@@ -43,9 +43,9 @@ export interface SheetToolbarItem {
     readonly disabledReason: string | undefined;
     /** What a press does; `undefined` for an item that is never pressed, whose `disabledReason` says why. */
     readonly press: (() => void) | undefined;
-    /** For a menu or a split control, what opens its list; `fromKeyTip` when a KeyTip opened it, so Escape there goes
-     * back to the KeyTips. */
-    readonly open: ((fromKeyTip: boolean) => void) | undefined;
+    /** For a menu or a split control, what opens its list; `keyTipRow` is the row whose KeyTips opened it, which Escape
+     * there goes back to, or `undefined` where no KeyTip did. */
+    readonly open: ((keyTipRow: number | undefined) => void) | undefined;
     /** Its KeyTip letters, Excel's Home tab's, or `undefined` for none. */
     readonly keyTip: string | undefined;
 }
@@ -125,9 +125,8 @@ export class SheetToolbar {
     // The item the keyboard is on while the band holds it: its key, so a repaint keeps it.
     #active: string | undefined;
     #painted: SheetToolbarPaint | undefined;
-    // The KeyTips while they stand, and the row whose KeyTip opened the list standing, which Escape there goes back to.
+    // The KeyTips while they stand.
     #keyTips: KeyTips | undefined;
-    #keyTipListRow: number | undefined;
     readonly #rowBadges = new Map<HTMLElement, HTMLElement>();
 
     constructor(doc: Document, hooks: SheetToolbarHooks) {
@@ -165,19 +164,20 @@ export class SheetToolbar {
     /** Starts the KeyTips, the rows' letters, and takes the keyboard to the band; false where no row has a letter. */
     startKeyTips(): boolean {
         if (this.#painted?.rows.some(row => row.keyTip !== undefined) !== true) return false;
-        this.#keyTipListRow = undefined;
         this.#showKeyTips({ row: undefined, typed: '' });
         this.band.focus({ preventScroll: true });
         return true;
     }
 
-    /** Escape in a list a KeyTip opened: back to that row's letters, the keyboard on the band. */
-    backToKeyTips(): void {
-        const row = this.#keyTipListRow;
-        this.#keyTipListRow = undefined;
-        if (row === undefined) return;
+    /** Escape in a list a KeyTip opened: back to the letters of the row it was opened from, the keyboard on the band. */
+    backToKeyTips(row: number): void {
         this.#showKeyTips({ row, typed: '' });
         this.band.focus({ preventScroll: true });
+    }
+
+    /** Ends the KeyTips where they stand without moving the keyboard, as the band is taken away. */
+    dropKeyTips(): void {
+        this.#keyTips = undefined;
     }
 
     /** The band's height for `rows` rows of `rowHeightPx`. */
@@ -379,8 +379,7 @@ export class SheetToolbar {
     #openFromBand(key: string): boolean {
         const open = this.#shownItem(key)?.open;
         if (open === undefined) return false;
-        this.#keyTipListRow = undefined;
-        open(false);
+        open(undefined);
         return true;
     }
 
@@ -458,6 +457,9 @@ export class SheetToolbar {
             else this.#endKeyTips();
             return;
         }
+        // Shift and Caps Lock change no letter the KeyTips read, which are matched in capitals: the letter they come
+        // before is still to come.
+        if (event.key === 'Shift' || event.key === 'CapsLock') return;
         if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) {
             this.#endKeyTips();
             return;
@@ -486,19 +488,19 @@ export class SheetToolbar {
             else this.#endKeyTips();
             return;
         }
-        this.#showKeyTips(undefined);
         if (chosen.disabledReason !== undefined) {
-            this.#hooks.giveBack();
+            this.#endKeyTips();
             return;
         }
+        // The item becomes the active one before the letters go, so the band shows the item its keys act on should
+        // the list not open.
+        this.#active = chosen.key;
+        this.#showKeyTips(undefined);
         // Excel's Alt, H, H opens the Fill's palette rather than setting its colour: a list opens.
         if (chosen.open !== undefined) {
-            this.#keyTipListRow = tips.row;
-            this.#active = chosen.key;
-            chosen.open(true);
+            chosen.open(tips.row);
             return;
         }
-        this.#active = chosen.key;
         this.#hooks.giveBack();
         chosen.press?.();
     }

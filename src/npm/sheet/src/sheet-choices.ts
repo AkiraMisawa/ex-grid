@@ -120,7 +120,7 @@ export class SheetChoicesPanel {
         let moved: number;
         switch (event.key) {
             case 'ArrowDown': moved = this.#next(this.#focused, across); break;
-            case 'ArrowUp': moved = this.#next(this.#focused, -across); break;
+            case 'ArrowUp': moved = across > 1 ? this.#upFromSwatch() : this.#next(this.#focused, -1); break;
             case 'ArrowRight': moved = across > 1 ? this.#next(this.#focused, 1) : this.#focused; break;
             case 'ArrowLeft': moved = across > 1 ? this.#next(this.#focused, -1) : this.#focused; break;
             case 'Home': moved = this.#next(-1, 1); break;
@@ -133,6 +133,15 @@ export class SheetChoicesPanel {
         this.#showFocused();
         this.#buttons[moved]?.focus();
     };
+
+    // Up from a swatch: the swatch above, or from the first row the choice listed before the swatches, as Automatic and
+    // No Fill stand above Excel's palette.
+    #upFromSwatch(): number {
+        const above = this.#next(this.#focused, -swatchesAcross);
+        if (above !== this.#focused) return above;
+        const firstSwatch = this.#choices.findIndex(choice => choice.swatch !== undefined);
+        return firstSwatch > 0 ? this.#next(firstSwatch, -1) : this.#focused;
+    }
 
     #choose(at: number): void {
         const choice = this.#choices[at];

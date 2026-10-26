@@ -902,6 +902,38 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         key('b', { ctrlKey: true });
         expect(document.activeElement).toBe(grid);
         expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(true);
+        // Shift before a letter waits for the letter: the KeyTips are matched in capitals.
+        key('F10');
+        key('Shift', { shiftKey: true });
+        key('H', { shiftKey: true });
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(14);
+        key('Escape');
+        key('Escape');
+        expect(document.activeElement).toBe(grid);
+        // An Alt held through a press is not alone.
+        key('Alt', { altKey: true });
+        grid?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, altKey: true }));
+        grid?.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true }));
+        expect(document.activeElement).toBe(grid);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
+    });
+
+    it('ADR-0100: the toolbar hidden while the KeyTips stand takes them away, and shown again it shows none', async () => {
+        const options = { showToolbar: true } as const;
+        const { element, sheet } = sheetOf(options);
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        key('F10');
+        key('h');
+        key('h');
+        expect(element.querySelector('.ex-sheet-choices')).not.toBeNull();
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: false });
+        expect(element.querySelector('.ex-sheet-choices')).toBeNull();
+        expect(document.activeElement).toBe(grid);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, ...options });
+        expect(element.querySelector('.ex-sheet-toolbar')).not.toBeNull();
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
     });
 
     it('ADR-0100: Alt, H, H opens the Fill\'s palette; Escape there goes back to the row\'s letters, then to the rows\', then to the Sheet', async () => {
@@ -913,7 +945,12 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         key('F10');
         key('h');
         key('h');
-        const { choice } = choicesOf(element);
+        const { list, choice } = choicesOf(element);
+        expect(document.activeElement).toBe(choice('No Fill'));
+        // ↑ from the palette's first row goes back to No Fill, which stands above it.
+        key('ArrowDown');
+        expect(document.activeElement).toBe(list.querySelectorAll('.ex-sheet-swatch-choice')[0]);
+        key('ArrowUp');
         expect(document.activeElement).toBe(choice('No Fill'));
         key('Escape');
         expect(element.querySelector('.ex-sheet-choices')).toBeNull();
