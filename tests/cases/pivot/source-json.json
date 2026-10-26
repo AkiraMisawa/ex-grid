@@ -790,6 +790,72 @@
         "refusal": "format",
         "saying": "Cell 15 is a rest of window 2, and the answer has 1."
       }
+    },
+    {
+      "name": "ADR-0370 (section 3): a server's Change Batch crosses, each value by its field's type, one of another type tagged with its own, and a date part as its whole number",
+      "document": "changeBatch",
+      "read": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v42\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Risk\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"},{\"name\":\"Year\",\"type\":\"date\",\"datePart\":\"year\"}],\"removed\":[[\"Rates\",100.5,\"1.5\",\"2026-01-02T00:00:00\",true,{\"number\":2026}]],\"added\":[[\"Rates\",120,\"1.5\",\"2026-01-02T13:45:00\",true,{\"number\":2026}],[null,{\"text\":\"7\"},\"-0\",null,null,null],[\"\",79228162514264337593543950335,\"Infinity\",\"2026-03-04T00:00:00\",{\"text\":\"yes\"},{\"double\":\"2025\"}]]}",
+      "expect": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v42\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Risk\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"},{\"name\":\"Year\",\"type\":\"date\",\"datePart\":\"year\"}],\"removed\":[[\"Rates\",100.5,\"1.5\",\"2026-01-02T00:00:00\",true,{\"number\":2026}]],\"added\":[[\"Rates\",120,\"1.5\",\"2026-01-02T13:45:00\",true,{\"number\":2026}],[null,{\"text\":\"7\"},\"-0\",null,null,null],[\"\",79228162514264337593543950335,\"Infinity\",\"2026-03-04T00:00:00\",{\"text\":\"yes\"},{\"number\":2025}]]}"
+    },
+    {
+      "name": "ADR-0370 (section 3): a Change Batch with no records crosses",
+      "document": "changeBatch",
+      "read": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v42\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Risk\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"},{\"name\":\"Year\",\"type\":\"date\",\"datePart\":\"year\"}],\"removed\":[],\"added\":[]}",
+      "expect": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v42\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Risk\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"},{\"name\":\"Year\",\"type\":\"date\",\"datePart\":\"year\"}],\"removed\":[],\"added\":[]}"
+    },
+    {
+      "name": "ADR-0370 (section 3): a Change Batch's record of another length is refused",
+      "document": "changeBatch",
+      "read": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v42\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"}],\"removed\":[[\"Rates\",\"FX\"]],\"added\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A batch record carries 2 values, and the batch has 1 fields."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a Change Batch's record that is not an array is refused",
+      "document": "changeBatch",
+      "read": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v42\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"}],\"removed\":[],\"added\":[{\"Desk\":\"Rates\"}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A batch record is an array of values."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a Change Batch names the version it goes to",
+      "document": "changeBatch",
+      "read": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"}],\"removed\":[],\"added\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'to' is a string, and is required."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a Change Batch's field of a type no field has is refused",
+      "document": "changeBatch",
+      "read": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v42\",\"fields\":[{\"name\":\"Desk\",\"type\":\"money\"}],\"removed\":[],\"added\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'money' is not a type this reader knows."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a Change Batch that leaves out what its data gained is refused, not read as gaining nothing",
+      "document": "changeBatch",
+      "read": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v42\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"}],\"removed\":[[\"Rates\"]]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'added' is an array, and is required."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a Change Batch goes from one Source Version to another",
+      "document": "changeBatch",
+      "read": "{\"version\":1,\"type\":\"changeBatch\",\"from\":\"v41\",\"to\":\"v41\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"}],\"removed\":[],\"added\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document holds a value that cannot be: A Change Batch goes from one Source Version to another, each named with text."
+      }
     }
   ]
 }

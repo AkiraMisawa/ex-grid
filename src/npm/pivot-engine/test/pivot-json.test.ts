@@ -3,7 +3,7 @@
 // what refuses it. tests/ExPivot.Engine.Tests/Cases/PivotJsonCaseTests.cs is the C# runner, and the one that
 // writes the answers.
 import { describe, expect, it } from 'vitest';
-import { PivotJson, pivotDetailsQuery, pivotQuery } from '../src/index';
+import { datePartField, PivotJson, pivotDetailsQuery, pivotField, pivotQuery, type PivotField, type PivotFieldType } from '../src/index';
 import { jsonDouble } from '../src/json/json-text';
 import { doubleRaw } from '../src/text/invariant';
 import { caseFiles, must, refusalOf, text, type Json } from './cases';
@@ -18,8 +18,34 @@ function written(document: string, json: string): string {
         case 'detailPage': return PivotJson.writeDetailPage(PivotJson.readDetailPage(json));
         case 'sourceChanged': return PivotJson.writeSourceChanged(PivotJson.readSourceChanged(json));
         case 'itemCounts': return PivotJson.writeItemCounts(PivotJson.readItemCounts(json));
+        case 'changeBatch': {
+            // The Script Core reads a batch against the source's fields; here the source's are the batch's own.
+            const fields = fieldsOf(json);
+            const notice = PivotJson.readServerNotice(json, fields);
+            if (notice.kind !== 'changeBatch') throw new Error('A changeBatch document reads as a Change Batch.');
+            return PivotJson.writeChangeBatch(notice, fields);
+        }
         default: throw new Error(`'${document}' is no document the cases read.`);
     }
+}
+
+// The fields a batch document names, where it names them as a reader takes them; none otherwise, so that the
+// reader refuses the document in its own words.
+function fieldsOf(json: string): PivotField[] {
+    const root: unknown = JSON.parse(json);
+    const named: unknown = typeof root === 'object' && root !== null ? Reflect.get(root, 'fields') : undefined;
+    if (!Array.isArray(named)) return [];
+    const types: readonly unknown[] = ['text', 'number', 'date', 'boolean'];
+    const fields: PivotField[] = [];
+    for (const field of named as unknown[]) {
+        const name: unknown = typeof field === 'object' && field !== null ? Reflect.get(field, 'name') : undefined;
+        const type: unknown = typeof field === 'object' && field !== null ? Reflect.get(field, 'type') : undefined;
+        const part: unknown = typeof field === 'object' && field !== null ? Reflect.get(field, 'datePart') : undefined;
+        if (typeof name !== 'string' || name.length === 0 || !types.includes(type)) return [];
+        if (part === 'year' || part === 'quarter' || part === 'month') fields.push(datePartField(name, 'Date', part));
+        else fields.push(pivotField({ name, type: type as PivotFieldType }));
+    }
+    return fields;
 }
 
 function answer(document: string, json: string): Json {

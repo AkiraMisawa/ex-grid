@@ -7,7 +7,7 @@
 import { createSnapshot, SnapshotError, type Snapshot, type SnapshotColumn, type SnapshotColumnInput, type SnapshotDecimal, type SnapshotKind } from '@ex-grid/data';
 import { declaredFields, datePartTitle, type PivotField, type PivotRecordField } from '../fields/pivot-field';
 import { ItemKeys, type ItemKey } from '../items/item-key';
-import { readRecordValue, type RecordValue } from '../items/record-value';
+import { isDecimal, readRecordValue, type RecordValue } from '../items/record-value';
 import type { PivotDatePart, PivotFieldType } from '../layout/pivot-enums';
 import { defined, elementAt, unreachable } from '../must';
 import { datePartOf } from '../words/pivot-words';
@@ -191,7 +191,7 @@ export function detailSnapshot(records: readonly (readonly DetailValue[])[], fie
         const value = elementAt(record, f);
         const part = elementAt(fields, f).datePart;
         if (part !== undefined && value !== null && typeof value !== 'number') {
-            throw new TypeError(`The ${datePartTitle(part)} of a date travels as its number, and the record carries a ${typeof value === 'object' ? 'decimal' : typeof value}.`);
+            throw new TypeError(`The ${datePartTitle(part)} of a date travels as its number, and the record carries a ${isDecimal(value) ? 'decimal' : typeof value}.`);
         }
         // A date travels by its ticks; every other value is read as a Consumer's is.
         return typeof value === 'bigint' ? { kind: 'date', ticks: value } : readRecordValue(value);

@@ -356,7 +356,7 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
     aggregate, items, details,
     subscribe: notify => {
         const socket = new WebSocket('/pivot/live');                  // your transport
-        socket.onmessage = event => notify(readNotice(event.data));  // your message to a notice
+        socket.onmessage = event => notify(PivotJson.readServerNotice(event.data, fields));
         return () => socket.close();
     },
 });
@@ -374,6 +374,15 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
             carries its values as a record behind a cell does: an exact number as a <code>SnapshotDecimal</code>, a date as
             its ticks, and a date part as its number; a JavaScript number is a double, whose sum is asked again. A <code>LocalPivotReportSource</code> over the source tells
             its own listeners each notice, as it does over a Snapshot.
+        </p>
+        <p>
+            <code>PivotJson</code> carries both notices, as it carries the questions and answers. A server built on
+            <code>ExPivot.Engine</code> writes a notice with <code>PivotJson.Write(new PivotSourceChanged(version))</code>
+            and a batch with <code>PivotJson.Write(new PivotServerChangeBatch(from, to, fields, removed, added))</code>,
+            its records the <code>PivotDetailRecord</code>s it would show behind a cell; a page reads either with
+            <code>PivotJson.readServerNotice(text, fields)</code>, the same document to the byte. A batch names its fields,
+            and one written under other fields, or in another order, is refused by name rather than read into the wrong
+            ones.
         </p>
         <p>
             The cube and the report run in slices too. <code>pivotCubeAsync</code> and <code>pivotReportAsync</code> take
