@@ -1177,6 +1177,8 @@ describe('ExPivot\'s Filter… (ADR-0061, ADR-0066)', () => {
         expect(filterItems(root)).toEqual(['☑ (Select All)', '☑ Credit', '☑ FX', '☑ Rates']);
     });
 
+    // Drawing 10,001 Items in jsdom takes about 3.5 s on its own, past Vitest's 5 s default on a loaded runner:
+    // the longer budget is CPU time for the DOM, not a wait for anything to happen.
     it('ADR-0061: past the Items Filter… holds, the list says so, and a search is the source\'s to answer', async () => {
         const source = new ManyCodes(10_001);
         const { root } = mount({ source, layout: createPivotLayout({ rows: ['Code'], values: ['Amount'] }) });
@@ -1202,7 +1204,7 @@ describe('ExPivot\'s Filter… (ADR-0061, ADR-0066)', () => {
         await settled();
         tickItem(root, 'C10000');
         expect(panel(root).querySelector<HTMLButtonElement>('.ex-pivot-ok')?.disabled).toBe(false);
-    });
+    }, 30_000);
 });
 
 function bandButton(root: HTMLElement, caption: string): HTMLButtonElement {
