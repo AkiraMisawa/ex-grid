@@ -2005,6 +2005,11 @@ describe('ExPivot\'s Find over the report (ADR-0332, ADR-0333)', () => {
         expect(await findInReport(source, metadata, { ...request, from: cellAt(60, 0), scope }, signal))
             .toEqual({ kind: 'answered', answer: { found: true, row: 70, column: 'L' } });
         expect(asked).toEqual([{ top: 61, left: 0, bottom: 79, right: 0 }]);
+        // Nothing found: the walk wraps to the Focus's row and reads that row alone again.
+        asked.length = 0;
+        expect(await findInReport(source, metadata, { ...request, text: 'z', from: cellAt(60, 0), scope }, signal))
+            .toEqual({ kind: 'answered', answer: { found: false } });
+        expect(asked).toEqual([{ top: 61, left: 0, bottom: 79, right: 0 }, { top: 60, left: 0, bottom: 60, right: 0 }]);
     });
 });
 

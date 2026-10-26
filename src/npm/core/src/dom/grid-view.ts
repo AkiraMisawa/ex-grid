@@ -4475,6 +4475,12 @@ export class GridView<Row> {
         }, (error: unknown) => {
             if (this.#destroyed || this.#findStepping !== stepping) return;
             this.#findStepping = undefined;
+            // Given up by a source since replaced: whatever stopped it, it was about rows the grid no longer shows,
+            // which the panel says as any answer from such a source (ADR-0142).
+            if (source !== this.#source && error instanceof DOMException && error.name === 'AbortError') {
+                this.#refuseFind('sourceChanged');
+                return;
+            }
             this.#setFindOutcome({ kind: 'none' });
             // Given up by whoever answers, who says why itself: nothing moves, and no "No match" is claimed for
             // cells nobody read (ADR-0055, ADR-0025).

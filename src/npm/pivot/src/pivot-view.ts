@@ -916,7 +916,7 @@ export class PivotView {
             answered: answer,
             nextRequestId: () => this.#nextRequestId(),
             moved: () => { this.#reportMoved(answer); },
-            findGivenUp: why => this.#findGivenUp(answer, why),
+            findGivenUp: why => { this.#findGivenUp(answer, why); },
         });
         this.#drawGrid();
         if (question.toggled !== undefined) this.#placeToggled(question.toggled);
@@ -999,8 +999,8 @@ export class PivotView {
 
     // A Find step over the report that cannot go on is said on the Pivot Toolbar, while that report is the one shown:
     // a step over a report since replaced is the grid's to refuse, as its source is no longer the grid's (ADR-0332 §1).
-    #findGivenUp(answer: PivotReportState, why: ReportFindGivenUp): boolean {
-        if (this.#destroyed || this.#shown.answer !== answer) return false;
+    #findGivenUp(answer: PivotReportState, why: ReportFindGivenUp): void {
+        if (this.#destroyed || this.#shown.answer !== answer) return;
         switch (why.kind) {
             case 'notHeld': this.#refusal = this.#words.word('find-report-not-held'); break;
             case 'refused': this.#refusal = this.#words.fill('source-refused', why.refusal.message); break;
@@ -1008,7 +1008,6 @@ export class PivotView {
             default: unreachable(why);
         }
         this.#draw();
-        return true;
     }
 
     // The report grid's refusals: Ctrl+H on a report, which is not written, is said on the Pivot Toolbar in Excel's

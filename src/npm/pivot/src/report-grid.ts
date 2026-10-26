@@ -41,9 +41,6 @@ export class ReportCellValue {
     }
 }
 
-/** What a step over a report no longer shown answers: the grid refuses it by its source, which is another now. */
-const notFoundInReport: GridFindResult = Object.freeze({ found: false });
-
 /**
  * The Match Mark's rule over the report (ADR-0332 §4): the reference rule over the text a cell shows, which is the
  * text its Copy reads and `findInReport` finds by, so the mark and the step agree. One function for every pivot:
@@ -272,9 +269,8 @@ export interface ReportRowsRequest {
     readonly nextRequestId: () => string;
     /** Told when a Window came from another report: the report is to be asked again. */
     readonly moved: () => void;
-    /** Told when a Find step over the report cannot go on (ADR-0332 §1): whether it was said, which it is while the
-     * report is the one shown. */
-    readonly findGivenUp: (why: ReportFindGivenUp) => boolean;
+    /** Told when a Find step over the report cannot go on, before the step is given up (ADR-0332 §1). */
+    readonly findGivenUp: (why: ReportFindGivenUp) => void;
 }
 
 /**
@@ -304,14 +300,13 @@ export function reportRows(request: ReportRowsRequest): FetchingGridSource<Pivot
         if (update.metadata.version !== version) throw new ReportMovedError();
         return pageOf(update);
     };
-    // A step that cannot go on is said by the pivot and given up: nothing moves, and nothing claims "no match" for
-    // cells it could not read (ADR-0025). The grid takes an AbortError as a step its Consumer gave up. Over a report
-    // no longer shown, the grid holds another report's rows as its source, and refuses whatever this one answers as
-    // the source having changed, which the panel says: the step is answered as it read, never given up unsaid.
+    // A step that cannot go on is given up: nothing moves, and nothing claims "no match" for cells it could not read
+    // (ADR-0025). The grid takes an AbortError as a step its Consumer gave up; the pivot says why while the report is
+    // the one shown, and over one since replaced the grid says its source changed.
     const find = async (step: GridFindRequest, _query: unknown, signal: AbortSignal): Promise<GridFindResult> => {
         const read = await findInReport(request.source, answered.metadata, step, signal);
         if (read.kind === 'answered') return read.answer;
-        if (!request.findGivenUp(read)) return notFoundInReport;
+        request.findGivenUp(read);
         throw new DOMException('The Find step over the report was given up.', 'AbortError');
     };
     return GridSource.fetch(fetch, {

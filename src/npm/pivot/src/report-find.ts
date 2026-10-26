@@ -57,8 +57,14 @@ export async function findInReport(
     const blockRows = Math.max(1, Math.floor(findBlockCells / names.length));
 
     // The rows a block may hold: within the scope's rows when there is one, so no block reads past them.
-    const first = scope === undefined ? 0 : Math.max(0, Math.min(...scope.map(range => range.topRow)));
-    const last = scope === undefined ? rows - 1 : Math.min(rows - 1, Math.max(...scope.map(range => range.topRow + range.rowCount - 1)));
+    let first = scope === undefined ? 0 : rows - 1;
+    let last = scope === undefined ? rows - 1 : 0;
+    if (scope !== undefined) {
+        for (const range of scope) {
+            first = Math.min(first, Math.max(0, range.topRow));
+            last = Math.max(last, Math.min(rows - 1, range.topRow + range.rowCount - 1));
+        }
+    }
     // The Focus's row is visited twice: first past the Focus, last up to it and on it.
     const visited = (visit: number, position: number): boolean => {
         if (visit === 0) return backward ? position < startColumn : position > startColumn;
@@ -71,12 +77,14 @@ export async function findInReport(
     for (let visit = 0; visit <= rows; visit++) {
         signal.throwIfAborted();
         const row = (((startRow + step * visit) % rows) + rows) % rows;
-        if (row < first || row > last || (scope !== undefined && !scope.some(range => row >= range.topRow && row < range.topRow + range.rowCount))) continue;
+        if (scope !== undefined && !scope.some(range => row >= range.topRow && row < range.topRow + range.rowCount)) continue;
         // A row with no cell left to look at is not read: the Focus at the end of the last row, a step from the start.
         if (!read.some(({ position }) => visited(visit, position))) continue;
         if (block === undefined || row < blockTop || row >= blockTop + block.rows.length) {
-            const top = backward ? Math.max(first, row - blockRows + 1) : row;
-            const bottom = backward ? row : Math.min(last, row + blockRows - 1);
+            // Once the walk has wrapped, it ends on the Focus's row: a block reads no row past it, which was searched first.
+            const wrapped = visit > 0 && (backward ? row >= startRow : row <= startRow);
+            const top = backward ? Math.max(first, row - blockRows + 1, wrapped ? startRow : 0) : row;
+            const bottom = backward ? row : Math.min(last, row + blockRows - 1, wrapped ? startRow : rows - 1);
             const answer = await source.copy(Object.freeze({
                 version: metadata.version,
                 columns: names,

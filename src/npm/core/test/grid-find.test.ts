@@ -256,6 +256,23 @@ describe('a Find step', () => {
         expect(refusals).toEqual([{ kind: 'find', reason: 'sourceChanged' }]);
     });
 
+    it('ADR-0142 / ADR-0055: a step given up by a source since replaced is said as the data replaced', async () => {
+        let giveUp: (() => void) | undefined;
+        const { source } = asking(GridSource.from(deals), () => new Promise((_resolve, reject) => {
+            giveUp = () => { reject(new DOMException('The report it read is gone.', 'AbortError')); };
+        }));
+        const options = { columns, source, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, findsHeaders: false } as const;
+        const { root, view, refusals } = grid(options);
+        await painted();
+        await find(root, 'novak');
+        enter(root, field(root));
+        view.update({ ...options, source: GridSource.from(deals), onRefused: refusal => { refusals.push(refusal); } });
+        defined(giveUp, 'the step')();
+        await settle();
+        expect(outcome(root)).toBe('The data was replaced; find again');
+        expect(refusals).toEqual([{ kind: 'find', reason: 'sourceChanged' }]);
+    });
+
     it('ADR-0055 / ADR-0025: a step given up by whoever answers moves nothing, and claims no "No match"', async () => {
         const { source } = asking(GridSource.from(deals), async () => { throw new DOMException('The server went away.', 'AbortError'); });
         const { root, refusals } = grid({ source });
