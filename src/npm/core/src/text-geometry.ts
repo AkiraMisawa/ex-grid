@@ -23,8 +23,9 @@ export interface GridTextGeometry {
     readonly glyphWidths: Readonly<Record<number, number>>;
 }
 
-// Each Density's metrics, resolved once: resolving builds the glyph table.
+// Each Density's metrics and geometry, made once: resolving builds the glyph table.
 const resolved = new Map<GridDensity, GridMetrics>();
+const geometries = new Map<GridDensity, GridTextGeometry>();
 
 function metricsAt(density: GridDensity): GridMetrics {
     let metrics = resolved.get(density);
@@ -39,8 +40,10 @@ function metricsAt(density: GridDensity): GridMetrics {
  * Worker as it is. A row height does not move it. */
 export function gridTextGeometry(options: { readonly density?: GridDensity } = {}): GridTextGeometry {
     const { density = 'compact' } = options;
+    const held = geometries.get(density);
+    if (held !== undefined) return held;
     const metrics = metricsAt(density).cellMetrics;
-    return Object.freeze({
+    const geometry: GridTextGeometry = Object.freeze({
         wideWidthPx: metrics.wideWidthPx,
         digitWidthPx: metrics.digitWidthPx,
         narrowWidthPx: metrics.narrowWidthPx,
@@ -49,6 +52,8 @@ export function gridTextGeometry(options: { readonly density?: GridDensity } = {
         cellHorizontalPaddingPx: metrics.cellHorizontalPaddingPx,
         glyphWidths: metrics.exportGlyphWidths(),
     });
+    geometries.set(density, geometry);
+    return geometry;
 }
 
 /** The cell width a header needs in a grid drawn at `density`, as an Auto width charges it (ADR-0016): its label,

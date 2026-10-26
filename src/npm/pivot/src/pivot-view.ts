@@ -50,7 +50,8 @@ export interface PivotSelectionChangedEvent {
     readonly selection: GridSelection;
     /** Each selected cell's row and column Items, each cell once, in the order selected (ADR-0340); `undefined`
      * when the selection reaches a row the grid does not hold drawn now, which is read from no Items rather than
-     * from some of them (spine rule 1). A selection of nothing is said with none. */
+     * from some of them (spine rule 1), and when no report is shown. A selection dropped over a report is said with
+     * an empty list. */
     readonly items: readonly PivotCellItems[] | undefined;
 }
 
@@ -692,9 +693,7 @@ export class PivotView {
             get items(): readonly PivotCellItems[] | undefined {
                 if (!read) {
                     read = true;
-                    // A selection of nothing stands for no cell, report or none: a Board lets its narrowing go.
-                    if (selection.ranges.length === 0) items = Object.freeze([]);
-                    else if (metadata !== undefined && state !== undefined) items = cellItems(selection, metadata, state.window, state.windowStart);
+                    if (metadata !== undefined && state !== undefined) items = cellItems(selection, metadata, state.window, state.windowStart);
                 }
                 return items;
             },
@@ -714,15 +713,16 @@ export class PivotView {
     }
 
     // An outer Item's button pressed, or its label double clicked: the Item is collapsed or expanded (ADR-0063).
-    // Each press turns it over in the pane's layout, the one the newest question asks for, not as the button that
-    // was pressed painted it: two presses expand what they collapsed, whether or not the report between them
-    // came first (spine rule 6). A field that left the pane has nothing to turn over.
+    // The press does what the button it was taken on said, against the pane's layout, the one the newest question
+    // asks for; where that layout no longer holds the Item as the button painted it, a press already moved it, or
+    // its field left the pane, and the press is refused rather than turned into its opposite (spine rule 6). Two
+    // presses of one painted button collapse once, as the Razor component's do.
     #toggled(toggle: PivotToggle): void {
         if (this.#destroyed) return;
         const pane = this.#paneLayout;
         const placed = pane.rows.find(placement => placement.field === toggle.field);
-        if (placed === undefined) return;
-        this.#move(setCollapsed(pane, toggle.field, toggle.item, !isItemCollapsed(placed, toggle.item)), undefined);
+        if (placed === undefined || isItemCollapsed(placed, toggle.item) !== toggle.isCollapsed) return;
+        this.#move(setCollapsed(pane, toggle.field, toggle.item, !toggle.isCollapsed), undefined);
     }
 
     // ---- Drawing ---------------------------------------------------------------------------------------

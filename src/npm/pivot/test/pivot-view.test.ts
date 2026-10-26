@@ -279,7 +279,7 @@ describe('ExPivot\'s report', () => {
         expect(changed).toHaveLength(2);
     });
 
-    it('spine rule 6: two presses of a button expand what they collapsed, whether or not the report between them came first', async () => {
+    it('spine rule 6: a press does what its button said, and one taken on a button a press already acted on is refused', async () => {
         const layout = createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] });
         const { grid } = mount({ source: local(), layout });
         await settled();
@@ -287,6 +287,10 @@ describe('ExPivot\'s report', () => {
         const button = (await grid.paint(0, 0)).button();
         button.click();
         button.click();
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
+        // The button painted for the collapsed Item says Expand, and does it.
+        (await grid.paint(0, 0)).button().click();
         await settled();
         expect(await grid.texts()).toEqual(before);
     });
