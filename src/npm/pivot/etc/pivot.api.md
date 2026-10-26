@@ -4,18 +4,26 @@
 
 ```ts
 
-import type { GridDensity } from '@ex-grid/core';
+import { GridDensity } from '@ex-grid/core';
+import { GridSelection } from '@ex-grid/core';
+import { PivotFieldItem } from '@ex-grid/pivot-engine';
 import { PivotLabel } from '@ex-grid/pivot-engine';
 import { PivotLayout } from '@ex-grid/pivot-engine';
 import { PivotSlicing } from '@ex-grid/pivot-engine';
 import { PivotSource } from '@ex-grid/pivot-engine';
-import type { ViewportSize } from '@ex-grid/core';
+import { ViewportSize } from '@ex-grid/core';
 
 // @public
 export function browserPivotLocale(languages: readonly string[]): string;
 
 // @public
 export function createPivot(element: HTMLElement, options: PivotViewOptions): PivotHandle;
+
+// @public
+export interface PivotCellItems {
+    readonly column: readonly PivotFieldItem[];
+    readonly row: readonly PivotFieldItem[];
+}
 
 // @public
 export interface PivotFieldListShownEvent {
@@ -40,6 +48,12 @@ export interface PivotRefusedEvent {
 }
 
 // @public
+export interface PivotSelectionChangedEvent {
+    readonly items: readonly PivotCellItems[] | undefined;
+    readonly selection: GridSelection;
+}
+
+// @public
 export interface PivotViewOptions {
     readonly density?: GridDensity;
     readonly fieldListWidth?: number;
@@ -49,6 +63,7 @@ export interface PivotViewOptions {
     readonly maxLeaves?: number;
     readonly onLayoutChanged?: (event: PivotLayoutChangedEvent) => void;
     readonly onRefused?: (event: PivotRefusedEvent) => void;
+    readonly onSelectionChanged?: (event: PivotSelectionChangedEvent) => void;
     readonly onShowFieldListChanged?: (event: PivotFieldListShownEvent) => void;
     readonly rowHeight?: number;
     readonly showFieldList?: boolean;
