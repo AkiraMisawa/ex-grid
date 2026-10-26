@@ -52,6 +52,31 @@ internal static class CorrectlyRounded
         if (double.IsPositiveInfinity(x)) return x;
         if (x == 1) return 0;
         if (x < MinNormal) return LogExact(x);
+        return TryRound(WideLog(x), out var rounded) ? rounded : LogExact(x);
+    }
+
+    /// <summary>
+    /// log10 <paramref name="x"/>, correctly rounded, where the double-double path rounds it surely; false for a
+    /// subnormal x and the rare argument near a rounding boundary, which <see cref="PortableMath.Log10"/> computes again.
+    /// </summary>
+    internal static bool TryLog10(double x, out double rounded)
+    {
+        if (x == 1)
+        {
+            rounded = 0;
+            return true;
+        }
+        if (!(x >= MinNormal) || !double.IsFinite(x))
+        {
+            rounded = double.NaN;
+            return false;
+        }
+        return TryRound(WideLog(x) * InverseLn10, out rounded);
+    }
+
+    /// <summary>ln <paramref name="x"/> in double-double, for a normal, finite x above 0.</summary>
+    private static Wide WideLog(double x)
+    {
         // x = m * 2^e with m in [sqrt(1/2), sqrt(2)]; ln m = 2 atanh(s), s = (m-1)/(m+1), |s| < 0.172.
         var bits = BitConverter.DoubleToInt64Bits(x);
         var e = (int)((bits >> 52) & 0x7FF) - 1023;
@@ -65,8 +90,7 @@ internal static class CorrectlyRounded
         var t = s * s;
         var series = AtanhCoefficients[^1];
         for (var j = AtanhCoefficients.Length - 2; j >= 0; j--) series = AtanhCoefficients[j] + (t * series);
-        var logarithm = (s * series) + new Wide(e * Ln2High, 0) + Wide.Product(e, Ln2Low) + new Wide(e * Ln2Lowest, 0);
-        return TryRound(logarithm, out var rounded) ? rounded : LogExact(x);
+        return (s * series) + new Wide(e * Ln2High, 0) + Wide.Product(e, Ln2Low) + new Wide(e * Ln2Lowest, 0);
     }
 
     /// <summary>
@@ -98,6 +122,9 @@ internal static class CorrectlyRounded
     private static readonly double Ln2Low;
     private static readonly double Ln2Lowest;
 
+    /// <summary>1/ln 10 as a double-double.</summary>
+    private static readonly Wide InverseLn10;
+
     /// <summary>2/(2j+1), j = 0 to 24: 2 atanh s = s * sum of these times (s^2)^j, which at |s| below 0.172 leaves less than 2^-112.</summary>
     private static readonly Wide[] AtanhCoefficients;
 
@@ -109,6 +136,10 @@ internal static class CorrectlyRounded
         Ln2Low = RoundToDouble(rest, -Scale);
         rest -= Exactly(Ln2Low, Scale);
         Ln2Lowest = RoundToDouble(rest, -Scale);
+        // ln 10 = 3 ln 2 + ln(5/4), and ln(5/4) = 2 atanh(1/9).
+        var inverseLn10 = (FixedOne << Scale) / ((3 * FixedLn2) + Atanh2(BigInteger.One, 9));
+        var inverseHigh = RoundToDouble(inverseLn10, -Scale);
+        InverseLn10 = new Wide(inverseHigh, RoundToDouble(inverseLn10 - Exactly(inverseHigh, Scale), -Scale));
         AtanhCoefficients = new Wide[25];
         for (var j = 0; j < AtanhCoefficients.Length; j++) AtanhCoefficients[j] = (Wide)2 / (2 * j + 1);
     }

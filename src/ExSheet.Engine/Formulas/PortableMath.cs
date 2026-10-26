@@ -38,7 +38,7 @@ internal static class PortableMath
     public static double Log10(double x)
     {
         if (!(x > 0) || !double.IsFinite(x)) throw new ArgumentOutOfRangeException(nameof(x), x, "Internal: log10 is asked of a number not above 0.");
-        return Rounded(p => BigReal.Log10(BigReal.Of(x), p));
+        return CorrectlyRounded.TryLog10(x, out var rounded) ? rounded : Rounded(p => BigReal.Log10(BigReal.Of(x), p));
     }
 
     public static double Atan(double x) => x == 0 ? x : Rounded(p => BigReal.Atan(BigReal.Of(x), p));
@@ -95,6 +95,10 @@ internal static class PortableMath
     /// <summary>atanh x for |x| below 1.</summary>
     public static double Atanh(double x) => x == 0 ? x : Rounded(p => BigReal.Atanh(BigReal.Of(x), p));
 
+    /// <summary>10^0 to 10^22, every one a double exactly.</summary>
+    private static readonly double[] PowersOfTen =
+        [1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22];
+
     /// <summary>
     /// <paramref name="a"/>^<paramref name="b"/> for a whole number <paramref name="b"/>, as <see cref="Math.Pow"/>
     /// answers it at 0, 1 and past the doubles' range, and otherwise the exact power rounded once: counted exactly
@@ -104,6 +108,16 @@ internal static class PortableMath
     {
         if (b != Math.Floor(b) || !double.IsFinite(b)) throw new ArgumentOutOfRangeException(nameof(b), b, "Internal: no whole power.");
         if (b == 0) return 1;
+        // One operation each, which IEEE arithmetic rounds correctly: a square, a reciprocal, and a power of ten whose 10^|b| is exact.
+        if (b == 1) return a;
+        if (b == 2) return a * a;
+        if (b == -1) return 1 / a;
+        if (Math.Abs(a) == 10 && Math.Abs(b) <= 22)
+        {
+            var exact = PowersOfTen[(int)Math.Abs(b)];
+            var tenth = b > 0 ? exact : 1 / exact;
+            return a < 0 && Math.Abs(b % 2) == 1 ? -tenth : tenth;
+        }
         var odd = Math.Abs(b % 2) == 1;
         var negative = a < 0 && odd;
         if (a == 0)

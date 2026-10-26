@@ -221,7 +221,9 @@ class Section {
      */
     #formatDigits(magnitude: number, minusGiven: boolean, culture: Culture): string | undefined {
         let minus = minusGiven;
-        const value = magnitude * powerOfTen(2 * this.percent) / powerOfTen(3 * this.#scale);
+        // One power for both, so percent signs and thousands commas that cancel never overflow or underflow on the way.
+        const shift = 2 * this.percent - 3 * this.#scale;
+        const value = shift >= 0 ? magnitude * powerOfTen(shift) : magnitude / powerOfTen(-shift);
         if (!Number.isFinite(value)) return undefined;
         let integerDigits: string;
         let fractionDigits: string;

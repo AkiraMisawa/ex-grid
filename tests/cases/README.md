@@ -730,3 +730,12 @@ address or a range as its text unless the case writes an object of its members, 
 object by the keys written. `then` reads members of the answer the same way, each `{"call", "args"}` or
 `{"get"}` with its own `is` or `throws`. A case, or its file, may name the `culture` xUnit runs the call with the thread in, so
 that a call that leaked the thread's culture would show; the Script Core has no thread culture to set.
+
+### `portableMath`
+
+A file of kind `portableMath` holds the platform's math functions as both engines answer them (the C# engine's
+`PortableMath`, the Script Core's `portable-math.ts`): each case is `[function, [argument, …], answer]`, every number
+a double's sixteen hexadecimal digits, and the answer the exact value rounded once to the nearest double, ties to
+even. The functions are `atan`, `asin`, `acos`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`, `log10`
+and `powWhole` (a whole power). The answers are mpmath's at 400 bits (`to_float`, `round_nearest`), computed from
+the argument's own double, never from its decimal spelling.

@@ -55,11 +55,21 @@ export function answer(request: SheetRequest): unknown {
             else throw error;
         }
     }
+    // A format code the engine does not read is answered by its reason under the code, and a range the Sheet refuses
+    // to format by its refusal under the range, as the oracle answers them.
     const formatRefusals: Record<string, unknown> = {};
     for (const [range, code] of request.formats === undefined ? [] : request.formats) {
         const reading = NumberFormat.tryParse(code);
-        if (reading.format === undefined) formatRefusals[code] = reading.reason;
-        else workbook.do(sheet.name, SheetEdit.setNumberFormat(CellRange.parse(range), reading.format));
+        if (reading.format === undefined) {
+            formatRefusals[code] = reading.reason;
+            continue;
+        }
+        try {
+            workbook.do(sheet.name, SheetEdit.setNumberFormat(CellRange.parse(range), reading.format));
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a refused range is an answer the oracle gives too
+            if (error instanceof SheetRefusedError) formatRefusals[range] = { refusal: 'refused', reason: error.refusal.reason };
+            else throw error;
+        }
     }
     const cells: Record<string, unknown> = {};
     for (const read of request.read) {

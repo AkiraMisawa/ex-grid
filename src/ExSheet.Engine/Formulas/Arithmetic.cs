@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Numerics;
 
 namespace ExSheet.Engine.Formulas;
 
@@ -40,28 +41,49 @@ internal static class Arithmetic
 
     /// <summary>
     /// A number rounded to 15 significant digits, half away from zero on its exact decimal value (ADR-0047),
-    /// as the nearest double: every place the engine reads a number at Excel's precision spells this one
-    /// with <c>"E14"</c> or <c>"G15"</c>, which writes its 15 digits back exactly. .NET's own <c>"E14"</c>
-    /// rounds the exact decimal value too, but an exact midpoint to even: 1.000030517578125 (1+2^-15) is
-    /// 1.00003051757812 there and 1.00003051757813 here, as the Script Core reads it. The differential
-    /// run found it (src/npm/sheet-engine/differential/README.md).
+    /// as the nearest double: every place the engine reads a number at Excel's precision reads this one.
     /// </summary>
     internal static double AtFifteenDigits(double x)
     {
         if (!double.IsFinite(x) || x == 0) return x;
-        var rounded = double.Parse(x.ToString("E14", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
-        // A midpoint is a double whose exact value has 16 significant digits, the last a 5. "E15" spells 16
-        // digits, rounded from the 17th, so it shows every midpoint, and "E800", every digit any double has,
-        // tells a midpoint from a number beside one.
-        var magnitude = Math.Abs(x);
-        var sixteen = magnitude.ToString("E15", CultureInfo.InvariantCulture);
-        if (sixteen[16] != '5') return rounded;
-        var exact = magnitude.ToString("E800", CultureInfo.InvariantCulture);
-        if (!exact.AsSpan(0, 17).SequenceEqual(sixteen.AsSpan(0, 17)) || exact.AsSpan(17, 785).IndexOfAnyExcept('0') >= 0) return rounded;
-        var kept = long.Parse(sixteen[0] + sixteen[2..16], CultureInfo.InvariantCulture) + 1;
-        var exponent = int.Parse(sixteen.AsSpan(18), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture) - 14;
-        var away = double.Parse($"{kept.ToString(CultureInfo.InvariantCulture)}E{exponent.ToString(CultureInfo.InvariantCulture)}", CultureInfo.InvariantCulture);
-        return x < 0 ? -away : away;
+        var (digits, exponent) = FifteenDigits(Math.Abs(x));
+        var rounded = double.Parse($"{digits}E{(exponent - 14).ToString(CultureInfo.InvariantCulture)}", CultureInfo.InvariantCulture);
+        return x < 0 ? -rounded : rounded;
+    }
+
+    /// <summary>
+    /// A positive finite number's 15 significant digits, rounded half away from zero on its exact decimal value
+    /// (ADR-0047), and the power of ten of the first. .NET's own <c>"E14"</c> rounds the exact decimal value too,
+    /// but an exact midpoint to even: 1.000030517578125 (1+2^-15) is 1.00003051757812 there and 1.00003051757813
+    /// here, as the Script Core reads it. The differential run found it (src/npm/sheet-engine/differential/README.md).
+    /// </summary>
+    internal static (string Digits, int Exponent) FifteenDigits(double magnitude)
+    {
+        // A midpoint's exact value has 16 significant digits, the last a 5, so its 17 digits end in 50; few
+        // numbers beside one spell that, and those the exact comparison turns away.
+        var seventeen = magnitude.ToString("E16", CultureInfo.InvariantCulture);
+        if (seventeen[16] == '5' && seventeen[17] == '0')
+        {
+            var sixteen = long.Parse(seventeen[0] + seventeen[2..17], CultureInfo.InvariantCulture);
+            var exponent = int.Parse(seventeen.AsSpan(19), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+            if (IsExactly(magnitude, sixteen, exponent - 15))
+            {
+                var away = (sixteen / 10) + 1;
+                // 999999999999999.5 rounds to the next power of ten.
+                return away == 1_000_000_000_000_000 ? ("100000000000000", exponent + 1) : (away.ToString(CultureInfo.InvariantCulture), exponent);
+            }
+        }
+        var e14 = magnitude.ToString("E14", CultureInfo.InvariantCulture);
+        return (e14[0] + e14[2..16], int.Parse(e14.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>Whether <paramref name="x"/> is exactly <paramref name="digits"/> times 10^<paramref name="power"/>.</summary>
+    private static bool IsExactly(double x, long digits, int power)
+    {
+        var (significand, twos) = CorrectlyRounded.Decompose(x);
+        var left = significand * BigInteger.Pow(2, Math.Max(twos, 0)) * BigInteger.Pow(10, Math.Max(-power, 0));
+        var right = digits * BigInteger.Pow(10, Math.Max(power, 0)) * BigInteger.Pow(2, Math.Max(-twos, 0));
+        return left == right;
     }
 
     private static bool Near(double a, double b, double tolerance)

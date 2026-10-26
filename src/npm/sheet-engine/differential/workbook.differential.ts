@@ -112,7 +112,7 @@ function formula(r: Draw, depth: number): string {
     }
 }
 
-/** A grid of typed texts in A1:E8 and Formulas over it in G1:G30, each read back with every spilled cell. */
+/** A grid of typed texts in A1:E8 and Formulas over it in G3, G6, … G90, read back across G:J down to row 92 so that every spilled cell is read. */
 function request(r: Draw): SheetRequest {
     const culture = r.pick(cultures);
     const entries: [string, string][] = [];

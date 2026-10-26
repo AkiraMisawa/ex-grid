@@ -5,7 +5,7 @@
 // ln x, which are asked far more often, keep `CorrectlyRounded`'s double-double path.
 import * as big from './big-real';
 import { BigReal } from './big-real';
-import { bitLength, decompose, exp as correctlyRoundedExp, log as correctlyRoundedLog, roundToDouble } from './correctly-rounded';
+import { bitLength, decompose, exp as correctlyRoundedExp, log as correctlyRoundedLog, roundToDouble, tryLog10 } from './correctly-rounded';
 
 /** The bits at the end of a result its computation may have got wrong: far more than any function here loses. */
 const slackBits = 24;
@@ -29,7 +29,8 @@ export const log = correctlyRoundedLog;
 /** log10 x for x above 0; 10^k is k exactly. */
 export function log10(x: number): number {
     if (!(x > 0) || !Number.isFinite(x)) throw new RangeError(`Internal: log10 is asked of ${String(x)}.`);
-    return rounded(p => big.log10(BigReal.of(x), p));
+    const fast = tryLog10(x);
+    return fast === undefined ? rounded(p => big.log10(BigReal.of(x), p)) : fast;
 }
 
 export function atan(x: number): number {
@@ -98,6 +99,15 @@ export function atanh(x: number): number {
 export function powWhole(a: number, b: number): number {
     if (!Number.isInteger(b)) throw new RangeError(`Internal: ${String(b)} is no whole power.`);
     if (b === 0) return 1;
+    // One operation each, which IEEE arithmetic rounds correctly: a square, a reciprocal, and a power of ten whose 10^|b| is exact.
+    if (b === 1) return a;
+    if (b === 2) return a * a;
+    if (b === -1) return 1 / a;
+    if (Math.abs(a) === 10 && Math.abs(b) <= 22) {
+        const exact = Number(`1e${String(Math.abs(b))}`);
+        const tenth = b > 0 ? exact : 1 / exact;
+        return a < 0 && Math.abs(b % 2) === 1 ? -tenth : tenth;
+    }
     const odd = Math.abs(b % 2) === 1;
     const negative = a < 0 && odd;
     if (a === 0) return b > 0 ? (Object.is(a, -0) && odd ? -0 : 0) : (Object.is(a, -0) && odd ? -Infinity : Infinity);

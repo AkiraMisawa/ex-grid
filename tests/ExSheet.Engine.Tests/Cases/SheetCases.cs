@@ -465,11 +465,8 @@ internal sealed class Run(CultureInfo culture)
         {
             Act(verb, argument!, sheet, outcome);
         }
-        catch (Exception e) when (e is FormulaSyntaxException or SheetRefusedException or InvalidOperationException
-            or ArgumentException or FormatException or RepeatedKeyException or SheetDocumentException)
+        catch (Exception e) when (IsRefusal(e))
         {
-            // The runner's own reading of a malformed case throws the same types; it is the case's defect, never a refusal.
-            if (ThrownByTheRunner(e)) throw;
             if (expect?["throws"] is not { } throws)
             {
                 Differences.Add($"{where} ({verb}) threw {e.GetType().Name}: {e.Message}");
@@ -494,7 +491,6 @@ internal sealed class Run(CultureInfo culture)
             Read(where, key, value, outcome);
     }
 
-    /// <summary>What a step did, for its readings: the change it reported, the refusal it was checked for, its step.</summary>
     /// <summary>A Linked Table's columns as <c>readTable</c> read them: <c>null</c> while it waits.</summary>
     private sealed record TableRead(IReadOnlyList<IReadOnlyList<Value?>>? Columns);
 
@@ -502,6 +498,7 @@ internal sealed class Run(CultureInfo culture)
         ? null
         : new JsonArray([.. columns.Select(c => (JsonNode)new JsonArray([.. c.Select(SheetCases.Encode)]))]);
 
+    /// <summary>What a step did, for its readings: the change it reported, the refusal it was checked for, its step.</summary>
     private sealed class Outcome(Sheet sheet)
     {
         public Sheet Sheet { get; set; } = sheet;
@@ -528,13 +525,18 @@ internal sealed class Run(CultureInfo culture)
         ["reformatsUnnamedRows"] = change.ReformatsUnnamedRows,
     };
 
-    /// <summary>Whether the innermost frame outside .NET's own libraries is this runner's rather than the engine's.</summary>
-    /// <summary>Whether the exception is the engine refusing, by a type a case reads as one, and not the runner's own.</summary>
+    /// <summary>
+    /// Whether the exception is the engine refusing, by a type a case reads as one. The runner's own reading of a
+    /// malformed case throws the same types, and the engine's broken invariants say "Internal", as the Script Core's
+    /// do: each is a defect, never a refusal.
+    /// </summary>
     internal static bool IsRefusal(Exception e) =>
         e is FormulaSyntaxException or SheetRefusedException or InvalidOperationException or ArgumentException or FormatException
             or RepeatedKeyException or SheetDocumentException
+        && !e.Message.StartsWith("Internal", StringComparison.Ordinal)
         && !ThrownByTheRunner(e);
 
+    /// <summary>Whether the innermost frame outside .NET's own libraries is this runner's rather than the engine's.</summary>
     private static bool ThrownByTheRunner(Exception e)
     {
         foreach (var frame in new System.Diagnostics.StackTrace(e).GetFrames())

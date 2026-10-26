@@ -152,6 +152,21 @@
       ]
     },
     {
+      "name": "ADR-0047: percent signs and thousands commas that cancel scale a number once, so it does not overflow on the way: =LEN(TEXT(1E+305,\"0,,%%%\"))",
+      "steps": [
+        {
+          "enter": {
+            "ZZ1000": "=LEN(TEXT(1E+305,\"0,,%%%\"))"
+          },
+          "expect": {
+            "values": {
+              "ZZ1000": 309
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "ADR-0047, ADR-0370: each function the platform's math library answers is the exact value rounded once to the nearest double, the same on every platform; at these arguments glibc's answer, V8's, or both are the double on the other side",
       "steps": [
         {

@@ -82,17 +82,27 @@ namespace ExSheet.Oracle
                         refusals[address] = new JsonObject { ["refusal"] = "refused", ["reason"] = Camel(e.Refusal.Reason.ToString()) };
                     }
                 }
-                // A format code the engine does not read is answered by its reason, as an entry's refusal is.
+                // A format code the engine does not read is answered by its reason under the code, and a range the
+                // Sheet refuses to format by its refusal under the range, as an entry's refusal is.
                 var formatRefusals = new JsonObject();
                 if (request["formats"] is JsonArray formats)
                 {
                     foreach (var format in formats)
                     {
-                        var code = (string)format![1]!;
-                        if (NumberFormat.TryParse(code, out var parsed, out var reason))
-                            workbook.Do(sheet.Name, SheetEdit.SetNumberFormat(CellRange.Parse((string)format[0]!), parsed));
-                        else
+                        var (range, code) = ((string)format![0]!, (string)format[1]!);
+                        if (!NumberFormat.TryParse(code, out var parsed, out var reason))
+                        {
                             formatRefusals[code] = reason;
+                            continue;
+                        }
+                        try
+                        {
+                            workbook.Do(sheet.Name, SheetEdit.SetNumberFormat(CellRange.Parse(range), parsed));
+                        }
+                        catch (SheetRefusedException e)
+                        {
+                            formatRefusals[range] = new JsonObject { ["refusal"] = "refused", ["reason"] = Camel(e.Refusal.Reason.ToString()) };
+                        }
                     }
                 }
                 var width = request["width"] is { } w ? (double?)w : null;
