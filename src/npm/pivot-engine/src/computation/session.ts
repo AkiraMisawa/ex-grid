@@ -14,8 +14,8 @@
 
 import type { SnapshotChange } from '@ex-grid/data';
 import type { PivotSourceRefusal } from '../cube/answer';
-import { buildCubeSteps, type CubeBuild, type PivotCube } from '../cube/cube';
-import { levelQueryForLayout, queriesEqual, queryForLayout } from '../cube/query';
+import { buildCubeSteps, cubeParts, type CubeBuild, type PivotCube } from '../cube/cube';
+import { levelQueryForLayout, queriesEqual, queryForLayout, type PivotLevelWindowInput, type PivotQuery } from '../cube/query';
 import { checkCubeHolds } from '../engine';
 import { fieldMetas, type PivotField } from '../fields/pivot-field';
 import { writePivotLayoutJson } from '../layout/layout-json';
@@ -31,6 +31,9 @@ import { ComputationReport } from './report';
 
 // The most Change Batches held for a pass while no Window asks for them; past it the pass is let go.
 const pendingBound = 1024;
+
+// The most questions remembered as refused whole past the cap, newest first: a guard on memory, never on the data.
+const windowedBound = 16;
 
 /** One complete computation, or the Pivot Source's refusal. */
 export interface PivotComputationResult {
@@ -65,6 +68,9 @@ export interface PivotComputationRequest {
     /** Lays the layout out from the cube held, without the batches pending, where that cube holds it: a layout
      * gesture shows the data it was made on. */
     readonly preferHeld: boolean;
+    /** Where the Sibling Windows start, for a Pivot Source that answers Level Aggregates (ADR-0370 section 3): asked
+     * once the source refused the question whole past the cap, and from then on for that question. */
+    readonly window?: PivotLevelWindowInput;
 }
 
 interface Pending {
@@ -92,6 +98,8 @@ export class PivotComputationSession {
     #structure: ComputationReport | undefined;
     #layout: string | undefined;
     #options: string | undefined;
+    // The questions without windows that the source refused past the cap, newest first: asked with windows from then on.
+    #windowed: PivotQuery[] = [];
     #busy = false;
     #disposed = false;
 
@@ -158,7 +166,12 @@ export class PivotComputationSession {
         const source = this.#source;
         // A source that answers Level Aggregates is asked with the groups the layout shows (ADR-0370 section 3): it
         // answers with the leaves when they fit the cap, and with the groups' cells when they do not.
-        const query = source.features.answersLevels ? levelQueryForLayout(layout, maxLeaves) : queryForLayout(layout, maxLeaves);
+        const unwindowed = source.features.answersLevels ? levelQueryForLayout(layout, maxLeaves) : queryForLayout(layout, maxLeaves);
+        // A source that answers Level Aggregates and refused the question whole past the cap is asked for windows of
+        // the sets ordered by a value (ADR-0370 section 3); none is asked while the question fits.
+        const windowed = request.window === undefined || !source.features.answersLevels ? undefined : levelQueryForLayout(layout, maxLeaves, request.window);
+        const windowable = windowed?.levels?.rows.some(rule => rule.order !== undefined) === true;
+        let query = windowable && this.#windowed.some(asked => queriesEqual(asked, unwindowed)) ? windowed : unwindowed;
         const layoutName = writePivotLayoutJson(layout);
         // Where it is not: the work that carries batches folded in place through to a whole state.
         let whole: Slicer | undefined;
@@ -169,7 +182,7 @@ export class PivotComputationSession {
         let answered = false;
         const held = this.#report;
         const link = this.#link;
-        if (request.preferHeld && held !== undefined && held.cube.holds(layout) && held.cube.query.maxLeaves === maxLeaves) {
+        if (request.preferHeld && held !== undefined && holdsAsked(held.cube, layout, query)) {
             cube = held.cube;
         } else if (link !== undefined) {
             const refusal = queryRefusal(source.fields, source.features, query);
@@ -221,14 +234,21 @@ export class PivotComputationSession {
                 if (build === undefined) throw new Error('Internal: the cube was made without what its build made.');
                 made = { pass: fresh, bindings: captured.bindings, computation: await aside.run(ComputationCube.create(cube, build, fresh)) };
             }
-        } else if (!request.refreshData && held !== undefined && held.cube.holds(layout) && held.cube.query.maxLeaves === maxLeaves) {
+        } else if (!request.refreshData && held !== undefined && holdsAsked(held.cube, layout, query)) {
             // A source that cannot name its changes is asked again only for a refresh (ADR-0153).
             cube = held.cube;
         } else {
             answered = true;
             await aside.step();
-            const answer = await source.aggregate(query, signal);
+            let answer = await source.aggregate(query, signal);
             signal?.throwIfAborted();
+            if (answer.refusal?.kind === 'tooManyLeaves' && query === unwindowed && windowable) {
+                this.#windowed = [unwindowed, ...this.#windowed.slice(0, windowedBound - 1)];
+                query = windowed;
+                await aside.step();
+                answer = await source.aggregate(query, signal);
+                signal?.throwIfAborted();
+            }
             if (answer.refusal !== undefined) return refused(answer.refusal, true);
             cube = await aside.run(buildCubeSteps(query, answer, fieldMetas(this.#fields)));
         }
@@ -281,6 +301,7 @@ export class PivotComputationSession {
     }
 
     #drop(): void {
+        this.#windowed = [];
         this.#pass = undefined;
         this.#bindings = undefined;
         this.#computation = undefined;
@@ -303,4 +324,10 @@ export class PivotComputationSession {
     #isDisposed(): boolean {
         return this.#disposed;
     }
+}
+
+// Whether a cube held answers the question a layout asks: it holds the layout under the same cap, and a cube of
+// Sibling Windows was asked for them where this question asks — the same orders, collapse and starts.
+function holdsAsked(cube: PivotCube, layout: PivotLayout, query: PivotQuery): boolean {
+    return cube.holds(layout) && cube.query.maxLeaves === query.maxLeaves && (cubeParts(cube).windows.size === 0 || queriesEqual(cube.query, query));
 }

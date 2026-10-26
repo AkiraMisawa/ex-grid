@@ -6,14 +6,14 @@
 import type { AggregateValue } from '../aggregates/parts';
 import { divideByZeroValue, doubleValue, numberErrorValue } from '../aggregates/parts';
 import type { PivotCube } from '../cube/cube';
-import { cubeParts, readCell, type AxisNode, type CubeAxis, type ItemRef } from '../cube/cube';
+import { cubeParts, readCell, type AxisNode, type CubeAxis, type CubeWindow, type ItemRef } from '../cube/cube';
 import { everyRecord, pivotDetailsQuery, placedFields, type PivotDetailsQuery, type PivotFieldItem } from '../cube/query';
 import type { FieldMeta } from '../fields/pivot-field';
 import { fromPublicKey, itemKeysEqual, itemKeyText, keyIdOf, publicKeyId, sameItem, type PivotItemKey } from '../items/item-key';
 import type { PivotAggregation, PivotColumnRole, PivotRowRole, PivotShowValuesAs } from '../layout/pivot-enums';
 import { itemKindOrder } from '../layout/pivot-enums';
 import type { PivotFieldPlacement, PivotLayout, PivotValueField } from '../layout/pivot-layout';
-import { elementAt } from '../must';
+import { defined, elementAt } from '../must';
 import { Slicer, checkedSlicing, inPieces, pieceUnits, runWhole, sortedSteps, type PivotSlicing } from '../source/slicing';
 import { escapeDataString, foldedText, upperInvariant } from '../text/casing';
 import { captionId, fillWord, pivotWordIds } from '../words/pivot-words';
@@ -239,8 +239,10 @@ export class PivotRowKey {
 
 const lineages = new WeakMap<PivotReportRow, object>();
 
-let makeRow: (role: PivotRowRole, node: AxisNode, valueField: number, carriesValues: boolean, labels: readonly PivotRowLabel[], lineage: object) => PivotReportRow;
+let makeRow: (role: PivotRowRole, node: AxisNode, valueField: number, carriesValues: boolean, labels: readonly PivotRowLabel[], lineage: object,
+    sibling?: number) => PivotReportRow;
 let rowNode: (row: PivotReportRow) => AxisNode;
+let rowSibling: (row: PivotReportRow) => number;
 
 /** A row of a report. */
 export class PivotReportRow {
@@ -253,20 +255,28 @@ export class PivotReportRow {
     /** Whether the row carries values: a group row whose subtotal stands at the bottom carries none. */
     readonly carriesValues: boolean;
     readonly #node: AxisNode;
+    // A Pending Row's sibling, by its place among its parent's siblings from 0, its node being the parent; −1 for
+    // any other row.
+    readonly #sibling: number;
     #key: PivotRowKey | undefined;
 
-    private constructor(role: PivotRowRole, node: AxisNode, valueField: number, carriesValues: boolean, labels: readonly PivotRowLabel[], lineage: object) {
+    private constructor(role: PivotRowRole, node: AxisNode, valueField: number, carriesValues: boolean, labels: readonly PivotRowLabel[], lineage: object,
+        sibling: number) {
         this.role = role;
         this.#node = node;
+        this.#sibling = sibling;
         this.valueField = valueField;
         this.carriesValues = carriesValues;
-        this.labels = Object.freeze([...labels]);
+        // Labels already frozen are shared, as the Pending Rows of a set share theirs.
+        this.labels = Object.isFrozen(labels) ? labels : Object.freeze([...labels]);
         lineages.set(this, lineage);
     }
 
     static {
-        makeRow = (role, node, valueField, carriesValues, labels, lineage) => new PivotReportRow(role, node, valueField, carriesValues, labels, lineage);
+        makeRow = (role, node, valueField, carriesValues, labels, lineage, sibling = -1) =>
+            new PivotReportRow(role, node, valueField, carriesValues, labels, lineage, sibling);
         rowNode = row => row.#node;
+        rowSibling = row => row.#sibling;
     }
 
     /** What the row stands for, across reports. */
@@ -290,9 +300,24 @@ function sameRows(mine: PivotReport, other: PivotReport, from: number, to: numbe
     for (let i = from; i < to; i++) {
         const row = elementAt(mine.rows, i);
         const theirs = elementAt(other.rows, i);
-        if (row.role !== theirs.role || row.valueField !== theirs.valueField || !samePath(rowNode(row), rowNode(theirs))) return false;
+        if (row.role === 'pending' || theirs.role === 'pending') {
+            // A Pending Row stands for the sibling at its place, which the same data puts at the same place
+            // whichever window was answered (ADR-0370 section 3).
+            const parent = siblingsParent(row);
+            const theirParent = siblingsParent(theirs);
+            if (mine.cube.sourceVersion !== other.cube.sourceVersion || parent === undefined || theirParent === undefined || !samePath(parent, theirParent)) return false;
+        } else if (row.role !== theirs.role || row.valueField !== theirs.valueField || !samePath(rowNode(row), rowNode(theirs))) {
+            return false;
+        }
     }
     return true;
+}
+
+// The parent of the sibling a row stands for: a Pending Row's own node, any other row's node's parent, and none
+// for a row of the grand total, which stands for no sibling.
+function siblingsParent(row: PivotReportRow): AxisNode | undefined {
+    const node = rowNode(row);
+    return row.role === 'pending' ? node : node.parent;
 }
 
 /** Whether the other report's rows stand, one for one, for what this one's do, compared a piece at a time. */
@@ -310,9 +335,10 @@ export function* sameRowsSteps(mine: PivotReport, other: PivotReport | undefined
 
 let reportOptions: (report: PivotReport) => ResolvedOptions;
 let reportLineage: (report: PivotReport) => object;
+let reportRanks: (report: PivotReport) => ReadonlyMap<number, number>;
 let makeReport: (cube: PivotCube, layout: PivotLayout, options: ResolvedOptions, reader: CellReader, labelColumns: readonly PivotLabelColumn[],
     valueColumns: readonly PivotReportColumn[], headerSpans: readonly PivotHeaderSpan[], headerTierCount: number,
-    rows: readonly PivotReportRow[], lineage: object) => PivotReport;
+    rows: readonly PivotReportRow[], lineage: object, ranks: ReadonlyMap<number, number>) => PivotReport;
 
 /** A report: its columns, its rows, and the value at each row and column. */
 export class PivotReport {
@@ -335,10 +361,11 @@ export class PivotReport {
     readonly #options: ResolvedOptions;
     readonly #reader: CellReader;
     readonly #lineage: object;
+    readonly #ranks: ReadonlyMap<number, number>;
 
     private constructor(cube: PivotCube, layout: PivotLayout, options: ResolvedOptions, reader: CellReader, labelColumns: readonly PivotLabelColumn[],
         valueColumns: readonly PivotReportColumn[], headerSpans: readonly PivotHeaderSpan[], headerTierCount: number,
-        rows: readonly PivotReportRow[], lineage: object) {
+        rows: readonly PivotReportRow[], lineage: object, ranks: ReadonlyMap<number, number>) {
         this.cube = cube;
         this.layout = layout;
         this.#options = options;
@@ -349,6 +376,7 @@ export class PivotReport {
         this.headerTierCount = headerTierCount;
         this.rows = Object.freeze([...rows]);
         this.#lineage = lineage;
+        this.#ranks = ranks;
         this.valueCaptions = Object.freeze(reader.values.map(v => v.caption));
     }
 
@@ -356,6 +384,7 @@ export class PivotReport {
         makeReport = (...args) => new PivotReport(...args);
         reportOptions = report => report.#options;
         reportLineage = report => report.#lineage;
+        reportRanks = report => report.#ranks;
     }
 
     /** The locale the report is written in. */
@@ -386,7 +415,7 @@ export class PivotReport {
 
     /** The row's Items, outermost first, each with its field. */
     rowPath(row: PivotReportRow): readonly PivotFieldItem[] {
-        this.#own(row);
+        this.#answered(row);
         return path(rowNode(row), this.layout.rows, cubeParts(this.cube).rows);
     }
 
@@ -399,6 +428,7 @@ export class PivotReport {
      * placed field's Hidden Items, under the cube's Source Version. A column of −1 asks for the row's. */
     detailsQuery(row: PivotReportRow, valueColumn: number, start = 0, count: number = everyRecord): PivotDetailsQuery {
         if (!this.rows.includes(row)) throw new TypeError('The row belongs to another report.');
+        this.#answered(row);
         if (!Number.isInteger(valueColumn) || valueColumn < -1 || valueColumn >= this.valueColumns.length) {
             throw new RangeError('Not a value column of the report, nor −1.');
         }
@@ -414,7 +444,7 @@ export class PivotReport {
 
     /** The Value Field a cell shows: its row's, its column's, the one Value Field, or −1 for none. */
     valueFieldAt(row: PivotReportRow, valueColumn: number): number {
-        this.#own(row);
+        this.#answered(row);
         if (row.valueField >= 0) return row.valueField;
         const column = elementAt(this.valueColumns, valueColumn);
         if (column.valueField >= 0) return column.valueField;
@@ -423,7 +453,7 @@ export class PivotReport {
 
     /** The value at a row and a value column as the report shows it, or `undefined` for an empty cell. */
     valueAt(row: PivotReportRow, valueColumn: number): PivotValue | undefined {
-        this.#own(row);
+        this.#answered(row);
         if (!Number.isInteger(valueColumn) || valueColumn < 0 || valueColumn >= this.valueColumns.length) {
             throw new RangeError(`The report has ${this.valueColumns.length} value columns.`);
         }
@@ -443,6 +473,123 @@ export class PivotReport {
                 + 'whose Value Fields and Items it names. Read a row through the report it came from.');
         }
     }
+
+    // A row of this report that was answered: a Pending Row has no Items, no Value Field and no value to read.
+    #answered(row: PivotReportRow): void {
+        this.#own(row);
+        if (row.role === 'pending') {
+            const parent = path(rowNode(row), this.layout.rows, cubeParts(this.cube).rows).map(step => itemKeyText(step.item)).join(' / ');
+            throw new RangeError(`The row stands for a sibling the Pivot Source has not answered: the siblings under ${parent === '' ? 'the grand total' : parent} `
+                + 'were answered as a window that does not hold it. Ask for a report Window that reaches it, and the window moves there (ADR-0370 section 3).');
+        }
+    }
+}
+
+/** A Sibling Window's set as a range of a report's rows reaches it: its parent's Items, the first and the last
+ * sibling the rows stand for, each by its place from 0, and how many siblings the set has. */
+export interface PendingSpan {
+    readonly parent: readonly PivotItemKey[];
+    readonly first: number;
+    readonly last: number;
+    readonly siblings: number;
+}
+
+/** The Sibling Windows' sets whose Pending Rows lie among the rows from `from` to before `to`, each with the
+ * siblings those rows stand for, answered or not (ADR-0370 section 3); none when every row there was answered.
+ * Not part of the public surface. */
+export function pendingSpans(report: PivotReport, from: number, to: number): readonly PendingSpan[] {
+    const parts = cubeParts(report.cube);
+    if (parts.windows.size === 0) return [];
+    const ranks = reportRanks(report);
+    const spans = new Map<AxisNode, { first: number; last: number; pending: boolean }>();
+    for (let i = from; i < to; i++) {
+        const row = elementAt(report.rows, i);
+        const node = rowNode(row);
+        const pending = row.role === 'pending';
+        const rank = pending ? rowSibling(row) : ranks.get(node.id);
+        if (rank === undefined || (!pending && (row.role === 'subtotal' || row.role === 'grandTotal'))) continue;
+        const parent = pending ? node : parentOf(node);
+        const held = spans.get(parent);
+        if (held === undefined) spans.set(parent, { first: rank, last: rank, pending });
+        else {
+            held.first = Math.min(held.first, rank);
+            held.last = Math.max(held.last, rank);
+            held.pending ||= pending;
+        }
+    }
+    const found: PendingSpan[] = [];
+    for (const [parent, reached] of spans) {
+        if (!reached.pending) continue;
+        const window = defined(parts.windows.get(parent.id), "a Pending Row's window");
+        found.push(Object.freeze({
+            parent: path(parent, report.layout.rows, parts.rows).map(step => step.item),
+            first: reached.first,
+            last: reached.last,
+            siblings: window.before + shownCount(parts.rows.childrenOf(parent).length, window) + window.after,
+        }));
+    }
+    return Object.freeze(found);
+}
+
+// Each report's Pending Rows as runs of consecutive rows, from the first to before the end, made once asked for.
+const pendingRuns = new WeakMap<PivotReport, readonly (readonly [number, number])[]>();
+
+/** Whether any row from `top` to `bottom`, both included, is a Pending Row. Not part of the public surface. */
+export function reachesPending(report: PivotReport, top: number, bottom: number): boolean {
+    if (cubeParts(report.cube).windows.size === 0) return false;
+    let runs = pendingRuns.get(report);
+    if (runs === undefined) {
+        const made: [number, number][] = [];
+        report.rows.forEach((row, i) => {
+            if (row.role !== 'pending') return;
+            const run = made.at(-1);
+            if (run?.[1] === i) run[1] = i + 1;
+            else made.push([i, i + 1]);
+        });
+        runs = made;
+        pendingRuns.set(report, runs);
+    }
+    // The first run that ends after `top`.
+    let low = 0;
+    let high = runs.length;
+    while (low < high) {
+        const middle = (low + high) >>> 1;
+        if (elementAt(runs, middle)[1] <= top) low = middle + 1;
+        else high = middle;
+    }
+    const run = runs[low];
+    return run !== undefined && run[0] <= bottom;
+}
+
+// A row parent's Items, as one text: two reports' parents of the same Items are one text.
+function parentText(node: AxisNode, report: PivotReport): string {
+    return path(node, report.layout.rows, cubeParts(report.cube).rows).map(step => publicKeyId(step.item)).join('\u0000');
+}
+
+/** The place of the sibling an answered row of a Sibling Window's set stands for: its parent's Items as one text,
+ * and its place among the set's siblings from 0; none for any other row. Not part of the public surface. */
+export function siblingPlace(report: PivotReport, row: PivotReportRow): { readonly parent: string; readonly rank: number } | undefined {
+    if (row.role === 'pending' || row.role === 'subtotal' || row.role === 'grandTotal') return undefined;
+    const node = rowNode(row);
+    const rank = reportRanks(report).get(node.id);
+    return rank === undefined ? undefined : { parent: parentText(parentOf(node), report), rank };
+}
+
+/** The siblings a report's Sibling Window under a parent, given by its Items as one text, shows: from the first to
+ * before the end, by their places from 0; none where the parent's set was answered whole. Not part of the public
+ * surface. */
+export function shownSiblings(report: PivotReport, parent: string): readonly [number, number] | undefined {
+    const parts = cubeParts(report.cube);
+    for (const [id, window] of parts.windows) {
+        const node = parts.rows.node(id);
+        if (parentText(node, report) === parent) return [window.before, window.before + shownCount(parts.rows.childrenOf(node).length, window)];
+    }
+    return undefined;
+}
+
+// How many of a windowed parent's children are shown: all but its margins.
+function shownCount(children: number, window: CubeWindow): number {
+    return children - (window.before > 0 ? 1 : 0) - (window.after > 0 ? 1 : 0);
 }
 
 function samePath(one: AxisNode, other: AxisNode): boolean {
@@ -525,6 +672,8 @@ export class ReportBuilder {
     readonly #sliced: boolean;
     readonly #rowAxis: CubeAxis;
     readonly #columnAxis: CubeAxis;
+    // Each shown sibling of a Sibling Window's set, by its node id: its place among all the set's siblings.
+    readonly #ranks = new Map<number, number>();
 
     /** A builder of `cube` under `layout`, which the cube holds; its rows are of `lineage`, a report's that it
      * lays out again, or of a lineage of their own. */
@@ -607,15 +756,18 @@ export class ReportBuilder {
         const columns: PivotReportColumn[] = [];
         const spans: PivotHeaderSpan[] = [];
         if (!this.#empty) yield* this.#emitColumns(columns, spans);
-        return makeReport(this.#cube, this.#layout, this.#options, this.#reader, this.#labelColumnList(), columns, spans, this.#tiers(), rows, this.#lineage);
+        return makeReport(this.#cube, this.#layout, this.#options, this.#reader, this.#labelColumnList(), columns, spans, this.#tiers(), rows, this.#lineage, this.#ranks);
     }
 
     /** `previous` with `rows` laid out by this builder: its label columns, and its value columns and spans unless
      * the columns changed — laid out again then, each column `previous` showed alike kept. */
     *withRows(previous: PivotReport, rows: readonly PivotReportRow[], columnsChanged: boolean): Generator<void, PivotReport> {
+        // Only a cube of leaves is updated, and only its answer has no Sibling Window: the places of a window's
+        // siblings are each report's own.
+        if (cubeParts(this.#cube).windows.size > 0) throw new Error('Internal: a report with Sibling Windows is laid out afresh, never updated.');
         if (!columnsChanged) {
             return makeReport(this.#cube, this.#layout, this.#options, this.#reader, previous.labelColumns, previous.valueColumns, previous.headerSpans,
-                previous.headerTierCount, rows, this.#lineage);
+                previous.headerTierCount, rows, this.#lineage, this.#ranks);
         }
         const columns: PivotReportColumn[] = [];
         const spans: PivotHeaderSpan[] = [];
@@ -626,7 +778,7 @@ export class ReportBuilder {
             return held !== undefined && held.header === column.header ? held : column;
         });
         return makeReport(this.#cube, this.#layout, this.#options, this.#reader, previous.labelColumns, kept, spans, previous.headerTierCount, rows,
-            this.#lineage);
+            this.#lineage, this.#ranks);
     }
 
     /**
@@ -644,6 +796,8 @@ export class ReportBuilder {
                 runWhole(this.#emitRows(before));
                 return { before, after, descend: false };
             }
+            this.#pendingRows(node, 'before', before);
+            this.#pendingRows(node, 'after', after);
             this.#grandTotalRows(after);
             return { before, after, descend: true };
         }
@@ -651,12 +805,21 @@ export class ReportBuilder {
         for (let level = pendingFrom; level < node.level; level++) this.#pending[level] = this.#ancestorAt(node, level);
         const tabular = this.#layout.form === 'tabular';
         const descend = (tabular ? this.#enterTabular(node, before) : this.#enterGrouped(node, before)) >= 0;
+        if (descend) this.#pendingRows(node, 'before', before);
         this.#pending.fill(undefined);
         if (descend) {
+            this.#pendingRows(node, 'after', after);
             if (tabular) this.#leaveTabular(node, after);
             else this.#leaveGrouped(node, after);
         }
         return { before, after, descend };
+    }
+
+    /** Where a node's child's block starts to show labels, as {@link rowsOf} takes it: the node's for its first
+     * child, unless Pending Rows stand before that child and took them; its child's level for any other. */
+    childPendingFrom(node: AxisNode, index: number, pendingFrom: number): number {
+        const window = cubeParts(this.#cube).windows.get(node.id);
+        return index === 0 && (window === undefined || window.before === 0) ? pendingFrom : node.level + 1;
     }
 
     /** A row node's children in their field's order, ordered a piece at a time. */
@@ -676,7 +839,7 @@ export class ReportBuilder {
             yield* this.#emitColumns(columns, spans);
             yield* this.#emitRows(rows);
         }
-        return makeReport(this.#cube, this.#layout, this.#options, this.#reader, this.#labelColumnList(), columns, spans, this.#tiers(), rows, this.#lineage);
+        return makeReport(this.#cube, this.#layout, this.#options, this.#reader, this.#labelColumnList(), columns, spans, this.#tiers(), rows, this.#lineage, this.#ranks);
     }
 
     #word(id: string): string {
@@ -862,12 +1025,37 @@ export class ReportBuilder {
             }
             return;
         }
-        if (this.#layout.form === 'tabular') {
-            yield* this.#walk(root, true, node => this.#enterTabular(node, rows), node => this.#leaveTabular(node, rows), () => rows.length, rowUnits);
-        } else {
-            yield* this.#walk(root, true, node => this.#enterGrouped(node, rows), node => this.#leaveGrouped(node, rows), () => rows.length, rowUnits);
-        }
+        const tabular = this.#layout.form === 'tabular';
+        const enter = (node: AxisNode): number => {
+            const mark = tabular ? this.#enterTabular(node, rows) : this.#enterGrouped(node, rows);
+            if (mark >= 0) this.#pendingRows(node, 'before', rows);
+            return mark;
+        };
+        const leave = (node: AxisNode): void => {
+            this.#pendingRows(node, 'after', rows);
+            if (tabular) this.#leaveTabular(node, rows);
+            else this.#leaveGrouped(node, rows);
+        };
+        yield* this.#walk(root, true, enter, leave, () => rows.length, rowUnits);
         this.#grandTotalRows(rows);
+    }
+
+    // A Sibling Window's Pending Rows on one side of its shown siblings (ADR-0370 section 3): each sibling there
+    // the rows it would have, as its siblings shown have them, with no label and no value. In the Tabular form the
+    // first of them, which stands first in its parent's block, takes the labels that block's first row shows.
+    #pendingRows(node: AxisNode, side: 'before' | 'after', rows: PivotReportRow[]): void {
+        const window = cubeParts(this.#cube).windows.get(node.id);
+        if (window === undefined) return;
+        const count = side === 'before' ? window.before : window.after;
+        if (count === 0) return;
+        const tabular = this.#layout.form === 'tabular';
+        if (side === 'before' && tabular && node.item !== undefined) this.#tabularLabels(node, node.level);
+        const first = side === 'before' ? 0 : window.before + shownCount(this.#rowAxis.childrenOf(node).length, window);
+        const each = this.#valuesOnRows ? (tabular ? this.#valueCount : 1 + this.#valueCount) : 1;
+        const labels = Object.freeze(this.#newLabels());
+        for (let sibling = first; sibling < first + count; sibling++) {
+            for (let r = 0; r < each; r++) rows.push(makeRow('pending', node, -1, false, labels, this.#lineage, sibling));
+        }
     }
 
     #grandTotalRows(rows: PivotReportRow[]): void {
@@ -1061,7 +1249,17 @@ export class ReportBuilder {
         const ordering = this.#ordering(node, rows);
         yield* inPieces(children.length, 2, ordering.prepare);
         const order = yield* sortedSteps(children.map((_, i) => i), ordering.compare);
-        return order.map(i => elementAt(children, i));
+        return this.#shown(node, rows, order.map(i => elementAt(children, i)));
+    }
+
+    // A row node's children as the report shows them: under a Sibling Window, all but its margins, which the cube
+    // checked sort strictly beyond the window's edges, and each shown sibling's place among the set's kept.
+    #shown(node: AxisNode, rows: boolean, ordered: readonly AxisNode[]): readonly AxisNode[] {
+        const window = rows ? cubeParts(this.#cube).windows.get(node.id) : undefined;
+        if (window === undefined) return ordered;
+        const shown = ordered.slice(window.before > 0 ? 1 : 0, ordered.length - (window.after > 0 ? 1 : 0));
+        shown.forEach((child, i) => this.#ranks.set(child.id, window.before + i));
+        return shown;
     }
 
     #atOnce(node: AxisNode, rows: boolean): boolean {
@@ -1075,6 +1273,10 @@ export class ReportBuilder {
     // At once, the order is made as directly as it can be: this is every node's order in a report laid out at
     // once, and a few hundred thousand nodes' in a large one.
     #orderAtOnce(node: AxisNode, rows: boolean): readonly AxisNode[] {
+        return this.#shown(node, rows, this.#sortAtOnce(node, rows));
+    }
+
+    #sortAtOnce(node: AxisNode, rows: boolean): readonly AxisNode[] {
         const level = node.level + 1;
         const placement = elementAt(rows ? this.#rowPlacements : this.#columnPlacements, level);
         if (placement.sort.byValue !== undefined) {

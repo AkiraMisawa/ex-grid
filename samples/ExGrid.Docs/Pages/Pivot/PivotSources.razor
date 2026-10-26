@@ -244,8 +244,22 @@ return answer.Build();</code></pre>
             siblings before a window could not be checked. The bundled sources answer windows too, and
             <code>@@ex-grid/pivot-engine</code>'s answer is theirs to the last bit, as <code>order</code>,
             <code>window</code>, <code>addWindow</code>, <code>addRest</code> and an answer's <code>windows</code> and
-            <code>restAt</code>. The TypeScript cube refuses an answer with windows by name until it lays them out
-            (ADR-0370).
+            <code>restAt</code>.
+        </p>
+        <p>
+            The TypeScript engine lays a window out with a row for every sibling of its set, so the report's row count and
+            the scrollbar drawn from it are the whole set's. Its cube first checks the window: the siblings shown, the
+            margins and the rest cells compose to the parent at every column group, and each margin sorts strictly beyond
+            its edge, or the answer is refused naming the parent. A sibling outside the window is a
+            <strong>Pending Row</strong>: role <code>pending</code>, no label and no value, never painted, and
+            <code>valueAt</code>, <code>rowPath</code> and <code>detailsQuery</code> refuse it by name rather than read
+            it as empty. A <code>LocalPivotReportSource</code> over a <code>FetchingPivotSource</code> that answers Level
+            Aggregates asks a question whole first, and with windows only once the server refuses it past the cap, so a
+            report that fits is never windowed. When a report Window reaches Pending Rows it asks again, each set the
+            Window reaches started so that the rows asked for lie in the middle of its window, and answers once that
+            answer is checked: scrolling down a million customers asks the server for the thousand around the screen, and
+            the rows' sequence, and the selection, stay as they were. A Copy or a Selection Summary that reaches a
+            Pending Row is refused by name (<code>rowsNotAnswered</code>), never answered with blanks (ADR-0370).
         </p>
     </DocsSection>
 

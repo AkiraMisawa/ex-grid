@@ -6,7 +6,7 @@
 import { PartColumns, emptyValue, type AggregateValue } from '../aggregates/parts';
 import { fromPublicKey, type ItemKey, type PivotItemKey } from '../items/item-key';
 import type { FieldMeta, PivotOrderKeyValue } from '../fields/pivot-field';
-import { sameKeys, hidingFilters, levelsOfLayout, placedFields, type PivotQuery, type PivotQueryField } from './query';
+import { sameKeys, hidingFilters, levelQueryForLayout, levelsOfLayout, placedFields, sameLevels, type PivotQuery, type PivotQueryField } from './query';
 import { answerColumns, type PivotAnswer, type PivotAnswerAxis, type PivotRestSide } from './answer';
 import type { PivotLayout, PivotFieldPlacement } from '../layout/pivot-layout';
 import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums';
@@ -133,6 +133,16 @@ export interface CubeParts {
     /** Every Item of a field over all the data, where the cube was made from records it can read again. */
     readonly allItems: ((field: string) => readonly ItemKey[]) | undefined;
     readonly cells: CubeCells;
+    /** The Sibling Windows a level answer holds, by their parent's row node id (ADR-0370 section 3). */
+    readonly windows: ReadonlyMap<number, CubeWindow>;
+}
+
+/** A Sibling Window as the report lays it out: how many siblings come before the first shown and after the last,
+ * each a Pending Row's worth, its margin among them. Its parent's children in the cube are the siblings shown and
+ * the margins, which sort strictly beyond them. */
+export interface CubeWindow {
+    readonly before: number;
+    readonly after: number;
 }
 
 /** What a cube's build made, for a computation that keeps the cube up to date (ADR-0153): each tree's nodes by
@@ -195,6 +205,7 @@ let partsOfCube: (cube: PivotCube) => CubeParts;
 let makeCube: (query: PivotQuery, sourceVersion: string, included: number, parts: CubeParts, values: readonly PartColumns[], levels: boolean) => PivotCube;
 let withCells: (cube: PivotCube, sourceVersion: string, included: number, rows: CubeAxis, columns: CubeAxis, cells: CubeCells) => PivotCube;
 let fieldsHeld: (cube: PivotCube, layout: PivotLayout) => boolean;
+let windowsHeld: (cube: PivotCube, layout: PivotLayout) => boolean;
 
 /** The cube a report is laid out from (ADR-0060/0066): the answer's leaves, each axis's tree of Items, and
  * every total merged from the leaves beneath it. Made by {@link pivotCube} or {@link aggregatePivot}. */
@@ -224,6 +235,7 @@ export class PivotCube {
     static {
         partsOfCube = cube => cube.#parts;
         fieldsHeld = (cube, layout) => cube.#holdsFields(layout);
+        windowsHeld = (cube, layout) => cube.#holdsWindows(layout);
         makeCube = (query, sourceVersion, included, parts, values, levels) => new PivotCube(query, sourceVersion, included, parts, values, levels);
         withCells = (cube, sourceVersion, included, rows, columns, cells) =>
             new PivotCube(cube.query, sourceVersion, included, Object.freeze({ ...cube.#parts, rows, columns, cells }), cube.#values, cube.isLevels);
@@ -231,9 +243,18 @@ export class PivotCube {
 
     /** Whether the cube was aggregated under the layout's placed fields, Hidden Items and Value Fields, with
      * the parts each of its Aggregations reads; one made from Level Aggregates, also under the groups the layout
-     * shows. */
+     * shows, and one that answered Sibling Windows, also under the orders and collapse the layout asks them by. */
     holds(layout: PivotLayout): boolean {
-        return this.#holdsFields(layout) && this.#showsGroups(layout);
+        return this.#holdsFields(layout) && this.#showsGroups(layout) && this.#holdsWindows(layout);
+    }
+
+    // Whether the Sibling Windows answered are where the layout would ask for them (ADR-0370 section 3): a window
+    // is cut by its set's order and laid out under the collapse it was asked with, so a layout that orders or
+    // collapses otherwise asks again.
+    #holdsWindows(layout: PivotLayout): boolean {
+        const window = this.query.levels?.window;
+        if (window === undefined || this.#parts.windows.size === 0) return true;
+        return sameLevels(levelQueryForLayout(layout, this.query.maxLeaves, window).levels, this.query.levels);
     }
 
     // The fields, Hidden Items and parts the layout lays out.
@@ -276,6 +297,11 @@ export class PivotCube {
 /** Whether the cube holds the layout's fields, Hidden Items and parts, whichever groups it shows. */
 export function cubeHoldsFields(cube: PivotCube, layout: PivotLayout): boolean {
     return fieldsHeld(cube, layout);
+}
+
+/** Whether the cube's Sibling Windows are where the layout would ask for them; not part of the public surface. */
+export function cubeHoldsWindows(cube: PivotCube, layout: PivotLayout): boolean {
+    return windowsHeld(cube, layout);
 }
 
 /** The parts of a cube the report reads. */
@@ -354,12 +380,19 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
     });
 
     const levels = query.levels;
+    const windows = new Map<number, CubeWindow>();
     if (answer.isLevels) {
         if (levels === undefined) throw new Error('Internal: a level answer is laid out only for a question with levels.');
         // Level Aggregates (ADR-0370 section 3): every total is the server's, and is checked against the groups
         // below it rather than merged from them; the grand total, at both roots (id 0), holds every record included.
         const total = cells.get(cellKey(0, 0));
         if (total !== undefined) included = answer.recordsAt(total);
+        const checked = answer.windows.map((window, w) => ({
+            parent: window.parent.reduce<AxisNode>((node, item) => defined(node.childAt(item), "a window's parent, as the answer was checked"), elementAt(rowTree.nodes, 0)),
+            before: window.before,
+            after: window.after,
+            rests: elementAt(rests, w),
+        }));
         yield* levelSumsSteps({
             levels,
             rowFields: answer.rows.length,
@@ -371,17 +404,10 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
             values: values.map((columns, v) => ({ field: elementAt(sources, v), columns })),
             describe: cell => describe(answer, cell),
             columnRoot: elementAt(columnTree.nodes, 0),
-            windows: answer.windows.map((window, w) => ({
-                parent: window.parent.reduce<AxisNode>((node, item) => defined(node.childAt(item), "a window's parent, as the answer was checked"), elementAt(rowTree.nodes, 0)),
-                before: window.before,
-                after: window.after,
-                rests: elementAt(rests, w),
-            })),
+            windows: checked,
             isRest: cell => answer.restAt(cell) !== undefined,
         });
-        if (answer.windows.length > 0) {
-            throw new Error('The answer holds windows of sibling sets, which this engine does not lay out yet; ask without a window (ADR-0370 section 3).');
-        }
+        for (const window of checked) windows.set(window.parent.id, Object.freeze({ before: window.before, after: window.after }));
     } else if (values.length > 0) {
         // Every total from its leaves (ADR-0060): each leaf is merged into every cell whose row and column
         // are its own or their ancestors. An ancestor's cell is never a leaf's, so nothing is counted twice.
@@ -416,6 +442,7 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
         rows: new BuiltAxis(rowTree.nodes),
         columns: new BuiltAxis(columnTree.nodes),
         cells: new BuiltCells(cells, values),
+        windows,
     });
     made?.(Object.freeze({ rowNodes: rowTree.nodes, columnNodes: columnTree.nodes, rowLeaves, columnLeaves, cells, values }));
     return makeCube(query, answer.sourceVersion, included, parts, values, answer.isLevels);

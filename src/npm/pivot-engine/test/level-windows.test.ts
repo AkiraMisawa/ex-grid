@@ -232,16 +232,6 @@ describe('ADR-0370: the bundled sources answer a sibling set past the limit as a
         expect(answer.refusal?.kind).toBe('tooManyLeaves');
     });
 
-    it('ADR-0370: the TypeScript cube refuses a window by name until it lays one out', async () => {
-        const source = new RecordPivotSource(trades(5, 1500, true), fields);
-        const query = pivotQuery({
-            rows: ['Region', 'Book'], columns: ['Live', 'Trader'], values: [{ field: 'Amount', parts: ['sum'] }], maxLeaves: 200,
-            levels: { rows: [{}, { order: amount('sum', true) }], columns: liveCollapsed, window: { limit: 3 } },
-        });
-        const answer = await source.aggregate(query);
-        expect(answer.windows.length).toBeGreaterThan(0);
-        expect(() => pivotCube(query, answer, fields)).toThrow('The answer holds windows of sibling sets, which this engine does not lay out yet');
-    });
 });
 
 describe('ADR-0370: a question with a window, and an answer that is not its answer', () => {
@@ -336,7 +326,7 @@ describe('ADR-0370: a question with a window, and an answer that is not its answ
     it('ADR-0370: the cube checks a window against its parent, rests included, and refuses one that does not add up', () => {
         const asked = ask(3, [{ rows: [east], start: 4 }]);
         const sums = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
-        expect(() => pivotCube(asked, books(asked, sums, 4, 7), fields)).toThrow('which this engine does not lay out yet');
+        expect(pivotCube(asked, books(asked, sums, 4, 7), fields).isLevels).toBe(true);
         expect(() => pivotCube(asked, books(asked, sums, 4, 7, 1), fields))
             .toThrow("The server's answer for [Region=Text:East] × [] does not add up: its sum of 'Amount' is not what its row groups below compose to");
     });

@@ -213,7 +213,7 @@ function metricsOf(written: JsonObject): NonNullable<PivotReportSettings['labelM
     };
 }
 
-const roleLetters = { item: 'i', group: 'g', subtotal: 's', grandTotal: 't' } as const;
+const roleLetters = { item: 'i', group: 'g', subtotal: 's', grandTotal: 't', pending: 'p' } as const;
 
 // One line a row, as a report's line is read (readings.ts).
 function line(row: PivotDisplayRow): string {
