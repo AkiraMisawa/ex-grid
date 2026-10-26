@@ -31,6 +31,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'Template Columns and Action Columns, what the value alone cannot say (ADR-0020); Cell State and Row Kind join as the Script Core comes to them.',
     },
     {
+        route: 'stripes', title: 'Row Stripes', group: 'Cells and rows',
+        description: 'Stripes decided from each row\'s position in the whole result, so they stay with the row as it scrolls (ADR-0038).',
+    },
+    {
         route: 'marks', title: 'Row Marks', group: 'Cells and rows',
         description: 'A Mark Column over 1,000,000 fetched rows: mark all, marks that survive a filter, and an action over them (ADR-0043).',
     },

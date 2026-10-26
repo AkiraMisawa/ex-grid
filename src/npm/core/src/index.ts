@@ -35,7 +35,7 @@ export type { TemporalLike } from './chrome/operand-reading';
 export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';
 export { foldCase } from './query/text-casing';
-export type { CellAlign } from './paint/cell-classes';
+export type { CellAlign, CellState } from './paint/cell-classes';
 export type { GridDensity } from './grid-metrics';
 export { densityText } from './density-text';
 export type { DensityText } from './density-text';

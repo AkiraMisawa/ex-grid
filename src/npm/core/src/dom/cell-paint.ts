@@ -1,17 +1,25 @@
-// What a Consumer that holds every cell declares about each one (ADR-0050, items 6, 7, 11 and 15; ADR-0051): a
-// cell's own kind, alignment, painted text and appearance, and the text an edit opens on. A Sheet is the
+// What a Consumer declares about each cell: its Cell State (ADR-0006), and, for one that holds every cell (ADR-0050,
+// items 6, 7, 11 and 15; ADR-0051), a cell's own kind, alignment, painted text and appearance, and the text an edit opens on. A Sheet is the
 // Consumer this is for: its column `A` holds numbers and text side by side, each formatted as its cell says.
 // Each declaration is asked per painted cell, so it is cheap; its identity is the change signal (ADR-0003/0006),
 // so a Consumer holds each in a field and hands over a new one when its answers change.
 
 import type { CellAppearance, CellTextMeasure, EdgeBorderOf } from '../cells/cell-appearance';
-import type { CellAlign } from '../paint/cell-classes';
+import type { CellAlign, CellState } from '../paint/cell-classes';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import type { ColumnType } from '../query/columns';
 import type { GridColumn } from './grid-column';
 
 /** The per-cell declarations of a grid's options. */
 export interface CellPaintOptions<Row> {
+    /**
+     * Cell Metadata (ADR-0006): asked for by (row, column) and answered as one of the five states the grid
+     * understands, which it paints as a class and does not interpret further. The Consumer maps its own vocabulary
+     * onto these five on the way in; a state nobody declared is refused rather than painted as an ordinary cell.
+     * Its identity is the change signal, as a row's is (ADR-0003): hand a new function when the metadata changes,
+     * because the same one answering otherwise leaves the states on screen where they are.
+     */
+    readonly cellState?: (row: Row, column: GridColumn<Row>) => CellState;
     /** A cell's kind (ADR-0050, item 6), in place of its column's: a Number or Date is right-aligned and becomes
      * `####` when it does not fit (ADR-0016); Text and Boolean show whole. */
     readonly cellType?: (row: Row, column: GridColumn<Row>) => ColumnType;
@@ -46,6 +54,7 @@ export class CellPaint<Row> {
         return new CellPaint<Row>({});
     }
 
+    readonly cellState: CellPaintOptions<Row>['cellState'];
     readonly cellType: CellPaintOptions<Row>['cellType'];
     readonly cellAlign: CellPaintOptions<Row>['cellAlign'];
     readonly paintedText: CellPaintOptions<Row>['paintedText'];
@@ -55,6 +64,7 @@ export class CellPaint<Row> {
     readonly editorText: CellPaintOptions<Row>['editorText'];
 
     private constructor(options: CellPaintOptions<Row>) {
+        this.cellState = options.cellState;
         this.cellType = options.cellType;
         this.cellAlign = options.cellAlign;
         this.paintedText = options.paintedText;
@@ -68,15 +78,17 @@ export class CellPaint<Row> {
      * one is the same function, so nothing is painted again for a render that changed none of them. */
     static take<Row>(options: CellPaintOptions<Row>, previous: CellPaint<Row>): CellPaint<Row> {
         // Checked as an untyped caller may hand them, where they arrive (CONVENTIONS.md).
-        const { cellType, cellAlign, paintedText, cellAppearance, edgeBorder, editorAppearance, editorText }: {
-            readonly cellType?: unknown; readonly cellAlign?: unknown; readonly paintedText?: unknown; readonly cellAppearance?: unknown;
+        const { cellState, cellType, cellAlign, paintedText, cellAppearance, edgeBorder, editorAppearance, editorText }: {
+            readonly cellState?: unknown; readonly cellType?: unknown; readonly cellAlign?: unknown; readonly paintedText?: unknown; readonly cellAppearance?: unknown;
             readonly edgeBorder?: unknown; readonly editorAppearance?: unknown; readonly editorText?: unknown;
         } = options;
-        const given = { cellType, cellAlign, paintedText, cellAppearance, edgeBorder, editorAppearance, editorText };
+        const given = { cellState, cellType, cellAlign, paintedText, cellAppearance, edgeBorder, editorAppearance, editorText };
         for (const [name, value] of Object.entries(given)) {
-            if (value !== undefined && typeof value !== 'function') throw new TypeError(`${name} is a function (ADR-0050).`);
+            if (value !== undefined && typeof value !== 'function') {
+                throw new TypeError(`${name} is a function (${name === 'cellState' ? 'ADR-0006' : 'ADR-0050'}).`);
+            }
         }
-        return previous.cellType === cellType && previous.cellAlign === cellAlign && previous.paintedText === paintedText
+        return previous.cellState === cellState && previous.cellType === cellType && previous.cellAlign === cellAlign && previous.paintedText === paintedText
             && previous.cellAppearance === cellAppearance && previous.edgeBorder === edgeBorder
             && previous.editorAppearance === editorAppearance && previous.editorText === editorText
             ? previous
@@ -86,7 +98,7 @@ export class CellPaint<Row> {
     /** Whether rows painted under `other` paint as under these: only the declarations a row reads are compared, so
      * a new `editorText` or `editorAppearance` paints no row again (ADR-0003). */
     paintsRowsAs(other: CellPaint<Row>): boolean {
-        return other === this || (other.cellType === this.cellType && other.cellAlign === this.cellAlign
+        return other === this || (other.cellState === this.cellState && other.cellType === this.cellType && other.cellAlign === this.cellAlign
             && other.paintedText === this.paintedText && other.cellAppearance === this.cellAppearance && other.edgeBorder === this.edgeBorder);
     }
 
