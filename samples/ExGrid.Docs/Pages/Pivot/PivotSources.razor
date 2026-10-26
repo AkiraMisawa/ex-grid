@@ -247,6 +247,22 @@ return answer.Build();</code></pre>
             <code>restAt</code>.
         </p>
         <p>
+            The demo API server in this repository, <code>samples/ExGrid.DemoApi</code> over SQLite, declares
+            <code>answersLevels</code> and answers both, and its source is a worked example. SQLite has no
+            <code>GROUPING SETS</code>, so its aggregate is one <code>GROUP BY</code> a pair of depths joined by
+            <code>UNION ALL</code>, each selecting its row and column depths first: a Blank is a <code>NULL</code> too, so
+            only the depths say where a group's Items end. A depth's <code>WHERE</code> keeps the records whose Items
+            above it are expanded, and a depth that every collapsed Item shuts off is not asked. It answers with the leaves
+            whenever they fit, as the bundled sources do. Its windows are cut in .NET rather than with
+            <code>ROW_NUMBER()</code>: it first reads the row groups at the grand total of the columns, orders each set by its value read from their parts with
+            <code>ExGrid.Data</code>'s <code>AggregateArithmetic.Read</code>, the engine's own arithmetic, so an Average
+            orders as the report sorts it to the last bit, with ties in its order of Items, and merges the groups of the
+            siblings beyond each margin into rest cells. Asked through <code>PivotSource.Fetch</code>, it answers as
+            <code>PivotSource.From</code> over the same trades, cell for cell, except for which of two tied siblings beyond
+            a window is its margin: the bundled sources take the one their leaves reached first, and the engine holds
+            either to the same checks.
+        </p>
+        <p>
             The TypeScript engine lays a window out with a row for every sibling of its set, so the report's row count and
             the scrollbar drawn from it are the whole set's. Its cube first checks the window: the siblings shown, the
             margins and the rest cells compose to the parent at every column group, and each margin sorts strictly beyond

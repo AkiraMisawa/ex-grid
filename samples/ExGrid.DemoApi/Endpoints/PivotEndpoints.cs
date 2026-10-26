@@ -8,7 +8,7 @@ namespace ExGrid.DemoApi;
 internal sealed record PivotFieldResponse(string Name, PivotFieldType Type, string Caption, string? Format);
 
 /// <summary>The source's features as <c>GET /api/pivot/fields</c> answers them.</summary>
-internal sealed record PivotFeaturesResponse(IReadOnlyList<PivotAggregation> Aggregations, bool CanRefresh, bool CountsItems);
+internal sealed record PivotFeaturesResponse(IReadOnlyList<PivotAggregation> Aggregations, bool CanRefresh, bool CountsItems, bool AnswersLevels);
 
 /// <summary>What <c>GET /api/pivot/fields</c> answers: everything <c>PivotSource.Fetch</c> takes
 /// besides the transport.</summary>
@@ -43,7 +43,7 @@ internal static class PivotEndpoints
     {
         app.MapGet("/api/pivot/fields", () => new PivotFieldsResponse(
             TradePivotFields.Fields.Select(field => new PivotFieldResponse(field.Name, field.Type, field.Caption, field.Format)).ToArray(),
-            new PivotFeaturesResponse(TradePivotFields.Features.Aggregations, TradePivotFields.Features.CanRefresh, TradePivotFields.Features.CountsItems)));
+            new PivotFeaturesResponse(TradePivotFields.Features.Aggregations, TradePivotFields.Features.CanRefresh, TradePivotFields.Features.CountsItems, TradePivotFields.Features.AnswersLevels)));
         app.MapGet("/api/pivot/item-counts", async (HttpResponse response, TradePivotSource source, TradeStore store, CancellationToken cancellationToken) =>
             store.State != TradeStoreState.Ready
                 ? ApiResults.NotReady(store, response)

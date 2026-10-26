@@ -1,3 +1,4 @@
+using ExGrid.Data;
 using ExPivot.Engine;
 using Microsoft.Data.Sqlite;
 
@@ -18,6 +19,10 @@ namespace ExGrid.DemoApi;
 /// <item><b>It refuses what <c>PivotSource.Fetch</c> refuses</b>, in the same words: a field it does
 /// not have, a part only an Aggregation it does not offer reads, and more leaves than the question
 /// allows — the last as soon as the reading passes the cap.</item>
+/// <item><b>Past the cap, a question with levels is answered with the groups it shows</b> (ADR-0370
+/// section 3), in the same read: <see cref="TradePivotSql.Levels"/> groups them, and
+/// <see cref="TradeLevelCells"/> folds them into cells and cuts the windows of the sets ordered by a
+/// value. A question whose leaves fit is answered with them, levels or not.</item>
 /// </list>
 /// <c>tests/ExGrid.DemoApi.Tests</c> holds its answers to <c>PivotSource.From</c>'s over the same
 /// trades, question for question (PV-22).
@@ -36,22 +41,54 @@ internal sealed class TradePivotSource(TradeStore store) : PivotSource
         ArgumentNullException.ThrowIfNull(query);
         if (Refusal(query) is { } refusal)
             return PivotAnswer.Refused(refusal);
-        var axis = query.Rows.Concat(query.Columns).Select(placed => TradePivotFields.Find(placed.Field)!).ToArray();
-        var values = query.Values.Select(value => TradePivotFields.Find(value.Field)!).ToArray();
+        var rows = query.Rows.Select(placed => TradePivotSql.Field(placed.Field)).ToArray();
+        var columns = query.Columns.Select(placed => TradePivotSql.Field(placed.Field)).ToArray();
+        var axis = rows.Concat(columns).ToArray();
+        var values = query.Values.Select(value => TradePivotSql.Field(value.Field)).ToArray();
         var (sql, parameters) = TradePivotSql.Aggregate(query, axis, values);
         return await store.ReadAsync(async (read, token) =>
         {
-            await using var command = read.Command(sql);
-            parameters.AddTo(command);
-            await using var reader = await command.ExecuteReaderAsync(token);
-            var leaves = new Leaves(query, axis, values);
-            while (await reader.ReadAsync(token))
+            await using (var command = read.Command(sql))
             {
-                // Refused as soon as the reading passes the cap: the rest is never read.
-                if (!leaves.Add(reader))
+                parameters.AddTo(command);
+                await using var reader = await command.ExecuteReaderAsync(token);
+                var leaves = new Leaves(query, axis, values);
+                var fits = true;
+                while (fits && await reader.ReadAsync(token))
+                {
+                    // Refused as soon as the reading passes the cap: the rest is never read.
+                    fits = leaves.Add(reader);
+                }
+                if (fits)
+                    return leaves.Answer(read.Version);
+            }
+            if (query.Levels is null)
+                return PivotAnswer.Refused(PivotSourceRefusal.TooManyLeaves(query.MaxLeaves));
+            // Past the cap, a question with levels is answered with the groups it shows, in the same
+            // read, so the answer is one Source Version (ADR-0370 section 3).
+            var cells = new TradeLevelCells(query, rows, columns, values);
+            if (cells.Windowed)
+            {
+                // Every row group at the grand total of the columns, which orders each set.
+                var (orderSql, orderParameters) = TradePivotSql.Levels(query, rows, columns, values, columnRootOnly: true);
+                await using var orderCommand = read.Command(orderSql);
+                orderParameters.AddTo(orderCommand);
+                await using var ordering = await orderCommand.ExecuteReaderAsync(token);
+                while (await ordering.ReadAsync(token))
+                    cells.Order(ordering);
+                cells.Plan();
+            }
+            var (levelSql, levelParameters) = TradePivotSql.Levels(query, rows, columns, values);
+            await using var levelCommand = read.Command(levelSql);
+            levelParameters.AddTo(levelCommand);
+            await using var groups = await levelCommand.ExecuteReaderAsync(token);
+            while (await groups.ReadAsync(token))
+            {
+                // Refused as soon as the cells pass the cap: the rest is never read.
+                if (!cells.Add(groups))
                     return PivotAnswer.Refused(PivotSourceRefusal.TooManyLeaves(query.MaxLeaves));
             }
-            return leaves.Answer(read.Version);
+            return cells.Answer(read.Version);
         }, cancellationToken);
     }
 
@@ -248,33 +285,7 @@ internal sealed class TradePivotSource(TradeStore store) : PivotSource
             var column = axis.Length;
             leaf.Records += reader.GetInt64(column++);
             for (var v = 0; v < values.Length; v++)
-            {
-                ref var part = ref leaf.Values[v];
-                var count = reader.GetInt64(column++);
-                part.Values += count;
-                if (!values[v].IsNumber)
-                    continue;
-                var parts = query.Values[v].Parts;
-                var sumAt = (parts & PivotParts.Sum) != 0 ? column++ : -1;
-                var minAt = (parts & PivotParts.Extremes) != 0 ? column : -1;
-                if (minAt >= 0)
-                    column += 2;
-                // A group whose values are all NULL has no numbers, and SQL's sum and extremes of
-                // it are NULL: nothing to add.
-                if (count == 0)
-                    continue;
-                var first = part.Numbers == 0;
-                part.Numbers += count;
-                if (sumAt >= 0)
-                    part.Sum += Amount(values[v], reader.GetInt64(sumAt));
-                if (minAt >= 0)
-                {
-                    var min = Amount(values[v], reader.GetInt64(minAt));
-                    var max = Amount(values[v], reader.GetInt64(minAt + 1));
-                    part.Min = first ? min : Math.Min(part.Min, min);
-                    part.Max = first ? max : Math.Max(part.Max, max);
-                }
-            }
+                leaf.Values[v].Fold(reader, ref column, values[v], query.Values[v].Parts);
             return true;
         }
 
@@ -286,22 +297,10 @@ internal sealed class TradePivotSource(TradeStore store) : PivotSource
             {
                 var at = builder.AddLeaf(leaf.Items, leaf.Records);
                 for (var v = 0; v < values.Length; v++)
-                {
-                    var part = leaf.Values[v];
-                    builder.SetCounts(at, v, part.Values, part.Numbers);
-                    // A field with no numbers sums to 0 and has extremes of 0, as the engine's do.
-                    if ((query.Values[v].Parts & PivotParts.Sum) != 0)
-                        builder.SetSum(at, v, PivotNumber.Exact(part.Sum));
-                    if ((query.Values[v].Parts & PivotParts.Extremes) != 0)
-                        builder.SetExtremes(at, v, PivotNumber.Exact(part.Min), PivotNumber.Exact(part.Max));
-                }
+                    leaf.Values[v].SetOn(builder, at, v, query.Values[v].Parts);
             }
             return builder.Build();
         }
-
-        // A stored number as the exact amount it is: cents are hundredths, never through a double.
-        private static decimal Amount(TradePivotField field, long stored) =>
-            field.Kind == TradeValueKind.Cents ? Cents.ToDecimal(stored) : stored;
 
         private sealed class Leaf(PivotItemKey[] items, int values)
         {
@@ -309,34 +308,115 @@ internal sealed class TradePivotSource(TradeStore store) : PivotSource
 
             public long Records { get; set; }
 
-            public ValueParts[] Values { get; } = new ValueParts[values];
-        }
-
-        private struct ValueParts
-        {
-            public long Values;
-            public long Numbers;
-            public decimal Sum;
-            public decimal Min;
-            public decimal Max;
+            public TradeParts[] Values { get; } = new TradeParts[values];
         }
     }
+}
 
-    /// <summary>A leaf's Items, equal when every Item is — text ignoring case, as Items are told apart.</summary>
-    private sealed class ItemsComparer : IEqualityComparer<PivotItemKey[]>
+/// <summary>
+/// One field in Values' parts over a group of trades (ADR-0066): its values that are not Blank, its
+/// numbers, and their exact sum and extremes. A group's are read from the columns SQL answers for
+/// it, and two groups' merge exactly — counts and sums add, extremes compare — so a leaf or a cell
+/// folded from several groups holds the parts of all their trades.
+/// </summary>
+internal struct TradeParts
+{
+    public long Values;
+    public long Numbers;
+    public decimal Sum;
+    public decimal Min;
+    public decimal Max;
+
+    /// <summary>Folds in one group's columns of a field, read from <paramref name="column"/> on, as
+    /// <c>TradePivotSql</c> selects them: its count, then the parts asked for of a number field.</summary>
+    public void Fold(SqliteDataReader reader, ref int column, TradePivotField field, PivotParts parts)
     {
-        public static readonly ItemsComparer Instance = new();
-
-        public bool Equals(PivotItemKey[]? x, PivotItemKey[]? y) =>
-            ReferenceEquals(x, y) || (x is not null && y is not null && x.AsSpan().SequenceEqual(y));
-
-        public int GetHashCode(PivotItemKey[] items)
+        var count = reader.GetInt64(column++);
+        if (!field.IsNumber)
         {
-            var hash = new HashCode();
-            foreach (var item in items)
-                hash.Add(item);
-            return hash.ToHashCode();
+            Values += count;
+            return;
         }
+        var sumAt = (parts & PivotParts.Sum) != 0 ? column++ : -1;
+        var minAt = (parts & PivotParts.Extremes) != 0 ? column : -1;
+        if (minAt >= 0)
+            column += 2;
+        // A group whose values are all NULL has no numbers, and SQL's sum and extremes of it are
+        // NULL: nothing to add.
+        if (count == 0)
+            return;
+        Merge(new TradeParts
+        {
+            Values = count,
+            Numbers = count,
+            Sum = sumAt >= 0 ? Amount(field, reader.GetInt64(sumAt)) : 0,
+            Min = minAt >= 0 ? Amount(field, reader.GetInt64(minAt)) : 0,
+            Max = minAt >= 0 ? Amount(field, reader.GetInt64(minAt + 1)) : 0,
+        });
+    }
+
+    /// <summary>Merges another group's parts of the same field in.</summary>
+    public void Merge(in TradeParts other)
+    {
+        Values += other.Values;
+        if (other.Numbers == 0)
+            return;
+        var first = Numbers == 0;
+        Numbers += other.Numbers;
+        Sum += other.Sum;
+        Min = first ? other.Min : Math.Min(Min, other.Min);
+        Max = first ? other.Max : Math.Max(Max, other.Max);
+    }
+
+    /// <summary>Sets the parts asked for at a leaf or cell of an answer. A field with no numbers sums
+    /// to 0 and has extremes of 0, as the engine's do.</summary>
+    public readonly void SetOn(PivotAnswerBuilder builder, int at, int value, PivotParts parts)
+    {
+        builder.SetCounts(at, value, Values, Numbers);
+        if ((parts & PivotParts.Sum) != 0)
+            builder.SetSum(at, value, PivotNumber.Exact(Sum));
+        if ((parts & PivotParts.Extremes) != 0)
+            builder.SetExtremes(at, value, PivotNumber.Exact(Min), PivotNumber.Exact(Max));
+    }
+
+    /// <summary>An Aggregation read from these parts by the engine's own arithmetic (ADR-0060,
+    /// ADR-0130): what a report shows for the group, and what orders its siblings by a value. A part
+    /// not among <paramref name="parts"/> is not given, so an Aggregation that reads it throws.</summary>
+    public readonly AggregateResult Read(PivotAggregation aggregation, PivotParts parts) => AggregateArithmetic.Read(
+        aggregation switch
+        {
+            PivotAggregation.Sum => Aggregation.Sum,
+            PivotAggregation.Count => Aggregation.Count,
+            PivotAggregation.Average => Aggregation.Average,
+            PivotAggregation.Max => Aggregation.Max,
+            PivotAggregation.Min => Aggregation.Min,
+            PivotAggregation.CountNumbers => Aggregation.CountNumbers,
+            _ => throw new InvalidOperationException($"Internal: {aggregation} is not offered, and a question reading it is refused first."),
+        },
+        new AggregateCounts { Values = Values, Numbers = Numbers },
+        (parts & PivotParts.Sum) != 0 ? new AggregateSum { Exact = Sum } : null,
+        (parts & PivotParts.Extremes) != 0 ? new AggregateExtremes { ExactMin = Min, ExactMax = Max } : null);
+
+    // A stored number as the exact amount it is: cents are hundredths, never through a double.
+    private static decimal Amount(TradePivotField field, long stored) =>
+        field.Kind == TradeValueKind.Cents ? Cents.ToDecimal(stored) : stored;
+}
+
+/// <summary>Items, equal when every Item is — text ignoring case, as Items are told apart. A null
+/// stands for a level a cell is not named at.</summary>
+internal sealed class ItemsComparer : IEqualityComparer<PivotItemKey?[]>
+{
+    public static readonly ItemsComparer Instance = new();
+
+    public bool Equals(PivotItemKey?[]? x, PivotItemKey?[]? y) =>
+        ReferenceEquals(x, y) || (x is not null && y is not null && x.AsSpan().SequenceEqual(y));
+
+    public int GetHashCode(PivotItemKey?[] items)
+    {
+        var hash = new HashCode();
+        foreach (var item in items)
+            hash.Add(item);
+        return hash.ToHashCode();
     }
 }
 
@@ -381,7 +461,8 @@ internal static class ItemOrder
         return first.Select(entry => entry.Item).ToArray();
     }
 
-    private static int Compare(Entry x, Entry y)
+    /// <summary>Two Items in this order.</summary>
+    internal static int Compare(Entry x, Entry y)
     {
         if (x.Item.Kind != y.Item.Kind)
             return x.Item.Kind.CompareTo(y.Item.Kind);

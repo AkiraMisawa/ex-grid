@@ -79,3 +79,14 @@ Half of the million-trade read is Microsoft.Data.Sqlite's own: a plain read of t
 2.4–2.8 s, one .NET string per text value. The Month column costs 0.6 s of it and 0.76 MiB of the
 Brotli payload. An aggregate at a million trades is SQLite's sort, well past PV-21's 0.3 s for a new
 question; the bundled source over a Snapshot is the fast path.
+
+2026-10-26: The SQL source answers Level Aggregates (ADR-0370 section 3) and declares
+`answersLevels`. Past `MaxLeaves`, in the same read, a question with levels is asked again as one
+`GROUP BY` a pair of depths, joined by `UNION ALL` since SQLite has no `GROUPING SETS`, each row
+carrying its depths because a Blank is a `NULL` too. A set ordered by a value past the window's
+limit is cut in .NET: the row groups at the grand total of the columns are read first, each set
+ordered by its value read from its parts with `AggregateArithmetic.Read`, ties in the source's order
+of Items; then every group is read under the cap, the siblings beyond each margin merged into rest
+cells and the groups below them passed over. `PivotLevelTests` holds the answers to `PivotSource.From`'s; where a tie
+lies beyond a margin the two sources may choose different margins, so that test merges each margin
+with its rest before comparing.

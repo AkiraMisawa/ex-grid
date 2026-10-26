@@ -77,20 +77,7 @@ internal static class TradePivotSql
     {
         var parameters = new SqlParameters();
         var select = new List<string>(axis.Select(field => field.Sql)) { "count(*)" };
-        for (var v = 0; v < values.Count; v++)
-        {
-            var field = values[v];
-            select.Add($"count({field.Sql})");
-            if (!field.IsNumber)
-                continue;
-            if ((query.Values[v].Parts & PivotParts.Sum) != 0)
-                select.Add($"sum({field.Sql})");
-            if ((query.Values[v].Parts & PivotParts.Extremes) != 0)
-            {
-                select.Add($"min({field.Sql})");
-                select.Add($"max({field.Sql})");
-            }
-        }
+        select.AddRange(Parts(query, values));
 
         var sql = new StringBuilder();
         sql.Append("SELECT ").AppendJoin(", ", select).Append("\nFROM trades");
@@ -99,6 +86,104 @@ internal static class TradePivotSql
             sql.Append("\nGROUP BY ").AppendJoin(", ", axis.Select(field => field.Sql));
         return (sql.ToString(), parameters);
     }
+
+    /// <summary>
+    /// The aggregate of Level Aggregates for <paramref name="query"/> (ADR-0370 section 3): the groups
+    /// the question's levels show, every shown row group crossed with every shown column group. A
+    /// <c>GROUPING SETS</c> in a database that has it; SQLite has none, so it is one <c>GROUP BY</c> a
+    /// pair of depths, joined by <c>UNION ALL</c>, each saying its depths first, then the fields it
+    /// groups by and <c>NULL</c> for the rest — a Blank is a <c>NULL</c> too, so the depths, not a
+    /// <c>NULL</c>, say where a group's Items end. A group is shown when every Item above its own is
+    /// expanded, so a depth's <c>WHERE</c> carries, for each field above its last, the Items that are:
+    /// those not toggled where the field is expanded, the toggled ones where it is collapsed. For
+    /// Region collapsed but EMEA over Desk, by Product:
+    /// <code>
+    /// SELECT 0, 0, NULL, NULL, NULL, count(*), count(Pnl), sum(Pnl) FROM trades
+    /// UNION ALL
+    /// SELECT 0, 1, NULL, NULL, Product, … GROUP BY Product
+    /// UNION ALL
+    /// SELECT 1, 0, Region, NULL, NULL, … GROUP BY Region
+    /// …
+    /// SELECT 2, 1, Region, Desk, Product, … FROM trades
+    /// WHERE Region COLLATE NOCASE IN (SELECT value FROM json_each($p0))
+    /// GROUP BY Region, Desk, Product
+    /// </code>
+    /// A depth no record can reach — every Item above it collapsed — is not asked. Each set is a scan
+    /// of its own, (rows + 1) × (columns + 1) of them at most. The groups are folded into cells and
+    /// windowed in .NET (<see cref="TradeLevelCells"/>); with <paramref name="columnRootOnly"/>, only
+    /// the row groups at the grand total of the columns are asked, which order each set before its
+    /// window is cut.
+    /// </summary>
+    public static (string Sql, SqlParameters Parameters) Levels(
+        PivotQuery query, IReadOnlyList<TradePivotField> rows, IReadOnlyList<TradePivotField> columns, IReadOnlyList<TradePivotField> values,
+        bool columnRootOnly = false)
+    {
+        var levels = query.Levels ?? throw new InvalidOperationException("Internal: Level Aggregates answer a question with levels.");
+        var parameters = new SqlParameters();
+        var hidden = query.Placed.Select(placed => Keeping(Field(placed.Field), placed.HiddenItems, parameters)).ToArray();
+        // The innermost field's Items have nothing below them, so its rule is never a condition.
+        var rowsExpanded = rows.SkipLast(1).Select((field, level) => Expanded(field, levels.Rows[level], parameters)).ToArray();
+        var columnsExpanded = columns.SkipLast(1).Select((field, level) => Expanded(field, levels.Columns[level], parameters)).ToArray();
+        var parts = Parts(query, values).ToArray();
+        var sets = new List<string>();
+        for (var rowDepth = 0; rowDepth <= rows.Count; rowDepth++)
+        {
+            var rowConditions = rowsExpanded.Take(Math.Max(0, rowDepth - 1)).ToArray();
+            if (rowConditions.Contains(NoRecord))
+                continue;
+            for (var columnDepth = 0; columnDepth <= (columnRootOnly ? 0 : columns.Count); columnDepth++)
+            {
+                var columnConditions = columnsExpanded.Take(Math.Max(0, columnDepth - 1)).ToArray();
+                if (columnConditions.Contains(NoRecord))
+                    continue;
+                var grouped = rows.Take(rowDepth).Concat(columns.Take(columnDepth)).Select(field => field.Sql).ToArray();
+                var select = new List<string>
+                {
+                    rowDepth.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    columnDepth.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                };
+                select.AddRange(rows.Select((field, level) => level < rowDepth ? field.Sql : "NULL"));
+                select.AddRange(columns.Select((field, level) => level < columnDepth ? field.Sql : "NULL"));
+                select.Add("count(*)");
+                select.AddRange(parts);
+                var sql = new StringBuilder();
+                sql.Append("SELECT ").AppendJoin(", ", select).Append("\nFROM trades");
+                AppendWhere(sql, hidden.Concat(rowConditions).Concat(columnConditions));
+                if (grouped.Length > 0)
+                    sql.Append("\nGROUP BY ").AppendJoin(", ", grouped);
+                sets.Add(sql.ToString());
+            }
+        }
+        return (string.Join("\nUNION ALL\n", sets), parameters);
+    }
+
+    // For each field in Values, its count and the parts asked for: a field that holds no numbers
+    // answers its count alone.
+    private static IEnumerable<string> Parts(PivotQuery query, IReadOnlyList<TradePivotField> values)
+    {
+        for (var v = 0; v < values.Count; v++)
+        {
+            var field = values[v];
+            yield return $"count({field.Sql})";
+            if (!field.IsNumber)
+                continue;
+            if ((query.Values[v].Parts & PivotParts.Sum) != 0)
+                yield return $"sum({field.Sql})";
+            if ((query.Values[v].Parts & PivotParts.Extremes) != 0)
+            {
+                yield return $"min({field.Sql})";
+                yield return $"max({field.Sql})";
+            }
+        }
+    }
+
+    // A condition no record meets.
+    private const string NoRecord = "0";
+
+    // The records whose Item of a field is expanded by its rule, or null when every record's is: those
+    // not toggled where the field is expanded, the toggled ones where it is collapsed.
+    private static string? Expanded(TradePivotField field, PivotLevelRule rule, SqlParameters parameters)
+        => rule.Collapsed ? Within(field, rule.ToggledItems, parameters) : Keeping(field, rule.ToggledItems, parameters);
 
     /// <summary>A field's Items over all the data (ADR-0066): its distinct stored values, which are
     /// folded into Items, searched and ordered in .NET (<see cref="TradePivotSource"/>).</summary>
@@ -152,12 +237,36 @@ internal static class TradePivotSql
         return blank ? $"({field.Sql} IS NOT NULL AND {notIn})" : $"({field.Sql} IS NULL OR {notIn})";
     }
 
+    /// <summary>
+    /// The records whose Item of a field is one of <paramref name="items"/>: <c>0</c>, matching none,
+    /// when no stored value of the field can be any of them. A Blank among them is <c>IS NULL</c>, and
+    /// the rest are one parameter, as in <see cref="Keeping"/>.
+    /// </summary>
+    public static string Within(TradePivotField field, IReadOnlyList<PivotItemKey> items, SqlParameters parameters)
+    {
+        var values = new List<object>();
+        var blank = false;
+        foreach (var item in items)
+        {
+            if (!field.TryStored(item, out var stored))
+                continue;
+            if (stored is null)
+                blank = true;
+            else
+                values.Add(stored);
+        }
+        if (values.Count == 0)
+            return blank ? $"{field.Sql} IS NULL" : NoRecord;
+        var @in = $"{field.Sql}{Collation(field, values)} IN (SELECT value FROM json_each({parameters.Add(JsonSerializer.Serialize(values))}))";
+        return blank ? $"({field.Sql} IS NULL OR {@in})" : @in;
+    }
+
     /// <summary>The records that carry <paramref name="item"/> in <paramref name="field"/>: <c>0</c>,
     /// matching none, when no stored value of the field can be that Item.</summary>
     public static string Carrying(TradePivotField field, PivotItemKey item, SqlParameters parameters)
     {
         if (!field.TryStored(item, out var stored))
-            return "0";
+            return NoRecord;
         if (stored is null)
             return $"{field.Sql} IS NULL";
         return $"{field.Sql}{Collation(field, [stored])} = {parameters.Add(stored)}";
@@ -181,6 +290,7 @@ internal static class TradePivotSql
             sql.Append("\nWHERE ").AppendJoin("\n  AND ", kept);
     }
 
-    private static TradePivotField Field(string name) =>
+    /// <summary>The field a question names, which the source has checked it has.</summary>
+    public static TradePivotField Field(string name) =>
         TradePivotFields.Find(name) ?? throw new InvalidOperationException($"'{name}' was asked for without being checked; the source refuses an unknown field first.");
 }

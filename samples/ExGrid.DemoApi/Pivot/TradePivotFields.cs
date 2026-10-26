@@ -160,6 +160,9 @@ internal static class TradePivotFields
     /// keep. A source is never obliged to approximate, so Value Field Settings… offers them
     /// disabled, with the reason. It can be refreshed: the data moves on while live updates run. It
     /// counts each field's Items (ADR-0370 section 3): a <c>SELECT DISTINCT</c> a field, once a version.
+    /// It answers Level Aggregates (ADR-0370 section 3): past the cap, a question with levels is
+    /// answered with the groups it shows (<see cref="TradePivotSql.Levels"/>), and a set ordered by a
+    /// value past the window's limit as a window of it (<see cref="TradeLevelCells"/>).
     /// </summary>
     public static readonly PivotSourceFeatures Features = new(
         [
@@ -167,7 +170,8 @@ internal static class TradePivotFields
             PivotAggregation.Max, PivotAggregation.Min, PivotAggregation.CountNumbers,
         ],
         canRefresh: true,
-        countsItems: true);
+        countsItems: true,
+        answersLevels: true);
 
     private static readonly Dictionary<string, TradePivotField> ByName = All.ToDictionary(f => f.Name, StringComparer.Ordinal);
 
