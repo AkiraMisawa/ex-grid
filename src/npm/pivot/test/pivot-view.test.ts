@@ -1320,6 +1320,108 @@ function bandButton(root: HTMLElement, caption: string): HTMLButtonElement {
     return button;
 }
 
+function deferBox(root: HTMLElement): HTMLInputElement {
+    const box = root.querySelector<HTMLInputElement>('.ex-pivot-defer input[type=checkbox]');
+    if (box === null) throw new Error('The Field List has no Defer Layout Update.');
+    return box;
+}
+
+function updateButton(root: HTMLElement): HTMLButtonElement {
+    const button = root.querySelector<HTMLButtonElement>('.ex-pivot-defer .ex-pivot-update');
+    if (button === null) throw new Error('The Field List has no Update.');
+    return button;
+}
+
+function setDeferred(root: HTMLElement, deferred: boolean): void {
+    const box = deferBox(root);
+    box.checked = deferred;
+    box.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+const rowFields = (layout: PivotLayout | undefined): readonly string[] => defined(layout, 'a layout').rows.map(placement => placement.field);
+
+describe('ExPivot\'s Defer Layout Update (ADR-0061)', () => {
+    it('ADR-0061: while it is ticked the pane\'s changes wait, and Update applies them in one change', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, view } = mount({ source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        expect(deferBox(root).checked).toBe(false);
+        expect(updateButton(root).disabled).toBe(true);
+        expect(deferBox(root).nextElementSibling?.textContent).toBe('Defer Layout Update');
+        expect(updateButton(root).textContent).toBe('Update');
+        setDeferred(root, true);
+        expect(updateButton(root).disabled).toBe(true);
+        tick(root, 'Desk');
+        await settled();
+        // The pane shows the pending layout; the report and the Consumer are left alone.
+        expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Region', 'Desk']);
+        expect(rowFields(view.shownLayout)).toEqual(['Region']);
+        expect(changed).toHaveLength(0);
+        expect(updateButton(root).disabled).toBe(false);
+        updateButton(root).click();
+        await settled();
+        expect(rowFields(view.shownLayout)).toEqual(['Region', 'Desk']);
+        expect(changed.map(rowFields)).toEqual([['Region', 'Desk']]);
+        // Still ticked, with nothing left to apply.
+        expect(deferBox(root).checked).toBe(true);
+        expect(updateButton(root).disabled).toBe(true);
+    });
+
+    it('ADR-0061: unticking it applies the pending layout, as Excel does', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, view } = mount({ source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        setDeferred(root, true);
+        tick(root, 'Desk');
+        await settled();
+        expect(changed).toHaveLength(0);
+        setDeferred(root, false);
+        await settled();
+        expect(rowFields(view.shownLayout)).toEqual(['Region', 'Desk']);
+        expect(changed).toHaveLength(1);
+        expect(updateButton(root).disabled).toBe(true);
+    });
+
+    it('ADR-0061: a gesture on the report applies at once and reaches the pending layout, so Update does not take it back', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        setDeferred(root, true);
+        // The pending layout sorts Desk Z to A, which the report does not show yet.
+        entryButton(root, 'rows', 1).click();
+        command(root, 'Sort Z to A').click();
+        await settled();
+        expect(changed).toHaveLength(0);
+        // EU collapsed by its button: the report shows it at once.
+        (await grid.paint(0, 0)).button().click();
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
+        expect(changed).toHaveLength(1);
+        updateButton(root).click();
+        await settled();
+        // Desk sorted Z to A under the US, and EU still collapsed.
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'Rates', 'FX', 'Grand Total']);
+        expect(changed).toHaveLength(2);
+    });
+
+    it('ADR-0061: a layout the Consumer hands in replaces the pending one', async () => {
+        const changed: PivotLayout[] = [];
+        const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
+        const { root, view } = mount(options);
+        await settled();
+        setDeferred(root, true);
+        tick(root, 'Desk');
+        const byDesk = createPivotLayout({ rows: ['Desk'], values: ['Amount'] });
+        view.update({ ...options, layout: byDesk });
+        await settled();
+        expect(rowFields(view.shownLayout)).toEqual(['Desk']);
+        expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Desk']);
+        expect(deferBox(root).checked).toBe(true);
+        expect(updateButton(root).disabled).toBe(true);
+        expect(changed).toHaveLength(0);
+    });
+});
+
 describe('ExPivot\'s report filter band (ADR-0061)', () => {
     it('ADR-0061: each field in Filters stands in the band with what it shows, and its Filter… opens over the report and applies there', async () => {
         const { root, view } = mount({ source: local(), layout: createPivotLayout({ filters: ['Region'], rows: ['Desk'], values: ['Amount'] }) });
