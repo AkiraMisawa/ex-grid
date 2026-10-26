@@ -225,8 +225,51 @@ describe('createBoard (ADR-0340)', () => {
         expect(mounts.charts[2]?.options.hiddenSeries).toEqual([]);
     });
 
+    it('refuses, before drawing any view, a grid showing dates on a Board given no Temporal (ADR-0350 section 16)', () => {
+        const dated = readBoard(`{"version": 1, "inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "day", "type": "date"}]}},
+          "views": [{"id": "desks", "grid": {"data": "trades", "columns": [{"column": "desk"}]}},
+                    {"id": "days", "grid": {"data": "trades", "columns": [{"column": "desk"}, {"column": "day"}]}}],
+          "layout": [{"views": ["desks", "days"]}]}`);
+        const { element, mounts, view } = draw({ board: dated });
+
+        expect(element.querySelector('[role="alert"]')?.textContent).toMatch(/^views\[1\]\.grid: Column 'day' holds dates/u);
+        expect(mounts.grids).toHaveLength(0);
+        expect(view.bound).toBeUndefined();
+    });
+
+    it('leaves no view running when one cannot be mounted', () => {
+        const mounts = new StandIns();
+        const failing: BoardMounts = { grid: mounts.grid, pivot: mounts.pivot, chart: () => { throw new RangeError('No chart.'); } };
+        const element = document.createElement('div');
+
+        expect(() => new BoardView(element, { board: board(), data: data(board()) }, failing)).toThrow('No chart.');
+        expect([only(mounts.grids).destroyed, only(mounts.pivots).destroyed]).toEqual([true, true]);
+        expect(element.children).toHaveLength(0);
+    });
+
+    it('says under a pivot that its links narrow nothing yet, rather than look like a selection of every row (spine rule 1)', () => {
+        const fromPivot = board(', "links": [{"from": "byDesk", "to": ["curve"], "on": ["desk"]}]');
+        const { element } = draw({ board: fromPivot });
+
+        expect(element.querySelector('[data-ex-view="byDesk"] .ex-board-link-status')?.textContent).toBe('Selecting cells here does not narrow the views it links to yet.');
+        expect(draw({ board: board() }).element.querySelector('.ex-board-link-status')).toBeNull();
+    });
+
+    it('binds again for an earlier Diff handed back, as a host undoing the user\'s changes does', () => {
+        const first = BoardDiff.read('{"version":1,"views":{"curve":{"chart":{"hidden":["pnl"]}}}}');
+        const { view, mounts, diffs, options } = draw({ board: board(), diff: first });
+        call(mounts.charts[0]?.options.onSeriesVisibilityChanged, { key: 'pnl', hidden: false });
+        view.update({ ...options, diff: only(diffs) });
+        expect(mounts.charts).toHaveLength(1);
+
+        view.update({ ...options, diff: first });
+        expect(mounts.charts).toHaveLength(2);
+        expect(mounts.charts[1]?.options.hiddenSeries).toEqual(['pnl']);
+    });
+
     it('redraws only its charts for another width, and empties its element when destroyed', () => {
         const { view, mounts, element, options } = draw({ board: board(), width: 1000 });
+        element.style.margin = '0 auto';
         view.update({ ...options, width: 500 });
         expect(only(mounts.charts).options.width).toBe(500);
         expect(mounts.grids).toHaveLength(1);
@@ -234,6 +277,7 @@ describe('createBoard (ADR-0340)', () => {
         view.destroy();
         expect(element.children).toHaveLength(0);
         expect(element.classList.contains('ex-board')).toBe(false);
+        expect([element.style.display, element.style.gap, element.style.margin]).toEqual(['', '', '0px auto']);
         expect([mounts.grids[0]?.destroyed, mounts.pivots[0]?.destroyed, mounts.charts[0]?.destroyed]).toEqual([true, true, true]);
     });
 });

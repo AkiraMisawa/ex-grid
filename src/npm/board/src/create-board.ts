@@ -3,7 +3,7 @@
 // Nothing of a Board that does not bind is drawn: a part drawn beside a refusal would look like the whole.
 
 import { createChart, type ChartHandle, type ChartOptions } from '@ex-grid/chart';
-import { createGrid, type GridHandle, type GridOptions, type GridSelection, type TemporalLike } from '@ex-grid/core';
+import { createGrid, type GridHandle, type GridOptions, type TemporalLike } from '@ex-grid/core';
 import { BoardRefusedError, type Snapshot } from '@ex-grid/data';
 import { createPivot, type PivotHandle, type PivotViewOptions } from '@ex-grid/pivot';
 import type { BoardDiff } from './board-diff';
@@ -97,7 +97,10 @@ export class BoardView {
     readonly #mounts: BoardMounts;
     #options: BoardOptions;
     #bound: BoundBoard | undefined;
-    #boundDiff: BoardDiff | undefined;
+    // The Diff last handed in: one handed again is not new, and one that differs from it is, even an earlier one.
+    #handedDiff: BoardDiff | undefined;
+    // The inline style the Board writes on its root, and what the root held there before.
+    readonly #ownStyle: Readonly<Record<'display' | 'flexDirection' | 'gap', string>>;
     #raised: BoardDiff | undefined;
     #mounted: Mounted[] = [];
     #unsubscribe: (() => void)[] = [];
@@ -108,7 +111,10 @@ export class BoardView {
         this.#mounts = mounts;
         this.#options = options;
         element.classList.add('ex-board');
+        const { display, flexDirection, gap } = element.style;
+        this.#ownStyle = Object.freeze({ display, flexDirection, gap });
         Object.assign(element.style, { display: 'flex', flexDirection: 'column', gap: `${boardGap}px` });
+        this.#handedDiff = options.diff;
         this.#bind(options.diff);
     }
 
@@ -121,14 +127,18 @@ export class BoardView {
         const was = this.#options;
         this.#options = options;
         const bound = this.#bound;
-        const sameDiff = options.diff === this.#boundDiff
-            || (bound !== undefined && (options.diff === undefined ? bound.diff.isEmpty : options.diff.sameAs(bound.diff)));
-        if (options.board === was.board && options.data === was.data && options.locale === was.locale && sameDiff) {
+        // A Diff handed in again is not new; another is new unless it is what the Board already shows, as when the host
+        // hands back each Diff raised.
+        const newDiff = options.diff !== this.#handedDiff;
+        this.#handedDiff = options.diff;
+        const shown = bound !== undefined && (options.diff === undefined ? bound.diff.isEmpty : options.diff.sameAs(bound.diff));
+        if (options.board === was.board && options.data === was.data && options.locale === was.locale && options.temporal === was.temporal
+            && (!newDiff || shown)) {
             if (options.width !== was.width) for (const mounted of this.#mounted) mounted.redraw();
             return;
         }
         // Bound again for a new Board or new data, the user's changes since are kept: only a new Diff replaces them.
-        this.#bind(options.diff === this.#boundDiff && bound !== undefined ? bound.diff : options.diff);
+        this.#bind(!newDiff && bound !== undefined ? bound.diff : options.diff);
     }
 
     destroy(): void {
@@ -136,7 +146,7 @@ export class BoardView {
         this.#destroyed = true;
         this.#clear();
         this.#element.classList.remove('ex-board');
-        this.#element.removeAttribute('style');
+        Object.assign(this.#element.style, this.#ownStyle);
     }
 
     #clear(): void {
@@ -150,18 +160,27 @@ export class BoardView {
 
     #bind(laid: BoardDiff | undefined): void {
         this.#clear();
-        const { board, data, locale = 'invariant', diff } = this.#options;
-        this.#boundDiff = diff;
+        const { board, data, locale = 'invariant' } = this.#options;
         const root = this.#element;
         if (board.title !== '') root.append(made('h2', 'ex-board-title', board.title));
+        const refuse = (error: BoardRefusedError) => {
+            const refusal = made('div', 'ex-board-refusal', error.path === '' ? error.message : `${error.path}: ${error.message}`);
+            refusal.setAttribute('role', 'alert');
+            root.append(refusal);
+        };
         let bound: BoundBoard;
         try {
             bound = bindBoard(board, data, laid === undefined ? { locale } : { locale, diff: laid });
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a Board that does not bind is drawn as its refusal, naming the path
             if (!(error instanceof BoardRefusedError)) throw error;
-            const refusal = made('div', 'ex-board-refusal', error.path === '' ? error.message : `${error.path}: ${error.message}`);
-            refusal.setAttribute('role', 'alert');
-            root.append(refusal);
+            refuse(error);
+            return;
+        }
+        // A grid the core would refuse is the Board's refusal, said before any view is drawn: a part drawn beside it
+        // would look like the whole.
+        const undrawable = this.#undrawable(bound);
+        if (undrawable !== undefined) {
+            refuse(undrawable);
             return;
         }
         this.#bound = bound;
@@ -175,7 +194,12 @@ export class BoardView {
             said.append(made('span', 'ex-board-dropped-lead', 'Not laid over, as the Board has changed:'), list);
             root.append(said);
         }
-        for (const row of board.layout) root.append(this.#row(bound, row));
+        try {
+            for (const row of board.layout) root.append(this.#row(bound, row));
+        } finally {
+            // A view whose mount threw leaves none of the others running behind it.
+            if (this.#mounted.length !== bound.views.length) this.#clear();
+        }
         this.#unsubscribe.push(bound.subscribe(() => { for (const mounted of this.#mounted) mounted.redraw(); }));
         // A grid's sort and filter are its source's (ADR-0001), which says when they move; a narrowing moves only its
         // rows, and raises no Diff.
@@ -184,6 +208,21 @@ export class BoardView {
         // some of it did not.
         this.#raised = bound.dropped.length > 0 ? undefined : bound.diff;
         this.#changed();
+    }
+
+    // A grid whose filter offers dates is made with Temporal, which the core refuses to draw without (ADR-0350 section
+    // 16); the first such grid of a Board given none, named by its path.
+    #undrawable(bound: BoundBoard): BoardRefusedError | undefined {
+        if (this.#options.temporal !== undefined) return undefined;
+        for (const [at, view] of bound.views.entries()) {
+            if (view.kind !== 'grid') continue;
+            const dated = view.columns.find(column => column.type === 'date' && column.queryable !== false);
+            if (dated !== undefined) {
+                return new BoardRefusedError(`views[${at}].grid`, `Column '${dated.name}' holds dates, and a date typed into its filter is made with `
+                    + 'Temporal, which the Board was not given: pass `temporal`, the browser\'s Temporal or a polyfill\'s (ADR-0350 section 16).');
+            }
+        }
+        return undefined;
     }
 
     // Raises the Diff when it now differs from the one last raised.
@@ -224,7 +263,7 @@ export class BoardView {
         section.append(host);
         switch (view.kind) {
             case 'grid': this.#mounted.push(this.#grid(bound, view, row, host, section)); break;
-            case 'pivot': this.#mounted.push(this.#pivot(bound, view, row, host)); break;
+            case 'pivot': this.#mounted.push(this.#pivot(bound, view, row, host, section)); break;
             case 'chart': this.#mounted.push(this.#chart(view, row, cell, shares, host)); break;
             default: throw new Error(`Internal: ${String(view satisfies never)} is not a view.`);
         }
@@ -234,7 +273,6 @@ export class BoardView {
     #grid(bound: BoundBoard, view: BoundGridView, row: BoardRow, host: HTMLElement, section: HTMLElement): Mounted {
         const id = view.view.id;
         const statuses: HTMLElement[] = [];
-        let selection: GridSelection | undefined;
         // A gesture the view takes redraws the grid with what it now shows; one it refuses, a round trip behind a
         // hide, changes nothing (spine rule 6).
         const taken = (took: boolean) => {
@@ -253,7 +291,6 @@ export class BoardView {
             onSelectionChanged: next => {
                 // A selection narrows the views its links reach; a dropped one, raised as an empty one, takes the
                 // narrowing away with it (ADR-0011).
-                selection = next;
                 bound.select(id, next);
                 for (const status of statuses) status.textContent = '';
             },
@@ -277,7 +314,6 @@ export class BoardView {
                 if (this.#bound !== bound) return;
                 // The grid raises its Selection in the microtask after the gesture that made it, before the browser
                 // dispatches the next event, so a press reads the selection it was made against.
-                if (selection !== undefined) bound.select(id, selection);
                 const raised = bound.confirm(output.name);
                 if (raised === undefined) {
                     status.textContent = 'Select the rows to hand on first.';
@@ -293,8 +329,15 @@ export class BoardView {
         return { destroy: () => { grid.destroy(); }, redraw: () => { /* Nothing of the grid's own moves. */ } };
     }
 
-    #pivot(bound: BoundBoard, view: BoundPivotView, row: BoardRow, host: HTMLElement): Mounted {
+    #pivot(bound: BoundBoard, view: BoundPivotView, row: BoardRow, host: HTMLElement, section: HTMLElement): Mounted {
         const id = view.view.id;
+        if (bound.board.links.some(link => link.from === id)) {
+            // The pivot does not yet say which Items its selected cells stand for, so its links narrow nothing: said
+            // under it, never left to look like a selection that matched every row (spine rule 1).
+            const status = made('span', 'ex-board-link-status', 'Selecting cells here does not narrow the views it links to yet.');
+            status.setAttribute('role', 'status');
+            section.append(status);
+        }
         let shown = view.source;
         const options = (): PivotViewOptions => ({
             source: view.source,
@@ -360,9 +403,14 @@ export class BoardView {
             }
         };
         show();
+        let drawn = { reading: view.reading, refusal: view.refusal, width: this.#options.width };
         return {
             destroy: () => { chart.destroy(); },
             redraw: () => {
+                // Told of every narrowing on the Board: only one that reached this chart, or another width, redraws it.
+                const now = { reading: view.reading, refusal: view.refusal, width: this.#options.width };
+                if (now.reading === drawn.reading && now.refusal === drawn.refusal && now.width === drawn.width) return;
+                drawn = now;
                 chart.update(options());
                 show();
             },

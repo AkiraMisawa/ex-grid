@@ -201,9 +201,10 @@
             <code>diff</code>. A grid showing a date column needs <code>temporal</code>, the Temporal namespace its
             filter makes dates with. <code>@@ex-grid/board-react</code> is the React component, <code>ExBoard</code>,
             whose props are those options; given no <code>locale</code>, it takes the browser's first language a pivot
-            writes in. A pivot's selected cells do not yet narrow the views its links reach in TypeScript.
+            writes in. A pivot's selected cells do not yet narrow the views its links reach in TypeScript, and the Board says so
+            under such a pivot.
         </p>
-        <pre class="docs-code"><code>import { createBoard } from '@@ex-grid/board';
+        <pre class="docs-code"><code>import { BoardDiff, createBoard } from '@@ex-grid/board';
 
 const handle = createBoard(element, {
     board, data: { trades }, width: 1000, locale: 'en-US', temporal: Temporal,
