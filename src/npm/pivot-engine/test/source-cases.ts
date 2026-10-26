@@ -8,7 +8,7 @@ import {
     datePartField, FetchingPivotSource, PivotJson, pivotAggregations, pivotCube, pivotDetailsQuery, pivotField, pivotItemsQuery, pivotParts, pivotQuery,
     pivotLeafBound, pivotReport, PivotItemCounts, PivotSourceFeatures, queryForLayout, RecordPivotSource, SnapshotPivotSource, type PivotAggregation, type PivotAnswer,
     type PivotAnswerAxis, type PivotDatePart, type PivotDetailValue, type PivotField, type PivotFieldItem, type PivotFieldType,
-    type PivotNumber, type PivotOptions, type PivotPart, type PivotLevelRuleInput, type PivotQuery, type PivotQueryField, type PivotSource, type PivotSourceChanged, type PivotSourceRefusal,
+    type PivotNumber, type PivotOptions, type PivotPart, type PivotLevelRuleInput, type PivotLevelWindowInput, type PivotQuery, type PivotQueryField, type PivotSource, type PivotSourceChanged, type PivotSourceRefusal,
 } from '../src/index';
 import { isDecimal } from '../src/items/record-value';
 import { defined, elementAt } from '../src/must';
@@ -303,13 +303,38 @@ function queryOf(written: JsonObject): PivotQuery {
         return list === undefined ? [] : array(list).map(r => {
             const rule = object(r);
             const toggled = rule['toggledItems'];
-            return { collapsed: rule['collapsed'] === true, toggledItems: toggled === undefined ? [] : array(toggled).map(itemKeyOf) };
+            const order = rule['order'];
+            const input = { collapsed: rule['collapsed'] === true, toggledItems: toggled === undefined ? [] : array(toggled).map(itemKeyOf) };
+            if (order === undefined) return input;
+            const by = object(order);
+            const descending = must(by, 'descending');
+            if (typeof descending !== 'boolean') throw new Error("A case's order says whether it descends, true or false.");
+            return {
+                ...input,
+                order: {
+                    value: whole(must(by, 'value')),
+                    aggregation: member<PivotAggregation>(pivotAggregations, must(by, 'aggregation'), 'an Aggregation'),
+                    descending,
+                },
+            };
         });
     };
+    // A window as a case writes it: its limit, and where it starts under each parent named by its Items.
+    const windowOf = (given: Json): PivotLevelWindowInput => {
+        const window = object(given);
+        const starts = window['starts'];
+        return {
+            limit: whole(must(window, 'limit')),
+            starts: starts === undefined ? [] : array(starts).map(s => ({ rows: array(must(object(s), 'rows')).map(itemKeyOf), start: whole(must(object(s), 'start')) })),
+        };
+    };
+    const window = levels?.['window'];
     return pivotQuery({
         rows: placed('rows'), columns: placed('columns'), filters: placed('filters'), values,
         ...(maxLeaves === undefined ? {} : { maxLeaves: whole(maxLeaves) }),
-        ...(levels === undefined ? {} : { levels: { rows: rules('rows'), columns: rules('columns') } }),
+        ...(levels === undefined ? {} : {
+            levels: window === undefined ? { rows: rules('rows'), columns: rules('columns') } : { rows: rules('rows'), columns: rules('columns'), window: windowOf(window) },
+        }),
     });
 }
 
@@ -369,7 +394,11 @@ export function answerJson(answered: PivotAnswer): Json {
         leaves: answered.leafCount,
         rows: axes(answered.rows),
         columns: axes(answered.columns),
-        leaf: leaves.map(leaf => ({ at: levels.map(a => a.itemAt(leaf)), records: answered.recordsAt(leaf) })),
+        leaf: leaves.map(leaf => {
+            const rest = answered.isLevels ? answered.restAt(leaf) : undefined;
+            const at = { at: levels.map(a => a.itemAt(leaf)), records: answered.recordsAt(leaf) };
+            return rest === undefined ? at : { ...at, rest: { window: rest.window, side: rest.side } };
+        }),
         values: answered.values.map(value => ({
             field: value.field,
             parts: value.parts,
@@ -396,6 +425,10 @@ export function answerJson(answered: PivotAnswer): Json {
     };
     // A level answer's cells (ADR-0370 section 3): an Item of −1 below a cell's depth.
     if (answered.isLevels) json['levels'] = true;
+    // Its windows (ADR-0370 section 3): each parent's Items as indexes, and the siblings on either side.
+    if (answered.isLevels && answered.windows.length > 0) {
+        json['windows'] = answered.windows.map(window => ({ parent: [...window.parent], before: window.before, after: window.after }));
+    }
     return json;
 }
 

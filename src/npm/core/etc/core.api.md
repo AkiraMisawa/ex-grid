@@ -36,16 +36,62 @@ export interface AutoColumnWidth {
 }
 
 // @public
+export type BorderStyle = 'none' | 'hair' | 'thin' | 'medium' | 'thick' | 'double' | 'dotted' | 'dashed' | 'dashDot' | 'dashDotDot' | 'mediumDashed' | 'mediumDashDot' | 'mediumDashDotDot' | 'slantedDashDot';
+
+// @public
 export type CellAlign = 'auto' | 'left' | 'center' | 'right';
 
 // @public
+export interface CellAppearance {
+    readonly bold?: boolean;
+    readonly bottom?: CellBorder;
+    readonly fill?: number;
+    readonly fontColour?: number;
+    readonly italic?: boolean;
+    readonly left?: CellBorder;
+    readonly right?: CellBorder;
+    readonly strikethrough?: boolean;
+    readonly top?: CellBorder;
+    readonly underline?: boolean;
+}
+
+// @public
+export interface CellBorder {
+    readonly colour?: number;
+    readonly style: BorderStyle;
+}
+
+// @public
 export type CellChangedAt<Row> = (row: Row, column: string) => number | undefined;
+
+// @public
+export interface CellPaintOptions<Row> {
+    readonly cellAlign?: (row: Row, column: GridColumn<Row>) => CellAlign;
+    readonly cellAppearance?: (row: Row, column: GridColumn<Row>) => CellAppearance;
+    readonly cellType?: (row: Row, column: GridColumn<Row>) => ColumnType;
+    readonly edgeBorder?: EdgeBorderOf;
+    readonly editorAppearance?: (row: Row, column: GridColumn<Row>) => CellAppearance;
+    readonly editorText?: (row: Row, column: GridColumn<Row>) => string | undefined;
+    readonly paintedText?: (row: Row, column: GridColumn<Row>, contentWidthPx: number, metrics: CellTextMeasure) => string | undefined;
+}
 
 // @public
 export interface CellPosition {
     readonly column: number;
     readonly row: number;
 }
+
+// @public
+export interface CellTextMeasure {
+    readonly bold: CellTextMeasure;
+    readonly cellHorizontalPaddingPx: number;
+    contentWidthPx(columnWidthPx: number): number;
+    readonly digitWidthPx: number;
+    textWidthPx(text: string): number;
+}
+
+// @public
+export function cellTextMeasure(density: GridDensity): CellTextMeasure;
 
 // @public
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
@@ -84,6 +130,9 @@ export type DistinctValues = {
 } | {
     readonly kind: 'tooMany';
 };
+
+// @public
+export type EdgeBorderOf = (upperOrLeft: CellBorder, lowerOrRight: CellBorder) => CellBorder;
 
 // @public
 export type EditDiscardReason =
@@ -236,6 +285,7 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly editable?: boolean;
     readonly filterUi?: FilterUi;
     readonly header?: string;
+    readonly headerAlign?: CellAlign;
     readonly template?: GridTemplate<Row>;
     readonly validate?: (row: Row, text: string) => EditVerdict;
     readonly width?: GridColumnWidth;
@@ -354,7 +404,7 @@ export interface GridHeaderGroup {
 }
 
 // @public
-export interface GridOptions<Row> {
+export interface GridOptions<Row> extends CellPaintOptions<Row> {
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
@@ -362,6 +412,7 @@ export interface GridOptions<Row> {
     readonly density?: GridDensity;
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
     readonly findsHeaders?: boolean;
+    readonly headerClickSelects?: boolean;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
     readonly hideColumnMenu?: boolean;

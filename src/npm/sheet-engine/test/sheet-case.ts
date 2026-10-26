@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CellAddress } from '../src/cell-address';
-import { BorderLine, CellColour, CellFill, type BorderLineStyle, type CellBorders, type CellFont, type HorizontalAlignment } from '../src/cell-format';
+import { BorderLine, CellColour, CellFill, type BorderLineStyle, type CellFormat, type CellBorders, type CellFont, type HorizontalAlignment } from '../src/cell-format';
 import { BorderChange, CellFormatChange } from '../src/cell-format-change';
 import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
@@ -17,10 +17,10 @@ import { NumberFormat } from '../src/number-format';
 import type { FillDirection, Sheet, SheetCopy } from '../src/sheet';
 import { RepeatedKeyError, SheetRefusedError, type SheetChange, type SheetRefusal } from '../src/sheet-change';
 import { SheetDocumentError, type SheetDocumentAxisFormat } from '../src/sheet-document-parts';
-import type { SheetDocument } from '../src/sheet-document';
+import { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
 import { parseWrittenError, Value } from '../src/value';
-import { Workbook, type WorkbookStep } from '../src/workbook';
+import { Workbook, type WorkbookChange, type WorkbookStep } from '../src/workbook';
 import { WorkbookDocument } from '../src/workbook-document';
 
 /** Where the shared cases of the engine live. */
@@ -119,7 +119,9 @@ export function decode(node: Json | undefined): Value | undefined {
     if (typeof node === 'boolean') return Value.fromBoolean(node);
     if (typeof node === 'number') return Value.fromNumber(node);
     if (isObject(node)) {
-        const error = typeof node['error'] === 'string' ? parseWrittenError(node['error']) : undefined;
+        // The two states of a computation are no Error Value typed, but a case may give one to be refused.
+        const written = node['error'];
+        const error = written === '#CIRC!' || written === '#GETTING_DATA' ? written : typeof written === 'string' ? parseWrittenError(written) : undefined;
         if (error === undefined || Object.keys(node).length !== 1) throw new CaseError(`${JSON.stringify(node)} is no Error Value a case gives.`);
         return Value.fromError(error);
     }
@@ -160,6 +162,36 @@ function borders(of: CellBorders): JsonObject {
     return { top: line(of.top), bottom: line(of.bottom), left: line(of.left), right: line(of.right) };
 }
 
+function cellFormatJson(of: CellFormat): JsonObject {
+    return { numberFormat: of.numberFormat.code, alignment: of.alignment, font: font(of.font), fill: fill(of.fill), borders: borders(of.borders) };
+}
+
+/** Nodes in the code-unit order of their JSON's text, so that a set reads the same from both runners. */
+function sorted(nodes: readonly Json[]): Json[] {
+    return nodes.map(n => [JSON.stringify(n), n] as const).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, n]) => n);
+}
+
+/** Text a case types: a string, or `{"parts": [...]}`, each part a string or `[string, times]`, for a Formula too long to write out. */
+function typedText(node: Json | undefined, what: string): string {
+    if (typeof node === 'string') return node;
+    if (!isObject(node) || Object.keys(node).length !== 1 || !Array.isArray(node['parts'])) {
+        throw new CaseError(`${what}: '${JSON.stringify(node)}' is no text to type: a string, or {"parts": [...]}.`);
+    }
+    return list(node['parts'], 'parts').map(part => {
+        if (typeof part === 'string') return part;
+        const [piece, times] = list(part, 'a part');
+        if (typeof piece !== 'string' || typeof times !== 'number' || !Number.isSafeInteger(times) || times < 0 || list(part, 'a part').length !== 2) {
+            throw new CaseError(`${what}: '${JSON.stringify(part)}' is no part of a text: a string, or [string, times] with times a whole number, 0 or more.`);
+        }
+        return piece.repeat(times);
+    }).join('');
+}
+
+/** A per-cell reading of texts with each built text (`typedText`) written out; a `null` stays one. */
+function texts(expected: Json, what: string): JsonObject {
+    return Object.fromEntries(Object.entries(object(expected, what)).map(([a, t]) => [a, isObject(t) ? typedText(t, a) : t]));
+}
+
 function entryJson(entry: Entry | undefined): Json {
     if (entry === undefined) return null;
     return entry.formula === undefined ? { constant: encode(entry.constant) } : { formula: entry.formula };
@@ -182,7 +214,10 @@ function changeOf(node: Json | undefined): CellFormatChange {
     }
     return new CellFormatChange({
         numberFormat: parts['numberFormat'] === undefined ? undefined : NumberFormat.parse(text(parts['numberFormat'], 'numberFormat')),
-        alignment: parts['alignment'] === undefined ? undefined : text(parts['alignment'], 'alignment') as HorizontalAlignment,
+        // A number is a value cast in from outside the vocabulary, given to be refused.
+        alignment: parts['alignment'] === undefined ? undefined
+            : typeof parts['alignment'] === 'number' ? parts['alignment'] as unknown as HorizontalAlignment
+            : text(parts['alignment'], 'alignment') as HorizontalAlignment,
         fontColour: parts['fontColour'] === undefined ? undefined : colourOf(parts['fontColour']),
         bold: flag(parts['bold'], 'bold'),
         italic: flag(parts['italic'], 'italic'),
@@ -266,6 +301,12 @@ export function compare(where: string, expected: Json | undefined, actual: Json 
         }
         return;
     }
+    // An Error Value compares in full: one written without "refused" is Excel's own, and a refusal is not it.
+    if (isObject(expected) && isObject(actual) && 'error' in expected && 'error' in actual
+        && Object.keys(expected).length !== Object.keys(actual).length) {
+        differences.push(`${where}: expected ${show(expected)}, got ${show(actual)}`);
+        return;
+    }
     if (isObject(expected) && isObject(actual)) {
         for (const [key, value] of Object.entries(expected)) compare(`${where}.${key}`, value, orNull(actual[key]), differences);
         return;
@@ -297,21 +338,51 @@ function cultureOf(name: string): Culture {
 
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
-    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'recalculateVolatile',
+    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat', 'show',
+    'doAll', 'readTable',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
 /** What a step did, for its readings: the change it reported, the refusal it was checked for, its step. */
+/** A Linked Table's columns, as `linkedTableColumns` answers them. */
+type Columns = readonly (readonly (Value | undefined)[])[];
+
+function columnsJson(columns: Columns | undefined): Json {
+    return columns === undefined ? null : columns.map(c => c.map(encode));
+}
+
 interface Outcome {
     sheet: Sheet;
     change: SheetChange | undefined;
     checked: boolean;
     refusal: SheetRefusal | undefined;
     step: WorkbookStep | undefined;
+    /** How many times the case's clock had been read before the step. */
+    clockReadsBefore: number;
+    /** What a step, an undo or a redo changed across the Workbook. */
+    workbookChange: WorkbookChange | undefined;
+    /** A Linked Table's columns as `readTable` read them (`undefined` while it waits), or `false` when no table was read. */
+    tableColumns: Columns | undefined | false;
+}
+
+function padded(n: number, width: number): string {
+    return String(n).padStart(width, '0');
 }
 
 function addresses(of: Iterable<CellAddress>): string[] {
     return [...of].map(a => a.toString());
+}
+
+/** A Sheet's change as a case reads one. */
+function changeJson(change: SheetChange): JsonObject {
+    return {
+        valueChanges: addresses(change.valueChanges),
+        recalculated: addresses(change.recalculated),
+        recalculatedCount: change.recalculated.length,
+        rows: [...change.rows],
+        columns: [...change.columns],
+        reformatsUnnamedRows: change.reformatsUnnamedRows,
+    };
 }
 
 /** A case the runner cannot read: the case's defect, never a refusal it can expect. */
@@ -324,10 +395,10 @@ class CaseError extends Error {}
  */
 function thrown(e: unknown): JsonObject {
     if (e instanceof CaseError) throw e;
-    if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', saying: e.message };
+    if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', reason: e.reason, beyondLimit: e.isBeyondLimit, saying: e.message };
     if (e instanceof SheetRefusedError) return { refusal: 'refused', reason: e.refusal.reason, saying: e.refusal.message };
     if (e instanceof RepeatedKeyError) return { refusal: 'repeatedKey', saying: e.message };
-    if (e instanceof SheetDocumentError) return { refusal: 'document', saying: e.message };
+    if (e instanceof SheetDocumentError) return { refusal: 'document', saying: e.message, documentVersion: orNull(e.documentVersion) };
     if (e instanceof FormatError) return { refusal: 'format', saying: e.message };
     if (e instanceof RangeError && e.message !== 'Maximum call stack size exceeded') return { refusal: 'argument', saying: e.message };
     if (e instanceof TypeError || e instanceof RangeError) throw e;
@@ -343,6 +414,8 @@ class Run {
     readonly #done: WorkbookStep[] = [];
     readonly #pictures = new Map<string, string>();
     readonly #copies = new Map<string, SheetCopy>();
+    readonly #tables = new Map<string, Columns | undefined>();
+    #clockReads = 0;
 
     constructor(culture: Culture) {
         this.culture = culture;
@@ -365,7 +438,7 @@ class Run {
             sheet = found;
         }
         const expect = step['expect'] === undefined ? undefined : object(step['expect'], 'expect');
-        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined };
+        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined, clockReadsBefore: this.#clockReads, workbookChange: undefined, tableColumns: false };
         try {
             this.#act(verb, argument, sheet, outcome);
         } catch (e) { // oxlint-disable-line ex-grid/no-catch -- a refusal a case expects is read, not rethrown
@@ -389,15 +462,27 @@ class Run {
         for (const [key, value] of Object.entries(expect)) this.#read(where, key, value, outcome);
     }
 
+    /** A Workbook opened from one Sheet saved as a Sheet Document, or from a document's JSON as the case writes it. */
+    #reopened(argument: JsonObject): Workbook {
+        const keys = Object.keys(argument);
+        // One Sheet saved as a Sheet Document's JSON, read back, and opened as a Workbook of that one Sheet.
+        if (keys.length === 1 && argument['sheet'] !== undefined) {
+            return Workbook.open(SheetDocument.fromJson(this.workbook.toSheetDocument(text(argument['sheet'], 'reopen.sheet')).toJson()));
+        }
+        if (keys.length === 1 && argument['sheetJson'] !== undefined) return Workbook.open(SheetDocument.fromJson(text(argument['sheetJson'], 'reopen.sheetJson')));
+        if (keys.length === 1 && argument['workbookJson'] !== undefined) return Workbook.open(WorkbookDocument.fromJson(text(argument['workbookJson'], 'reopen.workbookJson')));
+        throw new CaseError(`${JSON.stringify(argument)} is no way to reopen a Workbook.`);
+    }
+
     #act(verb: string, argument: Json, sheet: Sheet, outcome: Outcome): void {
         switch (verb) {
             case 'enter':
                 for (const [address, typed] of Object.entries(object(argument, 'enter'))) {
-                    outcome.change = sheet.enter(CellAddress.parse(address), text(typed, address));
+                    outcome.change = sheet.enter(CellAddress.parse(address), typedText(typed, address));
                 }
                 break;
             case 'enterAll':
-                outcome.change = sheet.enterMany(Object.entries(object(argument, 'enterAll')).map(([a, t]) => [CellAddress.parse(a), text(t, a)] as const));
+                outcome.change = sheet.enterMany(Object.entries(object(argument, 'enterAll')).map(([a, t]) => [CellAddress.parse(a), typedText(t, a)] as const));
                 break;
             case 'enterRun': {
                 // One batch over a range, each cell typed from a template naming its row: {row} or {row-1}.
@@ -412,7 +497,30 @@ class Run {
                 this.#done.push(step);
                 outcome.step = step;
                 outcome.sheet = step.sheet;
+                outcome.workbookChange = step.change;
                 outcome.change = step.change.changesSheets && !this.workbook.sheets.includes(step.sheet) ? undefined : step.change.for(step.sheet);
+                break;
+            }
+            case 'doAll': {
+                // Several edits, each on the Sheet it names, as one operation.
+                const all = this.workbook.doAll(list(argument, 'doAll').map(pair => {
+                    const [on, edit] = list(pair, 'an edit on a Sheet');
+                    return [text(on, 'a Sheet'), this.#edit(orNull(edit))] as const;
+                }));
+                this.#done.push(all);
+                outcome.step = all;
+                outcome.sheet = all.sheet;
+                outcome.workbookChange = all.change;
+                outcome.change = all.change.for(all.sheet);
+                break;
+            }
+            case 'readTable':
+            {
+                // A table's name, or {"name", "as"}, which also holds the snapshot read under that label.
+                const named = isObject(argument) ? argument : undefined;
+                const columns = this.workbook.linkedTableColumns(text(named === undefined ? argument : named['name'], 'readTable'));
+                outcome.tableColumns = columns;
+                if (named !== undefined) this.#tables.set(text(named['as'], 'as'), columns);
                 break;
             }
             case 'check':
@@ -424,11 +532,14 @@ class Run {
                 const done = this.#stepOf(argument);
                 outcome.step = done;
                 const change = verb === 'undo' ? done.undo() : done.redo();
+                outcome.workbookChange = change;
                 outcome.change = this.workbook.sheets.includes(done.sheet) ? change.for(done.sheet) : undefined;
                 break;
             }
             case 'reopen':
-                if (argument === 'document') this.workbook = Workbook.open(this.workbook.toDocument());
+                // One Sheet saved as a Sheet Document, opened as a Workbook of that one Sheet.
+                if (isObject(argument)) this.workbook = this.#reopened(argument);
+                else if (argument === 'document') this.workbook = Workbook.open(this.workbook.toDocument());
                 else if (argument === 'json') this.workbook = Workbook.open(WorkbookDocument.fromJson(this.workbook.toDocument().toJson()));
                 else throw new CaseError(`'${JSON.stringify(argument)}' is no way to reopen a Workbook.`);
                 outcome.sheet = this.workbook.shown;
@@ -454,8 +565,16 @@ class Run {
                     outcome.change = sheet.setAlignment(CellRange.parse(at), text(alignment, at) as HorizontalAlignment);
                 }
                 break;
+            case 'setCellFormat': {
+                // The Sheet's own form, outside any step.
+                const format = object(argument, 'setCellFormat');
+                outcome.change = sheet.setCellFormat(list(format['ranges'], 'setCellFormat.ranges').map(r => CellRange.parse(text(r, 'range'))), changeOf(format['change']));
+                break;
+            }
             case 'declareTable': {
                 const table = object(argument, 'declareTable');
+                const stray = Object.keys(table).find(part => !['name', 'columns', 'key'].includes(part));
+                if (stray !== undefined) throw new CaseError(`'${stray}' is no part of a Linked Table declared: name, columns and key.`);
                 const columns = list(table['columns'], 'columns').map(c => text(c, 'a column'));
                 const key = table['key'];
                 const name = text(table['name'], 'name');
@@ -468,7 +587,8 @@ class Run {
             case 'pushTable': {
                 const table = object(argument, 'pushTable');
                 const rows = list(table['rows'], 'rows').map(r => list(r, 'a row').map(decode));
-                outcome.change = this.workbook.pushLinkedTable(text(table['name'], 'name'), rows).for(sheet);
+                outcome.workbookChange = this.workbook.pushLinkedTable(text(table['name'], 'name'), rows);
+                outcome.change = outcome.workbookChange.for(sheet);
                 break;
             }
             case 'setToday': {
@@ -484,9 +604,41 @@ class Run {
             case 'setSeed':
                 outcome.change = this.workbook.setSeed(argument === null ? undefined : BigInt(typeof argument === 'number' ? argument : text(argument, 'setSeed'))).for(sheet);
                 break;
+            case 'getDisplay': {
+                // A display asked for, so that a width refused is a refusal the step can expect.
+                const asked = object(argument, 'getDisplay');
+                sheet.getDisplay(CellAddress.parse(text(asked['at'], 'getDisplay.at')), caseNumber(asked['width'], 'getDisplay.width'));
+                break;
+            }
+            case 'setClock': {
+                // A clock that moves on `step` seconds each time it is read, and counts its reads.
+                const clock = object(argument, 'setClock');
+                const from = text(clock['from'], 'setClock.from');
+                // Exactly yyyy-MM-ddTHH:mm:ss, as the C# runner reads it.
+                if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/u.test(from)) throw new CaseError(`'${from}' is no moment written yyyy-MM-ddTHH:mm:ss.`);
+                let at = Date.parse(`${from}Z`);
+                if (Number.isNaN(at)) throw new CaseError(`'${from}' is no moment.`);
+                const step = clock['step'];
+                if (typeof step !== 'number' || !Number.isFinite(step)) throw new CaseError('setClock.step is a number of seconds.');
+                this.workbook.nowSource = () => {
+                    this.#clockReads++;
+                    at += step * 1000;
+                    const d = new Date(at);
+                    return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), hour: d.getUTCHours(), minute: d.getUTCMinutes(), second: d.getUTCSeconds(), millisecond: d.getUTCMilliseconds() };
+                };
+                break;
+            }
             case 'recalculateVolatile':
                 outcome.change = this.workbook.recalculateVolatile().for(sheet);
                 break;
+            case 'show': {
+                // The Sheet shown, by its name.
+                const shown = this.workbook.find(text(argument, 'show'));
+                if (shown === undefined) throw new CaseError(`The Workbook has no Sheet '${text(argument, 'show')}' to show.`);
+                this.workbook.shown = shown;
+                outcome.sheet = shown;
+                break;
+            }
             default:
                 throw new CaseError(`'${verb}' is no step.`);
         }
@@ -513,7 +665,7 @@ class Run {
         const args = (): JsonObject => object(argument, name);
         switch (name) {
             case 'enter':
-                return SheetEdit.enterMany(Object.entries(args()).map(([a, t]) => [CellAddress.parse(a), text(t, a)] as const));
+                return SheetEdit.enterMany(Object.entries(args()).map(([a, t]) => [CellAddress.parse(a), typedText(t, a)] as const));
             case 'setEntries':
                 return SheetEdit.setEntries(Object.entries(args()).map(([a, e]) => [CellAddress.parse(a), entryOf(e)] as const));
             case 'setNumberFormat': {
@@ -566,6 +718,13 @@ class Run {
             case 'pasteText':
                 return SheetEdit.pasteText(list(args()['fields'], 'fields').map(r => list(r, 'a row').map(f => text(f, 'a field'))),
                     CellAddress.parse(text(args()['at'], 'at')));
+            case 'pasteFields': {
+                const typed = Object.entries(object(args()['typed'], 'typed')).map(([at, field]) => [CellAddress.parse(at), text(field, 'a field')] as const);
+                const entries = args()['entries'];
+                return SheetEdit.pasteFields(typed, entries === undefined
+                    ? undefined
+                    : Object.entries(object(entries, 'entries')).map(([at, entry]) => [CellAddress.parse(at), entryOf(entry)] as const));
+            }
             case 'enterInto':
                 return SheetEdit.enterInto(list(args()['targets'], 'targets').map(t => CellRange.parse(text(t, 'a target'))),
                     CellAddress.parse(text(args()['at'], 'at')), text(args()['typed'], 'typed'));
@@ -592,10 +751,13 @@ class Run {
         return `${this.workbook.toDocument().toJson()}\n${values.join('\n')}`;
     }
 
-    #read(where: string, key: string, expected: Json, outcome: Outcome): void {
+    #read(where: string, key: string, written: Json, outcome: Outcome): void {
+        const expected = key === 'formulas' || key === 'entryTexts' ? texts(written, key) : written;
         const sheet = outcome.sheet;
         const perCell = (read: (address: CellAddress) => Json): JsonObject =>
             Object.fromEntries(Object.keys(object(expected, key)).map(a => [a, read(CellAddress.parse(a))]));
+        const perRange = (read: (range: CellRange) => Json): JsonObject =>
+            Object.fromEntries(Object.keys(object(expected, key)).map(r => [r, read(CellRange.parse(r))]));
         let actual: Json;
         switch (key) {
             case 'values':
@@ -627,6 +789,26 @@ class Run {
                 break;
             case 'borders':
                 actual = perCell(a => borders(sheet.getBorders(a)));
+                break;
+            case 'cellFormats':
+                // The Cell Formats a range shows, each once, in the order of their JSON's text, as the C# runner orders them.
+                actual = perRange(r => sorted(sheet.getCellFormats(r).map(cellFormatJson)));
+                break;
+            case 'edgeLines': {
+                // The lines along each of a range's outer edges, each once, in the order of their JSON's text.
+                actual = perRange(r => {
+                    const lines = sheet.getEdgeLines(r);
+                    return { top: sorted(lines.top.map(line)), bottom: sorted(lines.bottom.map(line)), left: sorted(lines.left.map(line)), right: sorted(lines.right.map(line)) };
+                });
+                break;
+            }
+            case 'workbookJson':
+                // The Workbook Document's JSON as written, which the two engines write alike.
+                actual = this.workbook.toDocument().toJson();
+                break;
+            case 'documentJson':
+                // The Sheet Document's JSON as written, which the two engines write alike.
+                actual = this.workbook.toSheetDocument(sheet.name).toJson();
                 break;
             case 'document':
                 actual = documentJson(this.workbook.toSheetDocument(sheet.name));
@@ -660,21 +842,31 @@ class Run {
                     return [column, width === undefined ? null : { width: width.width, kind: width.kind }];
                 }));
                 break;
-            case 'change': {
-                const change = outcome.change;
-                actual = change === undefined ? null : {
-                    valueChanges: addresses(change.valueChanges),
-                    recalculated: addresses(change.recalculated),
-                    recalculatedCount: change.recalculated.length,
-                    rows: [...change.rows],
-                    columns: [...change.columns],
-                    reformatsUnnamedRows: change.reformatsUnnamedRows,
-                };
+            case 'change':
+                actual = outcome.change === undefined ? null : changeJson(outcome.change);
+                break;
+            case 'changes': {
+                // What a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name.
+                const changes = outcome.workbookChange;
+                if (changes === undefined) throw new CaseError(`${where}: only a step, an undo or a redo reads its changes.`);
+                actual = Object.fromEntries(changes.sheets.map(reached => [reached.name, changeJson(changes.for(reached))]));
                 break;
             }
             case 'refusal':
                 if (!outcome.checked) throw new CaseError(`${where}: only a check reads a refusal.`);
                 actual = outcome.refusal === undefined ? null : { reason: outcome.refusal.reason, saying: outcome.refusal.message };
+                break;
+            case 'clockReads':
+                actual = this.#clockReads - outcome.clockReadsBefore;
+                break;
+            case 'stepSheet':
+                // The Sheet a step was done on, or made: an inserted or copied Sheet is its step's.
+                if (outcome.step === undefined) throw new CaseError(`${where}: no step to read.`);
+                actual = outcome.step.sheet.name;
+                break;
+            case 'changesSheets':
+                if (outcome.workbookChange === undefined) throw new CaseError(`${where}: only a step, an undo or a redo reads whether it changed the Sheets.`);
+                actual = outcome.workbookChange.changesSheets;
                 break;
             case 'isUndone':
                 if (outcome.step === undefined) throw new CaseError(`${where}: no step to read.`);
@@ -704,6 +896,52 @@ class Run {
             case 'shown':
                 actual = this.workbook.shown.name;
                 break;
+            case 'sheetsReached':
+                if (outcome.workbookChange === undefined) throw new CaseError(`${where}: only a step, an undo, a redo or a push reads the Sheets it reached.`);
+                actual = outcome.workbookChange.sheets.map(s => s.name);
+                break;
+            case 'tableColumns': {
+                const columns = outcome.tableColumns;
+                if (columns === false) throw new CaseError(`${where}: only readTable reads a Linked Table's columns.`);
+                actual = columnsJson(columns);
+                break;
+            }
+            case 'heldTables':
+                // Each snapshot readTable held, as it stands now.
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(label => {
+                    if (!this.#tables.has(label)) throw new CaseError(`${where}: no snapshot was held as '${label}'.`);
+                    return [label, columnsJson(this.#tables.get(label))];
+                }));
+                break;
+            case 'copies':
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(name => {
+                    const copy = this.#copies.get(name);
+                    if (copy === undefined) throw new CaseError(`${where}: no copy was taken as '${name}'.`);
+                    const block = copy.block;
+                    return [name, {
+                        refusal: copy.refusal === undefined ? null : copy.refusal.reason,
+                        text: copy.text === undefined ? null : copy.text,
+                        html: copy.html === undefined ? null : copy.html,
+                        block: block === undefined
+                            ? null
+                            : Array.from({ length: block.rowCount }, (_, r) => Array.from({ length: block.columnCount }, (_unused, c) => entryJson(block.entryAt(r, c)))),
+                    }];
+                }));
+                break;
+            case 'workbook': {
+                const today = this.workbook.today;
+                actual = {
+                    culture: this.workbook.culture.name,
+                    today: today === undefined ? null : `${padded(today.year, 4)}-${padded(today.month, 2)}-${padded(today.day, 2)}`,
+                    hasVolatileFormulas: this.workbook.hasVolatileFormulas,
+                    changes: this.workbook.changes,
+                    seed: this.workbook.seed === undefined ? null : this.workbook.seed.toString(),
+                    linkedTables: this.workbook.linkedTables.map(t => ({
+                        name: t.name, columns: [...t.columns], keyColumns: [...t.keyColumns], isWaiting: t.isWaiting, rowCount: t.rowCount,
+                    })),
+                };
+                break;
+            }
             default:
                 throw new CaseError(`${where}: '${key}' is no reading.`);
         }

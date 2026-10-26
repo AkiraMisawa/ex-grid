@@ -1,0 +1,38 @@
+{
+  "about": "DATEDIF and YEARFRAC beyond the Windows date matrices in ExcelCases' datedif and yearfrac (ADR-0047). Transcribed from ExSheet.Engine.Tests' DateDifferencesTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: DATEDIF refuses the unresolved year-ignoring and MD domains: =DATEDIF(DATE(2020,1,1),DATE(2022,3,1),\"YD\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=DATEDIF(DATE(2020,1,1),DATE(2022,3,1),\"YD\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: DATEDIF refuses the unresolved year-ignoring and MD domains: =DATEDIF(1,2,\"MD\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=DATEDIF(1,2,\"MD\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: date differences recalculate when a date changes",
+      "steps": [
+        {"enter": {"A1": "59", "B1": "=DATEDIF(A1,61,\"D\")", "C1": "=YEARFRAC(A1,61,2)"}},
+        {"enter": {"A1": "60"}, "expect": {"values": {"B1": 1, "C1": 0.002777777777777778}, "change": {"recalculated": ["B1", "C1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: DATEDIF counts the fictitious 1900 day",
+      "steps": [
+        {"enter": {"ZZ1000": "=DATEDIF(59,61,\"D\")"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: YEARFRAC counts actual days on the 360-day basis",
+      "steps": [
+        {"enter": {"ZZ1000": "=YEARFRAC(59,61,2)"}, "expect": {"values": {"ZZ1000": 0.005555555555555556}}}
+      ]
+    }
+  ]
+}

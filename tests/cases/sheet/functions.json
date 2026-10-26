@@ -1,0 +1,617 @@
+{
+  "about": "What is the engine's own about its functions (ADR-0047, SH-7): dependencies, refusals on entry, and XLOOKUP's regular expressions. What each function answers is in ExcelCases. Transcribed from ExSheet.Engine.Tests' FunctionTests; the declared list stays there until the calls cases read it.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: a range argument is a dependency; changing a cell inside it recomputes, outside it does not",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2", "B1": "=SUM(A1:A3)"}},
+        {"enter": {"A3": "4"}, "expect": {"change": {"recalculated": ["B1"]}}},
+        {"enter": {"A4": "8"}, "expect": {"change": {"recalculated": []}, "values": {"B1": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with the wrong number of arguments when it is entered: =ROUND(1)",
+      "steps": [
+        {"enter": {"B1": "=ROUND(1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with the wrong number of arguments when it is entered: =ROUND(1,2,3)",
+      "steps": [
+        {"enter": {"B1": "=ROUND(1,2,3)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with the wrong number of arguments when it is entered: =IF(TRUE)",
+      "steps": [
+        {"enter": {"B1": "=IF(TRUE)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with the wrong number of arguments when it is entered: =IFERROR(1)",
+      "steps": [
+        {"enter": {"B1": "=IFERROR(1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with the wrong number of arguments when it is entered: =ISERROR()",
+      "steps": [
+        {"enter": {"B1": "=ISERROR()"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with the wrong number of arguments when it is entered: =XLOOKUP(1,A1:A2)",
+      "steps": [
+        {"enter": {"B1": "=XLOOKUP(1,A1:A2)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with the wrong number of arguments when it is entered: =SUM()",
+      "steps": [
+        {"enter": {"B1": "=SUM()"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?:a)\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?:a)"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?i)a\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?i)a"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?<n>a)\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?<n>a)"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?<=a+)b\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?<=a+)b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?<=a{2})b\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?<=a{2})b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?<=(a))b\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?<=(a))b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(a)(?<=\\\\1)b\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(a)(?<=\\1)b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?<=a)*b\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?<=a)*b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?<a)b\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?<a)b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(?=a)*\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(?=a)*"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\P{L}\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\P{L}"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\pL\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\pL"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\p{Greek}\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\p{Greek}"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\p{IsGreek}\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\p{IsGreek}"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\p{Cs}\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\p{Cs}"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"[\\\\p{L}]\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'[\\p{L}]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\1(a)\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\1(a)"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(a)\\\\2\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(a)\\2"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(a)\\\\10\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(a)\\10"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\0\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\0"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"a*+\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'a*+"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"a{,2}\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'a{,2}"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"a{x}\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'a{x}"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"a}\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'a}"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"a]\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'a]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"[[:alpha:]]\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'[[:alpha:]]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"[a-[b]]\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'[a-[b]]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"[a-c-e]\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'[a-c-e]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"[\\\\d-z]\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'[\\d-z]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"[z-a]\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'[z-a]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"[]\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'[]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\D\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\D"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\W\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\W"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\S\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\S"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\B\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\B"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\n\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\n"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\x41\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\x41"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"\\\\A\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'\\A"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"*a\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'*a"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"^*\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'^*"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"a**\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'a**"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"(a\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'(a"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"a)\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'a)"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"a\\\\\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'a\\"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XLOOKUP's match_mode 3 accepts only constructs PCRE2 and .NET read alike; any other pattern is #VALUE!: \"😀\"",
+      "steps": [
+        {"enter": {"A1": "a", "B1": "x", "C1": "'😀"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^a.c$\" against \"abc\"",
+      "steps": [
+        {"enter": {"A1": "'abc", "B1": "x", "C1": "'^a.c$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^a.c$\" against \"a\\nc\"",
+      "steps": [
+        {"enter": {"A1": "'a\nc", "B1": "x", "C1": "'^a.c$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^.$\" against \"😀\"",
+      "steps": [
+        {"enter": {"A1": "'😀", "B1": "x", "C1": "'^.$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^[^a]$\" against \"😀\"",
+      "steps": [
+        {"enter": {"A1": "'😀", "B1": "x", "C1": "'^[^a]$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^\\\\d+$\" against \"١٢\"",
+      "steps": [
+        {"enter": {"A1": "'١٢", "B1": "x", "C1": "'^\\d+$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^\\\\w+$\" against \"café\"",
+      "steps": [
+        {"enter": {"A1": "'café", "B1": "x", "C1": "'^\\w+$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^\\\\w+$\" against \"é\"",
+      "steps": [
+        {"enter": {"A1": "'é", "B1": "x", "C1": "'^\\w+$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"\\\\bcaf\\\\b\" against \"café\"",
+      "steps": [
+        {"enter": {"A1": "'café", "B1": "x", "C1": "'\\bcaf\\b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^\\\\s$\" against \"᠎\"",
+      "steps": [
+        {"enter": {"A1": "'᠎", "B1": "x", "C1": "'^\\s$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^[\\\\w]+$\" against \"café\"",
+      "steps": [
+        {"enter": {"A1": "'café", "B1": "x", "C1": "'^[\\w]+$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"(?=b)b\" against \"b\"",
+      "steps": [
+        {"enter": {"A1": "'b", "B1": "x", "C1": "'(?=b)b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^(?!a)\" against \"a\"",
+      "steps": [
+        {"enter": {"A1": "'a", "B1": "x", "C1": "'^(?!a)"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"(?<=a)b\" against \"ab\"",
+      "steps": [
+        {"enter": {"A1": "'ab", "B1": "x", "C1": "'(?<=a)b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"(?<=a)b\" against \"b\"",
+      "steps": [
+        {"enter": {"A1": "'b", "B1": "x", "C1": "'(?<=a)b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"(?<=a|bc)d\" against \"bcd\"",
+      "steps": [
+        {"enter": {"A1": "'bcd", "B1": "x", "C1": "'(?<=a|bc)d"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"(?<!a)b\" against \"ab\"",
+      "steps": [
+        {"enter": {"A1": "'ab", "B1": "x", "C1": "'(?<!a)b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^.(?<=\\\\w)$\" against \"é\"",
+      "steps": [
+        {"enter": {"A1": "'é", "B1": "x", "C1": "'^.(?<=\\w)$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^\\\\p{L}$\" against \"é\"",
+      "steps": [
+        {"enter": {"A1": "'é", "B1": "x", "C1": "'^\\p{L}$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^\\\\p{Lu}$\" against \"é\"",
+      "steps": [
+        {"enter": {"A1": "'é", "B1": "x", "C1": "'^\\p{Lu}$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^(a)\\\\1$\" against \"aa\"",
+      "steps": [
+        {"enter": {"A1": "'aa", "B1": "x", "C1": "'^(a)\\1$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^(a)\\\\1$\" against \"ab\"",
+      "steps": [
+        {"enter": {"A1": "'ab", "B1": "x", "C1": "'^(a)\\1$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^\\\\s$\" against \" \"",
+      "steps": [
+        {"enter": {"A1": "' ", "B1": "x", "C1": "'^\\s$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^[a\\\\-z]+$\" against \"a-z\"",
+      "steps": [
+        {"enter": {"A1": "'a-z", "B1": "x", "C1": "'^[a\\-z]+$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^[-a]+$\" against \"-a\"",
+      "steps": [
+        {"enter": {"A1": "'-a", "B1": "x", "C1": "'^[-a]+$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^[a-]+$\" against \"a-\"",
+      "steps": [
+        {"enter": {"A1": "'a-", "B1": "x", "C1": "'^[a-]+$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^a{2,3}?$\" against \"aaa\"",
+      "steps": [
+        {"enter": {"A1": "'aaa", "B1": "x", "C1": "'^a{2,3}?$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^\\\\(1\\\\)$\" against \"(1)\"",
+      "steps": [
+        {"enter": {"A1": "'(1)", "B1": "x", "C1": "'^\\(1\\)$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"^a b#$\" against \"a b#\"",
+      "steps": [
+        {"enter": {"A1": "'a b#", "B1": "x", "C1": "'^a b#$"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the accepted constructs match with PCRE2's meaning where .NET's would differ: \"A\" against \"a\"",
+      "steps": [
+        {"enter": {"A1": "'a", "B1": "x", "C1": "'A"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Unicode class reads a character outside the Basic Multilingual Plane as PCRE2 does not, so it is refused against one: \"\\\\w\"",
+      "steps": [
+        {"enter": {"A1": "'𝐀", "B1": "x", "C1": "'\\w"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Unicode class reads a character outside the Basic Multilingual Plane as PCRE2 does not, so it is refused against one: \"\\\\d\"",
+      "steps": [
+        {"enter": {"A1": "'𝐀", "B1": "x", "C1": "'\\d"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Unicode class reads a character outside the Basic Multilingual Plane as PCRE2 does not, so it is refused against one: \"\\\\s\"",
+      "steps": [
+        {"enter": {"A1": "'𝐀", "B1": "x", "C1": "'\\s"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Unicode class reads a character outside the Basic Multilingual Plane as PCRE2 does not, so it is refused against one: \"\\\\b\"",
+      "steps": [
+        {"enter": {"A1": "'𝐀", "B1": "x", "C1": "'\\b"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Unicode class reads a character outside the Basic Multilingual Plane as PCRE2 does not, so it is refused against one: \"\\\\p{L}\"",
+      "steps": [
+        {"enter": {"A1": "'𝐀", "B1": "x", "C1": "'\\p{L}"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Unicode class reads a character outside the Basic Multilingual Plane as PCRE2 does not, so it is refused against one: \"[^\\\\w]\"",
+      "steps": [
+        {"enter": {"A1": "'𝐀", "B1": "x", "C1": "'[^\\w]"}},
+        {"enter": {"D1": "=XLOOKUP(C1,A1:A1,B1:B1,,3)"}, "expect": {"values": {"D1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    }
+  ]
+}

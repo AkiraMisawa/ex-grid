@@ -1187,15 +1187,32 @@ answers in place of Leaf Aggregates when its leaves pass the cap
 ([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
 _Avoid_: subtotal (the engine's figure, laid out from parts), server total, rollup
 
+**Sibling Window**:
+How a set of sibling row groups sorted by a value, too many to answer whole, is answered as Level
+Aggregates: the siblings from the place the Question asks under their parent, with every sibling tied
+with the first or the last, one more each side as its margin, and a Rest Cell beyond each margin. A set
+sorted by its labels has none
+([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
+_Avoid_: Window (the rows the Consumer pushes in), page, top N
+
+**Rest Cell**:
+The siblings beyond a Sibling Window's margin on one side, merged into one Level Aggregate for each
+column group shown: what lets the parts of every sibling not answered still compose to their parent
+([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
+_Avoid_: others, remainder, "the rest" row (it is not a row of the report)
+
 **Question**:
 What a Pivot Source is asked to aggregate for a Pivot Report: the part of its Pivot Layout that
 decides the Leaf Aggregates — the row and column fields in order, the Hidden Items of each placed
 field, and for each field in Values the parts its Aggregations are computed from. A change to any of
 them asks a new Question, which supersedes one still unanswered; any other change — collapse, order,
 form, totals, Show Values As, a caption or a format — lays the held answer out again, and newer data
-is folded into that answer or answers the same Question again
+is folded into that answer or answers the same Question again. A Question for Level Aggregates also
+carries the groups shown, the value each Sibling Window's set is sorted by and where each starts, so
+a change to those asks again
 ([ADR-0066](./docs/adr/0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md),
-[ADR-0067](./docs/adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+[ADR-0067](./docs/adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md),
+[ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md))
 _Avoid_: query (the grid's **Query** asks for rows), request, and Pivot Layout (a layout asks a
 Question, and holds more)
 

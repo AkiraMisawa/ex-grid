@@ -46,4 +46,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'surface', title: '3D surface', group: 'ExChart',
         description: 'An FX volatility surface turned by dragging or with the arrow keys, zoomed and panned, read at the grid point nearest the pointer, sliced into a smile or a term structure by a click, with a hole drawn as a hole (ADR-0274).',
     },
+    {
+        route: 'pivot', title: 'Pivot', group: 'ExPivot',
+        description: 'Excel\'s PivotTable drawn by ExGrid: Month as a part of the trade date, the Fields pane with drag and drop, saving the layout, and Excel\'s Japanese words (ADR-0059, ADR-0060, ADR-0061).',
+    },
 ]);

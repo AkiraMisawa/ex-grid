@@ -226,6 +226,27 @@ return answer.Build();</code></pre>
             answer of cells by name, and ExPivot moves onto the TypeScript engine in 0.3.0, which is why there is no
             Example here.
         </p>
+        <p id="level-windows">
+            Collapsing does not help where one set of siblings is itself too large: a Customer field of a million Items
+            expanded under its Region. Such a set can be answered as a <strong>Sibling Window</strong> when the report sorts it
+            by a value. A row field's rule then carries <code>Order</code> (<code>new PivotLevelOrder(value,
+            aggregation, descending)</code>, the value in the question's <code>Values</code> and the Aggregation read at
+            its grand total), and <code>Levels</code> a <code>PivotLevelWindow(limit, starts)</code>: a set ordered by a
+            value with more than <code>limit</code> siblings is answered from the place a <code>PivotWindowStart</code>
+            asks under its parent, or the first, with <code>limit</code> siblings and every sibling tied with the first
+            and the last, one more each side as a margin, and the siblings beyond each margin merged into one <strong>Rest Cell</strong>
+            a column group, which a SQL server makes with <code>ROW_NUMBER() OVER (PARTITION BY … ORDER BY SUM(…))</code>.
+            The builder's <code>AddWindow(parentRows, before, after)</code> says how many siblings lie on each side and
+            <code>AddRest</code> adds the rest cells; a window not where it was asked, a set past the limit answered
+            whole, or a side whose siblings beyond the margin have no rest cell is refused by name, as another question's
+            answer. A set sorted by its labels is never windowed and stays refused past the cap, because the labels'
+            order (the culture's collation, formatted labels, Order Keys) is not one a server can reproduce, so the
+            siblings before a window could not be checked. The bundled sources answer windows too, and
+            <code>@@ex-grid/pivot-engine</code>'s answer is theirs to the last bit, as <code>order</code>,
+            <code>window</code>, <code>addWindow</code>, <code>addRest</code> and an answer's <code>windows</code> and
+            <code>restAt</code>. The TypeScript cube refuses an answer with windows by name until it lays them out
+            (ADR-0370).
+        </p>
     </DocsSection>
 
     <DocsSection Title="From TypeScript">

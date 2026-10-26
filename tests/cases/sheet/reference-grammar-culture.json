@@ -1,0 +1,1501 @@
+{
+  "about": "The Reference grammar (A1, $A$1, A$1, A1:B2, A:A, 1:1, a Sheet qualifier, structured references) parses and round-trips in the invariant syntax in every culture (SH-6, ADR-0047): entered on a Sheet declared in the culture, read back as entered, through a Sheet Document's JSON, and written again after a row inserted at the top moved what it names. A1=1, A2=2, B1=4, B2=8, C3=16, I3=32, and the Linked Tables LIMIT and Positions. The cultures are the ones both engines hold data for; ar-SA and tr-TR, which only .NET holds, and the process culture stay in ExSheet.Engine.Tests' ReferenceGrammarCultureTests, from which the rest is transcribed.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "setups": {
+    "filled": [
+      {"enterAll": {"A1": "1", "A2": "2", "B1": "4", "B2": "8", "C3": "16", "I3": "32"}},
+      {"declareTable": {"name": "LIMIT", "columns": ["Line"]}},
+      {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+      {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Net PV", "Rate#"]}},
+      {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}}
+    ]
+  },
+  "cases": [
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A1 in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A1"}, "expect": {"entryTexts": {"H10": "=A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$A$1 in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$A$1"}, "expect": {"entryTexts": {"H10": "=$A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=$A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A$1 in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A$1"}, "expect": {"entryTexts": {"H10": "=A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$B1 in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$B1"}, "expect": {"entryTexts": {"H10": "=$B1"}, "values": {"H10": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=$B1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 4}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$B2"}, "values": {"H11": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$B2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A1:B2) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A1:B2)"}, "expect": {"entryTexts": {"H10": "=SUM(A1:B2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(A1:B2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A$1:B$2) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A$1:B$2)"}, "expect": {"entryTexts": {"H10": "=SUM($A$1:B$2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM($A$1:B$2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A:A) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A:A)"}, "expect": {"entryTexts": {"H10": "=SUM(A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A:A)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A:B) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A:B)"}, "expect": {"entryTexts": {"H10": "=SUM($A:B)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM($A:B)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A:B)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A:B)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(1:1) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(1:1)"}, "values": {"H10": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(2:2)"}, "values": {"H11": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($1:2) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($1:2)"}, "expect": {"entryTexts": {"H10": "=SUM($1:2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM($1:2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($2:3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($2:3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =Sheet1!A1 in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=Sheet1!A1"}, "expect": {"entryTexts": {"H10": "=Sheet1!A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=Sheet1!A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=Sheet1!A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=Sheet1!A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Sheet1!$B$2:C3) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "expect": {"entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "values": {"H10": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 24}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}, "values": {"H11": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: ='Q 3'!B2*2 in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "='Q 3'!B2*2"}, "expect": {"entryTexts": {"H10": "='Q 3'!B2*2"}, "values": {"H10": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "='Q 3'!B2*2"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 16}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}, "values": {"H11": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}}}
+      ],
+      "sheets": ["Q 3"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM('It''s'!A:A) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM('It''s'!A:A)"}, "expect": {"entryTexts": {"H10": "=SUM('It''s'!A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "It's"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM('It''s'!A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "It's"}, "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}}}
+      ],
+      "sheets": ["It's"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV]) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])"}, "values": {"H10": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(Positions[PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 300.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}, "values": {"H11": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Net PV]) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Net PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Net PV])"}, "values": {"H10": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(Positions[Net PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": -50}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}, "values": {"H11": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Rate'#]) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Rate'#])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Rate'#])"}, "values": {"H10": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(Positions[Rate'#])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}, "values": {"H11": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "values": {"H10": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 308.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}, "values": {"H11": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(i3,$i$3:i$3) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(i3,$i$3:i$3)"}, "expect": {"entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}, "values": {"H10": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 64}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}, "values": {"H11": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =risk!i3 in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=risk!i3"}, "expect": {"entryTexts": {"H10": "=RISK!I3"}, "values": {"H10": 32}}},
+        {"reopen": {"sheet": "RISK"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=RISK!I3"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 32}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=RISK!I4"}, "values": {"H11": 32}}},
+        {"reopen": {"sheet": "RISK"}, "expect": {"entryTexts": {"H11": "=RISK!I4"}}}
+      ],
+      "sheets": ["RISK"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(limit[line]) in invariant",
+      "culture": "invariant",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(limit[line])"}, "expect": {"entryTexts": {"H10": "=SUM(LIMIT[Line])"}, "values": {"H10": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": ""}, "entryTexts": {"H10": "=SUM(LIMIT[Line])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 7}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}, "values": {"H11": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A1 in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A1"}, "expect": {"entryTexts": {"H10": "=A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$A$1 in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$A$1"}, "expect": {"entryTexts": {"H10": "=$A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=$A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A$1 in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A$1"}, "expect": {"entryTexts": {"H10": "=A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$B1 in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$B1"}, "expect": {"entryTexts": {"H10": "=$B1"}, "values": {"H10": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=$B1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 4}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$B2"}, "values": {"H11": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$B2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A1:B2) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A1:B2)"}, "expect": {"entryTexts": {"H10": "=SUM(A1:B2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(A1:B2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A$1:B$2) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A$1:B$2)"}, "expect": {"entryTexts": {"H10": "=SUM($A$1:B$2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM($A$1:B$2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A:A) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A:A)"}, "expect": {"entryTexts": {"H10": "=SUM(A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A:A)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A:B) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A:B)"}, "expect": {"entryTexts": {"H10": "=SUM($A:B)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM($A:B)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A:B)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A:B)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(1:1) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(1:1)"}, "values": {"H10": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(2:2)"}, "values": {"H11": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($1:2) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($1:2)"}, "expect": {"entryTexts": {"H10": "=SUM($1:2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM($1:2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($2:3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($2:3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =Sheet1!A1 in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=Sheet1!A1"}, "expect": {"entryTexts": {"H10": "=Sheet1!A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=Sheet1!A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=Sheet1!A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=Sheet1!A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Sheet1!$B$2:C3) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "expect": {"entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "values": {"H10": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 24}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}, "values": {"H11": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: ='Q 3'!B2*2 in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "='Q 3'!B2*2"}, "expect": {"entryTexts": {"H10": "='Q 3'!B2*2"}, "values": {"H10": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "='Q 3'!B2*2"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 16}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}, "values": {"H11": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}}}
+      ],
+      "sheets": ["Q 3"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM('It''s'!A:A) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM('It''s'!A:A)"}, "expect": {"entryTexts": {"H10": "=SUM('It''s'!A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "It's"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM('It''s'!A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "It's"}, "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}}}
+      ],
+      "sheets": ["It's"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV]) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])"}, "values": {"H10": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(Positions[PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 300.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}, "values": {"H11": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Net PV]) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Net PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Net PV])"}, "values": {"H10": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(Positions[Net PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": -50}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}, "values": {"H11": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Rate'#]) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Rate'#])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Rate'#])"}, "values": {"H10": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(Positions[Rate'#])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}, "values": {"H11": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "values": {"H10": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 308.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}, "values": {"H11": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(i3,$i$3:i$3) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(i3,$i$3:i$3)"}, "expect": {"entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}, "values": {"H10": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 64}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}, "values": {"H11": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =risk!i3 in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=risk!i3"}, "expect": {"entryTexts": {"H10": "=RISK!I3"}, "values": {"H10": 32}}},
+        {"reopen": {"sheet": "RISK"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=RISK!I3"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 32}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=RISK!I4"}, "values": {"H11": 32}}},
+        {"reopen": {"sheet": "RISK"}, "expect": {"entryTexts": {"H11": "=RISK!I4"}}}
+      ],
+      "sheets": ["RISK"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(limit[line]) in en-US",
+      "culture": "en-US",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(limit[line])"}, "expect": {"entryTexts": {"H10": "=SUM(LIMIT[Line])"}, "values": {"H10": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "en-US"}, "entryTexts": {"H10": "=SUM(LIMIT[Line])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 7}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}, "values": {"H11": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A1 in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A1"}, "expect": {"entryTexts": {"H10": "=A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$A$1 in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$A$1"}, "expect": {"entryTexts": {"H10": "=$A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=$A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A$1 in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A$1"}, "expect": {"entryTexts": {"H10": "=A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$B1 in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$B1"}, "expect": {"entryTexts": {"H10": "=$B1"}, "values": {"H10": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=$B1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 4}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$B2"}, "values": {"H11": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$B2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A1:B2) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A1:B2)"}, "expect": {"entryTexts": {"H10": "=SUM(A1:B2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(A1:B2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A$1:B$2) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A$1:B$2)"}, "expect": {"entryTexts": {"H10": "=SUM($A$1:B$2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM($A$1:B$2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A:A) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A:A)"}, "expect": {"entryTexts": {"H10": "=SUM(A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A:A)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A:B) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A:B)"}, "expect": {"entryTexts": {"H10": "=SUM($A:B)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM($A:B)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A:B)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A:B)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(1:1) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(1:1)"}, "values": {"H10": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(2:2)"}, "values": {"H11": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($1:2) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($1:2)"}, "expect": {"entryTexts": {"H10": "=SUM($1:2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM($1:2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($2:3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($2:3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =Sheet1!A1 in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=Sheet1!A1"}, "expect": {"entryTexts": {"H10": "=Sheet1!A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=Sheet1!A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=Sheet1!A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=Sheet1!A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Sheet1!$B$2:C3) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "expect": {"entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "values": {"H10": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 24}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}, "values": {"H11": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: ='Q 3'!B2*2 in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "='Q 3'!B2*2"}, "expect": {"entryTexts": {"H10": "='Q 3'!B2*2"}, "values": {"H10": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "='Q 3'!B2*2"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 16}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}, "values": {"H11": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}}}
+      ],
+      "sheets": ["Q 3"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM('It''s'!A:A) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM('It''s'!A:A)"}, "expect": {"entryTexts": {"H10": "=SUM('It''s'!A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "It's"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM('It''s'!A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "It's"}, "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}}}
+      ],
+      "sheets": ["It's"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV]) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])"}, "values": {"H10": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(Positions[PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 300.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}, "values": {"H11": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Net PV]) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Net PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Net PV])"}, "values": {"H10": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(Positions[Net PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": -50}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}, "values": {"H11": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Rate'#]) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Rate'#])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Rate'#])"}, "values": {"H10": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(Positions[Rate'#])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}, "values": {"H11": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "values": {"H10": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 308.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}, "values": {"H11": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(i3,$i$3:i$3) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(i3,$i$3:i$3)"}, "expect": {"entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}, "values": {"H10": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 64}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}, "values": {"H11": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =risk!i3 in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=risk!i3"}, "expect": {"entryTexts": {"H10": "=RISK!I3"}, "values": {"H10": 32}}},
+        {"reopen": {"sheet": "RISK"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=RISK!I3"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 32}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=RISK!I4"}, "values": {"H11": 32}}},
+        {"reopen": {"sheet": "RISK"}, "expect": {"entryTexts": {"H11": "=RISK!I4"}}}
+      ],
+      "sheets": ["RISK"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(limit[line]) in de-DE",
+      "culture": "de-DE",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(limit[line])"}, "expect": {"entryTexts": {"H10": "=SUM(LIMIT[Line])"}, "values": {"H10": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "de-DE"}, "entryTexts": {"H10": "=SUM(LIMIT[Line])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 7}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}, "values": {"H11": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A1 in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A1"}, "expect": {"entryTexts": {"H10": "=A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$A$1 in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$A$1"}, "expect": {"entryTexts": {"H10": "=$A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=$A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A$1 in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A$1"}, "expect": {"entryTexts": {"H10": "=A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$B1 in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$B1"}, "expect": {"entryTexts": {"H10": "=$B1"}, "values": {"H10": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=$B1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 4}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$B2"}, "values": {"H11": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$B2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A1:B2) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A1:B2)"}, "expect": {"entryTexts": {"H10": "=SUM(A1:B2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(A1:B2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A$1:B$2) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A$1:B$2)"}, "expect": {"entryTexts": {"H10": "=SUM($A$1:B$2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM($A$1:B$2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A:A) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A:A)"}, "expect": {"entryTexts": {"H10": "=SUM(A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A:A)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A:B) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A:B)"}, "expect": {"entryTexts": {"H10": "=SUM($A:B)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM($A:B)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A:B)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A:B)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(1:1) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(1:1)"}, "values": {"H10": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(2:2)"}, "values": {"H11": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($1:2) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($1:2)"}, "expect": {"entryTexts": {"H10": "=SUM($1:2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM($1:2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($2:3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($2:3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =Sheet1!A1 in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=Sheet1!A1"}, "expect": {"entryTexts": {"H10": "=Sheet1!A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=Sheet1!A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=Sheet1!A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=Sheet1!A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Sheet1!$B$2:C3) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "expect": {"entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "values": {"H10": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 24}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}, "values": {"H11": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: ='Q 3'!B2*2 in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "='Q 3'!B2*2"}, "expect": {"entryTexts": {"H10": "='Q 3'!B2*2"}, "values": {"H10": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "='Q 3'!B2*2"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 16}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}, "values": {"H11": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}}}
+      ],
+      "sheets": ["Q 3"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM('It''s'!A:A) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM('It''s'!A:A)"}, "expect": {"entryTexts": {"H10": "=SUM('It''s'!A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "It's"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM('It''s'!A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "It's"}, "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}}}
+      ],
+      "sheets": ["It's"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV]) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])"}, "values": {"H10": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(Positions[PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 300.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}, "values": {"H11": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Net PV]) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Net PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Net PV])"}, "values": {"H10": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(Positions[Net PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": -50}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}, "values": {"H11": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Rate'#]) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Rate'#])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Rate'#])"}, "values": {"H10": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(Positions[Rate'#])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}, "values": {"H11": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "values": {"H10": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 308.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}, "values": {"H11": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(i3,$i$3:i$3) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(i3,$i$3:i$3)"}, "expect": {"entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}, "values": {"H10": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 64}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}, "values": {"H11": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =risk!i3 in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=risk!i3"}, "expect": {"entryTexts": {"H10": "=RISK!I3"}, "values": {"H10": 32}}},
+        {"reopen": {"sheet": "RISK"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=RISK!I3"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 32}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=RISK!I4"}, "values": {"H11": 32}}},
+        {"reopen": {"sheet": "RISK"}, "expect": {"entryTexts": {"H11": "=RISK!I4"}}}
+      ],
+      "sheets": ["RISK"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(limit[line]) in fr-FR",
+      "culture": "fr-FR",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(limit[line])"}, "expect": {"entryTexts": {"H10": "=SUM(LIMIT[Line])"}, "values": {"H10": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "fr-FR"}, "entryTexts": {"H10": "=SUM(LIMIT[Line])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 7}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}, "values": {"H11": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A1 in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A1"}, "expect": {"entryTexts": {"H10": "=A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$A$1 in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$A$1"}, "expect": {"entryTexts": {"H10": "=$A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=$A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =A$1 in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=A$1"}, "expect": {"entryTexts": {"H10": "=A$1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=A$1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=A$2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=A$2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =$B1 in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=$B1"}, "expect": {"entryTexts": {"H10": "=$B1"}, "values": {"H10": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=$B1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 4}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=$B2"}, "values": {"H11": 4}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=$B2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A1:B2) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A1:B2)"}, "expect": {"entryTexts": {"H10": "=SUM(A1:B2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(A1:B2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A2:B3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A$1:B$2) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A$1:B$2)"}, "expect": {"entryTexts": {"H10": "=SUM($A$1:B$2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM($A$1:B$2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A$2:B$3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(A:A) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(A:A)"}, "expect": {"entryTexts": {"H10": "=SUM(A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(A:A)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($A:B) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($A:B)"}, "expect": {"entryTexts": {"H10": "=SUM($A:B)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM($A:B)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($A:B)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($A:B)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(1:1) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(1:1)"}, "values": {"H10": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(2:2)"}, "values": {"H11": 5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM($1:2) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM($1:2)"}, "expect": {"entryTexts": {"H10": "=SUM($1:2)"}, "values": {"H10": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM($1:2)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 15}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM($2:3)"}, "values": {"H11": 15}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM($2:3)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =Sheet1!A1 in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=Sheet1!A1"}, "expect": {"entryTexts": {"H10": "=Sheet1!A1"}, "values": {"H10": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=Sheet1!A1"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=Sheet1!A2"}, "values": {"H11": 1}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=Sheet1!A2"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Sheet1!$B$2:C3) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "expect": {"entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}, "values": {"H10": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(Sheet1!$B$2:C3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 24}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}, "values": {"H11": 24}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Sheet1!$B$3:C4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: ='Q 3'!B2*2 in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "='Q 3'!B2*2"}, "expect": {"entryTexts": {"H10": "='Q 3'!B2*2"}, "values": {"H10": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "='Q 3'!B2*2"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 16}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}, "values": {"H11": 16}}},
+        {"reopen": {"sheet": "Q 3"}, "expect": {"entryTexts": {"H11": "='Q 3'!B3*2"}}}
+      ],
+      "sheets": ["Q 3"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM('It''s'!A:A) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM('It''s'!A:A)"}, "expect": {"entryTexts": {"H10": "=SUM('It''s'!A:A)"}, "values": {"H10": 3}}},
+        {"reopen": {"sheet": "It's"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM('It''s'!A:A)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 3}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}, "values": {"H11": 3}}},
+        {"reopen": {"sheet": "It's"}, "expect": {"entryTexts": {"H11": "=SUM('It''s'!A:A)"}}}
+      ],
+      "sheets": ["It's"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV]) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])"}, "values": {"H10": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(Positions[PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 300.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}, "values": {"H11": 300.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Net PV]) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Net PV])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Net PV])"}, "values": {"H10": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(Positions[Net PV])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": -50}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}, "values": {"H11": -50}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Net PV])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[Rate'#]) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[Rate'#])"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[Rate'#])"}, "values": {"H10": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(Positions[Rate'#])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 1.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}, "values": {"H11": 1.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[Rate'#])"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "expect": {"entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}, "values": {"H10": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(Positions[PV])*$A$1+SUM(Sheet1!A1:A2,1:1)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 308.5}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}, "values": {"H11": 308.5}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(Positions[PV])*$A$2+SUM(Sheet1!A2:A3,2:2)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(i3,$i$3:i$3) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(i3,$i$3:i$3)"}, "expect": {"entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}, "values": {"H10": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(I3,$I$3:I$3)"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 64}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}, "values": {"H11": 64}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(I4,$I$4:I$4)"}}}
+      ]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =risk!i3 in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=risk!i3"}, "expect": {"entryTexts": {"H10": "=RISK!I3"}, "values": {"H10": 32}}},
+        {"reopen": {"sheet": "RISK"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=RISK!I3"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 32}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=RISK!I4"}, "values": {"H11": 32}}},
+        {"reopen": {"sheet": "RISK"}, "expect": {"entryTexts": {"H11": "=RISK!I4"}}}
+      ],
+      "sheets": ["RISK"]
+    },
+    {
+      "name": "SH-6, ADR-0047: a Reference form parses, and its text round-trips exactly, in the invariant syntax in every culture: =sum(limit[line]) in ja-JP",
+      "culture": "ja-JP",
+      "setup": "filled",
+      "steps": [
+        {"enter": {"H10": "=sum(limit[line])"}, "expect": {"entryTexts": {"H10": "=SUM(LIMIT[Line])"}, "values": {"H10": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "Through a Sheet Document and its JSON, opened again; its Linked Tables wait for their first snapshot.", "expect": {"workbook": {"culture": "ja-JP"}, "entryTexts": {"H10": "=SUM(LIMIT[Line])"}}},
+        {"pushTable": {"name": "LIMIT", "rows": [[3], [4]]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 100, -20, 0.5], ["R-2", 200.5, -30, 1]]}},
+        {"read": true, "expect": {"values": {"H10": 7}}},
+        {"do": {"insertRows": [0]}, "note": "A row inserted at the top moves what it names, and the text is the invariant one.", "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}, "values": {"H11": 7}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"H11": "=SUM(LIMIT[Line])"}}}
+      ]
+    }
+  ]
+}

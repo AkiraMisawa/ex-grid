@@ -1,0 +1,142 @@
+{
+  "about": "MROUND, CEILING.MATH and FLOOR.MATH beyond Windows Excel's observations in ExcelCases' mround, ceiling-math and floor-math (ADR-0047): what is refused rather than given a tolerance Excel was not seen to use. Transcribed from ExSheet.Engine.Tests' ObservedRoundingTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: division at an unobserved integer boundary does not invent a tolerance: =FLOOR.MATH(0.3,0.1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FLOOR.MATH(0.3,0.1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: division at an unobserved integer boundary does not invent a tolerance: =CEILING.MATH(0.07,0.01)",
+      "steps": [
+        {"enter": {"ZZ1000": "=CEILING.MATH(0.07,0.01)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a nonzero quotient that underflows is not a known zero: =CEILING.MATH(1E-300,1E300)",
+      "steps": [
+        {"enter": {"ZZ1000": "=CEILING.MATH(1E-300,1E300)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a nonzero quotient that underflows is not a known zero: =FLOOR.MATH(-1E-300,1E300)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FLOOR.MATH(-1E-300,1E300)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: documented integer multiples and default significance: =MROUND(10,3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(10,3)"}, "expect": {"values": {"ZZ1000": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: documented integer multiples and default significance: =MROUND(-10,-3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(-10,-3)"}, "expect": {"values": {"ZZ1000": -9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: documented integer multiples and default significance: =MROUND(17,5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(17,5)"}, "expect": {"values": {"ZZ1000": 15}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: documented integer multiples and default significance: =MROUND(18,5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(18,5)"}, "expect": {"values": {"ZZ1000": 20}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: documented integer multiples and default significance: =MROUND(0,-5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(0,-5)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: documented integer multiples and default significance: =CEILING.MATH(2.5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=CEILING.MATH(2.5)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: documented integer multiples and default significance: =FLOOR.MATH(2.5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FLOOR.MATH(2.5)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: MROUND refuses fractional multiples: =MROUND(1.3,0.2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(1.3,0.2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: MROUND refuses fractional multiples: =MROUND(-1.3,-0.2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(-1.3,-0.2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: rounding that overflows is an Error Value: =MROUND(1.7E307*10,1E307*10)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(1.7E307*10,1E307*10)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: rounding that overflows is an Error Value: =CEILING.MATH(1.7E307*10,1E307*10)",
+      "steps": [
+        {"enter": {"ZZ1000": "=CEILING.MATH(1.7E307*10,1E307*10)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: rounding that overflows is an Error Value: =FLOOR.MATH(-1.7E307*10,1E307*10)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FLOOR.MATH(-1.7E307*10,1E307*10)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: MROUND rejects boolean arguments, References to them included: =MROUND(2.5,TRUE)",
+      "steps": [
+        {"enter": {"A1": "TRUE"}},
+        {"enter": {"ZZ1000": "=MROUND(2.5,TRUE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: MROUND rejects boolean arguments, References to them included: =MROUND(A1,1)",
+      "steps": [
+        {"enter": {"A1": "TRUE"}},
+        {"enter": {"ZZ1000": "=MROUND(A1,1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: rounding recalculates when the multiple changes",
+      "steps": [
+        {"enter": {"A1": "3", "B1": "=MROUND(10,A1)"}, "expect": {"values": {"B1": 9}}},
+        {"enter": {"A1": "4"}, "expect": {"values": {"B1": 12}, "change": {"recalculated": ["B1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: MROUND rounds to an integer multiple away from zero at halfway",
+      "steps": [
+        {"enter": {"ZZ1000": "=MROUND(-2.5,-1)"}, "expect": {"values": {"ZZ1000": -3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FLOOR.MATH uses the observed negative number mode",
+      "steps": [
+        {"enter": {"ZZ1000": "=FLOOR.MATH(-2.5,1,1)"}, "expect": {"values": {"ZZ1000": -2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: CEILING.MATH uses the observed negative number mode",
+      "steps": [
+        {"enter": {"ZZ1000": "=CEILING.MATH(-2.5,1,1)"}, "expect": {"values": {"ZZ1000": -3}}}
+      ]
+    }
+  ]
+}

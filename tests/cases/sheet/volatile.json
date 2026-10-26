@@ -1,0 +1,65 @@
+{
+  "about": "A Formula that calls a volatile function is recalculated in every recalculation, a Reference computed while it is evaluated is read as it stands after the recalculation, and NOW answers the moment the host gives it (ADR-0124). Transcribed from ExSheet.Engine.Tests' VolatileTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0124: OFFSET reads a cell its text does not name, and follows a change to that cell",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "A5": "5", "A6": "6", "C1": "5", "B1": "=OFFSET(A1,C1,0)"}, "expect": {"values": {"B1": 6}}},
+        {"enter": {"A6": "60"}, "expect": {"values": {"B1": 60}}}
+      ]
+    },
+    {
+      "name": "ADR-0124: a cell the same recalculation has still to compute is computed first, whatever the order",
+      "steps": [
+        {"enter": {"D1": "1", "A6": "=D1*2", "B1": "=OFFSET(A1,5,0)+0"}, "note": "B1 sorts before A6 in no order the graph knows: its text names A1, not A6.", "expect": {"values": {"B1": 2}}},
+        {"enter": {"D1": "10"}, "expect": {"values": {"A6": 20, "B1": 20}}}
+      ]
+    },
+    {
+      "name": "ADR-0124 / ADR-0047: a Formula that reaches itself through a computed Reference is #CIRC!",
+      "steps": [
+        {"enter": {"B1": "=OFFSET(B1,0,0)+1"}, "expect": {"values": {"B1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0124: OFFSET gives SUM a range whose size follows the data",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2", "A3": "3", "A4": "4", "A5": "5", "C1": "3", "B1": "=SUM(OFFSET(A1,0,0,C1,1))"}, "expect": {"values": {"B1": 6}}},
+        {"enter": {"C1": "5"}, "expect": {"values": {"B1": 15}}}
+      ]
+    },
+    {
+      "name": "ADR-0124: NOW answers the moment its host gives, read once per recalculation, and moves on with any change",
+      "steps": [
+        {"setClock": {"from": "2026-10-03T18:00:00", "step": 0}},
+        {"enter": {"A1": "=NOW()"}, "expect": {"values": {"A1": 46298.75}}},
+        {"setClock": {"from": "2026-10-03T21:00:00", "step": 0}},
+        {"enter": {"Z1": "1"}, "expect": {"values": {"A1": 46298.875}}}
+      ]
+    },
+    {
+      "name": "ADR-0124: moving the clock on recalculates the volatile Formulas and what reads them, and nothing else",
+      "steps": [
+        {"setClock": {"from": "2026-10-03T18:00:00", "step": 0}},
+        {"enter": {"A1": "=NOW()", "B1": "=A1+1", "C1": "=2*3"}, "expect": {"workbook": {"hasVolatileFormulas": true}}},
+        {"setClock": {"from": "2026-10-03T18:01:00", "step": 0}},
+        {"recalculateVolatile": true, "expect": {"change": {"recalculated": ["A1", "B1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0124: without a moment, NOW waits, and a Formula that calls it waits whichever branch it takes",
+      "steps": [
+        {"enter": {"A1": "=NOW()", "A2": "=IF(TRUE,1,NOW())"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0124: a Sheet with no volatile Formula is not recalculated by the clock",
+      "steps": [
+        {"enter": {"A1": "=1+1"}, "expect": {"workbook": {"hasVolatileFormulas": false}}},
+        {"recalculateVolatile": true, "expect": {"change": {"recalculated": []}}}
+      ]
+    }
+  ]
+}

@@ -39,7 +39,7 @@ export class DotNetRandom {
         return Math.trunc(this.#sample() * (second - first)) + first;
     }
 
-    /** `NextDouble()`: a number in [0, 1). */
+    /** `NextDouble()`: a double in [0, 1). */
     nextDouble(): number {
         return this.#sample();
     }

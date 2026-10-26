@@ -1,0 +1,55 @@
+{
+  "about": "The engine's API rebuilt around the Workbook (ADR-0331 §9; exsheet-workbook ticket 13): a Workbook is made, opened and saved where a Sheet was, and the Sheet Day and the clock are the Workbook's, read by every Sheet it holds, one added later too. Transcribed from ExSheet.Engine.Tests' WorkbookApiTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0331 §9: a Workbook made from a culture alone holds one Sheet, Sheet1",
+      "steps": [
+        {"read": true, "expect": {"sheets": ["Sheet1"], "workbook": {"culture": "en-US"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §9, ADR-0048: a Sheet Document opens as a Workbook of that one Sheet, and a Sheet of a Workbook is saved as one",
+      "sheets": ["Rates"],
+      "steps": [
+        {"do": {"enter": {"A1": "2"}}},
+        {"do": {"enter": {"A2": "=A1*3"}}},
+        {"reopen": {"sheet": "rates"}, "expect": {"sheets": ["Rates"], "values": {"A2": 6}}},
+        {"reopen": {"sheet": "Missing"}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §9, ADR-0121: the Sheet Day is the Workbook's: one setting recalculates TODAY on every Sheet, and a Sheet added later reads it",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"A1": "=TODAY()"}}, "on": "One"},
+        {"do": {"enter": {"A1": "=TODAY()"}}, "on": "Two", "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
+        {"setToday": "2026-10-20", "on": "Two", "expect": {"change": {"valueChanges": ["A1"]}, "values": {"A1": 46315}}},
+        {"read": true, "on": "One", "expect": {"values": {"A1": 46315}, "workbook": {"today": "2026-10-20"}}},
+        {"do": {"insertSheet": {"name": "Three"}}, "on": "Two"},
+        {"do": {"enter": {"A1": "=TODAY()"}}, "on": "Three", "expect": {"values": {"A1": 46315}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §9, ADR-0124: the moment is read once for a recalculation of the whole Workbook, so every NOW on every Sheet answers it",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"setClock": {"from": "2026-10-20T09:30:00", "step": 60}},
+        {"do": {"enter": {"A1": "=NOW()"}}, "on": "One"},
+        {"do": {"enter": {"A1": "=NOW()"}}, "on": "Two"},
+        {"recalculateVolatile": true, "on": "One", "expect": {"clockReads": 1, "workbook": {"hasVolatileFormulas": true}, "values": {"A1": 46315.39791666667}}},
+        {"read": true, "on": "Two", "expect": {"values": {"A1": 46315.39791666667}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §9, ADR-0049: a Linked Table is declared and pushed on the Workbook, with one key column, and read from any Sheet",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"], "key": "Id"}},
+        {"do": {"enter": {"A1": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])"}}, "on": "Two"},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 250.5]]}, "on": "Two", "expect": {"values": {"A1": 250.5}, "workbook": {"linkedTables": [{"name": "Positions", "keyColumns": ["Id"]}]}}}
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 @* What the site shows under React where it has nothing for React yet (ADR-0350 §12): it says so where
    the Example or the page would be, rather than showing Blazor's in its place, and offers to switch the
-   whole site back. ExGrid's and ExChart's React packages are coming in 0.3.0; the other products have none yet. *@
+   whole site back. ExGrid's, ExChart's and ExPivot's React packages are coming in 0.3.0; the other products have none yet. *@
 <div class="@($"docs-not-in-react docs-not-in-react-{(Example ? "example" : "page")}")" role="note">
     <MudIcon Icon="@Icons.Material.Outlined.Info" Class="docs-not-in-react-icon" />
     <div class="docs-not-in-react-text">
@@ -28,6 +28,8 @@
         ("ExGrid", false) => "ExGrid for React, @ex-grid/react, is not published yet. This page describes ExGrid for Blazor, and each Example says so where it would run.",
         ("ExChart", true) => "This Example is not in ExChart for React yet. Its React package, @ex-grid/chart-react, is being built for 0.3.0; until then it runs under Blazor only.",
         ("ExChart", false) => "ExChart for React, @ex-grid/chart-react, is not published yet. This page describes ExChart for Blazor, and each Example says so where it would run.",
+        ("ExPivot", true) => "This Example is not in ExPivot for React yet. Its React package, @ex-grid/pivot-react, is being built for 0.3.0; until then it runs under Blazor only.",
+        ("ExPivot", false) => "ExPivot for React, @ex-grid/pivot-react, is not published yet. This page describes ExPivot for Blazor, and each Example says so where it would run.",
         (null, _) => "The React packages are not published yet, so everything on this page is for Blazor.",
         ("ExGrid.Data.Arrow", false) =>
             "ExGrid.Data.Arrow is a .NET package. Its TypeScript counterpart, @ex-grid/data, reads and writes the same Arrow and is published with 0.3.0; this page describes both from .NET, and says where they differ.",
