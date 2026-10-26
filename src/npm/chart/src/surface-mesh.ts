@@ -5,7 +5,7 @@
 // `SurfaceMesh`, held to it by the shared cases under tests/cases/chart/ (ADR-0370).
 import { tickText } from './invariant-text';
 import { elementAt } from './must';
-import { greatest, least, roundToDigits } from './numbers';
+import { firstBy, greatest, least, roundToDigits } from './numbers';
 import type { SurfaceAxis, SurfaceDefinition, SurfaceSlice, SurfaceValue } from './surface';
 import { decades, logSteps, nice, steps } from './ticks';
 import { toNumber } from './values';
@@ -245,6 +245,43 @@ export function surfaceSlicePath(definition: SurfaceDefinition, slice: SurfaceSl
 
 // The least distance, as a fraction of the floor, between two labels on an axis placed by value.
 const labelRoom = 1 / 12;
+
+/**
+ * The surface said in words, for a screen reader (ADR-0275's shape): what it is of, its grid or its mesh,
+ * the range of its values, its holes, and how it is coloured and scaled; then the Consumer's description.
+ */
+export function surfaceSummary(definition: SurfaceDefinition, title?: string, description?: string): string {
+    const present = definition.present();
+    const lo = firstBy(present, toNumber, (a, b) => a < b);
+    const hi = firstBy(present, toNumber, (a, b) => a > b);
+    const holes = definition.nodeCount - present.length;
+    const { x, y, nodes, triangles } = definition;
+    const z = blank(definition.zTitle) ? 'Values' : definition.zTitle;
+    const head = blank(title) ? '3D surface' : `${title}, a 3D surface`;
+    const shape = nodes !== undefined && triangles !== undefined
+        ? `a mesh of ${String(nodes.length)} nodes and ${String(triangles.length)} triangles`
+        : `${String(x.values.length)} by ${String(y.values.length)} points`;
+    const hole = definition.isMesh
+        ? `${holes === 1 ? 'node' : 'nodes'} without a value`
+        : `${holes === 1 ? 'hole' : 'holes'} where the data has no value`;
+    const centre = definition.centre;
+    const method = definition.method;
+    const text = `${head} of ${z} over ${axisLabel(x, 'x')} from ${x.write(0)} to ${x.write(x.values.length - 1)} and ${axisLabel(y, 'y')} from ${y.write(0)} to ${y.write(y.values.length - 1)}`
+        + `; ${shape}, from ${definition.writeZ(lo)} to ${definition.writeZ(hi)}`
+        + (holes === 0 ? '.' : `, with ${String(holes)} ${hole}.`)
+        + (centre === undefined ? '' : ` Coloured by distance from ${tickText(centre)}, below and above.`)
+        + (definition.effectiveZScale === 'logarithmic' ? ' The vertical scale is logarithmic.' : '')
+        + (method === undefined ? '' : ` Interpolated by the Consumer: ${method}.`);
+    return blank(description) ? text : `${text} ${description}`;
+}
+
+function blank(text: string | undefined): boolean {
+    return text === undefined || text.trim() === '';
+}
+
+function axisLabel(axis: SurfaceAxis, fallback: string): string {
+    return axis.title.trim() === '' ? fallback : axis.title;
+}
 
 // Where each value lies on each of the surface's scales (ADR-0312).
 class Frame {

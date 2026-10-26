@@ -103,7 +103,9 @@ test('ADR-0274: the surface turns below its floor, to a pitch of -90, and seen f
     const frame = await box(page).boundingBox();
     await page.mouse.move(frame.x + 40, frame.y + frame.height - 5);
     await page.mouse.down();
-    await page.mouse.move(frame.x + 40, frame.y - frame.height, { steps: 8 });
+    // From the bottom of the box to its top is nearly a whole turn, past the floor's -90 by far, and the release
+    // stays on the page: one outside the window is the window's to deliver, which headed Edge under CI did not.
+    await page.mouse.move(frame.x + 40, frame.y + 5, { steps: 8 });
     await page.mouse.up();
     await expect(events(page)).toHaveText(/pitch -90,/);
     await box(page).focus();
