@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 17:23:32 |
+| Generated on: | 10/26/2026 - 17:51:34 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1199 |
 | Files: | 609 |
-| **Line coverage:** | 94.7% (83561 of 88220) |
-| Covered lines: | 83561 |
-| Uncovered lines: | 4659 |
-| Coverable lines: | 88220 |
-| Total lines: | 140839 |
-| **Branch coverage:** | 87.7% (50631 of 57728) |
-| Covered branches: | 50631 |
-| Total branches: | 57728 |
+| **Line coverage:** | 94.7% (83564 of 88226) |
+| Covered lines: | 83564 |
+| Uncovered lines: | 4662 |
+| Coverable lines: | 88226 |
+| Total lines: | 140867 |
+| **Branch coverage:** | 87.7% (50637 of 57738) |
+| Covered branches: | 50637 |
+| Total branches: | 57738 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -318,7 +318,7 @@
 |ExGrid.Clipboard.SourceCell|100%||
 |ExGrid.ColumnDocument|100%||
 |ExGrid.ColumnGeometry|99.4%|95.4%|
-|ExGrid.ColumnInfo<TRow>|100%|100%|
+|ExGrid.ColumnInfo<TRow>|93.3%|91.6%|
 |ExGrid.Columns.AutoWidth|100%|100%|
 |ExGrid.Columns.CellTextMetrics|100%|81.6%|
 |ExGrid.Columns.ColumnWidth|100%|100%|
@@ -401,7 +401,7 @@
 |ExGrid.Components.SettledStamp|100%|100%|
 |ExGrid.Components.Share|100%|100%|
 |ExGrid.Components.SummaryFiguresMenu|80%|85.7%|
-|ExGrid.DisplayText|100%|90%|
+|ExGrid.DisplayText|100%|87.5%|
 |ExGrid.FetchedShapedGrid|90.9%||
 |ExGrid.FetchingGridSource<TRow>|84.3%|76%|
 |ExGrid.FetchingGridSource<TRow>|96.8%|86%|
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
