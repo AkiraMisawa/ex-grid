@@ -11,7 +11,7 @@ import {
     createGrid, formulaBarHeight, refusedCells, replacedCells, type CellPosition, type GridDirection,
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult,
-    type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
+    type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
     type ViewportSize,
 } from '@ex-grid/core';
 import {
@@ -365,6 +365,8 @@ class SheetView {
             onEdit: this.#onEdit,
             copyAnswer: this.#copyAnswer,
             onPaste: this.#onPaste,
+            showFillHandle: true,
+            onFill: this.#onFill,
             onClear: this.#onClear,
             onUndo: this.#onUndo,
             onRedo: this.#onRedo,
@@ -494,6 +496,18 @@ class SheetView {
         // The typed fields and the exact numbers are one engine edit: one step on the undo stack (ADR-0048). Its
         // undo selects the ranges pasted over (ADR-0331 §3).
         this.#performRefusing(intent, () => SheetEdit.pasteFields(typed, exact), intent.plan.targets.map(rangeOf));
+    };
+
+    // A Fill Intent (ADR-0050, item 5), filled as Excel fills by the engine: copies with relative References shifted,
+    // a linear series from two or more numbers, dates by day, as one step on the undo stack. Any other pattern is
+    // refused before anything is written: the grid is told, so the Selection stays on the source, and the user is
+    // told why.
+    readonly #onFill = (intent: GridFillIntent): void => {
+        if (intent.rowSequenceVersion !== this.#source.snapshot().rowSequenceVersion) {
+            intent.refuse();
+            return;
+        }
+        this.#performChecked(intent, SheetEdit.fill(rangeOf(intent.source), rangeOf(intent.target), intent.direction));
     };
 
     readonly #onClear = (intent: GridClearIntent): void => {
@@ -1255,7 +1269,7 @@ class SheetView {
 
     /** `edit` checked before anything is written: a refusal is told to the grid, which leaves the Selection where
      * it was, and to the user (ADR-0050 item 5). */
-    #performChecked(intent: GridPasteIntent, edit: SheetEdit): void {
+    #performChecked(intent: GridPasteIntent | GridFillIntent, edit: SheetEdit): void {
         const refusal = this.#workbook.check(this.#source.sheet.name, edit);
         if (refusal !== undefined) {
             intent.refuse();

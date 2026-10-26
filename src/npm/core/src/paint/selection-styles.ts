@@ -12,12 +12,13 @@
 // extra row on each side keeps a clipped edge out of the readable area.
 //
 // A range spanning the pinned boundary is painted in two layers (ADR-0004): its pinned part travels with
-// the Pinned Columns while the rest pans underneath. The fill handle's place is the editing layer's, and
-// comes with it.
+// the Pinned Columns while the rest pans underneath. The fill handle stands in whichever layer its corner
+// does (ADR-0050, item 5).
 
 import type { ColumnGeometry } from '../columns/column-geometry';
-import { itemAt } from '../must';
+import { itemAt, unreachable } from '../must';
 import type { CellPosition } from '../selection/cell';
+import type { FillHandleCorner } from '../selection/fill-rules';
 import { bottomRow, rangeCellCount, rangeContains, rightColumn, selectionRange, type SelectionRange } from '../selection/range';
 import type { RowRange } from '../viewport/row-range';
 
@@ -31,6 +32,17 @@ export interface OutlineCover {
     readonly firstOpenRow: number;
     readonly scrollLeftPx: number;
     readonly hasHeader: boolean;
+}
+
+/**
+ * Where the readable area begins, for a fill handle held at its edge (ADR-0050, item 5): `topPx` is its top in
+ * the selection layers' coordinates, measured from the painted slice's top, so the part of the first painted
+ * row under the header; and `leftPx` its left in the scrollable layer's, the content's, which is the horizontal
+ * scroll offset plus the Row Headings and the pinned block that cover the edge.
+ */
+export interface ReadableEdge {
+    readonly topPx: number;
+    readonly leftPx: number;
 }
 
 // The sides of the Selection's outline that stay inside the range, as the stylesheet reads them
@@ -177,6 +189,69 @@ export function scrollable(range: SelectionRange, columns: ColumnGeometry, rowHe
 /** The part of a range held against the Viewport's left edge, or `undefined` when it reaches no Pinned Column. */
 export function pinned(range: SelectionRange, columns: ColumnGeometry, rowHeightPx: number, painted: RowRange): string | undefined {
     return part(range, columns, rowHeightPx, painted, true);
+}
+
+/**
+ * The fill handle (ADR-0050, item 5): a square of `sizePx` at the `corner` of the range `fillHandleCorner`
+ * chose, in the layer that corner's cell belongs to, the pinned one when its column is pinned, the scrollable
+ * one otherwise. `undefined` for the other layer, so the handle is one element and never two, and while that
+ * cell is not among the painted rows (ADR-0053), where it could not be seen or grabbed; but a whole column's
+ * first row scrolled above them leaves its handle held at the readable area's top, as Excel's stayed in view
+ * with row 1 scrolled away. Where it lies about the corner is `handleCentrePx`'s.
+ */
+export function handle(
+    range: SelectionRange, corner: FillHandleCorner, columns: ColumnGeometry, rowHeightPx: number, painted: RowRange,
+    sizePx: number, pinnedLayer: boolean, readable: ReadableEdge,
+): string | undefined {
+    const cell = handleCell(range, corner);
+    if (sideOf(cellRange(cell), columns, pinnedLayer) === undefined) return undefined;
+    const heldAtTheTop = corner === 'topRight';
+    if ((!heldAtTheTop && cell.row < painted.start - 1) || cell.row > painted.start + painted.count) return undefined;
+    const [leftPx, topPx] = handleCentrePx(range, corner, columns, rowHeightPx, painted.start, sizePx, readable);
+    return `left: ${leftPx - (sizePx / 2)}px; top: ${topPx - (sizePx / 2)}px; width: ${sizePx}px; height: ${sizePx}px`;
+}
+
+/** The cell whose corner the handle stands at: the range's last row and last column, its first row and last
+ * column for whole columns, its last row and first column for whole rows. Its column decides the layer, and its
+ * row whether the handle is painted. */
+export function handleCell(range: SelectionRange, corner: FillHandleCorner): CellPosition {
+    switch (corner) {
+        case 'topRight': return Object.freeze({ row: range.topRow, column: rightColumn(range) });
+        case 'bottomLeft': return Object.freeze({ row: bottomRow(range), column: range.leftColumn });
+        case 'bottomRight': return Object.freeze({ row: bottomRow(range), column: rightColumn(range) });
+        default: return unreachable(corner);
+    }
+}
+
+/**
+ * The handle's centre, `[left, top]`, in the coordinates its layer paints in: the painted slice's top, and the
+ * content's (or the pinned layer's) left. At the bottom-right it is centred on the range's corner, the
+ * outline's outer corner (ADR-0008). At the top-right of whole columns and the bottom-left of whole rows it is
+ * centred on the edge that runs along the range and lies wholly inside the range across the other, so the
+ * header and the Row Headings, which stand above the selection layer, cover none of it. Held at the readable
+ * area's edge: a whole column's top never lies above the readable area's top, and a whole row's left in the
+ * scrollable layer never lies left of the Row Headings' and the pinned block's edge.
+ */
+export function handleCentrePx(
+    range: SelectionRange, corner: FillHandleCorner, columns: ColumnGeometry, rowHeightPx: number, firstPaintedRow: number,
+    sizePx: number, readable: ReadableEdge,
+): readonly [number, number] {
+    const half = sizePx / 2;
+    switch (corner) {
+        case 'topRight':
+            return [columns.offsetPxOf(rightColumn(range) + 1), Math.max((range.topRow - firstPaintedRow) * rowHeightPx, readable.topPx) + half];
+        case 'bottomLeft':
+            return [
+                (range.leftColumn < columns.pinnedCount
+                    ? columns.offsetPxOf(range.leftColumn)
+                    : Math.max(columns.offsetPxOf(range.leftColumn), readable.leftPx)) + half,
+                (bottomRow(range) + 1 - firstPaintedRow) * rowHeightPx,
+            ];
+        case 'bottomRight':
+            return [columns.offsetPxOf(rightColumn(range) + 1), (bottomRow(range) + 1 - firstPaintedRow) * rowHeightPx];
+        default:
+            return unreachable(corner);
+    }
 }
 
 // The sides that need their outline inside (ADR-0008, D2, 2026-10-14). A Heading Mark replaces the side

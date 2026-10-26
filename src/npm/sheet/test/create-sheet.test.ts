@@ -980,3 +980,37 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         await vi.waitFor(() => { expect(toolbarItem(element, 'Bold').disabled).toBe(false); });
     });
 });
+
+// A pointer event on the Viewport at the offsets the grid reads.
+function onViewport(element: HTMLElement, type: string, x: number, y: number): void {
+    const viewport = element.querySelector('.ex-viewport');
+    if (viewport === null) throw new Error('The Sheet has no Viewport.');
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, buttons: type === 'mouseup' ? 0 : 1 });
+    Object.defineProperty(event, 'offsetX', { value: x });
+    Object.defineProperty(event, 'offsetY', { value: y });
+    viewport.dispatchEvent(event);
+}
+
+describe('the fill handle (ADR-0050, item 5)', () => {
+    it('ADR-0050: dragging the handle down fills the series the engine reads, as one step on the undo stack, and selects source and target', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1', A2: '2' }) });
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('2'); });
+        press(element, 0, 0);
+        key('ArrowDown', { shiftKey: true });
+        const handle = await vi.waitFor(() => {
+            const found = element.querySelector<HTMLElement>('.ex-selection .ex-fill-handle');
+            if (found === null) throw new Error('No fill handle is painted.');
+            return found;
+        });
+        const centre = (side: 'left' | 'top'): number => Number.parseFloat(handle.style[side]) + (Number.parseFloat(handle.style.width) / 2);
+        const x = centre('left');
+        onViewport(element, 'mousedown', x, centre('top'));
+        onViewport(element, 'mousemove', x - 20, (4 * 28) + 5);
+        onViewport(element, 'mouseup', x - 20, (4 * 28) + 5);
+        await vi.waitFor(() => { expect([2, 3, 4].map(row => textAt(element, row, 0))).toEqual(['3', '4', '5']); });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-selection .ex-range')?.getAttribute('style')).toContain(`height: ${String(5 * 28)}px`); });
+        expect(sheet.undo()).toBe(true);
+        await vi.waitFor(() => { expect(textAt(element, 2, 0)).toBe(''); });
+        expect(textAt(element, 4, 0)).toBe('');
+    });
+});

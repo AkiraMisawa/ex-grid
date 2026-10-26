@@ -79,6 +79,13 @@ export function fromCorners(a: CellPosition, b: CellPosition): SelectionRange {
         Math.abs(a.column - b.column) + 1);
 }
 
+/** The smallest rectangle holding both ranges: a fill's source and its target together (ADR-0050, item 5). */
+export function boundingRange(a: SelectionRange, b: SelectionRange): SelectionRange {
+    return fromCorners(
+        { row: Math.min(a.topRow, b.topRow), column: Math.min(a.leftColumn, b.leftColumn) },
+        { row: Math.max(bottomRow(a), bottomRow(b)), column: Math.max(rightColumn(a), rightColumn(b)) });
+}
+
 /** Whether the cell lies inside the rectangle, every bound inclusive. */
 export function rangeContains(range: SelectionRange, position: CellPosition): boolean {
     return position.row >= range.topRow && position.row <= bottomRow(range)
