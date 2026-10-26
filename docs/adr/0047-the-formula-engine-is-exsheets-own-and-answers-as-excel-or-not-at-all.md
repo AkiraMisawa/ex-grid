@@ -4,6 +4,12 @@
 the C# engine's facts as shared cases and a differential run against the C# engine. Its numbers stay
 doubles, as below.)*
 
+*(2026-10-26, decided with the user: the engine computes `EXP`, `LN`, `POWER` and `^`, `ATAN` and the
+other functions a platform's math library answers itself, each correctly rounded, and calls no
+platform's library for them. A power whose exponent is not whole is still e^(b ln a), as observed below;
+a whole power is now the exact power rounded once. See "The platform's math library is not used", at
+the end.)*
+
 *(Decided with the user, 2026-09-27, in the design grilling that started ExSheet —
 [ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md).)*
 
@@ -358,7 +364,9 @@ Each disagreement goes to Excel's answer, except where a refusal is named.
   *(Corrected in implementation: nothing was rounding. The engine computed e^(0.5 ln 2), one unit
   in the last place below. `Math.Pow` for every exponent would break `=8^(1/3)` and `=27^(1/3)`,
   already observed, so every other fractional exponent stays e^(b ln a). ARITH-143, `=3^0.5`, asks
-  whether Excel's square root is general.)*
+  whether Excel's square root is general.)* *(2026-10-26: e^(b ln a) stays for an exponent that is not
+  whole, each step correctly rounded; a whole exponent is the exact power rounded once, and neither calls
+  `Math.Pow`. See "The platform's math library is not used", at the end.)*
 - **A value_if_error left out is empty, not 0** (IFERROR-016): `=IFERROR(1/0,)&""` is `""`, as an
   empty cell was (IFERROR-013).
 - **`XLOOKUP`'s regular expressions accept lookbehind** (XLOOKUP-153), which PCRE2 and .NET read the
@@ -990,3 +998,49 @@ computes. What still nests is bounded by refusal, as this ADR refuses whatever i
   entry and a function call refuses it as a refused `#VALUE!`, instead of stopping the process. A chain of cells
   computed on demand through `INDIRECT` is caught the same way. This depends on the host's stack size, not on
   timing; within the limits above it does not happen on a 1 MB thread.
+
+## The platform's math library is not used *(2026-10-26, decided with the user)*
+
+**`EXP`, `LN`, `LOG`, `LOG10`, `POWER` and `^`, `ATAN`, `ATAN2`, `ASIN`, `ACOS`, `SINH`, `COSH`, `TANH`,
+`ASINH`, `ACOSH`, `ATANH`, and the functions built from them (`ACOT`, `COTH`, `CSCH`, `SECH`, the
+financial functions' powers), are computed by the engine itself**, as `SIN`, `COS` and `TAN` already were
+(the note of 2026-10-12 under "The list grows"). Each answer is the exact value of the function at its
+argument's double, rounded once to the nearest double, ties to even. The C# engine on any runtime and the
+TypeScript engine of ADR-0370 in any browser therefore give the same double.
+
+**Why.** A platform's math library rounds some arguments the other way, and not the same ones as another's:
+glibc's (.NET on Linux), the Windows runtime's and V8's each have their own, and Safari's and Firefox's would
+be others again. ADR-0370's differential run, the TypeScript engine on V8 against the C# engine on glibc, found
+about 250 differences on its first seed, and nearly all of them were the last bit of one of these functions.
+A workbook whose last digit differs between two browsers, and whose `ROUND` or `=` built on that digit
+answers differently, is the quietly wrong answer this ADR refuses. The engine already computed e^x and ln x
+itself for the financial functions, because Excel's own exponential is correctly rounded where glibc's is
+not (XNPV-013, `CorrectlyRounded.cs`). Two other ways were considered: the browser's `Math`, with the
+differential run accepting a few units in the last place for these functions, leaves the last digit to the
+browser; and V8's algorithms copied into C# match Chrome, but Safari and Firefox still answer otherwise.
+
+**How.**
+
+- **e^x and ln x** keep the double-double path of `CorrectlyRounded.cs` (`correctly-rounded.ts`), about 100
+  bits, computed again in 256-bit fixed point when a rounding boundary lies within its error.
+- **Every other function** is computed in `BigReal` (`big-real.ts`), a binary number carried to a chosen
+  precision, to 128 bits. It is rounded when every number within the computation's error rounds to the same
+  double; otherwise it is computed again to twice the bits, up to 4096 (Ziv's strategy). An argument still
+  undecided at 4096 bits is an internal error, never a guess. `LOG10` takes the double-double path first and
+  `BigReal` only near a boundary, and 10^k is k exactly. `PortableMath.cs` (`portable-math.ts`) holds them.
+- **A whole power is computed exactly**: where |b| is at most 64, a^b is counted in integers and rounded
+  once (and so is any whole power of a power of two); beyond 64 it is e^(b ln |a|) in `BigReal`, rounded
+  once. 1, 2, −1 and 10^k up to 10^22 are each one correctly rounded IEEE operation.
+- **A power whose exponent is not whole is still exp(b·ln a)**, as the second and third runs observed
+  (ARITH-098: `=8^(1/3)` is 1.9999999999999998), each step correctly rounded: ln a, the product as a double,
+  and its exponential. An exponent of 0.5 stays the square root, which IEEE arithmetic rounds correctly.
+- The platform's `log2` is read in one place only: to tell that a power lies far past the doubles' range,
+  where its last bit cannot move the answer to overflow or to 0.
+
+**What holds it.** Both engines are held to `tests/cases/sheet/portable-math.json`: 779 arguments over the
+functions `BigReal` computes and whole powers, each answer mpmath's at 400 bits from the argument's own
+double (`PortableMathCaseTests` in xUnit, `portable-math.test.ts` in Vitest).
+`tests/cases/sheet/differential-findings.json` pins an argument per function where glibc, V8 or both round
+the other way. e^x and ln x are held by `CorrectlyRoundedTests` and by every Excel case that raises a power.
+**The gate is ADR-0370's differential run in CI**, at seed 20261026 (`.github/workflows/ci.yml`): any
+difference between the two engines, a last bit included, fails it.

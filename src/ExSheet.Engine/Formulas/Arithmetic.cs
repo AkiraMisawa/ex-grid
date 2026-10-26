@@ -9,7 +9,9 @@ namespace ExSheet.Engine.Formulas;
 /// verification/2026-09-27-windows-excel-2 and verification/2026-09-28-windows-excel-3). Excel
 /// computes in doubles, and then adjusts four things: a final addition or subtraction that nearly
 /// cancels is 0, and so is <c>SUM</c>'s last addition; a comparison of two numbers is made at
-/// Excel's precision; and a power is e^(b ln a), not the correctly rounded one, except a square root.
+/// Excel's precision; and a power whose exponent is not whole is e^(b ln a), not the correctly rounded
+/// power, except a square root. A whole power is the exact power rounded once. Neither calls the
+/// platform's math library (ADR-0047, "The platform's math library is not used").
 /// </summary>
 /// <remarks>
 /// Neither adjustment is documented by Microsoft; both were observed (ADR-0047, "What the third
