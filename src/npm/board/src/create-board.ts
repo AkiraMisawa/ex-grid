@@ -5,7 +5,7 @@
 import { createChart, type ChartHandle, type ChartOptions } from '@ex-grid/chart';
 import { createGrid, type GridHandle, type GridOptions, type TemporalLike } from '@ex-grid/core';
 import { BoardRefusedError, type Snapshot } from '@ex-grid/data';
-import { createPivot, type PivotHandle, type PivotViewOptions } from '@ex-grid/pivot';
+import { createPivot, type PivotHandle, type PivotSelectionChangedEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import type { BoardDiff } from './board-diff';
 import type { BoardOutput } from './board-output';
 import type { BoardCell, BoardReading, BoardRow } from './board-spec';
@@ -103,6 +103,8 @@ export class BoardView {
     readonly #ownStyle: Readonly<Record<'display' | 'flexDirection' | 'gap', string>>;
     #raised: BoardDiff | undefined;
     #mounted: Mounted[] = [];
+    // What is said under each pivot of its selection, emptied when a link narrows that pivot again.
+    readonly #linkStatus = new Map<string, HTMLElement>();
     #unsubscribe: (() => void)[] = [];
     #destroyed = false;
 
@@ -154,6 +156,7 @@ export class BoardView {
         this.#unsubscribe = [];
         for (const mounted of this.#mounted) mounted.destroy();
         this.#mounted = [];
+        this.#linkStatus.clear();
         this.#element.replaceChildren();
         this.#bound = undefined;
     }
@@ -293,6 +296,7 @@ export class BoardView {
                 // narrowing away with it (ADR-0011).
                 bound.select(id, next);
                 for (const status of statuses) status.textContent = '';
+                this.#letGoOfReached(bound, id);
             },
             onColumnWidthChanged: change => { taken(view.resize(change.column, change.widthPx)); },
             onColumnOrderChanged: order => { taken(view.reorder(order)); },
@@ -331,13 +335,11 @@ export class BoardView {
 
     #pivot(bound: BoundBoard, view: BoundPivotView, row: BoardRow, host: HTMLElement, section: HTMLElement): Mounted {
         const id = view.view.id;
-        if (bound.board.links.some(link => link.from === id)) {
-            // The pivot does not yet say which Items its selected cells stand for, so its links narrow nothing: said
-            // under it, never left to look like a selection that matched every row (spine rule 1).
-            const status = made('span', 'ex-board-link-status', 'Selecting cells here does not narrow the views it links to yet.');
-            status.setAttribute('role', 'status');
-            section.append(status);
-        }
+        const status = made('span', 'ex-board-link-status');
+        status.setAttribute('role', 'status');
+        section.append(status);
+        this.#linkStatus.set(id, status);
+        const linked = bound.board.links.some(link => link.from === id);
         let shown = view.source;
         const options = (): PivotViewOptions => ({
             source: view.source,
@@ -346,6 +348,17 @@ export class BoardView {
             showFieldList: false,
             viewportHeight: row.height,
             viewportWidth: 'stretch',
+            // A pivot's cells narrow by the Items they stand for, read from the report its grid held as it raised the
+            // selection. One the pivot cannot read narrows nothing, and says so.
+            ...(linked ? {
+                onSelectionChanged: (event: PivotSelectionChangedEvent) => {
+                    if (this.#bound !== bound) return;
+                    const cells = event.selection.ranges.length === 0 ? [] : event.items;
+                    status.textContent = cells === undefined ? 'The selection cannot be read from the report as drawn, so it narrows nothing.' : '';
+                    bound.selectCells(id, cells);
+                    this.#letGoOfReached(bound, id);
+                },
+            } : {}),
             onLayoutChanged: ({ layout }) => {
                 // A new layout is a new report, so what its cells narrowed is let go now, as a narrowing of it lets go
                 // (ADR-0011).
@@ -415,6 +428,24 @@ export class BoardView {
                 show();
             },
         };
+    }
+
+    // A pivot narrowed again has let go of its selection, so what was said of it goes too: every view a selection in
+    // `from` reaches along links, itself not included.
+    #letGoOfReached(bound: BoundBoard, from: string): void {
+        const reached = new Set<string>();
+        const next = [from];
+        for (let view = next.shift(); view !== undefined; view = next.shift()) {
+            for (const target of bound.board.links.filter(link => link.from === view).flatMap(link => link.to)) {
+                if (reached.has(target)) continue;
+                reached.add(target);
+                next.push(target);
+            }
+        }
+        for (const view of reached) {
+            const said = this.#linkStatus.get(view);
+            if (said !== undefined) said.textContent = '';
+        }
     }
 
     #locale(): string {

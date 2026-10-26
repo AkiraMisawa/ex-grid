@@ -7,7 +7,7 @@ import type { ChartHandle, ChartOptions } from '@ex-grid/chart';
 import type { GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
 import type { Snapshot } from '@ex-grid/data';
 import type { PivotHandle, PivotViewOptions } from '@ex-grid/pivot';
-import { readPivotLayoutJson } from '@ex-grid/pivot-engine';
+import { readPivotLayoutJson, textItemKey } from '@ex-grid/pivot-engine';
 import { BoardView, type BoardMounts, type BoardOptions } from '../src/create-board';
 import { boardInput, BoardDiff, readBoard, type BoardOutput, type BoardReading, type ShapedRow } from '../src/index';
 
@@ -247,12 +247,32 @@ describe('createBoard (ADR-0340)', () => {
         expect(element.children).toHaveLength(0);
     });
 
-    it('says under a pivot that its links narrow nothing yet, rather than look like a selection of every row (spine rule 1)', () => {
-        const fromPivot = board(', "links": [{"from": "byDesk", "to": ["curve"], "on": ["desk"]}]');
-        const { element } = draw({ board: fromPivot });
+    it('narrows a chart by a pivot\'s selected cells, says when it cannot read them, and lets go of a dropped selection (ADR-0340 Q5)', () => {
+        const fromPivot = board(', "links": [{"from": "byDesk", "to": ["curve"], "on": ["desk"]}, {"from": "blotter", "to": ["byDesk"], "on": ["desk"]}]');
+        const { element, mounts } = draw({ board: fromPivot });
+        const pivot = only(mounts.pivots);
+        const chart = only(mounts.charts);
+        const status = element.querySelector('[data-ex-view="byDesk"] .ex-board-link-status');
+        const points = () => chart.options.definition.series.map(series => series.points.length);
+        const rates = { row: [{ field: 'desk', item: textItemKey('Rates') }], column: [] };
 
-        expect(element.querySelector('[data-ex-view="byDesk"] .ex-board-link-status')?.textContent).toBe('Selecting cells here does not narrow the views it links to yet.');
-        expect(draw({ board: board() }).element.querySelector('.ex-board-link-status')).toBeNull();
+        call(pivot.options.onSelectionChanged, { selection: rows(0), items: [rates] });
+        expect(points()).toEqual([2]);
+        call(pivot.options.onSelectionChanged, { selection: rows(0), items: undefined });
+        expect(status?.textContent).toBe('The selection cannot be read from the report as drawn, so it narrows nothing.');
+        expect(points()).toEqual([3]);
+
+        // The blotter narrows the pivot again, which lets go of its selection, and of what was said of it.
+        call(only(mounts.grids).options.onSelectionChanged, rows(1));
+        expect(status?.textContent).toBe('');
+        call(pivot.options.onSelectionChanged, { selection: rows(0), items: [{ row: [{ field: 'desk', item: textItemKey('FX') }], column: [] }] });
+        expect(points()).toEqual([1]);
+        call(pivot.options.onSelectionChanged, { selection: rows(), items: [] });
+        expect(points()).toEqual([3]);
+    });
+
+    it('hears no selection from a pivot no link leaves', () => {
+        expect(only(draw({ board: board() }).mounts.pivots).options.onSelectionChanged).toBeUndefined();
     });
 
     it('binds again for an earlier Diff handed back, as a host undoing the user\'s changes does', () => {
