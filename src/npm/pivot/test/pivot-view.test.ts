@@ -2,13 +2,13 @@
 // ExPivot's Script Core in a DOM emulation (layer 2, ADR-0350 section 13). What the grid paints is the core's,
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CellPosition, CopyPlan, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
     type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotReportCopyQuery, type PivotReportCopyResult, type PivotReportMetadata, type PivotReportRange, type PivotReportRefusal,
     type PivotReportSource, type PivotSlicing,
-    type PivotSource,
+    type PivotServerNotice, type PivotSource,
 } from '@ex-grid/pivot-engine';
 import { findInReport } from '../src/report-find';
 import { browserPivotLocale } from '../src/browser-locale';
@@ -524,6 +524,115 @@ describe('ExPivot\'s copy (ADR-0152)', () => {
         const version = defined(grid.current.source, 'the report rows').snapshot().rowSequenceVersion;
         expect(await answer({ plan: across(1), withHeaders: false, rowSequenceVersion: version + 1 }, new AbortController().signal))
             .toEqual({ kind: 'refuse', sentence: 'The data has changed — refresh.' });
+    });
+});
+
+/** A server's source whose data the test moves: each move is told over the transport as a `changed` notice. */
+function liveServer(): { readonly source: FetchingPivotSource; readonly asked: () => number; readonly move: (moved: readonly Trade[]) => void } {
+    let behind = local();
+    let asked = 0;
+    const listeners = new Set<(notice: PivotServerNotice) => void>();
+    const source = new FetchingPivotSource(behind.fields, new PivotSourceFeatures(['sum', 'count'], false, true), {
+        aggregate: (query, signal) => {
+            asked++;
+            return behind.aggregate(query, signal);
+        },
+        details: (query, signal) => behind.details(query, signal),
+        items: (query, signal) => behind.items(query, signal),
+        itemCounts: signal => behind.itemCounts(signal),
+        subscribe: notify => {
+            listeners.add(notify);
+            return () => { listeners.delete(notify); };
+        },
+    });
+    return {
+        source,
+        asked: () => asked,
+        move: moved => {
+            behind = new RecordPivotSource(moved, fields);
+            for (const notify of listeners) notify({ kind: 'changed' });
+        },
+    };
+}
+
+describe('ExPivot\'s live data (ADR-0067)', () => {
+    afterEach(() => { vi.useRealTimers(); });
+
+    it('ADR-0067: a notice from the source asks the report again, under the layout on screen, and the new totals are shown', async () => {
+        const live = liveServer();
+        const { grid } = mount({ source: live.source, layout: byRegion, redrawInterval: 0 });
+        await settled();
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+        await settled();
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '112'], ['Grand Total', '142']]);
+    });
+
+    it('ADR-0067: notices within the redraw interval of the last change shown are gathered into one question, asked when the interval ends', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+        const live = liveServer();
+        const { grid } = mount({ source: live.source, layout: byRegion, redrawInterval: 250 });
+        await vi.advanceTimersByTimeAsync(0);
+        const first = live.asked();
+        // A notice after a quiet spell is asked for at once.
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 1 }]);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(live.asked()).toBe(first + 1);
+        // Three more within the interval: none is asked for until it ends, and then once, for the newest data.
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 2 }]);
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 3 }]);
+        await vi.advanceTimersByTimeAsync(100);
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 4 }]);
+        await vi.advanceTimersByTimeAsync(100);
+        expect(live.asked()).toBe(first + 1);
+        await vi.advanceTimersByTimeAsync(60);
+        expect(live.asked()).toBe(first + 2);
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '16'], ['Grand Total', '46']]);
+    });
+
+    it('ADR-0067: changes a refused move carried are asked for again under the layout on screen, once', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+        const live = liveServer();
+        const options: PivotViewOptions = { source: live.source, layout: byRegion, redrawInterval: 250, maxLeaves: 3 };
+        const { view, grid } = mount(options);
+        await vi.advanceTimersByTimeAsync(0);
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 1 }]);
+        await vi.advanceTimersByTimeAsync(0);
+        // Gathered within the interval, then carried by a layout the cap refuses: four leaves past three.
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 2 }]);
+        view.update({ ...options, layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '13'], ['Grand Total', '43']]);
+        await vi.advanceTimersByTimeAsync(250);
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '14'], ['Grand Total', '44']]);
+        const asked = live.asked();
+        const shown = defined(grid.current.source, 'the report rows');
+        await vi.advanceTimersByTimeAsync(1000);
+        expect([live.asked(), grid.current.source]).toEqual([asked, shown]);
+    });
+
+    it('ADR-0067: a source handed over is no longer heard, and a destroyed pivot hears nothing', async () => {
+        const before = liveServer();
+        const after = liveServer();
+        const { view, grid } = mount({ source: before.source, layout: byRegion, redrawInterval: 0 });
+        await settled();
+        view.update({ source: after.source, layout: byRegion, redrawInterval: 0 });
+        await settled();
+        const asked = before.asked();
+        before.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+        await settled();
+        expect(before.asked()).toBe(asked);
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
+        view.destroy();
+        const destroyed = after.asked();
+        after.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+        await settled();
+        expect(after.asked()).toBe(destroyed);
+    });
+
+    it('ADR-0067: a redraw interval that is not a time of zero or more is refused', () => {
+        expect(() => mount({ source: local(), redrawInterval: -1 })).toThrow(/redrawInterval/);
+        expect(() => mount({ source: local(), redrawInterval: Number.NaN })).toThrow(/redrawInterval/);
     });
 });
 
