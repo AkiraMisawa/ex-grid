@@ -1260,6 +1260,11 @@ export class GridView<Row> {
     #announcedRanges: readonly SelectionRange[] = [];
     #describesSelection = false;
     #cancelAnnounce: (() => void) | undefined;
+    // Owed while the browser may yet tell a box the last written scroll content changed (ADR-0220).
+    #cancelBoxTold: (() => void) | undefined;
+    // The root's, the scroller's and the scroll content's boxes as last written, and the root's parts, whose change
+    // is what may change the box the browser tells.
+    #laidOut: string | undefined;
 
     // What the browser told (ADR-0013, ADR-0028, ADR-0053, ADR-0090).
     #viewportReport: ViewportReport | undefined;
@@ -1719,6 +1724,7 @@ export class GridView<Row> {
         this.#destroyed = true;
         this.#cancelSettle?.();
         this.#cancelAnnounce?.();
+        this.#cancelBoxTold?.();
         this.#cancelFollow?.();
         this.#cancelMessage?.();
         this.#cancelRest?.();
@@ -2387,6 +2393,7 @@ export class GridView<Row> {
         const revealed = this.#stageReveal();
         this.#stageFollow();
         this.#paint();
+        this.#lookForNewLayout();
         const stepped = this.#scrollOwed;
         this.#scrollOwed = false;
         if (revealed || stepped) {
@@ -2409,6 +2416,7 @@ export class GridView<Row> {
     // holds no row waits on the browser to grow the box, which nothing the grid does brings, so it is not owed.
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
+            && this.#cancelBoxTold === undefined
             && this.#repaint === undefined && this.#cancelMessage === undefined
             && (this.#followArmed === undefined || this.#visible === undefined)
             && this.#cancelFollow === undefined
@@ -6858,6 +6866,37 @@ export class GridView<Row> {
         }
     }
 
+    // A box or scroll content written may change the box the browser tells: content that comes to overflow shows a
+    // scrollbar, which takes its strip out of the Viewport (ADR-0013). Until the browser has laid it out and told
+    // any such change the grid is not settled: a reading taken before would see a band built again (ADR-0220).
+    #lookForNewLayout(): void {
+        const layout = `${this.#root.getAttribute('style')}|${this.#scroller.getAttribute('style')}|${this.#spacer.getAttribute('style')}|`
+            + [...this.#root.children].map(child => child.className).join(' ');
+        if (layout === this.#laidOut) return;
+        this.#laidOut = layout;
+        this.#awaitBoxTold();
+    }
+
+    #awaitBoxTold(): void {
+        this.#cancelBoxTold?.();
+        this.#cancelBoxTold = undefined;
+        const ask = { open: true };
+        const cancel = this.#reports.afterLayout(this.#root, () => {
+            const owed = ask.open && this.#cancelBoxTold !== undefined;
+            ask.open = false;
+            if (!owed) return;
+            this.#cancelBoxTold = undefined;
+            this.#lookSettled();
+        });
+        // Told as it was asked, where nothing is laid out: nothing is owed.
+        if (ask.open) {
+            this.#cancelBoxTold = () => {
+                ask.open = false;
+                cancel();
+            };
+        }
+    }
+
     #paint(): void {
         // What is painted now is what the next key is aimed at.
         this.#droppedAim = undefined;
@@ -6903,8 +6942,8 @@ export class GridView<Row> {
         // or peel the Copied Range (ADR-0230 section 1, ADR-0037, ADR-0170).
         this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves',
             choice === undefined && this.#copied === undefined && this.#edit === undefined && this.#popover === undefined ? '' : undefined);
-        this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
+        this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);
         // A current match the user has moved off is no longer marked as one (ADR-0332 §4).
         this.#forgetCurrentMatchOffFocus();
@@ -7163,7 +7202,9 @@ export class GridView<Row> {
     #selectAllContext(extent: GridExtent): { readonly firstRow: number; readonly rowCount: number } | undefined {
         const size = this.#pageSize;
         if (size === undefined) return undefined;
-        const firstRow = Math.min(this.#pageIndex * size, extent.rowCount - 1);
+        // The page the next pass shows: a result that shrank since the last keeps its last page.
+        const index = Math.min(this.#pageIndex, Math.max(0, Math.ceil(extent.rowCount / size) - 1));
+        const firstRow = Math.min(index * size, extent.rowCount - 1);
         return { firstRow, rowCount: Math.min(extent.rowCount - firstRow, size) };
     }
 

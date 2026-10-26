@@ -34,6 +34,10 @@ export interface BrowserReports {
     /** Calls `callback` before the next frame of `element`'s window is painted; the answer cancels the call
      * if it has not run. A reveal's repaint moves the offset in the frames after the reveal's (ADR-0012). */
     nextFrame(element: HTMLElement, callback: () => void): () => void;
+    /** Calls `callback` once the browser has laid out what was written to `element`'s document and told any box it
+     * changed through `observeViewport`, or found none changed; the answer cancels the call if it has not run
+     * (ADR-0220). It may run before it answers, where nothing is laid out. */
+    afterLayout(element: HTMLElement, callback: () => void): () => void;
     /** Whether Meta is this platform's primary modifier, as Command is on an Apple platform: only the
      * browser can answer it (ADR-0012). */
     metaIsPrimary(): boolean;
@@ -164,6 +168,19 @@ export const browserReports: BrowserReports = Object.freeze({
         if (view === null) throw new Error('The grid\'s element is in a document with no window: nothing paints it.');
         const frame = view.requestAnimationFrame(callback);
         return () => { view.cancelAnimationFrame(frame); };
+    },
+    afterLayout(element: HTMLElement, callback: () => void): () => void {
+        // A frame lays out what was written after its animation frame callbacks, then delivers its resize
+        // observations, which hand their reports on through a timer of no delay (toldAfterTheObservation). So from the
+        // animation frame callbacks of the frame after the next, a timer of no delay runs after any such report: the
+        // browser runs timers of equal delay in the order they were set. An order, never a wait on time.
+        let cancel = browserReports.nextFrame(element, () => {
+            cancel = browserReports.nextFrame(element, () => {
+                const timer = setTimeout(callback, 0);
+                cancel = () => { clearTimeout(timer); };
+            });
+        });
+        return () => { cancel(); };
     },
     metaIsPrimary(): boolean {
         // `userAgentData` is Chromium's; the others still answer `platform`.
