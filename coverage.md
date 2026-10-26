@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.2% | 88.5% |
-| ExSheet | 95.2% | 87.6% |
+| ExSheet | 95.2% | 87.7% |
 | ExPivot | 94.4% | 86.3% |
 | ExChart | 90.9% | 83.8% |
 | ExBoard | 91.7% | 81.8% |
@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 06:08:46 |
+| Generated on: | 10/26/2026 - 06:42:01 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1197 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (83040 of 87861) |
-| Covered lines: | 83040 |
-| Uncovered lines: | 4821 |
+| **Line coverage:** | 94.5% (83041 of 87861) |
+| Covered lines: | 83041 |
+| Uncovered lines: | 4820 |
 | Coverable lines: | 87861 |
 | Total lines: | 140244 |
-| **Branch coverage:** | 87.2% (50159 of 57480) |
-| Covered branches: | 50159 |
+| **Branch coverage:** | 87.2% (50162 of 57480) |
+| Covered branches: | 50162 |
 | Total branches: | 57480 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1046,12 +1046,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
