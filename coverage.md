@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.2% | 88.5% |
-| ExSheet | 95.2% | 87.6% |
+| ExSheet | 95.2% | 87.7% |
 | ExPivot | 94.4% | 86.3% |
 | ExChart | 90.7% | 83.4% |
 | ExBoard | 91.7% | 81.8% |
@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 02:55:17 |
+| Generated on: | 10/26/2026 - 03:30:15 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1197 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (82981 of 87804) |
-| Covered lines: | 82981 |
-| Uncovered lines: | 4823 |
+| **Line coverage:** | 94.5% (82979 of 87804) |
+| Covered lines: | 82979 |
+| Uncovered lines: | 4825 |
 | Coverable lines: | 87804 |
 | Total lines: | 140163 |
-| **Branch coverage:** | 87.2% (50072 of 57418) |
-| Covered branches: | 50072 |
+| **Branch coverage:** | 87.2% (50084 of 57418) |
+| Covered branches: | 50084 |
 | Total branches: | 57418 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -1046,12 +1046,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
@@ -1129,11 +1129,11 @@
 |ExSheet.UnderlineItem|100%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.3%</summary>
+<details><summary>ExSheet.Engine - 97.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.3%**|**90.2%**|
+|**ExSheet.Engine**|**97.2%**|**90.3%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1148,7 +1148,7 @@
 |ExSheet.Engine.CellFormat|100%||
 |ExSheet.Engine.CellFormatChange|100%|94.4%|
 |ExSheet.Engine.CellRange|100%|90%|
-|ExSheet.Engine.CellState|100%|50%|
+|ExSheet.Engine.CellState|62.5%|0%|
 |ExSheet.Engine.CompletionCandidate|100%||
 |ExSheet.Engine.ConstantParser|96.4%|81.5%|
 |ExSheet.Engine.DateSerial|100%|100%|
@@ -1167,7 +1167,7 @@
 |ExSheet.Engine.Formulas.BinaryNode|79.1%|83.3%|
 |ExSheet.Engine.Formulas.BooleanNode|100%||
 |ExSheet.Engine.Formulas.CorrectlyRounded|100%|89.2%|
-|ExSheet.Engine.Formulas.Draws|73.3%|50%|
+|ExSheet.Engine.Formulas.Draws|100%|100%|
 |ExSheet.Engine.Formulas.Dyadic|100%|89.4%|
 |ExSheet.Engine.Formulas.Enclosure|93.8%|79.6%|
 |ExSheet.Engine.Formulas.ErrorNode|100%||
@@ -1180,9 +1180,9 @@
 |ExSheet.Engine.Formulas.FormulaText|100%|98.1%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary|95.8%|86.4%|
+|ExSheet.Engine.Formulas.FunctionLibrary|95.8%|86.6%|
 |ExSheet.Engine.Formulas.FunctionLibrary.CriteriaRange|79.1%|43.7%|
-|ExSheet.Engine.Formulas.FunctionLibrary.Criterion|95%|74.6%|
+|ExSheet.Engine.Formulas.FunctionLibrary.Criterion|96.7%|77.7%|
 |ExSheet.Engine.Formulas.FunctionLibrary.DoubleDouble|100%||
 |ExSheet.Engine.Formulas.FunctionLibrary.RowColumnAxis|100%|100%|
 |ExSheet.Engine.Formulas.FunctionLibrary.RowColumnPart|100%|100%|
@@ -1233,7 +1233,7 @@
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
-|ExSheet.Engine.Sheet|99.3%|95.8%|
+|ExSheet.Engine.Sheet|99%|95.8%|
 |ExSheet.Engine.Sheet.Cell|100%|100%|
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
@@ -1244,7 +1244,7 @@
 |ExSheet.Engine.Sheet.StructuralOutcome|100%||
 |ExSheet.Engine.Sheet.TableState|100%||
 |ExSheet.Engine.Sheet.TrendDigits|92%|78.1%|
-|ExSheet.Engine.SheetBlock|100%|50%|
+|ExSheet.Engine.SheetBlock|93.3%|50%|
 |ExSheet.Engine.SheetCell|100%||
 |ExSheet.Engine.SheetChange|100%|95.8%|
 |ExSheet.Engine.SheetColumnWidth|100%||
