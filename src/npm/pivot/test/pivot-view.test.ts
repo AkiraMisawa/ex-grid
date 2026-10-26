@@ -88,7 +88,6 @@ class GridStandIn {
             update: next => { this.options = next; },
             placeSelection: () => { throw new Error('The pivot places no selection.'); },
             destroy: () => { this.destroyed = true; },
-            placeSelection: () => { throw new Error('The pivot places no selection on its grid.'); },
         };
     };
 
