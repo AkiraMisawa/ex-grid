@@ -237,12 +237,11 @@ export class PivotRowKey {
     }
 }
 
-const lineages = new WeakMap<PivotReportRow, object>();
-
 let makeRow: (role: PivotRowRole, node: AxisNode, valueField: number, carriesValues: boolean, labels: readonly PivotRowLabel[], lineage: object,
     sibling?: number) => PivotReportRow;
 let rowNode: (row: PivotReportRow) => AxisNode;
 let rowSibling: (row: PivotReportRow) => number;
+let lineageOf: (row: PivotReportRow) => object | undefined;
 
 /** A row of a report. */
 export class PivotReportRow {
@@ -258,6 +257,9 @@ export class PivotReportRow {
     // A Pending Row's sibling, by its place among its parent's siblings from 0, its node being the parent; −1 for
     // any other row.
     readonly #sibling: number;
+    // The reports that may read the row: the one that laid it out, and those updated from it. A field of the row,
+    // not an entry in a map beside it, so that a million rows cost no table of a million entries to grow.
+    readonly #lineage: object;
     #key: PivotRowKey | undefined;
 
     private constructor(role: PivotRowRole, node: AxisNode, valueField: number, carriesValues: boolean, labels: readonly PivotRowLabel[], lineage: object,
@@ -269,7 +271,7 @@ export class PivotReportRow {
         this.carriesValues = carriesValues;
         // Labels already frozen are shared, as the Pending Rows of a set share theirs.
         this.labels = Object.isFrozen(labels) ? labels : Object.freeze([...labels]);
-        lineages.set(this, lineage);
+        this.#lineage = lineage;
     }
 
     static {
@@ -277,6 +279,8 @@ export class PivotReportRow {
             new PivotReportRow(role, node, valueField, carriesValues, labels, lineage, sibling);
         rowNode = row => row.#node;
         rowSibling = row => row.#sibling;
+        // A row-like object a caller made, not one a report laid out, has none.
+        lineageOf = row => #lineage in row ? row.#lineage : undefined;
     }
 
     /** What the row stands for, across reports. */
@@ -288,10 +292,6 @@ export class PivotReportRow {
         }
         return this.#key;
     }
-}
-
-function lineageOf(row: PivotReportRow): object | undefined {
-    return lineages.get(row);
 }
 
 // ---- The report ---------------------------------------------------------------------------------
@@ -644,6 +644,16 @@ export function buildReportSteps(cube: PivotCube, layout: PivotLayout, options: 
     return new ReportBuilder(cube, layout, options, true).build();
 }
 
+// Which side of a Sibling Window's shown siblings Pending Rows stand on, and a node's Pending Rows there, made a
+// piece at a time; undefined where it has none.
+type PendingSide = 'before' | 'after';
+type PendingSteps = (node: AxisNode, side: PendingSide) => Generator<void, void> | undefined;
+
+// The steps of a node's Pending Rows, none where it has none.
+function* allSteps(steps: Generator<void, void> | undefined): Generator<void, void> {
+    if (steps !== undefined) yield* steps;
+}
+
 // What a step of the walk is worth, in the units a piece counts: a node entered or left, each row it emits,
 // and each column, whose name is written from its Items.
 const rowUnits = 4;
@@ -787,7 +797,7 @@ export class ReportBuilder {
      * block: `pendingFrom` is the first level whose ancestor's label is still to be shown — the node's own level
      * for a node that is not its parent's first child, its parent's for one that is.
      */
-    rowsOf(node: AxisNode, pendingFrom: number): { readonly before: PivotReportRow[]; readonly after: PivotReportRow[]; readonly descend: boolean } {
+    *rowsOf(node: AxisNode, pendingFrom: number): Generator<void, { readonly before: PivotReportRow[]; readonly after: PivotReportRow[]; readonly descend: boolean }> {
         const before: PivotReportRow[] = [];
         const after: PivotReportRow[] = [];
         if (this.#empty) return { before, after, descend: false };
@@ -796,8 +806,8 @@ export class ReportBuilder {
                 runWhole(this.#emitRows(before));
                 return { before, after, descend: false };
             }
-            this.#pendingRows(node, 'before', before);
-            this.#pendingRows(node, 'after', after);
+            yield* allSteps(this.#pendingRows(node, 'before', before));
+            yield* allSteps(this.#pendingRows(node, 'after', after));
             this.#grandTotalRows(after);
             return { before, after, descend: true };
         }
@@ -805,10 +815,10 @@ export class ReportBuilder {
         for (let level = pendingFrom; level < node.level; level++) this.#pending[level] = this.#ancestorAt(node, level);
         const tabular = this.#layout.form === 'tabular';
         const descend = (tabular ? this.#enterTabular(node, before) : this.#enterGrouped(node, before)) >= 0;
-        if (descend) this.#pendingRows(node, 'before', before);
+        if (descend) yield* allSteps(this.#pendingRows(node, 'before', before));
         this.#pending.fill(undefined);
         if (descend) {
-            this.#pendingRows(node, 'after', after);
+            yield* allSteps(this.#pendingRows(node, 'after', after));
             if (tabular) this.#leaveTabular(node, after);
             else this.#leaveGrouped(node, after);
         }
@@ -868,11 +878,12 @@ export class ReportBuilder {
 
     // Depth first, in the Items' order: each node entered, its children ordered and walked, then left. A
     // step — a node entered or left, or a piece of its children ordered — is worth a unit and each row or
-    // column it emits more; once a piece's worth is done, the walk yields.
+    // column it emits more; once a piece's worth is done, the walk yields. A node's Pending Rows, made just
+    // after it is entered and just before it is left, are steps of their own, made a piece at a time.
     *#walk(root: AxisNode, rows: boolean, enter: (node: AxisNode) => number, leave: (node: AxisNode, mark: number) => void,
-        emitted: () => number, unitsEach: number): Generator<void, void> {
+        emitted: () => number, unitsEach: number, pending?: PendingSteps): Generator<void, void> {
         if (!this.#sliced) {
-            this.#walkAtOnce(root, rows, enter, leave);
+            this.#walkAtOnce(root, rows, enter, leave, pending);
             return;
         }
         const frames: WalkFrame[] = [];
@@ -883,12 +894,20 @@ export class ReportBuilder {
             units += 1 + ((emitted() - before) * unitsEach);
             return mark;
         };
+        // A node's Pending Rows: every piece but the last a step of its own, the last counted toward the step it ends.
+        const pendingRows = function* (node: AxisNode, side: PendingSide): Generator<void, void> {
+            const before = emitted();
+            yield* allSteps(pending?.(node, side));
+            units += (emitted() - before) * unitsEach;
+        };
         const rootMark = entered(root);
         if (rootMark < 0) return;
+        yield* pendingRows(root, 'before');
         frames.push({ node: root, mark: rootMark, children: this.#atOnce(root, rows) ? this.#orderAtOnce(root, rows) : yield* this.#order(root, rows), next: 0 });
         for (let top = frames.at(-1); top !== undefined; top = frames.at(-1)) {
             const child = top.children[top.next];
             if (child === undefined) {
+                yield* pendingRows(top.node, 'after');
                 const before = emitted();
                 leave(top.node, top.mark);
                 units += 1 + ((emitted() - before) * unitsEach);
@@ -896,7 +915,10 @@ export class ReportBuilder {
             } else {
                 top.next++;
                 const mark = entered(child);
-                if (mark >= 0) frames.push({ node: child, mark, children: this.#atOnce(child, rows) ? this.#orderAtOnce(child, rows) : yield* this.#order(child, rows), next: 0 });
+                if (mark >= 0) {
+                    yield* pendingRows(child, 'before');
+                    frames.push({ node: child, mark, children: this.#atOnce(child, rows) ? this.#orderAtOnce(child, rows) : yield* this.#order(child, rows), next: 0 });
+                }
             }
             if (units >= pieceUnits) {
                 units = 0;
@@ -906,10 +928,13 @@ export class ReportBuilder {
     }
 
     // The same walk at once, for a report laid out at once.
-    #walkAtOnce(node: AxisNode, rows: boolean, enter: (node: AxisNode) => number, leave: (node: AxisNode, mark: number) => void): void {
+    #walkAtOnce(node: AxisNode, rows: boolean, enter: (node: AxisNode) => number, leave: (node: AxisNode, mark: number) => void,
+        pending: PendingSteps | undefined): void {
         const mark = enter(node);
         if (mark < 0) return;
-        for (const child of this.#orderAtOnce(node, rows)) this.#walkAtOnce(child, rows, enter, leave);
+        runWhole(allSteps(pending?.(node, 'before')));
+        for (const child of this.#orderAtOnce(node, rows)) this.#walkAtOnce(child, rows, enter, leave, pending);
+        runWhole(allSteps(pending?.(node, 'after')));
         leave(node, mark);
     }
 
@@ -1026,36 +1051,33 @@ export class ReportBuilder {
             return;
         }
         const tabular = this.#layout.form === 'tabular';
-        const enter = (node: AxisNode): number => {
-            const mark = tabular ? this.#enterTabular(node, rows) : this.#enterGrouped(node, rows);
-            if (mark >= 0) this.#pendingRows(node, 'before', rows);
-            return mark;
-        };
+        const enter = (node: AxisNode): number => tabular ? this.#enterTabular(node, rows) : this.#enterGrouped(node, rows);
         const leave = (node: AxisNode): void => {
-            this.#pendingRows(node, 'after', rows);
             if (tabular) this.#leaveTabular(node, rows);
             else this.#leaveGrouped(node, rows);
         };
-        yield* this.#walk(root, true, enter, leave, () => rows.length, rowUnits);
+        yield* this.#walk(root, true, enter, leave, () => rows.length, rowUnits, (node, side) => this.#pendingRows(node, side, rows));
         this.#grandTotalRows(rows);
     }
 
     // A Sibling Window's Pending Rows on one side of its shown siblings (ADR-0370 section 3): each sibling there
     // the rows it would have, as its siblings shown have them, with no label and no value. In the Tabular form the
     // first of them, which stands first in its parent's block, takes the labels that block's first row shows.
-    #pendingRows(node: AxisNode, side: 'before' | 'after', rows: PivotReportRow[]): void {
+    // Undefined where there are none; otherwise made a piece at a time, since a window may stand over millions
+    // of siblings (PV-40).
+    #pendingRows(node: AxisNode, side: PendingSide, rows: PivotReportRow[]): Generator<void, void> | undefined {
         const window = cubeParts(this.#cube).windows.get(node.id);
-        if (window === undefined) return;
+        if (window === undefined) return undefined;
         const count = side === 'before' ? window.before : window.after;
-        if (count === 0) return;
+        if (count === 0) return undefined;
         const tabular = this.#layout.form === 'tabular';
         if (side === 'before' && tabular && node.item !== undefined) this.#tabularLabels(node, node.level);
         const first = side === 'before' ? 0 : window.before + shownCount(this.#rowAxis.childrenOf(node).length, window);
         const each = this.#valuesOnRows ? (tabular ? this.#valueCount : 1 + this.#valueCount) : 1;
         const labels = Object.freeze(this.#newLabels());
-        for (let sibling = first; sibling < first + count; sibling++) {
-            for (let r = 0; r < each; r++) rows.push(makeRow('pending', node, -1, false, labels, this.#lineage, sibling));
-        }
+        return inPieces(count * each, rowUnits, (from, to) => {
+            for (let at = from; at < to; at++) rows.push(makeRow('pending', node, -1, false, labels, this.#lineage, first + Math.floor(at / each)));
+        });
     }
 
     #grandTotalRows(rows: PivotReportRow[]): void {

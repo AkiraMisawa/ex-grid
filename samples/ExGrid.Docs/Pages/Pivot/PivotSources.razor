@@ -269,7 +269,8 @@ return answer.Build();</code></pre>
             its edge, or the answer is refused naming the parent. A sibling outside the window is a
             <strong>Pending Row</strong>: role <code>pending</code>, no label and no value, never painted, and
             <code>valueAt</code>, <code>rowPath</code> and <code>detailsQuery</code> refuse it by name rather than read
-            it as empty. A <code>LocalPivotReportSource</code> over a <code>FetchingPivotSource</code> that answers Level
+            it as empty. Pending Rows are made a few hundred at a time, in the report's slices, so a window over a
+            million siblings leaves the page painting while its rows are laid out. A <code>LocalPivotReportSource</code> over a <code>FetchingPivotSource</code> that answers Level
             Aggregates asks a question whole first, and with windows only once the server refuses it past the cap, so a
             report that fits is never windowed. When a report Window reaches Pending Rows it asks again, each set the
             Window reaches started so that the rows asked for lie in the middle of its window, and answers once that
