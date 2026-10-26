@@ -102,7 +102,8 @@ internal sealed class PivotSources
         return (fields, new PivotSourceFeatures(
             features.GetProperty("aggregations").EnumerateArray().Select(a => Enum.Parse<PivotAggregation>(a.GetString()!, ignoreCase: true)),
             features.GetProperty("canRefresh").GetBoolean(),
-            features.GetProperty("countsItems").GetBoolean()));
+            features.GetProperty("countsItems").GetBoolean(),
+            features.GetProperty("answersLevels").GetBoolean()));
     }
 
     /// <summary>The server's answer to a document, as it is sent: a <c>POST</c>.</summary>
@@ -138,45 +139,137 @@ internal sealed class PivotSources
     /// The same answer: the same refusal, or the same fields with the same parts, the same Items
     /// spelled the same, and every leaf's records and parts equal to the last bit. A source's own
     /// order of leaves and Items is not part of the answer (ADR-0066), so leaves are matched by their
-    /// Items.
+    /// Items. An answer of Level Aggregates is the same kind of answer, its cells matched by their
+    /// Items down to their depths, its windows and rest cells by their parents' Items (ADR-0370
+    /// section 3).
     /// </summary>
     public static void SameAnswer(PivotAnswer expected, PivotAnswer actual)
     {
         Assert.Equal(expected.Refusal, actual.Refusal);
         if (expected.IsRefused)
             return;
+        Assert.Equal(expected.IsLevels, actual.IsLevels);
         Assert.Equal(expected.Rows.Select(axis => axis.Field), actual.Rows.Select(axis => axis.Field));
         Assert.Equal(expected.Columns.Select(axis => axis.Field), actual.Columns.Select(axis => axis.Field));
         Assert.Equal(expected.Values.Select(v => (v.Field, v.Parts)), actual.Values.Select(v => (v.Field, v.Parts)));
         foreach (var (mine, theirs) in expected.Rows.Concat(expected.Columns).Zip(actual.Rows.Concat(actual.Columns)))
             Assert.Equal(mine.Items.Select(Show).Order(StringComparer.Ordinal), theirs.Items.Select(Show).Order(StringComparer.Ordinal));
         Assert.Equal(expected.LeafCount, actual.LeafCount);
+        Assert.Equal(Windows(expected), Windows(actual));
         Assert.Equal(Leaves(expected), Leaves(actual));
     }
 
-    /// <summary>Each leaf as a line — its Items, then its records and parts — in ordinal order.</summary>
+    /// <summary>
+    /// The same answer of windows one row field deep, but for which tied sibling is a margin: the
+    /// bundled sources order ties as their leaves first reached them, the SQL source by its order of
+    /// Items, and each answers truly (ADR-0370 section 3). So each window's margin on a side is merged
+    /// with that side's rest cell, a column group at a time, and those totals are what must agree,
+    /// with the windows and every other cell. A margin is told by the order: the first sibling
+    /// answered where the window has siblings before it, the last where it has some after it.
+    /// </summary>
+    public static void SameWindowedAnswer(PivotAnswer expected, PivotAnswer actual, Func<PivotAnswer, int, double> key, bool descending)
+    {
+        Assert.Equal(expected.Refusal, actual.Refusal);
+        if (expected.IsRefused)
+            return;
+        Assert.Equal(Windows(expected), Windows(actual));
+        Assert.Equal(TieProof(expected, key, descending), TieProof(actual, key, descending));
+    }
+
+    // Each cell as Leaves writes it, but each margin's and each rest's merged into one line a side and
+    // a column group: records, then each field's values, numbers and exact sum.
+    private static string[] TieProof(PivotAnswer answer, Func<PivotAnswer, int, double> key, bool descending)
+    {
+        Assert.Equal(2, answer.Rows.Count);
+        var lines = Leaves(answer).ToList();
+        var own = Enumerable.Range(0, answer.LeafCount).ToArray();
+        var cellLines = own.ToDictionary(cell => cell, cell => Leaves(answer, cell));
+        var sides = new SortedDictionary<string, (long Records, long[] Values, long[] Numbers, decimal[] Sums)>(StringComparer.Ordinal);
+        foreach (var window in answer.Windows)
+        {
+            var parent = window.Parent[0];
+            var siblings = own.Where(cell => answer.RestAt(cell) is null && answer.Rows[0].ItemAt(cell) == parent
+                    && answer.Rows[1].ItemAt(cell) >= 0 && answer.Columns.All(axis => axis.ItemAt(cell) < 0))
+                .OrderBy(cell => descending ? -key(answer, cell) : key(answer, cell)).ToArray();
+            var margins = new List<(int Item, PivotRestSide Side)>();
+            if (window.Before > 0)
+                margins.Add((answer.Rows[1].ItemAt(siblings[0]), PivotRestSide.Before));
+            if (window.After > 0)
+                margins.Add((answer.Rows[1].ItemAt(siblings[^1]), PivotRestSide.After));
+            foreach (var cell in own)
+            {
+                PivotRestSide? side = answer.RestAt(cell) is { } rest && answer.Windows[rest.Window] == window ? rest.Side : null;
+                if (side is null && answer.Rows[0].ItemAt(cell) == parent)
+                {
+                    foreach (var (item, marginSide) in margins)
+                    {
+                        if (answer.Rows[1].ItemAt(cell) == item)
+                            side = marginSide;
+                    }
+                }
+                if (side is null)
+                    continue;
+                lines.Remove(cellLines[cell]);
+                var name = $"{side} {Parent(answer, window)} at " + string.Join(" | ", answer.Columns.Select(axis => axis.ItemAt(cell) is var item and >= 0 ? Show(axis.Items[item]) : "-"));
+                (long Records, long[] Values, long[] Numbers, decimal[] Sums) total = sides.TryGetValue(name, out var held)
+                    ? held
+                    : (0L, new long[answer.Values.Count], new long[answer.Values.Count], new decimal[answer.Values.Count]);
+                total.Records += answer.RecordsAt(cell);
+                for (var v = 0; v < answer.Values.Count; v++)
+                {
+                    total.Values[v] += answer.Values[v].ValuesAt(cell);
+                    total.Numbers[v] += answer.Values[v].NumbersAt(cell);
+                    if ((answer.Values[v].Parts & PivotParts.Sum) != 0)
+                        total.Sums[v] += answer.Values[v].SumAt(cell).ExactValue;
+                }
+                sides[name] = total;
+            }
+        }
+        lines.AddRange(sides.Select(side => $"{side.Key} => records {side.Value.Records}; "
+            + string.Join("; ", side.Value.Values.Select((values, v) => $"values {values} numbers {side.Value.Numbers[v]} sum {Normal(side.Value.Sums[v])}"))));
+        lines.Sort(StringComparer.Ordinal);
+        return [.. lines];
+    }
+
+    /// <summary>Each window as a line — its parent's Items and its counts — in ordinal order.</summary>
+    public static string[] Windows(PivotAnswer answer)
+        => answer.Windows.Select(window => $"under {Parent(answer, window)}: {window.Before} before, {window.After} after")
+            .Order(StringComparer.Ordinal).ToArray();
+
+    // [Text:EMEA] — a window's parent's Items.
+    private static string Parent(PivotAnswer answer, PivotAnswerWindow window)
+        => "[" + string.Join(", ", window.Parent.Select((item, level) => Show(answer.Rows[level].Items[item]))) + "]";
+
+    /// <summary>Each leaf, or cell, as a line — its Items, <c>-</c> below a cell's depth, a rest
+    /// cell's side and parent, then its records and parts — in ordinal order.</summary>
     public static string[] Leaves(PivotAnswer answer)
     {
-        var axes = answer.Rows.Concat(answer.Columns).ToArray();
         var lines = new string[answer.LeafCount];
         for (var leaf = 0; leaf < answer.LeafCount; leaf++)
-        {
-            var line = new StringBuilder();
-            line.AppendJoin(" | ", axes.Select(axis => Show(axis.Items[axis.ItemAt(leaf)])));
-            line.Append(" => records ").Append(answer.RecordsAt(leaf));
-            foreach (var values in answer.Values)
-            {
-                line.Append("; ").Append(values.Field).Append(": values ").Append(values.ValuesAt(leaf))
-                    .Append(" numbers ").Append(values.NumbersAt(leaf)).Append(values.NonFiniteAt(leaf) ? " #NUM!" : "");
-                if ((values.Parts & PivotParts.Sum) != 0)
-                    line.Append(" sum ").Append(Show(values.SumAt(leaf)));
-                if ((values.Parts & PivotParts.Extremes) != 0)
-                    line.Append(" min ").Append(Show(values.MinAt(leaf))).Append(" max ").Append(Show(values.MaxAt(leaf)));
-            }
-            lines[leaf] = line.ToString();
-        }
+            lines[leaf] = Leaves(answer, leaf);
         Array.Sort(lines, StringComparer.Ordinal);
         return lines;
+    }
+
+    // One leaf's, or cell's, line.
+    private static string Leaves(PivotAnswer answer, int leaf)
+    {
+        var axes = answer.Rows.Concat(answer.Columns).ToArray();
+        var line = new StringBuilder();
+        line.AppendJoin(" | ", axes.Select(axis => axis.ItemAt(leaf) is var item and >= 0 ? Show(axis.Items[item]) : "-"));
+        if (answer.RestAt(leaf) is { } rest)
+            line.Append(" rest ").Append(rest.Side).Append(" under ").Append(Parent(answer, answer.Windows[rest.Window]));
+        line.Append(" => records ").Append(answer.RecordsAt(leaf));
+        foreach (var values in answer.Values)
+        {
+            line.Append("; ").Append(values.Field).Append(": values ").Append(values.ValuesAt(leaf))
+                .Append(" numbers ").Append(values.NumbersAt(leaf)).Append(values.NonFiniteAt(leaf) ? " #NUM!" : "");
+            if ((values.Parts & PivotParts.Sum) != 0)
+                line.Append(" sum ").Append(Show(values.SumAt(leaf)));
+            if ((values.Parts & PivotParts.Extremes) != 0)
+                line.Append(" min ").Append(Show(values.MinAt(leaf))).Append(" max ").Append(Show(values.MaxAt(leaf)));
+        }
+        return line.ToString();
     }
 
     /// <summary>The same page of Items: the same refusal, or the same Items in the same order,

@@ -773,6 +773,7 @@ are the core changes, and those do gate it.)*
 - **ExGrid's Change Highlight** (ADR-0068, DC-64 to DC-66).
 - **The demo API server, `samples/ExGrid.DemoApi`** (ADR-0069): SQLite holding money as integer
   cents, the trades as Arrow, a Pivot Source answered in SQL, and live changes said over SignalR.
+  Since 2026-10-26 its source also answers Level Aggregates and Sibling Windows (ADR-0370 section 3).
 - **The six pages:** `/pivot`, `/pivot-csv`, `/pivot-db`, `/pivot-live`, `/pivot-risk` and
   `/grid-live`. Each shows the code it runs, read from its own source.
 
