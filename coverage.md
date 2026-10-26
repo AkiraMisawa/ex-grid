@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 02:15:11 |
+| Generated on: | 10/26/2026 - 02:45:39 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1197 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (82980 of 87797) |
-| Covered lines: | 82980 |
-| Uncovered lines: | 4817 |
+| **Line coverage:** | 94.5% (82974 of 87797) |
+| Covered lines: | 82974 |
+| Uncovered lines: | 4823 |
 | Coverable lines: | 87797 |
 | Total lines: | 140156 |
-| **Branch coverage:** | 87.2% (50079 of 57418) |
-| Covered branches: | 50079 |
+| **Branch coverage:** | 87.2% (50074 of 57418) |
+| Covered branches: | 50074 |
 | Total branches: | 57418 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -1133,7 +1133,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.3%**|**90.3%**|
+|**ExSheet.Engine**|**97.3%**|**90.2%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1147,7 +1147,7 @@
 |ExSheet.Engine.CellFont|100%||
 |ExSheet.Engine.CellFormat|100%||
 |ExSheet.Engine.CellFormatChange|100%|94.4%|
-|ExSheet.Engine.CellRange|100%|86%|
+|ExSheet.Engine.CellRange|100%|90%|
 |ExSheet.Engine.CellState|100%|50%|
 |ExSheet.Engine.CompletionCandidate|100%||
 |ExSheet.Engine.ConstantParser|96.4%|81.5%|
@@ -1233,7 +1233,7 @@
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
-|ExSheet.Engine.Sheet|99.6%|96.2%|
+|ExSheet.Engine.Sheet|99.3%|95.8%|
 |ExSheet.Engine.Sheet.Cell|100%|100%|
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
