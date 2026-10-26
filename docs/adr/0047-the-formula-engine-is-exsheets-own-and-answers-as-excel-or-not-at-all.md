@@ -1008,7 +1008,7 @@ to the nearest double, ties to even. They answer `EXP`, `LN`, `LOG10` and `LOG` 
 `ATAN2`, `ASIN`, `ACOS` and the six hyperbolic functions. The functions built from them are computed from
 those doubles in IEEE arithmetic, so they are the same double everywhere without each being the correctly
 rounded one: `LOG` to another base is ln n / ln base (`=LOG(125,5)` is 3.0000000000000004), `ACOT` is
-pi/2 − atan n, and `COTH`, `CSCH` and `SECH` are 1 over their function. `^` and `POWER` are below. The C#
+pi/2 − atan n, `ACOTH` is ½ ln((n+1)/(n−1)), and `COTH`, `CSCH` and `SECH` are 1 over their function. `^` and `POWER` are below. The C#
 engine on any runtime and the TypeScript engine of ADR-0370 in any browser therefore give the same double.
 
 **Why.** A platform's math library rounds some arguments the other way, and not the same ones as another's:

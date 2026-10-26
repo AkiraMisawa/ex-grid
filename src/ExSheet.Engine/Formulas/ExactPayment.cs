@@ -66,7 +66,7 @@ internal static class ExactPayment
         if (!Fits(r) || !Fits(pv) || !Fits(fv) || !Fits(sum)) return null;
         // The growth's logarithm, estimated in doubles: past 2^1100 either way the enclosures would be vast. ln is the
         // correctly rounded one, not the platform's, so a growth near the line is refused alike everywhere (ADR-0047).
-        if (!(Math.Abs(periods * CorrectlyRounded.Log(1 + rate)) <= 1100 * Ln2)) return null;
+        if (!(Math.Abs(periods * PortableMath.Log(1 + rate)) <= 1100 * Ln2)) return null;
         for (var bits = FirstBits; bits <= MostBits; bits *= 2)
         {
             var (growth, lessOne) = Growth(r, onePlusRate, periods, bits);

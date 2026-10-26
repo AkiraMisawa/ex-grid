@@ -4,7 +4,7 @@
 // `Enclosure`s, and given only where both bounds round to the same double, the enclosures computed again with
 // twice the bits while they do not decide it. The refusals are the financial area's rules (2026-10-12), as the
 // C# remarks set them out.
-import { log } from './correctly-rounded';
+import { log } from './portable-math';
 import { Dyadic, Enclosure } from './enclosure';
 
 const firstBits = 96;
@@ -12,8 +12,6 @@ const mostBits = 1536;
 const leastFit = Dyadic.one.scale(-1021);
 const mostFit = Dyadic.one.scale(1022);
 const half = Dyadic.one.scale(-1);
-/** The double nearest ln 2, C#'s `Ln2`. */
-const ln2 = Math.LN2;
 
 /** The bound of `conditioned`, as a power of 2. */
 const mostMagnification = 6;
@@ -31,7 +29,7 @@ export function exactPayment(rate: number, periods: number, present: number, fut
     if (!fits(r) || !fits(pv) || !fits(fv) || !fits(sum)) return undefined;
     // The growth's logarithm, estimated in doubles: past 2^1100 either way the enclosures would be vast. ln is the
     // correctly rounded one, not the platform's, so a growth near the line is refused alike everywhere (ADR-0047).
-    if (!(Math.abs(periods * log(1 + rate)) <= 1100 * ln2)) return undefined;
+    if (!(Math.abs(periods * log(1 + rate)) <= 1100 * Math.LN2)) return undefined;
     for (let bits = firstBits; bits <= mostBits; bits *= 2) {
         const { growth, lessOne } = growthOf(r, onePlusRate, periods, bits);
         if (bits === firstBits && !quantitiesFit(r, pv, fv, sum, growth, lessOne, onePlusRate, atStart)) return undefined;
