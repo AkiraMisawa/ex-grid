@@ -8,7 +8,7 @@ import type { GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
 import type { Snapshot } from '@ex-grid/data';
 import type { PivotHandle, PivotViewOptions } from '@ex-grid/pivot';
 import { readPivotLayoutJson, textItemKey } from '@ex-grid/pivot-engine';
-import { BoardView, type BoardMounts, type BoardOptions } from '../src/create-board';
+import { BoardDrawing, type BoardMounts, type BoardOptions } from '../src/create-board';
 import { boardInput, BoardDiff, readBoard, type BoardOutput, type BoardReading, type ShapedRow } from '../src/index';
 
 const views = [
@@ -97,7 +97,7 @@ function only<T>(items: readonly T[]): T {
     return item;
 }
 
-const drawn: BoardView[] = [];
+const drawn: BoardDrawing[] = [];
 
 afterEach(() => {
     for (const view of drawn.splice(0)) view.destroy();
@@ -110,7 +110,7 @@ function draw(options: Partial<BoardOptions> & Pick<BoardOptions, 'board'>, moun
     const diffs: BoardDiff[] = [];
     const outputs: BoardOutput[] = [];
     const full: BoardOptions = { data: data(options.board), onDiff: diff => { diffs.push(diff); }, onOutput: output => { outputs.push(output); }, ...options };
-    const view = new BoardView(element, full, mounts);
+    const view = new BoardDrawing(element, full, mounts);
     drawn.push(view);
     return { element, view, mounts, diffs, outputs, options: full };
 }
@@ -237,6 +237,65 @@ describe('createBoard (ADR-0340)', () => {
         expect(mounts.charts[2]?.options.hiddenSeries).toEqual([]);
     });
 
+    it('keeps the user\'s changes through a refusal between two bindings, and raises no Diff for them again', () => {
+        const { element, view, mounts, diffs, options } = draw({ board: board() });
+        call(only(mounts.charts).options.onSeriesVisibilityChanged, { key: 'pnl', hidden: true });
+        view.update({ ...options, data: {} });
+        expect(element.querySelector('[role="alert"]')?.textContent).toMatch(/trades/u);
+
+        view.update({ ...options, data: data(options.board) });
+        expect(mounts.charts.at(-1)?.options.hiddenSeries).toEqual(['pnl']);
+        expect(diffs).toHaveLength(1);
+    });
+
+    it('binds again for the same options after a binding threw, rather than keep the emptied Board', () => {
+        const mounts = new StandIns();
+        let failing = false;
+        const flaky: BoardMounts = {
+            grid: mounts.grid,
+            pivot: mounts.pivot,
+            chart: (element, chartOptions) => { if (failing) throw new RangeError('No chart.'); return mounts.chart(element, chartOptions); },
+        };
+        const element = document.createElement('div');
+        const reading = board();
+        const view = new BoardDrawing(element, { board: reading, data: data(reading) }, flaky);
+        drawn.push(view);
+        const again = { board: reading, data: data(reading) };
+        failing = true;
+        expect(() => { view.update(again); }).toThrow('No chart.');
+        expect(element.querySelectorAll('section')).toHaveLength(0);
+
+        failing = false;
+        view.update(again);
+        expect(element.querySelectorAll('section')).toHaveLength(3);
+        expect(view.bound).toBeDefined();
+    });
+
+    it('takes no gesture from a view of an earlier binding', () => {
+        const { view, mounts, diffs, options } = draw({ board: linked });
+        const earlier = only(mounts.grids).options;
+        const earlierChart = only(mounts.charts).options;
+        view.update({ ...options, data: data(options.board) });
+
+        call(earlier.onSelectionChanged, rows(1));
+        call(earlierChart.onSeriesVisibilityChanged, { key: 'pnl', hidden: true });
+        expect(mounts.charts.at(-1)?.options.definition.series.map(series => series.points.length)).toEqual([3]);
+        expect(diffs).toHaveLength(0);
+        expect(view.bound?.diff.isEmpty).toBe(true);
+    });
+
+    it('keeps what it says of a pivot\'s selection while a link leaves the pivot as it was', () => {
+        const fromPivot = board(', "links": [{"from": "byDesk", "to": ["curve"], "on": ["desk"]}, {"from": "blotter", "to": ["byDesk"], "on": ["desk"]}]');
+        const { element, mounts } = draw({ board: fromPivot });
+        const status = element.querySelector('[data-ex-view="byDesk"] .ex-board-link-status');
+        call(only(mounts.grids).options.onSelectionChanged, rows(0));
+        call(only(mounts.pivots).options.onSelectionChanged, { selection: rows(0), items: undefined });
+
+        // Row 2 is Rates too: the pivot is not narrowed again, and keeps its selection.
+        call(only(mounts.grids).options.onSelectionChanged, rows(2));
+        expect(status?.textContent).toBe('The selection cannot be read from the report as drawn, so it narrows nothing.');
+    });
+
     it('refuses, before drawing any view, a grid showing dates on a Board given no Temporal (ADR-0350 section 16)', () => {
         const dated = readBoard(`{"version": 1, "inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "day", "type": "date"}]}},
           "views": [{"id": "desks", "grid": {"data": "trades", "columns": [{"column": "desk"}]}},
@@ -254,7 +313,7 @@ describe('createBoard (ADR-0340)', () => {
         const failing: BoardMounts = { grid: mounts.grid, pivot: mounts.pivot, chart: () => { throw new RangeError('No chart.'); } };
         const element = document.createElement('div');
 
-        expect(() => new BoardView(element, { board: board(), data: data(board()) }, failing)).toThrow('No chart.');
+        expect(() => new BoardDrawing(element, { board: board(), data: data(board()) }, failing)).toThrow('No chart.');
         expect([only(mounts.grids).destroyed, only(mounts.pivots).destroyed]).toEqual([true, true]);
         expect(element.children).toHaveLength(0);
     });

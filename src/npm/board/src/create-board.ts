@@ -77,7 +77,7 @@ const familyMounts: BoardMounts = Object.freeze({ grid: createGrid<ShapedRow>, p
  * the element and hands the Board its props; nothing here assumes React's lifecycle or Blazor's.
  */
 export function createBoard(element: HTMLElement, options: BoardOptions): BoardHandle {
-    const view = new BoardView(element, options, familyMounts);
+    const view = new BoardDrawing(element, options, familyMounts);
     return Object.freeze({
         update: (next: BoardOptions) => { view.update(next); },
         destroy: () => { view.destroy(); },
@@ -92,7 +92,7 @@ interface Mounted {
 }
 
 /** @internal Draws a Board with the mounts it is given; {@link createBoard} hands it the family's. */
-export class BoardView {
+export class BoardDrawing {
     readonly #element: HTMLElement;
     readonly #mounts: BoardMounts;
     #options: BoardOptions;
@@ -103,9 +103,10 @@ export class BoardView {
     readonly #ownStyle: Readonly<Record<'display' | 'flexDirection' | 'gap', string>>;
     #raised: BoardDiff | undefined;
     #mounted: Mounted[] = [];
-    // What is said under each pivot of its selection, emptied when a link narrows that pivot again.
-    readonly #linkStatus = new Map<string, HTMLElement>();
     #unsubscribe: (() => void)[] = [];
+    // Set while a binding is under way, and left set by one that threw, so the next update binds again rather than
+    // keep the emptied Board.
+    #binding = false;
     #destroyed = false;
 
     constructor(element: HTMLElement, options: BoardOptions, mounts: BoardMounts) {
@@ -133,14 +134,15 @@ export class BoardView {
         // hands back each Diff raised.
         const newDiff = options.diff !== this.#handedDiff;
         this.#handedDiff = options.diff;
-        const shown = bound !== undefined && (options.diff === undefined ? bound.diff.isEmpty : options.diff.sameAs(bound.diff));
-        if (options.board === was.board && options.data === was.data && options.locale === was.locale && options.temporal === was.temporal
-            && (!newDiff || shown)) {
+        const shown = () => bound !== undefined && (options.diff === undefined ? bound.diff.isEmpty : options.diff.sameAs(bound.diff));
+        if (!this.#binding && options.board === was.board && options.data === was.data && options.locale === was.locale
+            && options.temporal === was.temporal && (!newDiff || shown())) {
             if (options.width !== was.width) for (const mounted of this.#mounted) mounted.redraw();
             return;
         }
-        // Bound again for a new Board or new data, the user's changes since are kept: only a new Diff replaces them.
-        this.#bind(!newDiff && bound !== undefined ? bound.diff : options.diff);
+        // Bound again for a new Board or new data, the user's changes since are kept, through a refusal between too (the
+        // Diff last raised is them): only a new Diff replaces them.
+        this.#bind(newDiff ? options.diff : bound?.diff ?? this.#raised ?? options.diff);
     }
 
     destroy(): void {
@@ -156,13 +158,13 @@ export class BoardView {
         this.#unsubscribe = [];
         for (const mounted of this.#mounted) mounted.destroy();
         this.#mounted = [];
-        this.#linkStatus.clear();
         this.#element.replaceChildren();
         this.#bound = undefined;
     }
 
     #bind(laid: BoardDiff | undefined): void {
         this.#clear();
+        this.#binding = true;
         const { board, data, locale = 'invariant' } = this.#options;
         const root = this.#element;
         if (board.title !== '') root.append(made('h2', 'ex-board-title', board.title));
@@ -177,6 +179,7 @@ export class BoardView {
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a Board that does not bind is drawn as its refusal, naming the path
             if (!(error instanceof BoardRefusedError)) throw error;
             refuse(error);
+            this.#binding = false;
             return;
         }
         // A grid the core would refuse is the Board's refusal, said before any view is drawn: a part drawn beside it
@@ -184,6 +187,7 @@ export class BoardView {
         const undrawable = this.#undrawable(bound);
         if (undrawable !== undefined) {
             refuse(undrawable);
+            this.#binding = false;
             return;
         }
         this.#bound = bound;
@@ -206,10 +210,20 @@ export class BoardView {
         this.#unsubscribe.push(bound.subscribe(() => { for (const mounted of this.#mounted) mounted.redraw(); }));
         // A grid's sort and filter are its source's (ADR-0001), which says when they move; a narrowing moves only its
         // rows, and raises no Diff.
-        for (const view of bound.views) if (view.kind === 'grid') this.#unsubscribe.push(view.source.subscribe(() => { this.#changed(); }));
+        for (const view of bound.views) {
+            if (view.kind !== 'grid') continue;
+            let { sorts, filter } = view.source.snapshot();
+            this.#unsubscribe.push(view.source.subscribe(() => {
+                const now = view.source.snapshot();
+                if (now.sorts === sorts && now.filter === filter) return;
+                ({ sorts, filter } = now);
+                this.#changed();
+            }));
+        }
         // What is laid over is not the user's change: only a change from it is raised, and the Diff that applied, when
         // some of it did not.
         this.#raised = bound.dropped.length > 0 ? undefined : bound.diff;
+        this.#binding = false;
         this.#changed();
     }
 
@@ -267,7 +281,7 @@ export class BoardView {
         switch (view.kind) {
             case 'grid': this.#mounted.push(this.#grid(bound, view, row, host, section)); break;
             case 'pivot': this.#mounted.push(this.#pivot(bound, view, row, host, section)); break;
-            case 'chart': this.#mounted.push(this.#chart(view, row, cell, shares, host)); break;
+            case 'chart': this.#mounted.push(this.#chart(bound, view, row, cell, shares, host)); break;
             default: throw new Error(`Internal: ${String(view satisfies never)} is not a view.`);
         }
         return section;
@@ -279,7 +293,7 @@ export class BoardView {
         // A gesture the view takes redraws the grid with what it now shows; one it refuses, a round trip behind a
         // hide, changes nothing (spine rule 6).
         const taken = (took: boolean) => {
-            if (!took) return;
+            if (!took || this.#bound !== bound) return;
             grid.update(options());
             this.#changed();
         };
@@ -292,11 +306,12 @@ export class BoardView {
             locale: this.#locale(),
             ...(this.#options.temporal === undefined ? {} : { temporal: this.#options.temporal }),
             onSelectionChanged: next => {
+                // A selection a grid raises after the Board was bound again is of a grid no longer shown.
+                if (this.#bound !== bound) return;
                 // A selection narrows the views its links reach; a dropped one, raised as an empty one, takes the
                 // narrowing away with it (ADR-0011).
                 bound.select(id, next);
                 for (const status of statuses) status.textContent = '';
-                this.#letGoOfReached(bound, id);
             },
             onColumnWidthChanged: change => { taken(view.resize(change.column, change.widthPx)); },
             onColumnOrderChanged: order => { taken(view.reorder(order)); },
@@ -338,7 +353,6 @@ export class BoardView {
         const status = made('span', 'ex-board-link-status');
         status.setAttribute('role', 'status');
         section.append(status);
-        this.#linkStatus.set(id, status);
         const linked = bound.board.links.some(link => link.from === id);
         let shown = view.source;
         const options = (): PivotViewOptions => ({
@@ -356,10 +370,10 @@ export class BoardView {
                     const cells = event.selection.ranges.length === 0 ? [] : event.items;
                     status.textContent = cells === undefined ? 'The selection cannot be read from the report as drawn, so it narrows nothing.' : '';
                     bound.selectCells(id, cells);
-                    this.#letGoOfReached(bound, id);
                 },
             } : {}),
             onLayoutChanged: ({ layout }) => {
+                if (this.#bound !== bound) return;
                 // A new layout is a new report, so what its cells narrowed is let go now, as a narrowing of it lets go
                 // (ADR-0011).
                 view.changeLayout(layout);
@@ -372,20 +386,23 @@ export class BoardView {
         return {
             destroy: () => { pivot.destroy(); },
             redraw: () => {
-                // A new source is a refresh: the rows a link lets through now.
+                // A new source is a refresh: the rows a link lets through now. The report drawn again holds no
+                // selection (ADR-0011), so what was said of one goes with it.
                 if (view.source === shown) return;
                 shown = view.source;
+                status.textContent = '';
                 pivot.update(options());
             },
         };
     }
 
-    #chart(view: BoundChartView, row: BoardRow, cell: BoardCell, shares: number, host: HTMLElement): Mounted {
+    #chart(bound: BoundBoard, view: BoundChartView, row: BoardRow, cell: BoardCell, shares: number, host: HTMLElement): Mounted {
         const refusal = made('div', 'ex-board-refusal');
         refusal.setAttribute('role', 'alert');
         refusal.style.height = `${row.height}px`;
         const stage = made('div', 'ex-board-chart');
         const changed = () => {
+            if (this.#bound !== bound) return;
             chart.update(options());
             this.#changed();
         };
@@ -400,9 +417,9 @@ export class BoardView {
                 // The chart's whole range is null; the view's, undefined.
                 range: view.range === undefined ? null : view.range,
                 ...(view.scale === undefined ? {} : { scale: view.scale }),
-                onSeriesVisibilityChanged: ({ key, hidden }) => { view.changeVisibility(key, hidden); changed(); },
-                onRangeChanged: range => { view.changeRange(range === null ? undefined : range); changed(); },
-                onScaleChanged: scale => { view.changeScale(scale); changed(); },
+                onSeriesVisibilityChanged: ({ key, hidden }) => { if (this.#bound === bound) view.changeVisibility(key, hidden); changed(); },
+                onRangeChanged: range => { if (this.#bound === bound) view.changeRange(range === null ? undefined : range); changed(); },
+                onScaleChanged: scale => { if (this.#bound === bound) view.changeScale(scale); changed(); },
             };
         };
         const chart = this.#mounts.chart(stage, options());
@@ -428,24 +445,6 @@ export class BoardView {
                 show();
             },
         };
-    }
-
-    // A pivot narrowed again has let go of its selection, so what was said of it goes too: every view a selection in
-    // `from` reaches along links, itself not included.
-    #letGoOfReached(bound: BoundBoard, from: string): void {
-        const reached = new Set<string>();
-        const next = [from];
-        for (let view = next.shift(); view !== undefined; view = next.shift()) {
-            for (const target of bound.board.links.filter(link => link.from === view).flatMap(link => link.to)) {
-                if (reached.has(target)) continue;
-                reached.add(target);
-                next.push(target);
-            }
-        }
-        for (const view of reached) {
-            const said = this.#linkStatus.get(view);
-            if (said !== undefined) said.textContent = '';
-        }
     }
 
     #locale(): string {
