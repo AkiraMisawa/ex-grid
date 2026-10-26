@@ -1,0 +1,14 @@
+{
+  // The sources and the tests, for the editor and for `npm run typecheck`. ExGrid's Script Core and the
+  // pivot engine are read from their sources, so a change to either is checked here before it is built.
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "@ex-grid/core": ["../core/src/index.ts"],
+      "@ex-grid/data": ["../data/src/index.ts"],
+      "@ex-grid/pivot-engine": ["../pivot-engine/src/index.ts"]
+    }
+  },
+  "include": ["src", "test", "*.config.ts"]
+}

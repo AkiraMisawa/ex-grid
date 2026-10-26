@@ -266,6 +266,15 @@ export function setValueField(layout: PivotLayout, index: number, value: PivotVa
     return made(withLayout(layout, { values: Object.freeze(values) }));
 }
 
+/**
+ * Each Value Field's caption as the Field List shows it in Values, and the report heads its columns (ADR-0060):
+ * its own caption, or the default in the report's words, `Sum of Amount`, numbered to stay unique. A layout
+ * not yet answered is captioned as the report will caption it.
+ */
+export function pivotValueCaptions(layout: PivotLayout, fields: readonly PivotField[], options?: PivotOptions): readonly string[] {
+    return valueCaptions(layout.values, fieldMetas(fields), resolveOptions(options));
+}
+
 // ---- The Layout menu (ADR-0061) -----------------------------------------------------------------
 
 /**
