@@ -76,6 +76,7 @@ class GridStandIn {
         this.options = options;
         return {
             update: next => { this.options = next; },
+            placeSelection: () => { throw new Error('The report places no Selection.'); },
             destroy: () => { this.destroyed = true; },
         };
     };
