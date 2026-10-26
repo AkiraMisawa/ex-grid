@@ -187,3 +187,29 @@ for (const [pkg, kinds] of shipped) {
     ].join('\n'));
     console.log(`-> ${path.relative(repo, file)}`);
 }
+
+// ExChart's Script Core's record of its stylesheet (ADR-0370 section 1): the name and stamp its notice
+// is rendered with, and the minified text a saved SVG carries inside it, since a file has no page to take
+// it from (ADR-0282). src/npm/chart/test/shipped-stylesheet.test.ts checks it against the source.
+{
+    const chart = shipped.get('ExChart').Stylesheet;
+    const minified = fs.readFileSync(path.join(repo, 'src/ExChart/wwwroot/ex-chart.min.css'), 'utf8');
+    const comment = minified.lastIndexOf('/*# sourceMappingURL=');
+    const text = (comment < 0 ? minified : minified.slice(0, comment)).trimEnd();
+    const file = path.join(repo, 'src/npm/chart/src/dom/shipped-stylesheet.ts');
+    fs.writeFileSync(file, [
+        '// Written by tools/assets/minify.mjs (ADR-0123): do not edit. Edit src/ExChart/Assets/ and run it',
+        '// again, and commit what it writes. test/shipped-stylesheet.test.ts checks it against the source.',
+        '',
+        '/** The name of the stylesheet the chart draws against, by which its notice rules find the notice. */',
+        `export const stylesheetName = '${chart.name}';`,
+        '',
+        '/** The SHA-256 of that stylesheet\'s source: the stamp its own notice rule hides the notice for. */',
+        `export const stylesheetStamp = '${chart.stamp}';`,
+        '',
+        '/** The stylesheet as it ships, minified, without its source map comment: what a saved SVG carries. */',
+        `export const stylesheetText = ${JSON.stringify(text)};`,
+        '',
+    ].join('\n'));
+    console.log(`-> ${path.relative(repo, file)}`);
+}

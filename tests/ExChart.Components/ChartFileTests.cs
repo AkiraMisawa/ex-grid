@@ -68,8 +68,10 @@ public class ChartFileTests : BunitContext
         var (name, type, bytes) = Saved();
         Assert.Equal("Exposure profile.csv", name);
         Assert.Equal("text/csv", type);
+        // One byte-order mark, so Excel reads it as UTF-8 and the first header is the axis' title, not a mark and the title.
+        Assert.Equal(new byte[] { 0xEF, 0xBB, 0xBF }, bytes[..3]);
+        Assert.NotEqual(new byte[] { 0xEF, 0xBB, 0xBF }, bytes[3..6]);
         var text = Encoding.UTF8.GetString(bytes);
-        Assert.StartsWith("﻿", text, StringComparison.Ordinal);
         Assert.Contains("ENE", text, StringComparison.Ordinal);
     }
 

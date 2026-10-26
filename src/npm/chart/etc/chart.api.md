@@ -4,6 +4,8 @@
 
 ```ts
 
+import { GridDensity } from '@ex-grid/core';
+
 // @public
 export interface AppearanceKeys {
     readonly colour: string;
@@ -114,6 +116,19 @@ export interface ChartEdgeMark {
 }
 
 // @public
+export type ChartFileFormat = 'csv' | 'svg' | 'png';
+
+// @public
+export interface ChartHandle {
+    destroy(): void;
+    download(format: ChartFileFormat): Promise<boolean>;
+    update(options: ChartOptions): void;
+}
+
+// @public
+export type ChartLabel = (id: string) => string | undefined;
+
+// @public
 export interface ChartMark {
     readonly count: number;
     readonly panel: number;
@@ -136,11 +151,50 @@ export interface ChartMetrics {
 }
 
 // @public
+export interface ChartOptions {
+    readonly axisStyle?: AxisStyle;
+    readonly colourSlots?: number;
+    readonly definition: ChartDefinition;
+    readonly density?: GridDensity;
+    readonly description?: string;
+    readonly fileName?: string;
+    readonly height?: number;
+    readonly hiddenSeries?: ReadonlySet<string> | readonly string[];
+    readonly independentScales?: ReadonlySet<string> | readonly string[];
+    readonly label?: ChartLabel;
+    readonly legend?: LegendPlacement;
+    readonly onPointClick?: (click: ChartPointClick) => void;
+    readonly onRangeChanged?: (range: ChartRange | null) => void;
+    readonly onScaleChanged?: (scale: AxisScale) => void;
+    readonly onSeriesVisibilityChanged?: (change: SeriesVisibility) => void;
+    readonly range?: ChartRange | null;
+    readonly scale?: AxisScale;
+    readonly title?: string;
+    readonly width?: number;
+    readonly yScale?: AxisScale;
+}
+
+// @public
 export interface ChartPoint {
     readonly name?: string;
     readonly row?: unknown;
     readonly x: number;
     readonly y: ChartValue | null;
+}
+
+// @public
+export interface ChartPointClick {
+    readonly position: number;
+    readonly row?: unknown;
+    readonly seriesId: string;
+}
+
+// @public
+export interface ChartRange {
+    readonly from?: number;
+    readonly to?: number;
+    readonly yFrom?: number;
+    readonly yTo?: number;
 }
 
 // @public
@@ -279,6 +333,44 @@ export interface ChartView {
 }
 
 // @public
+export const chartWordIdList: readonly string[];
+
+// @public
+export const chartWordIds: Readonly<{
+    filters: "exchart.filters";
+    resetRange: "exchart.reset-range";
+    table: "exchart.table";
+    hideTable: "exchart.table.hide";
+    downloadCsv: "exchart.download.csv";
+    downloadSvg: "exchart.download.svg";
+    downloadPng: "exchart.download.png";
+    menuDownloadCsv: "exchart.menu.download.csv";
+    menuDownloadSvg: "exchart.menu.download.svg";
+    menuDownloadPng: "exchart.menu.download.png";
+    downloads: "exchart.downloads";
+    chart: "exchart.chart";
+    chartData: "exchart.chart-data";
+    from: "exchart.filters.from";
+    to: "exchart.filters.to";
+    apply: "exchart.filters.apply";
+    axis: "exchart.filters.axis";
+    proportional: "exchart.filters.proportional";
+    categories: "exchart.filters.categories";
+    dateHint: "exchart.filters.hint.date";
+    categoryHint: "exchart.filters.hint.category";
+    numberHint: "exchart.filters.hint.number";
+    notOnAxis: "exchart.filters.not-on-axis";
+    aDate: "exchart.filters.a-date";
+    aCategory: "exchart.filters.a-category";
+    aNumber: "exchart.filters.a-number";
+    fromAfterTo: "exchart.filters.from-after-to";
+    thinnedAtSource: "exchart.thinned-at-source";
+    oneMoreSeries: "exchart.tooltip.one-more";
+    moreSeries: "exchart.tooltip.more";
+    stylesheetNotice: "exchart.notice.stylesheet";
+}>;
+
+// @public
 export interface ColourKey {
     readonly bands: number;
     readonly box: Box;
@@ -289,6 +381,9 @@ export interface ColourKey {
     readonly title: string;
     readonly to: number;
 }
+
+// @public
+export function createChart(element: HTMLElement, options: ChartOptions): ChartHandle;
 
 // @public
 export type DateLabel = 'auto' | 'year' | 'yearMonth' | 'date' | 'monthYear' | 'tenor';
@@ -343,6 +438,9 @@ export interface IntervalBound {
 
 // @public
 export type IntervalStyle = 'whiskers' | 'band';
+
+// @public
+export const japaneseChartWords: ChartLabel;
 
 // @public
 export interface KeyTick {
@@ -568,6 +666,12 @@ export interface SeriesSampler {
     readonly from: number;
     readonly to: number;
     readonly valueAt: (position: number) => ChartValue | null;
+}
+
+// @public
+export interface SeriesVisibility {
+    readonly hidden: boolean;
+    readonly key: string;
 }
 
 // @public
