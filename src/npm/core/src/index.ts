@@ -10,7 +10,7 @@ export type { GridSelection } from './selection/selection';
 export { createGrid } from './dom/create-grid';
 export type { GridHandle } from './dom/create-grid';
 export type { GridPopoverContext } from './dom/consumer-popover';
-export type { GridHeaderGroup, GridOptions, GridViewRead, ViewportSize } from './dom/grid-view';
+export type { GridDeclaredKeyPress, GridHeaderGroup, GridOptions, GridViewRead, ViewportSize } from './dom/grid-view';
 export { cellTextMeasure, type CellPaintOptions } from './dom/cell-paint';
 export { formulaBarHeight, type FormulaBarOptions } from './dom/formula-bar';
 export type { BorderStyle, CellAppearance, CellBorder, CellTextMeasure, EdgeBorderOf } from './cells/cell-appearance';
@@ -19,6 +19,7 @@ export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { gridCommandIds, gridLabelIds } from './chrome/command-ids';
 export { markLabelIds } from './chrome/mark-words';
+export { selectionLabelIds } from './chrome/selection-words';
 export type { CopyOrientation, CopyPlan, CopyRefusalReason, PastePlan, PasteRefusalReason, PasteShape, SourceCell } from './clipboard/clipboard-rules';
 export { assembleCopy, invariantMarker, markAttribute, type CopyFlavours, type CopyValues, type GridCopyAnswer, type GridCopyRequest } from './clipboard/clipboard-data';
 export { parseClipboard } from './clipboard/clipboard-parse';
@@ -26,6 +27,7 @@ export type { PasteFieldOrigin } from './clipboard/clipboard-parse';
 export type { GridPasteIntent } from './clipboard/paste-intent';
 export type { GridClearIntent } from './clipboard/clear-intent';
 export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent, GridOverwriteNotice } from './cells/edit-intent';
+export { GridRuleset, type RuleViolation } from './cells/grid-ruleset';
 export { actionColumn, markColumn } from './dom/grid-column';
 export type {
     AutoColumnWidth, FixedColumnWidth, GridAction, GridActionEvent, GridColumn, GridColumnWidth, GridTemplate, GridTemplateCell,

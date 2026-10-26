@@ -1,5 +1,5 @@
 import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
-import { SERVER } from './hosting.mjs';
+import { REACT, SERVER } from './hosting.mjs';
 import { expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
 // A write lands as the user entered it, on the row the user aimed it at (ADR-0142, rewritten
@@ -22,6 +22,10 @@ function grid(page) {
 
 const NOTIONAL = 2;
 const ACT = 3;
+
+// The text a Notional written as `typed` is painted with. C#'s decimal keeps the places it was typed with; the
+// Script Core's number keeps none, so the React page writes every Notional with two (ADR-0350's values).
+const written = (typed) => (REACT ? Number(typed).toFixed(2) : typed);
 
 function cell(page, row, column) {
     return grid(page).locator(`[id$='r${row}c${column}']`);
@@ -105,7 +109,7 @@ test('LV-11/LV-21: a commit over a cell that changed under the editor lands, and
 
     await expect(page.locator('#edit-status')).toContainText('Notional=1500000');
     await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
-    await expect(notional).toHaveText('1500000');
+    await expect(notional).toHaveText(written('1500000'));
     await expect(notice).toContainText(`Notional written over ${moved}; it showed ${before} when you started typing`);
     await circuitQuiet();
     await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
@@ -195,8 +199,8 @@ test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it l
     }
     await expect(page.locator('#upstream-status')).toContainText('(×1)');
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
-    await expect(notional).toHaveText('5');
-    await expect(cell(page, 1, NOTIONAL)).toHaveText('5');
+    await expect(notional).toHaveText(written('5'));
+    await expect(cell(page, 1, NOTIONAL)).toHaveText(written('5'));
     await circuitQuiet();
     await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
     if (SERVER) {
@@ -224,7 +228,7 @@ test('LV-13: a Ctrl+Enter fill whose target changed since the key was pressed la
     expect((await seenAt(page, 'keydown', 'Enter')).text, 'Ctrl+Enter was taken on the render before F9\'s change').toBe(before);
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
     await expect(editor).toHaveCount(0);
-    await expect(cell(page, 4, NOTIONAL)).toHaveText('7');
+    await expect(cell(page, 4, NOTIONAL)).toHaveText(written('7'));
     await circuitQuiet();
     await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
     await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
@@ -295,7 +299,7 @@ for (const rtt of [0, 150]) {
                 .toBe(before);
         }
         await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
-        await expect(notional).toHaveText('7');
+        await expect(notional).toHaveText(written('7'));
         await circuitQuiet();
         await expect(page.locator('#edit-status')).toContainText('Notional=5');
         await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
@@ -321,7 +325,7 @@ for (const rtt of [0, 150]) {
             expect((await seenAt(page, 'keydown', '2')).text, 'the 2 was taken on the render before the 1 was painted')
                 .toBe(before);
         }
-        await expect(notional).toHaveText('2');
+        await expect(notional).toHaveText(written('2'));
         await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
         await circuitQuiet();
         await expect(page.locator('#edit-status')).toContainText('Notional=2');
@@ -349,7 +353,7 @@ test('LV-11: a change in the round trip between the key that opens the editor an
     expect((await seenAt(page, 'keydown', '5')).text, 'the 5 was taken on the render before F9\'s change').toBe(before);
     await expect(page.locator('#upstream-status')).toContainText('(×1)');
     await expect(page.locator('#edit-status')).toContainText('Notional=5');
-    await expect(notional).toHaveText('5');
+    await expect(notional).toHaveText(written('5'));
     await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
     await circuitQuiet();
     await expect(page.locator('#commit-refused-status')).toHaveText('Commit refused: —');
