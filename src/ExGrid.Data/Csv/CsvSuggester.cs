@@ -202,12 +202,19 @@ internal static class CsvSuggester
         if (even.Count > 1)
         {
             var listSeparator = culture.TextInfo.ListSeparator;
-            var chosen = even
+            var ordered = even
                 .OrderByDescending(e => e.Typed)
                 .ThenByDescending(e => Character(e.Separator) == listSeparator)
-                .First().Separator;
+                .ToList();
+            var chosen = ordered[0].Separator;
+            // The note says what chose it: the fields, else the culture, else only the order they are tried in.
+            var reason = ordered[0].Typed > ordered[1].Typed
+                ? "since its fields read best as numbers and dates"
+                : Character(chosen) == listSeparator
+                    ? "since the fields read alike under each and it is the culture's list separator"
+                    : "though the fields read alike under each and the culture's list separator is none of them";
             marks.Add(new CsvMark(CsvDoubt.Separator,
-                $"Every record splits evenly at {string.Join(" and at ", even.Select(e => Shown(e.Separator)))}; {Shown(chosen)} is suggested, since its fields read best as numbers and dates."));
+                $"Every record splits evenly at {string.Join(" and at ", even.Select(e => Shown(e.Separator)))}; {Shown(chosen)} is suggested, {reason}."));
             return chosen;
         }
         if (!anySplit || uneven.Count == 0)

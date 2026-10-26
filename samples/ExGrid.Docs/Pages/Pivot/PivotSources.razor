@@ -376,6 +376,19 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
             its own listeners each notice, as it does over a Snapshot.
         </p>
         <p>
+            ExPivot drawn by the Script Core (<code>createPivot</code>, or <code>ExPivot</code> from
+            <code>@@ex-grid/pivot-react</code>) hears those notices itself and asks the report on screen again, under its
+            layout, as the Blazor component does: a notice after a quiet spell at once, and the notices that come within
+            <code>redrawInterval</code> of the last change shown (250 ms unless given) gathered into one question, asked
+            when the interval ends. A notice of the version already on screen asks nothing, and a question out is never
+            cancelled by one: its answer is shown, and the changes that came meanwhile are asked for after it.
+        </p>
+        <pre class="docs-code"><code>const pivot = createPivot(element, {
+    source,                       // a SnapshotPivotSource, or a FetchingPivotSource with a transport
+    layout,
+    redrawInterval: 1000,         // a ticking source redraws the report at most once a second
+});</code></pre>
+        <p>
             The cube and the report run in slices too. <code>pivotCubeAsync</code> and <code>pivotReportAsync</code> take
             the same slicing and an <code>AbortSignal</code>, and give what <code>pivotCube</code> and
             <code>pivotReport</code> give, so an answer of a hundred thousand leaves, or a field with thousands of Items

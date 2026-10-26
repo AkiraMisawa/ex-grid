@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { SnapshotError, readCsvSnapshot, type CsvColumn, type CsvSchema, type Snapshot } from '../src/index';
-import { isObject, key, kindOf, list, text, valueOf, type Json, type JsonObject } from './case-json';
+import { fileOf, isObject, key, kindOf, list, text, valueOf, type Json, type JsonObject } from './case-json';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases/data');
 
@@ -74,30 +74,6 @@ function schemaOf(value: Json): CsvSchema {
         ...optional(value, 'blankText', texts),
         ...optional(value, 'recordKey', text),
     };
-}
-
-/** The file, as the case writes it: UTF-8 text, `{"hex": …}` bytes, or `{"repeat": text, "times": n}`. */
-function fileOf(value: Json): Uint8Array {
-    const encoder = new TextEncoder();
-    const pieces = list(value).map(piece => {
-        if (typeof piece === 'string') return encoder.encode(piece);
-        if (isObject(piece) && piece['hex'] !== undefined) {
-            const hex = text(piece['hex']).replaceAll(' ', '');
-            return Uint8Array.from({ length: hex.length / 2 }, (_, i) => Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16));
-        }
-        const once = encoder.encode(text(key(piece, 'repeat')));
-        const times = wholeNumber(key(piece, 'times'));
-        const repeated = new Uint8Array(once.length * times);
-        for (let i = 0; i < times; i++) repeated.set(once, i * once.length);
-        return repeated;
-    });
-    const bytes = new Uint8Array(pieces.reduce((sum, piece) => sum + piece.length, 0));
-    let at = 0;
-    for (const piece of pieces) {
-        bytes.set(piece, at);
-        at += piece.length;
-    }
-    return bytes;
 }
 
 /** The Snapshot a read made, as ExGrid.Data's runner writes it. */

@@ -7,23 +7,30 @@ import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
 import '../../../src/ExChart/wwwroot/ex-chart.min.css';
 import '../../../src/ExPivot/wwwroot/ex-pivot.min.css';
 import '../../../src/ExSheet/wwwroot/ex-sheet.min.css';
+import { Appearance } from './pages/appearance';
 import { Board } from './pages/board';
 import { Cells } from './pages/cells';
 import { Chart } from './pages/chart';
 import { ChartBridge } from './pages/chart-bridge';
 import { ChartCandles } from './pages/chart-candles';
 import { ChartSpecPage } from './pages/chart-spec';
+import { Density } from './pages/density';
 import { Features } from './pages/features';
 import { Fetch } from './pages/fetch';
 import { FilterPanel } from './pages/filter-panel';
 import { Home } from './pages/home';
+import { Lifecycle } from './pages/lifecycle';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
+import { PivotCsv } from './pages/pivot-csv';
 import { PivotDb } from './pages/pivot-db';
 import { PivotRisk } from './pages/pivot-risk';
 import { SheetDemo } from './pages/sheet';
+import { Sizing } from './pages/sizing';
+import { Stretch } from './pages/stretch';
 import { Stripes } from './pages/stripes';
+import { Tones } from './pages/tones';
 import { Marks } from './pages/marks';
 import { Virtual } from './pages/virtual';
 import { Wide } from './pages/wide';
@@ -51,9 +58,16 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: 
     pivot: Pivot,
     'pivot-risk': PivotRisk,
     'pivot-db': PivotDb,
+    'pivot-csv': PivotCsv,
     sheet: SheetDemo,
     marks: Marks,
     stripes: Stripes,
+    tones: Tones,
+    appearance: Appearance,
+    density: Density,
+    lifecycle: Lifecycle,
+    stretch: Stretch,
+    sizing: Sizing,
     board: Board,
 };
 

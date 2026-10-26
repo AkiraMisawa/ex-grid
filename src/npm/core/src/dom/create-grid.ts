@@ -29,6 +29,25 @@ export interface GridHandle<Row> {
     /** Hands the keyboard to the grid: to the field an open edit is typed in, else to where the grid takes keys
      * (ADR-0080). A Consumer's control beside the grid, such as a Sheet's tabs, gives it back with this. */
     focus(): void;
+    /**
+     * The keyboard back to the grid from something of the Consumer's that held it over the grid and goes away, a
+     * dialog, a panel, a tab (DC-61, ADR-0070): to an open edit's field, else where the grid takes keys (ADR-0080).
+     * Granted only while the keyboard is still this grid's, DOM focus inside it or on nothing, and not on its Formula
+     * Bar or Name Box: a control or a grid the user has moved to keeps it. Handed `from`, the frame that holds the
+     * keyboard as it goes, it is granted while DOM focus is on that frame too, so the frame gives the keyboard back
+     * before it is removed. It moves neither the Focus nor the Selection and scrolls nothing; once the grid is
+     * destroyed it does nothing.
+     */
+    returnKeyboard(from?: Element): void;
+    /**
+     * Hands the keyboard the grid holds on to a control of the Consumer's own, in place of the control's own
+     * `focus()` (DC-61, ADR-0070): a frame's first control, a dialog's Close. A container names its first enabled
+     * text field, its text selected, or else its first enabled control; one holding none throws a RangeError.
+     * Granted under `returnKeyboard`'s condition, so a press the user made meanwhile keeps the keyboard where it put
+     * it. It moves neither the Focus nor the Selection; the control scrolls into view unless `preventScroll` says
+     * not to. Once the grid is destroyed, the control takes the keyboard by its own focus.
+     */
+    handKeyboardTo(control: HTMLElement, options?: { readonly preventScroll?: boolean }): void;
     /** A key press in the grid's canonical form (ADR-0012), `Control+PageUp`, as this grid reads its own keys: Command
      * stands for Control on an Apple platform. A Consumer that hears keys beside the grid's names them so. */
     keyName(event: KeyboardEvent): string;
@@ -66,6 +85,8 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         readView: () => view.readView(),
         showViewWith: (state: GridViewRead, rowSequenceVersion: number) => { view.showViewWith(state, rowSequenceVersion); },
         focus: () => { view.focus(); },
+        returnKeyboard: (from?: Element) => { view.returnKeyboard(from); },
+        handKeyboardTo: (control: HTMLElement, how?: { readonly preventScroll?: boolean }) => { view.handKeyboardTo(control, how); },
         keyName: (event: KeyboardEvent) => view.keyName(event),
         openPopover: (content: (context: GridPopoverContext) => HTMLElement, label: string) => view.openPopover(content, label),
         closePopover: () => { view.closePopover(); },

@@ -63,6 +63,36 @@ describe('Per-cell declarations (ADR-0050)', () => {
             .toThrow(/cellState is a function \(ADR-0006\)/);
     });
 
+    it('ADR-0006: a column\'s tone rule paints a gain and a loss as their classes, under a Cell State, and is not asked about a null', async () => {
+        interface Pnl { readonly book: string; readonly amount: number | null }
+        const asked: unknown[] = [];
+        const sign = (value: unknown): 'positive' | 'negative' | 'none' => {
+            asked.push(value);
+            const amount = value as number;
+            return amount > 0 ? 'positive' : amount < 0 ? 'negative' : 'none';
+        };
+        const columns: readonly GridColumn<Pnl>[] = [
+            { name: 'Book', type: 'text', width: 80, value: p => p.book },
+            { name: 'Amount', type: 'number', width: 80, value: p => p.amount, tone: sign },
+        ];
+        const rows: readonly Pnl[] = [
+            { book: 'Gain', amount: 1250 }, { book: 'Loss', amount: -830 }, { book: 'Flat', amount: 0 }, { book: 'None', amount: null },
+        ];
+        const { root } = mount({ columns, rows, rowHeight: 24, viewportHeight: 480, cellState: (p, column) => (column.name === 'Amount' && p.book === 'Loss' ? 'stale' : 'normal') });
+        await painted();
+        expect([0, 1, 2, 3].map(r => cellAt(root, r, 1).className)).toEqual([
+            'ex-cell ex-cell-numeric ex-tone-positive',
+            'ex-cell ex-cell-numeric ex-tone-negative ex-state-stale',
+            'ex-cell ex-cell-numeric',
+            'ex-cell ex-cell-numeric',
+        ]);
+        // Asked about each value, however often a row is painted, and never about the null.
+        expect(new Set(asked)).toEqual(new Set([1250, -830, 0]));
+        const untyped = { name: 'Amount', type: 'number', value: (p: Pnl) => p.amount, tone: 'positive' } as unknown as GridColumn<Pnl>;
+        expect(() => mount({ columns: [untyped], rows, rowHeight: 24, viewportHeight: 480 }))
+            .toThrow(/tone is a function of the value/);
+    });
+
     it('ADR-0050 item 6: a cell declared a Number in a Text column is right-aligned and becomes #### when it does not fit', async () => {
         const root = sheet([{ cells: ['label', 123, 12_345_678_901_234] }], { cellType });
         await painted();

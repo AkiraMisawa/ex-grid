@@ -292,6 +292,11 @@ for a Blazor one.
 *(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 9 moves the workspace from `src/npm/` to `packages/`, and the NuGet projects
 to `dotnet/`, as the last step of 0.3.0.)*
 
+*(2026-10-26: ADR-0370 section 9's layout was settled with the user. The workspace's root becomes the
+repository's root, `packages/` holds only what npm publishes, and every C# project, the hosts and the
+Docs Site included, moves to `dotnet/` with `ExGrid.slnx` and `global.json`; layer 3 moves to
+`tests/browser/`.)*
+
 ### 14. Blazor's surface is designed afresh, from the Script Core's
 
 No Consumer depends on the current surface yet (the user, 2026-10-24), so Blazor's ExGrid does not

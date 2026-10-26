@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -597,6 +597,30 @@ row, column}}`, the `SnapshotException` or `SnapshotError` whole; or `{"refused"
 byte is read (`ArgumentException`, `TypeError`). A reading the Script Core refuses where .NET reads it (a calendar other
 than the Gregorian or the Thai Buddhist, a standard date format in a culture, `U`, the era) is not a shared case; Vitest holds
 it in `csv-read.test.ts`.
+
+## `csvSuggest`
+
+A Schema suggested from a CSV's first rows ([ADR-0064](../../docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)
+Q33, ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/CsvSuggestCaseTests.cs`)
+and Vitest against `@ex-grid/data` (`src/npm/data/test/csv-suggest-cases.test.ts`). Both stay, for the reason `csvRead`'s do.
+The C# runner writes the answers, with `EXGRID_WRITE_DATA_CASES=1`, reading each file from a stream that hands over as much
+as is asked of it, so the sample is the one a `Uint8Array` or a `Blob` gives the Script Core.
+
+A case gives a `file`, written as a `csvRead` case writes one, and may give `options`, written as `@ex-grid/data`'s
+`CsvSuggestionOptions` are (`rows`, `encoding`, `separator`, `hasHeader`, and `culture` as a language tag); a separator or an
+encoding neither package reads with stands for one refused. Its `expect` is the suggestion: the `schema`, written as a
+`csvRead` case writes one with its `separator`, `hasHeader` and `encoding` stated; `columns`, each with its `marks`,
+`isUnclear` and `examples`, in the Schema's order; the file's `marks`, each a `doubt` (the `CsvDoubt` member in camel case)
+and its `note`; `sampledRows`; and `isUnclear`. Or `{"refused": {message}}`, the `SnapshotException` or `SnapshotError`, or
+`{"refused": "argument"}` for options refused (`ArgumentException`, `TypeError`, `RangeError`).
+
+## `listSeparator`
+
+`data/list-separators.json` is every culture's list separator as .NET gives it (`TextInfo.ListSeparator`), which a
+suggestion takes to break a tie between two separators: a comma, a semicolon, or `null` for another. .NET on ICU keeps it in
+a table of its own that `Intl` does not hold, so `@ex-grid/data` carries a copy (`listSeparatorOf` in `src/csv/culture.ts`).
+xUnit holds the file to .NET (`ListSeparatorCaseTests.cs`, which writes it with `EXGRID_WRITE_DATA_CASES=1`) and Vitest holds
+the copy to the file (`list-separators.test.ts`).
 
 ## `boardInput`
 

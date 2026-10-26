@@ -20,7 +20,9 @@ export type ExGridProps<Row> = GridOptions<Row> & {
 
 /**
  * What a ref to an ExGrid reaches: the Script Core's grid handle, less what the adapter itself does with it
- * (taking the props again, and destroying the grid on unmount). Asked of a grid not mounted, it throws.
+ * (taking the props again, and destroying the grid on unmount). Asked of a grid not mounted, it throws, but for
+ * the keyboard's hand-offs: `returnKeyboard` then does nothing, and `handKeyboardTo` focuses the control itself
+ * (DC-61).
  */
 export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
 
@@ -59,6 +61,13 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
         readView: () => mounted(grid.current).readView(),
         showViewWith: (view, rowSequenceVersion) => { mounted(grid.current).showViewWith(view, rowSequenceVersion); },
         focus: () => { mounted(grid.current).focus(); },
+        // Before the grid is drawn there is no keyboard of its own to give back, and the control takes it by its
+        // own focus, as the C# core's does before it attaches (DC-61).
+        returnKeyboard: (from) => { grid.current?.returnKeyboard(from); },
+        handKeyboardTo: (control, how) => {
+            if (grid.current === undefined) control.focus({ preventScroll: how?.preventScroll === true });
+            else grid.current.handKeyboardTo(control, how);
+        },
         keyName: (event) => mounted(grid.current).keyName(event),
         openPopover: (content, label) => mounted(grid.current).openPopover(content, label),
         closePopover: () => { mounted(grid.current).closePopover(); },
