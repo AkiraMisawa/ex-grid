@@ -499,3 +499,44 @@ describe('Find and Replace (ADR-0055, ADR-0332)', () => {
         expect(sheet.workbook.shown.getEntryText(CellAddress.parse('A1'))).toBe('=B1*5');
     });
 });
+
+describe('the formatting and structure keys (ADR-0071, ADR-0050 item 14)', () => {
+    it('ADR-0071 case 17: Ctrl+B sets bold on the Selection by the Focus cell\'s direction, Ctrl+Shift+% a Number Format; each is one step to undo', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '0.5', A2: '0.25' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('0.5'); });
+        press(element, 0, 0);
+        key('ArrowDown', { shiftKey: true });
+        key('b', { ctrlKey: true });
+        const bold = (address: string): boolean => sheet.workbook.shown.getCellFormat(CellAddress.parse(address)).font.bold;
+        expect([bold('A1'), bold('A2')]).toEqual([true, true]);
+        key('%', { ctrlKey: true, shiftKey: true });
+        await vi.waitFor(() => { expect([textAt(element, 0, 0), textAt(element, 1, 0)]).toEqual(['50%', '25%']); });
+        expect(sheet.undo()).toBe(true);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('0.5'); });
+        key('B', { ctrlKey: true });
+        expect([bold('A1'), bold('A2')]).toEqual([false, false]);
+    });
+
+    it('ADR-0071: a formatting key while a cell is edited changes nothing, and the notice says why', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key('F2');
+        key('b', { ctrlKey: true });
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(false);
+        expect(noticeOf(element)).toMatch(/^Nothing was formatted: a cell is being edited/u);
+    });
+
+    it('ADR-0050 item 14: Ctrl+- over whole rows deletes them, and over any other Selection says why and changes nothing', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'one', A2: 'two', A3: 'three' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('one'); });
+        press(element, 1, 0);
+        key('-', { ctrlKey: true });
+        expect(noticeOf(element)).toMatch(/^Nothing was deleted: select whole row/u);
+        key(' ', { shiftKey: true });
+        key('-', { ctrlKey: true });
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('three'); });
+        expect(sheet.undo()).toBe(true);
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('two'); });
+    });
+});

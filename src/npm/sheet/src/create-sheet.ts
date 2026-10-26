@@ -30,6 +30,9 @@ import { SheetEdges } from './sheet-edges';
 import { SheetWords, type SheetLabel } from './sheet-words';
 import { SheetTabs } from './sheet-tabs';
 import { sheetTabKeys, sheetTabStepOf } from './sheet-tab-keys';
+import { sheetFormatChangeFor, sheetFormatKeyOf, type SheetFormatKey } from './sheet-format-keys';
+import { sheetStructureEditFor, sheetStructureKeyOf, type SheetStructureKey } from './sheet-structure-keys';
+import { widensAsAKeyDoes } from './sheet-widening';
 
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
@@ -625,7 +628,10 @@ class SheetView {
         if (event.isComposing || grid === undefined) return;
         const key = grid.keyName(event);
         const step = sheetTabStepOf(key);
-        if (step === undefined && key !== sheetTabKeys.insert) return;
+        if (step === undefined && key !== sheetTabKeys.insert) {
+            this.#onCellKey(event, key);
+            return;
+        }
         event.preventDefault();
         event.stopPropagation();
         if (step === undefined) {
@@ -642,6 +648,62 @@ class SheetView {
         this.#raiseDocument();
         if (onTabs) this.#tabs.focus(sheet);
     };
+
+    // Excel's formatting keys and its insert and delete keys, on the Selection as the grid holds it at the key (ADR-0071,
+    // "Keys"; ADR-0050 item 14), where the grid takes keys: not in the Name Box or a panel the grid opened, whose
+    // fields keep their own. Ctrl+1 waits on Format Cells.
+    #onCellKey(event: KeyboardEvent, key: string): void {
+        const format = sheetFormatKeyOf(key);
+        const structure = format === undefined ? sheetStructureKeyOf(key) : undefined;
+        if ((format === undefined && structure === undefined) || format === 'formatCells') return;
+        const target = event.target;
+        if (!(target instanceof Element) || !this.#gridElement.contains(target) || target.closest('.ex-popover, .ex-name-box') !== null) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (format !== undefined) this.#formatKey(format);
+        else if (structure !== undefined) this.#structureKey(structure);
+    }
+
+    // A formatting key sets its change on every range of the Selection as one step, its toggle's direction the Focus
+    // cell's (case 17), widening the columns a number no longer fits where the key widens (ADR-0071). While an edit
+    // is open it changes nothing, and the notice says why.
+    #formatKey(kind: SheetFormatKey): void {
+        if (this.#editing) {
+            this.#tell(this.#words.formatKeyWhileEditing);
+            return;
+        }
+        const selection = this.#grid?.readView().selection;
+        const focus = selection?.focus;
+        if (selection === undefined || focus === undefined) return;
+        const sheet = this.#source.sheet;
+        const change = sheetFormatChangeFor(kind, sheet.getCellFormat(new CellAddress(focus.row, focus.column)), sheet.culture);
+        const cells = selection.ranges.map(rangeOf);
+        this.#perform(SheetEdit.setCellFormat(cells, change), undefined, widensAsAKeyDoes(change) ? cells : undefined);
+    }
+
+    // Ctrl+Plus and Ctrl+Minus: over whole rows they insert or delete those rows, over whole columns those columns,
+    // each one step; over any other Selection, and while an edit is open, nothing changes and the notice says why
+    // (ADR-0050 item 14).
+    #structureKey(kind: SheetStructureKey): void {
+        const insert = kind === 'insert';
+        if (this.#editing) {
+            this.#tell(this.#words.structureKeyWhileEditing(insert));
+            return;
+        }
+        const selection = this.#grid?.readView().selection;
+        if (selection === undefined || selection.isEmpty) return;
+        const edit = sheetStructureEditFor(kind, selection, { rowCount: Sheet.rowCount, columnCount: Sheet.columnCount });
+        if (edit === undefined) {
+            this.#tell(this.#words.structureKeyNeedsWholeRowsOrColumns(insert));
+            return;
+        }
+        try {
+            this.#perform(edit);
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the engine's refusal is an answer told to the user; anything else is rethrown
+            if (!(error instanceof SheetRefusedError)) throw error;
+            this.#tell(this.#words.refused(error.refusal));
+        }
+    }
 
     // While an edit is open no other Sheet is shown, and the notice says why: the edit is typed on this one. Showing
     // another to point at its cells, as Excel does for a Formula, waits on Pointing across Sheets (ADR-0331 §5).
