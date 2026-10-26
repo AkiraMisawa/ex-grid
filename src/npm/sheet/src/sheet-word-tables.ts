@@ -103,6 +103,12 @@ export const englishSheetWordTable: Readonly<Record<SheetWordId, string>> = Obje
         "What was typed was not entered: another Sheet was shown, or another Sheet Document opened, while {0} was being edited, so nothing was written. Press Escape to leave it.",
     'commitRefused.rowLeftTheWindow':
         "What was typed was not entered: the row of {0} is not among the rows the Sheet holds now. Bring it back into view and press Enter again, or press Escape to leave it.",
+    'placementRefused.orderMoved':
+        "The selection was not moved: another Sheet was shown, or another Sheet Document opened, after it was asked for.",
+    'placementRefused.sourceChanged':
+        "The selection was not moved: the data the Sheet shows was replaced after it was asked for.",
+    'placementRefused.columnsMoved':
+        "The selection was not moved: the Sheet's columns changed after it was asked for.",
     'overwritten':
         "{0} was entered over a change made while it was being edited: it showed {1} when editing began and {2} just before.",
     'copyRefused.emptySelection': "Select the cells to copy.",
@@ -318,6 +324,12 @@ export const japaneseSheetWordTable: Readonly<Record<SheetWordId, string>> = Obj
         "入力した内容は確定されませんでした: {0} の編集中に別のシートが表示されたか、別のシート ドキュメントが開かれたため、何も書き込まれませんでした。Esc キーで編集を終了してください。",
     'commitRefused.rowLeftTheWindow':
         "入力した内容は確定されませんでした: {0} の行は、シートが現在保持している行にありません。その行を表示してもう一度 Enter キーを押すか、Esc キーで編集を終了してください。",
+    'placementRefused.orderMoved':
+        "選択範囲は移動されませんでした: 要求された後に別のシートが表示されたか、別のシート ドキュメントが開かれました。",
+    'placementRefused.sourceChanged':
+        "選択範囲は移動されませんでした: 要求された後にシートが表示するデータが置き換えられました。",
+    'placementRefused.columnsMoved':
+        "選択範囲は移動されませんでした: 要求された後にシートの列が変わりました。",
     'overwritten':
         "{0} は編集中に行われた変更の上に入力されました: 編集を始めたときは {1}、直前は {2} と表示されていました。",
     'copyRefused.emptySelection': "コピーするセルを選択してください。",
