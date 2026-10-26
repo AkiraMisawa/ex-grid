@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 02:45:39 |
+| Generated on: | 10/26/2026 - 02:55:17 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1197 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (82974 of 87797) |
-| Covered lines: | 82974 |
+| **Line coverage:** | 94.5% (82981 of 87804) |
+| Covered lines: | 82981 |
 | Uncovered lines: | 4823 |
-| Coverable lines: | 87797 |
-| Total lines: | 140156 |
-| **Branch coverage:** | 87.2% (50074 of 57418) |
-| Covered branches: | 50074 |
+| Coverable lines: | 87804 |
+| Total lines: | 140163 |
+| **Branch coverage:** | 87.2% (50072 of 57418) |
+| Covered branches: | 50072 |
 | Total branches: | 57418 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -1046,12 +1046,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
