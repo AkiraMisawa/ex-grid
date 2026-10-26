@@ -5,7 +5,7 @@
 | ExGrid | 95.3% | 88.6% |
 | ExSheet | 95.2% | 87.5% |
 | ExPivot | 94.4% | 86.3% |
-| ExChart | 91.8% | 86.1% |
+| ExChart | 91.8% | 86.2% |
 | ExBoard | 93.8% | 86.9% |
 | Data | 94% | 88.8% |
 
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 10:06:11 |
+| Generated on: | 10/26/2026 - 11:31:28 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1199 |
 | Files: | 609 |
-| **Line coverage:** | 94.6% (83521 of 88218) |
-| Covered lines: | 83521 |
-| Uncovered lines: | 4697 |
+| **Line coverage:** | 94.6% (83524 of 88218) |
+| Covered lines: | 83524 |
+| Uncovered lines: | 4694 |
 | Coverable lines: | 88218 |
-| Total lines: | 140827 |
-| **Branch coverage:** | 87.5% (50560 of 57724) |
-| Covered branches: | 50560 |
-| Total branches: | 57724 |
+| Total lines: | 140834 |
+| **Branch coverage:** | 87.6% (50565 of 57722) |
+| Covered branches: | 50565 |
+| Total branches: | 57722 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -127,7 +127,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**97.5%**|**91.2%**|
+|**ExChart.Engine**|**97.5%**|**91.4%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -146,15 +146,15 @@
 |ExChart.Engine.ChartReading|100%||
 |ExChart.Engine.ChartReadings|100%|96.1%|
 |ExChart.Engine.ChartRefusedException|100%||
-|ExChart.Engine.ChartScene|98.9%|90.3%|
+|ExChart.Engine.ChartScene|98.9%|90.5%|
 |ExChart.Engine.ChartSeries|100%|100%|
 |ExChart.Engine.ChartSource|91.4%|73.9%|
 |ExChart.Engine.ChartSource.InMemory|100%||
 |ExChart.Engine.ChartSourceAnswer|100%||
 |ExChart.Engine.ChartSourceQuery|100%||
 |ExChart.Engine.ChartSourceReading|100%||
-|ExChart.Engine.ChartSpec|97.7%|93.8%|
-|ExChart.Engine.ChartSpec.Reader|98.7%|94.4%|
+|ExChart.Engine.ChartSpec|98.1%|94.2%|
+|ExChart.Engine.ChartSpec.Reader|98.9%|94.4%|
 |ExChart.Engine.ChartSpecAnswer|100%||
 |ExChart.Engine.ChartSpecReading|91.3%|75%|
 |ExChart.Engine.ChartSpecRefusedException|100%||
@@ -217,7 +217,7 @@
 |ExChart.Engine.SurfaceView|100%||
 |ExChart.Engine.ThinnedDrawing|100%||
 |ExChart.Engine.Thinning|100%|97.3%|
-|ExChart.Engine.TickLayout|95.3%|80%|
+|ExChart.Engine.TickLayout|95.3%|80.7%|
 |ExChart.Engine.TickLayout.CalendarStep|100%||
 |ExChart.Engine.VerticalAxis|100%|62.5%|
 
@@ -1046,12 +1046,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
