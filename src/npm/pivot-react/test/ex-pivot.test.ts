@@ -54,6 +54,17 @@ describe('ExPivot', () => {
         expect(root?.querySelector<HTMLElement>('.ex-pivot-field-list')?.hidden).toBe(true);
     });
 
+    it('ADR-0370 section 10: a pivot given its locale never asks the browser for one', async () => {
+        Object.defineProperty(navigator, 'languages', { value: Object.freeze(['xx-YY']), configurable: true });
+        try {
+            const { container } = render(createElement(ExPivot, { source, slicing, locale: 'en-US' }));
+            await settled();
+            expect(container.firstElementChild?.classList.contains('ex-pivot')).toBe(true);
+        } finally {
+            Reflect.deleteProperty(navigator, 'languages');
+        }
+    });
+
     it('ADR-0370 section 10: given no locale, the pivot writes counts in the browser\'s language, read once when it is made', async () => {
         // The browser ranks a language the pivot does not write in first: the next is taken.
         Object.defineProperty(navigator, 'languages', { value: Object.freeze(['xx-YY', 'de-DE']), configurable: true });

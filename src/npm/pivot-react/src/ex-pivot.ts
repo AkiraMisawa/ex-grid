@@ -13,8 +13,10 @@ import { browserPivotLocale, createPivot, type PivotHandle, type PivotViewOption
 export type ExPivotProps = PivotViewOptions;
 
 /** The props as the core takes them: the browser's language where the Consumer gave no locale. */
-function withLocale(props: ExPivotProps, browserLocale: string): PivotViewOptions {
-    return props.locale === undefined ? { ...props, locale: browserLocale } : props;
+function withLocale(props: ExPivotProps, browserLocale: string | undefined): PivotViewOptions {
+    if (props.locale !== undefined) return props;
+    if (browserLocale === undefined) throw new Error('Internal: the browser\'s locale was not read for a pivot given none.');
+    return { ...props, locale: browserLocale };
 }
 
 /**
@@ -30,7 +32,8 @@ export function ExPivot(props: ExPivotProps): ReactElement {
     useLayoutEffect(() => {
         const root = element.current;
         if (root === null) throw new Error('Internal: React mounted no element for the pivot to draw into.');
-        browserLocale.current ??= browserPivotLocale(navigator.languages.length > 0 ? navigator.languages : [navigator.language]);
+        // The browser is asked only where the Consumer gave no locale: one that did needs nothing of it.
+        if (props.locale === undefined) browserLocale.current ??= browserPivotLocale(navigator.languages.length > 0 ? navigator.languages : [navigator.language]);
         const options = withLocale(props, browserLocale.current);
         if (pivot.current === undefined) {
             pivot.current = createPivot(root, options);

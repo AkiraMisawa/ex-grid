@@ -386,6 +386,24 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
         expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Region']);
     });
 
+    it('ADR-0370 section 3: a field moved and taken out again while the question was out is not named in its refusal', async () => {
+        const refused: { readonly message: string; readonly fields: readonly string[] }[] = [];
+        const { root } = mount({ source: server(), layout: createPivotLayout({ values: ['Amount'] }), maxLeaves: 1, onRefused: event => refused.push(event) });
+        await settled();
+        drag(field(root, 'Desk'), 'dragstart');
+        drag(area(root, 'rows'), 'dragenter');
+        drag(area(root, 'rows'), 'drop');
+        tick(root, 'Desk');
+        drag(field(root, 'Region'), 'dragstart');
+        drag(area(root, 'columns'), 'dragenter');
+        drag(area(root, 'columns'), 'drop');
+        await settled();
+        expect(refused).toEqual([{
+            message: 'Region (2 items) in Columns makes more than 1 combinations, the most server data allows. Put Region in Filters, or filter Region first.',
+            fields: ['Region'],
+        }]);
+    });
+
     it('ADR-0061: a drag that moves on from an Area to the list leaves the Area unmarked', async () => {
         const { root } = mount({ source: server(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
         await settled();
@@ -434,6 +452,24 @@ describe('ExPivot\'s options', () => {
         expect(view.shownLayout).toBe(both);
     });
 
+    it('ADR-0059: layouts this pivot raised, handed back late and in turn, ask for nothing', async () => {
+        const changed: PivotLayout[] = [];
+        const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
+        const { root, view } = mount(options);
+        await settled();
+        tick(root, 'Desk');
+        await settled();
+        tick(root, 'Region');
+        await settled();
+        const [both, deskOnly] = changed;
+        if (both === undefined || deskOnly === undefined) throw new Error('Two layouts were raised.');
+        view.update({ ...options, layout: both });
+        view.update({ ...options, layout: deskOnly });
+        await settled();
+        expect(view.shownLayout).toBe(deskOnly);
+        expect(changed).toHaveLength(2);
+    });
+
     it('ADR-0059: a layout naming a field the source does not offer is refused, and the pivot stays as it was', async () => {
         const options: PivotViewOptions = { source: local(), layout: byRegion };
         const { view } = mount(options);
@@ -474,10 +510,11 @@ describe('ExPivot\'s options', () => {
 });
 
 describe('browserPivotLocale', () => {
-    it('ADR-0370 section 10: the first of the browser\'s languages the pivot writes in, or its language without the region', () => {
+    it('ADR-0370 section 10: the first of the browser\'s languages the pivot writes in, never another standing in for one', () => {
         expect(browserPivotLocale(['xx-YY', 'de-DE'])).toBe('de-DE');
-        expect(browserPivotLocale(['es-419'])).toBe('es');
         expect(browserPivotLocale(['EN-us'])).toBe('en-US');
+        // Latin American Spanish is not written as Spain's, which groups thousands with a point.
+        expect(browserPivotLocale(['es-419', 'en-US'])).toBe('en-US');
     });
 
     it('ADR-0370 section 10: a browser with none of the pivot\'s languages is refused, saying to pass locale', () => {

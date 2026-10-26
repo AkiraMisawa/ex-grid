@@ -184,16 +184,14 @@ export class FieldListView {
         body.append(this.#chooseCaption, this.#search, this.#list, this.#dragCaption, areas);
         pane.append(heading, body);
         root.append(pane);
-        // A drag that moves on from an Area, to the list or out of the pane, leaves that Area unmarked: an Area
-        // hears its own entry first, so what reaches the pane from outside every Area is somewhere else.
+        // A drag that moves on from an Area to elsewhere in the pane leaves that Area unmarked: an Area hears its
+        // own entry first, so what reaches the pane from outside every Area is somewhere else. Leaving by
+        // dragleave is not heard, since WebKit names no element a drag left for.
         root.addEventListener('dragenter', event => {
             const target = event.target;
             if (!(target instanceof Node) || ![...this.#areas.values()].some(({ area }) => area.contains(target))) this.leaveTargets();
         });
-        root.addEventListener('dragleave', event => {
-            const to = event.relatedTarget;
-            if (!(to instanceof Node) || !root.contains(to)) this.leaveTargets();
-        });
+
     }
 
     /** Draws `model`. A drag in progress is dropped when the layout it started on is no longer the pane's. */
@@ -268,14 +266,14 @@ export class FieldListView {
                     const said = model.words.fill('field-item-count', written);
                     count.title = said;
                     count.setAttribute('aria-label', said);
-                    if (!count.isConnected) item.insertBefore(count, filtered.isConnected ? filtered : null);
+                    if (count.parentNode !== item) item.insertBefore(count, filtered.parentNode === item ? filtered : null);
                 }
                 const at = placementOf(model.layout, field.name);
                 if (at !== undefined && elementAt(placementsIn(model.layout, at.area), at.index).hiddenItems.length > 0) {
                     const word = model.words.word('filtered');
                     filtered.setAttribute('aria-label', word);
                     filtered.title = word;
-                    item.append(filtered);
+                    if (filtered.parentNode !== item) item.append(filtered);
                 } else {
                     filtered.remove();
                 }
