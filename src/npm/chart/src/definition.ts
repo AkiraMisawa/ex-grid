@@ -58,7 +58,9 @@ export function chartSeries(options: ChartSeriesOptions): ChartSeries {
     }));
     const open = hasOpen(bars);
     const given = options.points === undefined ? [] : options.points;
-    const points: readonly ChartPoint[] = options.bars === undefined
+    // A Price Range's points are its bars' closes, as C#'s Bars sets them. A series handed back as options, as
+    // C#'s `with` copies one, carries `bars: []` beside its own points, which stand.
+    const points: readonly ChartPoint[] = options.bars === undefined || options.bars.length === 0
         ? given.map(p => Object.freeze({ ...p, y: checkedValue(p.y, () => `${where}'s value at ${roundTrip(p.x)}`) }))
         : bars.map(b => Object.freeze({ x: b.x, y: wholeBar(b, open) ? b.close : null }));
     const keys = options.keys;
