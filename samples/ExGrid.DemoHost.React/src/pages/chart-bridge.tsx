@@ -2,7 +2,7 @@ import { useRef, useState, type ReactElement } from 'react';
 import { GridSource, type GridColumn, type GridHeaderGroup, type InMemoryGridSource } from '@ex-grid/core';
 import { GridChartBridge, gridChartCommandLabel, type ChartTarget, type GridChart } from '@ex-grid/chart';
 import { ExChart } from '@ex-grid/chart-react';
-import { ExGrid } from '@ex-grid/react';
+import { ExGrid, type ExGridApi } from '@ex-grid/react';
 import { Temporal } from 'temporal-polyfill';
 import { DemoNav } from '../demo-nav';
 
@@ -72,10 +72,8 @@ interface Held {
  * across, charted from the grid's context menu. The page is the Consumer: it adds the bridge's commands to the
  * grid in one line, shows each chart it is handed, and registers every open chart as a target of "Add to chart".
  * "Recalculate" moves every rate; "Delete the first row" removes a row the charts were made from.
- *
- * A click on a point does not move the grid's Focus here, as it does on the Blazor page: the Script Core's grid
- * has no member that places the Selection and the Focus for a Consumer (C#'s `PlaceSelectionAsync`), and the
- * React adapter hands out no handle, so the bridge has no `placeSelection` to call.
+ * A click on a point moves the grid's Focus to its cell, through the grid's own placement (ADR-0050 item 4),
+ * which refuses a request written under an order the grid no longer shows.
  */
 export function ChartBridge(): ReactElement {
     const [charts, setCharts] = useState<readonly NamedChart[]>([]);
@@ -83,6 +81,7 @@ export function ChartBridge(): ReactElement {
     const [, setRows] = useState<readonly CurveRow[]>([]);
     const recalculations = useRef(0);
     const held = useRef<Held | undefined>(undefined);
+    const grid = useRef<ExGridApi<CurveRow>>(null);
     if (held.current === undefined) {
         const rows: readonly CurveRow[] = Object.freeze(Array.from({ length: 8 }, (_, i) => row(i, 0)));
         const source = GridSource.from(rows, { rowKey: keyOf });
@@ -105,6 +104,10 @@ export function ChartBridge(): ReactElement {
             onChart: chart => { show([...holder.charts, { name: `Chart ${holder.charts.length + 1}`, chart }]); },
             onAdded: (target, chart) => { show(holder.charts.map(c => (c.name === target.name ? { name: c.name, chart } : c))); },
             onRefused: setRefusal,
+            placeSelection: ({ range, focus, rowSequenceVersion }) => {
+                if (grid.current === null) throw new Error('Internal: the grid is not mounted.');
+                return grid.current.placeSelection(range, focus, rowSequenceVersion);
+            },
         });
         const holder: Held = { rows, charts: [], source, bridge };
         held.current = holder;
@@ -145,6 +148,7 @@ export function ChartBridge(): ReactElement {
                 to its cell.
             </p>
             <ExGrid
+                ref={grid}
                 columns={columns}
                 source={source}
                 headerGroups={groups}
@@ -164,7 +168,8 @@ export function ChartBridge(): ReactElement {
             {charts.map(({ name, chart }) => (
                 <section key={name} className="bridge-chart" data-chart={name}>
                     <h2>{name}</h2>
-                    <ExChart definition={bridge.draw(chart)} title={name} width={760} height={280} />
+                    <ExChart definition={bridge.draw(chart)} title={name} width={760} height={280}
+                        onPointClick={click => { void bridge.showInGrid(chart, click); }} />
                 </section>
             ))}
         </>
