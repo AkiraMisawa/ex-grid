@@ -17,7 +17,7 @@ import { ChartElement } from './chart-element';
 import { fileName, mediaType, paintPng, save, type ChartFileFormat } from './chart-files';
 import { chartWord, chartWordIds, type ChartLabel } from './chart-words';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
-import { drawSurface, sliceAxisAt, type DrawnSurfacePoint, type SurfaceDrawing } from './surface-drawing';
+import { clamp, drawSurface, sliceAxisAt, type DrawnSurfacePoint, type SurfaceDrawing } from './surface-drawing';
 import { n } from './svg-markup';
 
 /** What a 3D surface is drawn from, and what it raises. */
@@ -64,6 +64,9 @@ const wheelZoom = Math.log(1.1) / 100;
 
 const svgNs = 'http://www.w3.org/2000/svg';
 
+/** How many raised views wait to be taken back before the oldest is forgotten. */
+const raisedKept = 64;
+
 interface Drag {
     readonly id: number;
     readonly x: number;
@@ -79,8 +82,6 @@ interface Tip {
     readonly x: number;
     readonly y: number;
 }
-
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
 /** An angle brought into (-180, 180]. */
 function turn(degrees: number): number {
@@ -117,6 +118,9 @@ export class SurfaceElement {
     // What the user changed, as last taken from an option or a gesture.
     #view: SurfaceView = defaultSurfaceView;
     #held: SurfaceView = defaultSurfaceView;
+    // The views raised and not yet taken back, oldest first: an echo of any of them is not the Consumer's own
+    // view, however late it arrives (spine rule 6).
+    #raised: SurfaceView[] = [];
     #slice: SurfaceSlice | null = null;
     #taken: { readonly view: SurfaceView | null; readonly slice: SurfaceSlice | null } | undefined;
 
@@ -132,6 +136,7 @@ export class SurfaceElement {
 
     // The pointer.
     #drawing: SurfaceDrawing | null = null;
+    #drawnFrom: readonly unknown[] = [];
     #drag: Drag | null = null;
     #tip: Tip | null = null;
     #tableOpen = false;
@@ -270,7 +275,8 @@ export class SurfaceElement {
         copy.removeAttribute('aria-hidden');
         copy.removeAttribute('class');
         const rootStyle = getComputedStyle(svg);
-        copy.setAttribute('style', `font-family:${rootStyle.fontFamily};font-size:${rootStyle.fontSize};background:${getComputedStyle(this.#box).backgroundColor}`);
+        const background = getComputedStyle(this.#root).backgroundColor;
+        copy.setAttribute('style', `font-family:${rootStyle.fontFamily};font-size:${rootStyle.fontSize}`);
         const from = svg.querySelectorAll('*');
         const to = copy.querySelectorAll('*');
         const properties = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity', 'opacity', 'paint-order', 'stroke-linejoin', 'font-weight'];
@@ -280,6 +286,12 @@ export class SurfaceElement {
             target.setAttribute('style', properties.map(p => `${p}:${style.getPropertyValue(p)}`).join(';'));
             target.removeAttribute('class');
         });
+        // A file has no page behind it: the background is drawn, so a PNG is not transparent (ADR-0282).
+        const backdrop = document.createElementNS(svgNs, 'rect');
+        backdrop.setAttribute('width', n(width));
+        backdrop.setAttribute('height', n(height));
+        backdrop.setAttribute('style', `fill:${background}`);
+        copy.prepend(backdrop);
         return new XMLSerializer().serializeToString(copy);
     }
 
@@ -336,11 +348,16 @@ export class SurfaceElement {
         const taken = this.#taken;
         if (taken === undefined || !sameTakenView(taken.view, view)) {
             const next = view === null ? defaultSurfaceView : rounded(view);
-            if (taken === undefined || !sameView(next, this.#held)) {
+            const echoed = this.#raised.findIndex(v => sameView(v, next));
+            if (echoed >= 0) {
+                this.#raised.splice(0, echoed + 1);
+            } else if (taken === undefined || !sameView(next, this.#held)) {
                 this.#view = view === null ? defaultSurfaceView : view;
+                this.#held = next;
+                this.#raised = [];
                 this.#drag = null;
+                this.#tip = null;
             }
-            this.#held = next;
         }
         if (taken === undefined || !sameSlice(taken.slice, slice)) {
             this.#slice = slice;
@@ -403,7 +420,7 @@ export class SurfaceElement {
     #buildSlice(): void {
         const definition = this.#definition;
         const slice = this.#slice;
-        const from = [definition, slice?.axis, slice?.value];
+        const from = [definition, slice?.axis, slice?.value, this.#options.label];
         if (from.every((v, i) => v === this.#sliceFrom[i])) {
             return;
         }
@@ -426,6 +443,11 @@ export class SurfaceElement {
         if (mesh === undefined) {
             throw new Error('Internal: the surface is drawn before its mesh is built.');
         }
+        const from = [mesh, this.#view, this.#slicePath, this.#width, this.#height];
+        if (this.#drawing !== null && from.every((v, i) => v === this.#drawnFrom[i])) {
+            return;
+        }
+        this.#drawnFrom = from;
         const drawing = drawSurface(mesh, this.#view, this.#slicePath, this.#width, this.#height);
         this.#drawing = drawing;
         const svg = this.#svg;
@@ -472,11 +494,12 @@ export class SurfaceElement {
         if (this.#drag !== null || (event.button !== 0 && event.button !== 2) || !this.#own(event)) {
             return;
         }
+        // Captured first: a pointer the browser does not know throws here and starts no gesture to wait on.
+        this.#box.setPointerCapture(event.pointerId);
         this.#drag = {
             id: event.pointerId, x: event.offsetX, y: event.offsetY, view: this.#view, pan: event.shiftKey || event.button === 2,
             moved: false, version: this.#version,
         };
-        this.#box.setPointerCapture(event.pointerId);
     }
 
     #onMove(event: PointerEvent): void {
@@ -577,6 +600,8 @@ export class SurfaceElement {
             return;
         }
         event.preventDefault();
+        // The point under the pointer has moved: the tooltip waits for the pointer's next move.
+        this.#point(null, 0, 0);
         this.#redraw();
         this.#raiseView();
     }
@@ -590,6 +615,7 @@ export class SurfaceElement {
         // pixels whatever the event's unit.
         const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? Math.max(1, this.#height) : 1);
         this.#view = { ...this.#view, zoom: clamp(this.#view.zoom * Math.exp(-pixels * wheelZoom), 0.5, 8) };
+        this.#point(null, 0, 0);
         this.#redraw();
         this.#raiseView();
     }
@@ -607,6 +633,11 @@ export class SurfaceElement {
             return;
         }
         this.#held = view;
+        this.#raised.push(view);
+        // A Consumer that never takes the view back keeps only the latest raised.
+        if (this.#raised.length > raisedKept) {
+            this.#raised.shift();
+        }
         this.#paintToolbar();
         this.#options.onViewChanged?.(view);
     }
@@ -620,7 +651,9 @@ export class SurfaceElement {
         if (button === this.#reset) {
             this.#view = defaultSurfaceView;
             this.#held = defaultSurfaceView;
+            this.#raised = [defaultSurfaceView];
             this.#drag = null;
+            this.#tip = null;
             this.#paint();
             this.#options.onViewChanged?.(defaultSurfaceView);
         } else if (button === this.#tableToggle) {

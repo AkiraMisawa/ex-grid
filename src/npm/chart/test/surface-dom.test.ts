@@ -166,6 +166,26 @@ describe('createSurface', () => {
         ]);
     });
 
+    it('spine rule 6: an echo that arrives after a later view was raised does not undo the keys pressed meanwhile', () => {
+        const views: SurfaceView[] = [];
+        const onViewChanged = (v: SurfaceView): void => { views.push(v); };
+        const { root, surface } = mount({ definition: vol(), onViewChanged });
+        key(root, 'ArrowRight');
+        key(root, 'ArrowRight');
+        surface.update({ definition: vol(), onViewChanged, view: elementAt(views, 0) });
+        key(root, 'ArrowRight');
+        expect(views.map(v => v.yaw)).toEqual([-30, -25, -20]);
+    });
+
+    it('ADR-0274, ADR-0255: a zoom moves the points from under a resting pointer, so the tooltip waits for its next move', () => {
+        const { root } = mount({ definition: vol() });
+        const [x, y] = dot(root, 0);
+        pointer(root, 'pointermove', x, y);
+        expect(root.querySelector('.ex-chart-surface-tooltip')).not.toBeNull();
+        box(root).dispatchEvent(new WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }));
+        expect(root.querySelector('.ex-chart-surface-tooltip')).toBeNull();
+    });
+
     it('ADR-0274: a drag with the right button pans, opens no menu and draws no slice', () => {
         const onSliceChanged = vi.fn<(slice: SurfaceSlice) => void>();
         const views: SurfaceView[] = [];
@@ -198,6 +218,8 @@ describe('createSurface', () => {
         surface.update({ definition: vol(), slice: { axis: 'y', value: '3Y' } });
         expect(root.querySelector('.ex-chart-surface-slice-chart')).toBeNull();
         expect(q(root, '.ex-chart-notes').textContent).toBe('No slice at Tenor 3Y: this surface has no such value.');
+        surface.update({ definition: vol(), slice: { axis: 'y', value: '3Y' }, label: japaneseChartWords });
+        expect(q(root, '.ex-chart-notes').textContent).toBe('Tenor 3Y の断面はありません。このサーフェスにその値はありません。');
     });
 
     it('ADR-0275, ADR-0311: View as table tabulates a grid, its hole blank, and lists a mesh\'s nodes', () => {
@@ -227,6 +249,7 @@ describe('createSurface', () => {
         const text = surface.svgText();
         expect(text).toMatch(/^<svg /);
         expect(text).not.toContain('class=');
+        expect(text).toMatch(/^<svg [^>]*><rect width="640" height="420"/);
         expect(text).toContain('viewBox="0 0 640 420"');
         await expect(surface.download('csv')).resolves.toBe(false);
     });

@@ -243,7 +243,8 @@ function labelOf(label: string | null): string {
     return label;
 }
 
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
+/** `v` held within `lo` to `hi`. */
+export const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
 /** The distance from (x, y) to a drawn line, or `Infinity` for a line with no point. */
 export function distanceToLine(drawn: readonly Screen[] | undefined, x: number, y: number): number {

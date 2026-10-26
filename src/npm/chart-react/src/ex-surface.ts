@@ -27,19 +27,11 @@ export function ExSurface(props: ExSurfaceProps): ReactElement {
     const { ref, ...options } = props;
     const element = useRef<HTMLDivElement>(null);
     const surface = useRef<SurfaceHandle | undefined>(undefined);
-    useImperativeHandle(ref, () => {
-        const mounted = (): SurfaceHandle => {
-            const drawn = surface.current;
-            if (drawn === undefined) {
-                throw new Error('This ExSurface is not mounted, so it has no drawing.');
-            }
-            return drawn;
-        };
-        return {
-            download: (format: ChartFileFormat) => mounted().download(format),
-            svgText: () => mounted().svgText(),
-        };
-    }, []);
+    // Unmounted, the surface answers as a destroyed one does: no drawing and no save.
+    useImperativeHandle(ref, () => ({
+        download: (format: ChartFileFormat) => (surface.current === undefined ? Promise.resolve(false) : surface.current.download(format)),
+        svgText: () => surface.current?.svgText(),
+    }), []);
     // Drawn before the browser paints, so a mounted surface is never seen empty.
     useLayoutEffect(() => {
         const root = element.current;
