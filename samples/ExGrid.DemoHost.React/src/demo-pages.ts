@@ -38,4 +38,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'pivot', title: 'Pivot', group: 'ExPivot',
         description: 'Excel\'s PivotTable drawn by ExGrid: Month as a part of the trade date, the Fields pane with drag and drop, saving the layout, and Excel\'s Japanese words (ADR-0059, ADR-0060, ADR-0061).',
     },
+    {
+        route: 'sheet', title: 'Sheet', group: 'ExSheet',
+        description: 'ExSheet drawn by ExGrid: Formulas, editing, paste, Delete, the fill keys and undo, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0370).',
+    },
 ]);
