@@ -795,6 +795,10 @@ internal sealed class Run(CultureInfo culture)
                     ["right"] = SheetCases.Sorted(lines.Right.Select(SheetCases.Line)),
                 } : null);
                 break;
+            case "documentJson":
+                // The Sheet Document's JSON as written, which the two engines write alike.
+                actual = Workbook.ToDocument(sheet.Name).ToJson();
+                break;
             case "document":
                 actual = SheetCases.Document(Workbook.ToDocument(sheet.Name));
                 break;

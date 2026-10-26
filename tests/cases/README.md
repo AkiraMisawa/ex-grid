@@ -674,7 +674,7 @@ Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value), `displays`, `texts
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
 range, `cellFormats` (the Cell Formats it shows, each once) and `edgeLines` (the lines along each outer edge),
 each a set written in the ordinal order of its members' JSON text; of
-the Sheet, `document`, `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
+the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which both engines write alike), `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
 `changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`
 (a `check`'s), `isUndone`, `ranges`, `stepSheet` (the Sheet a step was done on or made), `changesSheets`, and
 `clockReads` (how often the step read the clock); of the Workbook,

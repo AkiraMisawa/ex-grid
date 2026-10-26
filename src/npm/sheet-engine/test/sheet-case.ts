@@ -731,6 +731,10 @@ class Run {
                 });
                 break;
             }
+            case 'documentJson':
+                // The Sheet Document's JSON as written, which the two engines write alike.
+                actual = this.workbook.toSheetDocument(sheet.name).toJson();
+                break;
             case 'document':
                 actual = documentJson(this.workbook.toSheetDocument(sheet.name));
                 break;
