@@ -10,35 +10,35 @@
   },
   "cases": [
     {
-      "name": "Ticket 180, ADR-0047: typed in another case, written in the declared case of the table and of the column: =sum(limit[line])",
+      "name": "ADR-0047 (ticket 180): typed in another case, written in the declared case of the table and of the column: =sum(limit[line])",
       "setup": "limits",
       "steps": [
         {"do": {"enter": {"B2": "=sum(limit[line])"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Line])"}, "values": {"B2": 7}}}
       ]
     },
     {
-      "name": "Ticket 180, ADR-0047: typed in another case, written in the declared case of the table and of the column: =SUM(Limit[[net pv]])",
+      "name": "ADR-0047 (ticket 180): typed in another case, written in the declared case of the table and of the column: =SUM(Limit[[net pv]])",
       "setup": "limits",
       "steps": [
         {"do": {"enter": {"B2": "=SUM(Limit[[net pv]])"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Net PV])"}, "values": {"B2": 30}}}
       ]
     },
     {
-      "name": "Ticket 180, ADR-0047: typed in another case, written in the declared case of the table and of the column: =sum(limit[RATE'#])*2",
+      "name": "ADR-0047 (ticket 180): typed in another case, written in the declared case of the table and of the column: =sum(limit[RATE'#])*2",
       "setup": "limits",
       "steps": [
         {"do": {"enter": {"B2": "=sum(limit[RATE'#])*2"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Rate'#])*2"}, "values": {"B2": 3}}}
       ]
     },
     {
-      "name": "Ticket 180, ADR-0047: typed in another case, written in the declared case of the table and of the column: =SUM(LIMIT[Line])",
+      "name": "ADR-0047 (ticket 180): typed in another case, written in the declared case of the table and of the column: =SUM(LIMIT[Line])",
       "setup": "limits",
       "steps": [
         {"do": {"enter": {"B2": "=SUM(LIMIT[Line])"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Line])"}, "values": {"B2": 7}}}
       ]
     },
     {
-      "name": "Ticket 180, ADR-0048: pasted as text, and entered with Ctrl+Enter, a Formula is written in the declared case too",
+      "name": "ADR-0048 (ticket 180): pasted as text, and entered with Ctrl+Enter, a Formula is written in the declared case too",
       "setup": "limits",
       "steps": [
         {"do": {"pasteText": {"fields": [["=sum(limit[line])"]], "at": "B2"}}},
@@ -46,7 +46,7 @@
       ]
     },
     {
-      "name": "Ticket 180: a table or a column not declared is left as typed, and is #NAME? or #REF! as before",
+      "name": "ADR-0047 (ticket 180): a table or a column not declared is left as typed, and is #NAME? or #REF! as before",
       "setup": "limits",
       "steps": [
         {"do": {"enter": {"B2": "=sum(other[line])"}}},
@@ -54,7 +54,7 @@
       ]
     },
     {
-      "name": "Ticket 180: written again by an insertion and a fill, the declared case is kept",
+      "name": "ADR-0047 (ticket 180): written again by an insertion and a fill, the declared case is kept",
       "setup": "limits",
       "steps": [
         {"do": {"enter": {"B2": "=sum(limit[line])+a1"}}},
@@ -63,7 +63,7 @@
       ]
     },
     {
-      "name": "Ticket 180: a reopened Workbook's text is the declared case",
+      "name": "ADR-0048 (ticket 180): a reopened Workbook's text is the declared case",
       "setup": "limits",
       "steps": [
         {"do": {"enter": {"B2": "=sum(limit[net pv])"}}},

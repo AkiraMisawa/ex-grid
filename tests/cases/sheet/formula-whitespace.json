@@ -7,49 +7,49 @@
       "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"= 1 + 2\"",
       "steps": [
         {"enter": {"C5": "= 1 + 2"}, "expect": {"entryTexts": {"C5": "= 1 + 2"}}},
-        {"reopen": "json", "expect": {"entryTexts": {"C5": "= 1 + 2"}}}
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"C5": "= 1 + 2"}}}
       ]
     },
     {
       "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=A1 + B1\"",
       "steps": [
         {"enter": {"C5": "=A1 + B1"}, "expect": {"entryTexts": {"C5": "=A1 + B1"}}},
-        {"reopen": "json", "expect": {"entryTexts": {"C5": "=A1 + B1"}}}
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"C5": "=A1 + B1"}}}
       ]
     },
     {
       "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=SUM( A1:A3, 4 )\"",
       "steps": [
         {"enter": {"C5": "=SUM( A1:A3, 4 )"}, "expect": {"entryTexts": {"C5": "=SUM( A1:A3, 4 )"}}},
-        {"reopen": "json", "expect": {"entryTexts": {"C5": "=SUM( A1:A3, 4 )"}}}
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"C5": "=SUM( A1:A3, 4 )"}}}
       ]
     },
     {
       "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=IF(A1 > 0,\\n  A1,\\n  0)\"",
       "steps": [
         {"enter": {"C5": "=IF(A1 > 0,\n  A1,\n  0)"}, "expect": {"entryTexts": {"C5": "=IF(A1 > 0,\n  A1,\n  0)"}}},
-        {"reopen": "json", "expect": {"entryTexts": {"C5": "=IF(A1 > 0,\n  A1,\n  0)"}}}
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"C5": "=IF(A1 > 0,\n  A1,\n  0)"}}}
       ]
     },
     {
       "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=  -A1%\"",
       "steps": [
         {"enter": {"C5": "=  -A1%"}, "expect": {"entryTexts": {"C5": "=  -A1%"}}},
-        {"reopen": "json", "expect": {"entryTexts": {"C5": "=  -A1%"}}}
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"C5": "=  -A1%"}}}
       ]
     },
     {
       "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=\\\"a  b\\\" & \\\" c\\\"\"",
       "steps": [
         {"enter": {"C5": "=\"a  b\" & \" c\""}, "expect": {"entryTexts": {"C5": "=\"a  b\" & \" c\""}}},
-        {"reopen": "json", "expect": {"entryTexts": {"C5": "=\"a  b\" & \" c\""}}}
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"C5": "=\"a  b\" & \" c\""}}}
       ]
     },
     {
       "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"= Positions[PV]\"",
       "steps": [
         {"enter": {"C5": "= Positions[PV]"}, "expect": {"entryTexts": {"C5": "= Positions[PV]"}}},
-        {"reopen": "json", "expect": {"entryTexts": {"C5": "= Positions[PV]"}}}
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"entryTexts": {"C5": "= Positions[PV]"}}}
       ]
     },
     {

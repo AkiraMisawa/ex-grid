@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using ExSheet.Engine;
+using ExSheet.Engine.Tests.Cases;
 using Xunit;
 
 namespace ExSheet.Engine.Tests;
@@ -11,32 +13,12 @@ namespace ExSheet.Engine.Tests;
 /// </summary>
 public class HeadlessTests
 {
-    /// <summary>A document as a Consumer would have saved it: Entries only, never a Value (ADR-0048).</summary>
-    private const string Saved = """
-        {
-          "version": 1,
-          "culture": "de-DE",
-          "cells": [
-            { "at": "A1", "text": "Nominal" },
-            { "at": "B1", "number": 1234.5, "format": "#,##0.00" },
-            { "at": "A2", "text": "Rate" },
-            { "at": "B2", "number": 0.0375, "format": "0.00%" },
-            { "at": "A3", "text": "Start" },
-            { "at": "B3", "number": 46292, "format": "dd.mm.yyyy" },
-            { "at": "A4", "text": "Interest" },
-            { "at": "B4", "formula": "=ROUND(B1*B2,2)", "format": "#,##0.00" },
-            { "at": "B5", "formula": "=B3+30", "format": "dd.mm.yyyy" },
-            { "at": "B6", "formula": "=IF(B4>40,\"high\",\"low\")" },
-            { "at": "B7", "formula": "=SUM(B1,B4)/COUNT(B1:B4)" },
-            { "at": "B8", "formula": "=XLOOKUP(\"Rate\",A1:A4,B1:B4)" },
-            { "at": "B9", "formula": "=B10+1" },
-            { "at": "B10", "formula": "=B9+1" },
-            { "at": "B11", "formula": "=1/0" },
-            { "at": "B12", "formula": "=IFERROR(B11,-1)" },
-            { "at": "B13", "formula": "=SUM(Positions[PV])" }
-          ]
-        }
-        """;
+    /// <summary>
+    /// A document as a Consumer would have saved it, Entries only and never a Value (ADR-0048): the one the shared
+    /// cases open, read from their file so that there is one copy of it.
+    /// </summary>
+    private static readonly string Saved =
+        (string)JsonNode.Parse(File.ReadAllText(Path.Combine(SheetCases.Root, "headless.json")))!["setups"]!["saved"]![0]!["reopen"]!["sheetJson"]!;
 
     [Theory] // ADR-0048 (SH-17): the same document gives the same Values whatever culture the process runs under
     [InlineData("en-US")]

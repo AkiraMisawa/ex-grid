@@ -114,11 +114,15 @@ internal static class SheetCases
                 return null;
             case JsonObject error:
                 // The two states of a computation are no Error Value typed, but a case may give one to be refused.
-                var written = (string?)error["error"];
-                var parsed = ErrorValue.Circ;
-                if (written is not ("#CIRC!" or "#GETTING_DATA") && !ErrorValues.TryParseWritten(written, out parsed) || error.Count != 1)
+                if (error.Count != 1)
                     throw new InvalidDataException($"{error.ToJsonString()} is no Error Value a case gives.");
-                return Value.FromError(written switch { "#CIRC!" => ErrorValue.Circ, "#GETTING_DATA" => ErrorValue.GettingData, _ => parsed });
+                return Value.FromError((string?)error["error"] switch
+                {
+                    "#CIRC!" => ErrorValue.Circ,
+                    "#GETTING_DATA" => ErrorValue.GettingData,
+                    var written when ErrorValues.TryParseWritten(written, out var parsed) => parsed,
+                    _ => throw new InvalidDataException($"{error.ToJsonString()} is no Error Value a case gives."),
+                });
             case JsonValue value when value.GetValueKind() == JsonValueKind.String:
                 return Value.FromText((string)value!);
             case JsonValue value when value.GetValueKind() is JsonValueKind.True or JsonValueKind.False:
@@ -513,8 +517,8 @@ internal sealed class Run(CultureInfo culture)
             case "reopen":
                 Workbook = argument switch
                 {
-                    // One Sheet saved as a Sheet Document, opened as a Workbook of that one Sheet.
-                    JsonObject { Count: 1 } one when one["sheet"] is { } name => Workbook.Open(Workbook.ToDocument((string)name!)),
+                    // One Sheet saved as a Sheet Document's JSON, read back, and opened as a Workbook of that one Sheet.
+                    JsonObject { Count: 1 } one when one["sheet"] is { } name => Workbook.Open(SheetDocument.FromJson(Workbook.ToDocument((string)name!).ToJson())),
                     // A document's JSON as the case writes it, read and opened.
                     JsonObject { Count: 1 } one when one["sheetJson"] is { } json => Workbook.Open(SheetDocument.FromJson((string)json!)),
                     JsonObject { Count: 1 } one when one["workbookJson"] is { } json => Workbook.Open(WorkbookDocument.FromJson((string)json!)),
@@ -588,7 +592,10 @@ internal sealed class Run(CultureInfo culture)
                 // A clock that moves on `step` seconds each time it is read, and counts its reads.
                 var clock = argument.AsObject();
                 var at = DateTime.ParseExact((string)clock["from"]!, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
-                var seconds = SheetCases.Number(clock["step"]!);
+                // A finite number of seconds, as the TS runner reads it: no spelled non-finite step.
+                var seconds = clock["step"] is JsonValue stepNode && stepNode.GetValueKind() == JsonValueKind.Number
+                    ? stepNode.GetValue<double>()
+                    : throw new InvalidDataException("setClock.step is a number of seconds.");
                 Workbook.NowSource = () =>
                 {
                     _clockReads++;

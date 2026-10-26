@@ -418,7 +418,10 @@ class Run {
     /** A Workbook opened from one Sheet saved as a Sheet Document, or from a document's JSON as the case writes it. */
     #reopened(argument: JsonObject): Workbook {
         const keys = Object.keys(argument);
-        if (keys.length === 1 && argument['sheet'] !== undefined) return Workbook.open(this.workbook.toSheetDocument(text(argument['sheet'], 'reopen.sheet')));
+        // One Sheet saved as a Sheet Document's JSON, read back, and opened as a Workbook of that one Sheet.
+        if (keys.length === 1 && argument['sheet'] !== undefined) {
+            return Workbook.open(SheetDocument.fromJson(this.workbook.toSheetDocument(text(argument['sheet'], 'reopen.sheet')).toJson()));
+        }
         if (keys.length === 1 && argument['sheetJson'] !== undefined) return Workbook.open(SheetDocument.fromJson(text(argument['sheetJson'], 'reopen.sheetJson')));
         if (keys.length === 1 && argument['workbookJson'] !== undefined) return Workbook.open(WorkbookDocument.fromJson(text(argument['workbookJson'], 'reopen.workbookJson')));
         throw new CaseError(`${JSON.stringify(argument)} is no way to reopen a Workbook.`);
@@ -539,10 +542,12 @@ class Run {
                 // A clock that moves on `step` seconds each time it is read, and counts its reads.
                 const clock = object(argument, 'setClock');
                 const from = text(clock['from'], 'setClock.from');
+                // Exactly yyyy-MM-ddTHH:mm:ss, as the C# runner reads it.
+                if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/u.test(from)) throw new CaseError(`'${from}' is no moment written yyyy-MM-ddTHH:mm:ss.`);
                 let at = Date.parse(`${from}Z`);
                 if (Number.isNaN(at)) throw new CaseError(`'${from}' is no moment.`);
                 const step = clock['step'];
-                if (typeof step !== 'number') throw new CaseError('setClock.step is a number of seconds.');
+                if (typeof step !== 'number' || !Number.isFinite(step)) throw new CaseError('setClock.step is a number of seconds.');
                 this.workbook.nowSource = () => {
                     this.#clockReads++;
                     at += step * 1000;
