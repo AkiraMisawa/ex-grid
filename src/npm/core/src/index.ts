@@ -24,6 +24,7 @@ export type { FilterUi } from './dom/filter-panel';
 export type { TemporalLike } from './chrome/operand-reading';
 export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';
+export { foldCase } from './query/text-casing';
 export type { CellAlign } from './paint/cell-classes';
 export type { GridDensity } from './grid-metrics';
 export type { DistinctValues, GridSourceState } from './source/grid-source';

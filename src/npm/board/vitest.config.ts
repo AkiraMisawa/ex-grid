@@ -9,6 +9,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@ex-grid/chart': source('chart'),
+            '@ex-grid/core': source('core'),
             '@ex-grid/data': source('data'),
             '@ex-grid/pivot-engine': source('pivot-engine'),
         },

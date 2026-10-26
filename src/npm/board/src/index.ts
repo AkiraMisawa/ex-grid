@@ -10,3 +10,12 @@ export type {
 } from './board-spec';
 export { boardDefaultRowHeight, boardInput, boardVersion, boardView, readBoard } from './board-spec';
 export type { GridViewSpecReading, ShapedColumn } from './grid-view-spec';
+export { readGridViewSpec } from './grid-view-spec';
+export type { ShapedRow } from './shaped-grid';
+export { dateFormat, dateTimeFormat, integerFormat, shapedColumns, shapedRows } from './shaped-grid';
+export type { BoardValue } from './link-condition';
+export { LinkCondition, narrowedPositions, narrowedSnapshot } from './link-condition';
+export { BoardOutput } from './board-output';
+export type { BindBoardOptions, BoundView, PivotCellItems, SelectedRows } from './bound-board';
+export { BoundBoard, BoundChartView, BoundGridView, BoundPivotView, bindBoard } from './bound-board';
+export { plainDateTimeOf } from './snapshot-values';

@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@ex-grid/chart": "0.0.0-dev",
+    "@ex-grid/core": "0.0.0-dev",
     "@ex-grid/data": "0.0.0-dev",
     "@ex-grid/pivot-engine": "0.0.0-dev"
   }

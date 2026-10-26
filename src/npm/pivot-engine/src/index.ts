@@ -18,8 +18,9 @@ export type {
 export { pivotAggregations, pivotItemKinds } from './layout/pivot-enums';
 export type { PivotItemKey } from './items/item-key';
 export {
-    blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, textItemKey,
+    blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, publicKeyId, textItemKey,
 } from './items/item-key';
+export { pivotItemKeyAt } from './items/snapshot-item';
 export type {
     PivotFieldPlacement, PivotFieldPlacementInput, PivotLayout, PivotLayoutInput, PivotSort, PivotValueField, PivotValueFieldInput,
 } from './layout/pivot-layout';

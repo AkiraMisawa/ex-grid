@@ -7,6 +7,7 @@
     "resolveJsonModule": true,
     "paths": {
       "@ex-grid/chart": ["../chart/src/index.ts"],
+      "@ex-grid/core": ["../core/src/index.ts"],
       "@ex-grid/data": ["../data/src/index.ts"],
       "@ex-grid/pivot-engine": ["../pivot-engine/src/index.ts"]
     }
