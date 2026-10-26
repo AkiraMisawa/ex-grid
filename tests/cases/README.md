@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `boardInput`, `chart`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -320,6 +320,48 @@ answer holds, and no other, each `"empty"`, `{"exact": text}` (the decimal, writ
 `{"error": name}` (`divideByZero`, `notANumber`, `errorAmongValues`). `texts` gives the text a figure is shown
 with where no format applies.
 
+## `formatCode`
+
+An Excel number format code in the invariant spelling, as a grid built from a source's shape reads it
+(ADR-0342, ADR-0120), under `shaped/`: run by `tests/ExGrid.Tests/Cases/FormatCodeCaseTests.cs` against
+`FormatCode` and by `src/npm/core/test/format-code.test.ts` against the Script Core's `FormatCode`. A case
+names its `code` and either `refused`, the reason whole (the phrase that completes "the format code …"), or
+`isDate` and `texts`, each a `value`, the `locale` it is written in (`invariant` or a BCP 47 tag, ADR-0370
+section 10) and the text it `is`. A value is written as a Snapshot holds it: a JSON number a double,
+`{"decimal": text}` a decimal, `{"integer": text}` a long and a bigint, `{"double": text}` a double JSON cannot
+hold (`"NaN"`, `"Infinity"`), `{"date": text}` a DateTime and a Date's ticks. The names a date code shows are
+.NET's on Linux, ICU's, which the Script Core keeps in a table for the locales the cases cover.
+
+## `viewStateJson`
+
+The View State's JSON and a Query's (ADR-0207), under `view-state/`: run by
+`tests/ExGrid.Tests/Cases/ViewStateJsonCaseTests.cs` against `GridViewStateJson`, `GridViewState` and
+`GridQuery`'s equality, every case under the run's culture, de-DE and th-TH, and by
+`src/npm/core/test/view-state-json.test.ts` against the Script Core's `GridViewStateJson`, `GridViewState` and
+`sameGridQuery`. The file names the grid's `columns`, the names a View State is read against and read back
+against. A case does one of these:
+
+- `read` (or `readQuery`): JSON text, read. Either `writes`, the text the writer writes for what was read (which
+  reads back equal to it), or `refused`: the `path` the refusal stands at (`$.columns[0].width`, as C#'s
+  `JsonException.Path` says it; `null` where it names none) and the message whole, `says`, or a part of it,
+  `saying`, where the rest is the platform's own words about text that is not JSON.
+- `write` (or `writeQuery`): a View State (or a Query) built from the case, written. Either `writes`, the text
+  byte for byte, which reads back equal to what was built and is written again as the same text; or `refused`,
+  its `kind` (`argument`, `outOfRange`, or `notSupported`: C#'s `NotSupportedException`, the Script Core's
+  plain `Error`) and optionally `saying`.
+- `of`: `{"columns", "pinnedColumnCount", "sorts"}`, the View State a grid is shown under, each column a `name`
+  and optionally a `width`; `writes` or `refused` as for `write`.
+- `construct`: a View State built from the case, which making it refuses; `refused` as for `write`.
+- `equal` (or `equalQuery`): two built View States (or Queries), and whether they `is` the same.
+
+A built View State is `{"columns", "sorts", "filter"?}`, written as the JSON form writes it: each column
+`{"column", "width", "pinned"}`, a width `"Auto"` or a number of pixels; each sort level `{"column",
+"direction"}`; the filter `{"columns", "opaque"?}`, each column's spec `{"combinator"?, "clauses"}` (And where
+it names none), each clause `{"operator", "value"?, "values"?}`, and an operand `{"type", "value", "kind"?}` with
+the value's text, which each runner reads with its own platform's parse. A built Query is `{"range", "sorts",
+"filter"?}`, `"range": "default"` being a range left at its default. `null` builds a missing part, and a number
+where a name belongs the enum value no name names.
+
 ## `calls`
 
 The general kind, for logic that is a value and its members: geometry, metrics, widths. The file names
@@ -452,6 +494,27 @@ its camelCase name and a tuple as an array; in TypeScript, its own properties an
 as an object and a bigint as its number. A property the Script Core leaves out where it is absent reads as
 `null`, as C#'s does.
 
+### The Chart Spec reader: `spec`
+
+The Chart Spec read against tables named by Data Handle ([ADR-0320](../../docs/adr/0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md);
+ADR-0370, section 3: the reader stays in C# for a .NET host, and `readChartSpec` reads it in TypeScript),
+in the `spec*.json` files of `chart/`. A spec case is one of its own, with no other operation beside it:
+
+| Key | Meaning |
+|---|---|
+| `spec` | The spec as an object, written again as JSON by the runner: C# reads the file's text of it, TypeScript writes it out, so a number's spelling (`1.0`) and an order of members a whole-number name would change are not kept |
+| `specText` | The spec's text as it is, in place of `spec`: text that is not JSON, or a spelling the reader reads |
+| `tables` | Tables by Data Handle, each an object of its columns in order, each column a list of values. The file's `tables` are every case's; a case's own take the place of the file's of the same handle |
+| `refused` | `{path, message}`: the spec is refused at that path in exactly those words. A message that quotes the platform's own JSON parser, which .NET and JavaScript word differently, is held to `{path, startsWith}`, the spec's own words before it |
+| `expect` | The checks above, on `{title, definition, surface}`: the one the spec is not is `null`, and a surface's `definition`, which throws, is `{"refused": "invalidOperation"}` |
+
+A table's value is `null`, a text, `true` or `false`, a number (C#'s `double`), or `{"decimal": "1.25"}`
+(C#'s `decimal`; TypeScript's Snapshot decimal, so it is written without a trailing zero after the point),
+`{"integer": 3}` (C#'s `long`, TypeScript's `bigint`), `{"date": "yyyy-MM-dd"}` (`DateOnly`,
+`Temporal.PlainDate`), `{"dateTime": "yyyy-MM-ddTHH:mm:ss"}` (`DateTime`, `Temporal.PlainDateTime`) or
+`{"double": "NaN" | "Infinity" | "-Infinity"}`. A column's name is never a whole number, whose place among
+an object's keys JavaScript would move.
+
 ## `arrowRead`, `arrowShape` and `arrowWrite`
 
 The Snapshot as Apache Arrow ([ADR-0065](../../docs/adr/0065-a-snapshot-travels-as-apache-arrow.md), ADR-0370
@@ -527,6 +590,32 @@ that says none; and `fromJson` is rows as JSON text, made a Snapshot. `binds: tr
 each column's `name`, `kind` and `values`, written as an `arrowRead` case writes them except that a double that is no
 number is written by its name, `"NaN"`, because .NET's NaN and JavaScript's carry different bits. A refusal is `refused`,
 its `path` and its `message` whole, or `saying`, the words before a platform's own JSON parser speaks.
+
+## `boardSpec`
+
+A Board read whole ([ADR-0340](../../docs/adr/0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md),
+ADR-0370 section 3), under `board/`: xUnit runs them against ExBoard's reader (`tests/ExBoard.Tests/Cases/BoardSpecCaseTests.cs`)
+and Vitest against `@ex-grid/board` (`src/npm/board/test/board-spec-cases.test.ts`). Both stay, because a server reads a
+Board with ExBoard.Spec as a browser reads it.
+
+`read` is a Board's text. A case read whole says what the reading holds in `expect`: its `title`, its `inputs` as a
+`boardInput` case writes a declaration, each view's `id`, `kind`, `title` and the inputs it reads (`data`), a grid's
+`columns` (`column`, `kind`, `header`, `format` or `null`) and a pivot's `rows`, `columns` and `values` fields, the
+`layout` as each row's `cells`, `[view, width]`, and `height`, and the `links` and `outputs`. A case about links or outputs
+alone says only those, in `links` or `outputs`. A refusal is `refused`, its `path` and its `message` whole, or `saying`,
+the words before a platform's own JSON parser speaks.
+
+## `boardDiff`
+
+A Board Diff (ADR-0340, Q7), under `board/`: xUnit runs them against ExBoard's `BoardDiff`
+(`tests/ExBoard.Tests/Cases/BoardDiffCaseTests.cs`) and Vitest against `@ex-grid/board`
+(`src/npm/board/test/board-diff-cases.test.ts`). The file's `boards` names the Boards its cases are laid against, each a
+Board's text.
+
+`read` is a Diff's text. A case that reads it says in `writes` the text the Diff is written as again, byte for byte. A
+case with `fitTo` lays the Diff against the Board of that name first, and says in `dropped` the sentences of what no
+longer fits, in order, and in `writes` the Diff that still does. A refusal is `refused`, its `path` and its `message`
+whole, or `saying`, the words before a platform's own message.
 
 ## ExPivot's engine, under `pivot/`
 

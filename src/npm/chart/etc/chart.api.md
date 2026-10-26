@@ -78,6 +78,16 @@ export function chartCsvLong(definition: ChartDefinition, metrics: ChartMetrics,
 export function chartCsvWide(definition: ChartDefinition, metrics: ChartMetrics, view?: ChartView): string;
 
 // @public
+export interface ChartData {
+    readonly columns: readonly string[];
+    readonly rowCount: number;
+    value(column: string, row: number): unknown;
+}
+
+// @public
+export function chartDataOf(columns: readonly (readonly [name: string, values: readonly unknown[]])[]): ChartData;
+
+// @public
 export class ChartDefinition {
     constructor(options: ChartDefinitionOptions);
     get axis(): ChartAxis;
@@ -269,6 +279,32 @@ export interface ChartSeriesOptions {
     readonly thinned?: readonly PixelSummary[];
     readonly xInterval?: SeriesInterval;
 }
+
+// @public
+export class ChartSpecReading {
+    constructor(options: ChartSpecReadingOptions);
+    get definition(): ChartDefinition;
+    get surface(): SurfaceDefinition | undefined;
+    get title(): string;
+}
+
+// @public
+export type ChartSpecReadingOptions = {
+    readonly title: string;
+    readonly definition: ChartDefinition;
+} | {
+    readonly title: string;
+    readonly surface: SurfaceDefinition;
+};
+
+// @public
+export class ChartSpecRefusedError extends Error {
+    constructor(path: string, message: string);
+    readonly path: string;
+}
+
+// @public
+export const chartSpecVersion = 1;
 
 // @public
 export function chartSummary(definition: ChartDefinition, scene: ChartScene, title?: string, description?: string): string;
@@ -653,6 +689,9 @@ export interface PriceBar {
     readonly volume?: ChartValue | null;
     readonly x: number;
 }
+
+// @public
+export function readChartSpec(text: string, tables: (handle: string) => ChartData | undefined): ChartSpecReading;
 
 // @public
 export function readingAt(definition: ChartDefinition, scene: ChartScene, metrics: ChartMetrics, position: number, panel: number, pointerY: number): ChartReading;

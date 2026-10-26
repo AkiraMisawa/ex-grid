@@ -94,6 +94,9 @@ export function isJsonArray(value: JsonValue | undefined): value is readonly Jso
 export function isJsonObject(value: JsonValue | undefined): value is JsonObject;
 
 // @public
+export function jsonDoubleText(value: number): string;
+
+// @public
 export function jsonMember(object: JsonObject, name: string): JsonValue | undefined;
 
 // @public
@@ -115,6 +118,9 @@ export type JsonObject = {
 
 // @public
 export function jsonRawText(value: JsonValue): string;
+
+// @public
+export function jsonStringText(text: string): string;
 
 // @public
 export class JsonTextError extends Error {
@@ -260,5 +266,8 @@ export function ticksText(ticks: bigint): string;
 
 // @public
 export function writeArrowSnapshot(snapshot: Snapshot): Uint8Array;
+
+// @public
+export function writeJsonText(value: JsonValue): string;
 
 ```

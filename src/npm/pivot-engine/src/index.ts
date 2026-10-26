@@ -25,6 +25,7 @@ export {
     blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, publicKeyId as pivotItemKeyId,
     textItemKey,
 } from './items/item-key';
+export { pivotItemKeyAt } from './items/snapshot-item';
 export type {
     PivotFieldPlacement, PivotFieldPlacementInput, PivotLayout, PivotLayoutInput, PivotSort, PivotValueField, PivotValueFieldInput,
 } from './layout/pivot-layout';

@@ -7,6 +7,7 @@
 import { ChangeBatch } from '@ex-grid/data';
 import { Snapshot } from '@ex-grid/data';
 import { SnapshotChange } from '@ex-grid/data';
+import type { SnapshotColumn } from '@ex-grid/data';
 import { SnapshotDecimal } from '@ex-grid/data';
 
 // @public
@@ -443,6 +444,9 @@ export interface PivotItemKey {
 
 // @public
 export function pivotItemKey(kind: PivotItemKind, value?: string): PivotItemKey;
+
+// @public
+export function pivotItemKeyAt(column: SnapshotColumn, row: number): PivotItemKey;
 
 // @public
 export function pivotItemKeyId(key: PivotItemKey): string;
