@@ -118,6 +118,12 @@ export function decode(node: Json | undefined): Value | undefined {
     if (typeof node === 'string') return Value.fromText(node);
     if (typeof node === 'boolean') return Value.fromBoolean(node);
     if (typeof node === 'number') return Value.fromNumber(node);
+    if (isObject(node) && Object.keys(node).length === 2 && node['refused'] === true) {
+        // A refusal, as a Consumer holds one read from a refused cell.
+        if (node['error'] === '#VALUE!') return Value.refusal;
+        if (node['error'] === '#NAME?') return Value.refusedName;
+        throw new CaseError(`${JSON.stringify(node)} is no refusal: a refusal is #VALUE! or #NAME?.`);
+    }
     if (isObject(node)) {
         // The two states of a computation are no Error Value typed, but a case may give one to be refused.
         const written = node['error'];
@@ -272,7 +278,7 @@ function documentJson(document: SheetDocument): JsonObject {
         cellAddresses: document.cells.map(c => c.address.toString()),
         columns: document.columns.map(axisFormatJson),
         rows: document.rows.map(axisFormatJson),
-        columnWidths: document.columnWidths.map(w => ({ first: w.first, last: w.last, width: w.width, kind: w.kind })),
+        columnWidths: document.columnWidths.map(w => ({ first: w.first, last: w.last, width: w.width, kind: w.kind, isCustom: w.isCustom })),
     };
 }
 
@@ -339,7 +345,7 @@ function cultureOf(name: string): Culture {
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
     'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat', 'show',
-    'doAll', 'readTable',
+    'doAll', 'readTable', 'setColumnWidth', 'setAutomaticColumnWidth', 'rename', 'retype',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
@@ -565,6 +571,29 @@ class Run {
                     outcome.change = sheet.setAlignment(CellRange.parse(at), text(alignment, at) as HorizontalAlignment);
                 }
                 break;
+            case 'setColumnWidth': {
+                // The Sheet's own forms, outside any step.
+                const width = object(argument, 'setColumnWidth')['width'];
+                if (width === undefined) throw new CaseError('setColumnWidth names no width: write null for the default.');
+                outcome.change = sheet.setColumnWidth(CellRange.parse(text(object(argument, 'setColumnWidth')['columns'], 'columns')),
+                    width === null ? undefined : caseNumber(width, 'width'));
+                break;
+            }
+            case 'setAutomaticColumnWidth':
+                outcome.change = sheet.setAutomaticColumnWidth(CellRange.parse(text(object(argument, 'setAutomaticColumnWidth')['columns'], 'columns')),
+                    caseNumber(object(argument, 'setAutomaticColumnWidth')['width'], 'width'));
+                break;
+            case 'rename':
+                // The Sheet's own rename, outside any step.
+                outcome.change = sheet.rename(text(argument, 'rename'));
+                break;
+            case 'retype':
+                // Each cell's Entry text, as the Cell Editor opens it, typed back into the cell.
+                for (const cell of list(argument, 'retype')) {
+                    const address = CellAddress.parse(text(cell, 'retype'));
+                    outcome.change = sheet.enter(address, sheet.getEntryText(address));
+                }
+                break;
             case 'setCellFormat': {
                 // The Sheet's own form, outside any step.
                 const format = object(argument, 'setCellFormat');
@@ -601,9 +630,16 @@ class Run {
                 outcome.change = this.workbook.setToday({ year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) }).for(sheet);
                 break;
             }
-            case 'setSeed':
-                outcome.change = this.workbook.setSeed(argument === null ? undefined : BigInt(typeof argument === 'number' ? argument : text(argument, 'setSeed'))).for(sheet);
+            case 'setSeed': {
+                // A seed, or {"seed", "changes"}: the seed and the count of changes together.
+                const seedOf = (node: Json | undefined): bigint | undefined =>
+                    node === null || node === undefined ? undefined : BigInt(typeof node === 'number' ? node : text(node, 'setSeed'));
+                if (isObject(argument) && argument['seed'] === undefined) throw new CaseError('setSeed names no seed: write null for none.');
+                outcome.change = (isObject(argument)
+                    ? this.workbook.setSeed(seedOf(argument['seed']), integer(argument['changes'], 'changes'))
+                    : this.workbook.setSeed(seedOf(argument))).for(sheet);
                 break;
+            }
             case 'getDisplay': {
                 // A display asked for, so that a width refused is a refusal the step can expect.
                 const asked = object(argument, 'getDisplay');
@@ -831,6 +867,10 @@ class Run {
             case 'widthOnEntry':
                 actual = perCell(a => orNull(sheet.getWidthOnEntry(a)));
                 break;
+            case 'entryAddressesIn':
+                // The cells of each range that hold an Entry, in row order and then column order.
+                actual = perRange(r => addresses(sheet.entryAddressesIn(r).toSorted((a, b) => a.compareTo(b))));
+                break;
             case 'spilledFrom':
                 actual = perCell(a => orNull(sheet.spilledFrom(a)?.toString()));
                 break;
@@ -839,7 +879,7 @@ class Run {
                     const index = CellAddress.tryParseColumn(column);
                     if (index === undefined) throw new CaseError(`'${column}' is no column.`);
                     const width = sheet.getColumnWidth(index);
-                    return [column, width === undefined ? null : { width: width.width, kind: width.kind }];
+                    return [column, width === undefined ? null : { width: width.width, kind: width.kind, isCustom: width.isCustom, isSetByUser: width.isSetByUser }];
                 }));
                 break;
             case 'change':
@@ -889,6 +929,16 @@ class Run {
                 break;
             case 'valueAddresses':
                 actual = addresses(sheet.valueAddresses);
+                break;
+            case 'alike':
+                // Groups of cells whose Values are one another's, a refusal alike only to a refusal.
+                actual = list(expected, 'alike').map(group => {
+                    const values = list(group, 'a group of alike cells').map(c => JSON.stringify(encode(sheet.getValue(CellAddress.parse(text(c, 'a cell'))))));
+                    return new Set(values).size === 1 ? group : `unlike: ${values.join(', ')}`;
+                });
+                break;
+            case 'recalculationPasses':
+                actual = sheet.recalculationPasses;
                 break;
             case 'sheets':
                 actual = this.workbook.sheets.map(s => s.name);
