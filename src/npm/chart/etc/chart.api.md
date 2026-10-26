@@ -4,7 +4,16 @@
 
 ```ts
 
+import type { CellPosition } from '@ex-grid/core';
+import type { GridColumn } from '@ex-grid/core';
+import type { GridCommand } from '@ex-grid/core';
+import type { GridContextMenuContext } from '@ex-grid/core';
 import { GridDensity } from '@ex-grid/core';
+import type { GridHeaderGroup } from '@ex-grid/core';
+import type { GridSource } from '@ex-grid/core';
+import type { RowKey } from '@ex-grid/core';
+import type { RowKeyOf } from '@ex-grid/core';
+import type { SelectionRange } from '@ex-grid/core';
 
 // @public
 export interface AppearanceKeys {
@@ -165,6 +174,9 @@ export interface ChartOptions {
 }
 
 // @public
+export type ChartOrientation = 'seriesInColumns' | 'seriesInRows';
+
+// @public
 export interface ChartPoint {
     readonly name?: string;
     readonly row?: unknown;
@@ -283,6 +295,12 @@ export interface ChartTable {
 export function chartTable(definition: ChartDefinition, metrics: ChartMetrics, view?: ChartView): ChartTable;
 
 // @public
+export interface ChartTarget {
+    readonly chart: GridChart;
+    readonly name: string;
+}
+
+// @public
 export type ChartValue = number | bigint;
 
 // @public
@@ -353,6 +371,15 @@ export interface ColourKey {
     readonly ticks: readonly KeyTick[];
     readonly title: string;
     readonly to: number;
+}
+
+// @public
+export interface ColumnSeries {
+    readonly column: string;
+    readonly id: string;
+    readonly panel: string;
+    readonly rows: readonly KeyedPosition[];
+    readonly type: 'column';
 }
 
 // @public
@@ -444,6 +471,86 @@ export interface FittedCurveOptions {
 export function fitTheilSen(xs: readonly number[], ys: readonly number[], space?: FitSpace): FittedCurve;
 
 // @public
+export interface GridCell {
+    readonly column: string;
+    readonly rowKey: RowKey;
+}
+
+// @public
+export interface GridChart {
+    readonly axisColumn?: string;
+    readonly orientation: ChartOrientation;
+    readonly series: readonly GridChartSeries[];
+}
+
+// @public
+export class GridChartBridge<Row> {
+    constructor(options: GridChartBridgeOptions<Row>);
+    cellOf(chart: GridChart, click: ChartPointClick): GridCell | undefined;
+    readonly commands: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
+    get declarations(): GridChartDeclarations<Row>;
+    draw(chart: GridChart): ChartDefinition;
+    showCellInGrid(cell: GridCell): Promise<boolean>;
+    showInGrid(chart: GridChart, click: ChartPointClick): Promise<boolean>;
+}
+
+// @public
+export interface GridChartBridgeOptions<Row> {
+    readonly declarations: GridChartDeclarations<Row>;
+    readonly grid: () => GridChartGrid<Row> | undefined;
+    readonly onAdded?: (target: ChartTarget, chart: GridChart) => void;
+    readonly onChart?: (chart: GridChart) => void;
+    readonly onRefused?: (why: string) => void;
+    readonly placeSelection?: (placement: GridSelectionPlacement) => boolean | Promise<boolean>;
+    readonly targets?: () => readonly ChartTarget[];
+}
+
+// @public
+export const gridChartCommandIds: Readonly<{
+    readonly chart: 'exchart.chart';
+    readonly inColumns: 'exchart.chart.columns';
+    readonly inRows: 'exchart.chart.rows';
+    readonly addPrefix: "exchart.add:";
+}>;
+
+// @public
+export function gridChartCommandLabel(id: string): string | undefined;
+
+// @public
+export interface GridChartDeclarations<Row> {
+    readonly axisColumns?: ReadonlySet<string> | readonly string[];
+    readonly fromZeroOf?: (column: string) => boolean | undefined;
+    readonly kindOf?: (column: string) => SeriesKind | undefined;
+    readonly orientation?: ChartOrientation;
+    readonly positionOf?: (column: string) => number | undefined;
+    readonly positionScale?: AxisScale;
+    readonly positionTitle?: string;
+    readonly rowKey: RowKeyOf<Row>;
+    readonly rowName?: (row: Row) => string;
+    readonly rowOf: (key: RowKey) => Row | undefined;
+}
+
+// @public
+export interface GridChartGrid<Row> {
+    readonly columns: readonly GridColumn<Row>[];
+    readonly headerGroups?: readonly GridHeaderGroup[];
+    readonly source: GridSource<Row>;
+}
+
+// @public
+export function gridChartRowKeys(chart: GridChart): ReadonlySet<RowKey>;
+
+// @public
+export type GridChartSeries = ColumnSeries | RowSeries;
+
+// @public
+export interface GridSelectionPlacement {
+    readonly focus: CellPosition;
+    readonly range: SelectionRange;
+    readonly rowSequenceVersion: number;
+}
+
+// @public
 export type HorizontalTick = readonly [position: number, x: number, label: string | null];
 
 // @public
@@ -515,6 +622,12 @@ export type IntervalStyle = 'whiskers' | 'band';
 
 // @public
 export const japaneseChartWords: ChartLabel;
+
+// @public
+export interface KeyedPosition {
+    readonly key: RowKey;
+    readonly x: number;
+}
 
 // @public
 export interface KeyTick {
@@ -672,6 +785,17 @@ export function readingOfEdge(definition: ChartDefinition, scene: ChartScene, ed
 
 // @public
 export function readingOfMark(definition: ChartDefinition, scene: ChartScene, mark: number): ChartReading;
+
+// @public
+export interface RowSeries {
+    readonly columns: readonly string[];
+    readonly group: string;
+    readonly id: string;
+    readonly name: string;
+    readonly panel: string;
+    readonly rowKey: RowKey;
+    readonly type: 'row';
+}
 
 // @public
 export interface SceneOptions {

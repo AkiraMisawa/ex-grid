@@ -4,7 +4,8 @@
  * what its tooltip, its summary and its files say, the fits and interpolations a Consumer hands in, and a 3D
  * surface as the mesh its entry draws and the 2D charts its slices are; and its Script Core, `createChart`
  * and `createSurface`, which draw a chart as SVG into an element and hear the pointer, free of any UI
- * framework. A Framework Adapter mounts it; the C# engine and this package are held to one another by the
+ * framework; and the selection bridge, `GridChartBridge`, which charts a grid's selection from its context
+ * menu and keeps the rows it was made from (ADR-0258). A Framework Adapter mounts it; the C# engine and this package are held to one another by the
  * shared cases under `tests/cases/chart/`.
  *
  * @packageDocumentation
@@ -55,3 +56,10 @@ export type { SurfaceHandle } from './dom/create-surface';
 export type { SurfaceOptions } from './dom/surface-element';
 export { chartWordIdList, chartWordIds, japaneseChartWords } from './dom/chart-words';
 export type { ChartLabel } from './dom/chart-words';
+export { GridChartBridge, gridChartCommandIds, gridChartCommandLabel } from './bridge/grid-chart-bridge';
+export type { GridChartBridgeOptions, GridChartGrid, GridSelectionPlacement } from './bridge/grid-chart-bridge';
+export { gridChartRowKeys } from './bridge/grid-chart';
+export type {
+    ChartOrientation, ChartTarget, ColumnSeries, GridCell, GridChart, GridChartSeries, KeyedPosition, RowSeries,
+} from './bridge/grid-chart';
+export type { GridChartDeclarations } from './bridge/grid-chart-declarations';
