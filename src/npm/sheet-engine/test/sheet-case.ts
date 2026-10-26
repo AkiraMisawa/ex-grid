@@ -20,7 +20,7 @@ import { SheetDocumentError, type SheetDocumentAxisFormat } from '../src/sheet-d
 import type { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
 import { parseWrittenError, Value } from '../src/value';
-import { Workbook, type WorkbookStep } from '../src/workbook';
+import { Workbook, type WorkbookChange, type WorkbookStep } from '../src/workbook';
 import { WorkbookDocument } from '../src/workbook-document';
 
 /** Where the shared cases of the engine live. */
@@ -312,10 +312,24 @@ interface Outcome {
     step: WorkbookStep | undefined;
     /** How many times the case's clock had been read before the step. */
     clockReadsBefore: number;
+    /** What a step, an undo or a redo changed across the Workbook. */
+    workbookChange: WorkbookChange | undefined;
 }
 
 function addresses(of: Iterable<CellAddress>): string[] {
     return [...of].map(a => a.toString());
+}
+
+/** A Sheet's change as a case reads one. */
+function changeJson(change: SheetChange): JsonObject {
+    return {
+        valueChanges: addresses(change.valueChanges),
+        recalculated: addresses(change.recalculated),
+        recalculatedCount: change.recalculated.length,
+        rows: [...change.rows],
+        columns: [...change.columns],
+        reformatsUnnamedRows: change.reformatsUnnamedRows,
+    };
 }
 
 /** A case the runner cannot read: the case's defect, never a refusal it can expect. */
@@ -370,7 +384,7 @@ class Run {
             sheet = found;
         }
         const expect = step['expect'] === undefined ? undefined : object(step['expect'], 'expect');
-        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined, clockReadsBefore: this.#clockReads };
+        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined, clockReadsBefore: this.#clockReads, workbookChange: undefined };
         try {
             this.#act(verb, argument, sheet, outcome);
         } catch (e) { // oxlint-disable-line ex-grid/no-catch -- a refusal a case expects is read, not rethrown
@@ -417,6 +431,7 @@ class Run {
                 this.#done.push(step);
                 outcome.step = step;
                 outcome.sheet = step.sheet;
+                outcome.workbookChange = step.change;
                 outcome.change = step.change.changesSheets && !this.workbook.sheets.includes(step.sheet) ? undefined : step.change.for(step.sheet);
                 break;
             }
@@ -429,6 +444,7 @@ class Run {
                 const done = this.#stepOf(argument);
                 outcome.step = done;
                 const change = verb === 'undo' ? done.undo() : done.redo();
+                outcome.workbookChange = change;
                 outcome.change = this.workbook.sheets.includes(done.sheet) ? change.for(done.sheet) : undefined;
                 break;
             }
@@ -689,16 +705,14 @@ class Run {
                     return [column, width === undefined ? null : { width: width.width, kind: width.kind }];
                 }));
                 break;
-            case 'change': {
-                const change = outcome.change;
-                actual = change === undefined ? null : {
-                    valueChanges: addresses(change.valueChanges),
-                    recalculated: addresses(change.recalculated),
-                    recalculatedCount: change.recalculated.length,
-                    rows: [...change.rows],
-                    columns: [...change.columns],
-                    reformatsUnnamedRows: change.reformatsUnnamedRows,
-                };
+            case 'change':
+                actual = outcome.change === undefined ? null : changeJson(outcome.change);
+                break;
+            case 'changes': {
+                // What a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name.
+                const changes = outcome.workbookChange;
+                if (changes === undefined) throw new CaseError(`${where}: only a step, an undo or a redo reads its changes.`);
+                actual = Object.fromEntries(changes.sheets.map(sheet => [sheet.name, changeJson(changes.for(sheet))]));
                 break;
             }
             case 'refusal':

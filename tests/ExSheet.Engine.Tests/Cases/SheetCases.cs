@@ -405,7 +405,20 @@ internal sealed class Run(CultureInfo culture)
         public WorkbookStep? Step { get; set; }
         /// <summary>How many times the case's clock had been read before the step.</summary>
         public int ClockReadsBefore { get; init; }
+        /// <summary>What a step, an undo or a redo changed across the Workbook.</summary>
+        public WorkbookChange? WorkbookChange { get; set; }
     }
+
+    /// <summary>A Sheet's change as a case reads one.</summary>
+    private static JsonObject ChangeJson(SheetChange change) => new()
+    {
+        ["valueChanges"] = SheetCases.Addresses(change.ValueChanges),
+        ["recalculated"] = SheetCases.Addresses(change.Recalculated),
+        ["recalculatedCount"] = change.Recalculated.Count,
+        ["rows"] = SheetCases.Numbers(change.Rows),
+        ["columns"] = SheetCases.Numbers(change.Columns),
+        ["reformatsUnnamedRows"] = change.ReformatsUnnamedRows,
+    };
 
     /// <summary>Whether the innermost frame outside .NET's own libraries is this runner's rather than the engine's.</summary>
     private static bool ThrownByTheRunner(Exception e)
@@ -466,6 +479,7 @@ internal sealed class Run(CultureInfo culture)
                 _done.Add(step);
                 outcome.Step = step;
                 outcome.Sheet = step.Sheet;
+                outcome.WorkbookChange = step.Change;
                 outcome.Change = step.Change.ChangesSheets && !Workbook.Sheets.Contains(step.Sheet) ? null : step.Change.For(step.Sheet);
                 break;
             case "check":
@@ -477,6 +491,7 @@ internal sealed class Run(CultureInfo culture)
                 var done = Done(argument);
                 outcome.Step = done;
                 var change = done.Undo();
+                outcome.WorkbookChange = change;
                 outcome.Change = Workbook.Sheets.Contains(done.Sheet) ? change.For(done.Sheet) : null;
                 break;
             }
@@ -485,6 +500,7 @@ internal sealed class Run(CultureInfo culture)
                 var done = Done(argument);
                 outcome.Step = done;
                 var change = done.Redo();
+                outcome.WorkbookChange = change;
                 outcome.Change = Workbook.Sheets.Contains(done.Sheet) ? change.For(done.Sheet) : null;
                 break;
             }
@@ -764,18 +780,17 @@ internal sealed class Run(CultureInfo culture)
                 break;
             }
             case "change":
-                actual = outcome.Change is { } change
-                    ? new JsonObject
-                    {
-                        ["valueChanges"] = SheetCases.Addresses(change.ValueChanges),
-                        ["recalculated"] = SheetCases.Addresses(change.Recalculated),
-                        ["recalculatedCount"] = change.Recalculated.Count,
-                        ["rows"] = SheetCases.Numbers(change.Rows),
-                        ["columns"] = SheetCases.Numbers(change.Columns),
-                        ["reformatsUnnamedRows"] = change.ReformatsUnnamedRows,
-                    }
-                    : null;
+                actual = outcome.Change is { } change ? ChangeJson(change) : null;
                 break;
+            case "changes":
+            {
+                // What a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name.
+                var changes = outcome.WorkbookChange ?? throw new InvalidDataException($"{where}: only a step, an undo or a redo reads its changes.");
+                var each = new JsonObject();
+                foreach (var reached in changes.Sheets) each[reached.Name] = ChangeJson(changes.For(reached));
+                actual = each;
+                break;
+            }
             case "refusal":
                 if (!outcome.Checked) throw new InvalidDataException($"{where}: only a check reads a refusal.");
                 actual = outcome.Refusal is { } refusal

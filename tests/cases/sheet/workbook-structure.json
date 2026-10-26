@@ -1,0 +1,55 @@
+{
+  "about": "Rows and columns inserted or deleted on one Sheet reach the References of every Sheet of the Workbook, and a copy between Sheets shifts as Excel's does (ADR-0331, ADR-0046, ADR-0047, ADR-0048). Transcribed from ExSheet.Engine.Tests' WorkbookStructureTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0331, ADR-0046: a row inserted on one Sheet keeps another Sheet's References naming the same cells",
+      "sheets": ["Rates", "Deposit"],
+      "steps": [
+        {"enterAll": {"A2": "4", "A3": "6"}, "on": "Rates"},
+        {"enterAll": {"A1": "=Rates!A2*Rates!$A$3", "A2": "=SUM(Rates!A1:A3)", "A3": "=Rates!A1+A1"}, "on": "Deposit"},
+        {"do": {"insertRows": [1]}, "on": "Rates", "expect": {"changes": {"Deposit": {"recalculated": ["A1", "A2", "A3"]}}}},
+        {"read": true, "on": "Deposit", "expect": {"formulas": {"A1": "=Rates!A3*Rates!$A$4", "A2": "=SUM(Rates!A1:A4)", "A3": "=Rates!A1+A1"}, "values": {"A1": 24, "A2": 10}}},
+        {"do": {"enter": {"A3": "5"}}, "on": "Rates", "note": "The References rewritten are followed: a change at the cell's new place reaches them."},
+        {"read": true, "on": "Deposit", "expect": {"values": {"A1": 30, "A2": 11}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0047: a row deleted on one Sheet makes another Sheet's Reference to it #REF!, and undoing it gives the Formula back exactly",
+      "sheets": ["Rates", "Deposit"],
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "4", "A3": "6"}, "on": "Rates"},
+        {"enterAll": {"A1": "=Rates!A2*2", "A2": "=SUM(Rates!A1:A3)", "A3": "=Rates!A3"}, "on": "Deposit"},
+        {"do": {"deleteRows": [1]}, "on": "Rates"},
+        {"read": true, "on": "Deposit", "expect": {"formulas": {"A1": "=Rates!#REF!*2", "A2": "=SUM(Rates!A1:A2)", "A3": "=Rates!A2"}, "values": {"A1": {"error": "#REF!"}, "A2": 7}}},
+        {"undo": "last"},
+        {"read": true, "on": "Deposit", "expect": {"formulas": {"A1": "=Rates!A2*2", "A2": "=SUM(Rates!A1:A3)", "A3": "=Rates!A3"}, "values": {"A1": 8, "A2": 11}}},
+        {"do": {"enter": {"A2": "5"}}, "on": "Rates"},
+        {"read": true, "on": "Deposit", "expect": {"values": {"A1": 10}}},
+        {"redo": 0},
+        {"read": true, "on": "Deposit", "expect": {"formulas": {"A1": "=Rates!#REF!*2"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0046: a column inserted on one Sheet moves another Sheet's References; a whole row keeps its text and reads again",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"enterAll": {"A1": "2", "B1": "3"}, "on": "Sheet1"},
+        {"enterAll": {"A1": "=Sheet1!B1", "A2": "=SUM(Sheet1!1:1)"}, "on": "Sheet2"},
+        {"do": {"insertColumns": [1]}, "on": "Sheet1"},
+        {"do": {"enter": {"B1": "10"}}, "on": "Sheet1"},
+        {"read": true, "on": "Sheet2", "expect": {"formulas": {"A1": "=Sheet1!C1", "A2": "=SUM(Sheet1!1:1)"}, "values": {"A1": 3, "A2": 15}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: a block copied on one Sheet and pasted on another shifts its relative References, as Excel's copy does",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"B1": "=A1+Sheet2!A1+$A$1"}}, "on": "Sheet1"},
+        {"copy": {"range": "B1", "as": "block"}, "on": "Sheet1"},
+        {"do": {"paste": {"copy": "block", "at": "C3"}}, "on": "Sheet2", "expect": {"formulas": {"C3": "=B3+Sheet2!B3+$A$1"}}}
+      ]
+    }
+  ]
+}
