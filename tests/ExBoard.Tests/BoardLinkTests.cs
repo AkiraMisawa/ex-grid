@@ -63,44 +63,6 @@ public sealed class BoardLinkTests : BunitContext
     private static IEnumerable<string> Desks(BoundGridView grid) =>
         grid.Grid!.Source.Window.Select(r => (string)grid.Grid!.Snapshot.ValueAt(r.At, grid.Grid!.Snapshot["desk"])!);
 
-    [Fact] // ADR-0340 Q5: a link names a grid, the views it narrows and the columns it compares
-    public void A_link_is_read_from_its_grid_to_its_views_on_its_columns()
-    {
-        var board = BoardSpec.Read(Board("""{"from": "blotter", "to": ["byDesk", "curve", "limits"], "on": ["desk"]}"""));
-
-        var link = Assert.Single(board.Links);
-        Assert.Equal("blotter", link.From);
-        Assert.Equal(["byDesk", "curve", "limits"], link.To);
-        Assert.Equal(["desk"], link.On);
-        Assert.Empty(BoardSpec.Read(Board("").Replace(""", "links": []""", "", StringComparison.Ordinal)).Links);
-    }
-
-    public static TheoryData<string, string, string> Refusals => new()
-    {
-        { """{"from": "curve", "to": ["blotter"], "on": ["desk"]}""", "links[0].from", "The link starts at view 'curve', a chart; a link starts at a grid, whose selected rows narrow, or a pivot, whose selected cells do." },
-        { """{"from": "byDesk", "to": ["blotter"], "on": ["month"]}""", "links[0].on[0]", "The link compares field 'month', which pivot 'byDesk' does not place in its rows or columns; a pivot's cell names the items of its rows and columns." },
-        { """{"from": "byDesk", "to": ["blotter"], "on": ["pnl"]}""", "links[0].on[0]", "The link compares field 'pnl', which pivot 'byDesk' does not place in its rows or columns; a pivot's cell names the items of its rows and columns." },
-        { """{"from": "byDesk", "to": ["quotes"], "on": ["desk"]}""", "links[0].on[0]", "The link compares column 'desk', a text in input 'trades' and a integer in input 'quotes'; a value is compared only with one of its kind." },
-        { """{"from": "book", "to": ["blotter"], "on": ["desk"]}""", "links[0].from", "The link starts at view 'book', which the Board does not have." },
-        { """{"from": "blotter", "to": ["byBook"], "on": ["desk"]}""", "links[0].to[0]", "The link narrows view 'byBook', which the Board does not have." },
-        { """{"from": "blotter", "to": ["blotter"], "on": ["desk"]}""", "links[0].to[0]", "The link narrows its own view 'blotter'; a view's selection narrows other views." },
-        { """{"from": "blotter", "to": ["limits"], "on": ["month"]}""", "links[0].on[0]", "The link compares column 'month', which input 'limits' of view 'limits' does not declare." },
-        { """{"from": "blotter", "to": ["other"], "on": ["book"]}""", "links[0].on[0]", "The link compares column 'book', which input 'trades' of view 'blotter' does not declare." },
-        { """{"from": "blotter", "to": ["quotes"], "on": ["desk"]}""", "links[0].on[0]", "The link compares column 'desk', a text in input 'trades' and a integer in input 'quotes'; a value is compared only with one of its kind." },
-        { """{"from": "blotter", "to": ["other"], "on": ["desk", "desk"]}""", "links[0].on[1]", "'desk' is named twice." },
-        { """{"from": "blotter", "to": [], "on": ["desk"]}""", "links[0].to", "A link names the views it narrows, in 'to'." },
-        { """{"from": "blotter", "to": ["other"], "on": ["desk"], "when": "click"}""", "links[0].when", "A link has no member 'when'." },
-        { """{"from": "blotter", "to": ["other"], "on": ["desk"]}, {"from": "other", "to": ["limits", "blotter"], "on": ["desk"]}""", "links[1].to", "The link narrows view 'blotter', which already narrows view 'other'; links run one way." },
-    };
-
-    [Theory, MemberData(nameof(Refusals))] // ADR-0340: a link that cannot narrow is refused by path
-    public void A_link_that_cannot_narrow_is_refused_by_path(string links, string path, string message)
-    {
-        var refused = Assert.Throws<BoardRefusedException>(() => BoardSpec.Read(Board(links)));
-        Assert.Equal(path, refused.Path);
-        Assert.Equal(message, refused.Message);
-    }
-
     [Fact] // ADR-0340 Q5: the condition is the selected rows' tuples, never a cross product of lists
     public void A_condition_lets_through_only_the_tuples_selected()
     {

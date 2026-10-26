@@ -18,6 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The shared Board cases (ADR-0370 section 3): written once as data, run here against ExBoard and by
+         Vitest against @ex-grid/board. tests/cases/README.md says what a file holds. -->
+    <None Include="..\cases\board\**\*.json" Link="cases\board\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\ExBoard\ExBoard.csproj" />
     <Using Include="Xunit" />
   </ItemGroup>

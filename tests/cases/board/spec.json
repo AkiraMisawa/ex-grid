@@ -1,0 +1,837 @@
+{
+  "about": "A Board's JSON read (ADR-0340, ADR-0341, ADR-0342): its inputs, views, layout, links and outputs, and each refusal with its path and its words. Transcribed from ExBoard.Tests' BoardSpecTests and the reading facts of BoardLinkTests and BoardOutputTests.",
+  "kind": "boardSpec",
+  "cases": [
+    {
+      "name": "ADR-0340: a Board lays out views of the family in rows, over its declared inputs",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"], \"widths\": [2, 1], \"height\": 360}, {\"views\": [\"curve\"]}]}",
+      "expect": {
+        "title": "Desk P&L",
+        "inputs": [
+          {
+            "name": "trades",
+            "columns": [
+              {
+                "name": "desk",
+                "type": "text"
+              },
+              {
+                "name": "month",
+                "type": "text"
+              },
+              {
+                "name": "pnl",
+                "type": "decimal"
+              },
+              {
+                "name": "day",
+                "type": "date"
+              }
+            ]
+          }
+        ],
+        "views": [
+          {
+            "id": "blotter",
+            "kind": "grid",
+            "title": "Trades",
+            "data": [
+              "trades"
+            ],
+            "columns": [
+              {
+                "column": "desk",
+                "kind": "text",
+                "header": "desk",
+                "format": null
+              },
+              {
+                "column": "pnl",
+                "kind": "decimal",
+                "header": "pnl",
+                "format": "#,##0"
+              }
+            ]
+          },
+          {
+            "id": "byDesk",
+            "kind": "pivot",
+            "title": "",
+            "data": [
+              "trades"
+            ],
+            "rows": [
+              "desk"
+            ],
+            "columns": [],
+            "values": [
+              "pnl"
+            ]
+          },
+          {
+            "id": "curve",
+            "kind": "chart",
+            "title": "",
+            "data": [
+              "trades"
+            ]
+          }
+        ],
+        "layout": [
+          {
+            "cells": [
+              [
+                "blotter",
+                2
+              ],
+              [
+                "byDesk",
+                1
+              ]
+            ],
+            "height": 360
+          },
+          {
+            "cells": [
+              [
+                "curve",
+                1
+              ]
+            ],
+            "height": 320
+          }
+        ],
+        "links": [],
+        "outputs": []
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at 'version' says why in one sentence: A Board says its version; this reader reads version 1.",
+      "read": "{\"title\": \"x\"}",
+      "refused": {
+        "path": "version",
+        "message": "A Board says its version; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at 'version' says why in one sentence: The Board is version 2, and this reader reads version 1 only.",
+      "read": "{\"version\": 2}",
+      "refused": {
+        "path": "version",
+        "message": "The Board is version 2, and this reader reads version 1 only."
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at 'version' says why in one sentence: The Board is version 1.0, and this reader reads version 1 only.",
+      "read": "{\"version\": 1.0}",
+      "refused": {
+        "path": "version",
+        "message": "The Board is version 1.0, and this reader reads version 1 only."
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at 'theme' says why in one sentence: The Board has no member 'theme'.",
+      "read": "{\"version\": 1, \"theme\": \"dark\"}",
+      "refused": {
+        "path": "theme",
+        "message": "The Board has no member 'theme'."
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at 'version' says why in one sentence: The Board is version 2, and this reader reads version 1 only. (2)",
+      "read": "{\"version\": 2, \"links\": []}",
+      "refused": {
+        "path": "version",
+        "message": "The Board is version 2, and this reader reads version 1 only."
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at '' says why in one sentence: A Board is a JSON object.",
+      "read": "[]",
+      "refused": {
+        "path": "",
+        "message": "A Board is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at 'inputs' says why in one sentence: A Board declares its inputs, by name, in 'inputs'.",
+      "read": "{\"version\": 1}",
+      "refused": {
+        "path": "inputs",
+        "message": "A Board declares its inputs, by name, in 'inputs'."
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at 'inputs' says why in one sentence: A Board declares at least one input.",
+      "read": "{\"version\": 1, \"inputs\": {}}",
+      "refused": {
+        "path": "inputs",
+        "message": "A Board declares at least one input."
+      }
+    },
+    {
+      "name": "ADR-0340: a Board refused at 'title' says why in one sentence: The Board's title is text.",
+      "read": "{\"version\": 1, \"title\": 3, \"inputs\": {}}",
+      "refused": {
+        "path": "title",
+        "message": "The Board's title is text."
+      }
+    },
+    {
+      "name": "ADR-0340: text that is not JSON is refused as a whole",
+      "read": "{\"version\": 1,",
+      "refused": {
+        "path": "",
+        "saying": "The Board is not JSON: "
+      }
+    },
+    {
+      "name": "ADR-0340: a member written twice is refused rather than settled by whichever came last",
+      "read": "{\"version\": 1, \"version\": 1}",
+      "refused": {
+        "path": "",
+        "saying": "The Board is not JSON: "
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].grid.columns[1].format': Column 'pnl' is a decimal and needs a format",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\"]}]}",
+      "refused": {
+        "path": "views[0].grid.columns[1].format",
+        "saying": "Column 'pnl' is a decimal and needs a format"
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].grid.data': The grid shows input 'orders', which the Board does not declare.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"orders\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"]}]}",
+      "refused": {
+        "path": "views[0].grid.data",
+        "message": "The grid shows input 'orders', which the Board does not declare."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot.layout': The pivot places field 'book', which input 'trades' does not declare.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"book\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot.layout",
+        "message": "The pivot places field 'book', which input 'trades' does not declare."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot.layout': The pivot's layout cannot be read: A Pivot Layout names its version.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot.layout",
+        "message": "The pivot's layout cannot be read: A Pivot Layout names its version."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot.layout': The pivot's layout cannot be read: A Pivot Layout of version 2 cannot be read; this reader reads version 1.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 2, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot.layout",
+        "message": "The pivot's layout cannot be read: A Pivot Layout of version 2 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot.layout': The pivot's layout cannot be read: ",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"total\"}]}}}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot.layout",
+        "saying": "The pivot's layout cannot be read: "
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot.layout': A pivot holds its Pivot Layout in 'layout'.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\"}}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot.layout",
+        "message": "A pivot holds its Pivot Layout in 'layout'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot.data': The view reads input 'quotes', which the Board does not declare.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": {\"data\": \"quotes\", \"layout\": {}}}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot.data",
+        "message": "The view reads input 'quotes', which the Board does not declare."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot.data': A view names the input it reads in 'data'.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": {\"layout\": {}}}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot.data",
+        "message": "A view names the input it reads in 'data'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot.x': A pivot's spec has no member 'x'.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {}, \"x\": 1}}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot.x",
+        "message": "A pivot's spec has no member 'x'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].pivot': A pivot's spec is an object.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"byDesk\", \"pivot\": []}], \"layout\": [{\"views\": [\"byDesk\"]}]}",
+      "refused": {
+        "path": "views[0].pivot",
+        "message": "A pivot's spec is an object."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].chart.series[0].data': The chart reads input 'quotes', which the Board does not declare.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"quotes\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"curve\"]}]}",
+      "refused": {
+        "path": "views[0].chart.series[0].data",
+        "message": "The chart reads input 'quotes', which the Board does not declare."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].chart.series[0].y': series[0].y: \"trades\" has no column \"book\"; its columns are desk, month, pnl, day.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"book\"}]}}], \"layout\": [{\"views\": [\"curve\"]}]}",
+      "refused": {
+        "path": "views[0].chart.series[0].y",
+        "message": "series[0].y: \"trades\" has no column \"book\"; its columns are desk, month, pnl, day."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].chart.series[0].kind': series[0].kind \"flow\" is not a Series Kind",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"flow\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"curve\"]}]}",
+      "refused": {
+        "path": "views[0].chart.series[0].kind",
+        "saying": "series[0].kind \"flow\" is not a Series Kind"
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].chart.surface': A Board's chart view draws series; a Chart Spec of a 3D surface is drawn on its own, by ExSurface, and is not yet a view of a Board.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"curve\", \"chart\": {\"version\": 1, \"surface\": {\"data\": \"trades\", \"x\": \"desk\", \"y\": \"day\", \"z\": \"pnl\"}}}], \"layout\": [{\"views\": [\"curve\"]}]}",
+      "refused": {
+        "path": "views[0].chart.surface",
+        "message": "A Board's chart view draws series; a Chart Spec of a 3D surface is drawn on its own, by ExSurface, and is not yet a view of a Board."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].chart': A chart is a Chart Spec, an object.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"curve\", \"chart\": 1}], \"layout\": [{\"views\": [\"curve\"]}]}",
+      "refused": {
+        "path": "views[0].chart",
+        "message": "A chart is a Chart Spec, an object."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0]': View 'x' is one of grid, pivot and chart.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"x\"}], \"layout\": [{\"views\": [\"x\"]}]}",
+      "refused": {
+        "path": "views[0]",
+        "message": "View 'x' is one of grid, pivot and chart."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0]': View 'x' is one of grid, pivot and chart, not grid and chart.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"x\", \"grid\": {}, \"chart\": {}}], \"layout\": [{\"views\": [\"x\"]}]}",
+      "refused": {
+        "path": "views[0]",
+        "message": "View 'x' is one of grid, pivot and chart, not grid and chart."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].id': A view has an id, by which the layout places it.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"title\": \"x\", \"grid\": {}}], \"layout\": [{\"views\": [\"x\"]}]}",
+      "refused": {
+        "path": "views[0].id",
+        "message": "A view has an id, by which the layout places it."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].title': View 'x''s title is text.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"x\", \"title\": 1, \"grid\": {}}], \"layout\": [{\"views\": [\"x\"]}]}",
+      "refused": {
+        "path": "views[0].title",
+        "message": "View 'x''s title is text."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0].style': A view has no member 'style'.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"x\", \"grid\": {}, \"style\": {}}], \"layout\": [{\"views\": [\"x\"]}]}",
+      "refused": {
+        "path": "views[0].style",
+        "message": "A view has no member 'style'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[0]': A view is an object.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [3], \"layout\": [{\"views\": [\"x\"]}]}",
+      "refused": {
+        "path": "views[0]",
+        "message": "A view is an object."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views': A Board lists its views in 'views'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [], \"layout\": []}",
+      "refused": {
+        "path": "views",
+        "message": "A Board lists its views in 'views'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'views[1].id': Two views have the id 'blotter'.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"]}]}",
+      "refused": {
+        "path": "views[1].id",
+        "message": "Two views have the id 'blotter'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout': The layout leaves out view 'byDesk'; every view stands in it once.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\"]}]}",
+      "refused": {
+        "path": "layout",
+        "message": "The layout leaves out view 'byDesk'; every view stands in it once."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].views[1]': The layout places view 'blotter' twice; a view stands in one place.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"blotter\"]}]}",
+      "refused": {
+        "path": "layout[0].views[1]",
+        "message": "The layout places view 'blotter' twice; a view stands in one place."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].views[0]': The layout places view 'chart', which the Board does not have.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"chart\"]}]}",
+      "refused": {
+        "path": "layout[0].views[0]",
+        "message": "The layout places view 'chart', which the Board does not have."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].views[0]': A row names a view by its id.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [3]}]}",
+      "refused": {
+        "path": "layout[0].views[0]",
+        "message": "A row names a view by its id."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].views': A row lists its views, left to right, in 'views'.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": []}]}",
+      "refused": {
+        "path": "layout[0].views",
+        "message": "A row lists its views, left to right, in 'views'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0]': A row of the layout is an object.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [3]}",
+      "refused": {
+        "path": "layout[0]",
+        "message": "A row of the layout is an object."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout': A Board lays its views out in rows, in 'layout'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}]}",
+      "refused": {
+        "path": "layout",
+        "message": "A Board lays its views out in rows, in 'layout'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].widths': A row gives one width per view; this row has 1.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"], \"widths\": [1, 1]}]}",
+      "refused": {
+        "path": "layout[0].widths",
+        "message": "A row gives one width per view; this row has 1."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].widths[0]': A width is a whole number from 1 to 12, the view's share of the row.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"], \"widths\": [13]}]}",
+      "refused": {
+        "path": "layout[0].widths[0]",
+        "message": "A width is a whole number from 1 to 12, the view's share of the row."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].widths[0]': A width is a whole number from 1 to 12, the view's share of the row. (2)",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"], \"widths\": [1.5]}]}",
+      "refused": {
+        "path": "layout[0].widths[0]",
+        "message": "A width is a whole number from 1 to 12, the view's share of the row."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].height': A row's height is a number of CSS pixels from 80 to 4000.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"], \"height\": 79}]}",
+      "refused": {
+        "path": "layout[0].height",
+        "message": "A row's height is a number of CSS pixels from 80 to 4000."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].height': A row's height is a number of CSS pixels from 80 to 4000. (2)",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"], \"height\": \"tall\"}]}",
+      "refused": {
+        "path": "layout[0].height",
+        "message": "A row's height is a number of CSS pixels from 80 to 4000."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'layout[0].x': A row of the layout has no member 'x'.",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"], \"x\": 0, \"y\": 0}]}",
+      "refused": {
+        "path": "layout[0].x",
+        "message": "A row of the layout has no member 'x'."
+      }
+    },
+    {
+      "name": "ADR-0340/0341/0342: a Board refused at 'inputs.trades.columns[0].type': Column 'desk' of input 'trades' declares no type",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"]}]}",
+      "refused": {
+        "path": "inputs.trades.columns[0].type",
+        "saying": "Column 'desk' of input 'trades' declares no type"
+      }
+    },
+    {
+      "name": "ADR-0340: a row's height may be a fraction of a pixel",
+      "read": "{\"version\": 1, \"title\": \"Desk P&L\", \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"title\": \"Trades\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}], \"layout\": [{\"views\": [\"blotter\"], \"height\": 360.5}]}",
+      "expect": {
+        "title": "Desk P&L",
+        "inputs": [
+          {
+            "name": "trades",
+            "columns": [
+              {
+                "name": "desk",
+                "type": "text"
+              },
+              {
+                "name": "month",
+                "type": "text"
+              },
+              {
+                "name": "pnl",
+                "type": "decimal"
+              },
+              {
+                "name": "day",
+                "type": "date"
+              }
+            ]
+          }
+        ],
+        "views": [
+          {
+            "id": "blotter",
+            "kind": "grid",
+            "title": "Trades",
+            "data": [
+              "trades"
+            ],
+            "columns": [
+              {
+                "column": "desk",
+                "kind": "text",
+                "header": "desk",
+                "format": null
+              },
+              {
+                "column": "pnl",
+                "kind": "decimal",
+                "header": "pnl",
+                "format": "#,##0"
+              }
+            ]
+          }
+        ],
+        "layout": [
+          {
+            "cells": [
+              [
+                "blotter",
+                1
+              ]
+            ],
+            "height": 360.5
+          }
+        ],
+        "links": [],
+        "outputs": []
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link names a grid, the views it narrows and the columns it compares",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"byDesk\", \"curve\", \"limits\"], \"on\": [\"desk\"]}]}",
+      "links": [
+        {
+          "from": "blotter",
+          "to": [
+            "byDesk",
+            "curve",
+            "limits"
+          ],
+          "on": [
+            "desk"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0340 Q5: a Board with no links has none",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}]}",
+      "links": []
+    },
+    {
+      "name": "ADR-0340 Q5: a pivot's link compares a field it places in its rows",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"byDesk\", \"to\": [\"blotter\", \"limits\"], \"on\": [\"desk\"]}]}",
+      "links": [
+        {
+          "from": "byDesk",
+          "to": [
+            "blotter",
+            "limits"
+          ],
+          "on": [
+            "desk"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].from': The link starts at view 'curve', a chart; a link starts at a grid, whose selected rows narrow, or a pivot, whose selected cells do.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"curve\", \"to\": [\"blotter\"], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[0].from",
+        "message": "The link starts at view 'curve', a chart; a link starts at a grid, whose selected rows narrow, or a pivot, whose selected cells do."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].on[0]': The link compares field 'month', which pivot 'byDesk' does not place in its rows or columns; a pivot's cell names the items of its rows and columns.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"byDesk\", \"to\": [\"blotter\"], \"on\": [\"month\"]}]}",
+      "refused": {
+        "path": "links[0].on[0]",
+        "message": "The link compares field 'month', which pivot 'byDesk' does not place in its rows or columns; a pivot's cell names the items of its rows and columns."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].on[0]': The link compares field 'pnl', which pivot 'byDesk' does not place in its rows or columns; a pivot's cell names the items of its rows and columns.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"byDesk\", \"to\": [\"blotter\"], \"on\": [\"pnl\"]}]}",
+      "refused": {
+        "path": "links[0].on[0]",
+        "message": "The link compares field 'pnl', which pivot 'byDesk' does not place in its rows or columns; a pivot's cell names the items of its rows and columns."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].on[0]': The link compares column 'desk', a text in input 'trades' and a integer in input 'quotes'; a value is compared only with one of its kind.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"byDesk\", \"to\": [\"quotes\"], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[0].on[0]",
+        "message": "The link compares column 'desk', a text in input 'trades' and a integer in input 'quotes'; a value is compared only with one of its kind."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].from': The link starts at view 'book', which the Board does not have.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"book\", \"to\": [\"blotter\"], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[0].from",
+        "message": "The link starts at view 'book', which the Board does not have."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].from': A link names the view whose selection narrows in 'from'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"to\": [\"blotter\"], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[0].from",
+        "message": "A link names the view whose selection narrows in 'from'."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].to[0]': The link narrows view 'byBook', which the Board does not have.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"byBook\"], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[0].to[0]",
+        "message": "The link narrows view 'byBook', which the Board does not have."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].to[0]': The link narrows its own view 'blotter'; a view's selection narrows other views.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"blotter\"], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[0].to[0]",
+        "message": "The link narrows its own view 'blotter'; a view's selection narrows other views."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].on[0]': The link compares column 'month', which input 'limits' of view 'limits' does not declare.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"limits\"], \"on\": [\"month\"]}]}",
+      "refused": {
+        "path": "links[0].on[0]",
+        "message": "The link compares column 'month', which input 'limits' of view 'limits' does not declare."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].on[0]': The link compares column 'book', which input 'trades' of view 'blotter' does not declare.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"other\"], \"on\": [\"book\"]}]}",
+      "refused": {
+        "path": "links[0].on[0]",
+        "message": "The link compares column 'book', which input 'trades' of view 'blotter' does not declare."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].on[0]': The link compares column 'desk', a text in input 'trades' and a integer in input 'quotes'; a value is compared only with one of its kind. (2)",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"quotes\"], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[0].on[0]",
+        "message": "The link compares column 'desk', a text in input 'trades' and a integer in input 'quotes'; a value is compared only with one of its kind."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].on[1]': 'desk' is named twice.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"other\"], \"on\": [\"desk\", \"desk\"]}]}",
+      "refused": {
+        "path": "links[0].on[1]",
+        "message": "'desk' is named twice."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].on[0]': A name is text.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"other\"], \"on\": [\"\"]}]}",
+      "refused": {
+        "path": "links[0].on[0]",
+        "message": "A name is text."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].to': A link names the views it narrows, in 'to'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[0].to",
+        "message": "A link names the views it narrows, in 'to'."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0].when': A link has no member 'when'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"other\"], \"on\": [\"desk\"], \"when\": \"click\"}]}",
+      "refused": {
+        "path": "links[0].when",
+        "message": "A link has no member 'when'."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[0]': A link is an object.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [3]}",
+      "refused": {
+        "path": "links[0]",
+        "message": "A link is an object."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: a link refused at 'links[1].to': The link narrows view 'blotter', which already narrows view 'other'; links run one way.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": [{\"from\": \"blotter\", \"to\": [\"other\"], \"on\": [\"desk\"]}, {\"from\": \"other\", \"to\": [\"limits\", \"blotter\"], \"on\": [\"desk\"]}]}",
+      "refused": {
+        "path": "links[1].to",
+        "message": "The link narrows view 'blotter', which already narrows view 'other'; links run one way."
+      }
+    },
+    {
+      "name": "ADR-0340 Q5: links that are not a list are refused",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"month\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}, \"limits\": {\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"limit\", \"type\": \"decimal\"}]}, \"quotes\": {\"columns\": [{\"name\": \"desk\", \"type\": \"integer\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}, {\"column\": \"pnl\", \"format\": \"#,##0.00\"}]}}, {\"id\": \"other\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"month\"}]}}, {\"id\": \"limits\", \"grid\": {\"data\": \"limits\", \"columns\": [{\"column\": \"desk\"}, {\"column\": \"limit\", \"format\": \"#,##0\"}]}}, {\"id\": \"quotes\", \"grid\": {\"data\": \"quotes\", \"columns\": [{\"column\": \"desk\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}, {\"id\": \"curve\", \"chart\": {\"version\": 1, \"axis\": {\"values\": \"dates\"}, \"series\": [{\"id\": \"pnl\", \"name\": \"P&L\", \"kind\": \"level\", \"data\": \"trades\", \"x\": \"day\", \"y\": \"pnl\"}]}}], \"layout\": [{\"views\": [\"blotter\", \"other\", \"limits\", \"quotes\", \"byDesk\", \"curve\"]}], \"links\": {}}",
+      "refused": {
+        "path": "links",
+        "message": "A Board lists its links in 'links'."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output names a grid, the columns it hands on, and the confirm that raises it",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": {\"from\": \"blotter\", \"on\": [\"id\", \"day\"], \"confirm\": \"Book these trades\"}}}",
+      "outputs": [
+        {
+          "name": "chosen",
+          "from": "blotter",
+          "on": [
+            "id",
+            "day"
+          ],
+          "confirm": "Book these trades"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs.chosen.confirm': Output 'chosen' is raised by a confirm action, whose label is its 'confirm'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": {\"from\": \"blotter\", \"on\": [\"id\"]}}}",
+      "refused": {
+        "path": "outputs.chosen.confirm",
+        "message": "Output 'chosen' is raised by a confirm action, whose label is its 'confirm'."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs.chosen.from': Output 'chosen' is taken from view 'byDesk', a pivot; an output is taken from a grid's selected rows.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": {\"from\": \"byDesk\", \"on\": [\"desk\"], \"confirm\": \"Go\"}}}",
+      "refused": {
+        "path": "outputs.chosen.from",
+        "message": "Output 'chosen' is taken from view 'byDesk', a pivot; an output is taken from a grid's selected rows."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs.chosen.from': Output 'chosen' is taken from view 'book', which the Board does not have.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": {\"from\": \"book\", \"on\": [\"id\"], \"confirm\": \"Go\"}}}",
+      "refused": {
+        "path": "outputs.chosen.from",
+        "message": "Output 'chosen' is taken from view 'book', which the Board does not have."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs.chosen.from': An output names the view whose selection it hands on, in 'from'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": {\"on\": [\"id\"], \"confirm\": \"Go\"}}}",
+      "refused": {
+        "path": "outputs.chosen.from",
+        "message": "An output names the view whose selection it hands on, in 'from'."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs.chosen.on[0]': Output 'chosen' hands on column 'book', which input 'trades' does not declare.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": {\"from\": \"blotter\", \"on\": [\"book\"], \"confirm\": \"Go\"}}}",
+      "refused": {
+        "path": "outputs.chosen.on[0]",
+        "message": "Output 'chosen' hands on column 'book', which input 'trades' does not declare."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs.chosen.on': An output names the columns whose values it hands on, in 'on'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": {\"from\": \"blotter\", \"confirm\": \"Go\"}}}",
+      "refused": {
+        "path": "outputs.chosen.on",
+        "message": "An output names the columns whose values it hands on, in 'on'."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs.chosen.when': An output has no member 'when'.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": {\"from\": \"blotter\", \"on\": [\"id\"], \"confirm\": \"Go\", \"when\": \"selected\"}}}",
+      "refused": {
+        "path": "outputs.chosen.when",
+        "message": "An output has no member 'when'."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs.chosen': An output is an object.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"chosen\": 1}}",
+      "refused": {
+        "path": "outputs.chosen",
+        "message": "An output is an object."
+      }
+    },
+    {
+      "name": "ADR-0340 Q6: an output refused at 'outputs': An output has a name.",
+      "read": "{\"version\": 1, \"inputs\": {\"trades\": {\"columns\": [{\"name\": \"id\", \"type\": \"text\"}, {\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}, {\"name\": \"day\", \"type\": \"date\"}]}}, \"views\": [{\"id\": \"blotter\", \"grid\": {\"data\": \"trades\", \"columns\": [{\"column\": \"id\"}, {\"column\": \"desk\"}, {\"column\": \"pnl\", \"format\": \"#,##0\"}]}}, {\"id\": \"byDesk\", \"pivot\": {\"data\": \"trades\", \"layout\": {\"version\": 1, \"rows\": [{\"field\": \"desk\"}], \"values\": [{\"field\": \"pnl\", \"aggregation\": \"sum\"}]}}}], \"layout\": [{\"views\": [\"blotter\", \"byDesk\"]}], \"outputs\": {\"\": {\"from\": \"blotter\", \"on\": [\"id\"], \"confirm\": \"Go\"}}}",
+      "refused": {
+        "path": "outputs",
+        "message": "An output has a name."
+      }
+    }
+  ]
+}

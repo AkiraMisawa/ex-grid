@@ -6,399 +6,42 @@ using Xunit;
 namespace ExGrid.Tests;
 
 /// <summary>
-/// ADR-0207: what ExGrid's JSON entry point for the View State refuses, and that each refusal names
-/// what it refuses. Reading never guesses a type and never drops a part it does not understand
-/// (principle 1): an unknown tag, a value that does not parse as its tag's type, a width that is
-/// neither form, a column key the grid does not have, and a version this reader does not read are
-/// refused by name; so is what has no JSON form on the way out.
+/// ADR-0207: what ExGrid's JSON entry point for the View State refuses that only the C# core can be handed.
+/// What reading and writing refuse, and the text written, are the shared cases of
+/// <c>tests/cases/view-state</c> (ADR-0370 section 5), which <c>Cases/ViewStateJsonCaseTests</c> runs here
+/// and Vitest runs against the Script Core. What stays here has no counterpart there: operands of .NET types
+/// the Script Core does not have, a refusal's parameter name, and <c>System.Text.Json</c> handed a View State
+/// directly or through a Consumer's own source-generated context.
 /// </summary>
 public class GridViewStateJsonTests
 {
-    private static readonly string[] Grid = QuerySerialisationTests.GridColumns;
-
-    private static JsonException Refused(string json) => Assert.Throws<JsonException>(() => GridViewStateJson.Read(json, Grid));
-
-    private static JsonException QueryRefused(string json) => Assert.Throws<JsonException>(() => GridViewStateJson.ReadQuery(json));
-
-    /// <summary>That <paramref name="refusal"/> names <paramref name="member"/> itself: quoted in its
-    /// message, or as the last segment of the path it was refused at — never only as part of a longer
-    /// name (<c>column</c> within <c>columns</c>, which every View State's path holds).</summary>
-    private static void AssertNames(JsonException refusal, string member)
-    {
-        var path = refusal.Path ?? "";
-        var last = path[(path.LastIndexOf('.') + 1)..];
-        Assert.True(refusal.Message.Contains($"'{member}'", StringComparison.Ordinal) || last == member,
-            $"The refusal does not name '{member}': {refusal.Message} (at {path})");
-    }
-
-    /// <summary>A View State whose only filter clause carries <paramref name="operand"/>.</summary>
-    private static string WithOperand(string operand)
-        => """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"Equals","value":"""
-            + operand + "}]}}}}";
-
-    // ---- The version --------------------------------------------------------------------------
-
-    [Theory] // ADR-0207 / ST-4: a version this reader does not read — an earlier one, a later one — is refused by name, never half-read
-    [InlineData("0")]
-    [InlineData("2")]
-    [InlineData("-1")]
-    [InlineData("1.5")]
-    public void ADR0207_a_view_state_of_another_version_is_refused(string version)
-    {
-        var refusal = Refused($$"""{"version":{{version}},"columns":[],"sorts":[]}""");
-
-        Assert.Contains($"version {version}", refusal.Message, StringComparison.Ordinal);
-        Assert.Contains("reads version 1", refusal.Message, StringComparison.Ordinal);
-    }
-
-    [Theory] // ADR-0207 / FN-13: a Query of another version is refused the same way
-    [InlineData("0")]
-    [InlineData("2")]
-    public void ADR0207_a_query_of_another_version_is_refused(string version)
-    {
-        var refusal = QueryRefused($$"""{"version":{{version}},"range":{"start":0,"count":1},"sorts":[]}""");
-
-        Assert.Contains($"version {version}", refusal.Message, StringComparison.Ordinal);
-    }
-
-    [Theory] // ADR-0207: a document that names no version, or names it as anything but a number, is refused
-    [InlineData("""{"columns":[],"sorts":[]}""")]
-    [InlineData("""{"version":"1","columns":[],"sorts":[]}""")]
-    [InlineData("""{"version":null,"columns":[],"sorts":[]}""")]
-    public void ADR0207_a_view_state_that_names_no_version_is_refused(string json)
-        => Assert.Contains("version", Refused(json).Message, StringComparison.Ordinal);
-
-    [Theory] // ADR-0207: what is not a View State at all is refused, never read as an empty one
-    [InlineData("")]
-    [InlineData("not json")]
-    [InlineData("[]")]
-    [InlineData("null")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[]""")]
-    public void ADR0207_text_that_is_not_a_view_state_is_refused(string json) => Refused(json);
-
-    // ---- The document's members ---------------------------------------------------------------
-
-    [Theory] // ADR-0207: a member this version does not have is refused by name — never dropped
-    [InlineData("""{"version":1,"columns":[],"sorts":[],"layout":"wide"}""", "layout")]
-    [InlineData("""{"version":1,"columns":[{"column":"Book","width":"Auto","pinned":false,"hidden":true}],"sorts":[]}""", "hidden")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{},"opaque":"x"}}""", "opaque")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[{"column":"Book","direction":"Ascending","nulls":"first"}]}""", "nulls")]
-    public void ADR0207_a_member_this_version_does_not_have_is_refused_by_name(string json, string member)
-        => AssertNames(Refused(json), member);
-
-    [Theory] // ADR-0207: a member the form requires, missing or null, is refused by name
-    [InlineData("""{"version":1,"sorts":[]}""", "columns")]
-    [InlineData("""{"version":1,"columns":[]}""", "sorts")]
-    [InlineData("""{"version":1,"columns":[{"column":"Book","pinned":false}],"sorts":[]}""", "width")]
-    [InlineData("""{"version":1,"columns":[{"column":"Book","width":"Auto"}],"sorts":[]}""", "pinned")]
-    [InlineData("""{"version":1,"columns":[{"column":null,"width":"Auto","pinned":false}],"sorts":[]}""", "column")]
-    [InlineData("""{"version":1,"columns":[{"width":"Auto","pinned":false}],"sorts":[]}""", "column")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[{"column":"Book"}]}""", "direction")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[{"direction":"Ascending"}]}""", "column")]
-    public void ADR0207_a_required_member_that_is_missing_is_refused_by_name(string json, string member)
-        => AssertNames(Refused(json), member);
-
-    [Fact] // ADR-0207: a member named twice is refused, never settled by whichever came last
-    public void ADR0207_a_member_named_twice_is_refused()
-    {
-        Refused("""{"version":1,"columns":[],"columns":[],"sorts":[]}""");
-        Refused("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Book":{"combinator":"And","clauses":[]},"Book":{"combinator":"Or","clauses":[]}}}}""");
-    }
-
-    [Theory] // ADR-0207: a misshapen document is refused in the form's words, naming the member and where it stands — never in the serializer's, which name the internal types the form is read into
-    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"layout":"wide"}""", "$", "it has no member 'layout' in version 1")]
-    [InlineData(false, """{"version":1,"Columns":[],"sorts":[]}""", "$", "it has no member 'Columns' in version 1")]
-    [InlineData(false, """{"version":1,"sorts":[]}""", "$", "its member 'columns' is missing")]
-    [InlineData(false, """{"version":1,"columns":[{"column":"Book","pinned":false}],"sorts":[]}""", "$.columns[0]", "its member 'width' is missing")]
-    [InlineData(false, """{"version":1,"columns":[{"column":null,"width":"Auto","pinned":false}],"sorts":[]}""", "$.columns[0].column", "'column' is null, and it is a string")]
-    [InlineData(false, """{"version":1,"columns":null,"sorts":[]}""", "$.columns", "'columns' is null, and it is an array")]
-    [InlineData(false, """{"version":1,"columns":[{"column":"Book","width":"Auto","pinned":"yes"}],"sorts":[]}""", "$.columns[0].pinned", "'pinned' is true or false, and here it is a string")]
-    [InlineData(false, """{"version":1,"columns":[{"column":"Book","width":"Auto","pinned":null}],"sorts":[]}""", "$.columns[0].pinned", "'pinned' is null, and it is true or false")]
-    [InlineData(false, """{"version":1,"columns":{},"sorts":[]}""", "$.columns", "'columns' is an array, and here it is an object")]
-    [InlineData(false, """{"version":1,"columns":[7],"sorts":[]}""", "$.columns[0]", "item 1 of 'columns' is an object, and here it is the number 7")]
-    [InlineData(false, """{"version":1,"columns":[],"sorts":[{"column":"Book","direction":1}]}""", "$.sorts[0].direction", "'direction' is a string, and here it is the number 1")]
-    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"filter":{"columns":[]}}""", "$.filter.columns", "'columns' is an object, and here it is an array")]
-    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"Equals","value":{"type":"Decimal","value":25000000.50}}]}}}}""",
-        "$.filter.columns['Notional'].clauses[0].value.value", "'value' is a string, and here it is the number 25000000.50")]
-    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"Equals","value":25}]}}}}""",
-        "$.filter.columns['Notional'].clauses[0].value", "'value' is an object, and here it is the number 25")]
-    [InlineData(false, """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"In","values":[{"type":"Decimal"}]}]}}}}""",
-        "$.filter.columns['Notional'].clauses[0].values[0]", "its member 'value' is missing")]
-    [InlineData(true, """{"version":1,"range":{"start":1.5,"count":2},"sorts":[]}""", "$.range.start", "'start' is a whole number, and here it is the number 1.5")]
-    [InlineData(true, """{"version":1,"range":{"start":0,"count":3000000000},"sorts":[]}""", "$.range.count", "'count' is a whole number, and here it is the number 3000000000")]
-    [InlineData(true, """{"version":1,"range":null,"sorts":[]}""", "$.range", "'range' is null, and it is an object")]
-    [InlineData(true, """{"version":1,"range":{"start":0,"count":1},"sorts":[],"columns":[]}""", "$", "it has no member 'columns' in version 1")]
-    public void ADR0207_a_misshapen_document_is_refused_in_the_forms_words(bool query, string json, string path, string named)
-    {
-        var refusal = query ? QueryRefused(json) : Refused(json);
-
-        Assert.Equal(path, refusal.Path);
-        Assert.Contains($"cannot be read at {path}: {named} (ADR-0207).", refusal.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("ExGrid.", refusal.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("Document", refusal.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("System.", refusal.Message, StringComparison.Ordinal);
-    }
-
-    [Theory] // ADR-0207: a member of the wrong JSON type is refused
-    [InlineData("""{"version":1,"columns":[{"column":"Book","width":"Auto","pinned":"yes"}],"sorts":[]}""")]
-    [InlineData("""{"version":1,"columns":{},"sorts":[]}""")]
-    [InlineData("""{"version":1,"columns":[null],"sorts":[]}""")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[null]}""")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Book":null}}}""")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Book":{"combinator":"And","clauses":[null]}}}}""")]
-    public void ADR0207_a_member_of_the_wrong_shape_is_refused(string json) => Refused(json);
-
-    // ---- Columns --------------------------------------------------------------------------------
-
-    [Theory] // ADR-0207 / ST-4: a column the grid does not have is refused by name — in the columns, the sort and the filter
-    [InlineData("""{"version":1,"columns":[{"column":"Gone","width":"Auto","pinned":false}],"sorts":[]}""")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[{"column":"Gone","direction":"Ascending"}]}""")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Gone":{"combinator":"And","clauses":[]}}}}""")]
-    public void ADR0207_a_column_the_grid_does_not_have_is_refused_by_name(string json)
-    {
-        var refusal = Refused(json);
-
-        Assert.Contains("'Gone'", refusal.Message, StringComparison.Ordinal);
-        Assert.Contains("does not have", refusal.Message, StringComparison.Ordinal);
-    }
-
-    [Fact] // ADR-0207: a column the grid has under another case is not that column — names are ordinal
-    public void ADR0207_a_column_name_is_matched_exactly()
-        => Assert.Contains("'book'", Refused("""{"version":1,"columns":[{"column":"book","width":"Auto","pinned":false}],"sorts":[]}""").Message,
-            StringComparison.Ordinal);
-
-    [Fact] // ADR-0207: a column named twice among the columns is refused by name
-    public void ADR0207_a_column_named_twice_is_refused()
-        => Assert.Contains("'Book' appears twice", Refused(
-            """{"version":1,"columns":[{"column":"Book","width":"Auto","pinned":false},{"column":"Book","width":80,"pinned":false}],"sorts":[]}""").Message,
-            StringComparison.Ordinal);
-
-    [Fact] // ADR-0004 / ADR-0207: a pinned column after one that is not is refused — the pinned columns are the leading ones
-    public void ADR0207_a_pinned_column_after_an_unpinned_one_is_refused()
-        => Assert.Contains("'AsOf' is pinned after", Refused(
-            """{"version":1,"columns":[{"column":"Book","width":"Auto","pinned":false},{"column":"AsOf","width":"Auto","pinned":true}],"sorts":[]}""").Message,
-            StringComparison.Ordinal);
-
-    // ---- Names ----------------------------------------------------------------------------------
-
-    [Theory] // ADR-0207: an operator, a direction or a combinator this version does not name is refused by name — no other case, no number
-    [InlineData("""{"version":1,"columns":[],"sorts":[{"column":"Book","direction":"Down"}]}""", "'Down'")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[{"column":"Book","direction":"ascending"}]}""", "'ascending'")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[{"column":"Book","direction":"1"}]}""", "'1'")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Book":{"combinator":"Xor","clauses":[]}}}}""", "'Xor'")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Book":{"combinator":"And","clauses":[{"operator":"Between"}]}}}}""", "'Between'")]
-    [InlineData("""{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Book":{"combinator":"And","clauses":[{"operator":"equals"}]}}}}""", "'equals'")]
-    public void ADR0207_a_name_this_version_does_not_have_is_refused_by_name(string json, string named)
-        => Assert.Contains(named, Refused(json).Message, StringComparison.Ordinal);
-
-    [Fact] // ADR-0207: a JSON number where a name belongs is refused, never taken for an enum's value
-    public void ADR0207_a_number_for_a_name_is_refused()
-        => Refused("""{"version":1,"columns":[],"sorts":[{"column":"Book","direction":1}]}""");
-
-    // ---- Operands -------------------------------------------------------------------------------
-
-    [Theory] // ADR-0023 / ADR-0207: an operand type the filter model does not admit is refused by its tag
-    [InlineData("Money")]
-    [InlineData("decimal")]
-    [InlineData("Guid")]
-    [InlineData("TimeOnly")]
-    [InlineData("Char")]
-    [InlineData("")]
-    public void ADR0207_an_unknown_operand_tag_is_refused_by_name(string tag)
-    {
-        var refusal = Refused(WithOperand($$"""{"type":"{{tag}}","value":"1"}"""));
-
-        Assert.Contains($"'{tag}' is not an operand type", refusal.Message, StringComparison.Ordinal);
-        Assert.Contains("'Notional'", refusal.Message, StringComparison.Ordinal);
-    }
-
-    [Theory] // ADR-0207: a value that does not parse as its tag's type in the invariant culture is refused, naming both
-    [InlineData("Decimal", "25,000.50")]
-    [InlineData("Decimal", "25.000,50")]
-    [InlineData("Decimal", "1e3")]
-    [InlineData("Decimal", " 1")]
-    [InlineData("Decimal", "")]
-    [InlineData("Decimal", "0.00000000000000000000000000001")]
-    [InlineData("Decimal", "-0.00000000000000000000000000001")]
-    [InlineData("Decimal", "1.00000000000000000000000000001")]
-    [InlineData("Decimal", "25000000.500000000000000000000001")]
-    [InlineData("Decimal", "+1")]
-    [InlineData("Decimal", "01")]
-    [InlineData("Decimal", ".5")]
-    [InlineData("Decimal", "1.")]
-    [InlineData("Decimal", "-0")]
-    [InlineData("Double", "NaN")]
-    [InlineData("Double", "Infinity")]
-    [InlineData("Double", "0,5")]
-    [InlineData("Double", "1e-400")]
-    [InlineData("Double", "-1e-400")]
-    [InlineData("Double", "0.00001e-320")]
-    [InlineData("Single", "1e39")]
-    [InlineData("Single", "1e-50")]
-    [InlineData("Single", "1e-400")]
-    [InlineData("Int32", "1.5")]
-    [InlineData("Int32", "2147483648")]
-    [InlineData("Int64", "1e3")]
-    [InlineData("Int16", "40000")]
-    [InlineData("SByte", "128")]
-    [InlineData("UInt64", "-1")]
-    [InlineData("UInt32", "-1")]
-    [InlineData("UInt16", "65536")]
-    [InlineData("Byte", "256")]
-    [InlineData("Boolean", "True")]
-    [InlineData("Boolean", "1")]
-    [InlineData("Boolean", "yes")]
-    [InlineData("DateOnly", "05/01/2026")]
-    [InlineData("DateOnly", "2026-01-05T00:00:00.0000000")]
-    [InlineData("DateTimeOffset", "2026-01-05T09:30:00.0000000")]
-    [InlineData("DateTimeOffset", "2026-01-05T09:30:00.0000000Z")]
-    [InlineData("DateTimeOffset", "2026-01-05")]
-    public void ADR0207_a_value_that_does_not_parse_as_its_type_is_refused(string tag, string value)
-    {
-        var refusal = Refused(WithOperand($$"""{"type":"{{tag}}","value":"{{value}}"}"""));
-
-        Assert.Contains($"'{value}' is not a {tag}", refusal.Message, StringComparison.Ordinal);
-    }
-
-    [Theory] // ADR-0207: a DateTime is read in its one form and with its kind — a value that is not that form is refused
-    [InlineData("2026-01-05")]
-    [InlineData("2026-01-05T09:30:00")]
-    [InlineData("2026-01-05T09:30:00.0000000Z")]
-    [InlineData("2026-01-05T09:30:00.0000000+09:00")]
-    [InlineData("05/01/2026 09:30")]
-    public void ADR0207_a_datetime_in_another_form_is_refused(string value)
-        => Assert.Contains($"'{value}' is not a DateTime",
-            Refused(WithOperand($$"""{"type":"DateTime","value":"{{value}}","kind":"Utc"}""")).Message, StringComparison.Ordinal);
-
-    [Fact] // ADR-0207: a DateTime keeps its kind, so one that names none, or names another, is refused
-    public void ADR0207_a_datetime_names_its_kind()
-    {
-        Assert.Contains("names its kind", Refused(WithOperand("""{"type":"DateTime","value":"2026-01-05T09:30:00.0000000"}""")).Message,
-            StringComparison.Ordinal);
-        Assert.Contains("'Zulu' is not a DateTime kind",
-            Refused(WithOperand("""{"type":"DateTime","value":"2026-01-05T09:30:00.0000000","kind":"Zulu"}""")).Message, StringComparison.Ordinal);
-    }
-
-    [Fact] // ADR-0207: a kind on anything but a DateTime is a part this form does not have there, and is refused
-    public void ADR0207_a_kind_on_another_operand_is_refused()
-        => Assert.Contains("a kind belongs to a DateTime",
-            Refused(WithOperand("""{"type":"DateOnly","value":"2026-01-05","kind":"Utc"}""")).Message, StringComparison.Ordinal);
-
-    [Theory] // ADR-0207: an operand's value is always its text in a JSON string — a bare JSON number or Boolean is refused, never guessed at
-    [InlineData("""{"type":"Decimal","value":25000000.50}""")]
-    [InlineData("""{"type":"Boolean","value":true}""")]
-    [InlineData("""{"type":"Decimal"}""")]
-    [InlineData("""25000000.50""")]
-    [InlineData("""{"type":"Decimal","value":"1","unit":"USD"}""")]
-    public void ADR0207_an_operand_that_is_not_a_tagged_text_is_refused(string operand) => Refused(WithOperand(operand));
-
-    [Fact] // ADR-0207: an operand among In's values is held to the same — and a null there is a Blank, not a refusal
-    public void ADR0207_an_in_list_operand_is_read_as_any_other()
-    {
-        var json = """{"version":1,"columns":[],"sorts":[],"filter":{"columns":{"Notional":{"combinator":"And","clauses":[{"operator":"In","values":[{"type":"Decimal","value":"1"},null,{"type":"Decimal","value":"x"}]}]}}}}""";
-
-        Assert.Contains("value 3", Refused(json).Message, StringComparison.Ordinal);
-    }
-
-    // ---- A Query's range ------------------------------------------------------------------------
-
-    [Theory] // ADR-0001 / ADR-0207 / FN-13: a range no grid could ask for is refused on the way in, as RowRange refuses it
-    [InlineData(0, 0)]
-    [InlineData(-1, 5)]
-    [InlineData(0, -3)]
-    public void FN13_a_query_whose_range_no_grid_could_ask_for_is_refused(int start, int count)
-        => Assert.Contains("range", QueryRefused($$"""{"version":1,"range":{"start":{{start}},"count":{{count}}},"sorts":[]}""").Message,
-            StringComparison.Ordinal);
-
-    [Fact] // ADR-0207 / FN-13: a Query is read without a grid's columns — a server has none — and refuses the rest as a View State does
-    public void FN13_a_query_names_any_column_and_refuses_the_rest()
-    {
-        var query = GridViewStateJson.ReadQuery("""{"version":1,"range":{"start":3,"count":2},"sorts":[{"column":"Anything","direction":"Descending"}]}""");
-        Assert.Equal([new SortSpec("Anything", SortDirection.Descending)], query.Sorts);
-
-        QueryRefused("""{"version":1,"range":{"start":3,"count":2},"sorts":[{"column":"","direction":"Descending"}]}""");
-        QueryRefused("""{"version":1,"range":{"start":3,"count":2},"sorts":[],"columns":[]}""");
-    }
-
-    // ---- What has no JSON form ----------------------------------------------------------------
-
     public static TheoryData<object> Unwritable() => new()
     {
         Guid.Empty,
         new TimeOnly(9, 30),
         'x',
-        double.NaN,
-        double.PositiveInfinity,
-        float.NegativeInfinity,
         new object(),
     };
 
     [Theory]
-    [MemberData(nameof(Unwritable))] // ADR-0023 / ADR-0207: an operand of a type the filter does not admit, or a number it refuses, has no JSON form and is refused by name
+    [MemberData(nameof(Unwritable))] // ADR-0023 / ADR-0207: an operand of a .NET type the filter does not admit has no JSON form and is refused by name (the Script Core refuses an operand without its type, in its own tests)
     public void ADR0207_an_operand_the_filter_does_not_admit_is_refused_when_written(object operand)
     {
         var filter = new GridFilter(new Dictionary<string, FilterSpec> { ["Notional"] = new([new FilterClause(FilterOperator.Equals, operand)]) });
 
         var refusal = Assert.Throws<NotSupportedException>(() => GridViewStateJson.WriteQuery(new GridQuery(new RowRange(0, 1), [], filter)));
         Assert.Contains("'Notional'", refusal.Message, StringComparison.Ordinal);
+        Assert.Contains($"an operand of type {operand.GetType().Name} has no JSON form", refusal.Message, StringComparison.Ordinal);
         Assert.Throws<NotSupportedException>(() => GridViewStateJson.Write(new GridViewState([], [], filter)));
     }
 
-    [Fact] // ADR-0002 / ADR-0207: an Opaque Filter's meaning is the Consumer's alone — it has no JSON form here and is refused by name, never dropped
-    public void ADR0207_an_opaque_filter_is_refused_when_written()
+    [Fact] // ADR-0207: what reading would refuse is refused on the way out naming the parameter that held it, which the shared cases cannot say
+    public void ADR0207_a_writing_refusal_names_its_parameter()
     {
-        var filter = new GridFilter(new Dictionary<string, FilterSpec>(), Opaque: "region = EMEA");
+        var filter = new GridFilter(new Dictionary<string, FilterSpec> { [""] = new([new FilterClause(FilterOperator.IsBlank)]) });
 
-        var refusal = Assert.Throws<NotSupportedException>(() => GridViewStateJson.Write(new GridViewState([], [], filter)));
-        Assert.Contains("Opaque", refusal.Message, StringComparison.Ordinal);
-        Assert.Throws<NotSupportedException>(() => GridViewStateJson.WriteQuery(new GridQuery(new RowRange(0, 1), [], filter)));
-        // Written without it, the rest goes through.
-        Assert.Null(GridViewStateJson.Read(GridViewStateJson.Write(new GridViewState([], [], filter with { Opaque = null })), []).Filter!.Opaque);
-    }
-
-    [Theory] // ADR-0207: what reading would refuse is refused on the way out too, by name, so that nothing written fails to read back
-    [InlineData("a range left at its default", "A Query's range is a run of at least one row, and 0 rows at 0 is not")]
-    [InlineData("a sort level naming no column", "Sort level 1 names no column.")]
-    [InlineData("a null sort level", "Sort level 2 is null.")]
-    [InlineData("a direction its enum does not name", "Sort level 1: 5 is not a SortDirection")]
-    [InlineData("a filter naming no column", "The filter names no column.")]
-    [InlineData("a null column filter", "The filter on 'Book' is null.")]
-    [InlineData("no list of clauses", "The filter on 'Book' has no list of clauses")]
-    [InlineData("a null clause", "The filter on 'Book', clause 2 is null.")]
-    [InlineData("a combinator its enum does not name", "The filter on 'Book': 7 is not a FilterCombinator")]
-    [InlineData("an operator its enum does not name", "The filter on 'Book', clause 1: 99 is not a FilterOperator")]
-    public void ADR0207_writing_refuses_what_reading_would_refuse(string what, string named)
-    {
-        SortSpec[] sorts = what switch
-        {
-            "a sort level naming no column" => [new SortSpec("", SortDirection.Ascending)],
-            "a null sort level" => [new SortSpec("Book", SortDirection.Ascending), null!],
-            "a direction its enum does not name" => [new SortSpec("Book", (SortDirection)5)],
-            _ => [],
-        };
-        var isBlank = new FilterClause(FilterOperator.IsBlank);
-        FilterSpec? spec = what switch
-        {
-            "a null column filter" => null,
-            "no list of clauses" => new FilterSpec(null!),
-            "a null clause" => new FilterSpec([isBlank, null!]),
-            "a combinator its enum does not name" => new FilterSpec([isBlank], (FilterCombinator)7),
-            "an operator its enum does not name" => new FilterSpec([new FilterClause((FilterOperator)99)]),
-            _ => new FilterSpec([isBlank]),
-        };
-        var filter = new GridFilter(new Dictionary<string, FilterSpec> { [what == "a filter naming no column" ? "" : "Book"] = spec! });
-        var query = new GridQuery(what == "a range left at its default" ? default : new RowRange(0, 1), sorts, filter);
-
-        var refusal = Assert.Throws<ArgumentException>(() => GridViewStateJson.WriteQuery(query));
-        Assert.Contains(named, refusal.Message, StringComparison.Ordinal);
-        Assert.Equal("query", refusal.ParamName);
-        if (what != "a range left at its default" && what != "a null sort level")
-        {
-            // A View State is held to the same; its constructor already refuses a null sort level.
-            refusal = Assert.Throws<ArgumentException>(() => GridViewStateJson.Write(new GridViewState([], sorts, filter)));
-            Assert.Contains(named, refusal.Message, StringComparison.Ordinal);
-            Assert.Equal("viewState", refusal.ParamName);
-        }
+        Assert.Equal("query", Assert.Throws<ArgumentException>(() => GridViewStateJson.WriteQuery(new GridQuery(new RowRange(0, 1), [], filter))).ParamName);
+        Assert.Equal("viewState", Assert.Throws<ArgumentException>(() => GridViewStateJson.Write(new GridViewState([], [], filter))).ParamName);
     }
 
     // ---- What has no JSON form but the entry point's ------------------------------------------
@@ -434,44 +77,6 @@ public class GridViewStateJsonTests
 
         Assert.Throws<NotSupportedException>(() => JsonSerializer.Serialize(kept, ConsumerSettingsContext.Default.ConsumerSettings));
         Assert.Throws<NotSupportedException>(() => JsonSerializer.Deserialize("""{"View":{"columns":[],"sorts":[]}}""", ConsumerSettingsContext.Default.ConsumerSettings));
-    }
-
-    [Fact] // ADR-0207: an empty View State round-trips as itself — no columns, no sort, no filter
-    public void ADR0207_an_empty_view_state_round_trips()
-    {
-        var back = GridViewStateJson.Read(GridViewStateJson.Write(new GridViewState([], [], null)), []);
-
-        Assert.Empty(back.Columns);
-        Assert.Empty(back.Sorts);
-        Assert.Null(back.Filter);
-        Assert.Equal(0, back.PinnedColumnCount);
-    }
-
-    [Theory] // ADR-0207: the form written is the one documented — a reader in another language can rely on it, whatever the current culture
-    [InlineData("")]
-    [InlineData("de-DE")]
-    [InlineData("th-TH")]
-    public void ADR0207_the_form_is_the_documented_one(string culture)
-        => QuerySerialisationTests.InCulture(culture, TheFormIsTheDocumentedOne);
-
-    private static void TheFormIsTheDocumentedOne()
-    {
-        var view = new GridViewState(
-            [new ColumnViewState("Notional", ColumnWidth.Fixed(120.5), pinned: true), new ColumnViewState("Book", ColumnWidth.Auto)],
-            [new SortSpec("Book", SortDirection.Descending)],
-            new GridFilter(new Dictionary<string, FilterSpec>
-            {
-                ["AsOf"] = new([new FilterClause(FilterOperator.LessThan, new DateTime(2026, 1, 5, 9, 30, 0, DateTimeKind.Utc))]),
-                ["Notional"] = new([new FilterClause(FilterOperator.In, Values: [1.50m, null])], FilterCombinator.Or),
-            }));
-
-        Assert.Equal(
-            string.Concat(
-                """{"version":1,"columns":[{"column":"Notional","width":120.5,"pinned":true},{"column":"Book","width":"Auto","pinned":false}],""",
-                """ "sorts":[{"column":"Book","direction":"Descending"}],"filter":{"columns":{""".TrimStart(),
-                """ "AsOf":{"combinator":"And","clauses":[{"operator":"LessThan","value":{"type":"DateTime","value":"2026-01-05T09:30:00.0000000","kind":"Utc"}}]},""".TrimStart(),
-                """ "Notional":{"combinator":"Or","clauses":[{"operator":"In","values":[{"type":"Decimal","value":"1.50"},null]}]}}}}""".TrimStart()),
-            GridViewStateJson.Write(view));
     }
 }
 

@@ -32,6 +32,19 @@ export function list(value: Json): readonly Json[] {
     return value;
 }
 
+/** Each case of a file, which is an object. */
+export function cases(file: Json): readonly JsonObject[] {
+    return list(key(file, 'cases')).map(entry => {
+        if (!isObject(entry)) throw new Error(`A case is an object, not ${JSON.stringify(entry)}.`);
+        return entry;
+    });
+}
+
+/** `words` as a pattern that matches them at the start of a message. */
+export function startingWith(words: string): RegExp {
+    return new RegExp(`^${words.replaceAll(/[\\^$.*+?()[\]{}|/-]/g, '\\$&')}`);
+}
+
 export function kindOf(value: Json): SnapshotKind {
     const kind = text(value);
     if (kind === 'text' || kind === 'decimal' || kind === 'double' || kind === 'integer' || kind === 'date' || kind === 'boolean') return kind;

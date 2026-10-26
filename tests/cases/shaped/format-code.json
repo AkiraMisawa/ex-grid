@@ -1,0 +1,304 @@
+{
+  "about": "An Excel number format code in the invariant spelling, as a grid built from a source's shape reads it (ADR-0342, ADR-0120): what it reads, what it refuses, and the text it writes under the invariant culture and under en-GB, de-DE and ja-JP (ADR-0370 section 10). Transcribed from tests/ExGrid.Tests/ShapedGridTests.cs, with the locales added.",
+  "kind": "formatCode",
+  "cases": [
+    {
+      "name": "ADR-0342: a number with grouping and two places",
+      "code": "#,##0.00",
+      "isDate": false,
+      "texts": [
+        { "value": 1234567.891, "locale": "invariant", "is": "1,234,567.89" },
+        { "value": -1234.5, "locale": "invariant", "is": "-1,234.50" },
+        { "value": 1234567.891, "locale": "en-GB", "is": "1,234,567.89" },
+        { "value": 1234567.891, "locale": "de-DE", "is": "1.234.567,89" },
+        { "value": -1234.5, "locale": "de-DE", "is": "-1.234,50" },
+        { "value": 1234567.891, "locale": "ja-JP", "is": "1,234,567.89" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a percentage",
+      "code": "0.00%",
+      "isDate": false,
+      "texts": [
+        { "value": 0.1234, "locale": "invariant", "is": "12.34%" },
+        { "value": 0.1234, "locale": "en-GB", "is": "12.34%" },
+        { "value": 0.1234, "locale": "de-DE", "is": "12,34%" },
+        { "value": 0.1234, "locale": "ja-JP", "is": "12.34%" }
+      ]
+    },
+    {
+      "name": "ADR-0342: five places",
+      "code": "0.00000",
+      "isDate": false,
+      "texts": [
+        { "value": 1.08734, "locale": "invariant", "is": "1.08734" },
+        { "value": 1.08734, "locale": "de-DE", "is": "1,08734" }
+      ]
+    },
+    {
+      "name": "ADR-0342: an exponent, inside a decimal's range and outside it",
+      "code": "0.00E+00",
+      "isDate": false,
+      "texts": [
+        { "value": 1234.5, "locale": "invariant", "is": "1.23E+03" },
+        { "value": 1.5e-30, "locale": "invariant", "is": "1.50E-30" },
+        { "value": 1234.5, "locale": "de-DE", "is": "1,23E+03" },
+        { "value": 1.5e-30, "locale": "ja-JP", "is": "1.50E-30" },
+        { "value": 8.5e30, "locale": "invariant", "is": "8.50E+30" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a scaling comma divides by a thousand",
+      "code": "#,##0,",
+      "isDate": false,
+      "texts": [
+        { "value": 1234567.0, "locale": "invariant", "is": "1,235" },
+        { "value": 1234567.0, "locale": "de-DE", "is": "1.235" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a negative section",
+      "code": "#,##0.00;(#,##0.00)",
+      "isDate": false,
+      "texts": [
+        { "value": -5.0, "locale": "invariant", "is": "(5.00)" },
+        { "value": -1234.5, "locale": "de-DE", "is": "(1.234,50)" },
+        { "value": -1234.5, "locale": "en-GB", "is": "(1,234.50)" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a zero section of quoted text",
+      "code": "#,##0.00;(#,##0.00);\"-\"",
+      "isDate": false,
+      "texts": [
+        { "value": 0.0, "locale": "invariant", "is": "-" },
+        { "value": { "decimal": "0.00" }, "locale": "invariant", "is": "-" },
+        { "value": { "integer": "0" }, "locale": "de-DE", "is": "-" },
+        { "value": 12.5, "locale": "de-DE", "is": "12,50" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a quoted currency symbol, and one Excel shows unquoted",
+      "code": "\"$\"#,##0.00",
+      "isDate": false,
+      "texts": [
+        { "value": 1.5, "locale": "invariant", "is": "$1.50" },
+        { "value": 1.5, "locale": "ja-JP", "is": "$1.50" }
+      ]
+    },
+    {
+      "name": "ADR-0342: an unquoted dollar is a symbol Excel shows",
+      "code": "$#,##0.00",
+      "isDate": false,
+      "texts": [{ "value": 1.5, "locale": "invariant", "is": "$1.50" }]
+    },
+    {
+      "name": "ADR-0342: quoted text after the number",
+      "code": "0.0 \"bp\"",
+      "isDate": false,
+      "texts": [
+        { "value": 12.25, "locale": "invariant", "is": "12.3 bp" },
+        { "value": 12.25, "locale": "de-DE", "is": "12,3 bp" }
+      ]
+    },
+    {
+      "name": "ADR-0342: quoted text with spaces",
+      "code": "0.00\" p.a.\"",
+      "isDate": false,
+      "texts": [{ "value": 4.5, "locale": "invariant", "is": "4.50 p.a." }]
+    },
+    {
+      "name": "ADR-0342: an empty negative section shows nothing",
+      "code": "#,##0.00;",
+      "isDate": false,
+      "texts": [{ "value": -1500.0, "locale": "invariant", "is": "" }]
+    },
+    {
+      "name": "ADR-0342: an empty zero section shows nothing",
+      "code": "#,##0;-#,##0;",
+      "isDate": false,
+      "texts": [
+        { "value": 0.0, "locale": "invariant", "is": "" },
+        { "value": -1500.0, "locale": "invariant", "is": "-1,500" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a double keeps 15 significant digits, as Excel shows 1.005 in 0.00",
+      "code": "0.00",
+      "isDate": false,
+      "texts": [
+        { "value": 1.005, "locale": "invariant", "is": "1.01" },
+        { "value": 1.005, "locale": "de-DE", "is": "1,01" }
+      ]
+    },
+    {
+      "name": "ADR-0342, ExSheet's FMT-063: a negative that rounds to zero in one section shows no minus",
+      "code": "0.00",
+      "isDate": false,
+      "texts": [
+        { "value": -0.001, "locale": "invariant", "is": "0.00" },
+        { "value": { "decimal": "-0.001" }, "locale": "invariant", "is": "0.00" }
+      ]
+    },
+    {
+      "name": "ADR-0342: the section is chosen by the value's sign before rounding, as Excel chooses it",
+      "code": "0.00;(0.00)",
+      "isDate": false,
+      "texts": [{ "value": -0.001, "locale": "invariant", "is": "(0.00)" }]
+    },
+    {
+      "name": "ADR-0342: decimals and integers are formatted exactly",
+      "code": "#,##0.00",
+      "isDate": false,
+      "texts": [
+        { "value": { "decimal": "12345678901234567890.125" }, "locale": "invariant", "is": "12,345,678,901,234,567,890.13" },
+        { "value": { "decimal": "12345678901234567890.125" }, "locale": "de-DE", "is": "12.345.678.901.234.567.890,13" },
+        { "value": { "decimal": "-0.005" }, "locale": "invariant", "is": "-0.01" },
+        { "value": { "integer": "9223372036854775807" }, "locale": "invariant", "is": "9,223,372,036,854,775,807.00" },
+        { "value": { "integer": "-1234567" }, "locale": "ja-JP", "is": "-1,234,567.00" }
+      ]
+    },
+    {
+      "name": "ADR-0342: an integer column's default format",
+      "code": "#,##0",
+      "isDate": false,
+      "texts": [
+        { "value": { "integer": "1234567" }, "locale": "invariant", "is": "1,234,567" },
+        { "value": { "integer": "1234567" }, "locale": "de-DE", "is": "1.234.567" },
+        { "value": { "integer": "-42" }, "locale": "en-GB", "is": "-42" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a double that is not finite shows as the culture writes it",
+      "code": "#,##0.00",
+      "isDate": false,
+      "texts": [
+        { "value": { "double": "NaN" }, "locale": "invariant", "is": "NaN" },
+        { "value": { "double": "Infinity" }, "locale": "invariant", "is": "Infinity" },
+        { "value": { "double": "-Infinity" }, "locale": "invariant", "is": "-Infinity" },
+        { "value": { "double": "Infinity" }, "locale": "de-DE", "is": "∞" },
+        { "value": { "double": "-Infinity" }, "locale": "en-GB", "is": "-∞" },
+        { "value": { "double": "NaN" }, "locale": "ja-JP", "is": "NaN" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a date column's default format",
+      "code": "yyyy-mm-dd",
+      "isDate": true,
+      "texts": [
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "invariant", "is": "2026-10-20" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "de-DE", "is": "2026-10-20" },
+        { "value": { "date": "0001-01-01T00:00:00" }, "locale": "invariant", "is": "0001-01-01" },
+        { "value": { "date": "9999-12-31T23:59:59.9999999" }, "locale": "ja-JP", "is": "9999-12-31" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a date with a time of day, m read as minutes after an hour",
+      "code": "yyyy-mm-dd hh:mm:ss",
+      "isDate": true,
+      "texts": [
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "invariant", "is": "2026-10-20 09:05:07" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "en-GB", "is": "2026-10-20 09:05:07" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "de-DE", "is": "2026-10-20 09:05:07" },
+        { "value": { "date": "2024-02-29T23:59:59" }, "locale": "ja-JP", "is": "2024-02-29 23:59:59" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a month's abbreviated name beside a day, the genitive form where the culture has one",
+      "code": "d mmm yyyy",
+      "isDate": true,
+      "texts": [
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "invariant", "is": "20 Oct 2026" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "en-GB", "is": "20 Oct 2026" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "de-DE", "is": "20 Okt. 2026" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "ja-JP", "is": "20 10月 2026" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a month's name with no day beside it",
+      "code": "mmm yyyy",
+      "isDate": true,
+      "texts": [
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "de-DE", "is": "Okt 2026" },
+        { "value": { "date": "2026-03-20T09:05:07" }, "locale": "de-DE", "is": "Mär 2026" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a day's and a month's full names",
+      "code": "dddd, d mmmm yyyy",
+      "isDate": true,
+      "texts": [
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "invariant", "is": "Tuesday, 20 October 2026" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "en-GB", "is": "Tuesday, 20 October 2026" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "de-DE", "is": "Dienstag, 20 Oktober 2026" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "ja-JP", "is": "火曜日, 20 10月 2026" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a day's abbreviated name",
+      "code": "ddd dd/mm/yy",
+      "isDate": true,
+      "texts": [
+        { "value": { "date": "2026-01-04T00:00:00" }, "locale": "invariant", "is": "Sun 04/01/26" },
+        { "value": { "date": "2026-01-04T00:00:00" }, "locale": "de-DE", "is": "So 04/01/26" },
+        { "value": { "date": "2026-01-04T00:00:00" }, "locale": "ja-JP", "is": "日 04/01/26" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a month first, then the day, then a two-digit year",
+      "code": "m/d/yy",
+      "isDate": true,
+      "texts": [
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "invariant", "is": "10/20/26" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "de-DE", "is": "10/20/26" }
+      ]
+    },
+    {
+      "name": "ADR-0342: a twelve-hour clock with the culture's AM and PM",
+      "code": "h:mm AM/PM",
+      "isDate": true,
+      "texts": [
+        { "value": { "date": "2026-10-20T15:05:07" }, "locale": "invariant", "is": "3:05 PM" },
+        { "value": { "date": "2026-10-20T00:05:07" }, "locale": "invariant", "is": "12:05 AM" },
+        { "value": { "date": "2026-10-20T15:05:07" }, "locale": "en-GB", "is": "3:05 pm" },
+        { "value": { "date": "2026-10-20T15:05:07" }, "locale": "de-DE", "is": "3:05 PM" },
+        { "value": { "date": "2026-10-20T09:05:07" }, "locale": "ja-JP", "is": "9:05 午前" }
+      ]
+    },
+    {
+      "name": "ADR-0342: m read as minutes before a second",
+      "code": "mm:ss",
+      "isDate": true,
+      "texts": [{ "value": { "date": "2026-10-20T15:05:07" }, "locale": "invariant", "is": "05:07" }]
+    },
+    {
+      "name": "ADR-0342: a code of one day letter",
+      "code": "d",
+      "isDate": true,
+      "texts": [{ "value": { "date": "2026-10-20T15:05:07" }, "locale": "invariant", "is": "20" }]
+    },
+    {
+      "name": "ADR-0342: a code of one hour letter, on a 24-hour clock",
+      "code": "h",
+      "isDate": true,
+      "texts": [{ "value": { "date": "2026-10-20T15:05:07" }, "locale": "invariant", "is": "15" }]
+    },
+    { "name": "ADR-0342: an empty code is refused", "code": "", "refused": "is empty" },
+    { "name": "ADR-0342: General is refused as an unquoted letter", "code": "General", "refused": "holds the letter 'G' unquoted; quote text as \"text\"" },
+    { "name": "ADR-0342: a colour in brackets is refused", "code": "[Red]0.00", "refused": "holds a part in brackets (a colour, a condition or a locale), which a grid does not show" },
+    { "name": "ADR-0342: spacing is refused", "code": "0.00_)", "refused": "holds '_' spacing, which a grid does not show" },
+    { "name": "ADR-0342: a fraction's placeholder is refused", "code": "# ?/?", "refused": "holds the placeholder '?', which a grid does not show" },
+    { "name": "ADR-0342: a text placeholder is refused", "code": "0;@", "refused": "holds a text placeholder '@', and a number column holds no text" },
+    { "name": "ADR-0342: an open quotation is refused", "code": "\"open", "refused": "opens a quotation that it does not close" },
+    { "name": "ADR-0342: fractional seconds are refused", "code": "hh:mm:ss.000", "refused": "holds fractional seconds, which a grid does not show" },
+    { "name": "ADR-0342: a fill is refused", "code": "* 0.00", "refused": "holds '*' fill, which a grid does not show" },
+    { "name": "ADR-0342: a fraction is refused", "code": "0/0", "refused": "holds a fraction, which a grid does not show" },
+    { "name": "ADR-0342: a code that ends in an escape is refused", "code": "0.00\\", "refused": "ends in an escape with nothing after it" },
+    { "name": "ADR-0342: a date of two sections is refused", "code": "yyyy;0", "refused": "has more than one section for a date" },
+    { "name": "ADR-0342: four sections are refused", "code": "0;0;0;0", "refused": "has more than three sections" },
+    { "name": "ADR-0342: an E that is no exponent is refused", "code": "0.0E", "refused": "holds an 'E' that is no exponent such as E+00" },
+    { "name": "ADR-0342: two decimal points in a section are refused", "code": "0.0.0", "refused": "holds two decimal points in a section" },
+    { "name": "ADR-0342: five m are refused", "code": "mmmmm yyyy", "refused": "holds 'mmmmm', which a grid does not show" },
+    { "name": "ADR-0342: a code longer than 64 characters is refused", "code": "0.00000000000000000000000000000000000000000000000000000000000000000", "refused": "is longer than 64 characters" }
+  ]
+}

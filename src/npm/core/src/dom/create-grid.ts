@@ -1,6 +1,7 @@
 import type { CellPosition } from '../selection/cell';
 import type { SelectionRange } from '../selection/range';
 import { browserReports } from './browser-reports';
+import type { GridPopoverContext } from './consumer-popover';
 import { GridView, type GridOptions, type GridViewRead } from './grid-view';
 
 /** A grid drawn into an element, handed back by {@link createGrid}. */
@@ -31,6 +32,15 @@ export interface GridHandle<Row> {
     /** A key press in the grid's canonical form (ADR-0012), `Control+PageUp`, as this grid reads its own keys: Command
      * stands for Control on an Apple platform. A Consumer that hears keys beside the grid's names them so. */
     keyName(event: KeyboardEvent): string;
+    /**
+     * Shows the Consumer's own contents in the grid's popover frame (ADR-0050, item 16): `content` makes the element
+     * from the frame's context, which closes it. Under the header band, centred across the grid and bounded by its
+     * box; its first control takes the keyboard, Tab wraps inside it, and Escape, a press elsewhere in the grid and
+     * the box shrinking below a row close it, the keyboard back on the grid. False while an edit is open.
+     */
+    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
+    /** Closes the Consumer's popover where one stands; the keyboard returns to the grid. */
+    closePopover(): void;
     /** Stops the grid: it hears nothing more and empties its element. A source it was handed stays the
      * Consumer's. */
     destroy(): void;
@@ -50,6 +60,8 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         showViewWith: (state: GridViewRead, rowSequenceVersion: number) => { view.showViewWith(state, rowSequenceVersion); },
         focus: () => { view.focus(); },
         keyName: (event: KeyboardEvent) => view.keyName(event),
+        openPopover: (content: (context: GridPopoverContext) => HTMLElement, label: string) => view.openPopover(content, label),
+        closePopover: () => { view.closePopover(); },
         destroy: () => { view.destroy(); },
     });
 }

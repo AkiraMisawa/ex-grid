@@ -9,7 +9,7 @@ import type { GridCommand } from './grid-command';
 
 /** A popover is no narrower than this, unless the grid is (ADR-0040). Emitted inline, never a stylesheet
  * value beside it (ADR-0027). */
-const popoverMinWidthPx = 200;
+export const popoverMinWidthPx = 200;
 /** And no wider than this, nor than the grid. */
 const popoverMaxWidthPx = 320;
 

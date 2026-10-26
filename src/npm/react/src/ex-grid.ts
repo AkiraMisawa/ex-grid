@@ -60,6 +60,8 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
         showViewWith: (view, rowSequenceVersion) => { mounted(grid.current).showViewWith(view, rowSequenceVersion); },
         focus: () => { mounted(grid.current).focus(); },
         keyName: (event) => mounted(grid.current).keyName(event),
+        openPopover: (content, label) => mounted(grid.current).openPopover(content, label),
+        closePopover: () => { mounted(grid.current).closePopover(); },
     }), []);
     useLayoutEffect(() => () => {
         // The content goes with the grid, and nothing renders for it again.

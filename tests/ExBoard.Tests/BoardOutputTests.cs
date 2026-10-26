@@ -40,32 +40,6 @@ public sealed class BoardOutputTests : BunitContext
         return selection;
     }
 
-    [Fact] // ADR-0340 Q6: an output names a grid, the columns it hands on, and the confirm that raises it
-    public void An_output_is_read_with_its_confirm()
-    {
-        var output = Assert.Single(BoardSpec.Read(Board(Chosen)).Outputs);
-
-        Assert.Equal(new BoardOutputDeclaration("chosen", "blotter", output.On, "Book these trades"), output);
-        Assert.Equal(["id", "day"], output.On);
-    }
-
-    public static TheoryData<string, string, string> Refusals => new()
-    {
-        { """ "chosen": {"from": "blotter", "on": ["id"]} """, "outputs.chosen.confirm", "Output 'chosen' is raised by a confirm action, whose label is its 'confirm'." },
-        { """ "chosen": {"from": "byDesk", "on": ["desk"], "confirm": "Go"} """, "outputs.chosen.from", "Output 'chosen' is taken from view 'byDesk', a pivot; an output is taken from a grid's selected rows." },
-        { """ "chosen": {"from": "book", "on": ["id"], "confirm": "Go"} """, "outputs.chosen.from", "Output 'chosen' is taken from view 'book', which the Board does not have." },
-        { """ "chosen": {"from": "blotter", "on": ["book"], "confirm": "Go"} """, "outputs.chosen.on[0]", "Output 'chosen' hands on column 'book', which input 'trades' does not declare." },
-        { """ "chosen": {"from": "blotter", "on": ["id"], "confirm": "Go", "when": "selected"} """, "outputs.chosen.when", "An output has no member 'when'." },
-    };
-
-    [Theory, MemberData(nameof(Refusals))] // ADR-0340 Q6: an output that cannot be raised is refused by path
-    public void An_output_that_cannot_be_raised_is_refused(string outputs, string path, string message)
-    {
-        var refused = Assert.Throws<BoardRefusedException>(() => BoardSpec.Read(Board(outputs)));
-        Assert.Equal(path, refused.Path);
-        Assert.Equal(message, refused.Message);
-    }
-
     [Fact] // ADR-0340 Q6: a selection raises nothing; a confirm hands on its values with the version
     public void A_confirm_hands_on_the_selected_values_and_their_version()
     {

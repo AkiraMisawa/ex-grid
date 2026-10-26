@@ -1,5 +1,6 @@
 {
   // The shipped sources alone, whose declarations API Extractor rolls up (scripts/build.mjs).
+  // The core and @ex-grid/data are read as they are published, from their builds.
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
