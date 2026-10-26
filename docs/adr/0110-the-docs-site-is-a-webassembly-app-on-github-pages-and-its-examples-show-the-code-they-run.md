@@ -180,6 +180,18 @@ site a framework switch, Blazor or React, before any React package exists. What 
 - **The React Example's frame is not built yet.** It comes with the first React Example, once
   `@ex-grid/react` draws one: a page prebuilt into the site's static files and shown in a frame, as §12
   says, with its code beneath it.
+  *(2026-10-26: built, ExSheet's Examples first. A React Example is a `.tsx` file beside the Blazor
+  Example's `.razor` under `Examples/`, of the same name, whose default export is the component; the
+  files of its own folder it imports (`./Expenses`) are shown as further tabs, in the order it imports
+  them. `samples/ExGrid.Docs.React` builds all of them, from the packages' sources, into one page,
+  `wwwroot/react/index.html`, as the Docs project builds; that page runs the Example its address names,
+  `?example=Sheet/FirstSheet&scheme=dark`, in the site's scheme. It is not committed, and an Example that
+  does not type or build fails the site's build. Read for React, an Example with such a file runs it in a
+  frame under the Example's heading and shows its code; one without says that it is not in React yet, as
+  before. The frame's page sets the frame's height to the Example's, from inside, where the browser
+  reports the change, so the site renders no height and takes on no JavaScript for it. Under React the
+  Chrome switch stays Built-in, and an Example's toolbar says so, until a React Example has an MUI
+  counterpart.)*
 
 ### JavaScript
 

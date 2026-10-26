@@ -65,6 +65,8 @@
          files, and the snippets a page quotes (.html, .sh, .css), are handed over here. The code a
          page shows is the file it runs. -->
     <AdditionalFiles Include="Examples\**\*.cs;Examples\**\*.html;Examples\**\*.sh;Examples\**\*.css" />
+    <!-- A React Example's files (ADR-0350 section 12), beside the Blazor Example's: the code the frame runs. -->
+    <AdditionalFiles Include="Examples\**\*.ts;Examples\**\*.tsx" />
     <!-- The decision records: an API summary's "ADR-0016" links to its file, and the Roadmap reads the
          scope tables of ADR-0046 and ADR-0059. -->
     <AdditionalFiles Include="..\..\docs\adr\*.md" />
@@ -93,6 +95,48 @@
          site map's anchors are the ones the pages render (ADR-0110). -->
     <Compile Include="..\ExGrid.Docs.Generator\DocsAnchor.cs" Link="Shared\DocsAnchor.cs" />
   </ItemGroup>
+
+  <!-- The React Examples (ADR-0350 section 12, ADR-0110): the .tsx files beside the Blazor ones under Examples/,
+       built ahead of time by ExGrid.Docs.React into wwwroot/react, the page a React Example's frame opens. Built as
+       this project builds and never committed, so a change to an Example or to a package it runs is in the next
+       build, and an Example that does not type or build fails the site's build, as a Blazor one does. The build
+       needs Node, as ExGrid's does, and the Examples project's dependencies, which it installs once. -->
+  <PropertyGroup>
+    <ReactExamplesProject>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'ExGrid.Docs.React'))</ReactExamplesProject>
+    <ReactExamplesFrame>$(MSBuildThisFileDirectory)wwwroot/react/index.html</ReactExamplesFrame>
+    <ReactExamplesPackages>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', 'src', 'npm'))</ReactExamplesPackages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ReactExampleSource Include="Examples/**/*.ts;Examples/**/*.tsx" />
+    <ReactExampleSource Include="$(ReactExamplesProject)src/**/*;$(ReactExamplesProject)index.html;$(ReactExamplesProject)vite.config.ts;$(ReactExamplesProject)tsconfig.json;$(ReactExamplesProject)package.json;$(ReactExamplesProject)package-lock.json;$(ReactExamplesPackages)tsconfig.base.json" />
+    <ReactExampleSource Include="$(ReactExamplesPackages)core/src/**/*.ts;$(ReactExamplesPackages)react/src/**/*.ts;$(ReactExamplesPackages)data/src/**/*.ts" />
+    <ReactExampleSource Include="$(ReactExamplesPackages)sheet-engine/src/**/*.ts;$(ReactExamplesPackages)sheet/src/**/*.ts;$(ReactExamplesPackages)sheet-react/src/**/*.ts" />
+    <ReactExampleSource Include="..\..\src\ExGrid\wwwroot\ex-grid.min.css;..\..\src\ExSheet\wwwroot\ex-sheet.min.css" />
+    <Content Remove="wwwroot/react/**" />
+  </ItemGroup>
+
+  <!-- npm ci again whenever the lock file is newer than what it installed, as ExGrid's build does. -->
+  <Target Name="InstallReactExamples"
+          Inputs="$(ReactExamplesProject)package-lock.json" Outputs="$(ReactExamplesProject)node_modules/.package-lock.json">
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(ReactExamplesProject)" />
+  </Target>
+
+  <Target Name="BuildReactExamples" DependsOnTargets="InstallReactExamples"
+          Inputs="@(ReactExampleSource)" Outputs="$(ReactExamplesFrame)">
+    <Exec Command="npm run typecheck" WorkingDirectory="$(ReactExamplesProject)" />
+    <Exec Command="npm run build" WorkingDirectory="$(ReactExamplesProject)" />
+  </Target>
+
+  <!-- Apart from the build, which is skipped while the frame is newer than every source: the items are added on every
+       build, so the static web assets always hold the frame, and only the files the last build wrote. -->
+  <Target Name="IncludeReactExamples" DependsOnTargets="BuildReactExamples"
+          BeforeTargets="BeforeBuild;ResolveProjectStaticWebAssets;ResolveStaticWebAssetsConfiguration">
+    <ItemGroup>
+      <Content Remove="wwwroot/react/**" />
+      <Content Include="wwwroot/react/**" />
+    </ItemGroup>
+  </Target>
 
   <!-- The shipped assemblies' XML documentation, for the API tables: the file beside each
        referenced src/ project's assembly. -->

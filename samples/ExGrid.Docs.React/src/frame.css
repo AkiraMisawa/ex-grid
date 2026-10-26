@@ -1,0 +1,21 @@
+/* The frame's page: the Example on the surface the site draws its Examples on, with the site's padding
+   (docs.css, .docs-example-live). Its colours follow the scheme the site passes in the address. */
+:root {
+    --docs-frame-ink: light-dark(rgba(0, 0, 0, 0.87), rgba(255, 255, 255, 0.87));
+}
+
+html, body {
+    margin: 0;
+    background: transparent;
+    color: var(--docs-frame-ink);
+    font-family: Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.43;
+}
+
+#app {
+    padding: 24px;
+    overflow-x: auto;
+}
+
+p { margin: 12px 0 0; }
