@@ -2588,7 +2588,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         answering = true;
         const epoch = holdEpoch;
         if (answer) {
-            holdAnswer = { upTo, input };
+            holdAnswer = { upTo, input, from: popoverOf(document.activeElement) };
             answer.then(() => drain(epoch));
         } else {
             holdAnswer = null;
@@ -2978,6 +2978,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // takes the keyboard a round trip before the stamp says so on a circuit (ExGrid.MudBlazor's Find on
     // the Server host).
     //
+    // Nor does the stamp keep it for the key's own number, once every input before the key is answered and
+    // the popover holds the keyboard. The core focuses the popover's control from the after-work of the
+    // render that opened it, and the stamp says the key is answered only once that after-work is over: on a
+    // circuit, the focus call's round trip after the keyboard has arrived. A Tab typed once the built-in
+    // Find's field held the keyboard, before the stamp said so, was held and refused (CI on PR #322, the
+    // Server host, Chrome). Only a popover the keyboard was not in when the key was typed (`from`): nothing
+    // answered before the key is still to move the keyboard, so a popover it has moved into is the key's doing.
+    //
     // A key the gate does not know opens a popover is a popover key once the core hands the keyboard to a
     // Consumer's popover in answer to it — a hand-off numbered after the key: ExSheet's Ctrl+1 opens
     // Format Cells in the grid's frame. Held to the key's reply, a Shift+Tab typed once Format Cells' tab
@@ -2988,7 +2996,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // hand-off's number is there to wait for (inputsAnswered), and the hold ends only once it does.
     const answeredAtKey = () => {
         if (holdAnswer.upTo > 0) {
-            return inputsAnswered(holdAnswer.upTo);
+            return inputsAnswered(holdAnswer.upTo) || (awaitingPopover && popoverFocused()
+                && popoverOf(document.activeElement) !== holdAnswer.from && inputsAnswered(holdAnswer.upTo - 1));
         }
         return handOff === 'popover' && holdAnswer.input > 0 && handOffInput > holdAnswer.input && stamp !== null
             && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(holdAnswer.input, awaitingMove?.upTo ?? 0);

@@ -1,4 +1,4 @@
-import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, holdFrames, holdReplies } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, holdFrames, holdReplies, setRoundTrip } from './fixtures.mjs';
 import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 import { acrossEdges, blend, onDevicePixels, paints } from './pixels.mjs';
 
@@ -91,17 +91,27 @@ for (const chrome of ['builtin', 'mud']) {
         // hold behind Ctrl+F waited for that reply before it looked at anything, and held the Tab, which was
         // refused once the reply came (CI on PR #243, WebAssembly, one run in three). Here the reply is kept
         // back until the Tab is typed, so that is the case every time.
+        // On the Server host the Settled Stamp says Ctrl+F is answered only a round trip after the field has
+        // the keyboard, once the core's focus call has come back, and a Tab typed in between was refused (CI
+        // on PR #322, Chrome). The round trip is widened there, and the Tab typed as the field takes the
+        // keyboard, so that is the case every time too.
         test('FD-1/ADR-0240: a Tab typed once Find\'s field holds the keyboard moves on in the panel, before Ctrl+F\'s reply has come', async ({ page }) => {
             const letGo = await holdReplies(page, 'OnKeyAsync');
             await page.goto(`/features?chrome=${chrome}`);
             await grid(page).locator("[id$='r0c0']").click({ force: true });
             await settled(grid(page));
-            await page.keyboard.press('ControlOrMeta+f');
             const panel = grid(page).locator('.ex-popover-find');
             const field = panel.locator('input').first();
-            await expect(field).toBeFocused();
+            await setRoundTrip(300);
+            try {
+                await page.keyboard.press('ControlOrMeta+f');
+                await field.evaluate((f) => (document.activeElement === f ? undefined
+                    : new Promise((took) => { f.addEventListener('focus', () => took(), { once: true }); })));
 
-            await page.keyboard.press('Tab');
+                await page.keyboard.press('Tab');
+            } finally {
+                await setRoundTrip(0);
+            }
             await letGo();
             await settled(grid(page));
             await expect(field).not.toBeFocused();

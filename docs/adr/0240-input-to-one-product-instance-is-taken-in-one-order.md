@@ -688,6 +688,17 @@ the keyboard first; what that number waits for elsewhere, the popover holding th
 here in any case. Layer 3 holds Ctrl+1's reply and the frames, and on the Server host adds a 150 ms round
 trip; on the code before this note the Shift+Tab was refused on both hosts.
 
+*Widened (2026-10-26, CI on PR #322, the Server host, Chrome).* The stamp can trail the keyboard on a
+popover key's own number too. The core focuses the popover's control from the after-work of the render
+that opened it, and the stamp says the key is answered only once that after-work is over: on a circuit, a
+round trip after the field has the keyboard, once the focus call has come back. Find's field held the
+keyboard with the stamp still one number short, and a Tab typed in between was held and refused. A popover
+key's answer now also counts as come when every input before the key is answered and a popover the
+keyboard was not in when the key was typed holds it: nothing answered before the key is still to move the
+keyboard, so the popover it has moved into is the key's doing. Layer 3 widens the round trip to 300 ms and types
+the Tab as the field takes the keyboard; on the code before this note it was refused every time under the
+built-in Chrome.
+
 The same window, looked for on `main` with the page's animation frames held back (layer 3's
 `holdFrames`): a Tab typed once Find's field held the keyboard was refused too, under both Chromes. Keys a
 held replay reproduces — a menu's Tab, a tab's arrows — and the toolbar band after F10, which the wait
