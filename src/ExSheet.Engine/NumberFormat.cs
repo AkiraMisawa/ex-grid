@@ -953,7 +953,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         /// </summary>
         private string? FormatDigits(double magnitude, bool minus, CultureInfo culture)
         {
-            var value = magnitude * Math.Pow(100, Percent) / Math.Pow(1000, _scale);
+            var value = magnitude * PortableMath.PowWhole(10, 2 * Percent) / PortableMath.PowWhole(10, 3 * _scale);
             if (!double.IsFinite(value)) return null;
             string integerDigits;
             string fractionDigits;

@@ -162,7 +162,7 @@ internal static class CorrectlyRounded
     }
 
     /// <summary>A finite double as significand * 2^exponent, the significand a whole number.</summary>
-    private static (BigInteger Significand, int Exponent) Decompose(double x)
+    internal static (BigInteger Significand, int Exponent) Decompose(double x)
     {
         var bits = BitConverter.DoubleToInt64Bits(Math.Abs(x));
         var biased = (int)((bits >> 52) & 0x7FF);

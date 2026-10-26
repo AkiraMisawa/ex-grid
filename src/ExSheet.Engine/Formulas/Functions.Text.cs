@@ -402,7 +402,7 @@ internal static partial class FunctionLibrary
         {
             return Operand.Of(ErrorValue.Value);
         }
-        return Operand.Of(Evaluator.Number(number / Math.Pow(100, percents)));
+        return Operand.Of(Evaluator.Number(number / PortableMath.PowWhole(10, 2 * percents)));
     }
 
     /// <summary>

@@ -667,7 +667,7 @@ internal static partial class FunctionLibrary
         {
             // Every digit is dropped: a number below half the place is 0, and away from zero it is the place itself.
             if (rounding != Rounding.AwayFromZero) return 0;
-            var place = Math.Pow(10, -digits);
+            var place = PortableMath.PowWhole(10, -digits);
             return number < 0 ? -place : place;
         }
         var keep = (int)kept;
