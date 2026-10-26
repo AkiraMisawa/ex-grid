@@ -358,6 +358,11 @@ describe('ExPivot\'s selection (ADR-0340)', () => {
         expect(event?.items?.map(cell => named(cell.row))).toEqual(['Region=EU', 'Region=EU Desk=Credit']);
     });
 
+    it('ADR-0340: a selection dropped is said with no Items, so what it narrowed is let go', async () => {
+        const [event] = await selected(byRegion, []);
+        expect(event?.items).toEqual([]);
+    });
+
     it('spine rule 1: a selection reaching a row the grid does not hold is said with no Items rather than some', async () => {
         const [event] = await selected(byRegion, [{ topRow: 0, leftColumn: 0, rowCount: 50, columnCount: 1 }]);
         expect(event?.selection.ranges).toHaveLength(1);

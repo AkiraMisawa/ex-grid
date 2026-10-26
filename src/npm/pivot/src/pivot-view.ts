@@ -50,7 +50,7 @@ export interface PivotSelectionChangedEvent {
     readonly selection: GridSelection;
     /** Each selected cell's row and column Items, each cell once, in the order selected (ADR-0340); `undefined`
      * when the selection reaches a row the grid does not hold drawn now, which is read from no Items rather than
-     * from some of them (spine rule 1). */
+     * from some of them (spine rule 1). A selection of nothing is said with none. */
     readonly items: readonly PivotCellItems[] | undefined;
 }
 
@@ -692,7 +692,9 @@ export class PivotView {
             get items(): readonly PivotCellItems[] | undefined {
                 if (!read) {
                     read = true;
-                    items = metadata === undefined || state === undefined ? undefined : cellItems(selection, metadata, state.window, state.windowStart);
+                    // A selection of nothing stands for no cell, report or none: a Board lets its narrowing go.
+                    if (selection.ranges.length === 0) items = Object.freeze([]);
+                    else if (metadata !== undefined && state !== undefined) items = cellItems(selection, metadata, state.window, state.windowStart);
                 }
                 return items;
             },
