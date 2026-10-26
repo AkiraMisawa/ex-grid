@@ -12,6 +12,7 @@ import {
     pointedReferenceAt, referenceText, structuredReferenceText,
 } from '../src/formula-entry';
 import { Value } from '../src/value';
+import { Workbook } from '../src/workbook';
 import { CaseError, compare, cultureOf, decode, encode, isObject, list, object, text, thrown, type Json, type JsonObject } from './sheet-case';
 
 type Callable = (...args: unknown[]) => unknown;
@@ -38,6 +39,7 @@ const subjects: Readonly<Record<string, object>> = {
         referenceText,
         structuredReferenceText,
     },
+    Workbook,
 };
 
 /** An argument as a case writes it: JSON as it stands, or one of the engine's own values, tagged. */

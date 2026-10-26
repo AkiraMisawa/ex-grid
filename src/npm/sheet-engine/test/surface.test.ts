@@ -72,18 +72,6 @@ describe('the engine surface', () => {
         expect(names.filter(name => hiding.test(name))).toEqual([]);
     });
 
-    // ADR-0047: whole columns and rows are written as Excel writes them.
-    it.each([
-        ['B:D', true, false],
-        ['3:4', false, true],
-        ['A:XFD', true, true],
-        ['A1:B2', false, false],
-    ] as const)('reads %s as whole columns %s and whole rows %s', (text, columns, rows) => {
-        const range = CellRange.parse(text);
-        expect(range.isWholeColumns).toBe(columns);
-        expect(range.isWholeRows).toBe(rows);
-    });
-
     // ADR-0331: the Sheet shown is one of the Workbook's, and a Sheet of another is refused.
     it('refuses to show a Sheet of another Workbook', () => {
         const workbook = new Workbook(Culture.of('en-US'), ['Sheet1', 'Sheet2']);
@@ -93,16 +81,10 @@ describe('the engine surface', () => {
         }).toThrow(RangeError);
     });
 
-    // ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet.
-    it.each([[['Sheet1', 'SHEET1']], [['a:b']], [[]]] as const)('refuses a Workbook of the names %j', names => {
-        expect(() => new Workbook(Culture.of('en-US'), names)).toThrow(RangeError);
-    });
-
-    // ADR-0331: every Sheet is under the Workbook's culture, and a name no Sheet has finds none.
-    it('puts every Sheet under the Workbook\'s culture, and finds no missing name', () => {
+    // ADR-0331: every Sheet is under the Workbook's culture.
+    it('puts every Sheet under the Workbook\'s culture', () => {
         const workbook = new Workbook(Culture.of('en-US'), ['Inputs', 'Totals']);
         for (const sheet of workbook.sheets) expect(sheet.culture).toBe(workbook.culture);
-        expect(workbook.find('Missing')).toBeUndefined();
     });
 
     // ADR-0331: an edit naming no Sheet of the Workbook is refused, and changes nothing.

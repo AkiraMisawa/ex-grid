@@ -26,6 +26,7 @@ public class SheetCallCaseTests
         ["DeclaredFunction"] = typeof(DeclaredFunction),
         ["Entry"] = typeof(Entry),
         ["FormulaEntry"] = typeof(FormulaEntry),
+        ["Workbook"] = typeof(Workbook),
     };
 
     private const BindingFlags Visible = BindingFlags.Public | BindingFlags.NonPublic;

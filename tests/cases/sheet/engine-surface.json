@@ -1,0 +1,54 @@
+{
+  "about": "Calls of the engine's surface that hold no Sheet's contents (ADR-0047, ADR-0331): a range's whole columns and rows, and the Workbook's Sheet names. Transcribed from ExSheet.Engine.Tests' EngineSurfaceTests, which keeps what the two surfaces spell differently.",
+  "kind": "sheetCalls",
+  "cases": [
+    {
+      "name": "ADR-0047: whole columns and rows are written as Excel writes them: B:D",
+      "call": "CellRange.parse",
+      "args": ["B:D"],
+      "is": {"isWholeColumns": true, "isWholeRows": false}
+    },
+    {
+      "name": "ADR-0047: whole columns and rows are written as Excel writes them: 3:4",
+      "call": "CellRange.parse",
+      "args": ["3:4"],
+      "is": {"isWholeColumns": false, "isWholeRows": true}
+    },
+    {
+      "name": "ADR-0047: whole columns and rows are written as Excel writes them: A:XFD",
+      "call": "CellRange.parse",
+      "args": ["A:XFD"],
+      "is": {"isWholeColumns": true, "isWholeRows": true}
+    },
+    {
+      "name": "ADR-0047: whole columns and rows are written as Excel writes them: A1:B2",
+      "call": "CellRange.parse",
+      "args": ["A1:B2"],
+      "is": {"isWholeColumns": false, "isWholeRows": false}
+    },
+    {
+      "name": "ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet: two names alike without regard to case",
+      "call": "new Workbook",
+      "args": [{"culture": "en-US"}, ["Sheet1", "SHEET1"]],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet: a name Excel refuses",
+      "call": "new Workbook",
+      "args": [{"culture": "en-US"}, ["a:b"]],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet: no Sheet",
+      "call": "new Workbook",
+      "args": [{"culture": "en-US"}, []],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0331: a name no Sheet has finds none",
+      "call": "new Workbook",
+      "args": [{"culture": "en-US"}, ["Inputs", "Totals"]],
+      "then": [{"call": "find", "args": ["Missing"], "is": null}]
+    }
+  ]
+}

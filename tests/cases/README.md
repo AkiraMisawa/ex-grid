@@ -720,7 +720,7 @@ own reading of a malformed case, an engine defect, and what JavaScript throws by
 A file of kind `sheetCalls` holds calls of the engine's surface made directly, outside a Workbook: a `call` of
 `Subject.member` (a static method, or a property read when the case writes no `args`) or `new Subject`, its `args`,
 and what it answers (`is`) or refuses (`throws`, a refusal as above). The subjects are `CellAddress`, `CellRange`,
-`DateSerial`, `DeclaredFunction`, `Entry` and `FormulaEntry`; a member is named as the Script Core spells it, and xUnit finds it as C# spells it, `parse` as
+`DateSerial`, `DeclaredFunction`, `Entry`, `FormulaEntry` and `Workbook`; a member is named as the Script Core spells it, and xUnit finds it as C# spells it, `parse` as
 `Parse`. An argument is JSON as it stands, or one of the engine's own values tagged: `{"value": v}` as a sheet case
 writes a Value, `{"address": "A1"}`, `{"range": "A1:B2"}`, `{"culture": name}`, and `{"lookup": {name: [...]}}`,
 a function from a name, found without regard to case, to what the map holds for it, or nothing. A C# method that
