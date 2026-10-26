@@ -2,11 +2,11 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.2% | 88.5% |
+| ExGrid | 95.3% | 88.6% |
 | ExSheet | 95.2% | 87.5% |
 | ExPivot | 94.4% | 86.3% |
-| ExChart | 90.9% | 83.8% |
-| ExBoard | 91.7% | 81.8% |
+| ExChart | 91.8% | 86.1% |
+| ExBoard | 93.8% | 86.9% |
 | Data | 94% | 88.8% |
 
 # Summary
@@ -14,35 +14,35 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 08:29:41 |
+| Generated on: | 10/26/2026 - 09:15:21 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1199 |
 | Files: | 609 |
-| **Line coverage:** | 94.5% (83379 of 88212) |
-| Covered lines: | 83379 |
-| Uncovered lines: | 4833 |
-| Coverable lines: | 88212 |
-| Total lines: | 140819 |
-| **Branch coverage:** | 87.2% (50340 of 57718) |
-| Covered branches: | 50340 |
-| Total branches: | 57718 |
+| **Line coverage:** | 94.6% (83521 of 88218) |
+| Covered lines: | 83521 |
+| Uncovered lines: | 4697 |
+| Coverable lines: | 88218 |
+| Total lines: | 140827 |
+| **Branch coverage:** | 87.5% (50562 of 57724) |
+| Covered branches: | 50562 |
+| Total branches: | 57724 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 91.7%</summary>
+<details><summary>ExBoard - 93.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**91.7%**|**81.8%**|
+|**ExBoard**|**93.8%**|**86.9%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
-|ExBoard.BoardChartChange|100%|25%|
+|ExBoard.BoardChartChange|100%|100%|
 |ExBoard.BoardChartQuery|100%||
 |ExBoard.BoardChartView|87.5%||
-|ExBoard.BoardDiff|92.2%|84.9%|
+|ExBoard.BoardDiff|98.8%|91.8%|
 |ExBoard.BoardDiffReading|100%||
 |ExBoard.BoardGridChange|92.3%|75%|
 |ExBoard.BoardGridView|75%||
@@ -55,7 +55,7 @@
 |ExBoard.BoardReading|100%||
 |ExBoard.BoardRow|100%||
 |ExBoard.BoardSource|100%|84.6%|
-|ExBoard.BoardSpec|91.4%|75.1%|
+|ExBoard.BoardSpec|95%|87.1%|
 |ExBoard.BoardSpec.DeclaredColumns|75%|100%|
 |ExBoard.BoardSpecAnswer|100%||
 |ExBoard.BoardSpecTool|100%||
@@ -123,11 +123,11 @@
 |ExChart.SnapshotChartData|100%|100%|
 
 </details>
-<details><summary>ExChart.Engine - 96%</summary>
+<details><summary>ExChart.Engine - 97.5%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**96%**|**88%**|
+|**ExChart.Engine**|**97.5%**|**91.2%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -137,7 +137,7 @@
 |ExChart.Engine.ChartAxis|96%|81.8%|
 |ExChart.Engine.ChartCsv|100%|90.5%|
 |ExChart.Engine.ChartData|95.4%|80%|
-|ExChart.Engine.ChartDefinition|85.9%|85.3%|
+|ExChart.Engine.ChartDefinition|86.6%|85.8%|
 |ExChart.Engine.ChartEdge|100%||
 |ExChart.Engine.ChartEdgeMark|100%||
 |ExChart.Engine.ChartMark|100%||
@@ -153,8 +153,8 @@
 |ExChart.Engine.ChartSourceAnswer|100%||
 |ExChart.Engine.ChartSourceQuery|100%||
 |ExChart.Engine.ChartSourceReading|100%||
-|ExChart.Engine.ChartSpec|92.4%|79%|
-|ExChart.Engine.ChartSpec.Reader|92.3%|78.2%|
+|ExChart.Engine.ChartSpec|97.7%|93.8%|
+|ExChart.Engine.ChartSpec.Reader|98.7%|94.4%|
 |ExChart.Engine.ChartSpecAnswer|100%||
 |ExChart.Engine.ChartSpecReading|91.3%|75%|
 |ExChart.Engine.ChartSpecRefusedException|100%||
@@ -235,11 +235,11 @@
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
 </details>
-<details><summary>ExGrid - 94.9%</summary>
+<details><summary>ExGrid - 95%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**94.9%**|**88.6%**|
+|**ExGrid**|**95%**|**88.7%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -407,7 +407,7 @@
 |ExGrid.FetchingGridSource<TRow>|96.8%|86%|
 |ExGrid.FilterClause|100%||
 |ExGrid.FilterDocument|100%||
-|ExGrid.FilterEquality|87.5%|81.2%|
+|ExGrid.FilterEquality|93.7%|82.8%|
 |ExGrid.FilterOperators|100%|100%|
 |ExGrid.FilterSpec|100%||
 |ExGrid.FilterSpecDocument|100%||
@@ -425,7 +425,7 @@
 |ExGrid.Finding.GridReplaceResult|100%|100%|
 |ExGrid.Finding.GridReplaceWrite<TRow>|93.3%||
 |ExGrid.Finding.HeaderFindWalk|100%|100%|
-|ExGrid.FormatCode|86.5%|85.2%|
+|ExGrid.FormatCode|95.5%|89.1%|
 |ExGrid.GridChangeBatch<TRow>|96.6%|68.7%|
 |ExGrid.GridColumn<TRow>|50%||
 |ExGrid.GridColumn<TRow>|96.6%|92.6%|
@@ -443,8 +443,8 @@
 |ExGrid.GridSource|100%|100%|
 |ExGrid.GridViewSpec|90.6%|70.8%|
 |ExGrid.GridViewSpecReading|100%||
-|ExGrid.GridViewState|96.6%|84.2%|
-|ExGrid.GridViewStateJson|97.6%|90.6%|
+|ExGrid.GridViewState|98.3%|89.4%|
+|ExGrid.GridViewStateJson|97.8%|91.2%|
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
