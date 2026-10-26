@@ -34,7 +34,7 @@ import { SheetChange } from '@ex-grid/sheet-engine';
 import { SheetDocument } from '@ex-grid/sheet-engine';
 import { SheetEdit } from '@ex-grid/sheet-engine';
 import type { SheetRefusal } from '@ex-grid/sheet-engine';
-import type { Value } from '@ex-grid/sheet-engine';
+import { Value } from '@ex-grid/sheet-engine';
 import { ViewportSize } from '@ex-grid/core';
 import { Workbook } from '@ex-grid/sheet-engine';
 import { WorkbookDocument } from '@ex-grid/sheet-engine';
@@ -352,7 +352,9 @@ export function sheetFormatKeysDeclared(): readonly string[];
 
 // @public
 export interface SheetHandle {
+    declareLinkedTable(name: string, columns: readonly string[], key?: string | readonly string[]): void;
     destroy(): void;
+    pushLinkedTable(name: string, rows: Iterable<readonly (Value | undefined)[]>): void;
     redo(): boolean;
     undo(): boolean;
     update(options: SheetOptions): void;

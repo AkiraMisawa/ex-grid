@@ -4,7 +4,7 @@
 // stack (ADR-0048), hands back new instances only for the rows a change names (ADR-0003), and says in its own words
 // what it refuses (ADR-0370 section 10).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CellAddress, Culture, SheetEdit, SheetRefusedError, Workbook } from '@ex-grid/sheet-engine';
+import { CellAddress, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
 import { createSheet, type SheetHandle, type SheetOptions } from '../src/create-sheet';
 
 const mounted: SheetHandle[] = [];
@@ -144,6 +144,51 @@ describe('createSheet (ADR-0046, ADR-0370 section 1)', () => {
         sheet.update({ locale: 'en-us', viewportWidth: 600, viewportHeight: 300 });
         expect(() => { sheet.update({ locale: 'de-DE' }); }).toThrow(/culture is recorded in its document/u);
         expect(() => createSheet(document.createElement('div'), { locale: 'xx-XX' })).toThrow(/xx-XX/u);
+    });
+});
+
+/** A Linked Table's rows of an Id and a PV, as a page pushes them. */
+const rowsOf = (...rows: readonly (readonly [string, number])[]): (readonly Value[])[] => rows.map(([id, pv]) => [Value.fromText(id), Value.fromNumber(pv)]);
+
+describe('Linked Tables (ADR-0049)', () => {
+    it('ADR-0049: a declared table\'s readers wait for its first snapshot, which repaints them; the document hears the declaration, never the rows, and neither is a step to undo', async () => {
+        const documents: unknown[] = [];
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'Total', B1: '=SUM(Positions[PV])', A3: 'Untouched' }), onWorkbookChanged: document => { documents.push(document); } });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        expect(documents).toHaveLength(1);
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
+        // The same declaration again changes nothing the document records.
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        expect(documents).toHaveLength(1);
+        const untouched = cellAt(element, 2, 0);
+        sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1250], ['R-2', -420.5]));
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('829.5'); });
+        expect(cellAt(element, 2, 0)).toBe(untouched);
+        expect(documents).toHaveLength(1);
+        expect(sheet.undo()).toBe(false);
+    });
+
+    it('ADR-0049: a snapshot in which a key repeats is refused with the engine\'s error, and its readers wait again', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ B1: '=SUM(Positions[PV])' }) });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1]));
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('1'); });
+        expect(() => { sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1], ['r-1', 2])); }).toThrow(RepeatedKeyError);
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
+    });
+
+    it('ADR-0049, ADR-0331: a reader on a Sheet other than the first follows a push, and waits again when a key repeats', async () => {
+        const workbook = new Workbook(Culture.of('en-US'), ['Sheet1', 'Second']);
+        workbook.do('Second', SheetEdit.enter(CellAddress.parse('B1'), '=SUM(Positions[PV])'));
+        const { element, sheet } = sheetOf({ document: workbook.toDocument() });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        click(element.querySelectorAll('.ex-sheet-tab')[1]);
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
+        sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1], ['R-2', 2]));
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('3'); });
+        expect(() => { sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1], ['r-1', 2])); }).toThrow(RepeatedKeyError);
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
     });
 });
 

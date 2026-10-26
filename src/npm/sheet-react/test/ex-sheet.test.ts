@@ -2,10 +2,10 @@
 // The adapter's own tests (ADR-0350 section 13): React Testing Library mounts it. What the Sheet does is
 // `@ex-grid/sheet`'s, tested there; here, that the adapter mounts it once, hands it each render's props, and
 // destroys it with the component.
-import { createElement, StrictMode } from 'react';
+import { createElement, createRef, StrictMode } from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ExSheet } from '../src/ex-sheet';
+import { ExSheet, type ExSheetApi } from '../src/ex-sheet';
 
 afterEach(() => { cleanup(); });
 
@@ -29,6 +29,19 @@ describe('ExSheet', () => {
         } finally {
             Reflect.deleteProperty(navigator, 'language');
         }
+    });
+
+    it('ADR-0049: a ref reaches the mounted Sheet under StrictMode, and asks nothing of one unmounted', () => {
+        const sheet = createRef<ExSheetApi>();
+        const { unmount } = render(createElement(StrictMode, null, createElement(ExSheet, { locale: 'en-US', ref: sheet })));
+        const api = sheet.current;
+        if (api === null) throw new Error('The ref was given the Sheet.');
+        api.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        api.pushLinkedTable('Positions', []);
+        expect(api.workbook.linkedTables.map(table => table.name)).toEqual(['Positions']);
+        expect(api.undo()).toBe(false);
+        unmount();
+        expect(() => api.workbook).toThrow(/not mounted/u);
     });
 
     it('ADR-0018: unmounted, the Sheet is destroyed and its element emptied; under StrictMode one Sheet stands', () => {
