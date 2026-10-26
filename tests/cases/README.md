@@ -663,8 +663,9 @@ each `[sheet, edit]`; `undo` and `redo` of the `last` step or
 of the step at an index among those done; `reopen` from the Workbook's `document` or that document's `json`,
 from `{"sheet": name}` (that one Sheet's Sheet Document, written to JSON and read back), or from a document
 the case writes, `{"sheetJson": text}` or `{"workbookJson": text}`; `remember` a picture of the Workbook by
-name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat`, `setAlignment` and
-`setCellFormat` (`ranges` and a `change`) directly, outside any step; `declareTable` and `pushTable` for a
+name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat`, `setAlignment`,
+`setCellFormat` (`ranges` and a `change`), `setColumnWidth` and `setAutomaticColumnWidth` (`columns` and a `width`)
+directly, outside any step; `declareTable` and `pushTable` for a
 Linked Table, and `readTable`, its columns by name, or `{"name", "as"}` to hold the snapshot read under a label; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clock that starts `from` a
 moment written `yyyy-MM-ddTHH:mm:ss` and moves on a finite `step` of seconds each time it is read; and
 `getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect; and `show`, the Sheet
@@ -677,7 +678,7 @@ An expectation names readings: per cell, `values` (a string is text, a number a 
 Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in full, so that one written without
 `"refused": true` is never a refusal), `displays`, `texts`, `formulas`, `entryTexts`,
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
-range, `cellFormats` (the Cell Formats it shows, each once) and `edgeLines` (the lines along each outer edge),
+range, `cellFormats` (the Cell Formats it shows, each once), `entryAddressesIn` (its cells that hold an Entry, in row order) and `edgeLines` (the lines along each outer edge),
 each a set written in the ordinal order of its members' JSON text as `JSON.stringify` writes it; of
 the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which both engines write alike), `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
 `changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`

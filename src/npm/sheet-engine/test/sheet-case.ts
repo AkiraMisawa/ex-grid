@@ -272,7 +272,7 @@ function documentJson(document: SheetDocument): JsonObject {
         cellAddresses: document.cells.map(c => c.address.toString()),
         columns: document.columns.map(axisFormatJson),
         rows: document.rows.map(axisFormatJson),
-        columnWidths: document.columnWidths.map(w => ({ first: w.first, last: w.last, width: w.width, kind: w.kind })),
+        columnWidths: document.columnWidths.map(w => ({ first: w.first, last: w.last, width: w.width, kind: w.kind, isCustom: w.isCustom })),
     };
 }
 
@@ -339,7 +339,7 @@ function cultureOf(name: string): Culture {
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
     'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat', 'show',
-    'doAll', 'readTable',
+    'doAll', 'readTable', 'setColumnWidth', 'setAutomaticColumnWidth',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
@@ -564,6 +564,17 @@ class Run {
                 for (const [at, alignment] of Object.entries(object(argument, 'setAlignment'))) {
                     outcome.change = sheet.setAlignment(CellRange.parse(at), text(alignment, at) as HorizontalAlignment);
                 }
+                break;
+            case 'setColumnWidth': {
+                // The Sheet's own forms, outside any step.
+                const width = object(argument, 'setColumnWidth')['width'];
+                outcome.change = sheet.setColumnWidth(CellRange.parse(text(object(argument, 'setColumnWidth')['columns'], 'columns')),
+                    width === undefined || width === null ? undefined : caseNumber(width, 'width'));
+                break;
+            }
+            case 'setAutomaticColumnWidth':
+                outcome.change = sheet.setAutomaticColumnWidth(CellRange.parse(text(object(argument, 'setAutomaticColumnWidth')['columns'], 'columns')),
+                    caseNumber(object(argument, 'setAutomaticColumnWidth')['width'], 'width'));
                 break;
             case 'setCellFormat': {
                 // The Sheet's own form, outside any step.
@@ -831,6 +842,10 @@ class Run {
             case 'widthOnEntry':
                 actual = perCell(a => orNull(sheet.getWidthOnEntry(a)));
                 break;
+            case 'entryAddressesIn':
+                // The cells of each range that hold an Entry, in row order and then column order.
+                actual = perRange(r => addresses(sheet.entryAddressesIn(r).toSorted((a, b) => (a.row === b.row ? a.column - b.column : a.row - b.row))));
+                break;
             case 'spilledFrom':
                 actual = perCell(a => orNull(sheet.spilledFrom(a)?.toString()));
                 break;
@@ -839,7 +854,7 @@ class Run {
                     const index = CellAddress.tryParseColumn(column);
                     if (index === undefined) throw new CaseError(`'${column}' is no column.`);
                     const width = sheet.getColumnWidth(index);
-                    return [column, width === undefined ? null : { width: width.width, kind: width.kind }];
+                    return [column, width === undefined ? null : { width: width.width, kind: width.kind, isCustom: width.isCustom, isSetByUser: width.isSetByUser }];
                 }));
                 break;
             case 'change':

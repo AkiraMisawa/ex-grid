@@ -347,6 +347,7 @@ internal static class SheetCases
                 ["last"] = w.Last,
                 ["width"] = w.Width,
                 ["kind"] = Camel(w.Kind),
+                ["isCustom"] = w.IsCustom,
             })]),
         };
     }
@@ -431,7 +432,7 @@ internal sealed class Run(CultureInfo culture)
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
         "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat", "show",
-        "doAll", "readTable",
+        "doAll", "readTable", "setColumnWidth", "setAutomaticColumnWidth",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -663,6 +664,13 @@ internal sealed class Run(CultureInfo culture)
             case "setAlignment":
                 foreach (var (at, alignment) in argument.AsObject())
                     outcome.Change = sheet.SetAlignment(CellRange.Parse(at), SheetCases.Enum<HorizontalAlignment>(alignment!));
+                break;
+            case "setColumnWidth":
+                // The Sheet's own forms, outside any step.
+                outcome.Change = sheet.SetColumnWidth(CellRange.Parse((string)argument["columns"]!), argument["width"] is { } setWidth ? SheetCases.Number(setWidth) : null);
+                break;
+            case "setAutomaticColumnWidth":
+                outcome.Change = sheet.SetAutomaticColumnWidth(CellRange.Parse((string)argument["columns"]!), SheetCases.Number(argument["width"]!));
                 break;
             case "setCellFormat":
                 // The Sheet's own form, outside any step.
@@ -939,6 +947,10 @@ internal sealed class Run(CultureInfo culture)
             case "widthOnEntry":
                 actual = PerCell(expected, a => sheet.GetWidthOnEntry(a));
                 break;
+            case "entryAddressesIn":
+                // The cells of each range that hold an Entry, in row order and then column order.
+                actual = PerRange(expected, r => SheetCases.Addresses(sheet.EntryAddressesIn(r).OrderBy(a => a.Row).ThenBy(a => a.Column)));
+                break;
             case "spilledFrom":
                 actual = PerCell(expected, a => sheet.SpilledFrom(a)?.ToString());
                 break;
@@ -949,7 +961,7 @@ internal sealed class Run(CultureInfo culture)
                 {
                     if (!CellAddress.TryParseColumn(column, out var index)) throw new InvalidDataException($"'{column}' is no column.");
                     widths[column] = sheet.GetColumnWidth(index) is { } width
-                        ? new JsonObject { ["width"] = width.Width, ["kind"] = SheetCases.Camel(width.Kind) }
+                        ? new JsonObject { ["width"] = width.Width, ["kind"] = SheetCases.Camel(width.Kind), ["isCustom"] = width.IsCustom, ["isSetByUser"] = width.IsSetByUser }
                         : null;
                 }
                 actual = widths;

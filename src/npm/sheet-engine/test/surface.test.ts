@@ -102,6 +102,17 @@ describe('the engine surface', () => {
         for (const sheet of workbook.sheets) expect([...sheet.entryAddresses]).toEqual([]);
     });
 
+    // ADR-0046: a width that is no finite number is refused, as one outside Excel's range is.
+    it.each([Number.NaN, Number.POSITIVE_INFINITY])('refuses the column width %s', width => {
+        const sheet = new Workbook(Culture.of('en-US')).shown;
+        const columns = CellRange.parse('B:B');
+        expect(() => SheetEdit.setColumnWidth(columns, width)).toThrow(RangeError);
+        expect(() => sheet.setColumnWidth(columns, width)).toThrow(RangeError);
+        expect(() => SheetEdit.setAutomaticColumnWidth(columns, width)).toThrow(RangeError);
+        expect(() => sheet.setAutomaticColumnWidth(columns, width)).toThrow(RangeError);
+        expect(sheet.getColumnWidth(1)).toBeUndefined();
+    });
+
     // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette.
     it.each([
         ['black', 0x000000],
