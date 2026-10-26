@@ -20,7 +20,10 @@
       "@ex-grid/data": ["../../src/npm/data/src/index.ts"],
       "@ex-grid/pivot-engine": ["../../src/npm/pivot-engine/src/index.ts"],
       "@ex-grid/pivot": ["../../src/npm/pivot/src/index.ts"],
-      "@ex-grid/pivot-react": ["../../src/npm/pivot-react/src/index.ts"]
+      "@ex-grid/pivot-react": ["../../src/npm/pivot-react/src/index.ts"],
+      "@ex-grid/sheet-engine": ["../../src/npm/sheet-engine/src/index.ts"],
+      "@ex-grid/sheet": ["../../src/npm/sheet/src/index.ts"],
+      "@ex-grid/sheet-react": ["../../src/npm/sheet-react/src/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

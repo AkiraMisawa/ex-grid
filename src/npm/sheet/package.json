@@ -1,0 +1,35 @@
+{
+  "name": "@ex-grid/sheet",
+  "version": "0.0.0-dev",
+  "description": "ExSheet's Script Core: a general-purpose Excel-like sheet drawn by ExGrid as its Consumer, over @ex-grid/sheet-engine, with its words, Format Cells, the Name Box, Excel's keys and Pointing, free of any UI framework.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "src/npm/sheet"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts"
+  ],
+  "dependencies": {
+    "@ex-grid/core": "0.0.0-dev",
+    "@ex-grid/sheet-engine": "0.0.0-dev"
+  },
+  "scripts": {
+    "build": "node ../scripts/build.mjs",
+    "api": "node ../scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}
