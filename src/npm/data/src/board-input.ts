@@ -178,17 +178,13 @@ export class BoardInput {
      * a time `yyyy-MM-ddTHH:mm[:ss[.fffffff]]`, never with an offset; `text` a string, and a `boolean` `true` or
      * `false`. The refusal's path is `input[row].column`, the row counted from 0.
      */
-    fromJson(json: string | JsonValue): Snapshot {
+    fromJson(json: string): Snapshot {
         let rows: JsonValue;
-        if (typeof json === 'string') {
-            try {
-                rows = readJsonText(json);
-            } catch (error) {
-                if (!(error instanceof JsonTextError)) throw error;
-                throw new BoardRefusedError(this.#name, `The data of input '${this.#name}' is not JSON: ${error.message}`, { cause: error });
-            }
-        } else {
-            rows = json;
+        try {
+            rows = readJsonText(json);
+        } catch (error) {
+            if (!(error instanceof JsonTextError)) throw error;
+            throw new BoardRefusedError(this.#name, `The data of input '${this.#name}' is not JSON: ${error.message}`, { cause: error });
         }
         if (!isJsonArray(rows)) throw new BoardRefusedError(this.#name, `The data of input '${this.#name}' is not a list of rows.`);
         const values = this.columns.map((): unknown[] => []);
@@ -291,6 +287,9 @@ function decimalOfNumber(raw: string): SnapshotDecimal | undefined {
     const [, sign = '', whole = '', fraction = '', exponent = '0'] = match;
     let digits = (whole + fraction).replace(/^0+(?=\d)/u, '');
     let places = fraction.length - Number(exponent);
+    // A decimal has at most 29 digits, so an exponent past them is refused before its zeros are written out.
+    if (places < -29) return undefined;
+    if (/^0+$/u.test(digits)) return canonicalDecimal(0n, 0);
     while (places > 0 && digits.endsWith('0')) {
         digits = digits.slice(0, -1);
         places--;

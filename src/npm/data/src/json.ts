@@ -58,6 +58,28 @@ export class JsonTextError extends Error {
 // The names of an object in the order the document wrote them, which an object's own keys do not keep where a
 // name is a whole number.
 const writtenOrder = new WeakMap<JsonObject, readonly string[]>();
+// The text each object and array was written as, for jsonRawText.
+const writtenText = new WeakMap<object, string>();
+
+/** How deeply System.Text.Json reads a document by default (`JsonReaderOptions.MaxDepth`). */
+const maxDepth = 64;
+
+// Refuses text nested deeper than System.Text.Json reads, before anything walks it.
+function checkDepth(text: string): void {
+    let depth = 0;
+    for (let at = 0; at < text.length; at++) {
+        const ch = text.charAt(at);
+        if (ch === '"') {
+            at++;
+            while (at < text.length && text.charAt(at) !== '"') at += text.charAt(at) === '\\' ? 2 : 1;
+        } else if (ch === '{' || ch === '[') {
+            depth++;
+            if (depth > maxDepth) throw new JsonTextError(`The document is nested deeper than ${maxDepth}, the depth a reader takes.`);
+        } else if (ch === '}' || ch === ']') {
+            depth--;
+        }
+    }
+}
 
 /** The names `object` was written with, in the order the document wrote them, as System.Text.Json enumerates
  * an object; an object {@link readJsonText} did not read gives its own keys. */
@@ -86,13 +108,18 @@ export function isJsonObject(value: JsonValue | undefined): value is JsonObject 
     return typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof JsonNumber);
 }
 
-/** A text that reads back as `value`, its numbers as spelt and no space between tokens: the value written
- * again, where `JsonElement.GetRawText` would keep the document's own spaces and escapes. */
+/** The text a value was written as, as `JsonElement.GetRawText` returns it: an object or an array
+ * {@link readJsonText} read is the document's own text, its spaces and escapes kept, and a number its spelling.
+ * A string, which JavaScript holds as its characters, is written again as `JSON.stringify` writes it, and a value
+ * {@link readJsonText} did not read is written again with no space between its tokens. */
 export function jsonRawText(value: JsonValue): string {
     if (value === null) return 'null';
     if (typeof value === 'boolean') return value ? 'true' : 'false';
     if (typeof value === 'string') return JSON.stringify(value);
     if (value instanceof JsonNumber) return value.raw;
+    if (typeof value !== 'object') throw new TypeError(`${String(value)} is not a value readJsonText reads: a number it reads is a JsonNumber.`);
+    const written = writtenText.get(value);
+    if (written !== undefined) return written;
     if (isJsonArray(value)) return `[${value.map(jsonRawText).join(',')}]`;
     return `{${jsonMemberNames(value).map(name => `${JSON.stringify(name)}:${jsonRawText(memberOf(value, name))}`).join(',')}}`;
 }
@@ -102,6 +129,7 @@ export function jsonRawText(value: JsonValue): string {
  * object that writes a member twice, throw a {@link JsonTextError}; each number is kept as it is spelt.
  */
 export function readJsonText(text: string): JsonValue {
+    checkDepth(text);
     try {
         JSON.parse(text);
     } catch (error) {
@@ -123,6 +151,7 @@ export function readJsonText(text: string): JsonValue {
     const valueAt = (): JsonValue => {
         skip();
         const ch = text.charAt(at);
+        const start = at;
         if (ch === '{') {
             at++;
             const object: { [key: string]: JsonValue } = {};
@@ -131,6 +160,7 @@ export function readJsonText(text: string): JsonValue {
             if (text.charAt(at) === '}') {
                 at++;
                 writtenOrder.set(object, Object.freeze(order));
+                writtenText.set(object, text.slice(start, at));
                 return Object.freeze(object);
             }
             for (;;) {
@@ -144,6 +174,7 @@ export function readJsonText(text: string): JsonValue {
                 skip();
                 if (text.charAt(at++) === '}') {
                     writtenOrder.set(object, Object.freeze(order));
+                    writtenText.set(object, text.slice(start, at));
                     return Object.freeze(object);
                 }
             }
@@ -154,12 +185,16 @@ export function readJsonText(text: string): JsonValue {
             skip();
             if (text.charAt(at) === ']') {
                 at++;
+                writtenText.set(entries, text.slice(start, at));
                 return Object.freeze(entries);
             }
             for (;;) {
                 entries.push(valueAt());
                 skip();
-                if (text.charAt(at++) === ']') return Object.freeze(entries);
+                if (text.charAt(at++) === ']') {
+                    writtenText.set(entries, text.slice(start, at));
+                    return Object.freeze(entries);
+                }
             }
         }
         if (ch === '"') return stringAt();

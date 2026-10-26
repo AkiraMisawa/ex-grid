@@ -67,17 +67,39 @@ public class BoardInputCaseTests
             input.Check(new DataShape(ColumnsOf(check!.AsArray())));
             return true;
         }
-        if (entry.TryGetPropertyValue("checkSource", out var shape))
+        if (entry.TryGetPropertyValue("bind", out var bind))
         {
-            await input.CheckAsync(new Answering(shape is null ? null : new DataShape(ColumnsOf(shape.AsArray()))), TestContext.Current.CancellationToken);
+            var builder = new SnapshotColumnsBuilder();
+            foreach (var column in ColumnsOf(bind!.AsArray()))
+            {
+                _ = column.Kind switch
+                {
+                    SnapshotKind.Text => (object)builder.Text(column.Name),
+                    SnapshotKind.Decimal => builder.Decimal(column.Name),
+                    SnapshotKind.Double => builder.Double(column.Name),
+                    SnapshotKind.Integer => builder.Integer(column.Name),
+                    SnapshotKind.Date => builder.Date(column.Name),
+                    _ => builder.Boolean(column.Name),
+                };
+            }
+            var snapshot = builder.Build();
+            Assert.Same(snapshot, input.Bind(snapshot));
             return true;
         }
-        var snapshot = input.FromJson((string)Must(entry, "fromJson")!);
-        return new JsonArray([.. snapshot.Columns.Select(column => (JsonNode)new JsonObject
+        if (entry.TryGetPropertyValue("checkSource", out var shape))
+        {
+            var answered = shape is null ? null : new DataShape(ColumnsOf(shape.AsArray()));
+            var source = new Answering(answered);
+            Assert.Same(answered, await input.CheckAsync(source, TestContext.Current.CancellationToken));
+            Assert.Equal(1, source.Asked);
+            return true;
+        }
+        var rows = input.FromJson((string)Must(entry, "fromJson")!);
+        return new JsonArray([.. rows.Columns.Select(column => (JsonNode)new JsonObject
         {
             ["name"] = column.Name,
             ["kind"] = BoardInput.NameOf(column.Kind),
-            ["values"] = new JsonArray([.. snapshot.Rows.Select(row => Value(snapshot.ValueAt(row, column)))]),
+            ["values"] = new JsonArray([.. rows.Rows.Select(row => Value(rows.ValueAt(row, column)))]),
         })]);
     }
 
@@ -109,7 +131,13 @@ public class BoardInputCaseTests
 
     private sealed class Answering(DataShape? shape) : IShapedSource
     {
-        public ValueTask<DataShape?> ShapeAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(shape);
+        public int Asked { get; private set; }
+
+        public ValueTask<DataShape?> ShapeAsync(CancellationToken cancellationToken = default)
+        {
+            Asked++;
+            return ValueTask.FromResult(shape);
+        }
     }
 
     private static JsonNode? Must(JsonObject entry, string key) =>

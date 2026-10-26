@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
-    BoardInput, BoardRefusedError, decimalText, readJsonText, ticksText, type DataShapeColumn, type Snapshot, type SnapshotColumn,
+    BoardInput, BoardRefusedError, createSnapshot, decimalText, readJsonText, ticksText, type DataShapeColumn, type Snapshot, type SnapshotColumn,
 } from '../src/index';
 import { isObject, key, kindOf, list, text, type Json, type JsonObject } from './case-json';
 
@@ -70,10 +70,19 @@ async function answer(entry: JsonObject): Promise<Json> {
         input.check({ columns: columnsOf(check) });
         return true;
     }
+    const bind = entry['bind'];
+    if (bind !== undefined) {
+        const snapshot = createSnapshot({ columns: columnsOf(bind).map(column => ({ name: column.name, kind: column.kind, values: [] })) });
+        expect(input.bind(snapshot)).toBe(snapshot);
+        return true;
+    }
     const source = entry['checkSource'];
     if (source !== undefined) {
         const shape = source === null ? undefined : { columns: columnsOf(source) };
-        await input.checkSource({ shape: () => Promise.resolve(shape) });
+        let asked = 0;
+        const answered = await input.checkSource({ shape: () => { asked++; return Promise.resolve(shape); } });
+        expect(answered).toBe(shape);
+        expect(asked).toBe(1);
         return true;
     }
     return snapshotOf(input.fromJson(text(key(entry, 'fromJson'))));
