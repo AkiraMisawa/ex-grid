@@ -25,3 +25,24 @@ export function expenses(): WorkbookDocument {
     workbook.do(sheet, SheetEdit.setCellFormat([CellRange.parse('A1:D1'), CellRange.parse('A7:D7')], new CellFormatChange({ bold: true })));
     return workbook.toDocument();
 }
+
+/** The claim and a summary that reads it, as a Workbook Document of two Sheets. */
+export function expensesWorkbook(): WorkbookDocument {
+    const workbook = Workbook.open(expenses());
+    workbook.do('Sheet1', SheetEdit.rename('Claim'));
+    workbook.do('Claim', SheetEdit.insertSheet('Summary'));
+    const rows = [
+        ['Claimed', '=Claim!D7'],
+        ['Travel', '=Claim!D2+Claim!D5'],
+        ['Approved limit', '6000'],
+        ['Over the limit', '=MAX(0, B1-B3)'],
+    ];
+    rows.forEach((row, r) => {
+        row.forEach((typed, c) => {
+            workbook.do('Summary', SheetEdit.enter(new CellAddress(r, c), typed));
+        });
+    });
+    workbook.do('Summary', SheetEdit.setColumnWidth(CellRange.parse('A:A'), 18));
+    workbook.do('Summary', SheetEdit.setNumberFormat(CellRange.parse('B1:B4'), NumberFormat.parse('#,##0.00')));
+    return workbook.toDocument();
+}

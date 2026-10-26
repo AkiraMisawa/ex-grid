@@ -19,3 +19,8 @@ html, body {
 }
 
 p { margin: 12px 0 0; }
+
+/* What the Blazor Examples write with MudBlazor's utility classes: a row of controls above the Example
+   (d-flex gap-2 mb-3), and a line above it (mb-3). */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+p.first { margin: 0 0 12px; }

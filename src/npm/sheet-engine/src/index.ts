@@ -8,8 +8,8 @@
  */
 export { CellAddress, columnCount, rowCount } from './cell-address';
 export {
-    BorderLine, CellBorders, CellFill, CellFont, CellFormat,
-    type BorderLineStyle, type CellColour, type CellDisplay, type HorizontalAlignment, type RangeEdgeLines,
+    BorderLine, CellBorders, CellColour, CellFill, CellFont, CellFormat,
+    type BorderLineStyle, type CellDisplay, type HorizontalAlignment, type RangeEdgeLines,
 } from './cell-format';
 export { BorderChange, CellFormatChange, type BorderChangeParts, type CellFormatChangeParts } from './cell-format-change';
 export { CellRange } from './cell-range';
