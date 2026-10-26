@@ -15,7 +15,7 @@ import { WriteGate } from './write-gate';
 /** The events .NET listens to: each one the component has a handler for, and no other, since a grid given a
  * handler can behave otherwise than one without (a grid without `onEdit` edits nothing). */
 export type HeardKind =
-    | 'selectionChanged' | 'edit' | 'paste' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
+    | 'selectionChanged' | 'edit' | 'paste' | 'fill' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
     | 'columnHidden' | 'pinnedCountChanged' | 'editingChanged' | 'editDiscarded' | 'cellDoubleClick' | 'leave' | 'overwriteNotice' | 'action';
 
 /** The component's parameters, as the core's options are spelt. .NET sends only what the Consumer set, and the
@@ -32,12 +32,12 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
 type PassedOption =
     | 'density' | 'rowHeight' | 'headerHeight' | 'viewportHeight' | 'viewportWidth' | 'pinnedColumnCount' | 'virtualiseColumns' | 'stripeRows'
     | 'highlightFocusRow' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
-    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups';
+    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'density', 'rowHeight', 'headerHeight', 'viewportHeight', 'viewportWidth', 'pinnedColumnCount', 'virtualiseColumns', 'stripeRows',
     'highlightFocusRow', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
-    'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups',
+    'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle',
 ]);
 
 /** What the component asks of the grid it attached. Each call carries its data as the JSON text .NET wrote, read
@@ -149,7 +149,7 @@ export function parsed<T>(json: string): T {
 }
 
 type Handlers = Required<Pick<GridOptions<BlazorRow>,
-    | 'onSelectionChanged' | 'onEdit' | 'onPaste' | 'onClear' | 'onUndo' | 'onRedo' | 'onRefused' | 'onColumnWidthChanged' | 'onColumnOrderChanged'
+    | 'onSelectionChanged' | 'onEdit' | 'onPaste' | 'onFill' | 'onClear' | 'onUndo' | 'onRedo' | 'onRefused' | 'onColumnWidthChanged' | 'onColumnOrderChanged'
     | 'onColumnHidden' | 'onPinnedCountChanged' | 'onEditingChanged' | 'onEditDiscarded' | 'onCellDoubleClick' | 'onLeave' | 'onOverwriteNotice'
     | 'onAction'>>;
 
@@ -167,6 +167,9 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
                 targets: intent.plan.targets, source: intent.plan.source, collapsesSelection: intent.plan.collapsesSelection, values: intent.values,
                 origins: intent.origins, rowSequenceVersion: intent.rowSequenceVersion, enteredAt: intent.enteredAt, fillSource: intent.fillSource,
             });
+        },
+        onFill: intent => {
+            write('fill', { source: intent.source, target: intent.target, direction: intent.direction, rowSequenceVersion: intent.rowSequenceVersion });
         },
         onClear: intent => { write('clear', { targets: intent.targets, rowSequenceVersion: intent.rowSequenceVersion }); },
         onUndo: () => { send('undo', null); },
@@ -201,6 +204,7 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('edit') ? { onEdit: heard.onEdit } : {}),
         ...(hears.has('paste') ? { onPaste: heard.onPaste } : {}),
+        ...(hears.has('fill') ? { onFill: heard.onFill } : {}),
         ...(hears.has('clear') ? { onClear: heard.onClear } : {}),
         ...(hears.has('undo') ? { onUndo: heard.onUndo } : {}),
         ...(hears.has('redo') ? { onRedo: heard.onRedo } : {}),

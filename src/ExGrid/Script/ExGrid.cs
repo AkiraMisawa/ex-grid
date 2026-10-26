@@ -120,6 +120,23 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// component with a <see cref="NotSupportedException"/> once it returns.</summary>
     [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
 
+    /// <summary>
+    /// Whether the fill handle is painted at the bottom-right of a single-range Selection while no edit is open
+    /// (ADR-0050, item 5). Dragged along one axis and released, it raises one <see cref="OnFill"/> intent; a target over
+    /// a column that is not Editable is refused first, through <see cref="OnRefused"/>. Off unless set.
+    /// </summary>
+    [Parameter] public bool ShowFillHandle { get; set; }
+
+    /// <summary>
+    /// Hears a fill-handle drag, released (ADR-0050, item 5): the source, the target beside it and the direction. The
+    /// Consumer writes the fill, and the rows it then shows are what the cells paint. The browser has already placed
+    /// the Selection over the source and the target together when the intent reaches .NET, so as with
+    /// <see cref="OnEdit"/>, a handler that calls <see cref="GridFillIntent.Refuse"/> fails the component with a
+    /// <see cref="NotSupportedException"/> once it returns: a pattern the Consumer does not fill is answered by
+    /// writing nothing.
+    /// </summary>
+    [Parameter] public EventCallback<GridFillIntent> OnFill { get; set; }
+
     /// <summary>Hears Delete over editable cells (ADR-0035): the Consumer clears them.</summary>
     [Parameter] public EventCallback<GridClearIntent> OnClear { get; set; }
 
@@ -618,6 +635,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteBoolean("hideCopyWithHeaders", HideCopyWithHeaders);
         json.WriteBoolean("headerClickSelects", HeaderClickSelects);
         json.WriteBoolean("pasteMaySpill", PasteMaySpill);
+        json.WriteBoolean("showFillHandle", ShowFillHandle);
         json.WriteBoolean("findsHeaders", FindsHeaders);
         // Nothing answers a Selection Summary over a source in .NET yet (ADR-0130): none is drawn, rather than a
         // status line that never fills.
@@ -658,6 +676,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         yield return ("selectionChanged", SelectionChanged.HasDelegate);
         yield return ("edit", OnEdit.HasDelegate);
         yield return ("paste", OnPaste.HasDelegate);
+        yield return ("fill", OnFill.HasDelegate);
         yield return ("clear", OnClear.HasDelegate);
         yield return ("undo", OnUndo.HasDelegate);
         yield return ("redo", OnRedo.HasDelegate);
@@ -966,6 +985,18 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                     await OnPaste.InvokeAsync(intent);
                     if (intent.IsRefused)
                         throw NotRefusable("a paste");
+                };
+            }
+            case "fill":
+            {
+                var intent = new GridFillIntent(ScriptJson.Range(payload.GetProperty("source")),
+                    new FillExtension(ScriptJson.Range(payload.GetProperty("target")), ScriptJson.Member<GridDirection>(payload.GetProperty("direction"))),
+                    payload.GetProperty("rowSequenceVersion").GetInt32());
+                return async () =>
+                {
+                    await OnFill.InvokeAsync(intent);
+                    if (intent.IsRefused)
+                        throw NotRefusable("a fill");
                 };
             }
             case "clear":

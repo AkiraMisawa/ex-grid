@@ -52,12 +52,14 @@
             crosses the circuit. It takes the same <code>GridColumn</code>s and <code>IGridSource</code>, and its
             parameters and events are named as the core's are. Edit a Book below: the commit reaches
             <code>OnEdit</code> after the browser has made it, so your handler answers with the row the source
-            then holds, and cannot refuse it.
+            then holds, and cannot refuse it. Select a few Books, or a Trader beside one, and drag the small square
+            at the Selection's bottom-right down, up or onto Book: with <code>ShowFillHandle</code> set, the release reaches <code>OnFill</code> as
+            the same <code>GridFillIntent</code>, and the Selection is already the source and the target together.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreGrid)" Files="@(["Examples/Data/Trade.cs"])" />
         <p>
             Not carried yet, and refused by name when a column declares it: Template Columns, <code>Validate</code>,
-            Tone and Row Marks, and a refusal from <code>OnEdit</code> or <code>OnPaste</code>. Find and the
+            Tone and Row Marks, and a refusal from <code>OnEdit</code>, <code>OnPaste</code> or <code>OnFill</code>. Find and the
             Selection Summary are not offered yet either: Ctrl+F is refused, and no summary is drawn. Use the grid
             above for those until they arrive. The browser is sent the rows around the ones in view, a few
             screens either side, and asks for more as it scrolls, so a source that holds a million rows sends a

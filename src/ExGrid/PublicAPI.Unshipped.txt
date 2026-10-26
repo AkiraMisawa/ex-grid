@@ -300,6 +300,8 @@ ExGrid.Script.ExGrid<TRow>.OnEditDiscarded.get -> Microsoft.AspNetCore.Component
 ExGrid.Script.ExGrid<TRow>.OnEditDiscarded.set -> void
 ExGrid.Script.ExGrid<TRow>.OnEditingChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
 ExGrid.Script.ExGrid<TRow>.OnEditingChanged.set -> void
+ExGrid.Script.ExGrid<TRow>.OnFill.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridFillIntent!>
+ExGrid.Script.ExGrid<TRow>.OnFill.set -> void
 ExGrid.Script.ExGrid<TRow>.OnLeave.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Script.ExGrid<TRow>.OnLeave.set -> void
 ExGrid.Script.ExGrid<TRow>.OnOverwriteNotice.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridOverwriteNotice>
@@ -329,6 +331,8 @@ ExGrid.Script.ExGrid<TRow>.Rows.get -> System.Collections.Generic.IReadOnlyList<
 ExGrid.Script.ExGrid<TRow>.Rows.set -> void
 ExGrid.Script.ExGrid<TRow>.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
 ExGrid.Script.ExGrid<TRow>.SelectionChanged.set -> void
+ExGrid.Script.ExGrid<TRow>.ShowFillHandle.get -> bool
+ExGrid.Script.ExGrid<TRow>.ShowFillHandle.set -> void
 ExGrid.Script.ExGrid<TRow>.Source.get -> ExGrid.IGridSource<TRow!>?
 ExGrid.Script.ExGrid<TRow>.Source.set -> void
 ExGrid.Script.ExGrid<TRow>.StripeRows.get -> bool

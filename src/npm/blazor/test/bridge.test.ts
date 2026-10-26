@@ -405,6 +405,38 @@ describe('the grid', () => {
     });
 });
 
+// A press on the viewport where the grid reads it: offsets in the viewport's own pixels.
+function pointer(root: HTMLElement, type: string, x: number, y: number): void {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, buttons: type === 'mouseup' ? 0 : 1 });
+    Object.defineProperty(event, 'offsetX', { value: x });
+    Object.defineProperty(event, 'offsetY', { value: y });
+    const viewport = root.querySelector('.ex-viewport');
+    if (viewport === null) throw new Error('The grid drew no viewport.');
+    viewport.dispatchEvent(event);
+}
+
+describe('intents', () => {
+    it('ADR-0050 item 5: a fill dragged from the handle reaches .NET as its source, target, direction and order', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({
+            options: options({ rowHeight: 24, showFillHandle: true, hears: ['fill'] }), state: state(1, [rates, credit], { rowSequenceVersion: 4 }),
+        }, dotnet);
+        await Promise.resolve();
+        // Book's first cell, then its handle (7 px at its bottom-right, Book being 120 px wide) dragged one row down.
+        pointer(root, 'mousedown', 10, 5);
+        pointer(root, 'mouseup', 10, 5);
+        await Promise.resolve();
+        pointer(root, 'mousedown', 120, 24);
+        pointer(root, 'mousemove', 10, 29);
+        pointer(root, 'mouseup', 10, 29);
+        await Promise.resolve();
+        expect(dotnet.heard('fill')).toEqual([{
+            source: { topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }, target: { topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 1 },
+            direction: 'down', rowSequenceVersion: 4,
+        }]);
+    });
+});
+
 describe('keyboard', () => {
     it('DC-61 / ADR-0070: a control the grid holds the keyboard for is handed it, and the keyboard comes back from it', () => {
         const { root, grid } = mount();
