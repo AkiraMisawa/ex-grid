@@ -3,7 +3,7 @@
 // a column has one shape for sorting, filtering and painting.
 
 import type { EditVerdict } from '../cells/edit-intent';
-import type { CellAlign } from '../paint/cell-classes';
+import type { CellAlign, CellTone } from '../paint/cell-classes';
 import { ColumnWidth, ColumnWidthSpec } from '../columns/column-width';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
 import type { QueryColumn } from '../query/columns';
@@ -118,6 +118,11 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
      * nothing, so a grid with no `onEdit` opens no Cell Editor, and one with no `onPaste` takes a paste on no
      * column. The grid never holds the value either way: a write leaves as an intent. */
     readonly editable?: boolean;
+    /** The column's tone rule (ADR-0006): what a value means, a gain or a loss, for the theme to paint. The
+     * Consumer declares when; the theme's Visual Tokens say what colour, and the bare grid paints none. A null or
+     * missing value has no tone and the rule is not asked. It is asked once per painted cell, so it stays a
+     * comparison. */
+    readonly tone?: (value: unknown) => CellTone;
     /** The Consumer's verdict on a commit to this column, asked as it commits (ADR-0034): accept, flag or
      * reject. None means every commit is accepted. It runs on the commit's path, so it is cheap. */
     readonly validate?: (row: Row, text: string) => EditVerdict;
@@ -172,10 +177,10 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
     let marking: string | undefined;
     return Object.freeze(columns.map((column, index) => {
         // Checked as an untyped caller may hand it, where it arrives (CONVENTIONS.md).
-        const { name, value, align, headerAlign, header, type, editable, validate, filterUi, actions, template, queryable, mark }: {
+        const { name, value, align, headerAlign, header, type, editable, validate, filterUi, actions, template, queryable, mark, tone }: {
             readonly name: unknown; readonly value: unknown; readonly align?: unknown; readonly headerAlign?: unknown; readonly header?: unknown; readonly type: unknown;
             readonly editable?: unknown; readonly validate?: unknown; readonly filterUi?: unknown; readonly actions?: unknown;
-            readonly template?: unknown; readonly queryable?: unknown; readonly mark?: unknown;
+            readonly template?: unknown; readonly queryable?: unknown; readonly mark?: unknown; readonly tone?: unknown;
         } = column;
         if (typeof name !== 'string' || name === '') {
             throw new TypeError(`The column at ${index} has no name: a column is named by a non-empty string.`);
@@ -204,6 +209,9 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
         }
         if (validate !== undefined && typeof validate !== 'function') {
             throw new TypeError(`Column '${name}': validate is a function of the row and the text (ADR-0034).`);
+        }
+        if (tone !== undefined && typeof tone !== 'function') {
+            throw new TypeError(`Column '${name}': tone is a function of the value, answering what it means (ADR-0006).`);
         }
         if (filterUi !== undefined && (typeof filterUi !== 'string' || !filterUis.has(filterUi))) {
             throw new RangeError(`Column '${name}': filterUi is one of ${[...filterUis].join(', ')}, not ${JSON.stringify(filterUi)} (ADR-0009).`);

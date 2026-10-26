@@ -13,6 +13,7 @@ import { Chart } from './pages/chart';
 import { ChartBridge } from './pages/chart-bridge';
 import { ChartCandles } from './pages/chart-candles';
 import { ChartSpecPage } from './pages/chart-spec';
+import { Density } from './pages/density';
 import { Features } from './pages/features';
 import { Fetch } from './pages/fetch';
 import { FilterPanel } from './pages/filter-panel';
@@ -27,6 +28,7 @@ import { SheetDemo } from './pages/sheet';
 import { Sizing } from './pages/sizing';
 import { Stretch } from './pages/stretch';
 import { Stripes } from './pages/stripes';
+import { Tones } from './pages/tones';
 import { Marks } from './pages/marks';
 import { Virtual } from './pages/virtual';
 import { Wide } from './pages/wide';
@@ -58,6 +60,8 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: 
     sheet: SheetDemo,
     marks: Marks,
     stripes: Stripes,
+    tones: Tones,
+    density: Density,
     stretch: Stretch,
     sizing: Sizing,
     board: Board,

@@ -106,6 +106,9 @@ export interface CellTextMeasure {
 export function cellTextMeasure(density: GridDensity): CellTextMeasure;
 
 // @public
+export type CellTone = 'none' | 'positive' | 'negative';
+
+// @public
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
 
 // @public
@@ -423,6 +426,7 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly headerAlign?: CellAlign;
     readonly mark?: boolean;
     readonly template?: GridTemplate<Row>;
+    readonly tone?: (value: unknown) => CellTone;
     readonly validate?: (row: Row, text: string) => EditVerdict;
     readonly width?: GridColumnWidth;
 }

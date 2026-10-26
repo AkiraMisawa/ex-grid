@@ -39,7 +39,7 @@ import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '
 import { defined, itemAt } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
 import { canonicalKey, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
-import { cellClasses, type MatchMark } from '../paint/cell-classes';
+import { cellClasses, type CellTone, type MatchMark } from '../paint/cell-classes';
 import { columnMark, rowMark } from '../paint/heading-mark-styles';
 import { rowClasses, type RowKind } from '../paint/row-classes';
 import { rowMarkHeaderPress, rowMarkHeaderState, type MarkRefusalReason, type RowMarkIntent, type RowMarks } from '../rows/row-marks';
@@ -857,6 +857,15 @@ interface BarReading<Row> {
 
 /** The refusals the grid words itself (ADR-0203); a commit's is the Consumer's to word (A11Y-16). */
 type WordedRefusal = Extract<GridRefusal, { readonly kind: 'copy' | 'paste' }>;
+
+/** A column's tone rule's answer about a value, refused by the column's name where it is no tone (ADR-0006). */
+function toneOf<Row>(column: GridColumn<Row>, value: unknown): CellTone {
+    const tone: unknown = defined(column.tone, 'a tone rule')(value);
+    if (tone !== 'none' && tone !== 'positive' && tone !== 'negative') {
+        throw new RangeError(`Column '${column.name}': its tone rule answered ${JSON.stringify(tone)} for ${JSON.stringify(value)}; a tone is none, positive or negative (ADR-0006).`);
+    }
+    return tone;
+}
 
 /** A page follow (ADR-0204): armed by a move for the Focus it moved to and the cell its reveal brought into
  * the Viewport, and asked once that cell is painted. `rowsKept` says the reveal left the rows where the user had
@@ -7415,7 +7424,8 @@ export class GridView<Row> {
         }
         const cellPaint = this.#cellPaint;
         const { appearance } = paint;
-        const text = textFor(column, column.value(row));
+        const value = column.value(row);
+        const text = textFor(column, value);
         const mark = this.#markOf(row, c, marks, current, text);
         // A cell's own kind and alignment, where the Consumer declares them, over its column's (ADR-0050, items 6
         // and 7); a bold cell is judged by the bold widths (ADR-0016).
@@ -7430,7 +7440,9 @@ export class GridView<Row> {
         const cell = this.#root.ownerDocument.createElement('div');
         const align = cellPaint.cellAlign === undefined ? column.align ?? 'auto' : cellPaint.cellAlign(row, column); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
         const state = cellPaint.cellState === undefined ? 'normal' : cellPaint.cellState(row, column);
-        const base = cellClasses({ numeric, pinned, state, align, mark });
+        // A null value means nothing, and its rule is not asked (ADR-0006).
+        const tone = column.tone === undefined || value === null || value === undefined ? 'none' : toneOf(column, value);
+        const base = cellClasses({ numeric, pinned, state, align, tone, mark });
         const own = appearance?.classOf(c);
         cell.className = own === undefined ? base : `${base} ${own}`;
         cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
