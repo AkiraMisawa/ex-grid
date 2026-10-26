@@ -11,7 +11,6 @@ export default defineConfig({
             '@ex-grid/core': at('../../src/npm/core/src/index.ts'),
             '@ex-grid/data': at('../../src/npm/data/src/index.ts'),
             '@ex-grid/react': at('../../src/npm/react/src/index.ts'),
-            '@ex-grid/data': at('../../src/npm/data/src/index.ts'),
             '@ex-grid/pivot-engine': at('../../src/npm/pivot-engine/src/index.ts'),
             '@ex-grid/pivot': at('../../src/npm/pivot/src/index.ts'),
             '@ex-grid/pivot-react': at('../../src/npm/pivot-react/src/index.ts'),
