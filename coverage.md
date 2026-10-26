@@ -5,7 +5,7 @@
 | ExGrid | 95.2% | 88.5% |
 | ExSheet | 95.2% | 87.6% |
 | ExPivot | 94.4% | 86.3% |
-| ExChart | 90.8% | 83.8% |
+| ExChart | 90.9% | 83.8% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 94% | 88.8% |
 
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 05:34:40 |
+| Generated on: | 10/26/2026 - 06:08:46 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1197 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (82984 of 87804) |
-| Covered lines: | 82984 |
-| Uncovered lines: | 4820 |
-| Coverable lines: | 87804 |
-| Total lines: | 140163 |
-| **Branch coverage:** | 87.2% (50104 of 57418) |
-| Covered branches: | 50104 |
-| Total branches: | 57418 |
+| **Line coverage:** | 94.5% (83040 of 87861) |
+| Covered lines: | 83040 |
+| Uncovered lines: | 4821 |
+| Coverable lines: | 87861 |
+| Total lines: | 140244 |
+| **Branch coverage:** | 87.2% (50159 of 57480) |
+| Covered branches: | 50159 |
+| Total branches: | 57480 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -172,11 +172,11 @@
 |ExChart.Engine.Edges|91.4%|90%|
 |ExChart.Engine.EquatableList|100%||
 |ExChart.Engine.EquatableList<T>|61.5%|50%|
-|ExChart.Engine.Fitting.Fit|100%|96.3%|
+|ExChart.Engine.Fitting.Fit|99.3%|93.3%|
 |ExChart.Engine.Fitting.FittedCurve|100%|96.1%|
 |ExChart.Engine.Interpolation.Interpolant1D|100%|100%|
 |ExChart.Engine.Interpolation.Interpolant2D|100%|100%|
-|ExChart.Engine.Interpolation.Interpolate|100%|100%|
+|ExChart.Engine.Interpolation.Interpolate|100%|97.8%|
 |ExChart.Engine.IntervalBound|100%||
 |ExChart.Engine.KeyTick|100%||
 |ExChart.Engine.LegendEntry|100%||
