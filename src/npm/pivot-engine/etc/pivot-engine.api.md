@@ -76,6 +76,9 @@ export function fillPivotWord(template: string, ...args: readonly string[]): str
 export function formatPivotCount(count: number, locale: string): string;
 
 // @public
+export function formatPivotDetailValue(value: PivotDetailValue, format: string | undefined, locale: string): string;
+
+// @public
 export function formatPivotNumber(value: number, format: string, locale: string): string;
 
 // @public
@@ -109,7 +112,7 @@ export const japanesePivotWords: PivotLabel;
 export function layoutChoiceChanges(layout: PivotLayout, choice: PivotLayoutChoice): boolean;
 
 // @public
-export function levelQueryForLayout(layout: PivotLayout, maxLeaves?: number): PivotQuery;
+export function levelQueryForLayout(layout: PivotLayout, maxLeaves?: number, window?: PivotLevelWindowInput): PivotQuery;
 
 // @public
 export function levelsOfLayout(layout: PivotLayout): PivotLevels;
@@ -854,7 +857,7 @@ export interface PivotReportRefusal {
 }
 
 // @public
-export type PivotReportRefusalKind = 'reportVersionNotHeld' | 'unknownOrderKeyPolicy' | 'sourceRefused' | 'invalidRequest' | 'orderKeyFailed';
+export type PivotReportRefusalKind = 'reportVersionNotHeld' | 'unknownOrderKeyPolicy' | 'sourceRefused' | 'invalidRequest' | 'orderKeyFailed' | 'rowsNotAnswered';
 
 // @public
 export interface PivotReportRefused {
@@ -972,7 +975,7 @@ export interface PivotRowLabel {
 }
 
 // @public
-export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal';
+export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal' | 'pending';
 
 // @public
 export type PivotShowValuesAs = 'noCalculation' | 'percentOfGrandTotal' | 'percentOfColumnTotal' | 'percentOfRowTotal';

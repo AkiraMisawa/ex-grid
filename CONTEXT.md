@@ -1201,6 +1201,13 @@ column group shown: what lets the parts of every sibling not answered still comp
 ([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
 _Avoid_: others, remainder, "the rest" row (it is not a row of the report)
 
+**Pending Row**:
+The row a Sibling Window's set keeps for a sibling outside its window: no label and no value, so the
+report's row count is the whole set's. It is never painted: a report Window that reaches one asks the
+Question again with the window moved there
+([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
+_Avoid_: placeholder, skeleton row, loading row
+
 **Question**:
 What a Pivot Source is asked to aggregate for a Pivot Report: the part of its Pivot Layout that
 decides the Leaf Aggregates — the row and column fields in order, the Hidden Items of each placed

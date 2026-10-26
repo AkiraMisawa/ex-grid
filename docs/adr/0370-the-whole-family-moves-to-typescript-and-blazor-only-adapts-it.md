@@ -370,6 +370,34 @@ that does, a layout past `MaxLeaves` is not refused:
     and, among ties, by the order the leaves first reached them. The rest cells' parts are merged in
     that order, so the C# and the TypeScript answers are the same, bit for bit.
 
+  *(Decided with the user on 2026-10-26: every sibling has its row, and scrolling to one asks again.)*
+  A windowed set is laid out with a row for each of its siblings, so the report's row count, and the
+  scrollbar drawn from it, are the whole set's. A sibling outside the window, a margin or one merged
+  into a rest cell, has a pending row: no label and no value, never painted. The report source never
+  answers a report Window with a pending row. When a Window it is asked for reaches pending rows, it
+  asks the question again with each such set's window started so that it holds them, and answers once
+  that answer is checked. A Copy, a Selection Summary or the records behind a cell that reach a pending
+  row are refused by name. The rest follows from that:
+  - **Which sets are windowed.** A set is windowed only where its siblings show no groups below them:
+    its field is the innermost in Rows, or its Items are collapsed and none is toggled. Each sibling's
+    rows are then known without its answer, and the row count is exact. The question carries the order
+    only for such a field, and only when the report sorts it by a value shown as it is computed: a
+    percentage of a total reorders, or ties, what the server sorts. An expanded set too large to
+    answer whole stays refused by name past the cap.
+  - **When windows are asked.** A question is asked whole first. Only once the source refuses it past
+    the cap is it asked again with windows, and from then on for that question, so a report that fits
+    is never windowed and its Copy reaches every row.
+  - **The limit** is 1,000 siblings, or the rows of the largest Window asked for, where that is more.
+    A Window of rows from one set is then always held by one answer.
+  - **Where a window starts.** Each set a Window reaches pending is started so that the siblings the
+    Window's rows stand for lie in the middle of it, no further than the limit from the end; the other
+    sets keep theirs. A new layout starts every window again at its first
+    sibling. Under the same data a sibling stands at the same place whichever window was answered, so
+    moving a window keeps the rows' sequence, and the selection with it (ADR-0011).
+  - **Rejected: the window's siblings alone**, with a row on each side saying how many more and asking
+    for them when pressed. It would window expanded sets too, but it scrolls unlike any other report
+    and puts a control of the grid's own among the report's rows.
+
 **Live server data re-asks what is shown.** ADR-0066 refused answers that name the leaves that changed,
 because a source naming too few painted totals that did not add up with nothing to say so, and
 ADR-0151's Window Changes end with its report Windows. Under a new Source Version the engine asks the

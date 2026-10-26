@@ -6,6 +6,9 @@
 
 import { GridDensity } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
+import { PivotDetailPage } from '@ex-grid/pivot-engine';
+import { PivotDetailsQuery } from '@ex-grid/pivot-engine';
+import { PivotField } from '@ex-grid/pivot-engine';
 import { PivotFieldItem } from '@ex-grid/pivot-engine';
 import { PivotLabel } from '@ex-grid/pivot-engine';
 import { PivotLayout } from '@ex-grid/pivot-engine';
@@ -24,6 +27,15 @@ export interface PivotCellItems {
     readonly column: readonly PivotFieldItem[];
     readonly row: readonly PivotFieldItem[];
 }
+
+// @public
+export interface PivotDetailItem {
+    readonly field: string;
+    readonly item: string;
+}
+
+// @public
+export type PivotDetailsView = 'tab' | 'dialog';
 
 // @public
 export interface PivotFieldListShownEvent {
@@ -54,8 +66,20 @@ export interface PivotSelectionChangedEvent {
 }
 
 // @public
+export interface PivotShowDetailsEvent {
+    readonly columnItems: readonly PivotDetailItem[];
+    readonly fields: readonly PivotField[];
+    readonly query: PivotDetailsQuery;
+    readonly records: (start: number, count: number, signal?: AbortSignal) => Promise<PivotDetailPage>;
+    readonly rowItems: readonly PivotDetailItem[];
+    readonly title: string;
+    readonly valueField: string | undefined;
+}
+
+// @public
 export interface PivotViewOptions {
     readonly density?: GridDensity;
+    readonly detailsView?: PivotDetailsView;
     readonly fieldListWidth?: number;
     readonly label?: PivotLabel;
     readonly layout?: PivotLayout;
@@ -64,6 +88,7 @@ export interface PivotViewOptions {
     readonly onLayoutChanged?: (event: PivotLayoutChangedEvent) => void;
     readonly onRefused?: (event: PivotRefusedEvent) => void;
     readonly onSelectionChanged?: (event: PivotSelectionChangedEvent) => void;
+    readonly onShowDetails?: (event: PivotShowDetailsEvent) => void;
     readonly onShowFieldListChanged?: (event: PivotFieldListShownEvent) => void;
     readonly rowHeight?: number;
     readonly showFieldList?: boolean;

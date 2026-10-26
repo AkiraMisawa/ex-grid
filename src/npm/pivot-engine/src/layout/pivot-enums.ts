@@ -45,8 +45,9 @@ export const pivotItemKinds: readonly PivotItemKind[] = Object.freeze(['number',
 export type PivotDatePart = 'year' | 'quarter' | 'month';
 
 /** What a row of a report stands for (ADR-0059/0060): an Item of the innermost field, a group row, a
- * subtotal, or the grand total. */
-export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal';
+ * subtotal, or the grand total; or a Pending Row, kept for a sibling outside a Sibling Window and never shown
+ * (ADR-0370 section 3). */
+export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal' | 'pending';
 
 /** What a value column of a report stands for (ADR-0060). */
 export type PivotColumnRole = 'item' | 'subtotal' | 'grandTotal';

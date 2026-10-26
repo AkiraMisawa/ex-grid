@@ -43,6 +43,14 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'An exposure profile in two panels and a hazard curve drawn as steps: the tooltip lists every series at the pointer\'s date, the legend hides a series, a drag narrows the range, and Next run replaces the data keeping what the user changed (ADR-0252, ADR-0270 to ADR-0273).',
     },
     {
+        route: 'chart-bridge', title: 'Charting a selection', group: 'ExChart',
+        description: 'A curve history charted from the grid\'s context menu: series in columns along the dates or in rows across the tenors, Add to chart, a refusal by name, a chart that keeps its rows through a recalculation and a deleted row, and a click that moves the grid\'s Focus (ADR-0258).',
+    },
+    {
+        route: 'scatter', title: 'Scatter and fitted lines', group: 'ExChart',
+        description: 'CDS spreads against leverage beside their grid, with the least-squares and the Theil–Sen line; Old Faithful; and PRML\'s polynomial curve fitting of degree 0, 1, 3 and 9. The nearest point\'s tooltip, a click to the row, a rectangle that narrows both axes, a logarithmic spread axis (ADR-0290, ADR-0291).',
+    },
+    {
         route: 'chart-candles', title: 'Candles and intervals', group: 'ExChart',
         description: 'Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers; strategies\' risk and return with intervals both ways (ADR-0300 to ADR-0304).',
     },

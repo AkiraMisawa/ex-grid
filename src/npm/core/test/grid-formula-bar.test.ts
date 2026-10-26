@@ -172,16 +172,7 @@ describe('the Name Box (ADR-0051) and placeSelection (ADR-0050, item 4)', () => 
         expect(defined(selections.at(-1), 'a Selection').focus).toEqual({ row: 5, column: 1 });
     });
 
-    it('ADR-0050 item 4: a placement is taken against the version the grid reports, which moves on when the rows are replaced', async () => {
-        const { root, view } = await grid();
-        const reported = (): number => Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence'));
-        const before = reported();
-        view.update({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, showFormulaBar: true });
-        await painted();
-        expect(reported()).not.toBe(before);
-        expect(view.placeSelection(selectionRange(1, 0, 1, 1), { row: 1, column: 0 }, before)).toBe(false);
-        expect(view.placeSelection(selectionRange(1, 0, 1, 1), { row: 1, column: 0 }, reported())).toBe(true);
-    });
+    // How a placement meets an open edit and a replaced source is grid-placement.test.ts's.
 
     it('ADR-0051: the Name Box left without Enter drops what was typed and names the Focus again', async () => {
         const { root, entered } = await grid();
@@ -194,16 +185,6 @@ describe('the Name Box (ADR-0051) and placeSelection (ADR-0050, item 4)', () => 
         box.blur();
         expect(box.value).toBe('R4C1');
         expect(entered).toEqual([]);
-    });
-
-    it('ADR-0050 item 4: a placement is refused while an edit stands', async () => {
-        const { root, view } = await grid();
-        press(root, 10, rowY(0));
-        await painted();
-        key('Z');
-        await painted();
-        expect(view.placeSelection(selectionRange(4, 0, 1, 1), { row: 4, column: 0 }, 0)).toBe(false);
-        expect(cellEditor(root).value).toBe('Z');
     });
 });
 

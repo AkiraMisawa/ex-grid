@@ -9,12 +9,10 @@ export interface GridHandle<Row> {
     /** Takes the options again, whole: what did not change costs nothing, and a row that did not change is
      * not touched (ADR-0003). */
     update(options: GridOptions<Row>): void;
-    /**
-     * Places the Selection (ADR-0050, item 4): `range` becomes the one range, with the Focus on `focus`, scrolled
-     * into view, as the Name Box's address or an undo's range asks. Taken against `rowSequenceVersion`, the one the
-     * grid reported when the Consumer chose the place (an intent's), the source's own until the source is replaced:
-     * false, and nothing placed, once the rows' order has moved since, or while an edit stands. A range or a Focus outside the grid is refused with a RangeError.
-     */
+    /** Places `range` as the one range with the Focus on `focus`, as a click leaves it, if the grid's source
+     * still says `rowSequenceVersion` (ADR-0050 item 4): true once placed, and otherwise refused through
+     * `onRefused` (kind `placement`) or held by an open edit's Reject. A range outside the grid throws a
+     * RangeError. */
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     /** The view as the grid holds it now (ADR-0331): the Selection, with the Row Sequence Version it is written in,
      * and the scroll offsets the grid last knew. A Consumer that shows several sets of rows in one grid keeps each

@@ -552,6 +552,7 @@ class SheetView {
             case 'commit':
                 this.#tell(this.#words.commitRefused(new CellAddress(refusal.cell.row, refusal.cell.column).toString(), refusal.reason), { saidByGrid: true });
                 return;
+            case 'placement': this.#tell(this.#words.placementRefused(refusal.reason), { saidByGrid: true }); return;
             // The find panel says its own outcomes (ADR-0332 §5); a Sheet has no Action Column (ADR-0037) and no Mark
             // Column (ADR-0043) to refuse.
             case 'find':

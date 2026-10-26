@@ -3,7 +3,7 @@
 // with no UI. The C# engine's PivotEngine.
 
 import type { PivotAnswer } from './cube/answer';
-import { buildCube, buildCubeSteps, cubeHoldsFields, cubeParts, ItemRef, type PivotCube } from './cube/cube';
+import { buildCube, buildCubeSteps, cubeHoldsFields, cubeHoldsWindows, cubeParts, ItemRef, type PivotCube } from './cube/cube';
 import { placedFields, queryForLayout, type PivotQuery } from './cube/query';
 import { fieldMeta, fieldMetas, numberFormatProblem, type FieldMeta, type PivotField, type PivotRecordField } from './fields/pivot-field';
 import { fromPublicKey, keyIdOf, toPublicKey, type PivotItemKey } from './items/item-key';
@@ -139,6 +139,10 @@ export async function pivotReportAsync(cube: PivotCube, layout: PivotLayout, opt
  * for. */
 export function checkCubeHolds(cube: PivotCube, layout: PivotLayout): void {
     validateLayout(layout, cubeParts(cube).meta);
+    if (cubeHoldsFields(cube, layout) && !cubeHoldsWindows(cube, layout)) {
+        throw new Error('The cube holds Sibling Windows cut by the orders and collapse its question asked, and this layout orders or '
+            + 'collapses its windowed fields otherwise; ask the source again with levelQueryForLayout before laying it out (ADR-0370 section 3).');
+    }
     if (!cube.holds(layout) && cubeHoldsFields(cube, layout)) {
         throw new Error('The cube was made from Level Aggregates of the groups its question showed, and this layout shows groups '
             + 'below them it does not hold; ask the source again with levelQueryForLayout before laying it out (ADR-0370 section 3).');
