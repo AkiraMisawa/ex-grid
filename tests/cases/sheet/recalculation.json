@@ -40,6 +40,14 @@
       ]
     },
     {
+      "name": "ADR-0047: a long chain entered in one batch recomputes in dependency order without running out of stack",
+      "steps": [
+        { "enter": { "A1": "1" } },
+        { "enterRun": { "range": "A2:A50001", "typed": "=A{row-1}+1" }, "expect": { "values": { "A50001": 50001 } } },
+        { "enter": { "A1": "2" }, "expect": { "values": { "A50001": 50002 }, "change": { "recalculatedCount": 50000 } } }
+      ]
+    },
+    {
       "name": "ADR-0047 (SH-8): Values are published only from a completed recalculation",
       "note": "A batch is one change and one recalculation: every Value it reports is from the end state, and none from a state between its parts.",
       "steps": [

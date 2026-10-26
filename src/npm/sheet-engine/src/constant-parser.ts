@@ -3,7 +3,7 @@
 // Error Values, or else text.
 import { dayOrder, type Culture } from './culture';
 import { serialFromDate } from './date-serial';
-import { equalsIgnoreCase, isAsciiDigit, isWhiteSpace, trimEndChar, trimWhiteSpace, upperInvariant } from './dotnet';
+import { equalsIgnoreCase, isAsciiDigit, isWhiteSpace, trimEndChar, upperInvariant } from './dotnet';
 import { abbreviatedMonthNamesOf, NumberFormat } from './number-format';
 import { elementAt } from './must';
 import { parseTypedError, Value } from './value';
@@ -271,9 +271,9 @@ export function parseDateTime(text: string, culture: Culture, year: number): Par
     let datePart = text;
     let timePart: string | undefined;
     const space = text.indexOf(' ');
-    if (space > 0 && timePattern.test(trimWhiteSpace(text.slice(space + 1)))) {
+    if (space > 0 && timePattern.test(trimSpaces(text.slice(space + 1)))) {
         datePart = text.slice(0, space);
-        timePart = trimWhiteSpace(text.slice(space + 1));
+        timePart = trimSpaces(text.slice(space + 1));
     }
 
     if (timePart === undefined) {

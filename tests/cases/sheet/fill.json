@@ -11,6 +11,17 @@
       ]
     },
     {
+      "name": "ADR-0050: a day or month name is recognised in either case, composed or decomposed, and through invisible characters (de-DE)",
+      "culture": "de-DE",
+      "steps": [
+        { "enter": { "A1": "Ma\u0308rz", "B1": "mon\u00ADtag", "C1": "\u200BJANUAR", "D1": "Marz" } },
+        { "check": { "fill": { "source": "A1", "target": "A2", "direction": "down" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } },
+        { "check": { "fill": { "source": "B1", "target": "B2", "direction": "down" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } },
+        { "check": { "fill": { "source": "C1", "target": "C2", "direction": "down" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } },
+        { "check": { "fill": { "source": "D1", "target": "D2", "direction": "down" } }, "expect": { "refusal": null } }
+      ]
+    },
+    {
       "name": "ADR-0050: formats and alignment repeat from the source",
       "steps": [
         { "enter": { "A1": "1", "A2": "2" } },

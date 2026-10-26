@@ -58,6 +58,16 @@ function weigh(text: string): { weights: Weight[]; hyphens: number } {
     const weights: Weight[] = [];
     for (let i = 0; i < text.length; i++) {
         const c = text.charCodeAt(i);
+        const pair = text.codePointAt(i);
+        if (pair !== undefined && pair > 0xffff) {
+            // A character outside the Basic Multilingual Plane is two halves with no decomposition: each is
+            // weighed as itself, in the class of the whole character (an emoji among the symbols, 𠮷 among the
+            // letters), as a character inside the plane with no accents is.
+            const weightClass = classOfCharacter(String.fromCodePoint(pair));
+            weights.push({ weightClass, base: c, accents: '' }, { weightClass, base: text.charCodeAt(i + 1), accents: '' });
+            i++;
+            continue;
+        }
         if (c === 0x2d || c === 0x27) {
             hyphens++;
             continue;
@@ -74,8 +84,7 @@ function weigh(text: string): { weights: Weight[]; hyphens: number } {
 /** A character's primary weight — its class and its base character — and its accents. */
 function weighCharacter(c: number): Weight {
     if (c < 128) return { weightClass: classOf(c), base: upperInvariant(c), accents: '' };
-    // Half of a character outside the Basic Multilingual Plane (an emoji) has no decomposition of its own: it
-    // is weighed as itself, among the symbols.
+    // A half with no other half is no character: it is weighed as itself, among the symbols.
     if (c >= 0xd800 && c <= 0xdfff) return { weightClass: 0, base: c, accents: '' };
     const decomposed = String.fromCharCode(c).normalize('NFD');
     const base = decomposed.charCodeAt(0);
@@ -86,7 +95,10 @@ const decimalDigit = /^\p{Nd}$/u;
 const letter = /^\p{L}$/u;
 
 function classOf(c: number): number {
-    const character = String.fromCharCode(c);
+    return classOfCharacter(String.fromCharCode(c));
+}
+
+function classOfCharacter(character: string): number {
     if (decimalDigit.test(character)) return 1;
     if (letter.test(character)) return 2;
     return 0;

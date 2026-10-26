@@ -336,7 +336,7 @@ internal sealed class Run(CultureInfo culture)
 
     private static readonly string[] Verbs =
     [
-        "enter", "enterAll", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
+        "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
         "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "recalculateVolatile",
     ];
 
@@ -365,6 +365,8 @@ internal sealed class Run(CultureInfo culture)
         catch (Exception e) when (e is FormulaSyntaxException or SheetRefusedException or InvalidOperationException
             or ArgumentException or FormatException or RepeatedKeyException or SheetDocumentException)
         {
+            // The runner's own reading of a malformed case throws the same types; it is the case's defect, never a refusal.
+            if (ThrownByTheRunner(e)) throw;
             if (expect?["throws"] is not { } throws)
             {
                 Differences.Add($"{where} ({verb}) threw {e.GetType().Name}: {e.Message}");
@@ -397,6 +399,18 @@ internal sealed class Run(CultureInfo culture)
         public bool Checked { get; set; }
         public SheetRefusal? Refusal { get; set; }
         public WorkbookStep? Step { get; set; }
+    }
+
+    /// <summary>Whether the innermost frame outside .NET's own libraries is this runner's rather than the engine's.</summary>
+    private static bool ThrownByTheRunner(Exception e)
+    {
+        foreach (var frame in new System.Diagnostics.StackTrace(e).GetFrames())
+        {
+            var assembly = frame.GetMethod()?.DeclaringType?.Assembly;
+            if (assembly == typeof(SheetCases).Assembly) return true;
+            if (assembly == typeof(Sheet).Assembly) return false;
+        }
+        return false;
     }
 
     private static JsonObject Thrown(Exception e) => e switch
@@ -432,6 +446,15 @@ internal sealed class Run(CultureInfo culture)
             case "enterAll":
                 outcome.Change = sheet.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), (string)p.Value!))]);
                 break;
+            case "enterRun":
+            {
+                // One batch over a range, each cell typed from a template naming its row: {row} or {row-1}.
+                var run = argument.AsObject();
+                var typed = (string)run["typed"]!;
+                outcome.Change = sheet.Enter([.. CellRange.Parse((string)run["range"]!).Cells().Select(a => new KeyValuePair<CellAddress, string>(a,
+                    typed.Replace("{row-1}", a.Row.ToString(CultureInfo.InvariantCulture)).Replace("{row}", (a.Row + 1).ToString(CultureInfo.InvariantCulture))))]);
+                break;
+            }
             case "do":
                 var step = Workbook.Do(sheet.Name, Edit(argument));
                 _done.Add(step);

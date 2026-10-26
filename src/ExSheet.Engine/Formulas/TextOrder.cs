@@ -68,8 +68,19 @@ internal static class TextOrder
     {
         hyphens = 0;
         var weights = new List<(int, char, string)>(text.Length);
-        foreach (var c in text)
+        for (var i = 0; i < text.Length; i++)
         {
+            var c = text[i];
+            if (char.IsHighSurrogate(c) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+            {
+                // A character outside the Basic Multilingual Plane is two halves with no decomposition:
+                // each is weighed as itself, in the class of the whole character (an emoji among the
+                // symbols, 𠮷 among the letters), as a character inside the plane with no accents is.
+                var @class = ClassOf(CharUnicodeInfo.GetUnicodeCategory(char.ConvertToUtf32(c, text[i + 1])));
+                weights.Add((@class, c, ""));
+                weights.Add((@class, text[++i], ""));
+                continue;
+            }
             if (c is '-' or '\'')
             {
                 hyphens++;
@@ -90,8 +101,8 @@ internal static class TextOrder
     private static (int Class, char Base, string Accents) Weigh(char c)
     {
         if (c < 128) return (ClassOf(c), char.ToUpperInvariant(c), "");
-        // Half of a character outside the Basic Multilingual Plane (an emoji) has no decomposition of its
-        // own, and normalising it alone throws: it is weighed as itself, among the symbols.
+        // A half with no other half is no character: normalising it alone throws, so it is weighed as
+        // itself, among the symbols.
         if (char.IsSurrogate(c)) return (0, c, "");
         var decomposed = c.ToString().Normalize(NormalizationForm.FormD);
         var baseCharacter = decomposed[0];
@@ -99,7 +110,9 @@ internal static class TextOrder
         return (ClassOf(baseCharacter), char.ToUpperInvariant(baseCharacter), accents);
     }
 
-    private static int ClassOf(char c) => char.GetUnicodeCategory(c) switch
+    private static int ClassOf(char c) => ClassOf(char.GetUnicodeCategory(c));
+
+    private static int ClassOf(UnicodeCategory category) => category switch
     {
         UnicodeCategory.DecimalDigitNumber => 1,
         UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter or UnicodeCategory.TitlecaseLetter

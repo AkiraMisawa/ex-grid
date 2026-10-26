@@ -1,4 +1,5 @@
 import { isAsciiDigit, isAsciiLetter, upperInvariant } from './dotnet';
+import { FormatError } from './format-error';
 
 /** Excel's extent: how many rows a Sheet has, 1,048,576. */
 export const rowCount = 1_048_576;
@@ -53,10 +54,10 @@ export class CellAddress {
         return this.#row !== other.#row ? this.#row - other.#row : this.#column - other.#column;
     }
 
-    /** Parses an address in A1 form, such as `B7` or `xfd1048576`; anything else is refused with a `TypeError`. */
+    /** Parses an address in A1 form, such as `B7` or `xfd1048576`; anything else is refused with a `FormatError`. */
     static parse(text: string): CellAddress {
         const address = CellAddress.tryParse(text);
-        if (address === undefined) throw new TypeError(`'${text}' is not a cell address from A1 to XFD1048576.`);
+        if (address === undefined) throw new FormatError(`'${text}' is not a cell address from A1 to XFD1048576.`);
         return address;
     }
 

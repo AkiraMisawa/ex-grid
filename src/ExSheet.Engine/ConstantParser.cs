@@ -259,10 +259,10 @@ internal static partial class ConstantParser
         string datePart = text;
         string? timePart = null;
         var space = text.IndexOf(' ');
-        if (space > 0 && TimePattern().IsMatch(text[(space + 1)..].Trim()))
+        if (space > 0 && TimePattern().IsMatch(text[(space + 1)..].Trim(' ')))
         {
             datePart = text[..space];
-            timePart = text[(space + 1)..].Trim();
+            timePart = text[(space + 1)..].Trim(' ');
         }
 
         if (timePart is null && TryParseTime(text, out var timeOnly, out var timeFormat))

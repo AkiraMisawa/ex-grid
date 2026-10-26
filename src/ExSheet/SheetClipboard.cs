@@ -221,7 +221,7 @@ internal static partial class SheetClipboard
     private static double? NumberOf(string typed, CultureInfo culture) =>
         Entry.Parse(typed, culture)?.Constant is { Kind: ValueKind.Number } value ? value.Number : null;
 
-    [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?\z", RegexOptions.CultureInvariant)]
     private static partial Regex IsoDate();
 
     private static CellRange RangeOf(SelectionRange range) => SheetFormulaAids.RangeOf(range);

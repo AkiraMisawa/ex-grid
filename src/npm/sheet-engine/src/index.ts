@@ -23,6 +23,7 @@ export {
     type ArgumentHint, type CompletionCandidate, type CompletionKind, type FormulaCompletion, type FormulaReference,
     type PointSite, type ReferenceCycle,
 } from './formula-entry';
+export { FormatError } from './format-error';
 export { FormulaSyntaxError } from './formula-syntax-error';
 export type { SheetDay, SheetMoment } from './formulas/cell-reader';
 export type { ArgumentValue } from './formulas/function-definition';

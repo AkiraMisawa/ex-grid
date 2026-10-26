@@ -332,6 +332,11 @@ export type ErrorValue = '#NULL!' | '#DIV/0!' | '#VALUE!' | '#REF!' | '#NAME?' |
 export type FillDirection = 'down' | 'right' | 'up' | 'left';
 
 // @public
+export class FormatError extends TypeError {
+    constructor(message: string);
+}
+
+// @public
 export interface FormulaCompletion {
     readonly candidates: readonly CompletionCandidate[];
     readonly length: number;

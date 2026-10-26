@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using ExSheet.Engine.Formulas;
 
 namespace ExSheet.Engine;
@@ -396,12 +397,31 @@ public sealed partial class Sheet
     /// <summary>
     /// Text Excel's fill would not simply copy: text holding a digit (Excel steps the number in
     /// it) and the day and month names of its built-in lists, in English and in the Sheet's culture.
+    /// A name is recognised in either case, composed or decomposed, and through the invisible
+    /// characters a paste can carry: a name in doubt is refused rather than copied. The comparison
+    /// is the engine's own, not the platform's collation, so that it answers alike everywhere.
     /// </summary>
     private bool ContinuesAsSeries(string text)
     {
         if (text.Any(char.IsDigit)) return true;
-        var trimmed = text.Trim();
-        return ListNames.Value.Contains(trimmed) || (_cultureListNames ??= CultureListNames(Culture)).Contains(trimmed);
+        // No list name holds half of a character, and normalising one alone throws.
+        if (text.Any(char.IsSurrogate)) return false;
+        var key = ListKey(text.Trim());
+        return ListNames.Value.Contains(key) || (_cultureListNames ??= CultureListNames(Culture)).Contains(key);
+    }
+
+    /// <summary>A list name as it is compared: composed, its invisible characters dropped, in upper case.</summary>
+    private static string ListKey(string name)
+    {
+        var composed = name.Normalize(NormalizationForm.FormC);
+        var visible = new StringBuilder(composed.Length);
+        foreach (var c in composed)
+        {
+            // A soft hyphen, the zero-width space, joiners and the word joiner, and the byte order mark.
+            if (c is '\u00AD' or '\u200B' or '\u200C' or '\u200D' or '\u2060' or '\uFEFF') continue;
+            visible.Append(c);
+        }
+        return visible.ToString().ToUpperInvariant();
     }
 
     private HashSet<string>? _cultureListNames;
@@ -412,7 +432,7 @@ public sealed partial class Sheet
     {
         var format = culture.DateTimeFormat;
         return new HashSet<string>(
-            format.DayNames.Concat(format.AbbreviatedDayNames).Concat(format.MonthNames).Concat(NumberFormat.AbbreviatedMonthNamesOf(culture)).Where(n => n.Length > 0),
-            StringComparer.Create(culture, ignoreCase: true));
+            format.DayNames.Concat(format.AbbreviatedDayNames).Concat(format.MonthNames).Concat(NumberFormat.AbbreviatedMonthNamesOf(culture)).Where(n => n.Length > 0).Select(ListKey),
+            StringComparer.Ordinal);
     }
 }

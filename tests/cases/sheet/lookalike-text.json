@@ -9,7 +9,7 @@
     },
     {
       "name": "ADR-0047: a time typed with a line break after it stays text",
-      "steps": [{ "enter": { "A1": "12:30\n" }, "expect": { "values": { "A1": "12:30\n" } } }]
+      "steps": [{ "enter": { "A1": "12:30\n", "A2": "1/2/2026 12:30\n" }, "expect": { "values": { "A1": "12:30\n", "A2": "1/2/2026 12:30\n" } } }]
     },
     {
       "name": "ADR-0047: a month name date typed with a line break after it stays text",
@@ -31,10 +31,10 @@
       "steps": [{ "declareTable": { "name": "Prices\n", "columns": ["Item"] }, "expect": { "throws": { "refusal": "argument" } } }]
     },
     {
-      "name": "ADR-0047: text holding a character outside the Basic Multilingual Plane sorts as a symbol",
+      "name": "ADR-0047: a character outside the Basic Multilingual Plane sorts in its own class, an emoji among the symbols and 𠮷 among the letters",
       "steps": [
-        { "enter": { "A1": "b", "A2": "😀", "A3": "a", "B1": "=SORT(A1:A3)" } },
-        { "read": true, "expect": { "values": { "B1": "😀", "B2": "a", "B3": "b" } } }
+        { "enter": { "A1": "b", "A2": "😀", "A3": "a", "A4": "𠮷", "A5": "'1", "B1": "=SORT(A1:A5)" } },
+        { "read": true, "expect": { "values": { "B1": "😀", "B2": "1", "B3": "a", "B4": "b", "B5": "𠮷" } } }
       ]
     }
   ]

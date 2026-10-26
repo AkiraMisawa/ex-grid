@@ -272,6 +272,18 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.Equal("###", CellText(target, "A1"));
     }
 
+    [Theory] // ADR-0047, ADR-0048: an invariant field that only looks like an ISO date is the text it is, never a refused date
+    [InlineData("2026-09-27\n")]
+    [InlineData("٢٠٢٦-٠٩-٢٧")]
+    [InlineData("2026-09-27T12:30\n")]
+    public void An_invariant_field_that_only_looks_like_a_date_is_text(string field)
+    {
+        var culture = CultureInfo.GetCultureInfo("en-US");
+
+        Assert.Equal(field, SheetClipboard.TypedFor(field, ExGrid.Clipboard.PasteFieldOrigin.Invariant, culture));
+        Assert.Equal(ValueKind.Text, Entry.Parse(field, culture)!.Constant!.Value.Kind);
+    }
+
     [Fact] // ADR-0005/0048: outward, the text flavour is the Values as shown and the HTML flavour the unformatted Values
     public async Task A_copy_carries_the_values_shown_and_unformatted()
     {

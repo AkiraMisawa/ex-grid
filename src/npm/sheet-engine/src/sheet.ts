@@ -2811,9 +2811,11 @@ export class Sheet {
     /** Text Excel's fill would not simply copy: text holding a digit, and the day and month names of its built-in lists, in English and in the Sheet's culture. */
     #continuesAsSeries(text: string): boolean {
         for (let i = 0; i < text.length; i++) if (isDigit(text.charCodeAt(i))) return true;
-        const trimmed = ignoreCaseKey(trimWhiteSpace(text));
+        // No list name holds half of a character (C#'s normalising one alone throws).
+        if (/[\uD800-\uDFFF]/u.test(text)) return false;
+        const key = listKey(trimWhiteSpace(text));
         this.#cultureListNames ??= cultureListNames(this.culture);
-        return invariantListNames().has(trimmed) || this.#cultureListNames.has(trimmed);
+        return invariantListNames().has(key) || this.#cultureListNames.has(key);
     }
 }
 
@@ -3266,6 +3268,15 @@ function invariantListNames(): Set<string> {
 function cultureListNames(culture: Culture): Set<string> {
     const data = culture.data;
     return new Set([...data.dayNames, ...data.abbreviatedDayNames, ...data.monthNames, ...abbreviatedMonthNamesOf(culture)]
-        .filter(n => n.length > 0).map(ignoreCaseKey));
+        .filter(n => n.length > 0).map(listKey));
+}
+
+/**
+ * A list name as it is compared: composed, its invisible characters (a soft hyphen, the zero-width space,
+ * joiners and the word joiner, the byte order mark) dropped, in upper case. A name in doubt is refused
+ * rather than copied, and the comparison is the engine's own, not the platform's collation.
+ */
+function listKey(name: string): string {
+    return ignoreCaseKey(name.normalize('NFC').replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/gu, ''));
 }
 

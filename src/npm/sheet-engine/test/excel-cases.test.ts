@@ -235,7 +235,9 @@ function act(workbook: Workbook, c: JsonObject): string | undefined {
 }
 
 /** `Math.Round(x, digits)` as .NET computes it: scaled, rounded half to even, scaled back. */
+/** `Math.Round(x, digits)`, as the C# runner compares: a number of 1e16 or more is already whole, and is left as it is. */
 function roundTo(x: number, digits: number): number {
+    if (Math.abs(x) >= 1e16) return x;
     const power = 10 ** digits;
     return roundHalfToEven(x * power) / power;
 }

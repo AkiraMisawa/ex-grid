@@ -320,7 +320,7 @@ export class Evaluator {
                 return;
             case 'scalar':
             case 'missing':
-                throw new TypeError('Not a range.');
+                throw new RangeError('Not a range.');
             default:
                 throw new Error(`Internal: ${String(range.kind)} is no kind of operand.`);
         }

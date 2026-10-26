@@ -1,5 +1,6 @@
 import { CellAddress, columnCount, rowCount } from './cell-address';
 import { isAsciiDigit } from './dotnet';
+import { FormatError } from './format-error';
 
 /**
  * A rectangle of cells on a Sheet, inclusive at both corners, held from its top-left corner (`first`) to its
@@ -79,10 +80,10 @@ export class CellRange {
         }
     }
 
-    /** Parses `B7`, `B7:C9` (corners in either order, letters in either case), whole columns `B:D` or whole rows `2:4`; no `$`. Anything else is a `TypeError`. */
+    /** Parses `B7`, `B7:C9` (corners in either order, letters in either case), whole columns `B:D` or whole rows `2:4`; no `$`. Anything else is a `FormatError`. */
     static parse(text: string): CellRange {
         const range = CellRange.tryParse(text);
-        if (range === undefined) throw new TypeError(`'${text}' is not a cell range such as A1 or A1:B2.`);
+        if (range === undefined) throw new FormatError(`'${text}' is not a cell range such as A1 or A1:B2.`);
         return range;
     }
 

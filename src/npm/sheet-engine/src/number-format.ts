@@ -5,6 +5,7 @@ import { powerOfTen, roundHalfAwayFromZeroAt } from './formulas/rounding';
 import { elementAt } from './must';
 import { generalFitted, generalText } from './number-text';
 import type { Value } from './value';
+import { FormatError } from './format-error';
 
 /**
  * A colour a Number Format names at the start of a section — `[Red]` and the seven others, in any case
@@ -703,10 +704,10 @@ export class NumberFormat {
         return this.#sections.length > 0 && elementAt(this.#sections, 0).percent > 0;
     }
 
-    /** Reads a format code; one outside the subset is refused with a `TypeError` that says why. */
+    /** Reads a format code; one outside the subset is refused with a `FormatError` that says why. */
     static parse(code: string): NumberFormat {
         const reading = NumberFormat.tryParse(code);
-        if (reading.format === undefined) throw new TypeError(`The number format '${code}' is not supported: ${reading.reason}`);
+        if (reading.format === undefined) throw new FormatError(`The number format '${code}' is not supported: ${reading.reason}`);
         return reading.format;
     }
 
