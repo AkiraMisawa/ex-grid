@@ -14,12 +14,12 @@ import { ExGrid } from '@ex-grid/react';
 import { Temporal } from 'temporal-polyfill';
 import { DemoNav } from '../demo-nav';
 import { dotNetRound } from '../dotnet-math';
-import { fxVolDataDeltas, fxVolDataDeltaValues, fxVolDataForwards, fxVolDataQuotes, type FxForwardRow, type FxVolRow } from './data';
+import { fxVolDataAsOf, fxVolDataDeltas, fxVolDataDeltaValues, fxVolDataForwards, fxVolDataPair, fxVolDataQuotes, fxVolDataSpot, fxVolDataSpotDate, type FxForwardRow, type FxVolRow } from './data';
 import { fixed, grouped, numberOf } from './format';
 import { ShowcaseShell, Views } from './shell';
 
-const pair = 'EURUSD';
-const asOf = '2026-10-13', spotDate = '2026-10-15', spot = 1.165;
+const pair = fxVolDataPair;
+const asOf = fxVolDataAsOf.toString(), spotDate = fxVolDataSpotDate.toString(), spot = fxVolDataSpot;
 
 /** The method the filled quotes were made with, as the surface names it. */
 const method = 'natural cubic spline across delta, per expiry';
@@ -98,7 +98,7 @@ function sliceOf(slice: SurfaceSlice, name: string): ChartDefinition {
 const quoteColumns: readonly GridColumn<FxVolRow>[] = Object.freeze([
     { name: 'Tenor', type: 'text', value: (r: FxVolRow) => r.tenor, header: 'Tenor' },
     { name: 'Expiry', type: 'date', dateType: 'dateOnly', value: (r: FxVolRow) => r.expiry, header: 'Expiry' },
-    ...fxVolDataDeltas.map((d, i): GridColumn<FxVolRow> => ({ name: d, type: 'number', value: (r: FxVolRow) => r.vols[i] ?? null, header: d, format: percent })),
+    ...fxVolDataDeltas.map((d, i): GridColumn<FxVolRow> => ({ name: d, type: 'number', value: (r: FxVolRow) => at(r.vols, i, 'vol'), header: d, format: percent })),
 ]);
 const quoteGroups: readonly GridHeaderGroup[] = Object.freeze([{ label: 'Implied volatility (%)', columns: fxVolDataDeltas }]);
 const quoteSource = GridSource.from(fxVolDataQuotes, { rowKey: (r: FxVolRow) => r.tenor });

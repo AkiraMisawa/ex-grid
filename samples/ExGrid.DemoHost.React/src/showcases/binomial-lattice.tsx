@@ -41,7 +41,8 @@ interface OptionTerms {
 }
 
 /** Prices `o` on an `n`-step lattice, returning the price and every node. */
-function price(o: OptionTerms, n: number): { readonly price: number; readonly nodes: readonly LatticeNode[] } {
+// The lattice's price, and its nodes when `drawn`: the convergence chart prices every N up to 500 and draws none.
+function price(o: OptionTerms, n: number, drawn = true): { readonly price: number; readonly nodes: readonly LatticeNode[] } {
     const dt = o.maturity / n;
     const u = Math.exp(o.volatility * Math.sqrt(dt));
     const d = 1 / u;
@@ -49,7 +50,7 @@ function price(o: OptionTerms, n: number): { readonly price: number; readonly no
     const disc = Math.exp(-o.rate * dt);
     const payoff = (s: number): number => Math.max(o.put ? o.strike - s : s - o.strike, 0);
     const spotAt = (i: number, j: number): number => o.spot * (u ** j) * (d ** (i - j));
-    const nodes: LatticeNode[] = new Array<LatticeNode>((n + 1) * (n + 2) / 2);
+    const nodes: LatticeNode[] = drawn ? new Array<LatticeNode>((n + 1) * (n + 2) / 2) : [];
     const index = (i: number, j: number): number => i * (i + 1) / 2 + j;
     const v: number[] = new Array<number>(n + 1).fill(0);
     const held = (j: number): number => {
@@ -60,7 +61,7 @@ function price(o: OptionTerms, n: number): { readonly price: number; readonly no
     for (let j = 0; j <= n; j++) {
         const value = payoff(spotAt(n, j));
         v[j] = value;
-        nodes[index(n, j)] = { step: n, up: j, spot: spotAt(n, j), value, exercise: value, early: false };
+        if (drawn) nodes[index(n, j)] = { step: n, up: j, spot: spotAt(n, j), value, exercise: value, early: false };
     }
     for (let i = n - 1; i >= 0; i--) {
         for (let j = 0; j <= i; j++) {
@@ -69,7 +70,7 @@ function price(o: OptionTerms, n: number): { readonly price: number; readonly no
             const early = o.american && exercise > hold;
             const value = early ? exercise : hold;
             v[j] = value;
-            nodes[index(i, j)] = { step: i, up: j, spot: spotAt(i, j), value, exercise, early };
+            if (drawn) nodes[index(i, j)] = { step: i, up: j, spot: spotAt(i, j), value, exercise, early };
         }
     }
     const first = held(0);
@@ -167,7 +168,7 @@ function lattice(nodes: readonly LatticeNode[], n: number): ChartDefinition {
 }
 
 function convergence(terms: OptionTerms, nMax: number, bs: number): ChartDefinition {
-    const points = Array.from({ length: nMax }, (_, k) => ({ x: k + 1, y: price(terms, k + 1).price }));
+    const points = Array.from({ length: nMax }, (_, k) => ({ x: k + 1, y: price(terms, k + 1, false).price }));
     return new ChartDefinition({
         axis: { values: 'numbers', title: 'Steps N', format: x => fixed(x, 0) },
         series: [
@@ -194,19 +195,29 @@ function Switch({ label, options, value, onChange }: {
     );
 }
 
-/** A number the user types, as the built-in Chrome draws one; a text that is no number changes nothing. */
-function Field({ label, id, value, onChange }: {
+/**
+ * A number the user types, as the built-in Chrome draws one. Like the Blazor field's binding, it is taken when the
+ * field is left or Enter is typed, never on a keystroke on the way to it (a 0 typed before .25); a text that is no
+ * number, or not above zero where `positive`, changes nothing, and the field then shows the figure taken, as the
+ * page clamped it.
+ */
+function Field({ label, id, value, onChange, positive = false }: {
     readonly label: string; readonly id: string; readonly value: number; readonly onChange: (value: number) => void;
+    readonly positive?: boolean;
 }): ReactElement {
-    const [text, setText] = useState(String(value));
+    const [draft, setDraft] = useState<string | undefined>(undefined);
+    const take = (input: HTMLInputElement): void => {
+        const typed = input.valueAsNumber;
+        if (Number.isFinite(typed) && (!positive || typed > 0)) onChange(typed);
+        setDraft(undefined);
+    };
     return (
         <label className={`xs-bin-field xs-bin-${id}`}>
             <span>{label}</span>
-            <input type="number" step="any" value={text} onChange={event => {
-                setText(event.target.value);
-                const typed = event.target.valueAsNumber;
-                if (Number.isFinite(typed)) onChange(typed);
-            }} />
+            <input type="number" step="any" value={draft ?? String(value)}
+                onChange={event => { setDraft(event.target.value); }}
+                onBlur={event => { take(event.currentTarget); }}
+                onKeyDown={event => { if (event.key === 'Enter') take(event.currentTarget); }} />
         </label>
     );
 }
@@ -266,8 +277,8 @@ export function BinomialLatticeShowcase(): ReactElement {
                         <Field label="Spot S₀" id="spot" value={terms.spot} onChange={v => { set({ spot: v }); }} />
                         <Field label="Strike K" id="strike" value={terms.strike} onChange={v => { set({ strike: v }); }} />
                         <Field label="Risk-free rate r" id="rate" value={terms.rate} onChange={v => { set({ rate: v }); }} />
-                        <Field label="Volatility σ" id="vol" value={terms.volatility} onChange={v => { set({ volatility: v }); }} />
-                        <Field label="Maturity T (years)" id="maturity" value={terms.maturity} onChange={v => { set({ maturity: v }); }} />
+                        <Field label="Volatility σ" id="vol" value={terms.volatility} positive onChange={v => { set({ volatility: v }); }} />
+                        <Field label="Maturity T (years)" id="maturity" value={terms.maturity} positive onChange={v => { set({ maturity: v }); }} />
                         <div className="xs-bin-heading">Lattice</div>
                         <Field label={`Steps drawn N (1–${String(maxDrawn)})`} id="steps" value={n}
                             onChange={v => { setN(Math.min(maxDrawn, Math.max(1, Math.trunc(v)))); }} />

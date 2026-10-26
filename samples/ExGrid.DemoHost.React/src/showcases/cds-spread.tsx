@@ -11,12 +11,12 @@ import {
 import { ExChart } from '@ex-grid/chart-react';
 import { ExGrid, type ExGridApi } from '@ex-grid/react';
 import { DemoNav } from '../demo-nav';
-import { creditDataNames, type CreditName } from './data';
+import { creditDataAsOf, creditDataNames, type CreditName } from './data';
 import { fixed, grouped, numberOf } from './format';
 import { ShowcaseShell } from './shell';
 
 const title = 'CDS spread vs leverage';
-const asOf = '2026-10-13';
+const asOf = creditDataAsOf.toString();
 
 /** `ToString("0.00") + "x"` and `ToString("#,##0") + "bp"`. */
 const times = (v: number): string => `${fixed(v, 2)}x`;

@@ -3,7 +3,7 @@
 // their tenors across, and an interest-rate curve three ways. Each view keeps its own grid, controls and chart;
 // only the selected one is on the screen. Every figure is a fixed value (data.ts); nothing here bootstraps or
 // interpolates a curve.
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { GridSource, type GridColumn, type GridHeaderGroup, type InMemoryGridSource } from '@ex-grid/core';
 import {
     ChartDefinition, GridChartBridge, gridChartCommandLabel, type ChartSeriesOptions, type ChartValue, type GridChart,
@@ -18,6 +18,7 @@ import {
     cdsCurveDataCurves, cdsCurveDataShifts, cdsCurveDataTenorNames, cdsCurveDataTenorYears, cdsDataCurves, cdsDataShifts, rateDataBuilt,
     rateDataCurves, rateDataInterpolations, rateDataQuotes, rateDataTenors, rateDataYears, type BuiltCurve, type CdsCurveRow, type CdsRow,
     type RateQuotes,
+    cdsDataRatePct, cdsDataRecoveryPct, rateDataDeposits, rateDataEarlier, rateDataToday,
 } from './data';
 import { dayNumberOf, fixed, grouped, numberOf } from './format';
 import { ShowcaseShell, Views } from './shell';
@@ -48,10 +49,14 @@ function useCharted<Row>(first: readonly Row[], keyOf: (row: Row) => string, col
     const grid = useRef<ExGridApi<Row>>(null);
     const held = useRef<Charted<Row> | undefined>(undefined);
     if (held.current === undefined) {
+        const heldNow = (): Charted<Row> => {
+            if (held.current === undefined) throw new Error('Internal: the page asked for its rows before it held them.');
+            return held.current;
+        };
         const source = GridSource.from(first, { rowKey: keyOf });
         const tabs = new ChartTabsModel();
         const bridge = new GridChartBridge<Row>({
-            declarations: { ...declarations, rowKey: keyOf, rowOf: key => held.current?.rows.find(r => keyOf(r) === key) },
+            declarations: { ...declarations, rowKey: keyOf, rowOf: key => heldNow().rows.find(r => keyOf(r) === key) },
             grid: () => ({ columns, headerGroups: groups, source }),
             targets: tabs.targets,
             onChart: tabs.open,
@@ -119,7 +124,7 @@ function CdsCurveView(): ReactElement {
     return (
         <>
             <div className="xs-tools">
-                <span>Recovery 40%, a flat 3% rate, quarterly premiums on the IMM dates.</span>
+                <span>Recovery {cdsDataRecoveryPct}%, a flat {cdsDataRatePct}% rate, quarterly premiums on the IMM dates.</span>
                 <span className="xs-spacer" />
                 <span>Quotes shifted {shiftText(at(cdsDataShifts, shift, 'shift'))}</span>
                 <button type="button" className="xs-button xs-shift-down" disabled={shift === 0} onClick={() => { move(-1); }}>−10bp</button>
@@ -216,7 +221,7 @@ function EntityCurvesView(): ReactElement {
 // with the interpolation's name (ADR-0257), and a forward under log-linear discount factors is a rate over each
 // interval (ADR-0253).
 
-const today = '2026-10-13', earlier = '2026-09-14', deposits = 6;
+const today = rateDataToday.toString(), earlier = rateDataEarlier.toString(), deposits = rateDataDeposits;
 const ratePanel = 'Rate (%)', discountPanel = 'Discount factor';
 
 /** One pillar as the table shows it: the instrument, its quotes, and what the curve made of it. */
@@ -363,19 +368,22 @@ function RateCurveView(): ReactElement {
     });
     const change = (next: Partial<RateChoice>): void => { setChoice({ ...choice, ...next }); };
     const quotes = quotesOf(choice.curve, today);
-    const built = builtOf(choice.curve, today, choice.interpolation);
-    const rows: readonly PillarRow[] = rateDataTenors.map((t, i) => ({
-        term: t, type: i < deposits ? 'Deposit' : 'Swap', maturity: at(quotes.maturities, i, 'maturity'),
-        bid: at(quotes.bid, i, 'bid'), ask: at(quotes.ask, i, 'ask'), mid: mid(quotes, i),
-        zero: at(choice.annual ? built.zeroAnnual : built.zeroContinuous, i, 'zero'), discount: at(built.discount, i, 'discount'),
-        forward1Y: at(built.forward1Y, i, 'forward'), implied: at(built.implied, i, 'implied'),
-    }));
+    // One source while the rows stand: a switch of the chart alone leaves the grid's Selection and scroll as they were.
+    const { rows, source } = useMemo(() => {
+        const built = builtOf(choice.curve, today, choice.interpolation);
+        const pillars: readonly PillarRow[] = rateDataTenors.map((t, i) => ({
+            term: t, type: i < deposits ? 'Deposit' : 'Swap', maturity: at(quotes.maturities, i, 'maturity'),
+            bid: at(quotes.bid, i, 'bid'), ask: at(quotes.ask, i, 'ask'), mid: mid(quotes, i),
+            zero: at(choice.annual ? built.zeroAnnual : built.zeroContinuous, i, 'zero'), discount: at(built.discount, i, 'discount'),
+            forward1Y: at(built.forward1Y, i, 'forward'), implied: at(built.implied, i, 'implied'),
+        }));
+        return { rows: pillars, source: GridSource.from(pillars, { rowKey: (r: PillarRow) => r.term }) };
+    }, [choice.curve, choice.interpolation, choice.annual, quotes]);
     const fit = fixed(Math.max(...rows.map(r => Math.abs(r.implied - r.mid) * 100)), 6);
     const definition = new ChartDefinition({
         axis: tenorAxis,
         series: [...seriesOf(choice, today), ...(choice.compare ? seriesOf(choice, earlier) : [])],
     });
-    const source = GridSource.from(rows, { rowKey: (r: PillarRow) => r.term });
     return (
         <>
             <div className="xs-tools">

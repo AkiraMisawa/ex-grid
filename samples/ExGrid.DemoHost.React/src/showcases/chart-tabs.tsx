@@ -31,6 +31,11 @@ export class ChartTabsModel {
 
     /** Replaces the tab `target` was with `chart`, a series added to it, and selects it. */
     readonly added = (target: ChartTarget, chart: GridChart): void => {
+        // A tab closed after its "Add to chart" was chosen has nowhere to take the series: said, never dropped.
+        if (!this.#state.charts.some(c => c.name === target.name)) {
+            this.refused(`${target.name} was closed, so the series could not be added to it.`);
+            return;
+        }
         this.#set({
             charts: this.#state.charts.map(c => (c.name === target.name ? { name: c.name, chart } : c)), active: target.name, refusal: undefined,
         });

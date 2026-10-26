@@ -150,6 +150,17 @@ for (const file of [...files, 'Records.cs']) {
         const elementType = element.endsWith('[]') ? `readonly (${tsType(element.slice(0, -2))})[]` : tsType(element);
         lines.push(`export const ${camel(holder)}${name}: readonly (${elementType})[] = ${parse(tokens(init), type)};`, '');
     }
+    // The scalars beside them (`AsOf`, `Spot`, `Name`), one declarator or several on a line.
+    for (const m of text.matchAll(/public (?:const|static readonly) (int|double|decimal|string|DateOnly) ([^;\n]+);/g)) {
+        const [, type, declarators] = m;
+        const holder = [...text.slice(0, m.index).matchAll(/public static (?:partial )?class (\w+)/g)].at(-1)?.[1];
+        if (holder === undefined) throw new Error(`${file}: '${declarators}' stands in no class.`);
+        const each = [...declarators.matchAll(/(\w+)\s*=\s*(new\([^)]*\)|"(?:[^"\\]|\\.)*"|-?[\d.]+(?:[eE][-+]?\d+)?[mMdD]?)\s*(?:,|$)/g)];
+        if (each.length === 0) throw new Error(`${file}: cannot read '${declarators}'.`);
+        for (const [, name, init] of each) {
+            lines.push(`export const ${camel(holder)}${name}: ${tsType(type)} = ${parse(tokens(init), type)};`, '');
+        }
+    }
 }
 
 writeFileSync(out, `${lines.join('\n').trimEnd()}\n`);

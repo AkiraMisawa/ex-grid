@@ -73,13 +73,17 @@ export function ExposureShowcase(): ReactElement {
     const grid = useRef<ExGridApi<ExposureRow>>(null);
     const held = useRef<Held | undefined>(undefined);
     if (held.current === undefined) {
+        const heldNow = (): Held => {
+            if (held.current === undefined) throw new Error('Internal: the page asked for its rows before it held them.');
+            return held.current;
+        };
         const rows = profile(0);
         const source = GridSource.from(rows, { rowKey: keyOf });
         const tabs = new ChartTabsModel();
         const bridge = new GridChartBridge<ExposureRow>({
             declarations: {
                 rowKey: keyOf,
-                rowOf: key => held.current?.rows.find(r => keyOf(r) === key),
+                rowOf: key => heldNow().rows.find(r => keyOf(r) === key),
                 // The page says what each figure is (ADR-0253): CVA is an amount per bucket, the rest are levels.
                 kindOf: column => (column.startsWith('Cva') ? 'amountPerPeriod' : 'level'),
             },

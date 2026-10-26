@@ -11,12 +11,12 @@ import { ExChart } from '@ex-grid/chart-react';
 import { ExGrid, type ExGridApi } from '@ex-grid/react';
 import { Temporal } from 'temporal-polyfill';
 import { DemoNav } from '../demo-nav';
-import { indexDataBars, intervalDataCurve, intervalDataForecasts, intervalDataStrategies, type IndexBar } from './data';
+import { indexDataBars, indexDataName, intervalDataCurve, intervalDataForecasts, intervalDataStrategies, type IndexBar } from './data';
 import { dayNumberOf, fixed, grouped, numberOf } from './format';
 import barsSource from '../../../ExChart.Showcases/IndexBarsView.razor?raw';
 import { razorStyle, ShowcaseShell, Views } from './shell';
 
-const name = 'Northgate 225';
+const name = indexDataName;
 const averageDays = 25;
 
 /** One session as the grid shows it: the bar, its change from the previous close, and the page's average. */
