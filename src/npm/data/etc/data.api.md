@@ -18,7 +18,7 @@ export class BoardInput {
     checkSource(source: ShapedSource, signal?: AbortSignal): Promise<DataShape>;
     column(name: string): DataShapeColumn | undefined;
     get columns(): readonly DataShapeColumn[];
-    fromJson(json: string | JsonValue): Snapshot;
+    fromJson(json: string): Snapshot;
     get name(): string;
     static read(name: string, declaration: JsonValue, path: string): BoardInput;
     get shape(): DataShape;
