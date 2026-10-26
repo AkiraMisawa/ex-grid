@@ -16,14 +16,15 @@ import {
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
     layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWordIdList, setCollapsed,
-    validateLayout, type PivotDisplayRow, type PivotEntry, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
+    pivotItemKeyId, validateLayout, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
     type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
 } from '@ex-grid/pivot-engine';
 import { entryMenuCommands, entryOfField, type EntryMenuCommand, type EntryPanel } from './entry-menu';
 import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMove } from './field-list';
-import { ItemFilterPanel } from './item-filter';
+import { ItemFilterPanel, itemsProblemText } from './item-filter';
 import { ItemListings, pendingFirst, searchItems, type FieldItems, type ItemsUnder } from './items';
 import { PivotMenuFrame, type PivotMenuCommand } from './menu';
+import { element } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
@@ -153,13 +154,28 @@ interface AtEntry {
 }
 
 /** What is open in the pivot (ADR-0061), one at a time: the Layout menu from the Pivot Toolbar, a placed field's menu
- * in the Field List, or a panel that menu opened in its place. */
+ * in the Field List, a panel that menu opened in its place, or Filter… under a report filter in the band. */
 type OpenSurface =
     | { readonly kind: 'layout'; readonly popup: PivotMenuFrame }
     | (AtEntry & { readonly kind: 'entry'; readonly popup: PivotMenuFrame })
-    | (AtEntry & { readonly kind: 'panel'; readonly popup: PivotPanel });
+    | (AtEntry & { readonly kind: 'panel'; readonly popup: PivotPanel })
+    | { readonly kind: 'band'; readonly field: string; readonly against: PivotLayout; readonly popup: ItemFilterPanel };
 
-type EntrySurface = Exclude<OpenSurface, { readonly kind: 'layout' }>;
+type EntrySurface = Extract<OpenSurface, { readonly kind: 'entry' | 'panel' }>;
+
+/** A report filter in the band: its caption, and its button, which says what it shows and opens Filter… under it. */
+interface BandFilter {
+    readonly filter: HTMLElement;
+    readonly caption: HTMLElement;
+    readonly anchor: HTMLElement;
+    readonly button: HTMLButtonElement;
+    readonly summary: HTMLElement;
+}
+
+// Stops what a panel asked that is still on its way, as it leaves.
+function closed(open: OpenSurface): void {
+    if (open.kind === 'panel' || open.kind === 'band') open.popup.close?.();
+}
 
 // The Layout menu's groups, each headed where it starts, in Excel's order (ADR-0061).
 const layoutHeadings: ReadonlyMap<PivotLayoutChoice, string> = new Map([
@@ -224,6 +240,10 @@ export class PivotView {
     readonly #notice: HTMLElement;
     readonly #fieldListToggle: HTMLButtonElement;
     readonly #layoutAnchor: HTMLElement;
+    readonly #toolbarStart: HTMLElement;
+    // The report filter band (ADR-0061): each report filter's elements, kept while it stands in Filters.
+    readonly #band: HTMLElement;
+    readonly #bandFilters = new Map<string, BandFilter>();
     readonly #layoutButton: HTMLButtonElement;
     readonly #layoutLabel: HTMLElement;
     readonly #backdrop: HTMLElement;
@@ -268,7 +288,7 @@ export class PivotView {
     // The Items Filter… lists, asked of the source under the report on screen (ADR-0066).
     readonly #items = new ItemListings(() => { this.#draw(); });
     // A field menu the pane left while it held the keyboard: the keyboard goes to its field's entry once drawn.
-    #keyboardAfterDraw: EntrySurface | undefined;
+    #keyboardAfterDraw: OpenSurface | undefined;
     #destroyed = false;
 
     constructor(root: HTMLElement, options: PivotViewOptions, mountGrid: MountGrid) {
@@ -299,6 +319,9 @@ export class PivotView {
         this.#report = div('ex-pivot-report');
         const toolbar = div('ex-pivot-toolbar');
         const start = div('ex-pivot-toolbar-start');
+        this.#toolbarStart = start;
+        this.#band = div('ex-pivot-filters');
+        this.#band.setAttribute('role', 'group');
         const end = div('ex-pivot-toolbar-end');
         this.#fieldListToggle = document.createElement('button');
         this.#fieldListToggle.type = 'button';
@@ -834,17 +857,50 @@ export class PivotView {
 
     #menuFrame(place: 'field-list' | 'toolbar-end'): PivotMenuFrame {
         const frame = new PivotMenuFrame(this.#root.ownerDocument, place, () => { this.#close('opener'); });
-        // The keyboard leaving a menu for another control — Tab past its last command — closes it, so the Layout
-        // menu's backdrop takes no press meant for that control, and a field menu does not stand open over the pane
-        // once the keyboard left the pivot. A field menu's entry, which toggles it, is inside its bounds.
-        frame.element.addEventListener('focusout', event => {
+        this.#closeOnLeaving(frame.element);
+        return frame;
+    }
+
+    // The keyboard leaving what is open for another control — Tab past its last command — closes it, so the backdrop of
+    // a surface opened from the Pivot Toolbar takes no press meant for that control, and a field menu does not stand
+    // open over the pane once the keyboard left the pivot. A field menu's entry, which toggles it, is inside its bounds.
+    #closeOnLeaving(frame: HTMLElement): void {
+        frame.addEventListener('focusout', event => {
             const to = event.relatedTarget;
             const open = this.#open;
-            if (open?.popup !== frame || !(to instanceof Node)) return;
-            const bounds = open.kind === 'entry' ? frame.element.parentNode : frame.element;
+            if (open?.popup.element !== frame || !(to instanceof Node)) return;
+            const bounds = open.kind === 'entry' ? frame.parentNode : frame;
             if (bounds !== null && !bounds.contains(to)) this.#close('stay');
         });
-        return frame;
+    }
+
+    // A report filter's button opens Filter… under it, over the report, and closes the one standing under it.
+    #toggleBand(field: string): void {
+        const open = this.#open;
+        if (open?.kind === 'band' && open.field === field) {
+            this.#close('opener');
+            return;
+        }
+        const pane = this.#paneLayout;
+        const handlers = {
+            // OK's layout is the pane's next, taken against the layout Filter… was opened on (spine rule 6).
+            apply: (layout: PivotLayout) => {
+                this.#finish(surface, () => {
+                    this.#edited({ layout, against: pane, moved: undefined });
+                    return undefined;
+                });
+            },
+            cancel: () => { if (this.#open === surface) this.#close('opener'); },
+            items: () => this.#itemsOf(field),
+            search: (search: string, signal: AbortSignal) =>
+                Promise.resolve().then(() => searchItems(field, search, defined(this.#itemsUnder(field), 'a report to search the Items of'), signal)),
+        };
+        this.#items.retry(field);
+        const popup = new ItemFilterPanel(this.#root.ownerDocument,
+            { layout: pane, field, caption: this.#captionOf(field), place: 'toolbar-start', locale: this.#locale, words: this.#words }, handlers);
+        this.#closeOnLeaving(popup.element);
+        const surface: OpenSurface = { kind: 'band', field, against: pane, popup };
+        this.#openSurface(surface);
     }
 
     // Opened, its first enabled command, or its panel's first control, takes the keyboard.
@@ -861,30 +917,44 @@ export class PivotView {
         const open = this.#takeDown();
         if (open === undefined) return;
         this.#draw();
-        if (keyboard === 'opener') this.#returnKeyboard(open, open.kind === 'layout' ? undefined : this.#entryNow(open));
+        if (keyboard === 'opener') this.#returnKeyboard(open, this.#entryNow(open));
     }
 
     // Takes what is open off the page, without drawing.
     #takeDown(): OpenSurface | undefined {
         const open = this.#open;
         this.#open = undefined;
-        if (open?.kind === 'panel') open.popup.close?.();
-        open?.popup.element.remove();
+        if (open === undefined) return undefined;
+        closed(open);
+        open.popup.element.remove();
         return open;
     }
 
-    // The keyboard goes back to the button that opened the menu: Layout ▾, or the entry `entry` names, where the field
-    // the menu was for stands now; a field taken out of the Areas hands it to its tick box in the list.
+    // The keyboard goes back to the button that opened the menu: Layout ▾, a report filter's button, or the entry `entry`
+    // names, where the field the menu was for stands now; a field taken out of the Areas hands it to its tick box in
+    // the list.
     #returnKeyboard(open: OpenSurface, entry: PivotEntry | undefined): void {
         if (open.kind === 'layout') this.#layoutButton.focus();
+        else if (open.kind === 'band') this.#focusBand(open.field);
         else if (entry !== undefined) this.#fieldList.focusEntry(entry);
         else this.#fieldList.focusField(open.field);
     }
 
-    // Where the field a menu was for stands in the pane's layout now.
-    #entryNow(open: EntrySurface): PivotEntry | undefined {
-        return entryOfField(this.#paneLayout, open.field, open.entry);
+    // A report filter's button; once the field has left Filters, its tick box in the Field List, or the toggle that
+    // shows the list.
+    #focusBand(field: string): void {
+        const filter = this.#bandFilters.get(field);
+        if (filter !== undefined) filter.button.focus();
+        else if (this.#fieldListShown) this.#fieldList.focusField(field);
+        else this.#fieldListToggle.focus();
     }
+
+    // Where the field a menu or panel in the Field List was for stands in the pane's layout now; none for what opened
+    // from the Pivot Toolbar.
+    #entryNow(open: OpenSurface): PivotEntry | undefined {
+        return open.kind === 'entry' || open.kind === 'panel' ? entryOfField(this.#paneLayout, open.field, open.entry) : undefined;
+    }
+
 
     // Closes what is open, does what its command or its OK says, and hands the keyboard back once the pivot is drawn
     // after it. The popup leaves the page once the keyboard has gone back, so the Layout menu's never passes it
@@ -892,7 +962,7 @@ export class PivotView {
     #finish(open: OpenSurface, run: () => PivotEntry | undefined): void {
         if (this.#open !== open) return;
         this.#open = undefined;
-        if (open.kind === 'panel') open.popup.close?.();
+        closed(open);
         this.#returnKeyboard(open, run());
         open.popup.element.remove();
     }
@@ -965,7 +1035,7 @@ export class PivotView {
                 const field = fieldOf(against, entry);
                 // Opened again on Items that could not be listed, it asks for them again.
                 this.#items.retry(field);
-                popup = new ItemFilterPanel(document, { layout: against, field, caption: this.#captionOf(field), locale: this.#locale, words }, {
+                popup = new ItemFilterPanel(document, { layout: against, field, caption: this.#captionOf(field), place: 'field-list', locale: this.#locale, words }, {
                     ...handlers,
                     items: () => this.#itemsOf(field),
                     // Asked from the panel's draw, it says a problem in a later turn, never in the middle of that draw.
@@ -1001,16 +1071,18 @@ export class PivotView {
         this.#openSurface(surface);
     }
 
-    // Each draw draws the open menu again from the pane's layout. A field's menu or panel goes when the pane leaves
-    // the layout it was opened on, since its entry may now be another field's, and when the Field List is hidden; the
-    // keyboard it held goes to the entry its field stands at now.
+    // Each draw draws the open menu again from the pane's layout. A field's menu or panel, or a report filter's Filter…,
+    // goes when the pane leaves the layout it was opened on, since its entry may now be another field's and its draft is
+    // taken against that layout; one in the Field List goes too when the list is hidden. The keyboard it held goes to
+    // the entry or the button its field stands at now.
     #drawMenu(valueCaptions: readonly string[] | undefined): void {
         const open = this.#open;
-        if (open !== undefined && open.kind !== 'layout' && (open.against !== this.#paneLayout || !this.#fieldListShown)) {
+        const inList = open?.kind === 'entry' || open?.kind === 'panel';
+        if (open !== undefined && open.kind !== 'layout' && (open.against !== this.#paneLayout || (inList && !this.#fieldListShown))) {
             const held = open.popup.element.contains(this.#root.ownerDocument.activeElement);
             this.#takeDown();
             // Hidden with the Field List, the keyboard goes to the toggle that shows it again.
-            if (held && this.#fieldListShown) this.#keyboardAfterDraw = open;
+            if (held && (this.#fieldListShown || !inList)) this.#keyboardAfterDraw = open;
             else if (held) this.#fieldListToggle.focus();
         }
         const shown = this.#open;
@@ -1019,6 +1091,10 @@ export class PivotView {
         if (shown?.kind === 'layout') {
             shown.popup.draw(this.#words.word('layout-menu'), this.#layoutCommands(shown));
             if (shown.popup.element.parentNode !== this.#layoutAnchor) this.#layoutAnchor.append(shown.popup.element);
+        }
+        this.#drawBand();
+        // Under what is open from the Pivot Toolbar, a press anywhere else closes it.
+        if (shown?.kind === 'layout' || shown?.kind === 'band') {
             if (this.#backdrop.parentNode !== this.#root) this.#root.append(this.#backdrop);
         } else {
             this.#backdrop.remove();
@@ -1029,7 +1105,91 @@ export class PivotView {
             shown.popup.draw(this.#words.fill('field-menu', this.#entryCaption(entry, valueCaptions)),
                 commands.map(command => this.#entryCommand(shown, command)));
         }
-        if (shown?.kind === 'panel') shown.popup.redraw?.();
+        if (shown?.kind === 'panel' || shown?.kind === 'band') shown.popup.redraw?.();
+    }
+
+    // The report filter band, on the Pivot Toolbar's left (ADR-0061): each field in Filters, its caption, and a button
+    // that says what it shows and opens Filter… under it, over the report. It stands while Filters holds a field.
+    #drawBand(): void {
+        const document = this.#root.ownerDocument;
+        const words = this.#words;
+        const filters = this.#paneLayout.filters;
+        const open = this.#open;
+        const drawn: HTMLElement[] = [];
+        const kept = new Set<string>();
+        for (const placement of filters) {
+            const { field } = placement;
+            let band = this.#bandFilters.get(field);
+            if (band === undefined) {
+                band = this.#bandFilter(document, field);
+                this.#bandFilters.set(field, band);
+            }
+            kept.add(field);
+            const caption = this.#captionOf(field);
+            const opened = open?.kind === 'band' && open.field === field;
+            if (band.caption.textContent !== caption) band.caption.textContent = caption;
+            const summary = this.#bandSummary(placement);
+            if (band.summary.textContent !== summary) band.summary.textContent = summary;
+            band.button.classList.toggle('ex-pivot-filter-active', placement.hiddenItems.length > 0);
+            band.button.setAttribute('aria-expanded', opened ? 'true' : 'false');
+            band.button.setAttribute('aria-label', words.fill('filter-of', caption));
+            if (opened && open.popup.element.parentNode !== band.anchor) band.anchor.append(open.popup.element);
+            drawn.push(band.filter);
+        }
+        for (const field of this.#bandFilters.keys()) {
+            if (!kept.has(field)) this.#bandFilters.delete(field);
+        }
+        this.#band.setAttribute('aria-label', words.word('report-filters'));
+        const children = this.#band.children;
+        if (drawn.length !== children.length || drawn.some((filter, i) => children[i] !== filter)) this.#band.replaceChildren(...drawn);
+        if (drawn.length === 0) this.#band.remove();
+        else if (this.#band.parentNode !== this.#toolbarStart) this.#toolbarStart.append(this.#band);
+    }
+
+    #bandFilter(document: Document, field: string): BandFilter {
+        const filter = element(document, 'div', 'ex-pivot-filter');
+        const caption = element(document, 'span', 'ex-pivot-filter-caption');
+        const anchor = element(document, 'span', 'ex-pivot-filter-anchor');
+        const button = element(document, 'button', 'ex-pivot-filter-button');
+        button.type = 'button';
+        button.setAttribute('data-ex-claims', 'click');
+        button.setAttribute('aria-haspopup', 'dialog');
+        const summary = element(document, 'span', 'ex-pivot-filter-summary');
+        const arrow = element(document, 'span', 'ex-pivot-entry-arrow');
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.textContent = '▾';
+        button.append(summary, arrow);
+        button.addEventListener('click', () => { this.#toggleBand(field); });
+        anchor.append(button);
+        filter.append(caption, anchor);
+        return { filter, caption, anchor, button, summary };
+    }
+
+    // What a report filter shows, as Excel shows a page field: (All) while it hides nothing, the one Item shown, or
+    // (Multiple Items), read from the field's Items, asked of the source; Loading… until a first listing lands, rather
+    // than a guess, and why when they cannot be listed. While a new Source Version's Items are on their way, it is read
+    // from the Items in view, the earlier version's (ADR-0066 refined).
+    #bandSummary(placement: PivotFieldPlacement): string {
+        const words = this.#words;
+        if (placement.hiddenItems.length === 0) return words.word('all');
+        const items = this.#itemsOf(placement.field);
+        if (items.problem !== undefined) return itemsProblemText(items.problem, words);
+        const page = items.listed;
+        if (page === undefined) return words.word('loading');
+        if (page.total > page.items.length) {
+            // More Items than are held: provably several shown, or not known.
+            return page.total - placement.hiddenItems.length > 1 ? words.word('multiple-items') : words.word('loading');
+        }
+        // One Item shown is named; past one, how many does not matter.
+        const hidden = new Set(placement.hiddenItems.map(key => pivotItemKeyId(key)));
+        let shown: PivotItemInfo | undefined;
+        for (const item of page.items) {
+            if (hidden.has(pivotItemKeyId(item.key))) continue;
+            if (shown !== undefined) return words.word('multiple-items');
+            shown = item;
+        }
+        // None shown (data that no longer holds the one Item shown) is said as the Razor component says it.
+        return shown === undefined ? words.word('multiple-items') : shown.label;
     }
 
     // What a field's Items are listed under: the report on screen, and the field's order in it. None while no report
@@ -1117,7 +1277,7 @@ export class PivotView {
                 maxLeaves: this.#maxLeaves,
                 locale: this.#locale,
                 words,
-                popup: this.#open !== undefined && this.#open.kind !== 'layout' ? { entry: this.#open.entry, frame: this.#open.popup.element } : undefined,
+                popup: this.#open?.kind === 'entry' || this.#open?.kind === 'panel' ? { entry: this.#open.entry, frame: this.#open.popup.element } : undefined,
             });
         }
         const left = this.#keyboardAfterDraw;

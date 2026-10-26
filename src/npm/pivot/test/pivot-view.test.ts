@@ -1141,6 +1141,93 @@ describe('ExPivot\'s Filter… (ADR-0061, ADR-0066)', () => {
     });
 });
 
+function bandButton(root: HTMLElement, caption: string): HTMLButtonElement {
+    const filter = [...root.querySelectorAll('.ex-pivot-filters .ex-pivot-filter')].find(f => f.querySelector('.ex-pivot-filter-caption')?.textContent === caption);
+    const button = filter?.querySelector<HTMLButtonElement>('.ex-pivot-filter-button');
+    if (button === undefined || button === null) throw new Error(`The band has no report filter '${caption}'.`);
+    return button;
+}
+
+describe('ExPivot\'s report filter band (ADR-0061)', () => {
+    it('ADR-0061: each field in Filters stands in the band with what it shows, and its Filter… opens over the report and applies there', async () => {
+        const { root, view } = mount({ source: local(), layout: createPivotLayout({ filters: ['Region'], rows: ['Desk'], values: ['Amount'] }) });
+        await settled();
+        const band = root.querySelector('.ex-pivot-toolbar-start .ex-pivot-filters');
+        expect(band?.getAttribute('aria-label')).toBe('Report filters');
+        const button = bandButton(root, 'Region');
+        expect(button.textContent).toBe('(All)▾');
+        expect(button.getAttribute('aria-label')).toBe('Filter Region');
+        expect(button.classList.contains('ex-pivot-filter-active')).toBe(false);
+        button.click();
+        const frame = panel(root);
+        expect(frame.className).toBe('ex-pivot-popup ex-pivot-popup-overlay');
+        expect(frame.parentElement?.className).toBe('ex-pivot-filter-anchor');
+        expect(button.getAttribute('aria-expanded')).toBe('true');
+        expect(root.querySelector('.ex-pivot-backdrop')).not.toBeNull();
+        expect(document.activeElement).toBe(search(root));
+        await settled();
+        tickItem(root, 'US');
+        press(root, 'ex-pivot-ok');
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(root.querySelector('.ex-pivot-backdrop')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        await settled();
+        expect(view.shownLayout.filters[0]?.hiddenItems).toEqual([{ kind: 'text', value: 'US' }]);
+        expect(button.textContent).toBe('EU▾');
+        expect(button.classList.contains('ex-pivot-filter-active')).toBe(true);
+    });
+
+    it('ADR-0061: a filter showing several Items says (Multiple Items), and the backdrop and Escape close its Filter… with the draft', async () => {
+        const changed: PivotLayout[] = [];
+        const { root } = mount({
+            source: local(),
+            layout: createPivotLayout({ filters: [{ field: 'Desk', hiddenItems: [{ kind: 'text', value: 'FX' }] }], rows: ['Region'], values: ['Amount'] }),
+            onLayoutChanged: event => changed.push(event.layout),
+        });
+        await settled();
+        const button = bandButton(root, 'Desk');
+        expect(button.textContent).toBe('(Multiple Items)▾');
+        button.click();
+        await settled();
+        tickItem(root, 'Rates');
+        root.querySelector<HTMLElement>('.ex-pivot-backdrop')?.click();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        button.click();
+        await settled();
+        expect(filterItems(root)).toEqual(['☐ (Select All)', '☑ Credit', '☐ FX', '☑ Rates']);
+        panel(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        await settled();
+        expect(changed).toHaveLength(0);
+    });
+
+    it('ADR-0061, spine rule 6: a report filter\'s Filter… goes when the pane leaves its layout, and the keyboard it held goes to the button', async () => {
+        const options: PivotViewOptions = { source: local(), layout: createPivotLayout({ filters: ['Region'], rows: ['Desk'], values: ['Amount'] }) };
+        const { root, view } = mount(options);
+        await settled();
+        bandButton(root, 'Region').click();
+        await settled();
+        tickItem(root, 'US');
+        view.update({ ...options, layout: createPivotLayout({ filters: ['Region'], columns: ['Desk'], values: ['Amount'] }) });
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(root.querySelector('.ex-pivot-backdrop')).toBeNull();
+        expect(document.activeElement).toBe(bandButton(root, 'Region'));
+        await settled();
+        expect(view.shownLayout.filters[0]?.hiddenItems).toEqual([]);
+    });
+
+    it('ADR-0061: the band stands only while Filters holds a field', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        expect(root.querySelector('.ex-pivot-filters')).toBeNull();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Move to Report Filter').click();
+        expect(bandButton(root, 'Region').textContent).toBe('(All)▾');
+    });
+});
+
 describe('ExPivot\'s options', () => {
     it('ADR-0059: a layout this pivot raised is never asked for when handed back, and a copy of an earlier one is', async () => {
         const changed: PivotLayout[] = [];
