@@ -14,14 +14,14 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 06:42:01 |
+| Generated on: | 10/26/2026 - 07:06:22 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1197 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (83041 of 87861) |
-| Covered lines: | 83041 |
-| Uncovered lines: | 4820 |
+| **Line coverage:** | 94.5% (83039 of 87861) |
+| Covered lines: | 83039 |
+| Uncovered lines: | 4822 |
 | Coverable lines: | 87861 |
 | Total lines: | 140244 |
 | **Branch coverage:** | 87.2% (50162 of 57480) |
@@ -1248,7 +1248,7 @@
 |ExSheet.Engine.SheetCell|100%||
 |ExSheet.Engine.SheetChange|100%|95.8%|
 |ExSheet.Engine.SheetColumnWidth|100%||
-|ExSheet.Engine.SheetCopy|100%||
+|ExSheet.Engine.SheetCopy|91.6%||
 |ExSheet.Engine.SheetDocument|99.6%|93.4%|
 |ExSheet.Engine.SheetDocumentAxisFormat|100%||
 |ExSheet.Engine.SheetDocumentCell|100%||
