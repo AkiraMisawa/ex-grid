@@ -15,10 +15,10 @@ internal static class ShippedAssets
     internal const string StylesheetPath = "_content/ExPivot/ex-pivot.min.css";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string StylesheetVersion = "db5144e18177";
+    internal const string StylesheetVersion = "34df221e7f2c";
 
     /// <summary>The SHA-256 of <c>Assets/ex-pivot.css</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string StylesheetStamp = "15e2c65239f337c744cd005705478a6d3eead2ae4bf608a50267c61c79a07454";
+    internal const string StylesheetStamp = "1a2532223e2af8d3d27b7aa2e8919df9378c1554121b47e778ced6ff8ae89dd3";
 
     /// <summary>The source's name, by which the stylesheet's notice rules find this package's notice.</summary>
     internal const string StylesheetName = "ex-pivot.css";

@@ -1,9 +1,10 @@
 /**
- * ExChart's layout in TypeScript (ADR-0370): a chart's definition, checked when it is made, and the scene
- * it is laid out as in CSS pixels — panels, axes, ticks, each series' lines, markers, candles and
- * intervals — what its tooltip, its summary and its files say, and a 3D surface as the mesh its entry
- * draws and the 2D charts its slices are, free of any UI framework. A Framework Adapter draws the scene; the C# engine and this
- * package are held to one another by the shared cases under `tests/cases/chart/`.
+ * ExChart in TypeScript (ADR-0370): a chart's definition, checked when it is made, and the scene it is
+ * laid out as in CSS pixels — panels, axes, ticks, each series' lines, markers, candles and intervals —
+ * what its tooltip, its summary and its files say, and a 3D surface as the mesh its entry draws and the 2D
+ * charts its slices are; and its Script Core, `createChart`, which draws a chart as SVG into an element and
+ * hears the pointer, the legend and Chart Filters, free of any UI framework. A Framework Adapter mounts it;
+ * the C# engine and this package are held to one another by the shared cases under `tests/cases/chart/`.
  *
  * @packageDocumentation
  */
@@ -37,3 +38,9 @@ export type {
 } from './surface';
 export { surfaceBandCount, surfaceMesh, surfaceSlicePath } from './surface-mesh';
 export type { SurfaceColourBar, SurfaceFace, SurfaceMesh, SurfaceMeshNode, SurfaceMeshPoint, SurfaceTick } from './surface-mesh';
+export { createChart } from './dom/create-chart';
+export type { ChartHandle } from './dom/create-chart';
+export type { ChartOptions, ChartPointClick, ChartRange, SeriesVisibility } from './dom/chart-element';
+export type { ChartFileFormat } from './dom/chart-files';
+export { chartWordIdList, chartWordIds, japaneseChartWords } from './dom/chart-words';
+export type { ChartLabel } from './dom/chart-words';

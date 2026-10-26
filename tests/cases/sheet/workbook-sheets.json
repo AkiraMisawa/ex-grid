@@ -1,0 +1,160 @@
+{
+  "about": "Sheets inserted, renamed, deleted, moved and copied as steps of a Workbook (ADR-0331 sections 3 and 4): their names, the Formulas that name them, and undo. Transcribed from ExSheet.Engine.Tests' WorkbookSheetsTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0331 §3, §4: a new Sheet takes the next SheetN, beside the Sheet the edit is done on",
+      "sheets": ["Sheet1", "Data", "Sheet3"],
+      "steps": [
+        {"do": {"insertSheet": {}}, "on": "Sheet1", "expect": {"stepSheet": "Sheet4", "changesSheets": true}},
+        {"do": {"insertSheet": {"before": true}}, "on": "Data", "expect": {"stepSheet": "Sheet5", "sheets": ["Sheet1", "Sheet4", "Sheet5", "Data", "Sheet3"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an insertion is a step; undone, the Sheet goes; redone, it comes back",
+      "steps": [
+        {"do": {"insertSheet": {"name": "Notes"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A1": "=Notes!A1"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A2": "1"}}, "on": "Sheet1", "note": "Undone in the reverse of the order done."},
+        {"undo": 2},
+        {"undo": 0, "expect": {"sheets": ["Sheet1"]}},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": {"error": "#REF!"}}}},
+        {"redo": 0, "expect": {"sheets": ["Sheet1", "Notes"]}},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §4: a name another Sheet has, without regard to case, is refused by name",
+      "sheets": ["Sheet1", "Data"],
+      "steps": [
+        {"check": {"rename": "DATA"}, "on": "Sheet1", "expect": {"refusal": {"reason": "sheetNameTaken", "saying": "A Sheet of the Workbook is already named 'Data'."}}},
+        {"do": {"rename": "data"}, "on": "Sheet1", "expect": {"throws": {"refusal": "refused", "reason": "sheetNameTaken"}}},
+        {"do": {"insertSheet": {"name": "DATA"}}, "on": "Sheet1", "expect": {"throws": {"refusal": "refused", "reason": "sheetNameTaken"}}},
+        {"do": {"insertSheet": {"name": "a/b"}}, "on": "Sheet1", "expect": {"throws": {"refusal": "argument"}}},
+        {"read": true, "expect": {"sheets": ["Sheet1", "Data"]}},
+        {"do": {"rename": "DATA"}, "on": "Data", "note": "Its own name in another case is a rename.", "expect": {"sheets": ["Sheet1", "DATA"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a rename rewrites every Formula that names the Sheet, on every Sheet",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "5"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A1": "=sheet2!A1*2"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A2": "=SUM(Sheet2!A1:A3)"}}, "on": "Sheet1"},
+        {"do": {"enter": {"B1": "=Sheet2!A1+1"}}, "on": "Sheet2"},
+        {"do": {"rename": "Q1 Sales"}, "on": "Sheet2", "expect": {"changesSheets": true, "changes": {"Sheet1": {"rows": [0, 1]}}}},
+        {"read": true, "on": "Sheet1", "expect": {"formulas": {"A1": "='Q1 Sales'!A1*2", "A2": "=SUM('Q1 Sales'!A1:A3)"}, "values": {"A1": 10}}},
+        {"read": true, "on": "Q1 Sales", "expect": {"formulas": {"B1": "='Q1 Sales'!A1+1"}}},
+        {"do": {"enter": {"A1": "7"}}, "on": "Q1 Sales", "note": "Still followed under the new name."},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 14}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: undoing a rename gives back the name and every Formula exactly as typed",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "=sheet2!A1*2"}}, "on": "Sheet1"},
+        {"do": {"rename": "Data"}, "on": "Sheet2"},
+        {"read": true, "on": "Sheet1", "expect": {"formulas": {"A1": "=Data!A1*2"}}},
+        {"undo": "last", "expect": {"sheets": ["Sheet1", "Sheet2"]}},
+        {"read": true, "on": "Sheet1", "expect": {"formulas": {"A1": "=sheet2!A1*2"}}},
+        {"do": {"enter": {"A1": "4"}}, "on": "Sheet2"},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 8}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a Formula whose only Reference to another Sheet the deletion turns into #REF! is recalculated to #REF!, and back on the undo",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"A1": "21"}}, "on": "One"},
+        {"do": {"enter": {"A1": "=One!A1*2"}}, "on": "Two"},
+        {"do": {"deleteSheet": true}, "on": "One", "expect": {"changes": {"Two": {"valueChanges": ["A1"]}}}},
+        {"read": true, "on": "Two", "expect": {"formulas": {"A1": "=#REF!*2"}, "values": {"A1": {"error": "#REF!"}}}},
+        {"undo": "last"},
+        {"read": true, "on": "Two", "expect": {"values": {"A1": 42}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a deletion turns References to the Sheet into #REF!; undoing it gives back the Sheet and those Formulas exactly",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3"],
+      "steps": [
+        {"do": {"enter": {"A1": "5"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A2": "=A1*3"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A1": "=Sheet2!A1*2+Sheet3!A1"}}, "on": "Sheet1"},
+        {"do": {"enter": {"B1": "=SUM(Sheet2!A1:A2)"}}, "on": "Sheet3"},
+        {"show": "Sheet2"},
+        {"do": {"deleteSheet": true}, "on": "Sheet2", "expect": {"sheets": ["Sheet1", "Sheet3"], "shown": "Sheet3", "changesSheets": true}},
+        {"read": true, "on": "Sheet1", "expect": {"formulas": {"A1": "=#REF!*2+Sheet3!A1"}, "values": {"A1": {"error": "#REF!"}}}},
+        {"read": true, "on": "Sheet3", "expect": {"formulas": {"B1": "=SUM(#REF!)"}}},
+        {"undo": "last", "expect": {"sheets": ["Sheet1", "Sheet2", "Sheet3"], "shown": "Sheet2"}},
+        {"read": true, "on": "Sheet1", "expect": {"formulas": {"A1": "=Sheet2!A1*2+Sheet3!A1"}, "values": {"A1": 10}}},
+        {"read": true, "on": "Sheet3", "expect": {"formulas": {"B1": "=SUM(Sheet2!A1:A2)"}, "values": {"B1": 20}}},
+        {"do": {"enter": {"A1": "1"}}, "on": "Sheet2", "note": "Followed again after the undo."},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 2}}},
+        {"read": true, "on": "Sheet3", "expect": {"values": {"B1": 4}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: the Workbook's last Sheet is not deleted",
+      "sheets": ["Only"],
+      "steps": [
+        {"check": {"deleteSheet": true}, "expect": {"refusal": {"reason": "lastSheet"}}},
+        {"do": {"deleteSheet": true}, "expect": {"throws": {"refusal": "refused", "reason": "lastSheet"}, "sheets": ["Only"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: moving changes the order, and undoes",
+      "sheets": ["A", "B", "C"],
+      "steps": [
+        {"do": {"moveSheet": 2}, "on": "A", "expect": {"sheets": ["B", "C", "A"]}},
+        {"undo": "last", "expect": {"sheets": ["A", "B", "C"]}},
+        {"do": {"moveSheet": 3}, "on": "A", "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: copying copies Entries, formats and widths, named Name (2), its own References naming the copy",
+      "sheets": ["Sheet1", "Data"],
+      "steps": [
+        {"do": {"enter": {"A1": "4"}}, "on": "Data"},
+        {"do": {"enter": {"A2": "=A1*2"}}, "on": "Data"},
+        {"do": {"enter": {"A3": "=Data!A1+Sheet1!B1"}}, "on": "Data"},
+        {"do": {"enter": {"B1": "1"}}, "on": "Sheet1"},
+        {"do": {"setNumberFormat": {"at": ["A2"], "format": "0.00"}}, "on": "Data"},
+        {"do": {"setColumnWidth": {"columns": "A:A", "width": 20}}, "on": "Data"},
+        {"do": {"copySheet": true}, "on": "Data", "expect": {"stepSheet": "Data (2)", "sheets": ["Sheet1", "Data", "Data (2)"]}},
+        {"read": true, "on": "Data (2)", "expect": {"texts": {"A2": "8.00"}, "formulas": {"A3": "='Data (2)'!A1+Sheet1!B1"}, "values": {"A3": 5}, "columnWidths": {"A": {"width": 20}}}},
+        {"do": {"enter": {"A1": "10"}}, "on": "Data (2)", "note": "Each copy follows its own cells."},
+        {"read": true, "on": "Data", "expect": {"values": {"A1": 4}}},
+        {"read": true, "on": "Data (2)", "expect": {"values": {"A2": 20}}},
+        {"do": {"copySheet": 0}, "on": "Data", "expect": {"sheets": ["Data (3)", "Sheet1", "Data", "Data (2)"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a copy is undone and redone",
+      "steps": [
+        {"do": {"enter": {"A1": "3"}}},
+        {"do": {"copySheet": true}},
+        {"undo": "last", "expect": {"sheets": ["Sheet1"]}},
+        {"redo": "last", "expect": {"sheets": ["Sheet1", "Sheet1 (2)"]}},
+        {"read": true, "on": "Sheet1 (2)", "expect": {"values": {"A1": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §4: a copy's name is cut to fit 31 characters",
+      "sheets": ["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"],
+      "steps": [
+        {"do": {"copySheet": true}, "expect": {"sheets": ["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "xxxxxxxxxxxxxxxxxxxxxxxxxxx (2)"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a name that comes to exist resolves a Reference that was #REF!",
+      "steps": [
+        {"do": {"enter": {"A1": "=Data!A1+1"}}, "expect": {"values": {"A1": {"error": "#REF!"}}}},
+        {"do": {"insertSheet": {"name": "Data"}}, "on": "Sheet1"},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 1}}}
+      ]
+    }
+  ]
+}

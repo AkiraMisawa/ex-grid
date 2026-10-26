@@ -302,6 +302,9 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
     for (const field of [...placedFields(query).map(f => f.field), ...query.values.map(v => v.field)]) {
         if (!meta.has(field)) throw new Error(`The question names '${field}', and no Pivot Field of that name is declared (ADR-0060).`);
     }
+    if (answer.isLevels && answer.windows.length > 0) {
+        throw new Error('The answer holds windows of sibling sets, which this engine does not lay out yet; ask without a window (ADR-0370 section 3).');
+    }
     const leafCount = answer.leafCount;
     const rowTree = yield* tree(answer.rows, leafCount);
     const columnTree = yield* tree(answer.columns, leafCount);

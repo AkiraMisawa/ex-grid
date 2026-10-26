@@ -202,7 +202,7 @@ public sealed class BoardInput
         foreach (var element in rows.EnumerateArray())
         {
             if (element.ValueKind != JsonValueKind.Object)
-                throw new BoardRefusedException($"{Name}[{row}]", $"Input '{Name}', row {row + 1:N0}: is not an object.");
+                throw new BoardRefusedException($"{Name}[{row}]", string.Create(CultureInfo.InvariantCulture, $"Input '{Name}', row {row + 1:N0}: is not an object."));
             for (var c = 0; c < Columns.Count; c++)
             {
                 var column = Columns[c];
@@ -244,6 +244,9 @@ public sealed class BoardInput
                     decimal number = 0;
                     var converts = v.ValueKind == JsonValueKind.Number ? v.TryGetDecimal(out number)
                         : v.ValueKind == JsonValueKind.String && decimal.TryParse(v.GetString(), Digits, invariant, out number);
+                    // A decimal parse rounds digits past what a decimal holds, which would hand on money that
+                    // was never written: such a value is refused, never rounded (spine rule 1).
+                    converts = converts && Exact(v.ValueKind == JsonValueKind.Number ? v.GetRawText() : v.GetString()!, number);
                     if (converts)
                         money.Append(number);
                     return converts;
@@ -301,6 +304,31 @@ public sealed class BoardInput
             default:
                 throw new InvalidOperationException($"Unknown kind {column.Kind}.");
         }
+    }
+
+    // Whether the number written as raw (a JSON number, or the digits decimal.TryParse read) is exactly parsed.
+    private static bool Exact(string raw, decimal parsed)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(raw, @"^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        if (!match.Success || !int.TryParse(match.Groups[4].Success ? match.Groups[4].Value : "0", NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var exponent))
+            return false;
+        var digits = match.Groups[2].Value + match.Groups[3].Value;
+        var written = System.Numerics.BigInteger.Parse(digits.Length == 0 ? "0" : digits, CultureInfo.InvariantCulture);
+        if (match.Groups[1].Value == "-")
+            written = -written;
+        var places = match.Groups[3].Value.Length - exponent;
+        var bits = decimal.GetBits(parsed);
+        var held = (new System.Numerics.BigInteger((uint)bits[2]) << 64) | (new System.Numerics.BigInteger((uint)bits[1]) << 32) | (uint)bits[0];
+        if (bits[3] < 0)
+            held = -held;
+        var scale = (bits[3] >> 16) & 0xFF;
+        // Both at the larger of the two scales, compared whole. A scale far past the other's, from an exponent, can
+        // only match where both are zero, and is not raised to a power to find that out.
+        if (Math.Abs(places - scale) > digits.Length + 30)
+            return written.IsZero && held.IsZero;
+        return places > scale
+            ? held * System.Numerics.BigInteger.Pow(10, places - scale) == written
+            : written * System.Numerics.BigInteger.Pow(10, scale - places) == held;
     }
 
     private static string Shown(JsonElement value)

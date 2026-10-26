@@ -11,6 +11,29 @@ export function applyChangeBatch(snapshot: Snapshot, batch: ChangeBatch): Snapsh
 export const arrowStreamMediaType = "application/vnd.apache.arrow.stream";
 
 // @public
+export class BoardInput {
+    constructor(name: string, columns: readonly DataShapeColumn[]);
+    bind(snapshot: Snapshot): Snapshot;
+    check(shape: DataShape): void;
+    checkSource(source: ShapedSource, signal?: AbortSignal): Promise<DataShape>;
+    column(name: string): DataShapeColumn | undefined;
+    get columns(): readonly DataShapeColumn[];
+    fromJson(json: string): Snapshot;
+    get name(): string;
+    static read(name: string, declaration: JsonValue, path: string): BoardInput;
+    get shape(): DataShape;
+}
+
+// @public
+export const boardKindNames: readonly SnapshotKind[];
+
+// @public
+export class BoardRefusedError extends Error {
+    constructor(path: string, message: string, options?: ErrorOptions);
+    readonly path: string;
+}
+
+// @public
 export type BooleanColumn = SnapshotColumnBase<'boolean', boolean>;
 
 // @public
@@ -65,10 +88,58 @@ export interface DoubleColumn extends SnapshotColumnBase<'double', number> {
 export type IntegerColumn = SnapshotColumnBase<'integer', bigint>;
 
 // @public
+export function isJsonArray(value: JsonValue | undefined): value is readonly JsonValue[];
+
+// @public
+export function isJsonObject(value: JsonValue | undefined): value is JsonObject;
+
+// @public
+export function jsonMember(object: JsonObject, name: string): JsonValue | undefined;
+
+// @public
+export function jsonMemberNames(object: JsonObject): readonly string[];
+
+// @public
+export class JsonNumber {
+    constructor(raw: string);
+    get double(): number;
+    get int32(): number | undefined;
+    get integer(): number | undefined;
+    readonly raw: string;
+}
+
+// @public
+export type JsonObject = {
+    readonly [key: string]: JsonValue;
+};
+
+// @public
+export function jsonRawText(value: JsonValue): string;
+
+// @public
+export class JsonTextError extends Error {
+    constructor(message: string, options?: ErrorOptions);
+}
+
+// @public
+export type JsonValue = null | boolean | JsonNumber | string | readonly JsonValue[] | JsonObject;
+
+// @public
 export function readArrowShape(arrow: Uint8Array | ArrayBuffer): DataShape;
 
 // @public
 export function readArrowSnapshot(arrow: Uint8Array | ArrayBuffer, options?: SnapshotReadOptions): Promise<Snapshot>;
+
+// @public
+export function readJsonText(text: string): JsonValue;
+
+// @public
+export function shapeColumn(shape: DataShape, name: string): DataShapeColumn | undefined;
+
+// @public
+export interface ShapedSource {
+    shape(signal?: AbortSignal): Promise<DataShape | undefined>;
+}
 
 // @public
 export interface Snapshot {

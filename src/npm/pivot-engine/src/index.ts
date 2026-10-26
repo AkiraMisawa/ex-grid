@@ -8,8 +8,11 @@
  * @packageDocumentation
  */
 export type { PivotLabel } from './words/pivot-words';
-export { japanesePivotWords, pivotWordIdList, pivotWordIds, unitedKingdomPivotWords } from './words/pivot-words';
+export {
+    fillWord as fillPivotWord, japanesePivotWords, pivotWordIdList, pivotWordIds, resolveWord as pivotWord, unitedKingdomPivotWords,
+} from './words/pivot-words';
 export { pivotLocales } from './culture/culture-data';
+export { formatPivotCount } from './text/number-text';
 export { PivotFormatError, PivotOrderKeyError, PivotVersionError } from './errors';
 export type {
     PivotAggregation, PivotArea, PivotAxis, PivotColumnRole, PivotDatePart, PivotFieldType, PivotItemKind, PivotReportForm, PivotRowRole,
@@ -30,7 +33,7 @@ export {
 export { pivotLayoutJsonVersion, readPivotLayoutJson, writePivotLayoutJson } from './layout/layout-json';
 export type { PivotEditResult, PivotEntry, PivotFieldInfo, PivotLayoutChoice, PivotRefusal } from './layout/layout-edits';
 export {
-    chooseLayout, defaultAggregation, isLayoutChosen, isValuesPseudoField, layoutChoiceChanges, moveEntry, pivotLayoutChoices, placeField,
+    chooseLayout, defaultAggregation, isLayoutChosen, isValuesPseudoField, layoutChoiceChanges, moveEntry, pivotLayoutChoices, pivotValueCaptions, placeField,
     refusalWord, removeEntry, setCollapsed, setFieldCollapsed, setHiddenItems, setSort, setSubtotals, setValueField, tickField,
     untickField, valuesPseudoField,
 } from './layout/layout-edits';
@@ -39,14 +42,14 @@ export type {
 } from './fields/pivot-field';
 export { datePartField, pivotField, pivotRecordField } from './fields/pivot-field';
 export type {
-    PivotDetailsQuery, PivotFieldItem, PivotItemsQuery, PivotLevelRule, PivotLevelRuleInput, PivotLevels, PivotPart, PivotQuery, PivotQueryField,
-    PivotQueryInput, PivotQueryValue,
+    PivotDetailsQuery, PivotFieldItem, PivotItemsQuery, PivotLevelOrder, PivotLevelRule, PivotLevelRuleInput, PivotLevels, PivotLevelWindow,
+    PivotLevelWindowInput, PivotPart, PivotQuery, PivotQueryField, PivotQueryInput, PivotQueryValue, PivotWindowStart,
 } from './cube/query';
 export {
     defaultMaxItems, defaultMaxLeaves, isLevelExpanded, levelQueryForLayout, levelsOfLayout, pivotDetailsQuery, pivotItemsQuery, pivotLevelRule, pivotParts,
     pivotQuery, queryForLayout,
 } from './cube/query';
-export type { PivotNumber, PivotSourceRefusal, PivotSourceRefusalKind } from './cube/answer';
+export type { PivotAnswerRest, PivotAnswerWindow, PivotNumber, PivotRestSide, PivotSourceRefusal, PivotSourceRefusalKind } from './cube/answer';
 export { PivotAnswer, PivotAnswerAxis, PivotAnswerBuilder, PivotAnswerValues, PivotRefusals } from './cube/answer';
 export { PivotCube } from './cube/cube';
 export type { PivotDetailRecord, PivotDetailValue, PivotFetchers, PivotSource, PivotSourceChanged } from './source/pivot-source';

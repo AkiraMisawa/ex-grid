@@ -6,6 +6,7 @@ import { casesOf, findCase, runSheetCase } from './sheet-case';
 describe('sheet cases', () => {
     it.each(casesOf('sheet'))('%s: %s', (file, name) => {
         const { file: document, entry } = findCase(file, name);
-        expect(runSheetCase(document, entry)).toEqual([]);
+        const differences = runSheetCase(document, entry);
+        expect(differences, differences.join('\n')).toEqual([]);
     });
 });

@@ -1,0 +1,202 @@
+{
+  "about": "A Workbook Document: what it carries, what comes back from it, what it refuses by name, and the Sheet Documents it opens as Workbooks of one Sheet (ADR-0331, ADR-0048, ADR-0049). Its JSON is read as text, which both engines write alike. Transcribed from ExSheet.Engine.Tests' WorkbookDocumentTests; a Sheet of another Workbook refused as the one shown is in the surface tests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0331: a Workbook Document carries its version, culture, Sheet shown and Sheets in order",
+      "sheets": ["Inputs", "Totals"],
+      "steps": [
+        {"show": "Totals", "expect": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Totals\",\"sheets\":[{\"name\":\"Inputs\",\"cells\":[]},{\"name\":\"Totals\",\"cells\":[]}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: Entries, Cell Formats, widths and the Sheet shown come back; every Value is computed again",
+      "culture": "de-DE",
+      "sheets": ["Rates", "Deposit"],
+      "steps": [
+        {"do": {"enter": {"A1": "4,5%"}}, "on": "Rates"},
+        {"do": {"enter": {"A1": "2500000"}}, "on": "Deposit"},
+        {"do": {"enter": {"A2": "=ROUND(A1*Rates!A1*92/360,2)"}}, "on": "Deposit"},
+        {"do": {"setNumberFormat": {"at": ["A2"], "format": "#,##0.00"}}, "on": "Deposit"},
+        {"do": {"setColumnWidth": {"columns": "A:A", "width": 20}}, "on": "Rates"},
+        {"show": "Deposit", "expect": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"de-DE\",\"shown\":\"Deposit\",\"sheets\":[{\"name\":\"Rates\",\"columnWidths\":[{\"at\":\"A:A\",\"width\":20,\"kind\":\"setByUser\"}],\"cells\":[{\"at\":\"A1\",\"number\":0.045,\"format\":\"0.00%\"}]},{\"name\":\"Deposit\",\"cells\":[{\"at\":\"A1\",\"number\":2500000},{\"at\":\"A2\",\"formula\":\"=ROUND(A1*Rates!A1*92/360,2)\",\"format\":\"#,##0.00\"}]}]}"}},
+        {"reopen": "json", "expect": {"workbook": {"culture": "de-DE", "changes": 0}, "sheets": ["Rates", "Deposit"], "shown": "Deposit", "values": {"A2": 28750}, "texts": {"A2": "28.750,00"}}},
+        {"read": true, "on": "Rates", "expect": {"columnWidths": {"A": {"width": 20}}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0049: the Linked Tables are recorded once, on the Workbook, and declared again waiting",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"declareTable": {"name": "Trades", "columns": ["Id", "Amount"], "key": ["Id"]}},
+        {"do": {"enter": {"A1": "=SUM(Trades[Amount])"}}, "on": "Sheet2", "expect": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Trades\",\"columns\":[\"Id\",\"Amount\"],\"key\":\"Id\"}],\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]},{\"name\":\"Sheet2\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=SUM(Trades[Amount])\"}]}]}"}},
+        {"reopen": "json", "expect": {"workbook": {"linkedTables": [{"name": "Trades", "keyColumns": ["Id"]}]}}},
+        {"read": true, "on": "Sheet2", "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: an unknown Workbook Document version is refused by name, not guessed at: version 2",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":2,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "documentVersion": 2, "saying": "The Workbook Document is version 2; this engine reads versions 1 to 1."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: an unknown Workbook Document version is refused by name, not guessed at: version 0",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":0,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "documentVersion": 0, "saying": "The Workbook Document is version 0; this engine reads versions 1 to 1."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: 'values'",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}],\"values\":[]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}],\"values\":[]}"}, "expect": {"throws": {"refusal": "document", "saying": "'values' is not part of a version 1 Workbook Document."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: 'culture'",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"culture\":\"de-DE\",\"cells\":[]}]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"culture\":\"de-DE\",\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'culture' is not part of a Sheet of a Workbook Document."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: 'version'",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"version\":9,\"cells\":[]}]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"version\":9,\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'version' is not part of a Sheet of a Workbook Document."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: 'linkedTables'",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"linkedTables\":[],\"cells\":[]}]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"linkedTables\":[],\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'linkedTables' is not part of a Sheet of a Workbook Document."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: 'SHEET1'",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]},{\"name\":\"SHEET1\",\"cells\":[]}]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]},{\"name\":\"SHEET1\",\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "saying": "Two Sheets of the Workbook Document are named 'SHEET1'."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: 'Sheet9'",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet9\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet9\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "saying": "The Sheet shown, 'Sheet9', is not a Sheet of the Workbook Document."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: no Sheets",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[]}"}, "expect": {"throws": {"refusal": "document", "saying": "The Workbook Document records no Sheets."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: no Sheet shown",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "saying": "The Workbook Document records no Sheet shown."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: no culture",
+      "note": "{\"workbookVersion\":1,\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"shown\":\"Sheet1\",\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "saying": "The Workbook Document records no culture."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: no name",
+      "note": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"cells\":[]}]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[{\"cells\":[]}]}"}, "expect": {"throws": {"refusal": "document", "saying": "A Sheet of the Workbook Document records no name."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: anything a Workbook Document does not define is refused by name: version",
+      "note": "{\"workbookVersion\":\"1\",\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[]}",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"workbookVersion\":\"1\",\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"sheets\":[]}"}, "expect": {"throws": {"refusal": "document", "saying": "The Workbook Document's version is not a number."}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 1",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":1,\"culture\":\"en-US\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Sheet1"], "shown": "Sheet1", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 2",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Positions\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Positions"], "shown": "Positions", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 3",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Positions\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Positions"], "shown": "Positions", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 4",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Positions\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Positions"], "shown": "Positions", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 5",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":5,\"culture\":\"en-US\",\"name\":\"Positions\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Positions"], "shown": "Positions", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 6",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Positions\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Positions"], "shown": "Positions", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 7",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":7,\"culture\":\"en-US\",\"name\":\"Positions\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Positions"], "shown": "Positions", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 8",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":8,\"culture\":\"en-US\",\"name\":\"Positions\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Positions"], "shown": "Positions", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet Document of every readable version opens as a Workbook of one Sheet: version 9",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Positions\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"A2\",\"formula\":\"=A1*3\"}]}"}, "expect": {"sheets": ["Positions"], "shown": "Positions", "values": {"A2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0049: a Sheet Document's Linked Tables become the Workbook's",
+      "steps": [
+        {"declareTable": {"name": "Trades", "columns": ["Id", "Amount"], "key": "Id"}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"workbook": {"linkedTables": [{"name": "Trades"}]}, "workbookJson": "{\"workbookVersion\":1,\"culture\":\"en-US\",\"shown\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Trades\",\"columns\":[\"Id\",\"Amount\"],\"key\":\"Id\"}],\"sheets\":[{\"name\":\"Sheet1\",\"cells\":[]}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: a Sheet Document of an unknown version is refused as a Sheet Document refuses it",
+      "steps": [
+        {"reopen": {"workbookJson": "{\"version\":10,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[]}"}, "expect": {"throws": {"refusal": "document", "documentVersion": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: the Sheet shown is the Workbook's first until another is shown",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"read": true, "expect": {"shown": "Sheet1"}}
+      ]
+    }
+  ]
+}

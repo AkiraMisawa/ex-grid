@@ -264,11 +264,19 @@ internal static class PivotSourceCases
         IReadOnlyList<PivotLevelRule> Rules(JsonNode levels, string axis) => levels[axis] is { } rules
             ? [.. rules.AsArray().Select(r => new PivotLevelRule(
                 (bool?)r!["collapsed"] ?? false,
-                [.. (r["toggledItems"]?.AsArray() ?? []).Select(k => PivotCases.ItemKeyOf(k!))]))]
+                [.. (r["toggledItems"]?.AsArray() ?? []).Select(k => PivotCases.ItemKeyOf(k!))],
+                r["order"] is { } order
+                    ? new PivotLevelOrder((int)order["value"]!, PivotCases.Member<PivotAggregation>((string)order["aggregation"]!), (bool)order["descending"]!)
+                    : null))]
             : [];
+        // A window as a case writes it: its limit, and where it starts under each parent named by its Items.
+        static PivotLevelWindow? Window(JsonNode levels) => levels["window"] is { } window
+            ? new PivotLevelWindow((int)window["limit"]!, [.. (window["starts"]?.AsArray() ?? []).Select(s => new PivotWindowStart(
+                [.. s!["rows"]!.AsArray().Select(k => PivotCases.ItemKeyOf(k!))], (int)s["start"]!))])
+            : null;
         return new PivotQuery(Placed("rows"), Placed("columns"), Placed("filters"), values, written["maxLeaves"] is { } max ? (int)max : PivotQuery.DefaultMaxLeaves)
         {
-            Levels = written["levels"] is { } levels ? new PivotLevels(Rules(levels, "rows"), Rules(levels, "columns")) : null,
+            Levels = written["levels"] is { } levels ? new PivotLevels(Rules(levels, "rows"), Rules(levels, "columns"), Window(levels)) : null,
         };
     }
 
@@ -327,11 +335,14 @@ internal static class PivotSourceCases
         var leaves = new JsonArray();
         for (var leaf = 0; leaf < answer.LeafCount; leaf++)
         {
-            leaves.Add(new JsonObject
+            var entry = new JsonObject
             {
                 ["at"] = new JsonArray([.. levels.Select(a => JsonValue.Create(a.ItemAt(leaf)))]),
                 ["records"] = answer.RecordsAt(leaf),
-            });
+            };
+            if (answer.IsLevels && answer.RestAt(leaf) is { } rest)
+                entry["rest"] = new JsonObject { ["window"] = rest.Window, ["side"] = PivotCases.Name(rest.Side) };
+            leaves.Add(entry);
         }
         var values = new JsonArray();
         foreach (var value in answer.Values)
@@ -381,6 +392,16 @@ internal static class PivotSourceCases
         // A level answer's cells (ADR-0370 section 3): an Item of −1 below a cell's depth.
         if (answer.IsLevels)
             json["levels"] = true;
+        // Its windows (ADR-0370 section 3): each parent's Items as indexes, and the siblings on either side.
+        if (answer.IsLevels && answer.Windows.Count > 0)
+        {
+            json["windows"] = new JsonArray([.. answer.Windows.Select(w => (JsonNode)new JsonObject
+            {
+                ["parent"] = new JsonArray([.. w.Parent.Select(item => JsonValue.Create(item))]),
+                ["before"] = w.Before,
+                ["after"] = w.After,
+            })]);
+        }
         return json;
     }
 

@@ -238,12 +238,22 @@ public static class PivotLayoutJson
         (PivotAggregation.StdDevp, "stdDevp"), (PivotAggregation.Var, "var"), (PivotAggregation.Varp, "varp"),
     ];
 
-    private static string Name(PivotAggregation aggregation)
+    internal static string Name(PivotAggregation aggregation)
         => Aggregations.FirstOrDefault(a => a.Value == aggregation).Name
             ?? throw new ArgumentOutOfRangeException(nameof(aggregation), aggregation, "Unknown Aggregation.");
 
-    private static PivotAggregation ParseAggregation(string text)
-        => Aggregations.Any(a => a.Name == text) ? Aggregations.First(a => a.Name == text).Value : throw Unknown("aggregation", text);
+    /// <summary>The Aggregation a name names, or null for a name this version does not know.</summary>
+    internal static PivotAggregation? AggregationNamed(string text)
+    {
+        foreach (var (value, name) in Aggregations)
+        {
+            if (name == text)
+                return value;
+        }
+        return null;
+    }
+
+    private static PivotAggregation ParseAggregation(string text) => AggregationNamed(text) ?? throw Unknown("aggregation", text);
 
     private static string Name(PivotShowValuesAs showAs) => showAs switch
     {

@@ -311,6 +311,49 @@ that does, a layout past `MaxLeaves` is not refused:
   nearest; that is the `GROUP BY` premise again, held by the same shared cases as the rest of
   `ExPivot.Server`'s pass.
 
+  *(Narrowed with the user on 2026-10-26: windows by value first.)* A window is answered only for a
+  sibling set ordered by a value. The engine's order of Items by label is its culture's collation over
+  the labels it formats, and a Consumer's Order Key in the browser; a server cannot reproduce it, and a
+  server sorting otherwise would put siblings before the window that the engine would not. The order
+  would hold at every edge the screen shows, but a running total started from those parts would be
+  wrong with nothing to show it. A value the engine and a server compute from the same parts, so a set
+  ordered by one is checkable at every edge. A set ordered by label past the cap stays refused by name,
+  as above. Windows by label can be added once a server can be held to the engine's order.
+
+  *(The question's and the answer's shape, written on 2026-10-26 as the contract is built.)*
+
+  - **The question.** A row field's rule may say how its Items are ordered: by a field in Values, under
+    an Aggregation, ascending or descending, read at the grand total of the columns as the report sorts
+    them (`PivotLevelOrder`). A column field's rule says none. The levels may carry a window
+    (`PivotLevelWindow`), with two parts:
+    - its `Limit`: the most siblings a set ordered by a value is answered with whole;
+    - for each parent, where its window starts among the siblings.
+
+    A set with more siblings than the limit is answered as a window starting there: at the first sibling
+    when the question names none, and no further than the limit from the end.
+  - **The siblings answered.** The window's siblings are those from its start, up to the limit, and
+    every sibling tied with its first or its last. Siblings whose value is not a number are tied with
+    one another, and they follow every number in either direction. Beside the window, the server answers
+    the nearest sibling on each side: the last before it and the first after it. These margins are
+    answered as any shown group is, with the groups below them, and are not shown. They are what the
+    engine checks a tie at the edge against.
+  - **What lies on either side.** The answer says, for each windowed parent, how many siblings come
+    before the first one shown and after the last (`PivotAnswerWindow`); a margin counts among them. The
+    siblings beyond each margin are answered as rest cells: their parts merged, one rest cell for each
+    shown column group they have records under. A rest cell is named by its parent's Items and says its
+    window and its side. Its siblings have no cells of their own.
+  - **The checks.** Before laying a window out, the engine checks five things, and refuses the answer
+    by name at the first that fails:
+    - before, margins, window and after compose to the parent, for every column group, as any sibling
+      set does;
+    - each margin sorts strictly before or after its edge of the window, so no tie straddles an edge;
+    - the counts put the window where it was asked;
+    - a set with more siblings than the limit came as a window;
+    - a set with no more than the limit came whole.
+  - **The bundled sources** answer a window from the cells they merge, ordering each set by the value
+    and, among ties, by the order the leaves first reached them. The rest cells' parts are merged in
+    that order, so the C# and the TypeScript answers are the same, bit for bit.
+
 **Live server data re-asks what is shown.** ADR-0066 refused answers that name the leaves that changed,
 because a source naming too few painted totals that did not add up with nothing to say so, and
 ADR-0151's Window Changes end with its report Windows. Under a new Source Version the engine asks the

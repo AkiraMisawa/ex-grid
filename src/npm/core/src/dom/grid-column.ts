@@ -110,6 +110,9 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly width?: GridColumnWidth;
     /** How the column's cells align; by their type unless given (ADR-0006). */
     readonly align?: CellAlign;
+    /** How the column's header aligns; as its cells unless given. A Sheet centres its column letters over cells
+     * that align each by its own kind (ADR-0050, item 7). */
+    readonly headerAlign?: CellAlign;
     /** Whether typing and a paste may write this column's cells (ADR-0007, ADR-0035). Off unless given: this
      * is a display-first grid, and a cell written where nobody hears the intent would be written into
      * nothing, so a grid with no `onEdit` opens no Cell Editor, and one with no `onPaste` takes a paste on no
@@ -169,8 +172,8 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
     let marking: string | undefined;
     return Object.freeze(columns.map((column, index) => {
         // Checked as an untyped caller may hand it, where it arrives (CONVENTIONS.md).
-        const { name, value, align, header, type, editable, validate, filterUi, actions, template, queryable, mark }: {
-            readonly name: unknown; readonly value: unknown; readonly align?: unknown; readonly header?: unknown; readonly type: unknown;
+        const { name, value, align, headerAlign, header, type, editable, validate, filterUi, actions, template, queryable, mark }: {
+            readonly name: unknown; readonly value: unknown; readonly align?: unknown; readonly headerAlign?: unknown; readonly header?: unknown; readonly type: unknown;
             readonly editable?: unknown; readonly validate?: unknown; readonly filterUi?: unknown; readonly actions?: unknown;
             readonly template?: unknown; readonly queryable?: unknown; readonly mark?: unknown;
         } = column;
@@ -189,6 +192,9 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
         }
         if (align !== undefined && (typeof align !== 'string' || !aligns.has(align))) {
             throw new RangeError(`Column '${name}': align is one of ${[...aligns].join(', ')}, not ${JSON.stringify(align)}.`);
+        }
+        if (headerAlign !== undefined && (typeof headerAlign !== 'string' || !aligns.has(headerAlign))) {
+            throw new RangeError(`Column '${name}': headerAlign is one of ${[...aligns].join(', ')}, not ${JSON.stringify(headerAlign)}.`);
         }
         if (header !== undefined && typeof header !== 'string') {
             throw new TypeError(`Column '${name}': a header is a string.`);

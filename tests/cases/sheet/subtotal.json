@@ -1,0 +1,425 @@
+{
+  "about": "SUBTOTAL and AGGREGATE, admitted while a Sheet cannot hide a row (ADR-0047's note of 2026-10-10, docs/specs/exsheet-functions ticket 16, SH-68): what the Excel case corpus cannot state. Their answers to Excel's cases are in ExcelCases/subtotal.json and aggregate.json. Transcribed from ExSheet.Engine.Tests' SubtotalTests; the test that fails on the day the engine's surface can hide a row stays there, and in the TS surface tests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047 (2026-10-10), SH-68: while no row can be hidden, SUBTOTAL's 101 to 111 give what 1 to 11 give, and AGGREGATE's options 1, 3, 5 and 7 what 0, 2, 4 and 6 give",
+      "note": "Each step computes the pair side by side and expects both to be the same Value. Where what 1 to 11 or options 0, 2, 4 and 6 give changes, both change together and the expectation moves with them; the day the two of a pair differ, a row can be hidden: decide with the user how they pass over a hidden or filtered row (ADR-0047's note of 2026-10-10), never by making them differ in the expectation.",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "'3", "A4": "TRUE", "A6": "abc", "A7": "4", "A8": "=1/0"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(1,A1:A7)", "ZZ1001": "=SUBTOTAL(101,A1:A7)"}, "expect": {"values": {"ZZ1000": 2.3333333333333335, "ZZ1001": 2.3333333333333335}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A7)", "ZZ1001": "=SUBTOTAL(102,A1:A7)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(3,A1:A7)", "ZZ1001": "=SUBTOTAL(103,A1:A7)"}, "expect": {"values": {"ZZ1000": 6, "ZZ1001": 6}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(4,A1:A7)", "ZZ1001": "=SUBTOTAL(104,A1:A7)"}, "expect": {"values": {"ZZ1000": 4, "ZZ1001": 4}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(5,A1:A7)", "ZZ1001": "=SUBTOTAL(105,A1:A7)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(6,A1:A7)", "ZZ1001": "=SUBTOTAL(106,A1:A7)"}, "expect": {"values": {"ZZ1000": 8, "ZZ1001": 8}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(7,A1:A7)", "ZZ1001": "=SUBTOTAL(107,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.5275252316519465, "ZZ1001": 1.5275252316519465}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(8,A1:A7)", "ZZ1001": "=SUBTOTAL(108,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.247219128924647, "ZZ1001": 1.247219128924647}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A7)", "ZZ1001": "=SUBTOTAL(109,A1:A7)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": 7}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(10,A1:A7)", "ZZ1001": "=SUBTOTAL(110,A1:A7)"}, "expect": {"values": {"ZZ1000": 2.333333333333333, "ZZ1001": 2.333333333333333}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(11,A1:A7)", "ZZ1001": "=SUBTOTAL(111,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.5555555555555554, "ZZ1001": 1.5555555555555554}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A8)", "ZZ1001": "=AGGREGATE(9,1,A1:A8)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}, "ZZ1001": {"error": "#DIV/0!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A8)", "ZZ1001": "=AGGREGATE(9,3,A1:A8)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A8)", "ZZ1001": "=AGGREGATE(9,5,A1:A8)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}, "ZZ1001": {"error": "#DIV/0!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A8)", "ZZ1001": "=AGGREGATE(9,7,A1:A8)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10), SH-68: a cell that becomes a nested SUBTOTAL is passed over from then on, and one that stops is counted again",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3", "B1": "=SUBTOTAL(9,A1:A3)", "B2": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"B1": 6, "B2": 6}}},
+        {"enter": {"A3": "=SUBTOTAL(9,A1:A2)"}, "expect": {"values": {"B1": 3, "B2": 3}}},
+        {"enter": {"A3": "=SUM(A1:A2)"}, "expect": {"values": {"B1": 6, "B2": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested, passed over by SUBTOTAL and AGGREGATE's options 0 to 3 and counted by 4 to 7: =SUBTOTAL(9,A1:A2)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=SUBTOTAL(9,A1:A2)"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A3)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested, passed over by SUBTOTAL and AGGREGATE's options 0 to 3 and counted by 4 to 7: =AGGREGATE(9,0,A1:A2)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=AGGREGATE(9,0,A1:A2)"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A3)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested, passed over by SUBTOTAL and AGGREGATE's options 0 to 3 and counted by 4 to 7: =SUBTOTAL(9,A1:A2)*2",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=SUBTOTAL(9,A1:A2)*2"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A3)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 9}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested, passed over by SUBTOTAL and AGGREGATE's options 0 to 3 and counted by 4 to 7: =1+SUBTOTAL(9,A1:A2)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=1+SUBTOTAL(9,A1:A2)"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A3)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested, passed over by SUBTOTAL and AGGREGATE's options 0 to 3 and counted by 4 to 7: =(SUBTOTAL(9,A1:A2))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=(SUBTOTAL(9,A1:A2))"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A3)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested, passed over by SUBTOTAL and AGGREGATE's options 0 to 3 and counted by 4 to 7: =IF(TRUE,SUBTOTAL(9,A1:A2))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=IF(TRUE,SUBTOTAL(9,A1:A2))"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A3)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested, passed over by SUBTOTAL and AGGREGATE's options 0 to 3 and counted by 4 to 7: =AGGREGATE(9,0,A1:A2)+0",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=AGGREGATE(9,0,A1:A2)+0"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A3)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): a cell whose Formula calls SUBTOTAL or AGGREGATE anywhere is nested, passed over by SUBTOTAL and AGGREGATE's options 0 to 3 and counted by 4 to 7: =LET(x,SUBTOTAL(9,A1:A2),x+1)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=LET(x,SUBTOTAL(9,A1:A2),x+1)"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A3)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68: what counts as nested is the Formula's text, so a call in a branch IF never takes is nested too (SUBTOTAL-039 asks Excel)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=IF(FALSE,SUBTOTAL(9,A1:A2),5)"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 8}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): AGGREGATE's option 4 counts a nested SUBTOTAL or AGGREGATE as its Value, in the reference form and the array form, where option 0 passes over it",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=SUBTOTAL(9,A1:A2)", "B1": "1", "B2": "2", "B3": "=AGGREGATE(9,0,B1:B2)"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,4,A1:A3,1)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,B1:B3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,0,A1:A3,1)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,B1:B3)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): AGGREGATE's option 5 counts a nested SUBTOTAL or AGGREGATE as its Value, in the reference form and the array form, where option 1 passes over it",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=SUBTOTAL(9,A1:A2)", "B1": "1", "B2": "2", "B3": "=AGGREGATE(9,0,B1:B2)"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,5,A1:A3,1)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,5,B1:B3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,1,A1:A3,1)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,1,B1:B3)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): AGGREGATE's option 6 counts a nested SUBTOTAL or AGGREGATE as its Value, in the reference form and the array form, where option 2 passes over it",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=SUBTOTAL(9,A1:A2)", "B1": "1", "B2": "2", "B3": "=AGGREGATE(9,0,B1:B2)"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A3,1)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,B1:B3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,2,A1:A3,1)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,B1:B3)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, SH-68 (the seventeenth Windows run): AGGREGATE's option 7 counts a nested SUBTOTAL or AGGREGATE as its Value, in the reference form and the array form, where option 3 passes over it",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "=SUBTOTAL(9,A1:A2)", "B1": "1", "B2": "2", "B3": "=AGGREGATE(9,0,B1:B2)"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,7,A1:A3,1)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7,B1:B3)"}, "expect": {"values": {"ZZ1000": 6}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A3)"}, "expect": {"values": {"ZZ1000": 3}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,3,A1:A3,1)"}, "expect": {"values": {"ZZ1000": 2}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,3,B1:B3)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0125, SH-68 (the seventeenth Windows run: SUBTOTAL-038): a cell spilled from a Formula that calls SUBTOTAL is nested, as its Anchor is",
+      "steps": [
+        {"enterAll": {"C1": "1", "A1": "=SEQUENCE(2,1,SUBTOTAL(9,C1))"}, "expect": {"values": {"A2": 2}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A2)"}, "expect": {"values": {"ZZ1000": 0}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A2)"}, "expect": {"values": {"ZZ1000": 0}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A2)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after: =SUBTOTAL(9.5,A1:A3)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "A4": "=1/0"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9.5,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after: =SUBTOTAL(9.99,A1:A3)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "A4": "=1/0"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9.99,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after: =SUBTOTAL(1.5,A1:A3)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "A4": "=1/0"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(1,A1:A3)"}, "expect": {"values": {"ZZ1000": 2.3333333333333335}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(1.5,A1:A3)"}, "expect": {"values": {"ZZ1000": 2.3333333333333335}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after: =SUBTOTAL(11.9,A1:A3)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "A4": "=1/0"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(11,A1:A3)"}, "expect": {"values": {"ZZ1000": 1.5555555555555554}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(11.9,A1:A3)"}, "expect": {"values": {"ZZ1000": 1.5555555555555554}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after: =SUBTOTAL(109.5,A1:A3)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "A4": "=1/0"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(109.5,A1:A3)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after: =AGGREGATE(9.5,6,A1:A4)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "A4": "=1/0"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A4)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9.5,6,A1:A4)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after: =AGGREGATE(9,6.9,A1:A4)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "A4": "=1/0"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A4)"}, "expect": {"values": {"ZZ1000": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6.9,A1:A4)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: SUBTOTAL-027): a function number that is not whole is truncated toward zero, and the range is checked after: =AGGREGATE(14.5,6,A1:A4,1)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "4", "A4": "=1/0"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,A1:A4,1)"}, "expect": {"values": {"ZZ1000": 4}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(14.5,6,A1:A4,1)"}, "expect": {"values": {"ZZ1000": 4}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: truncated, a function number outside Excel's ranges is still #VALUE!: =SUBTOTAL(0.5,A1:A3)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(0.5,A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: truncated, a function number outside Excel's ranges is still #VALUE!: =SUBTOTAL(11.5+1,A1:A3)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(11.5+1,A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: truncated, a function number outside Excel's ranges is still #VALUE!: =SUBTOTAL(100.5,A1:A3)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(100.5,A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: truncated, a function number outside Excel's ranges is still #VALUE!: =SUBTOTAL(-9.5,A1:A3)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(-9.5,A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: truncated, a function number outside Excel's ranges is still #VALUE!: =AGGREGATE(19.5+1,6,A1:A3)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(19.5+1,6,A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: truncated, a function number outside Excel's ranges is still #VALUE!: =AGGREGATE(9,7.5+1,A1:A3)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,7.5+1,A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: truncated, a function number outside Excel's ranges is still #VALUE!: =AGGREGATE(9,-0.5-1,A1:A3)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,-0.5-1,A1:A3)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the seventeenth Windows run: AGGREGATE-039): the array form takes a number given directly as an array of that one Value",
+      "steps": [
+        {"enter": {"A1": "=AGGREGATE(14,6,5,1)", "A2": "=AGGREGATE(15,4,2+3,1)", "A3": "=AGGREGATE(14,6,5,2)"}, "expect": {"values": {"A1": 5, "A2": 5, "A3": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: AGGREGATE-061): text or a boolean given directly to the array form holds no number, so LARGE and SMALL are #NUM!: =AGGREGATE(14,6,\"5\",1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,\"5\",1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: AGGREGATE-061): text or a boolean given directly to the array form holds no number, so LARGE and SMALL are #NUM!: =AGGREGATE(14,4,\"5\",1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AGGREGATE(14,4,\"5\",1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: AGGREGATE-061): text or a boolean given directly to the array form holds no number, so LARGE and SMALL are #NUM!: =AGGREGATE(15,6,\"abc\",1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,\"abc\",1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: AGGREGATE-061): text or a boolean given directly to the array form holds no number, so LARGE and SMALL are #NUM!: =AGGREGATE(14,6,TRUE,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AGGREGATE(14,6,TRUE,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: AGGREGATE-061): text or a boolean given directly to the array form holds no number, so LARGE and SMALL are #NUM!: =AGGREGATE(15,0,FALSE,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AGGREGATE(15,0,FALSE,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (the area pass of 2026-10-12: AGGREGATE-061): text or a boolean given directly to the array form holds no number, so LARGE and SMALL are #NUM!: =AGGREGATE(15,6,\"\",1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=AGGREGATE(15,6,\"\",1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an Error Value given directly to the array form is its result, even under an option that passes over Error Values, until Excel is asked (AGGREGATE-067)",
+      "steps": [
+        {"enter": {"A1": "=AGGREGATE(14,6,1/0,1)", "A2": "=AGGREGATE(15,4,NA(),1)"}, "expect": {"values": {"A1": {"error": "#DIV/0!"}, "A2": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-10), ADR-0049: a Linked Table's column is a reference to SUBTOTAL and AGGREGATE, and they wait for its data",
+      "steps": [
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
+        {"enter": {"A1": "=SUBTOTAL(9,Rates[Mid])", "A2": "=AGGREGATE(4,6,Rates[Mid])"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.5], ["USDJPY", {"error": "#N/A"}], ["GBPUSD", 2.5]]}, "expect": {"values": {"A1": {"error": "#N/A"}, "A2": 2.5}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a SUBTOTAL whose range holds its own cell reads a cycle, and is #CIRC!",
+      "steps": [
+        {"enter": {"A1": "1", "A3": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"A3": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with too few arguments when it is entered: =SUBTOTAL(9)",
+      "steps": [
+        {"enter": {"A1": "=SUBTOTAL(9)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel refuses a call with too few arguments when it is entered: =AGGREGATE(9,6)",
+      "steps": [
+        {"enter": {"A1": "=AGGREGATE(9,6)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    }
+  ]
+}

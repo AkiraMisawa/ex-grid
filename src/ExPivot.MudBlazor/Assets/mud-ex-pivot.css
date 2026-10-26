@@ -32,6 +32,9 @@
     --ex-pivot-toggle-color: var(--mud-palette-text-secondary);
     --ex-pivot-toggle-background: transparent;
     --ex-pivot-toggle-border-color: var(--mud-palette-lines-inputs);
+    /* An Area a drop would take past the cap (ADR-0370 section 3): the palette's error, as a
+       refusal is painted. */
+    --ex-pivot-over-cap-color: var(--mud-palette-error);
     /* Show Details (ADR-0059): a tab's records over the report, and the dialog's frame and
        backdrop — ExPivot's, painted as MudBlazor paints a MudDialog: the surface, no edge, the
        theme's corners and the dialog's elevation. The tabs and the dialog's content are this

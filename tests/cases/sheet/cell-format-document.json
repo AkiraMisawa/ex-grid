@@ -1,0 +1,245 @@
+{
+  "about": "The Sheet Document records Font, Fill and Borders for cells, rows and columns since version 8; an older version reads with none of them and refuses a document holding them; a colour of any other kind than Automatic or RGB is refused by name (ADR-0071, ADR-0048, SH-38). A document's JSON is read as text. Transcribed from ExSheet.Engine.Tests' CellFormatDocumentTests; how d-mmm-yy is read as a local code under en-GB is in the surface tests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): Font, Fill and Borders are recorded for cells, rows and columns, and round-trip",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B:B"], "change": {"italic": true, "fill": "#FFFF00"}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"bold": true, "fontColour": "#FF0000"}}},
+        {"setCellFormat": {"ranges": ["B5"], "change": {"underline": true, "strikethrough": true, "fill": "none", "borders": {"top": {"style": "thin"}, "bottom": {"style": "double", "colour": "#0000FF"}}}}},
+        {"read": true, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"font\":{\"italic\":true},\"fill\":\"#FFFF00\"}],\"rows\":[{\"at\":\"3:3\",\"font\":{\"color\":\"#FF0000\",\"bold\":true}}],\"cells\":[{\"at\":\"B3\",\"font\":{\"color\":\"#FF0000\",\"bold\":true,\"italic\":true}},{\"at\":\"B5\",\"font\":{\"italic\":true,\"underline\":true,\"strikethrough\":true},\"fill\":\"none\",\"borders\":{\"top\":{\"style\":\"thin\"},\"bottom\":{\"style\":\"double\",\"color\":\"#0000FF\"}}}]}"}},
+        {"remember": "saved"},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"picture": "saved", "cellFormats": {"B3": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "#FF0000", "bold": true, "italic": true, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}], "B4": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}], "B5": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": true, "strikethrough": true}, "fill": "none", "borders": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": {"style": "double", "colour": "#0000FF"}, "left": "none", "right": "none"}}], "B6": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}], "B9": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}], "C3": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "#FF0000", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}], "C5": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): every line style is written by the name Excel's own file gives it (slantedDashDot as slantDashDot), and reads back",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"bottom": {"style": "hair", "colour": "#000000"}}}}},
+        {"setCellFormat": {"ranges": ["B3"], "change": {"borders": {"bottom": {"style": "thin", "colour": "#000001"}}}}},
+        {"setCellFormat": {"ranges": ["B4"], "change": {"borders": {"bottom": {"style": "medium", "colour": "#000002"}}}}},
+        {"setCellFormat": {"ranges": ["B5"], "change": {"borders": {"bottom": {"style": "thick", "colour": "#000003"}}}}},
+        {"setCellFormat": {"ranges": ["B6"], "change": {"borders": {"bottom": {"style": "double", "colour": "#000004"}}}}},
+        {"setCellFormat": {"ranges": ["B7"], "change": {"borders": {"bottom": {"style": "dotted", "colour": "#000005"}}}}},
+        {"setCellFormat": {"ranges": ["B8"], "change": {"borders": {"bottom": {"style": "dashed", "colour": "#000006"}}}}},
+        {"setCellFormat": {"ranges": ["B9"], "change": {"borders": {"bottom": {"style": "dashDot", "colour": "#000007"}}}}},
+        {"setCellFormat": {"ranges": ["B10"], "change": {"borders": {"bottom": {"style": "dashDotDot", "colour": "#000008"}}}}},
+        {"setCellFormat": {"ranges": ["B11"], "change": {"borders": {"bottom": {"style": "mediumDashed", "colour": "#000009"}}}}},
+        {"setCellFormat": {"ranges": ["B12"], "change": {"borders": {"bottom": {"style": "mediumDashDot", "colour": "#00000A"}}}}},
+        {"setCellFormat": {"ranges": ["B13"], "change": {"borders": {"bottom": {"style": "mediumDashDotDot", "colour": "#00000B"}}}}},
+        {"setCellFormat": {"ranges": ["B14"], "change": {"borders": {"bottom": {"style": "slantedDashDot", "colour": "#00000C"}}}}},
+        {"read": true, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"B2\",\"borders\":{\"bottom\":{\"style\":\"hair\",\"color\":\"#000000\"}}},{\"at\":\"B3\",\"borders\":{\"bottom\":{\"style\":\"thin\",\"color\":\"#000001\"}}},{\"at\":\"B4\",\"borders\":{\"bottom\":{\"style\":\"medium\",\"color\":\"#000002\"}}},{\"at\":\"B5\",\"borders\":{\"bottom\":{\"style\":\"thick\",\"color\":\"#000003\"}}},{\"at\":\"B6\",\"borders\":{\"bottom\":{\"style\":\"double\",\"color\":\"#000004\"}}},{\"at\":\"B7\",\"borders\":{\"bottom\":{\"style\":\"dotted\",\"color\":\"#000005\"}}},{\"at\":\"B8\",\"borders\":{\"bottom\":{\"style\":\"dashed\",\"color\":\"#000006\"}}},{\"at\":\"B9\",\"borders\":{\"bottom\":{\"style\":\"dashDot\",\"color\":\"#000007\"}}},{\"at\":\"B10\",\"borders\":{\"bottom\":{\"style\":\"dashDotDot\",\"color\":\"#000008\"}}},{\"at\":\"B11\",\"borders\":{\"bottom\":{\"style\":\"mediumDashed\",\"color\":\"#000009\"}}},{\"at\":\"B12\",\"borders\":{\"bottom\":{\"style\":\"mediumDashDot\",\"color\":\"#00000A\"}}},{\"at\":\"B13\",\"borders\":{\"bottom\":{\"style\":\"mediumDashDotDot\",\"color\":\"#00000B\"}}},{\"at\":\"B14\",\"borders\":{\"bottom\":{\"style\":\"slantDashDot\",\"color\":\"#00000C\"}}}]}"}},
+        {"reopen": {"sheet": "Sheet1"}, "note": "The cell below each shows the same line on its top, which it shares (case 11-7).", "expect": {"borders": {"B2": {"bottom": {"style": "hair", "colour": "#000000"}}, "B3": {"bottom": {"style": "thin", "colour": "#000001"}}, "B4": {"bottom": {"style": "medium", "colour": "#000002"}}, "B5": {"bottom": {"style": "thick", "colour": "#000003"}}, "B6": {"bottom": {"style": "double", "colour": "#000004"}}, "B7": {"bottom": {"style": "dotted", "colour": "#000005"}}, "B8": {"bottom": {"style": "dashed", "colour": "#000006"}}, "B9": {"bottom": {"style": "dashDot", "colour": "#000007"}}, "B10": {"bottom": {"style": "dashDotDot", "colour": "#000008"}}, "B11": {"bottom": {"style": "mediumDashed", "colour": "#000009"}}, "B12": {"bottom": {"style": "mediumDashDot", "colour": "#00000A"}}, "B13": {"bottom": {"style": "mediumDashDotDot", "colour": "#00000B"}}, "B14": {"bottom": {"style": "slantedDashDot", "colour": "#00000C"}}}}},
+        {"read": true, "expect": {"borders": {"B3": {"top": {"style": "hair", "colour": "#000000"}}, "B4": {"top": {"style": "thin", "colour": "#000001"}}, "B5": {"top": {"style": "medium", "colour": "#000002"}}, "B6": {"top": {"style": "thick", "colour": "#000003"}}, "B7": {"top": {"style": "double", "colour": "#000004"}}, "B8": {"top": {"style": "dotted", "colour": "#000005"}}, "B9": {"top": {"style": "dashed", "colour": "#000006"}}, "B10": {"top": {"style": "dashDot", "colour": "#000007"}}, "B11": {"top": {"style": "dashDotDot", "colour": "#000008"}}, "B12": {"top": {"style": "mediumDashed", "colour": "#000009"}}, "B13": {"top": {"style": "mediumDashDot", "colour": "#00000A"}}, "B14": {"top": {"style": "mediumDashDotDot", "colour": "#00000B"}}, "B15": {"top": {"style": "slantedDashDot", "colour": "#00000C"}}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38), the twelfth Windows run: a document recording both sides of each edge it set, which agree, shows the same edges from either side at every level, and reads back unchanged",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"F:F\",\"borders\":{\"right\":{\"style\":\"thick\"}}},{\"at\":\"G:G\",\"borders\":{\"left\":{\"style\":\"thick\"}}}],\"rows\":[{\"at\":\"7:7\",\"borders\":{\"bottom\":{\"style\":\"double\",\"color\":\"#0000FF\"}}},{\"at\":\"8:8\",\"borders\":{\"top\":{\"style\":\"double\",\"color\":\"#0000FF\"}}}],\"cells\":[{\"at\":\"B2\",\"borders\":{\"bottom\":{\"style\":\"thin\"}}},{\"at\":\"B3\",\"borders\":{\"top\":{\"style\":\"thin\"}}},{\"at\":\"C5\",\"borders\":{\"right\":{\"style\":\"medium\",\"color\":\"#FF0000\"}}},{\"at\":\"D5\",\"borders\":{\"left\":{\"style\":\"medium\",\"color\":\"#FF0000\"}}}]}"}, "expect": {"borders": {"B2": {"top": "none", "bottom": {"style": "thin", "colour": "Automatic"}, "left": "none", "right": "none"}, "B3": {"top": {"style": "thin", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}, "C5": {"top": "none", "bottom": "none", "left": "none", "right": {"style": "medium", "colour": "#FF0000"}}, "D5": {"top": "none", "bottom": "none", "left": {"style": "medium", "colour": "#FF0000"}, "right": "none"}, "F2": {"top": "none", "bottom": "none", "left": "none", "right": {"style": "thick", "colour": "Automatic"}}, "G1048576": {"top": "none", "bottom": "none", "left": {"style": "thick", "colour": "Automatic"}, "right": "none"}, "A7": {"top": "none", "bottom": {"style": "double", "colour": "#0000FF"}, "left": "none", "right": "none"}, "XFD8": {"top": {"style": "double", "colour": "#0000FF"}, "bottom": "none", "left": "none", "right": "none"}}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"F:F\",\"borders\":{\"right\":{\"style\":\"thick\"}}},{\"at\":\"G:G\",\"borders\":{\"left\":{\"style\":\"thick\"}}}],\"rows\":[{\"at\":\"7:7\",\"borders\":{\"bottom\":{\"style\":\"double\",\"color\":\"#0000FF\"}}},{\"at\":\"8:8\",\"borders\":{\"top\":{\"style\":\"double\",\"color\":\"#0000FF\"}}}],\"cells\":[{\"at\":\"B2\",\"borders\":{\"bottom\":{\"style\":\"thin\"}}},{\"at\":\"B3\",\"borders\":{\"top\":{\"style\":\"thin\"}}},{\"at\":\"C5\",\"borders\":{\"right\":{\"style\":\"medium\",\"color\":\"#FF0000\"}}},{\"at\":\"D5\",\"borders\":{\"left\":{\"style\":\"medium\",\"color\":\"#FF0000\"}}}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (SH-38): a part recorded at its default is written, so it still hides the level under it",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"font\":{\"bold\":true},\"borders\":{\"left\":{\"style\":\"thin\"}}}],\"cells\":[{\"at\":\"B2\",\"font\":{},\"borders\":{}}]}"}, "expect": {"fonts": {"B2": {"bold": false, "italic": false, "underline": false, "strikethrough": false, "colour": "Automatic"}, "B3": {"bold": true}}, "borders": {"B2": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"font\":{\"bold\":true},\"borders\":{\"left\":{\"style\":\"thin\"}}}],\"cells\":[{\"at\":\"B2\",\"font\":{},\"borders\":{}}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-38): the reader takes an explicit Automatic colour, false emphasis and either case of hex",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"automatic\",\"bold\":false,\"italic\":true},\"fill\":\"#c0ffee\",\"borders\":{\"left\":{\"style\":\"hair\",\"color\":\"automatic\"}}}]}"}, "expect": {"fonts": {"A1": {"colour": "Automatic", "bold": false, "italic": true, "underline": false, "strikethrough": false}}, "fills": {"A1": "#C0FFEE"}, "borders": {"A1": {"top": "none", "bottom": "none", "left": {"style": "hair", "colour": "Automatic"}, "right": "none"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-38): a document of an older version reads with no Font, Fill or Borders, and is written at the current version",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"format\":\"0.00\"}],\"cells\":[{\"at\":\"B2\",\"number\":1,\"align\":\"center\"}]}"}, "expect": {"cellFormats": {"B2": [{"numberFormat": "0.00", "alignment": "center", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"format\":\"0.00\"}],\"cells\":[{\"at\":\"B2\",\"number\":1,\"align\":\"center\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-38): an older version does not define Font, Fill or Borders, so a document of one holding them is refused: case 1",
+      "note": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"bold\":true}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"bold\":true}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-38): an older version does not define Font, Fill or Borders, so a document of one holding them is refused: case 2",
+      "note": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"fill\":\"#FFFF00\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"fill\":\"#FFFF00\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-38): an older version does not define Font, Fill or Borders, so a document of one holding them is refused: case 3",
+      "note": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"2:2\",\"borders\":{}}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"2:2\",\"borders\":{}}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-38): an older version does not define Font, Fill or Borders, so a document of one holding them is refused: case 4",
+      "note": "{\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"bold\":true}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"bold\":true}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-38): an older version does not define Font, Fill or Borders, so a document of one holding them is refused: case 5",
+      "note": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"A:A\",\"fill\":\"none\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"A:A\",\"fill\":\"none\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: theme in ,\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":{\"theme\":4,\"tint\":0.4}}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":{\"theme\":4,\"tint\":0.4}}}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'{\"theme\":4,\"tint\":0.4}' is not a colour a Sheet Document records: a colour is \"automatic\" or \"#RRGGBB\", and no other kind is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: red in ,\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"red\"}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"red\"}}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'red' is not a colour a Sheet Document records: a colour is \"automatic\" or \"#RRGGBB\", and no other kind is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: #F00 in ,\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"#F00\"}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"#F00\"}}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'#F00' is not a colour a Sheet Document records: a colour is \"automatic\" or \"#RRGGBB\", and no other kind is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: #FF00000 in ,\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"#FF00000\"}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"#FF00000\"}}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'#FF00000' is not a colour a Sheet Document records: a colour is \"automatic\" or \"#RRGGBB\", and no other kind is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: FF0000 in ,\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"FF0000\"}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"color\":\"FF0000\"}}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'FF0000' is not a colour a Sheet Document records: a colour is \"automatic\" or \"#RRGGBB\", and no other kind is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: automatic in ,\"cells\":[{\"at\":\"A1\",\"fill\":\"automatic\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"fill\":\"automatic\"}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'automatic' is not a Fill a Sheet Document records: a Fill is \"none\" or \"#RRGGBB\", and no other kind of colour is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: theme in ,\"cells\":[{\"at\":\"A1\",\"fill\":{\"theme\":1}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"fill\":{\"theme\":1}}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'{\"theme\":1}' is not a Fill a Sheet Document records: a Fill is \"none\" or \"#RRGGBB\", and no other kind of colour is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: #GGGGGG in ,\"columns\":[{\"at\":\"B:B\",\"fill\":\"#GGGGGG\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"fill\":\"#GGGGGG\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document", "saying": "'#GGGGGG' is not a Fill a Sheet Document records: a Fill is \"none\" or \"#RRGGBB\", and no other kind of colour is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at: indexed in ,\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"style\":\"thin\",\"color\":{\"indexed\":10}}}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"style\":\"thin\",\"color\":{\"indexed\":10}}}}]}"}, "expect": {"throws": {"refusal": "document", "saying": "'{\"indexed\":10}' is not a colour a Sheet Document records: a colour is \"automatic\" or \"#RRGGBB\", and no other kind is read."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"font\":{\"size\":14}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"size\":14}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"font\":{\"bold\":\"yes\"}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"bold\":\"yes\"}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"font\":{\"underline\":\"double\"}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":{\"underline\":\"double\"}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"font\":\"bold\"}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"font\":\"bold\"}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"borders\":{\"diagonal\":{\"style\":\"thin\"}}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"borders\":{\"diagonal\":{\"style\":\"thin\"}}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"style\":\"none\"}}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"style\":\"none\"}}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"style\":\"Thin\"}}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"style\":\"Thin\"}}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"color\":\"#000000\"}}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"color\":\"#000000\"}}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"style\":\"thin\",\"width\":2}}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":{\"style\":\"thin\",\"width\":2}}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":\"thin\"}}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"borders\":{\"top\":\"thin\"}}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"cells\":[{\"at\":\"A1\",\"borders\":[]}]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"borders\":[]}]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused: ,\"rows\":[{\"at\":\"2:2\",\"pattern\":\"gray125\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"rows\":[{\"at\":\"2:2\",\"pattern\":\"gray125\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 103 (2026-10-14, after run 18a, format-cells 9): a code of its own spelled d-mmm-yy opens as built-in 15 where the culture spells 15 so, and stays a code of its own elsewhere, on a cell and on a column alike: en-US",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"format\":\"d\\\\-mmm\\\\-yy\"}]}"}, "expect": {"numberFormats": {"A1": "d-mmm-yy"}}},
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"format\":\"d\\\\-mmm\\\\-yy\"}],\"cells\":[]}"}, "expect": {"numberFormats": {"B7": "d-mmm-yy"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 103 (2026-10-14, after run 18a, format-cells 9): a code of its own spelled d-mmm-yy opens as built-in 15 where the culture spells 15 so, and stays a code of its own elsewhere, on a cell and on a column alike: ja-JP",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"ja-JP\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"format\":\"d\\\\-mmm\\\\-yy\"}]}"}, "expect": {"numberFormats": {"A1": "d\\-mmm\\-yy"}}},
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"ja-JP\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"format\":\"d\\\\-mmm\\\\-yy\"}],\"cells\":[]}"}, "expect": {"numberFormats": {"B7": "d\\-mmm\\-yy"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ticket 103 (2026-10-14, after run 18a, format-cells 9): a code of its own spelled d-mmm-yy opens as built-in 15 where the culture spells 15 so, and stays a code of its own elsewhere, on a cell and on a column alike: en-GB",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-GB\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"format\":\"d\\\\-mmm\\\\-yy\"}]}"}, "expect": {"numberFormats": {"A1": "d\\-mmm\\-yy"}}},
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-GB\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"format\":\"d\\\\-mmm\\\\-yy\"}],\"cells\":[]}"}, "expect": {"numberFormats": {"B7": "d\\-mmm\\-yy"}}}
+      ]
+    }
+  ]
+}

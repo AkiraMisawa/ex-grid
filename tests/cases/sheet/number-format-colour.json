@@ -1,0 +1,339 @@
+{
+  "about": "The colour a Number Format's section names, answered with the text it shows (ADR-0071, SH-40, ADR-0016, ADR-0047): by the section a number or a text used, at a width or not, and none where no section was used. Transcribed from ExSheet.Engine.Tests' NumberFormatColourTests; the legacy palette's values are in the surface tests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [Red]0 for 5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 5}}}},
+        {"setNumberFormat": {"A1": "[Red]0"}, "expect": {"displays": {"A1": {"text": "5", "colour": "red"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [red]0 for 5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 5}}}},
+        {"setNumberFormat": {"A1": "[red]0"}, "expect": {"displays": {"A1": {"text": "5", "colour": "red"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [MAGENTA]0 for 5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 5}}}},
+        {"setNumberFormat": {"A1": "[MAGENTA]0"}, "expect": {"displays": {"A1": {"text": "5", "colour": "magenta"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [Cyan]0 for -7",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -7}}}},
+        {"setNumberFormat": {"A1": "[Cyan]0"}, "expect": {"displays": {"A1": {"text": "-7", "colour": "cyan"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: 0.00_);[Red](0.00) for -1.5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -1.5}}}},
+        {"setNumberFormat": {"A1": "0.00_);[Red](0.00)"}, "expect": {"displays": {"A1": {"text": "(1.50)", "colour": "red"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: 0.00_);[Red](0.00) for 1.5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 1.5}}}},
+        {"setNumberFormat": {"A1": "0.00_);[Red](0.00)"}, "expect": {"displays": {"A1": {"text": "1.50 ", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [Blue]0;[Magenta]-0;[Green]\"zero\" for 3",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 3}}}},
+        {"setNumberFormat": {"A1": "[Blue]0;[Magenta]-0;[Green]\"zero\""}, "expect": {"displays": {"A1": {"text": "3", "colour": "blue"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [Blue]0;[Magenta]-0;[Green]\"zero\" for -3",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -3}}}},
+        {"setNumberFormat": {"A1": "[Blue]0;[Magenta]-0;[Green]\"zero\""}, "expect": {"displays": {"A1": {"text": "-3", "colour": "magenta"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [Blue]0;[Magenta]-0;[Green]\"zero\" for 0",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0}}}},
+        {"setNumberFormat": {"A1": "[Blue]0;[Magenta]-0;[Green]\"zero\""}, "expect": {"displays": {"A1": {"text": "zero", "colour": "green"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [Blue]0;[Magenta]-0 for 0",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0}}}},
+        {"setNumberFormat": {"A1": "[Blue]0;[Magenta]-0"}, "expect": {"displays": {"A1": {"text": "0", "colour": "blue"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: 0;[Yellow]-0 for -7",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -7}}}},
+        {"setNumberFormat": {"A1": "0;[Yellow]-0"}, "expect": {"displays": {"A1": {"text": "-7", "colour": "yellow"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [White]0.00 for 1",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 1}}}},
+        {"setNumberFormat": {"A1": "[White]0.00"}, "expect": {"displays": {"A1": {"text": "1.00", "colour": "white"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [Black]yyyy-mm-dd for 45292",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 45292}}}},
+        {"setNumberFormat": {"A1": "[Black]yyyy-mm-dd"}, "expect": {"displays": {"A1": {"text": "2024-01-01", "colour": "black"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: [Green]0% for 0.5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0.5}}}},
+        {"setNumberFormat": {"A1": "[Green]0%"}, "expect": {"displays": {"A1": {"text": "50%", "colour": "green"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: 0.00 for 1",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 1}}}},
+        {"setNumberFormat": {"A1": "0.00"}, "expect": {"displays": {"A1": {"text": "1.00", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text: General for 1",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 1}}}},
+        {"setNumberFormat": {"A1": "General"}, "expect": {"displays": {"A1": {"text": "1", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: text shown by a text section takes that section's colour: 0;0;0;[Red]@",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "Q3"}}}},
+        {"setNumberFormat": {"A1": "0;0;0;[Red]@"}, "expect": {"displays": {"A1": {"text": "Q3", "colour": "red"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: text shown by a text section takes that section's colour: [Blue]@",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "Q3"}}}},
+        {"setNumberFormat": {"A1": "[Blue]@"}, "expect": {"displays": {"A1": {"text": "Q3", "colour": "blue"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: text shown by a text section takes that section's colour: 0;[Red]-0;0;\"total \"@",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "Q3"}}}},
+        {"setNumberFormat": {"A1": "0;[Red]-0;0;\"total \"@"}, "expect": {"displays": {"A1": {"text": "total Q3", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071, SH-40 (the eleventh Windows run, case 3b): Excel took 0;[Red]@, and showed 5 in it as 5, in black",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 5}}}},
+        {"setNumberFormat": {"A1": "0;[Red]@"}, "expect": {"displays": {"A1": {"text": "5", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 reading beside case 3b: @ ends the format, so every number is the first section's, with a minus sign: 0;[Red]@ for -5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -5}}}},
+        {"setNumberFormat": {"A1": "0;[Red]@"}, "expect": {"displays": {"A1": {"text": "-5", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 reading beside case 3b: @ ends the format, so every number is the first section's, with a minus sign: 0;[Red]@ for 0",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0}}}},
+        {"setNumberFormat": {"A1": "0;[Red]@"}, "expect": {"displays": {"A1": {"text": "0", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 reading beside case 3b: @ ends the format, so every number is the first section's, with a minus sign: [Blue]0;[Red]@ for -5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -5}}}},
+        {"setNumberFormat": {"A1": "[Blue]0;[Red]@"}, "expect": {"displays": {"A1": {"text": "-5", "colour": "blue"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 reading beside case 3b: @ ends the format, so every number is the first section's, with a minus sign: 0.0;[Magenta]-0.0;[Red]@ for -5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -5}}}},
+        {"setNumberFormat": {"A1": "0.0;[Magenta]-0.0;[Red]@"}, "expect": {"displays": {"A1": {"text": "-5.0", "colour": "magenta"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 reading beside case 3b: @ ends the format, so every number is the first section's, with a minus sign: 0.0;[Magenta]-0.0;[Red]@ for 0",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0}}}},
+        {"setNumberFormat": {"A1": "0.0;[Magenta]-0.0;[Red]@"}, "expect": {"displays": {"A1": {"text": "0.0", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 reading beside case 3b: text in a format that @ ends is shown by that section, in its colour: 0;[Red]@",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "abc"}}}},
+        {"setNumberFormat": {"A1": "0;[Red]@"}, "expect": {"displays": {"A1": {"text": "abc", "colour": "red"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 reading beside case 3b: text in a format that @ ends is shown by that section, in its colour: 0;-0;[Green]\"note: \"@",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "abc"}}}},
+        {"setNumberFormat": {"A1": "0;-0;[Green]\"note: \"@"}, "expect": {"displays": {"A1": {"text": "note: abc", "colour": "green"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 reading beside case 3b: text in a format that @ ends is shown by that section, in its colour: [Blue]0;@",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "abc"}}}},
+        {"setNumberFormat": {"A1": "[Blue]0;@"}, "expect": {"displays": {"A1": {"text": "abc", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0071 (case 3b): booleans and Error Values still show as themselves in 0;[Red]@, uncoloured",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": true}, "A2": {"constant": {"error": "#DIV/0!"}}}}},
+        {"setNumberFormat": {"A1:A2": "0;[Red]@"}, "expect": {"displays": {"A1": {"colour": null}, "A2": {"colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 reading, SH-40: text in a format with no text section uses no section, so no section's colour",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "Q3"}}}},
+        {"setNumberFormat": {"A1": "[Red]0"}, "expect": {"displays": {"A1": {"text": "Q3", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 reading, SH-40: a number shown as General beside a lone text section uses no section, so no section's colour",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 5}}}},
+        {"setNumberFormat": {"A1": "[Red]@"}, "expect": {"displays": {"A1": {"text": "5", "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 reading, SH-40: booleans and Error Values show as themselves, through no section, so no section's colour",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": true}, "A2": {"constant": {"error": "#DIV/0!"}}}}},
+        {"setNumberFormat": {"A1:A2": "[Red]0;[Red]-0;[Red]0;[Red]@"}, "expect": {"displays": {"A1": {"colour": null}, "A2": {"colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: a blank cell shows nothing, so nothing is coloured, at any width",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Red]0"}, "expect": {"displays": {"A1": {"colour": null}}}},
+        {"read": true, "expect": {"displays": {"A1": {"width": 10, "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: the display at a column's width, which the component paints, carries the colour too: 0;[Red]-0 for -5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -5}}}},
+        {"setNumberFormat": {"A1": "0;[Red]-0"}, "expect": {"displays": {"A1": {"width": 10, "text": "-5", "colour": "red", "cannotShow": false}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: the display at a column's width, which the component paints, carries the colour too: 0;[Red]-0 for 5",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 5}}}},
+        {"setNumberFormat": {"A1": "0;[Red]-0"}, "expect": {"displays": {"A1": {"width": 10, "text": "5", "colour": null, "cannotShow": false}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: the display at a column's width, which the component paints, carries the colour too: [Blue]0;[Magenta]-0;[Green]\"zero\" for 0",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0}}}},
+        {"setNumberFormat": {"A1": "[Blue]0;[Magenta]-0;[Green]\"zero\""}, "expect": {"displays": {"A1": {"width": 10, "text": "zero", "colour": "green", "cannotShow": false}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 reading, SH-40, ADR-0016: a number its section cannot show in the width (####) keeps that section's colour: 0;[Red]-0 for -123456",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -123456}}}},
+        {"setNumberFormat": {"A1": "0;[Red]-0"}, "expect": {"displays": {"A1": {"width": 3, "text": "", "colour": "red", "cannotShow": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 reading, SH-40, ADR-0016: a number its section cannot show in the width (####) keeps that section's colour: [Blue]0.00 for 123456",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 123456}}}},
+        {"setNumberFormat": {"A1": "[Blue]0.00"}, "expect": {"displays": {"A1": {"width": 3, "text": "", "colour": "blue", "cannotShow": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 reading, SH-40, ADR-0016: a date that cannot exist cannot show at any width, and keeps its section's colour",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": -1}}}},
+        {"setNumberFormat": {"A1": "[Red]yyyy-mm-dd"}, "expect": {"displays": {"A1": {"cannotShow": true, "colour": "red"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: General fitted to a width uses no section, so no colour",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 0.3333333333333333}, "A2": {"constant": 123456789}}}},
+        {"read": true, "expect": {"displays": {"A1": {"width": 8, "colour": null}, "A2": {"width": 1, "colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40, ADR-0047 (TYPED-052): $-5 typed takes Excel's currency format, and its negative section is red",
+      "steps": [
+        {"enter": {"A1": "$-5", "B1": "$5"}, "expect": {"displays": {"A1": {"text": "($5)", "colour": "red"}, "B1": {"colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40: every one of the eight names is read, and each answers itself",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": 1}, "A2": {"constant": 1}, "A3": {"constant": 1}, "A4": {"constant": 1}, "A5": {"constant": 1}, "A6": {"constant": 1}, "A7": {"constant": 1}, "A8": {"constant": 1}}}},
+        {"setNumberFormat": {"A1": "[Black]0"}},
+        {"setNumberFormat": {"A2": "[Blue]0"}},
+        {"setNumberFormat": {"A3": "[Cyan]0"}},
+        {"setNumberFormat": {"A4": "[Green]0"}},
+        {"setNumberFormat": {"A5": "[Magenta]0"}},
+        {"setNumberFormat": {"A6": "[Red]0"}},
+        {"setNumberFormat": {"A7": "[White]0"}},
+        {"setNumberFormat": {"A8": "[Yellow]0"}},
+        {"read": true, "expect": {"displays": {"A1": {"colour": "black"}, "A2": {"colour": "blue"}, "A3": {"colour": "cyan"}, "A4": {"colour": "green"}, "A5": {"colour": "magenta"}, "A6": {"colour": "red"}, "A7": {"colour": "white"}, "A8": {"colour": "yellow"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-40 (a reading until the eleventh Windows run, case 2): the format colour is answered only where its section names one, so the Font colour shows elsewhere",
+      "steps": [
+        {"enter": {"A1": "-5", "B1": "5"}},
+        {"setNumberFormat": {"A1:B1": "0;[Red]-0"}, "expect": {"displays": {"A1": {"colour": "red"}, "B1": {"colour": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0047 (FMT-075 to 077), SH-40: a numbered colour stays refused, by name: [Color10]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Color10]0"}, "expect": {"throws": {"refusal": "format", "saying": "The number format '[Color10]0' is not supported: a numbered colour ([Color n]) is refused, as Excel refuses it; name one of the eight colours instead."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0047 (FMT-075 to 077), SH-40: a numbered colour stays refused, by name: [color3]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[color3]0"}, "expect": {"throws": {"refusal": "format", "saying": "The number format '[color3]0' is not supported: a numbered colour ([Color n]) is refused, as Excel refuses it; name one of the eight colours instead."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0047 (FMT-075 to 077), SH-40: a numbered colour stays refused, by name: 0;[Color10]-0",
+      "steps": [
+        {"setNumberFormat": {"A1": "0;[Color10]-0"}, "expect": {"throws": {"refusal": "format", "saying": "The number format '0;[Color10]-0' is not supported: a numbered colour ([Color n]) is refused, as Excel refuses it; name one of the eight colours instead."}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, ADR-0047 (FMT-075 to 077), SH-40: a numbered colour stays refused, by name: [Color 3]0",
+      "steps": [
+        {"setNumberFormat": {"A1": "[Color 3]0"}, "expect": {"throws": {"refusal": "format", "saying": "The number format '[Color 3]0' is not supported: a numbered colour ([Color n]) is refused, as Excel refuses it; name one of the eight colours instead."}}}
+      ]
+    }
+  ]
+}
