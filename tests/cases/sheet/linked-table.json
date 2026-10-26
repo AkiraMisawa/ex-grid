@@ -75,7 +75,7 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
         {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
         {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=IFERROR(XLOOKUP(\"R-4471\",Positions[Id],Positions[PV]),0)", "A3": "=A1+1"}},
-        {"reopen": "json", "expect": {"values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}, "A3": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "isWaiting": true, "rowCount": 0}]}}},
+        {"reopen": "json", "expect": {"values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}, "A3": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "key": null, "isWaiting": true, "rowCount": 0}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-4471", 250.5, "FX"]]}, "expect": {"values": {"A1": 250.5, "A2": 250.5, "A3": 251.5}, "change": {"valueChanges": ["A1", "A2", "A3"]}}}
       ]
     },
@@ -85,8 +85,8 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "@PV"]}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
         {"enter": {"A1": "=SUM(Positions[['@PV]])"}, "expect": {"formulas": {"A1": "=SUM(Positions['@PV])"}, "values": {"A1": 42}}},
-        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['@PV])"}, "values": {"A1": 42}}},
-        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['@PV])"}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['@PV])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['@PV])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['@PV])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['@PV])"}}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
       ]
     },
@@ -96,8 +96,8 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV@EOD"]}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
         {"enter": {"A1": "=SUM(Positions[[PV'@EOD]])"}, "expect": {"formulas": {"A1": "=SUM(Positions[PV'@EOD])"}, "values": {"A1": 42}}},
-        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[PV'@EOD])"}, "values": {"A1": 42}}},
-        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[PV'@EOD])"}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[PV'@EOD])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[PV'@EOD])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[PV'@EOD])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[PV'@EOD])"}}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
       ]
     },
@@ -107,8 +107,8 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "[x]"]}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
         {"enter": {"A1": "=SUM(Positions[['[x']]])"}, "expect": {"formulas": {"A1": "=SUM(Positions['[x']])"}, "values": {"A1": 42}}},
-        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['[x']])"}, "values": {"A1": 42}}},
-        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['[x']])"}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['[x']])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['[x']])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['[x']])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['[x']])"}}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
       ]
     },
@@ -118,8 +118,8 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "a#b"]}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
         {"enter": {"A1": "=SUM(Positions[[a'#b]])"}, "expect": {"formulas": {"A1": "=SUM(Positions[a'#b])"}, "values": {"A1": 42}}},
-        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[a'#b])"}, "values": {"A1": 42}}},
-        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[a'#b])"}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[a'#b])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[a'#b])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[a'#b])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[a'#b])"}}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
       ]
     },
@@ -129,8 +129,8 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "it's"]}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
         {"enter": {"A1": "=SUM(Positions[[it''s]])"}, "expect": {"formulas": {"A1": "=SUM(Positions[it''s])"}, "values": {"A1": 42}}},
-        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[it''s])"}, "values": {"A1": 42}}},
-        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[it''s])"}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[it''s])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[it''s])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[it''s])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[it''s])"}}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
       ]
     },
@@ -140,8 +140,8 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "@[#']"]}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
         {"enter": {"A1": "=SUM(Positions[['@'['#''']]])"}, "expect": {"formulas": {"A1": "=SUM(Positions['@'['#''']])"}, "values": {"A1": 42}}},
-        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['@'['#''']])"}, "values": {"A1": 42}}},
-        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['@'['#''']])"}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['@'['#''']])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['@'['#''']])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['@'['#''']])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['@'['#''']])"}}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
       ]
     },
@@ -260,7 +260,7 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
         {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
-        {"read": true, "expect": {"workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "isWaiting": false, "rowCount": 3}, {"name": "Rates", "columns": ["Pair", "Mid"], "keyColumns": [], "isWaiting": true, "rowCount": 0}]}}}
+        {"read": true, "expect": {"workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "key": null, "isWaiting": false, "rowCount": 3}, {"name": "Rates", "columns": ["Pair", "Mid"], "keyColumns": [], "key": null, "isWaiting": true, "rowCount": 0}]}}}
       ]
     },
     {
@@ -328,7 +328,7 @@
         {"pushTable": {"name": "Missing", "rows": []}, "expect": {"throws": {"refusal": "invalidOperation"}}},
         {"pushTable": {"name": "Positions", "rows": [["a", 1]]}, "expect": {"throws": {"refusal": "argument"}}},
         {"pushTable": {"name": "Positions", "rows": [["a", {"error": "#GETTING_DATA"}, "b"]]}, "expect": {"throws": {"refusal": "argument"}}},
-        {"read": true, "expect": {"values": {"A1": 300.5}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "isWaiting": false, "rowCount": 3}]}}}
+        {"read": true, "expect": {"values": {"A1": 300.5}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "key": null, "isWaiting": false, "rowCount": 3}]}}}
       ]
     },
     {
@@ -336,7 +336,7 @@
       "steps": [
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
         {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
-        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"], ["R-10", 30, "FX"]]}, "expect": {"values": {"A1": 60, "A2": 10}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": ["Id"], "isWaiting": false, "rowCount": 3}]}}}
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"], ["R-10", 30, "FX"]]}, "expect": {"values": {"A1": 60, "A2": 10}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": ["Id"], "key": "Id", "isWaiting": false, "rowCount": 3}]}}}
       ]
     },
     {
@@ -346,7 +346,7 @@
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
         {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"]]}, "expect": {"values": {"A1": 30}}},
-        {"pushTable": {"name": "Positions", "rows": [["R-1", 11, "FX"], ["R-2", 21, "FX"], ["R-1", 12, "Rates"]]}, "expect": {"throws": {"refusal": "repeatedKey", "saying": "The snapshot of 'Positions' is refused: its key column 'Id' holds \"R-1\" in rows 0 and 2. The table waits for a snapshot in which no key repeats, and every Formula that reads it shows #GETTING_DATA.", "table": "Positions", "keyColumns": ["Id"], "keys": ["R-1"], "firstRow": 0, "secondRow": 2, "valueChanges": ["A1", "A2", "A3", "A4"]}, "values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}, "A4": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"isWaiting": true, "rowCount": 0}]}}}
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 11, "FX"], ["R-2", 21, "FX"], ["R-1", 12, "Rates"]]}, "expect": {"throws": {"refusal": "repeatedKey", "saying": "The snapshot of 'Positions' is refused: its key column 'Id' holds \"R-1\" in rows 0 and 2. The table waits for a snapshot in which no key repeats, and every Formula that reads it shows #GETTING_DATA.", "table": "Positions", "keyColumn": "Id", "key": "R-1", "keyColumns": ["Id"], "keys": ["R-1"], "firstRow": 0, "secondRow": 2, "valueChanges": ["A1", "A2", "A3", "A4"]}, "values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}, "A4": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"isWaiting": true, "rowCount": 0}]}}}
       ]
     },
     {
@@ -496,7 +496,7 @@
       "name": "ADR-0049 (2026-09-30), SH-33: the key names one of the columns, without regard to case; any other name is refused by name",
       "steps": [
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV"], "key": "Book"}, "expect": {"throws": {"refusal": "argument", "saying": "The key 'Book' is not one of the columns of 'Positions'."}}},
-        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"], "key": "pair"}, "expect": {"workbook": {"linkedTables": [{"name": "Rates", "keyColumns": ["Pair"]}]}}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"], "key": "pair"}, "expect": {"workbook": {"linkedTables": [{"name": "Rates", "keyColumns": ["Pair"], "key": "Pair"}]}}},
         {"declareTable": {"name": "Empty", "columns": ["V"], "key": ""}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": [{"name": "Rates"}]}}}
       ]
     },
@@ -507,10 +507,10 @@
         {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"]]}},
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "id"}, "expect": {"change": {"valueChanges": []}, "values": {"A1": 30}}},
-        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Desk"}, "expect": {"change": {"valueChanges": ["A1", "A2", "A3", "A4"]}, "values": {"A1": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"keyColumns": ["Desk"]}]}}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Desk"}, "expect": {"change": {"valueChanges": ["A1", "A2", "A3", "A4"]}, "values": {"A1": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"keyColumns": ["Desk"], "key": "Desk"}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"]]}, "expect": {"throws": {"refusal": "repeatedKey"}}, "note": "The new key is the one checked: Desk repeats, Id no longer counts."},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-1", 20, "Rates"]]}, "expect": {"values": {"A1": 30}}},
-        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"keyColumns": []}]}}}
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"keyColumns": [], "key": null}]}}}
       ]
     },
     {
@@ -520,7 +520,7 @@
         {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
         {"read": true, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Positions\",\"columns\":[\"Id\",\"PV\",\"Desk\"],\"key\":\"Id\"},{\"name\":\"Rates\",\"columns\":[\"Pair\",\"Mid\"]}],\"cells\":[{\"at\":\"A1\",\"formula\":\"=SUM(Positions[PV])\"},{\"at\":\"A2\",\"formula\":\"=XLOOKUP(\\u0022R-1\\u0022, Positions[Id], Positions[PV])\"},{\"at\":\"A3\",\"formula\":\"=IFERROR(XLOOKUP(\\u0022R-1\\u0022, Positions[Id], Positions[PV]), 0)\"},{\"at\":\"A4\",\"formula\":\"=A1\\u002B1\"}]}"}},
-        {"reopen": "json", "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Id"]}, {"keyColumns": []}]}}},
+        {"reopen": "json", "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Id"], "key": "Id"}, {"keyColumns": [], "key": null}]}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 1, "FX"], ["R-1", 2, "FX"]]}, "expect": {"throws": {"refusal": "repeatedKey"}}},
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}, "expect": {"change": {"valueChanges": []}}}
       ]
@@ -528,7 +528,7 @@
     {
       "name": "ADR-0048/0049 (2026-09-30): a document written before keys were recorded still opens, its tables without a key",
       "steps": [
-        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Positions\",\"columns\":[\"Id\",\"PV\"]}],\"cells\":[{\"at\":\"A1\",\"formula\":\"=SUM(Positions[PV])\"}]}"}, "expect": {"workbook": {"linkedTables": [{"keyColumns": []}]}, "values": {"A1": {"error": "#GETTING_DATA"}}}},
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Positions\",\"columns\":[\"Id\",\"PV\"]}],\"cells\":[{\"at\":\"A1\",\"formula\":\"=SUM(Positions[PV])\"}]}"}, "expect": {"workbook": {"linkedTables": [{"keyColumns": [], "key": null}]}, "values": {"A1": {"error": "#GETTING_DATA"}}}},
         {"pushTable": {"name": "Positions", "rows": [["R-1", 1], ["R-1", 2]]}, "expect": {"values": {"A1": 3}}}
       ]
     },
@@ -565,7 +565,7 @@
     {
       "name": "ADR-0058 (amended 2026-10-03): a key of several columns is declared as a list, spelled as the columns are",
       "steps": [
-        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["entity", "TENOR"]}, "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Entity", "Tenor"]}]}}},
+        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["entity", "TENOR"]}, "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Entity", "Tenor"], "key": null}]}}},
         {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "Tenor"]}, "expect": {"change": {"valueChanges": []}}}
       ]
     },
@@ -587,7 +587,7 @@
         {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "Tenor"]}},
         {"enter": {"A1": "=SUM(Cds[Spread])"}},
         {"pushTable": {"name": "Cds", "rows": [["ACME", "5Y", 1], ["ACME", "10Y", 2], ["BETA", "5Y", 3]]}, "expect": {"values": {"A1": 6}}},
-        {"pushTable": {"name": "Cds", "rows": [["ACME", "5Y", 1], ["ACME", "10Y", 2], ["acme", "5y", 3]]}, "expect": {"throws": {"refusal": "repeatedKey", "saying": "The snapshot of 'Cds' is refused: its key columns 'Entity', 'Tenor' holds \"ACME\", \"5Y\" in row 0 and \"acme\", \"5y\" in row 2, which its lookup does not tell apart. The table waits for a snapshot in which no key repeats, and every Formula that reads it shows #GETTING_DATA.", "keyColumns": ["Entity", "Tenor"], "keys": ["ACME", "5Y"], "firstRow": 0, "secondRow": 2}, "values": {"A1": {"error": "#GETTING_DATA"}}}}
+        {"pushTable": {"name": "Cds", "rows": [["ACME", "5Y", 1], ["ACME", "10Y", 2], ["acme", "5y", 3]]}, "expect": {"throws": {"refusal": "repeatedKey", "saying": "The snapshot of 'Cds' is refused: its key columns 'Entity', 'Tenor' holds \"ACME\", \"5Y\" in row 0 and \"acme\", \"5y\" in row 2, which its lookup does not tell apart. The table waits for a snapshot in which no key repeats, and every Formula that reads it shows #GETTING_DATA.", "keyColumn": "Entity, Tenor", "key": "ACME", "keyColumns": ["Entity", "Tenor"], "keys": ["ACME", "5Y"], "firstRow": 0, "secondRow": 2}, "values": {"A1": {"error": "#GETTING_DATA"}}}}
       ]
     },
     {
@@ -603,7 +603,7 @@
         {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "Tenor"]}},
         {"declareTable": {"name": "Positions", "columns": ["Id", "PV"], "key": "Id"}},
         {"read": true, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Cds\",\"columns\":[\"Entity\",\"Tenor\",\"Spread\"],\"key\":[\"Entity\",\"Tenor\"]},{\"name\":\"Positions\",\"columns\":[\"Id\",\"PV\"],\"key\":\"Id\"}],\"cells\":[]}"}},
-        {"reopen": "json", "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Entity", "Tenor"]}, {"keyColumns": ["Id"]}]}}}
+        {"reopen": "json", "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Entity", "Tenor"], "key": null}, {"keyColumns": ["Id"], "key": "Id"}]}}}
       ]
     },
     {

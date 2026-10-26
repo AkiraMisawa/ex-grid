@@ -164,7 +164,13 @@ describe('the engine surface', () => {
 
     // ADR-0049, ADR-0331 §9: a table is never undeclared: the Workbook, which holds the tables, has no API for it.
     it('has no way to undeclare a Linked Table', () => {
-        const names = Object.getOwnPropertyNames(Workbook.prototype).filter(n => n.includes('LinkedTable') || n.includes('linkedTable') || /undeclare/iu.test(n));
+        // Every name a Workbook answers to: its class's statics, its prototype chain's members, and its own fields.
+        const workbook = new Workbook(Culture.of('en-US'));
+        const members = [...Object.getOwnPropertyNames(Workbook).map(n => `static ${n}`), ...Object.getOwnPropertyNames(workbook)];
+        for (let p: object | null = Workbook.prototype; p !== null && p !== Object.prototype; p = Object.getPrototypeOf(p) as object | null) {
+            members.push(...Object.getOwnPropertyNames(p));
+        }
+        const names = members.filter(n => /linkedtable|undeclare/iu.test(n));
         expect(names.toSorted()).toEqual(['declareLinkedTable', 'linkedTableColumns', 'linkedTables', 'pushLinkedTable']);
     });
 

@@ -690,7 +690,7 @@ the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which bot
 (a `check`'s), `isUndone`, `ranges`, `stepSheet` (the Sheet a step was done on or made), `changesSheets`, `sheetsReached` (the Sheets a step, an undo, a
 redo or a push reached, in order), `tableColumns` (what `readTable` read, `null` while the table waits), `heldTables` (each snapshot held, as it stands now), and
 `clockReads` (how often the step read the clock); of the Workbook,
-`sheets`, `shown`, `workbook` (its `culture`, `today`, `seed` as a string of digits, `hasVolatileFormulas`, `linkedTables` and `changes`),
+`sheets`, `shown`, `workbook` (its `culture`, `today`, `seed` as a string of digits, `hasVolatileFormulas`, `linkedTables`, each with its `name`, `columns`, `keyColumns`, `key` (the one key column, `null` for none or several), `isWaiting` and `rowCount`, and `changes`),
 `workbookJson` (its Workbook Document's JSON text), `copies` (each copy taken, by its name: its `refusal` and the words it is `saying`, its outward
 `text` and `html`, and its `block`, rows of the Entries it holds), and
 `picture` or `pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
@@ -699,7 +699,7 @@ exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
 A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type
 on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaSyntaxException`,
 `FormulaSyntaxError`) with its `reason` and whether it is `beyondLimit`, `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
-`repeatedKey` with its `table`, `keyColumns`, `keys`, `firstRow`, `secondRow` and the `valueChanges` of the table's going back to waiting, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
+`repeatedKey` with its `table`, `keyColumn` and `key` (the columns joined by `, ` and the first column's Value, for a key of several columns), `keyColumns`, `keys`, `firstRow`, `secondRow` and the `valueChanges` of the table's going back to waiting, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
 `RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
 (`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's
 own reading of a malformed case, an engine defect, and what JavaScript throws by itself fail the case.

@@ -405,7 +405,7 @@ function thrown(e: unknown): JsonObject {
     if (e instanceof SheetRefusedError) return { refusal: 'refused', reason: e.refusal.reason, saying: e.refusal.message };
     if (e instanceof RepeatedKeyError) {
         return {
-            refusal: 'repeatedKey', saying: e.message, table: e.table, keyColumns: [...e.keyColumns], keys: e.keys.map(encode),
+            refusal: 'repeatedKey', saying: e.message, table: e.table, keyColumn: e.keyColumn, key: encode(e.key), keyColumns: [...e.keyColumns], keys: e.keys.map(encode),
             firstRow: e.firstRow, secondRow: e.secondRow, valueChanges: addresses(e.change.valueChanges),
         };
     }
@@ -993,7 +993,7 @@ class Run {
                     changes: this.workbook.changes,
                     seed: this.workbook.seed === undefined ? null : this.workbook.seed.toString(),
                     linkedTables: this.workbook.linkedTables.map(t => ({
-                        name: t.name, columns: [...t.columns], keyColumns: [...t.keyColumns], isWaiting: t.isWaiting, rowCount: t.rowCount,
+                        name: t.name, columns: [...t.columns], keyColumns: [...t.keyColumns], key: orNull(t.key), isWaiting: t.isWaiting, rowCount: t.rowCount,
                     })),
                 };
                 break;

@@ -118,10 +118,10 @@ public class FinancialEvaluationTests
     }
 
     [Theory] // ADR-0047, the exception for PMT (decided with the user, 2026-10-12): PMT-011 and PMT-012, a fractional and a negative nper, are the exact payment rounded once, each one unit in the last place from Excel's double
-    [InlineData(-989.2729401451878, -989.2729401451879)] // =PMT(8%/12,10.5,10000)
-    [InlineData(970.3654226924855, 970.3654226924854)]   // =PMT(8%/12,-10,10000)
-    public void ADR0047_PMTs_exact_payment_is_one_unit_from_Excels_double_at_a_fractional_or_negative_number_of_periods(double exact, double excel) =>
-        Assert.Equal(1, Math.Abs(BitConverter.DoubleToInt64Bits(exact) - BitConverter.DoubleToInt64Bits(excel)));
+    [InlineData("=PMT(8%/12,10.5,10000)", -989.2729401451879)]
+    [InlineData("=PMT(8%/12,-10,10000)", 970.3654226924854)]
+    public void ADR0047_PMTs_exact_payment_is_one_unit_from_Excels_double_at_a_fractional_or_negative_number_of_periods(string formula, double excel) =>
+        Assert.Equal(1, Math.Abs(BitConverter.DoubleToInt64Bits(Number(formula)) - BitConverter.DoubleToInt64Bits(excel)));
 
     [Fact] // ADR-0047: XNPV-013, at 797 days a correctly rounded exponential gives Excel's discount, where glibc's exp is one unit in the last place below it
     public void ADR0047_XNPV_013s_discount_is_the_correctly_rounded_exponential()
@@ -131,20 +131,33 @@ public class FinancialEvaluationTests
         Assert.Equal(CorrectlyRounded.ExpExact(exponent), CorrectlyRounded.Exp(exponent));
     }
 
-    [Fact] // ADR-0047: XNPV-004, Excel's double (financial-evaluation.json), is what e^(x ln(1+rate)) summed from the first value gives; Math.Pow summed so is 8 units in the last place away
+    [Fact] // ADR-0047: XNPV-004, Excel's double, is what the engine's e^(x ln(1+rate)) summed from the first value gives (financial-evaluation.json); Math.Pow summed so is 8 units in the last place away
     public void ADR0047_Math_Pow_was_8_units_in_the_last_place_from_XNPV_004()
     {
-        string[] values = ["-10000", "2750", "2750", "2750", "4250"];
-        string[] dates = ["39448", "39522", "40089", "40217", "40327"];
+        double[] values = [-10000, 2750, 2750, 2750, 4250];
+        double[] dates = [39448, 39522, 40089, 40217, 40327];
+        var sheet = NewSheet();
+        for (var i = 0; i < values.Length; i++)
+        {
+            sheet.Enter($"A{i + 1}", values[i].ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sheet.Enter($"B{i + 1}", dates[i].ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
         var byPow = 0.0;
-        for (var i = 0; i < values.Length; i++) byPow += double.Parse(values[i], System.Globalization.CultureInfo.InvariantCulture) / Math.Pow(1.12, (double.Parse(dates[i], System.Globalization.CultureInfo.InvariantCulture) - 39448) / 365);
-        Assert.Equal(342.04308747657205, byPow);
-        Assert.NotEqual(342.0430874765725, byPow);
+        for (var i = 0; i < values.Length; i++) byPow += values[i] / Math.Pow(1.12, (dates[i] - dates[0]) / 365);
+        var engine = sheet.Evaluate("=XNPV(0.12,A1:A5,B1:B5)").Number;
+        Assert.Equal(8, Math.Abs(BitConverter.DoubleToInt64Bits(engine) - BitConverter.DoubleToInt64Bits(byPow)));
     }
 
-    [Fact] // ADR-0047: XNPV-018, run 18a: Excel's double (financial-evaluation.json) is the plain sum from the first value, which nearly cancels, where Excel's last-addition adjustment would give 0
-    public void ADR0047_XNPV_018_is_the_plain_sum_from_the_first_value() =>
-        Assert.Equal(1.1368683772161603E-13, 1000 + (-1100 / 1.1));
+    [Fact] // ADR-0047: XNPV-018, run 18a: the engine's XNPV, Excel's double (financial-evaluation.json), is the plain sum from the first value, which nearly cancels, where Excel's last-addition adjustment would give 0
+    public void ADR0047_XNPV_018_is_the_plain_sum_from_the_first_value()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1000");
+        sheet.Enter("A2", "-1100");
+        sheet.Enter("B1", "39448");
+        sheet.Enter("B2", "39813");
+        Assert.Equal(1000 + (-1100 / 1.1), sheet.Evaluate("=XNPV(0.1,A1:A2,B1:B2)").Number);
+    }
 
     /// <summary><paramref name="value"/> to a whole power by squaring from the lowest bit, each product a double, as PV and FV raise it.</summary>
     private static double RaisedBySquaring(double value, int exponent)

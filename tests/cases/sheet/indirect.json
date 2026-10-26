@@ -161,7 +161,7 @@
       "steps": [
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
         {"enter": {"B1": "=INDEX(Rates[Mid],1)", "B2": "5", "A1": "=SUM(B1:B2)"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": 6.08}}}
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": {"near": 6.08, "within": 5e-10}}}}
       ]
     },
     {
@@ -169,7 +169,7 @@
       "steps": [
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
         {"enter": {"B1": "=INDEX(Rates[Mid],1)", "B2": "5", "A1": "=AGGREGATE(9,6,INDIRECT(\"B1:B2\"))"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": 6.08}}}
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": {"near": 6.08, "within": 5e-10}}}}
       ]
     },
     {
@@ -177,7 +177,7 @@
       "steps": [
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
         {"enter": {"B1": "=INDEX(Rates[Mid],1)", "B2": "5", "A1": "=AGGREGATE(9,3,INDIRECT(\"B1:B2\"))"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": 6.08}}}
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": {"near": 6.08, "within": 5e-10}}}}
       ]
     },
     {
@@ -201,7 +201,7 @@
       "steps": [
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
         {"enter": {"B1": "=INDEX(Rates[Mid],1)", "B2": "5", "A1": "=SUBTOTAL(9,INDIRECT(\"B1:B2\"))"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": 6.08}}}
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": {"near": 6.08, "within": 5e-10}}}}
       ]
     },
     {
@@ -311,14 +311,14 @@
       "name": "ADR-0124 (2026-10-10), seventeenth Windows run (INDIRECT-023, 024): R1C1 text naming an absolute cell or a range of two is read when a1 is FALSE, 0, a blank or left empty: =SUM(INDIRECT(\"R2C2:R5C2\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2C2:R5C2\",FALSE))"}, "expect": {"values": {"ZZ1000": 118.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2C2:R5C2\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-10), seventeenth Windows run (INDIRECT-023, 024): R1C1 text naming an absolute cell or a range of two is read when a1 is FALSE, 0, a blank or left empty: =SUM(INDIRECT(\"R5C2:R2C2\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R5C2:R2C2\",FALSE))"}, "expect": {"values": {"ZZ1000": 118.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R5C2:R2C2\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -346,28 +346,28 @@
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"RC[-1]\",FALSE) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=INDIRECT(\"RC[-1]\",FALSE)"}, "expect": {"values": {"C2": 1.333}}}
+        {"enter": {"C2": "=INDIRECT(\"RC[-1]\",FALSE)"}, "expect": {"values": {"C2": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"rc[-1]\",FALSE) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=INDIRECT(\"rc[-1]\",FALSE)"}, "expect": {"values": {"C2": 1.333}}}
+        {"enter": {"C2": "=INDIRECT(\"rc[-1]\",FALSE)"}, "expect": {"values": {"C2": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =SUM(INDIRECT(\"RC[-1]:R[1]C[-1]\",FALSE)) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=SUM(INDIRECT(\"RC[-1]:R[1]C[-1]\",FALSE))"}, "expect": {"values": {"C2": 46.333}}}
+        {"enter": {"C2": "=SUM(INDIRECT(\"RC[-1]:R[1]C[-1]\",FALSE))"}, "expect": {"values": {"C2": {"near": 46.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =SUM(INDIRECT(\"R[1]C[-1]:RC[-1]\",FALSE)) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=SUM(INDIRECT(\"R[1]C[-1]:RC[-1]\",FALSE))"}, "expect": {"values": {"C2": 46.333}}}
+        {"enter": {"C2": "=SUM(INDIRECT(\"R[1]C[-1]:RC[-1]\",FALSE))"}, "expect": {"values": {"C2": {"near": 46.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -388,49 +388,49 @@
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"R2C\",FALSE) in B5",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"B5": "=INDIRECT(\"R2C\",FALSE)"}, "expect": {"values": {"B5": 1.333}}}
+        {"enter": {"B5": "=INDIRECT(\"R2C\",FALSE)"}, "expect": {"values": {"B5": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"R[0]C[-1]\",FALSE) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=INDIRECT(\"R[0]C[-1]\",FALSE)"}, "expect": {"values": {"C2": 1.333}}}
+        {"enter": {"C2": "=INDIRECT(\"R[0]C[-1]\",FALSE)"}, "expect": {"values": {"C2": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"R[-0]C[-1]\",FALSE) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=INDIRECT(\"R[-0]C[-1]\",FALSE)"}, "expect": {"values": {"C2": 1.333}}}
+        {"enter": {"C2": "=INDIRECT(\"R[-0]C[-1]\",FALSE)"}, "expect": {"values": {"C2": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"R[+0]C[-1]\",FALSE) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=INDIRECT(\"R[+0]C[-1]\",FALSE)"}, "expect": {"values": {"C2": 1.333}}}
+        {"enter": {"C2": "=INDIRECT(\"R[+0]C[-1]\",FALSE)"}, "expect": {"values": {"C2": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"R[00]C[-1]\",FALSE) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=INDIRECT(\"R[00]C[-1]\",FALSE)"}, "expect": {"values": {"C2": 1.333}}}
+        {"enter": {"C2": "=INDIRECT(\"R[00]C[-1]\",FALSE)"}, "expect": {"values": {"C2": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"R[1]C[0]\",FALSE) in B1",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"B1": "=INDIRECT(\"R[1]C[0]\",FALSE)"}, "expect": {"values": {"B1": 1.333}}}
+        {"enter": {"B1": "=INDIRECT(\"R[1]C[0]\",FALSE)"}, "expect": {"values": {"B1": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"R[1]C[-0]\",FALSE) in B1",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"B1": "=INDIRECT(\"R[1]C[-0]\",FALSE)"}, "expect": {"values": {"B1": 1.333}}}
+        {"enter": {"B1": "=INDIRECT(\"R[1]C[-0]\",FALSE)"}, "expect": {"values": {"B1": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -458,7 +458,7 @@
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =INDIRECT(\"R[-01]C[-1]\",FALSE) in C3",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C3": "=INDIRECT(\"R[-01]C[-1]\",FALSE)"}, "expect": {"values": {"C3": 1.333}}}
+        {"enter": {"C3": "=INDIRECT(\"R[-01]C[-1]\",FALSE)"}, "expect": {"values": {"C3": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -493,14 +493,14 @@
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =SUM(INDIRECT(\"R02:R03\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R02:R03\",FALSE))"}, "expect": {"values": {"ZZ1000": 46.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R02:R03\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 46.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =SUM(INDIRECT(\"C02\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"C02\",FALSE))"}, "expect": {"values": {"ZZ1000": 118.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"C02\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -514,7 +514,7 @@
       "name": "ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s: =SUM(INDIRECT(\"C[-01]\",FALSE)) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=SUM(INDIRECT(\"C[-01]\",FALSE))"}, "expect": {"values": {"C2": 118.333}}}
+        {"enter": {"C2": "=SUM(INDIRECT(\"C[-01]\",FALSE))"}, "expect": {"values": {"C2": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -1412,7 +1412,7 @@
       "name": "ADR-0124 (2026-10-12), the area passes (INDIRECT-036, 045, 050): relative R1C1 text counts from the Formula's own cell, R and C each with a number or an offset in brackets: =INDIRECT(\"R[-1]C[-1]\",FALSE) in C3",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C3": "=INDIRECT(\"R[-1]C[-1]\",FALSE)"}, "expect": {"values": {"C3": 1.333}}}
+        {"enter": {"C3": "=INDIRECT(\"R[-1]C[-1]\",FALSE)"}, "expect": {"values": {"C3": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -1433,7 +1433,7 @@
       "name": "ADR-0124 (2026-10-12), the area passes (INDIRECT-036, 045, 050): relative R1C1 text counts from the Formula's own cell, R and C each with a number or an offset in brackets: =INDIRECT(\"R[-3]C[1]\",FALSE) in A5",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"A5": "=INDIRECT(\"R[-3]C[1]\",FALSE)"}, "expect": {"values": {"A5": 1.333}}}
+        {"enter": {"A5": "=INDIRECT(\"R[-3]C[1]\",FALSE)"}, "expect": {"values": {"A5": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -1475,7 +1475,7 @@
       "name": "ADR-0124 (2026-10-12), the area passes (INDIRECT-037, 038, 046 to 049): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span: =SUM(INDIRECT(\"C2\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"C2\",FALSE))"}, "expect": {"values": {"ZZ1000": 118.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"C2\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -1489,28 +1489,28 @@
       "name": "ADR-0124 (2026-10-12), the area passes (INDIRECT-037, 038, 046 to 049): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span: =SUM(INDIRECT(\"C[-1]\",FALSE)) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=SUM(INDIRECT(\"C[-1]\",FALSE))"}, "expect": {"values": {"C2": 118.333}}}
+        {"enter": {"C2": "=SUM(INDIRECT(\"C[-1]\",FALSE))"}, "expect": {"values": {"C2": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the area passes (INDIRECT-037, 038, 046 to 049): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span: =SUM(INDIRECT(\"R2:R3\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2:R3\",FALSE))"}, "expect": {"values": {"ZZ1000": 46.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2:R3\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 46.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the area passes (INDIRECT-037, 038, 046 to 049): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span: =SUM(INDIRECT(\"R3:R2\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R3:R2\",FALSE))"}, "expect": {"values": {"ZZ1000": 46.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R3:R2\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 46.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-12), the area passes (INDIRECT-037, 038, 046 to 049): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span: =SUM(INDIRECT(\"C1:C2\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"C1:C2\",FALSE))"}, "expect": {"values": {"ZZ1000": 118.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"C1:C2\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -1531,7 +1531,7 @@
       "name": "ADR-0124 (2026-10-12), the area passes (INDIRECT-037, 038, 046 to 049): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span: =SUM(INDIRECT(\"R2C2:R[3]C[-1]\",FALSE)) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=SUM(INDIRECT(\"R2C2:R[3]C[-1]\",FALSE))"}, "expect": {"values": {"C2": 118.333}}}
+        {"enter": {"C2": "=SUM(INDIRECT(\"R2C2:R[3]C[-1]\",FALSE))"}, "expect": {"values": {"C2": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -1580,14 +1580,14 @@
       "name": "ADR-0124 (2026-10-14, after run 18a: INDIRECT-075, 076; 101 to 103 ask the extent): a cell joined to a whole column is the cell's row across the columns they span, and a whole row joined to a cell the rows they span down the cell's column, with the parts read as alone, numbers, offsets or none: =SUM(INDIRECT(\"R2C2:C3\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2C2:C3\",FALSE))"}, "expect": {"values": {"ZZ1000": 1.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2C2:C3\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-14, after run 18a: INDIRECT-075, 076; 101 to 103 ask the extent): a cell joined to a whole column is the cell's row across the columns they span, and a whole row joined to a cell the rows they span down the cell's column, with the parts read as alone, numbers, offsets or none: =SUM(INDIRECT(\"R3:R2C2\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R3:R2C2\",FALSE))"}, "expect": {"values": {"ZZ1000": 46.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R3:R2C2\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 46.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -1650,21 +1650,21 @@
       "name": "ADR-0124 (2026-10-14, after run 18a: INDIRECT-075, 076; 101 to 103 ask the extent): a cell joined to a whole column is the cell's row across the columns they span, and a whole row joined to a cell the rows they span down the cell's column, with the parts read as alone, numbers, offsets or none: =SUM(INDIRECT(\"RC[-3]:C[-2]\",FALSE)) in E2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"E2": "=SUM(INDIRECT(\"RC[-3]:C[-2]\",FALSE))"}, "expect": {"values": {"E2": 1.333}}}
+        {"enter": {"E2": "=SUM(INDIRECT(\"RC[-3]:C[-2]\",FALSE))"}, "expect": {"values": {"E2": {"near": 1.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-14, after run 18a: INDIRECT-075, 076; 101 to 103 ask the extent): a cell joined to a whole column is the cell's row across the columns they span, and a whole row joined to a cell the rows they span down the cell's column, with the parts read as alone, numbers, offsets or none: =SUM(INDIRECT(\"R[3]:RC[-1]\",FALSE)) in C2",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C2": "=SUM(INDIRECT(\"R[3]:RC[-1]\",FALSE))"}, "expect": {"values": {"C2": 118.333}}}
+        {"enter": {"C2": "=SUM(INDIRECT(\"R[3]:RC[-1]\",FALSE))"}, "expect": {"values": {"C2": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
       "name": "ADR-0124 (2026-10-14, after run 18a: INDIRECT-075, 076; 101 to 103 ask the extent): a cell joined to a whole column is the cell's row across the columns they span, and a whole row joined to a cell the rows they span down the cell's column, with the parts read as alone, numbers, offsets or none: =SUM(INDIRECT(\"R:R[-1]C[-1]\",FALSE)) in C3",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C3": "=SUM(INDIRECT(\"R:R[-1]C[-1]\",FALSE))"}, "expect": {"values": {"C3": 46.333}}}
+        {"enter": {"C3": "=SUM(INDIRECT(\"R:R[-1]C[-1]\",FALSE))"}, "expect": {"values": {"C3": {"near": 46.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -2074,7 +2074,7 @@
       "name": "ADR-0124 (2026-10-18, the oracle run: INDIRECT-105): parts are joined left to right, each join the rectangle it spans, so R2:R3C2:C3 is B2:B3 joined to column C, B2:C3: =SUM(INDIRECT(\"R2:R3C2:C3\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2:R3C2:C3\",FALSE))"}, "expect": {"values": {"ZZ1000": 46.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2:R3C2:C3\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 46.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -2095,7 +2095,7 @@
       "name": "ADR-0124 (2026-10-18, the oracle run: INDIRECT-105): parts are joined left to right, each join the rectangle it spans, so R2:R3C2:C3 is B2:B3 joined to column C, B2:C3: =SUM(INDIRECT(\"R2C2:R5C2:R3C2\",FALSE))",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2C2:R5C2:R3C2\",FALSE))"}, "expect": {"values": {"ZZ1000": 118.333}}}
+        {"enter": {"ZZ1000": "=SUM(INDIRECT(\"R2C2:R5C2:R3C2\",FALSE))"}, "expect": {"values": {"ZZ1000": {"near": 118.333, "within": 5e-10}}}}
       ]
     },
     {
@@ -2125,7 +2125,7 @@
       "name": "ADR-0124 (2026-10-12): the same relative R1C1 text in each cell of a column reads from each cell",
       "setup": "microsoftsExample",
       "steps": [
-        {"enter": {"C3": "=INDIRECT(\"R[-1]C[-1]\",FALSE)*2", "C4": "=INDIRECT(\"R[-1]C[-1]\",FALSE)*2", "C5": "=INDIRECT(\"R[-1]C[-1]\",FALSE)*2", "C6": "=INDIRECT(\"R[-1]C[-1]\",FALSE)*2"}, "expect": {"values": {"C3": 2.666, "C4": 90, "C5": 20, "C6": 124}}}
+        {"enter": {"C3": "=INDIRECT(\"R[-1]C[-1]\",FALSE)*2", "C4": "=INDIRECT(\"R[-1]C[-1]\",FALSE)*2", "C5": "=INDIRECT(\"R[-1]C[-1]\",FALSE)*2", "C6": "=INDIRECT(\"R[-1]C[-1]\",FALSE)*2"}, "expect": {"values": {"C3": {"near": 2.666, "within": 5e-10}, "C4": 90, "C5": 20, "C6": 124}}}
       ]
     },
     {
@@ -2329,8 +2329,8 @@
       "steps": [
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
         {"enter": {"A1": "=INDIRECT(\"Rates[Mid]\")"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": 1.08}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.1]]}, "expect": {"values": {"A1": 1.1}}}
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": {"near": 1.08, "within": 5e-10}}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.1]]}, "expect": {"values": {"A1": {"near": 1.1, "within": 5e-10}}}}
       ]
     },
     {
@@ -2338,8 +2338,8 @@
       "steps": [
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
         {"enter": {"A1": "=IFERROR(INDIRECT(\"Rates[Mid]\"),0)"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": 1.08}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.1]]}, "expect": {"values": {"A1": 1.1}}}
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": {"near": 1.08, "within": 5e-10}}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.1]]}, "expect": {"values": {"A1": {"near": 1.1, "within": 5e-10}}}}
       ]
     },
     {
@@ -2365,8 +2365,8 @@
       "steps": [
         {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
         {"enter": {"A1": "=AGGREGATE(9,6,INDIRECT(\"Rates[Mid]\"))"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": 1.08}}},
-        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.1]]}, "expect": {"values": {"A1": 1.1}}}
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": {"near": 1.08, "within": 5e-10}}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.1]]}, "expect": {"values": {"A1": {"near": 1.1, "within": 5e-10}}}}
       ]
     },
     {

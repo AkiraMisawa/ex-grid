@@ -546,7 +546,8 @@ internal sealed class Run(CultureInfo culture)
         SheetRefusedException r => new JsonObject { ["refusal"] = "refused", ["reason"] = SheetCases.Camel(r.Refusal.Reason), ["saying"] = r.Refusal.Message },
         RepeatedKeyException k => new JsonObject
         {
-            ["refusal"] = "repeatedKey", ["saying"] = Saying(k), ["table"] = k.Table,
+            ["refusal"] = "repeatedKey", ["saying"] = WithoutParameter(k), ["table"] = k.Table,
+            ["keyColumn"] = k.KeyColumn, ["key"] = SheetCases.Encode(k.Key),
             ["keyColumns"] = new JsonArray([.. k.KeyColumns.Select(c => (JsonNode)c)]), ["keys"] = new JsonArray([.. k.Keys.Select(v => SheetCases.Encode(v))]),
             ["firstRow"] = k.FirstRow, ["secondRow"] = k.SecondRow, ["valueChanges"] = SheetCases.Addresses(k.Change.ValueChanges),
         },
@@ -557,12 +558,19 @@ internal sealed class Run(CultureInfo culture)
     };
 
     /// <summary>An argument exception's message without the parameter suffix .NET adds.</summary>
-    private static string Saying(ArgumentException e)
+    private static string WithoutParameter(ArgumentException e)
     {
         var message = e.Message;
         var suffix = e.ParamName is null ? -1 : message.LastIndexOf($" (Parameter '{e.ParamName}')", StringComparison.Ordinal);
-        if (suffix >= 0) message = message[..suffix];
-        // An ArgumentOutOfRangeException also adds the value on a line of its own.
+        return suffix >= 0 ? message[..suffix] : message;
+    }
+
+    /// <summary>An argument exception's message as the Script Core's RangeError says it: without the parameter suffix,
+    /// and without the value an ArgumentOutOfRangeException adds on a line of its own.</summary>
+    private static string Saying(ArgumentException e)
+    {
+        var message = WithoutParameter(e);
+        if (e is not ArgumentOutOfRangeException) return message;
         var line = message.IndexOf('\n');
         return line >= 0 ? message[..line].TrimEnd('\r') : message;
     }
@@ -1112,6 +1120,7 @@ internal sealed class Run(CultureInfo culture)
                         ["name"] = t.Name,
                         ["columns"] = new JsonArray([.. t.Columns.Select(c => (JsonNode)c)]),
                         ["keyColumns"] = new JsonArray([.. t.KeyColumns.Select(c => (JsonNode)c)]),
+                        ["key"] = t.Key,
                         ["isWaiting"] = t.IsWaiting,
                         ["rowCount"] = t.RowCount,
                     })]),
