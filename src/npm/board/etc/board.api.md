@@ -4,7 +4,9 @@
 
 ```ts
 
+import { AxisScale } from '@ex-grid/chart';
 import { BoardInput } from '@ex-grid/data';
+import { ChartRange } from '@ex-grid/chart';
 import { ChartSpecReading } from '@ex-grid/chart';
 import { DataShape } from '@ex-grid/data';
 import { GridColumn } from '@ex-grid/core';
@@ -24,6 +26,7 @@ export function bindBoard(board: BoardReading, data: Readonly<Record<string, Sna
 
 // @public
 export interface BindBoardOptions {
+    readonly diff?: BoardDiff;
     readonly locale?: string;
 }
 
@@ -31,6 +34,15 @@ export interface BindBoardOptions {
 export interface BoardCell {
     readonly view: string;
     readonly width: number;
+}
+
+// @public
+export class BoardChartChange {
+    constructor(hiddenSeries: Iterable<string>, range?: ChartRange, scale?: AxisScale);
+    readonly hiddenSeries: readonly string[];
+    get isNone(): boolean;
+    readonly range: ChartRange | undefined;
+    readonly scale: AxisScale | undefined;
 }
 
 // @public
@@ -43,7 +55,46 @@ export interface BoardChartView {
 }
 
 // @public
+export type BoardColumnKinds = ReadonlyMap<string, SnapshotKind>;
+
+// @public
 export const boardDefaultRowHeight = 320;
+
+// @public
+export class BoardDiff {
+    constructor(parts: BoardDiffParts);
+    readonly charts: ReadonlyMap<string, BoardChartChange>;
+    static readonly empty: BoardDiff;
+    fitTo(board: BoardReading): BoardDiffReading;
+    readonly grids: ReadonlyMap<string, BoardGridChange>;
+    get isEmpty(): boolean;
+    readonly pivots: ReadonlyMap<string, BoardPivotChange>;
+    static read(json: string): BoardDiff;
+    sameAs(other: BoardDiff | undefined): boolean;
+    toJson(): string;
+    static readonly version = 1;
+}
+
+// @public
+export interface BoardDiffParts {
+    readonly charts?: ReadonlyMap<string, BoardChartChange>;
+    readonly grids?: ReadonlyMap<string, BoardGridChange>;
+    readonly pivots?: ReadonlyMap<string, BoardPivotChange>;
+}
+
+// @public
+export interface BoardDiffReading {
+    readonly diff: BoardDiff;
+    readonly dropped: readonly string[];
+}
+
+// @public
+export class BoardGridChange {
+    constructor(viewState: GridViewState, hidden: Iterable<string>, kinds?: BoardColumnKinds);
+    readonly hidden: readonly string[];
+    readonly kinds: BoardColumnKinds;
+    readonly viewState: GridViewState;
+}
 
 // @public
 export interface BoardGridView {
@@ -82,6 +133,13 @@ export interface BoardOutputDeclaration {
     readonly from: string;
     readonly name: string;
     readonly on: readonly string[];
+}
+
+// @public
+export class BoardPivotChange {
+    constructor(layout: PivotLayout, kinds?: BoardColumnKinds);
+    readonly kinds: BoardColumnKinds;
+    readonly layout: PivotLayout;
 }
 
 // @public
@@ -125,13 +183,15 @@ export function boardView(board: BoardReading, id: string): BoardView | undefine
 // @public
 export class BoundBoard {
     // @internal
-    constructor(board: BoardReading, data: ReadonlyMap<string, Snapshot>, inputs: ReadonlyMap<string, BoardInput>, views: readonly BoundView[]);
+    constructor(board: BoardReading, data: ReadonlyMap<string, Snapshot>, inputs: ReadonlyMap<string, BoardInput>, views: readonly BoundView[], dropped: readonly string[]);
     readonly board: BoardReading;
     canConfirm(name: string): boolean;
     cellCondition(link: BoardLink, cells: readonly PivotCellItems[]): LinkCondition | undefined;
     conditionOf(link: BoardLink): LinkCondition | undefined;
     confirm(name: string): BoardOutput | undefined;
     readonly data: ReadonlyMap<string, Snapshot>;
+    get diff(): BoardDiff;
+    readonly dropped: readonly string[];
     gridCondition(link: BoardLink, selection: SelectedRows): LinkCondition | undefined;
     narrow(link: BoardLink, condition: LinkCondition | undefined): void;
     select(from: string, selection: SelectedRows): boolean;
@@ -145,13 +205,22 @@ export class BoundBoard {
 export class BoundChartView {
     // @internal
     constructor(view: BoardChartView, reading: ChartSpecReading);
+    get change(): BoardChartChange | undefined;
+    changeRange(range: ChartRange | undefined): void;
+    changeScale(scale: AxisScale): void;
+    changeVisibility(key: string, hidden: boolean): void;
+    hiddenSeries: readonly string[];
     readonly kind = "chart";
+    // @internal
+    layOver(change: BoardChartChange): void;
+    range: ChartRange | undefined;
     // @internal
     read(reading: ChartSpecReading): void;
     reading: ChartSpecReading;
     refusal: string | undefined;
     // @internal
     refuse(refusal: string): void;
+    scale: AxisScale | undefined;
     readonly view: BoardChartView;
 }
 
@@ -159,12 +228,15 @@ export class BoundChartView {
 export class BoundGridView {
     // @internal
     constructor(view: BoardGridView, snapshot: Snapshot, locale: string, path: string);
+    get change(): BoardGridChange | undefined;
     columns: readonly GridColumn<ShapedRow>[];
     // @internal
     condition(on: readonly string[], selection: SelectedRows): LinkCondition | undefined;
     get hidden(): readonly string[];
     hide(column: string): boolean;
     readonly kind = "grid";
+    // @internal
+    layOver(change: BoardGridChange, dropped: string[]): void;
     // @internal
     narrowTo(positions: readonly number[] | undefined): void;
     pin(count: number): boolean;
@@ -174,12 +246,14 @@ export class BoundGridView {
     readonly snapshot: Snapshot;
     readonly source: InMemoryGridSource<ShapedRow>;
     readonly view: BoardGridView;
+    get viewState(): GridViewState;
 }
 
 // @public
 export class BoundPivotView {
     // @internal
-    constructor(view: BoardPivotView, snapshot: Snapshot);
+    constructor(view: BoardPivotView, snapshot: Snapshot, shape: DataShape);
+    get change(): BoardPivotChange | undefined;
     changeLayout(layout: PivotLayout): void;
     readonly kind = "pivot";
     layout: PivotLayout;

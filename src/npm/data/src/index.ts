@@ -23,5 +23,6 @@ export { arrowStreamMediaType, readArrowShape, readArrowSnapshot, snapshotArrowM
 export { writeArrowSnapshot } from './arrow/writer';
 export type { JsonObject, JsonValue } from './json';
 export { JsonNumber, JsonTextError, isJsonArray, isJsonObject, jsonMember, jsonMemberNames, jsonRawText, readJsonText } from './json';
+export { jsonDoubleText, jsonStringText, writeJsonText } from './json-write';
 export type { ShapedSource } from './board-input';
 export { BoardInput, BoardRefusedError, boardKindNames, shapeColumn } from './board-input';

@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `boardInput`, `boardSpec`, `chart`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -596,6 +596,18 @@ Board with ExBoard.Spec as a browser reads it.
 `layout` as each row's `cells`, `[view, width]`, and `height`, and the `links` and `outputs`. A case about links or outputs
 alone says only those, in `links` or `outputs`. A refusal is `refused`, its `path` and its `message` whole, or `saying`,
 the words before a platform's own JSON parser speaks.
+
+## `boardDiff`
+
+A Board Diff (ADR-0340, Q7), under `board/`: xUnit runs them against ExBoard's `BoardDiff`
+(`tests/ExBoard.Tests/Cases/BoardDiffCaseTests.cs`) and Vitest against `@ex-grid/board`
+(`src/npm/board/test/board-diff-cases.test.ts`). The file's `boards` names the Boards its cases are laid against, each a
+Board's text.
+
+`read` is a Diff's text. A case that reads it says in `writes` the text the Diff is written as again, byte for byte. A
+case with `fitTo` lays the Diff against the Board of that name first, and says in `dropped` the sentences of what no
+longer fits, in order, and in `writes` the Diff that still does. A refusal is `refused`, its `path` and its `message`
+whole, or `saying`, the words before a platform's own message.
 
 ## ExPivot's engine, under `pivot/`
 

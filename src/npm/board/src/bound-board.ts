@@ -2,16 +2,20 @@
 // is made what it draws, a link's selection narrows the views it reaches (ADR-0340, Q5), and an output is raised
 // only by the user's confirm (Q6). A Board over sources held on a server (ADR-0343 to ADR-0345) is not yet here.
 
-import { ChartSpecRefusedError, readChartSpec, type ChartSpecReading } from '@ex-grid/chart';
-import { engineFilterOf, GridViewStateJsonError, InMemoryGridSource, type GridColumn, type GridColumnWidth, type GridFilter, type GridSelection } from '@ex-grid/core';
-import { BoardRefusedError, type BoardInput, type Snapshot } from '@ex-grid/data';
-import { pivotItemKeyAt, publicKeyId, SnapshotPivotSource, type PivotFieldItem, type PivotLayout } from '@ex-grid/pivot-engine';
+import { ChartSpecRefusedError, readChartSpec, type AxisScale, type ChartRange, type ChartSpecReading } from '@ex-grid/chart';
+import {
+    engineFilterOf, GridViewState, GridViewStateJsonError, InMemoryGridSource, type ColumnViewState, type GridColumn, type GridFilter, type GridSelection,
+} from '@ex-grid/core';
+import { BoardRefusedError, type BoardInput, type DataShape, type Snapshot } from '@ex-grid/data';
+import { pivotItemKeyAt, publicKeyId, SnapshotPivotSource, writePivotLayoutJson, type PivotFieldItem, type PivotLayout } from '@ex-grid/pivot-engine';
+import { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange, kindsOf, placed } from './board-diff';
 import { BoardOutput } from './board-output';
 import { refusedAt } from './grid-view-spec';
-import type { BoardChartView, BoardGridView, BoardLink, BoardPivotView, BoardReading } from './board-spec';
+import { boardInput, type BoardChartView, type BoardGridView, type BoardLink, type BoardPivotView, type BoardReading } from './board-spec';
 import { LinkCondition, narrowedPositions, narrowedSnapshot, valueAt, type BoardValue } from './link-condition';
 import { resized, shapedColumns, shapedRows, type ShapedRow } from './shaped-grid';
 import { declaredChartData } from './snapshot-values';
+import { taggedFilter } from './tagged-filter';
 
 /** The cells selected in a pivot, as its selection reads them: each cell's row and column Items, outermost
  * first. A cell on a subtotal names fewer Items, and a grand total none. */
@@ -29,6 +33,9 @@ export type SelectedRows = Pick<GridSelection, 'ranges'>;
 export interface BindBoardOptions {
     /** The locale a grid's text is written in, a BCP 47 tag or `invariant`, the default (ADR-0370 section 10). */
     readonly locale?: string;
+    /** What the user changed last time, laid over the Board (ADR-0340, Q7): what still fits applies, and what does not
+     * is dropped and named in {@link BoundBoard.dropped}. */
+    readonly diff?: BoardDiff;
 }
 
 /** A view of a bound Board. */
@@ -41,7 +48,7 @@ export type BoundView = BoundGridView | BoundPivotView | BoundChartView;
  * naming the input or the path. Data for a name the Board does not declare is not read.
  */
 export function bindBoard(board: BoardReading, data: Readonly<Record<string, Snapshot>>, options: BindBoardOptions = {}): BoundBoard {
-    const { locale = 'invariant' } = options;
+    const { locale = 'invariant', diff = BoardDiff.empty } = options;
     const bound = new Map<string, Snapshot>();
     for (const input of board.inputs) {
         const snapshot = Object.hasOwn(data, input.name) ? data[input.name] : undefined;
@@ -52,12 +59,40 @@ export function bindBoard(board: BoardReading, data: Readonly<Record<string, Sna
     const views = board.views.map((view, i): BoundView => {
         switch (view.kind) {
             case 'grid': return new BoundGridView(view, held(bound, view.grid.data), locale, `views[${i}].grid`);
-            case 'pivot': return new BoundPivotView(view, held(bound, view.input));
+            case 'pivot': return new BoundPivotView(view, held(bound, view.input), inputOf(board, view.input).shape);
             case 'chart': return new BoundChartView(view, readChart(view, bound, inputs, `views[${i}].chart`, undefined));
             default: throw new Error(`Internal: ${String(view satisfies never)} is not a view.`);
         }
     });
-    return new BoundBoard(board, bound, inputs, views);
+    const fitted = diff.fitTo(board);
+    const dropped = [...fitted.dropped];
+    for (const view of views) {
+        switch (view.kind) {
+            case 'grid': {
+                const change = fitted.diff.grids.get(view.view.id);
+                if (change !== undefined) view.layOver(change, dropped);
+                break;
+            }
+            case 'pivot': {
+                const change = fitted.diff.pivots.get(view.view.id);
+                if (change !== undefined) view.changeLayout(change.layout);
+                break;
+            }
+            case 'chart': {
+                const change = fitted.diff.charts.get(view.view.id);
+                if (change !== undefined) view.layOver(change);
+                break;
+            }
+            default: throw new Error(`Internal: ${String(view satisfies never)} is not a view.`);
+        }
+    }
+    return new BoundBoard(board, bound, inputs, views, dropped);
+}
+
+function inputOf(board: BoardReading, name: string): BoardInput {
+    const input = boardInput(board, name);
+    if (input === undefined) throw new Error(`Internal: a view reads input '${name}', which its Board's reader let through undeclared.`);
+    return input;
 }
 
 function held(bound: ReadonlyMap<string, Snapshot>, name: string): Snapshot {
@@ -82,13 +117,36 @@ export class BoundBoard {
     readonly data: ReadonlyMap<string, Snapshot>;
     /** The views, in the Board's order. */
     readonly views: readonly BoundView[];
+    /** What of the Diff laid over at {@link bindBoard} no longer fit the Board, one sentence per part naming its path
+     * ({@link BoardDiff.fitTo}); empty when everything applied. */
+    readonly dropped: readonly string[];
 
     /** @internal Made by {@link bindBoard}. */
-    constructor(board: BoardReading, data: ReadonlyMap<string, Snapshot>, inputs: ReadonlyMap<string, BoardInput>, views: readonly BoundView[]) {
+    constructor(board: BoardReading, data: ReadonlyMap<string, Snapshot>, inputs: ReadonlyMap<string, BoardInput>, views: readonly BoundView[],
+        dropped: readonly string[]) {
         this.board = board;
         this.data = data;
         this.#inputs = inputs;
         this.views = Object.freeze([...views]);
+        this.dropped = Object.freeze([...dropped]);
+    }
+
+    /** What the user has changed, as one Board Diff (ADR-0340, Q7): each view's part that differs from what the Board
+     * writes. The Board itself is never rewritten. */
+    get diff(): BoardDiff {
+        const grids = new Map<string, BoardGridChange>();
+        const pivots = new Map<string, BoardPivotChange>();
+        const charts = new Map<string, BoardChartChange>();
+        for (const view of this.views) {
+            const id = view.view.id;
+            switch (view.kind) {
+                case 'grid': { const change = view.change; if (change !== undefined) grids.set(id, change); break; }
+                case 'pivot': { const change = view.change; if (change !== undefined) pivots.set(id, change); break; }
+                case 'chart': { const change = view.change; if (change !== undefined) charts.set(id, change); break; }
+                default: throw new Error(`Internal: ${String(view satisfies never)} is not a view.`);
+            }
+        }
+        return new BoardDiff({ grids, pivots, charts });
     }
 
     /** The view whose id is `id`; an id the Board does not have is refused with a `RangeError`. */
@@ -292,8 +350,12 @@ export class BoundBoard {
 export class BoundGridView {
     readonly #declared: ReadonlyMap<string, GridColumn<ShapedRow>>;
     readonly #rows: readonly ShapedRow[];
-    #shown: { readonly column: string; readonly width: GridColumnWidth; readonly pinned: boolean }[];
+    #shown: ColumnViewState[];
     #hidden: string[] = [];
+    // The filter in the View State's form, and the engine's filter it was set as: while the source holds that one, the
+    // View State's is the one written, its operands as typed.
+    #taggedFilter: GridFilter | undefined;
+    #engineSet: GridFilter | undefined;
 
     /** What kind of view it is. */
     readonly kind = 'grid';
@@ -331,7 +393,49 @@ export class BoundGridView {
             }
         });
         this.source.setSorts(view.grid.viewState.sorts);
-        this.source.setFilter(this.#engineFilter(view.grid.viewState.filter, path));
+        this.#taggedFilter = view.grid.viewState.filter;
+        this.#engineSet = this.#engineFilter(view.grid.viewState.filter, path);
+        this.source.setFilter(this.#engineSet);
+    }
+
+    /** The View State the grid is shown under now (ADR-0207): the columns as the user left them, and the sort and the
+     * filter its source holds, the filter's operands typed as ExBoard's C# grid types them. */
+    get viewState(): GridViewState {
+        const { sorts, filter } = this.source.snapshot();
+        const kinds = new Map(this.view.grid.columns.map(column => [column.column, column.kind]));
+        const typed = filter === this.#engineSet ? this.#taggedFilter : taggedFilter(filter, name => kinds.get(name));
+        const columns = this.#shown.map(shown => ({ ...shown }));
+        return new GridViewState(typed === undefined ? { columns, sorts } : { columns, sorts, filter: typed });
+    }
+
+    /** What differs from the Board's spec, or undefined where nothing does. */
+    get change(): BoardGridChange | undefined {
+        const state = this.viewState;
+        if (state.equals(this.view.grid.viewState) && this.#hidden.length === 0) return undefined;
+        const kinds = new Map(this.view.grid.columns.map(column => [column.column, column.kind]));
+        const filtered = (state.filter === undefined ? [] : Object.keys(state.filter.columns)).flatMap(column => {
+            const kind = kinds.get(column);
+            return kind === undefined ? [] : [[column, kind] as const];
+        });
+        return new BoardGridChange(state, this.#hidden, new Map(filtered));
+    }
+
+    /** @internal A part of a Diff already fitted to this view ({@link BoardDiff.fitTo}). A filter whose operands the
+     * grid cannot compare is dropped, named in `dropped`, and the rest applies. */
+    layOver(change: BoardGridChange, dropped: string[]): void {
+        this.#shown = change.viewState.columns.map(shown => ({ ...shown }));
+        this.#hidden = [...change.hidden];
+        this.#rebuild();
+        this.source.setSorts(change.viewState.sorts);
+        try {
+            this.#engineSet = engineFilterOf(change.viewState.filter, name => this.#declared.get(name));
+            this.#taggedFilter = change.viewState.filter;
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a filter the grid cannot compare is dropped by name, as fitTo drops what no longer fits
+            if (!(error instanceof GridViewStateJsonError)) throw error;
+            dropped.push(`views.${this.view.id}.grid: ${error.message}`);
+            return;
+        }
+        this.source.setFilter(this.#engineSet);
     }
 
     // The spec's filter as the engine compares it, against the columns the grid is built with; a refusal named under
@@ -432,7 +536,7 @@ export class BoundGridView {
         return row;
     }
 
-    #shownAt(at: number): { readonly column: string; readonly width: GridColumnWidth; readonly pinned: boolean } {
+    #shownAt(at: number): ColumnViewState {
         const shown = this.#shown[at];
         if (shown === undefined) throw new Error(`Internal: no column is shown at ${at}.`);
         return shown;
@@ -454,6 +558,7 @@ export class BoundGridView {
 /** A pivot view over its input's Snapshot, or, while a link narrows it, over the rows let through. */
 export class BoundPivotView {
     readonly #unnarrowed: SnapshotPivotSource;
+    readonly #shape: DataShape;
 
     /** What kind of view it is. */
     readonly kind = 'pivot';
@@ -468,9 +573,10 @@ export class BoundPivotView {
     layout: PivotLayout;
 
     /** @internal Made by {@link bindBoard}. */
-    constructor(view: BoardPivotView, snapshot: Snapshot) {
+    constructor(view: BoardPivotView, snapshot: Snapshot, shape: DataShape) {
         this.view = view;
         this.snapshot = snapshot;
+        this.#shape = shape;
         this.layout = view.layout;
         this.source = this.#unnarrowed = new SnapshotPivotSource(snapshot);
     }
@@ -478,6 +584,13 @@ export class BoundPivotView {
     /** The user changed the layout from the field list or a header (ADR-0059). */
     changeLayout(layout: PivotLayout): void {
         this.layout = layout;
+    }
+
+    /** The layout, or undefined where it is the Board's. */
+    get change(): BoardPivotChange | undefined {
+        return writePivotLayoutJson(this.layout) === writePivotLayoutJson(this.view.layout)
+            ? undefined
+            : new BoardPivotChange(this.layout, kindsOf(this.#shape, placed(this.layout)));
     }
 
     /** @internal Shows the rows of `narrowed`, or every row given undefined. */
@@ -497,11 +610,47 @@ export class BoundChartView {
     /** Why the chart is not drawn, naming the path, when its spec cannot draw the rows its links let through;
      * undefined while it is drawn. {@link BoundChartView.reading} is then of other rows, and not shown. */
     refusal: string | undefined;
+    /** The keys of the series the user hid, in order: a new array each time it changes (ADR-0272). */
+    hiddenSeries: readonly string[] = Object.freeze([]);
+    /** The range the user narrowed the chart to, or undefined for the whole (ADR-0273). */
+    range: ChartRange | undefined;
+    /** The axis the user switched to, or undefined for the declared one (ADR-0251). */
+    scale: AxisScale | undefined;
 
     /** @internal Made by {@link bindBoard}. */
     constructor(view: BoardChartView, reading: ChartSpecReading) {
         this.view = view;
         this.reading = reading;
+    }
+
+    /** What the user changed, or undefined where nothing is. */
+    get change(): BoardChartChange | undefined {
+        return this.hiddenSeries.length === 0 && this.range === undefined && this.scale === undefined
+            ? undefined
+            : new BoardChartChange(this.hiddenSeries, this.range, this.scale);
+    }
+
+    /** A series hidden or shown from the legend (ADR-0271). */
+    changeVisibility(key: string, hidden: boolean): void {
+        if (this.hiddenSeries.includes(key) === hidden) return;
+        this.hiddenSeries = Object.freeze(new BoardChartChange(hidden ? [...this.hiddenSeries, key] : this.hiddenSeries.filter(k => k !== key)).hiddenSeries);
+    }
+
+    /** The range narrowed, or returned to the whole with undefined (ADR-0273). */
+    changeRange(range: ChartRange | undefined): void {
+        this.range = range === undefined ? undefined : Object.freeze({ ...range });
+    }
+
+    /** The axis switched under Chart Filters (ADR-0251). */
+    changeScale(scale: AxisScale): void {
+        this.scale = scale;
+    }
+
+    /** @internal A part of a Diff already fitted to this view. */
+    layOver(change: BoardChartChange): void {
+        this.hiddenSeries = change.hiddenSeries;
+        this.range = change.range;
+        this.scale = change.scale;
     }
 
     /** @internal Takes a reading of the rows let through. */

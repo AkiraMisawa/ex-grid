@@ -18,3 +18,5 @@ export { LinkCondition, narrowedPositions, narrowedSnapshot } from './link-condi
 export { BoardOutput } from './board-output';
 export type { BindBoardOptions, BoundView, PivotCellItems, SelectedRows } from './bound-board';
 export { BoundBoard, BoundChartView, BoundGridView, BoundPivotView, bindBoard } from './bound-board';
+export type { BoardColumnKinds, BoardDiffParts, BoardDiffReading } from './board-diff';
+export { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange } from './board-diff';
