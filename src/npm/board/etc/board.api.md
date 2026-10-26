@@ -20,6 +20,7 @@ import { Snapshot } from '@ex-grid/data';
 import { SnapshotDecimal } from '@ex-grid/data';
 import { SnapshotKind } from '@ex-grid/data';
 import { SnapshotPivotSource } from '@ex-grid/pivot-engine';
+import { TemporalLike } from '@ex-grid/core';
 
 // @public
 export function bindBoard(board: BoardReading, data: Readonly<Record<string, Snapshot>>, options?: BindBoardOptions): BoundBoard;
@@ -129,10 +130,11 @@ export interface BoardLink {
 export interface BoardOptions {
     readonly board: BoardReading;
     readonly data: Readonly<Record<string, Snapshot>>;
-    readonly diff?: BoardDiff;
+    readonly diff?: BoardDiff | undefined;
     readonly locale?: string;
     readonly onDiff?: (diff: BoardDiff) => void;
     readonly onOutput?: (output: BoardOutput) => void;
+    readonly temporal?: TemporalLike;
     readonly width?: number;
 }
 

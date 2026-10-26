@@ -56,8 +56,7 @@ export function Board(): ReactElement {
             <DemoNav route="board" />
             <h1>A Board</h1>
             <ExBoard board={reading} data={data} width={1000} locale="en-US" temporal={Temporal}
-                     onOutput={output => { setRaised(output.toJson()); }} onDiff={changed => { setDiff(changed.toJson()); }}
-                     {...(laid === undefined ? {} : { diff: laid })} />
+                     onOutput={output => { setRaised(output.toJson()); }} onDiff={changed => { setDiff(changed.toJson()); }} diff={laid} />
             <pre id="raised" role="log">{raised}</pre>
             <button type="button" id="again" onClick={() => {
                 // As a host does next time: the Diff read back from its JSON, and the Board bound afresh.

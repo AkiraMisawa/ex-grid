@@ -43,7 +43,7 @@ export interface BoardOptions {
      * apply. A new one binds the Board again, unless it is the one already shown, as when the host hands back each
      * Diff raised. A Board bound again for new data keeps what the user has changed since.
      */
-    readonly diff?: BoardDiff;
+    readonly diff?: BoardDiff | undefined;
     /** Raised when the user changes a view — a sort, a filter, a column's width, order, pinning or hiding, a pivot's
      * layout, a chart's series, range or axis — with the whole Board Diff. The Board is never rewritten; the host
      * keeps this ({@link BoardDiff.toJson}) and hands it back as `diff` next time. */
