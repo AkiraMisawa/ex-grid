@@ -197,7 +197,13 @@ internal static class SheetCases
         return new CellFormatChange
         {
             NumberFormat = parts["numberFormat"] is { } code ? NumberFormat.Parse((string)code!) : null,
-            Alignment = parts["alignment"] is { } alignment ? Enum<HorizontalAlignment>(alignment) : null,
+            // A number is a value cast in from outside the vocabulary, given to be refused.
+            Alignment = parts["alignment"] switch
+            {
+                null => null,
+                var cast when cast.GetValueKind() == JsonValueKind.Number => (HorizontalAlignment)cast.GetValue<int>(),
+                var alignment => Enum<HorizontalAlignment>(alignment),
+            },
             FontColour = parts["fontColour"] is { } colour ? ColourOf(colour) : null,
             Bold = (bool?)parts["bold"],
             Italic = (bool?)parts["italic"],
@@ -341,7 +347,7 @@ internal sealed class Run(CultureInfo culture)
     private static readonly string[] Verbs =
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
-        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay",
+        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -542,6 +548,10 @@ internal sealed class Run(CultureInfo culture)
             case "setAlignment":
                 foreach (var (at, alignment) in argument.AsObject())
                     outcome.Change = sheet.SetAlignment(CellRange.Parse(at), SheetCases.Enum<HorizontalAlignment>(alignment!));
+                break;
+            case "setCellFormat":
+                // The Sheet's own form, outside any step.
+                outcome.Change = sheet.SetCellFormat([.. argument["ranges"]!.AsArray().Select(r => CellRange.Parse((string)r!))], SheetCases.ChangeOf(argument["change"]!));
                 break;
             case "declareTable":
             {

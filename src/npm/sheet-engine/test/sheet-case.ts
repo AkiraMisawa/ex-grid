@@ -184,7 +184,10 @@ function changeOf(node: Json | undefined): CellFormatChange {
     }
     return new CellFormatChange({
         numberFormat: parts['numberFormat'] === undefined ? undefined : NumberFormat.parse(text(parts['numberFormat'], 'numberFormat')),
-        alignment: parts['alignment'] === undefined ? undefined : text(parts['alignment'], 'alignment') as HorizontalAlignment,
+        // A number is a value cast in from outside the vocabulary, given to be refused.
+        alignment: parts['alignment'] === undefined ? undefined
+            : typeof parts['alignment'] === 'number' ? parts['alignment'] as unknown as HorizontalAlignment
+            : text(parts['alignment'], 'alignment') as HorizontalAlignment,
         fontColour: parts['fontColour'] === undefined ? undefined : colourOf(parts['fontColour']),
         bold: flag(parts['bold'], 'bold'),
         italic: flag(parts['italic'], 'italic'),
@@ -299,7 +302,7 @@ function cultureOf(name: string): Culture {
 
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
-    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay',
+    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
@@ -486,6 +489,12 @@ class Run {
                     outcome.change = sheet.setAlignment(CellRange.parse(at), text(alignment, at) as HorizontalAlignment);
                 }
                 break;
+            case 'setCellFormat': {
+                // The Sheet's own form, outside any step.
+                const format = object(argument, 'setCellFormat');
+                outcome.change = sheet.setCellFormat(list(format['ranges'], 'setCellFormat.ranges').map(r => CellRange.parse(text(r, 'range'))), changeOf(format['change']));
+                break;
+            }
             case 'declareTable': {
                 const table = object(argument, 'declareTable');
                 const columns = list(table['columns'], 'columns').map(c => text(c, 'a column'));
