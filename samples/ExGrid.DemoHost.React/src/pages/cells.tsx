@@ -1,8 +1,9 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
-import { actionColumn, type GridActionEvent, type GridColumn, type GridTemplateCell } from '@ex-grid/core';
+import { actionColumn, type GridActionEvent, type GridColumn, type GridEditIntent, type GridTemplateCell } from '@ex-grid/core';
 import { ExGrid, templateColumn } from '@ex-grid/react';
 import { DemoNav } from '../demo-nav';
 import { demoPositions, type DemoPosition } from '../demo-data';
+import { useQuery } from '../router';
 
 /**
  * The other half of ADR-0020's seam: a control the Consumer owns. `ex-interactive` turns pointer events back
@@ -21,9 +22,11 @@ function NoteInput({ cell }: { readonly cell: GridTemplateCell<DemoPosition> }):
     return <input ref={input} className="ex-interactive demo-note" tabIndex={-1} placeholder="note" aria-label={`Note for ${cell.row.book}`} />;
 }
 
+const book: GridColumn<DemoPosition> = { name: 'Book', type: 'text', value: (r: DemoPosition) => r.book, width: 180 };
+
 // Held once, never rebuilt per render: a new columns array would paint every row again (ADR-0003).
 const columns: readonly GridColumn<DemoPosition>[] = Object.freeze([
-    { name: 'Book', type: 'text', value: (r: DemoPosition) => r.book, width: 180 },
+    book,
     { name: 'CloseOfBusiness', type: 'number', value: (r: DemoPosition) => r.closeOfBusiness, header: 'Close of business' },
     { name: 'Intraday', type: 'number', value: (r: DemoPosition) => r.intraday },
     // The value is still what sorting and copy read, never the template (ADR-0020).
@@ -41,11 +44,29 @@ const columns: readonly GridColumn<DemoPosition>[] = Object.freeze([
     ], { header: 'Review' }),
 ]);
 
+// ?editable=1: Book takes typing, so the grid holds the keyboard in its Keyboard Field (ADR-0080) beside an
+// Interactive cell.
+const editableColumns: readonly GridColumn<DemoPosition>[] = Object.freeze([{ ...book, editable: true }, ...columns.slice(1)]);
+
 /** The page /cells of the Blazor hosts, as far as the Script Core draws it: its Template and Action Columns
  * and the keys that enter them. */
 export function Cells(): ReactElement {
+    const editable = useQuery('editable') === '1';
+    const listensToLeave = useQuery('leave') === '1';
     const [status, setStatus] = useState('No action pressed yet.');
     const presses = useRef(0);
+    // ?leave=1 listens to the Escape that leaves the grid (onLeave, ADR-0070), and does nothing with it but count
+    // it, which DC-62 reads below the grid.
+    const [heardLeave, setHeardLeave] = useState('No leave heard yet.');
+    const leaves = useRef(0);
+    const onLeave = useCallback(() => {
+        leaves.current += 1;
+        setHeardLeave(`Leave heard. Heard so far: ${leaves.current}.`);
+    }, []);
+    // An edit is reported and not kept: the page shows what was asked.
+    const onEdit = useCallback(({ row, column, value }: GridEditIntent<DemoPosition>) => {
+        setStatus(`Edited '${column}' on ${row.book} to ${String(value)}.`);
+    }, []);
     // The count makes "fired exactly once" observable: a held Space must not fire again per auto-repeat, and
     // Enter must never fire at all (ADR-0020, ADR-0037).
     const onAction = useCallback(({ row, column, action }: GridActionEvent<DemoPosition>) => {
@@ -71,13 +92,21 @@ export function Cells(): ReactElement {
                 <span id="action-status">{status}</span>
             </p>
             <ExGrid
-                columns={columns}
+                columns={editable ? editableColumns : columns}
                 rows={demoPositions}
                 onAction={onAction}
+                {...(editable ? { onEdit } : {})}
+                {...(listensToLeave ? { onLeave } : {})}
                 rowHeight={28}
                 viewportHeight={420}
                 viewportWidth={1100}
                 pinnedColumnCount={1} />
+            {/* Below the grid, so a line that changes never moves the rows under the pointer. */}
+            {listensToLeave ? (
+                <p className="demo-status">
+                    <span id="leave-status">{heardLeave}</span>
+                </p>
+            ) : null}
         </>
     );
 }

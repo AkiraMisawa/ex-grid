@@ -428,6 +428,12 @@ describe('Template Columns', () => {
         expect(root.getAttribute('aria-activedescendant')).toBe(`${prefix(root)}r2c2`);
         expect(key(input, 'Escape').defaultPrevented).toBe(true);
         expect(document.activeElement).toBe(root);
+        // A held Escape's repeats are the control's: the press brought the keyboard back, and a repeat in the
+        // control brings nothing more (KB-44, DC-62).
+        input.focus();
+        expect(key(input, 'Escape', { repeat: true }).defaultPrevented).toBe(false);
+        expect(document.activeElement).toBe(input);
+        root.focus();
 
         source.replaceRow(defined(rows[2], 'row 2'), { book: 'Book-2 (edited)', notional: 2 });
         await painted();
