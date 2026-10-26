@@ -29,6 +29,7 @@ import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
 import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { reorderColumns } from '../columns/header-reorder';
 import { decideOverflow } from '../columns/overflow-rules';
+import { changeHighlightShowingUntil } from '../cells/change-highlight';
 import { entryFor, rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
@@ -504,6 +505,10 @@ const modifierKeys: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'M
 /** The built-in Chrome's words for a stylesheet of another version (ADR-0123, ADR-0203). */
 const stylesheetNoticeWords = 'This page holds another version\'s stylesheet. Reload the page.';
 
+/** The shortest and longest waits the Change Highlight timer is armed for (ADR-0068). */
+const shortestHighlightWaitMs = 1;
+const longestHighlightWaitMs = 24 * 60 * 60 * 1000;
+
 /** What each instance's ids begin with, so two grids on a page never share one (ADR-0018). */
 let instances = 0;
 
@@ -537,6 +542,8 @@ interface PaintedRow<Row> {
     /** Its Row Heading's label and style, or none without the band (ADR-0050, item 1). */
     readonly heading: string | undefined;
     readonly headingStyle: string | undefined;
+    /** The earliest end among the Change Highlights it painted, or none (ADR-0068): the time that paints it again. */
+    readonly highlightEnd: number | undefined;
 }
 
 /**
@@ -750,6 +757,10 @@ interface RowPaint<Row> {
     readonly kind: RowKind;
     /** Its Row Heading's label, or none without the band (ADR-0050, item 1). */
     readonly heading: string | undefined;
+    /** The time its Change Highlights are painted by, read once for the pass while they are declared (ADR-0068),
+     * and the earliest end among the marks its cells painted, gathered as they are. */
+    readonly now: number | undefined;
+    highlightEnd: number | undefined;
 }
 
 /** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
@@ -1171,6 +1182,8 @@ export class GridView<Row> {
 
     // What is painted.
     #painted = new Map<unknown, PaintedRow<Row>>();
+    // The one Change Highlight timer and the end it is armed for, while a mark is painted (ADR-0068).
+    #highlightTimer: { readonly cancel: () => void; readonly end: number } | undefined;
     #paintedHeader: {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined;
         readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number; readonly grips: boolean;
@@ -1582,6 +1595,7 @@ export class GridView<Row> {
         this.#cancelFollow?.();
         this.#repaint?.cancel();
         this.#stopEdgeTimer();
+        this.#stopHighlightTimer();
         this.#copy?.abort();
         this.#fill?.abort();
         this.#findStepping?.abort();
@@ -6956,6 +6970,9 @@ export class GridView<Row> {
         const nextPlaceholders = new Map<number, HTMLElement>();
         const nextStates = new Map<number, HTMLElement>();
         let repainted = false;
+        // The earliest end among the Change Highlights this pass leaves painted, a row painted under a key met twice
+        // included (ADR-0068).
+        let earliestHighlight: number | undefined;
         const doc = viewport.ownerDocument;
         // A control of a Template cell's content holding the keyboard: a row painted again moves its slot,
         // which takes DOM focus off it, so it is given back once the rows stand (ADR-0020).
@@ -6973,6 +6990,12 @@ export class GridView<Row> {
             const paint = this.#cellPaint;
             const lookup = paint.cellAppearance;
             const scrollableNow = this.#placeholderMode ? undefined : this.#scrollable;
+            // Every row of one pass paints its Change Highlights by one time, read only while they are declared
+            // (ADR-0068): a row whose earliest mark has ended by it paints again, and no other row does.
+            const now = paint.cellChangedAt === undefined ? undefined : this.#reports.clock.now();
+            const ended = (end: number | undefined): void => {
+                if (end !== undefined && (earliestHighlight === undefined || end < earliestHighlight)) earliestHighlight = end;
+            };
             if (lookup !== undefined) {
                 const columns = this.#columns;
                 this.#appearances.begin((row, c) => lookup(row, itemAt(columns, c).column), lookup, paint.edgeBorder, columns,
@@ -7028,8 +7051,10 @@ export class GridView<Row> {
                 if (was !== undefined && !next.has(key) && was.row === row && was.index === index && was.styles === this.#styles
                     && was.rowKind === this.#rowKind && was.stripe === stripe && was.heading === heading && was.headingStyle === headingStyle
                     && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)
-                    && paint.paintsRowsAs(was.paint) && was.appearance === appearance && was.chosen === chosen && was.marked === marked) {
+                    && paint.paintsRowsAs(was.paint) && was.appearance === appearance && was.chosen === chosen && was.marked === marked
+                    && (was.highlightEnd === undefined || (now !== undefined && now < was.highlightEnd))) {
                     if (was.marks === marks && was.current === current) {
+                        ended(was.highlightEnd);
                         next.set(key, was);
                         for (const slot of was.slots) used.add(slot);
                         rows.push(was.element);
@@ -7039,6 +7064,7 @@ export class GridView<Row> {
                     // A new search judges the row's cells again, and paints the row again only where its marks
                     // moved (ADR-0332 §4, ADR-0003).
                     if (this.#matchedIn(row, scrollable, marks, current) === was.matched) {
+                        ended(was.highlightEnd);
                         next.set(key, { ...was, marks, current });
                         for (const slot of was.slots) used.add(slot);
                         rows.push(was.element);
@@ -7047,8 +7073,9 @@ export class GridView<Row> {
                     }
                 }
                 const kind = this.#rowKind === undefined ? 'detail' : this.#rowKind(row);
-                const rowPaint: RowPaint<Row> = { key, chosen: chosenHere, marked, used, slots: [], appearance, kind, heading };
+                const rowPaint: RowPaint<Row> = { key, chosen: chosenHere, marked, used, slots: [], appearance, kind, heading, now, highlightEnd: undefined };
                 const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, rowPaint, stripe);
+                ended(rowPaint.highlightEnd);
                 repainted = true;
                 // A key met twice in one Window is painted, never paired: which of the two a later row
                 // continues cannot be told (ADR-0140).
@@ -7056,7 +7083,7 @@ export class GridView<Row> {
                     next.set(key, {
                         element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
                         marks, current, matched, paint, appearance, chosen, slots: rowPaint.slots, marked, rowKind: this.#rowKind, stripe,
-                        heading, headingStyle,
+                        heading, headingStyle, highlightEnd: rowPaint.highlightEnd,
                     });
                 }
                 rows.push(element);
@@ -7064,6 +7091,7 @@ export class GridView<Row> {
             }
         }
         this.#painted = next;
+        this.#armHighlightTimer(earliestHighlight);
         this.#placeholders = nextPlaceholders;
         this.#headingStates = nextStates;
         if (this.#cellPaint.cellAppearance !== undefined) this.#appearances.end();
@@ -7449,7 +7477,8 @@ export class GridView<Row> {
         const state = cellPaint.cellState === undefined ? 'normal' : cellPaint.cellState(row, column);
         // A null value means nothing, and its rule is not asked (ADR-0006).
         const tone = column.tone === undefined || value === null || value === undefined ? 'none' : toneOf(column, value);
-        const base = cellClasses({ numeric, pinned, state, align, tone, mark });
+        const changed = this.#changed(row, column, paint);
+        const base = cellClasses({ numeric, pinned, state, align, tone, changed, mark });
         const own = appearance?.classOf(c);
         cell.className = own === undefined ? base : `${base} ${own}`;
         cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
@@ -7467,6 +7496,53 @@ export class GridView<Row> {
             cell.textContent = decision.displayText;
         }
         return { element: cell, mark };
+    }
+
+    // Whether a value cell wears the Change Highlight at the pass's time (ADR-0068): one question to the Consumer per
+    // painted value cell, and none without the declaration. A mark it shows joins the row's earliest end. Keyed by the
+    // row and the column painted, never by the element, so a row painted afresh asks again for what it now paints.
+    #changed(row: Row, column: GridColumn<Row>, paint: RowPaint<Row>): boolean {
+        const { cellChangedAt, changeHighlightDuration } = this.#cellPaint;
+        if (cellChangedAt === undefined) return false;
+        const end = changeHighlightShowingUntil(cellChangedAt(row, column.name), changeHighlightDuration, defined(paint.now, 'the pass\'s time'));
+        if (end === undefined) return false;
+        if (paint.highlightEnd === undefined || end < paint.highlightEnd) paint.highlightEnd = end;
+        return true;
+    }
+
+    // Arms the one timer for the earliest end among the Change Highlights painted now (ADR-0068), after every pass
+    // that can paint or drop a mark. With no mark painted, no timer stands. When it fires, the rows are painted
+    // again, and only those whose marks ended by then are rebuilt.
+    #armHighlightTimer(earliest: number | undefined): void {
+        if (earliest === undefined || this.#destroyed) {
+            this.#stopHighlightTimer();
+            return;
+        }
+        if (this.#highlightTimer !== undefined && this.#highlightTimer.end === earliest) return;
+        this.#stopHighlightTimer();
+        const end = earliest;
+        const { clock } = this.#reports;
+        // An end already passed is waited for by a millisecond rather than none, so the timer never fires inside the
+        // pass that armed it; a far one is waited for a day at a time, as a timer's delay is bounded.
+        const wait = Math.min(Math.max(end - clock.now(), shortestHighlightWaitMs), longestHighlightWaitMs);
+        const cancel = clock.setTimer(() => {
+            this.#highlightTimer = undefined;
+            if (this.#destroyed) return;
+            // A timer can fire a moment before the clock reaches its end, and a wait cut short fires long before:
+            // neither ends a mark, and the timer is armed again for what remains.
+            if (clock.now() < end) {
+                this.#armHighlightTimer(end);
+                return;
+            }
+            this.#invalidate();
+        }, wait);
+        this.#highlightTimer = { cancel, end };
+    }
+
+    #stopHighlightTimer(): void {
+        if (this.#highlightTimer === undefined) return;
+        this.#highlightTimer.cancel();
+        this.#highlightTimer = undefined;
     }
 
     // An Action or Template cell (ADR-0020): the grid's own buttons, or the Consumer's content in a slot kept
