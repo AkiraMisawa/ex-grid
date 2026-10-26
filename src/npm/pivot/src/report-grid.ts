@@ -322,7 +322,8 @@ export function cellItems(
     selection: GridSelection, metadata: PivotReportMetadata, rows: readonly PivotDisplayRow[], windowStart: number,
 ): readonly PivotCellItems[] | undefined {
     const labels = metadata.labelColumns.length;
-    const seen = new Set<string>();
+    // A cell two ranges both hold is said once; one range holds each of its cells once.
+    const seen = selection.ranges.length > 1 ? new Set<string>() : undefined;
     const cells: PivotCellItems[] = [];
     for (const range of selection.ranges) {
         const bottom = range.topRow + range.rowCount - 1;
@@ -331,9 +332,11 @@ export function cellItems(
         for (let r = range.topRow; r <= bottom; r++) {
             const row = elementAt(rows, r - windowStart);
             for (let c = range.leftColumn; c <= right; c++) {
-                const key = `${r},${c}`;
-                if (seen.has(key)) continue;
-                seen.add(key);
+                if (seen !== undefined) {
+                    const key = `${r},${c}`;
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                }
                 cells.push(Object.freeze(c < labels
                     ? { row: labelPath(row.rowPath, elementAt(metadata.labelColumns, c)), column: noItems }
                     : { row: row.rowPath, column: elementAt(metadata.valueColumns, c - labels).columnPath }));

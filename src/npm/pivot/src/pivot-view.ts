@@ -15,7 +15,7 @@ import {
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, pivotValueCaptions, placementOf,
-    pivotWordIdList, setCollapsed, validateLayout, type PivotDisplayRow, type PivotItemCounts, type PivotLabel, type PivotLayout,
+    isItemCollapsed, pivotWordIdList, setCollapsed, validateLayout, type PivotDisplayRow, type PivotItemCounts, type PivotLabel, type PivotLayout,
     type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
 } from '@ex-grid/pivot-engine';
 import { FieldListView, type FieldListEdit, type FieldListMove } from './field-list';
@@ -675,19 +675,28 @@ export class PivotView {
         this.#drawGrid();
     }
 
-    // The grid's selection, said with what its cells stand for, read from the rows the grid holds now: the grid
-    // raises it after the rows it was taken over are its own.
+    // The grid's selection, said with what its cells stand for, read from the rows the grid holds when it is
+    // raised: each report is a new source, so a selection the grid keeps is over the same report's rows, and one
+    // over another report is dropped and raised again (ADR-0011). The Items are read when first asked for, from
+    // what was held then, so a selection dragged over thousands of cells costs nothing until a Consumer reads it.
     #selectionChanged(selection: GridSelection): void {
         const raise = this.#options.onSelectionChanged;
         if (raise === undefined || this.#destroyed) return;
         const answer = this.#shown.answer;
-        const rows = this.#rows;
+        const state = this.#rows?.snapshot();
+        const metadata = answer?.metadata;
+        let read = false;
         let items: readonly PivotCellItems[] | undefined;
-        if (answer !== undefined && rows !== undefined) {
-            const state = rows.snapshot();
-            items = cellItems(selection, answer.metadata, state.window, state.windowStart);
-        }
-        raise(Object.freeze({ selection, items }));
+        raise(Object.freeze({
+            selection,
+            get items(): readonly PivotCellItems[] | undefined {
+                if (!read) {
+                    read = true;
+                    items = metadata === undefined || state === undefined ? undefined : cellItems(selection, metadata, state.window, state.windowStart);
+                }
+                return items;
+            },
+        }));
     }
 
     // A double click on an outer Item's label expands or collapses it, as Excel's does (ADR-0063).
@@ -703,9 +712,15 @@ export class PivotView {
     }
 
     // An outer Item's button pressed, or its label double clicked: the Item is collapsed or expanded (ADR-0063).
+    // Each press turns it over in the pane's layout, the one the newest question asks for, not as the button that
+    // was pressed painted it: two presses expand what they collapsed, whether or not the report between them
+    // came first (spine rule 6). A field that left the pane has nothing to turn over.
     #toggled(toggle: PivotToggle): void {
         if (this.#destroyed) return;
-        this.#move(setCollapsed(this.#paneLayout, toggle.field, toggle.item, !toggle.isCollapsed), undefined);
+        const pane = this.#paneLayout;
+        const placed = pane.rows.find(placement => placement.field === toggle.field);
+        if (placed === undefined) return;
+        this.#move(setCollapsed(pane, toggle.field, toggle.item, !isItemCollapsed(placed, toggle.item)), undefined);
     }
 
     // ---- Drawing ---------------------------------------------------------------------------------------

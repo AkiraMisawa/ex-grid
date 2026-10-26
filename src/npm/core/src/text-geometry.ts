@@ -23,11 +23,23 @@ export interface GridTextGeometry {
     readonly glyphWidths: Readonly<Record<number, number>>;
 }
 
+// Each Density's metrics, resolved once: resolving builds the glyph table.
+const resolved = new Map<GridDensity, GridMetrics>();
+
+function metricsAt(density: GridDensity): GridMetrics {
+    let metrics = resolved.get(density);
+    if (metrics === undefined) {
+        metrics = GridMetrics.resolve({ density });
+        resolved.set(density, metrics);
+    }
+    return metrics;
+}
+
 /** The text geometry of a grid drawn at `density`, as `createGrid` resolves it: plain data, which crosses to a
  * Worker as it is. A row height does not move it. */
 export function gridTextGeometry(options: { readonly density?: GridDensity } = {}): GridTextGeometry {
     const { density = 'compact' } = options;
-    const metrics = GridMetrics.resolve({ density }).cellMetrics;
+    const metrics = metricsAt(density).cellMetrics;
     return Object.freeze({
         wideWidthPx: metrics.wideWidthPx,
         digitWidthPx: metrics.digitWidthPx,
@@ -44,5 +56,5 @@ export function gridTextGeometry(options: { readonly density?: GridDensity } = {
  * Consumer that fixes a column's width beside the grid's own charges its header alike. */
 export function gridHeaderRequiredPx(label: string, options: { readonly density?: GridDensity; readonly menuButton: boolean; readonly sortable: boolean }): number {
     const { density = 'compact', menuButton, sortable } = options;
-    return GridMetrics.resolve({ density }).headerRequiredPx({ label, menuButton, sortable });
+    return metricsAt(density).headerRequiredPx({ label, menuButton, sortable });
 }

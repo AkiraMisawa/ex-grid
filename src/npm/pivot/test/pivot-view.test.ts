@@ -279,6 +279,18 @@ describe('ExPivot\'s report', () => {
         expect(changed).toHaveLength(2);
     });
 
+    it('spine rule 6: two presses of a button expand what they collapsed, whether or not the report between them came first', async () => {
+        const layout = createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] });
+        const { grid } = mount({ source: local(), layout });
+        await settled();
+        const before = await grid.texts();
+        const button = (await grid.paint(0, 0)).button();
+        button.click();
+        button.click();
+        await settled();
+        expect(await grid.texts()).toEqual(before);
+    });
+
     it('ADR-0037: Space on a label cell hands the keyboard to its button, and no other mount takes it', async () => {
         const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
         await settled();
