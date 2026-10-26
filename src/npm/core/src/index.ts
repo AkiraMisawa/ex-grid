@@ -9,6 +9,7 @@ export type { SelectionRange } from './selection/range';
 export type { GridSelection } from './selection/selection';
 export { createGrid } from './dom/create-grid';
 export type { GridHandle } from './dom/create-grid';
+export type { GridPopoverContext } from './dom/consumer-popover';
 export type { GridHeaderGroup, GridOptions, GridViewRead, ViewportSize } from './dom/grid-view';
 export { cellTextMeasure, type CellPaintOptions } from './dom/cell-paint';
 export { formulaBarHeight, type FormulaBarOptions } from './dom/formula-bar';
