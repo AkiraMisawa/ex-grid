@@ -441,6 +441,27 @@ its camelCase name and a tuple as an array; in TypeScript, its own properties an
 as an object and a bigint as its number. A property the Script Core leaves out where it is absent reads as
 `null`, as C#'s does.
 
+### The Chart Spec reader: `spec`
+
+The Chart Spec read against tables named by Data Handle ([ADR-0320](../../docs/adr/0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md);
+ADR-0370, section 3: the reader stays in C# for a .NET host, and `readChartSpec` reads it in TypeScript),
+in the `spec*.json` files of `chart/`. A spec case is one of its own, with no other operation beside it:
+
+| Key | Meaning |
+|---|---|
+| `spec` | The spec as an object, written again as JSON by the runner: C# reads the file's text of it, TypeScript writes it out, so a number's spelling (`1.0`) and an order of members a whole-number name would change are not kept |
+| `specText` | The spec's text as it is, in place of `spec`: text that is not JSON, or a spelling the reader reads |
+| `tables` | Tables by Data Handle, each an object of its columns in order, each column a list of values. The file's `tables` are every case's; a case's own take the place of the file's of the same handle |
+| `refused` | `{path, message}`: the spec is refused at that path in exactly those words. A message that quotes the platform's own JSON parser, which .NET and JavaScript word differently, is held to `{path, startsWith}`, the spec's own words before it |
+| `expect` | The checks above, on `{title, definition, surface}`: the one the spec is not is `null`, and a surface's `definition`, which throws, is `{"refused": "invalidOperation"}` |
+
+A table's value is `null`, a text, `true` or `false`, a number (C#'s `double`), or `{"decimal": "1.25"}`
+(C#'s `decimal`; TypeScript's Snapshot decimal, so it is written without a trailing zero after the point),
+`{"integer": 3}` (C#'s `long`, TypeScript's `bigint`), `{"date": "yyyy-MM-dd"}` (`DateOnly`,
+`Temporal.PlainDate`), `{"dateTime": "yyyy-MM-ddTHH:mm:ss"}` (`DateTime`, `Temporal.PlainDateTime`) or
+`{"double": "NaN" | "Infinity" | "-Infinity"}`. A column's name is never a whole number, whose place among
+an object's keys JavaScript would move.
+
 ## `arrowRead`, `arrowShape` and `arrowWrite`
 
 The Snapshot as Apache Arrow ([ADR-0065](../../docs/adr/0065-a-snapshot-travels-as-apache-arrow.md), ADR-0370

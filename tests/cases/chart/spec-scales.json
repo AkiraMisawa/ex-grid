@@ -1,0 +1,471 @@
+{
+  "about": "A Chart Spec's colour and size read from columns (ADR-0320, ADR-0310), from tests/ExChart.Engine.Tests/ChartSpecTests.cs (ChartSpecScaleTests).",
+  "kind": "chart",
+  "tables": {
+    "credit": {
+      "lev": [
+        2.5,
+        4.0,
+        3.0
+      ],
+      "spr": [
+        {
+          "decimal": "120"
+        },
+        {
+          "decimal": "310"
+        },
+        {
+          "decimal": "200"
+        }
+      ],
+      "pnl": [
+        {
+          "decimal": "-1"
+        },
+        {
+          "decimal": "10"
+        },
+        {
+          "decimal": "0"
+        }
+      ],
+      "notional": [
+        {
+          "decimal": "5"
+        },
+        {
+          "decimal": "20"
+        },
+        {
+          "decimal": "10"
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0320: colour and size are read from columns, never written as values",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "colour": {
+              "column": "pnl",
+              "scale": "diverging",
+              "centre": 0,
+              "title": "P&L"
+            },
+            "size": {
+              "column": "notional"
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.colourBy",
+          "is": {
+            "title": "P&L",
+            "values": [
+              -1,
+              10,
+              0
+            ],
+            "centre": 0
+          }
+        },
+        {
+          "at": "definition.series.0.sizeBy",
+          "is": {
+            "title": "notional",
+            "values": [
+              5,
+              20,
+              10
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: a sequential colour runs from the lowest value to the highest, titled by its column",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "colour": {
+              "column": "pnl",
+              "scale": "sequential"
+            },
+            "size": {
+              "column": "notional",
+              "title": "Notional"
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.colourBy",
+          "is": {
+            "title": "pnl",
+            "values": [
+              -1,
+              10,
+              0
+            ],
+            "centre": null
+          }
+        },
+        {
+          "at": "definition.series.0.sizeBy.title",
+          "is": "Notional"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310: a diverging scale says its centre",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "colour": {
+              "column": "pnl",
+              "scale": "diverging"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].colour.centre",
+        "message": "series[0].colour.centre is missing: a diverging scale says the value that means nothing, such as 0 for a P&L or 1 for a ratio."
+      }
+    },
+    {
+      "name": "ADR-0310: a sequential scale has no centre",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "colour": {
+              "column": "pnl",
+              "scale": "sequential",
+              "centre": 0
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].colour.centre",
+        "message": "series[0].colour.centre belongs to a diverging scale; a sequential one runs from the lowest value to the highest."
+      }
+    },
+    {
+      "name": "ADR-0310: a centre is a finite number",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "colour": {
+              "column": "pnl",
+              "scale": "diverging",
+              "centre": "zero"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].colour.centre",
+        "message": "series[0].colour.centre is a finite number."
+      }
+    },
+    {
+      "name": "ADR-0310: a centre past a double's range is no finite number",
+      "specText": "{ \"version\": 1, \"axis\": { \"values\": \"numbers\" }, \"series\": [ { \"id\": \"n\", \"name\": \"Names\", \"kind\": \"observation\", \"data\": \"credit\", \"x\": \"lev\", \"y\": \"spr\", \"colour\": { \"column\": \"pnl\", \"scale\": \"diverging\", \"centre\": 1e400 } } ] }",
+      "refused": {
+        "path": "series[0].colour.centre",
+        "message": "series[0].colour.centre is a finite number."
+      }
+    },
+    {
+      "name": "ADR-0320: a colour value is not part of a spec",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "colour": {
+              "column": "pnl",
+              "scale": "sequential",
+              "value": "#ff0000"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].colour.value",
+        "message": "series[0].colour.value is not part of a Chart Spec: series[0].colour takes column, scale, centre, title."
+      }
+    },
+    {
+      "name": "ADR-0320: a colour's scale is one of two",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "colour": {
+              "column": "pnl"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].colour.scale",
+        "message": "series[0].colour.scale is missing: it says how the colours run, one of sequential, diverging."
+      }
+    },
+    {
+      "name": "ADR-0320: a colour is an object naming its column",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "colour": "pnl"
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].colour",
+        "message": "series[0].colour is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0320: a size names its column",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "size": {
+              "title": "Notional"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].size.column",
+        "message": "series[0].size.column is missing: the column it is read from."
+      }
+    },
+    {
+      "name": "ADR-0320: a size's column is one of its table's",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "size": {
+              "column": "weight"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].size.column",
+        "message": "series[0].size.column: \"credit\" has no column \"weight\"; its columns are lev, spr, pnl, notional."
+      }
+    },
+    {
+      "name": "ADR-0320: a size's values are numbers",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "size": {
+              "column": "notional"
+            }
+          }
+        ]
+      },
+      "tables": {
+        "credit": {
+          "lev": [
+            2.5
+          ],
+          "spr": [
+            {
+              "decimal": "120"
+            }
+          ],
+          "pnl": [
+            {
+              "decimal": "1"
+            }
+          ],
+          "notional": [
+            "large"
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].size.column",
+        "message": "series[0].size.column: row 1 of \"credit\" holds \"large\", which is not a number."
+      }
+    },
+    {
+      "name": "ADR-0320: colour and size belong to an observation, and the definition says so by the series' path",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "level",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "size": {
+              "column": "notional"
+            }
+          }
+        ]
+      },
+      "tables": {
+        "credit": {
+          "lev": [
+            2.5,
+            3.0
+          ],
+          "spr": [
+            {
+              "decimal": "120"
+            },
+            {
+              "decimal": "200"
+            }
+          ],
+          "pnl": [
+            {
+              "decimal": "1"
+            },
+            {
+              "decimal": "2"
+            }
+          ],
+          "notional": [
+            {
+              "decimal": "5"
+            },
+            {
+              "decimal": "10"
+            }
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0]",
+        "message": "series[0]: 'Names' takes a colour or a size from a column, which belongs to marks drawn one a row: an observation."
+      }
+    }
+  ]
+}
