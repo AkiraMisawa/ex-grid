@@ -51,7 +51,8 @@ block on `main` before it uses the first number.
 | 0360–0369 | `claude/project-thread-3sdzq1` | Input Order's remainder: a box's first control taking the keyboard from the grid's script where no grid stands (ExPivot's report not yet drawn; ADR-0360, chosen by the user 2026-10-24; numbered 0350 on the branch until the block was found taken), and ticket 07's differential test, with a press on the cell being edited keeping the edit (ADR-0361) and a press let through for its drag taking its place among the held inputs (ADR-0362) |
 | 0370–0379 | `claude/project-thread-ubb577` | 0.3.0 for the whole family: everything, engines included, in TypeScript, and Blazor wrapping it (ADR-0370, decided with the user 2026-10-25; numbered 0351 on the branch until the same day, when 0351 was found to be in ADR-0350's block) |
 | 0380–0389 | `claude/project-thread-ba3868` | Validation that answers later: a verdict or a refusal as a promise, the input behind it waiting, Blazor carrying it (ADR-0380, decided with the user 2026-10-26 from the survey of AG Grid and Apex Grid), and rules over the whole collection (ADR-0381, the same day) |
-| 0390– | free | reserve a block of ten |
+| 0390–0399 | `claude/project-thread-qwl4ao` | React's design-system Wrappers: Mantine first and MUI, both in 0.3.0, over the same Chrome slots (ADR-0390, decided with the user 2026-10-26) |
+| 0400– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

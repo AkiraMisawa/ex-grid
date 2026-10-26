@@ -162,7 +162,9 @@ site a framework switch, Blazor or React, before any React package exists. What 
 - **It sits in the app bar beside the Chrome switch**, for the whole site, and is remembered between
   visits (below, under JavaScript). A first visit reads the site for Blazor. Under React the Chrome
   switch reads Built-in / MUI, and cannot be changed while no Example runs under React: a choice made
-  there would change nothing on the page.
+  there would change nothing on the page. *(It reads Built-in / Mantine / MUI once a Wrapper runs an
+  Example, by [ADR-0390](./0390-react-takes-two-design-system-wrappers-mantine-first-and-mui-over-the-same-chrome-slots.md)
+  section 8.)*
 - **Read for React, an Example with no React counterpart says so in its frame**, where it would run,
   and neither the Blazor component nor its code is shown. An ExGrid Example says that it is not in
   `@ex-grid/react` yet; any other product's says that the product has no React package. The product is

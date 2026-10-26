@@ -51,7 +51,7 @@ unchanged ([ADR-0251](./docs/adr/0251-a-chart-is-defined-in-the-datas-terms-and-
 _Avoid_: chart spec, chart config
 
 **Chart Dock**:
-The MudBlazor Wrapper's place for charts made from a grid selection: a panel beside or below the grid,
+A Wrapper's place for charts made from a grid selection (MudBlazor's, and Mantine's and MUI's under React): a panel beside or below the grid,
 never over it, with several charts as tabs
 ([ADR-0258](./docs/adr/0258-the-selection-bridge-follows-the-rows-it-was-made-from.md)).
 _Avoid_: chart panel (a chart's panels are parts of one chart), chart window, floating chart
@@ -1447,9 +1447,10 @@ _Avoid_: demo, demo pages (those are layer 3's fixture), playground
 
 **Example**:
 A live component on a Docs Site page, with beneath it the code it runs, read from its own source.
-It shows one thing, and where a Wrapper exists it switches between the built-in Chrome and
-MudBlazor's
-([ADR-0110](./docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
+It shows one thing, and where a Wrapper exists it switches between the built-in Chrome and a
+Wrapper's: MudBlazor's under Blazor, Mantine's or MUI's under React
+([ADR-0390](./docs/adr/0390-react-takes-two-design-system-wrappers-mantine-first-and-mui-over-the-same-chrome-slots.md),
+[ADR-0110](./docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
 _Avoid_: sample, snippet (a snippet is code that does not run)
 
 **Framework switch**:
