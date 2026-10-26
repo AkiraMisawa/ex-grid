@@ -235,6 +235,10 @@ created on npm by the user before the first publish. The NuGet identifiers stay 
 
 The later products, if they follow (section 1), take names under the same scope.
 
+*(Amended 2026-10-26 by [ADR-0390](./0390-react-takes-two-design-system-wrappers-mantine-first-and-mui-over-the-same-chrome-slots.md),
+decided with the user: React's design-system Wrappers are `@ex-grid/mantine`, built first, and
+`@ex-grid/mui`, both in 0.3.0.)*
+
 Blazor's adapter keeps the NuGet identifier `ExGrid`, and the component keeps its name. It carries the
 Script Core's built script as a shipped asset of its own, minified and asked for by the version it was
 built with ([ADR-0123](./0123-shipped-scripts-and-stylesheets-are-minified-and-each-package-asks-for-the-files-it-was-built-with.md)),
@@ -254,6 +258,11 @@ MUI's palette to a Theme and its density words onto Density, supplies Cell Metri
 fills the Chrome seams with MUI's components. It owns no geometry, no DOM inside the instance root and no
 state (P9).
 
+*(Amended 2026-10-26 by [ADR-0390](./0390-react-takes-two-design-system-wrappers-mantine-first-and-mui-over-the-same-chrome-slots.md),
+decided with the user: `@ex-grid/mantine` ships in 0.3.0 beside it and is built first. Both fill the
+same Chrome slots through the same React hooks, and the MUI Wrapper requires a theme made with
+`cssVariables: true`.)*
+
 ### 12. The Docs Site switches between frameworks
 
 The Docs Site gains a **framework switch**, Blazor or React, chosen once for the whole site and
@@ -268,6 +277,9 @@ A React Example is built ahead of time into the site's static files and shown in
 the way ag-grid.com shows each Example, so React never runs inside the Blazor app and the site's own
 JavaScript does not grow. The site's build fails when a React Example does not build, as it fails today
 for a Blazor one.
+
+*(Amended 2026-10-26 by [ADR-0390](./0390-react-takes-two-design-system-wrappers-mantine-first-and-mui-over-the-same-chrome-slots.md)
+section 8: under React the switch reads Built-in / Mantine / MUI.)*
 
 *(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 8 widens the switch to every product's pages.)*
 

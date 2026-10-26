@@ -511,6 +511,10 @@ Source lives at `src/npm/<name>` until section 9's move. A Blazor adapter carrie
 script as a shipped asset of its own (ADR-0350 section 9, ADR-0123), so a Blazor Consumer still installs
 nothing from npm. Each MUI Wrapper is held to ADR-0030 as `@ex-grid/mui` is.
 
+*(Amended 2026-10-26 by [ADR-0390](./0390-react-takes-two-design-system-wrappers-mantine-first-and-mui-over-the-same-chrome-slots.md),
+decided with the user: each product with a `-mui` Wrapper also has a `-mantine` one, `@ex-grid/sheet-mantine`,
+`@ex-grid/pivot-mantine` and `@ex-grid/chart-mantine`, built before its `-mui`, and both ship in 0.3.0.)*
+
 ### 6. The order inside 0.3.0
 
 ADR-0350 section 7's three steps hold for ExGrid as written, and each product takes the same three,
@@ -535,6 +539,9 @@ of every product works stably")*: its layer 3 green on CI with no red open again
 re-run (ADR-0220). No product ships as 0.3.0 alone ahead of the others. Prereleases publish from tags meanwhile
 ([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)), so a
 product reaches React developers as a prerelease when its step 1 holds.
+
+*(Amended 2026-10-26 by [ADR-0390](./0390-react-takes-two-design-system-wrappers-mantine-first-and-mui-over-the-same-chrome-slots.md)
+section 2: the gate includes every Mantine and MUI Wrapper.)*
 
 ### 7. Each engine is measured beside the C# record
 
@@ -681,7 +688,9 @@ typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript ha
   Wrappers take MUI's own localised text where MUI has a key, as the MudBlazor Wrappers take MudBlazor's
   (WR-3), and the label function otherwise. ExSheet's sentences, fixed in English today with no seam,
   move behind its label function with its port. Other languages are a Consumer's, through the same
-  function.
+  function. *(A Mantine Wrapper, added by
+  [ADR-0390](./0390-react-takes-two-design-system-wrappers-mantine-first-and-mui-over-the-same-chrome-slots.md),
+  takes the family's tables and the label function only: Mantine's components carry no words of their own.)*
 
 ### 11. Layer 3 judges a behaviour once, and a Blazor host what Blazor touches
 
