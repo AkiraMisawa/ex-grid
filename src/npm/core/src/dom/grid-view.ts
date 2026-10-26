@@ -4332,10 +4332,11 @@ export class GridView<Row> {
             return;
         }
         const { cell } = current;
-        // What the cell paints now is what the editor would open with, what the user sees as they press, and
-        // what the write replaces (ADR-0142).
+        // The replacement is written into what the editor would open with, a Sheet's Entry where it declares one, so
+        // a Formula stays a Formula (ADR-0332 §2); what the cell paints is what the user sees as they press, and what
+        // the write is told it replaces (ADR-0142).
         const painted = this.#paintedTextAt(cell);
-        const text = replacedEntry(painted, this.#findPattern(), held.replaceText);
+        const text = replacedEntry(this.#openingTextAt(cell), this.#findPattern(), held.replaceText);
         if (text === undefined) {
             this.#findStep(false);
             return;

@@ -60,6 +60,12 @@ function cellTextOf(display: CellDisplay, value: Value | undefined, setting: Hor
     return Object.freeze({ text: display.text, isNumber: display.isNumber, raw, align, colour: display.colour, toString });
 }
 
+/** The text the cell at `address` is shown with, a `####` included, or `''` for a blank cell: what Find searches
+ * (ADR-0055), the engine's display, never the width-fitted text a column paints. */
+export function shownTextOf(sheet: Sheet, address: CellAddress): string {
+    return cellTextOf(sheet.getDisplay(address), sheet.getValue(address), sheet.getAlignment(address))?.text ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- a blank cell shows no text, which matches nothing
+}
+
 /** A content width in pixels as Excel's column width: how many of the grid's digits fit in it. */
 export function charactersIn(contentWidthPx: number, metrics: CellTextMeasure): number {
     return contentWidthPx <= 0 || metrics.digitWidthPx <= 0 ? 0 : contentWidthPx / metrics.digitWidthPx;
