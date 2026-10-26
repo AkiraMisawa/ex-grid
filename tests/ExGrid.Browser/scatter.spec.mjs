@@ -3,7 +3,7 @@ import { test, expect, circuitQuiet } from './fixtures.mjs';
 // Scatter on /scatter (tickets 54 to 59, ADR-0290, ADR-0291). The CDS chart holds 200 names, the
 // distressed DSTR at row 57 the highest spread by far, beside a grid of Name, Leverage and 5Y spread;
 // a least-squares and a Theil–Sen line over them. Old Faithful holds 272 eruptions. The page writes the
-// range it was handed under the checkbox. The fits' notes are held by FittingTests and
+// range it was handed under the checkbox. The fits' notes are held by tests/cases/chart/fitting.json and
 // chart-showcases.spec.mjs.
 
 const cds = (page) => page.locator('.scatter-side-by-side .ex-chart');

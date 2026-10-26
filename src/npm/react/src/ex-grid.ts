@@ -3,7 +3,7 @@
 // instance root, and decides nothing. The rows are never React's: a component per row would repeat,
 // through `memo`, the fight with re-rendering that ADR-0003 measured.
 
-import { createElement, Fragment, useLayoutEffect, useRef, type ReactElement } from 'react';
+import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useRef, type ReactElement, type Ref } from 'react';
 import { createGrid, type GridHandle, type GridOptions } from '@ex-grid/core';
 import { holdPortals, useTemplatePortals } from './template-column';
 
@@ -13,10 +13,19 @@ import { holdPortals, useTemplatePortals } from './template-column';
  * never the browser's: a grid with a Date column whose filter is offered is given one on every browser
  * alike, or refused on every browser alike (ADR-0350 section 16).
  */
-export type ExGridProps<Row> = GridOptions<Row>;
+export type ExGridProps<Row> = GridOptions<Row> & {
+    /** A ref to what the Consumer may ask of the grid it rendered. */
+    readonly ref?: Ref<ExGridApi<Row>>;
+};
+
+/**
+ * What a ref to an ExGrid reaches: the Script Core's grid handle, less what the adapter itself does with it
+ * (taking the props again, and destroying the grid on unmount). Asked of a grid not mounted, it throws.
+ */
+export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
 
 /** The props as the core takes them: the browser's language where the Consumer gave no locale. */
-function withLocale<Row>(props: ExGridProps<Row>, browserLocale: string): GridOptions<Row> {
+function withLocale<Row>(props: GridOptions<Row>, browserLocale: string): GridOptions<Row> {
     return props.locale === undefined ? { ...props, locale: browserLocale } : props;
 }
 
@@ -25,6 +34,7 @@ function withLocale<Row>(props: ExGridProps<Row>, browserLocale: string): GridOp
  * render hands the core the props again, and what did not change costs nothing (ADR-0003).
  */
 export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
+    const { ref, ...options } = props;
     const element = useRef<HTMLDivElement>(null);
     const grid = useRef<GridHandle<Row> | undefined>(undefined);
     const browserLocale = useRef<string | undefined>(undefined);
@@ -36,14 +46,23 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
         if (root === null) throw new Error('Internal: React mounted no element for the grid to draw into.');
         holdPortals(root, portals);
         browserLocale.current ??= navigator.language;
-        const options = withLocale(props, browserLocale.current);
+        const taken = withLocale(options, browserLocale.current);
         if (grid.current === undefined) {
             portals.begin();
-            grid.current = createGrid(root, options);
+            grid.current = createGrid(root, taken);
         } else {
-            grid.current.update(options);
+            grid.current.update(taken);
         }
     });
+    useImperativeHandle(ref, () => ({
+        placeSelection: (range, focus, rowSequenceVersion) => mounted(grid.current).placeSelection(range, focus, rowSequenceVersion),
+        readView: () => mounted(grid.current).readView(),
+        showViewWith: (view, rowSequenceVersion) => { mounted(grid.current).showViewWith(view, rowSequenceVersion); },
+        focus: () => { mounted(grid.current).focus(); },
+        keyName: (event) => mounted(grid.current).keyName(event),
+        openPopover: (content, label) => mounted(grid.current).openPopover(content, label),
+        closePopover: () => { mounted(grid.current).closePopover(); },
+    }), []);
     useLayoutEffect(() => () => {
         // The content goes with the grid, and nothing renders for it again.
         portals.end();
@@ -52,4 +71,9 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
         browserLocale.current = undefined;
     }, [portals]);
     return createElement(Fragment, null, createElement('div', { ref: element }), ...portals.elements());
+}
+
+function mounted<Row>(grid: GridHandle<Row> | undefined): GridHandle<Row> {
+    if (grid === undefined) throw new Error('This ExGrid is not mounted: a grid not drawn is asked nothing.');
+    return grid;
 }

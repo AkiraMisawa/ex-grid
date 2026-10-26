@@ -5,16 +5,23 @@
 ```ts
 
 import type { GridColumn } from '@ex-grid/core';
+import { GridHandle } from '@ex-grid/core';
 import { GridOptions } from '@ex-grid/core';
 import type { GridTemplateCell } from '@ex-grid/core';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
+import { Ref } from 'react';
 
 // @public
 export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement;
 
 // @public
-export type ExGridProps<Row> = GridOptions<Row>;
+export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
+
+// @public
+export type ExGridProps<Row> = GridOptions<Row> & {
+    readonly ref?: Ref<ExGridApi<Row>>;
+};
 
 // @public
 export function templateColumn<Row>(column: TemplateColumnOptions<Row>, render: (cell: GridTemplateCell<Row>) => ReactNode): GridColumn<Row>;
