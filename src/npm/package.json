@@ -7,8 +7,8 @@
   "type": "module",
   "workspaces": [
     "core",
-    "chart",
     "data",
+    "chart",
     "pivot-engine",
     "react"
   ],
