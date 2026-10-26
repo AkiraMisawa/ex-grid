@@ -96,8 +96,23 @@ const snapshot = await readCsvSnapshot({
             included: both packages run the same cases, under <code>tests/cases/data/</code>. A culture is a language tag, read
             through the browser's <code>Intl</code>; a date in a calendar other than the Gregorian or the Thai Buddhist, a standard
             date format in a culture, the standard format <code>U</code>, and the era (<code>g</code>) are refused when the Schema is read rather than read some other
-            way. Suggesting a Schema is not in TypeScript yet.
+            way.
         </p>
+        <p>
+            <code>suggestCsvSchema</code> proposes a Schema for a file nobody has described, as <code>CsvSchema.SuggestAsync</code>
+            does, with the same marks in the same words; a <code>Blob</code> is read only as far as the rows sampled. Its
+            <code>culture</code> settles what the sample cannot (the decimal point, whether a date has its day first, and the list
+            separator that breaks a tie between two separators), and nothing is applied until the Schema is handed to
+            <code>readCsvSnapshot</code>:
+        </p>
+        <pre class="docs-code"><code>import { readCsvSnapshot, suggestCsvSchema } from '@@ex-grid/data';
+
+const suggestion = await suggestCsvSchema(file, { culture: 'de-DE' });
+for (const column of suggestion.columns) {
+    for (const mark of column.marks) console.log(column.column.name, mark.doubt, mark.note);
+}
+// Show the marks to the user, let them change the Schema, then read the file under it.
+const snapshot = await readCsvSnapshot(suggestion.schema, file);</code></pre>
     </DocsSection>
 
     <DocsSection Title="From columns, in slices">

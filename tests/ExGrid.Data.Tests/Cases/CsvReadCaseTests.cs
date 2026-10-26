@@ -23,7 +23,7 @@ public class CsvReadCaseTests
 {
     private static readonly string Root = Path.Combine(AppContext.BaseDirectory, "cases", "data");
 
-    private static bool Writing => Environment.GetEnvironmentVariable("EXGRID_WRITE_DATA_CASES") == "1";
+    internal static bool Writing => Environment.GetEnvironmentVariable("EXGRID_WRITE_DATA_CASES") == "1";
 
     private static readonly Lock WriteGate = new();
 
@@ -167,7 +167,7 @@ public class CsvReadCaseTests
 
     /// <summary>The file, as the case writes it: a list of pieces, each UTF-8 text, <c>{"hex": "ef bb bf"}</c>
     /// bytes, or <c>{"repeat": "1\n", "times": 1024}</c> UTF-8 text written that many times.</summary>
-    private static byte[] Bytes(JsonNode file)
+    internal static byte[] Bytes(JsonNode file)
     {
         var bytes = new List<byte>();
         foreach (var piece in file.AsArray())
@@ -215,13 +215,13 @@ public class CsvReadCaseTests
 
     // ---- the files ----------------------------------------------------------------------------------
 
-    private static JsonObject Read(string path) => JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+    internal static JsonObject Read(string path) => JsonNode.Parse(File.ReadAllText(path))!.AsObject();
 
-    private static JsonNode Must(JsonObject node, string key)
+    internal static JsonNode Must(JsonObject node, string key)
         => node[key] ?? throw new InvalidOperationException($"The case names no '{key}'.");
 
     /// <summary>Writes ExGrid.Data's answer into the case of the source file, under its <c>expect</c>.</summary>
-    private static void Write(string file, string name, JsonNode answer)
+    internal static void Write(string file, string name, JsonNode answer)
     {
         lock (WriteGate)
         {
@@ -229,6 +229,23 @@ public class CsvReadCaseTests
             var document = Read(path);
             var entry = document["cases"]!.AsArray().Single(c => (string?)c!["name"] == name)!.AsObject();
             entry["expect"] = answer.DeepClone();
+            File.WriteAllText(path, document.ToJsonString(new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                IndentSize = 2,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            }) + "\n");
+        }
+    }
+
+    /// <summary>Writes ExGrid.Data's answer into the source file, under the document's <paramref name="key"/>.</summary>
+    internal static void WriteKey(string file, string key, JsonNode answer)
+    {
+        lock (WriteGate)
+        {
+            var path = Path.Combine(SourceRoot(), file);
+            var document = Read(path);
+            document[key] = answer.DeepClone();
             File.WriteAllText(path, document.ToJsonString(new JsonSerializerOptions
             {
                 WriteIndented = true,

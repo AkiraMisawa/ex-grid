@@ -1,0 +1,3550 @@
+{
+  "about": "A Schema suggested from a CSV's first rows (ADR-0064 Q33, ADR-0370 section 3): the Schema, each column's marks and examples, the file's marks and the rows sampled, or the refusal, worded as both packages word it. A file is a list of pieces, as csv-read.json writes one; options are the TypeScript CsvSuggestionOptions. Transcribed from ExGrid.Data.Tests' suggestion tests and widened; the answers are ExGrid.Data's, written by its runner.",
+  "kind": "csvSuggest",
+  "cases": [
+    {
+      "name": "ADR-0064 (Q33): each column's kind and reading is proposed, and nothing clear is marked",
+      "file": [
+        "Desk,Qty,Notional,Rate,When,Live\nFX,5,1234.5,1.5e-3,2026-09-30,TRUE\nRates,-7,0.25,2E10,2026-10-01,false\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Desk",
+              "kind": "text"
+            },
+            {
+              "name": "Qty",
+              "kind": "integer"
+            },
+            {
+              "name": "Notional",
+              "kind": "decimal"
+            },
+            {
+              "name": "Rate",
+              "kind": "double"
+            },
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy-MM-dd"
+              ]
+            },
+            {
+              "name": "Live",
+              "kind": "boolean"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "FX",
+              "Rates"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "5",
+              "-7"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1234.5",
+              "0.25"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1.5e-3",
+              "2E10"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2026-09-30",
+              "2026-10-01"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "TRUE",
+              "false"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): digits with a leading zero are Text, marked as a possible identifier",
+      "file": [
+        "Account,Qty\n00123,1\n4567,2\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Account",
+              "kind": "text"
+            },
+            {
+              "name": "Qty",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "leadingZeros",
+                "note": "'00123' (row 1) has a leading zero, so the column could be an identifier rather than a number; it is suggested as Text, kept exactly."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "00123",
+              "4567"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "2"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): more than three values with leading zeros are named and counted",
+      "file": [
+        "Id\n001\n002\n-003\n+004\n0005\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Id",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "leadingZeros",
+                "note": "'001' (row 1), '002' (row 2), '-003' (row 3) and 2 more have leading zeros, so the column could be an identifier rather than a number; it is suggested as Text, kept exactly."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "001",
+              "002",
+              "-003",
+              "+004",
+              "0005"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 5,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): dates in more than one format are marked, every format suggested",
+      "file": [
+        "When\n2026-09-30\n30.09.2026\n2026-10-01\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy-MM-dd",
+                "d.M.yyyy"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "mixedDateFormats",
+                "note": "The dates are written in 2 formats: 'yyyy-MM-dd', as '2026-09-30' (row 1), 'd.M.yyyy', as '30.09.2026' (row 2); all of them are suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "2026-09-30",
+              "30.09.2026",
+              "2026-10-01"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 3,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a date that could be day or month first follows en-US",
+      "file": [
+        "When\n01/02/2026\n03/04/2026\n"
+      ],
+      "options": {
+        "culture": "en-US"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "M/d/yyyy"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "dayOrMonth",
+                "note": "'01/02/2026' (row 1) could have its day or its month first; 'M/d/yyyy' is suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "01/02/2026",
+              "03/04/2026"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a date that could be day or month first follows en-GB",
+      "file": [
+        "When\n01/02/2026\n03/04/2026\n"
+      ],
+      "options": {
+        "culture": "en-GB"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "d/M/yyyy"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "dayOrMonth",
+                "note": "'01/02/2026' (row 1) could have its day or its month first; 'd/M/yyyy' is suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "01/02/2026",
+              "03/04/2026"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a date that could be day or month first follows ja-JP, whose dates have the year first",
+      "file": [
+        "When\n01/02/2026\n03/04/2026\n"
+      ],
+      "options": {
+        "culture": "ja-JP"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "M/d/yyyy"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "dayOrMonth",
+                "note": "'01/02/2026' (row 1) could have its day or its month first; 'M/d/yyyy' is suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "01/02/2026",
+              "03/04/2026"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a date that could be day or month first follows the invariant culture",
+      "file": [
+        "When\n01/02/2026\n03/04/2026\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "M/d/yyyy"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "dayOrMonth",
+                "note": "'01/02/2026' (row 1) could have its day or its month first; 'M/d/yyyy' is suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "01/02/2026",
+              "03/04/2026"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a day past the twelfth settles the order, and nothing is marked",
+      "file": [
+        "When\n01/02/2026\n25/04/2026\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "d/M/yyyy"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "01/02/2026",
+              "25/04/2026"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): dates with the day first and others with the month first are marked twice",
+      "file": [
+        "When\n2026-09-30\n13/02/2026\n02/13/2026\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy-MM-dd",
+                "d/M/yyyy",
+                "M/d/yyyy"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "mixedDateFormats",
+                "note": "The dates are written in 3 formats: 'yyyy-MM-dd', as '2026-09-30' (row 1), 'd/M/yyyy', as '13/02/2026' (row 2), 'M/d/yyyy', as '02/13/2026' (row 3); all of them are suggested."
+              },
+              {
+                "doubt": "dayOrMonth",
+                "note": "Some dates have the day first and others the month first; which is which cannot be told."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "2026-09-30",
+              "13/02/2026",
+              "02/13/2026"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 3,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): dates with a time, an offset and AM or PM are read",
+      "file": [
+        "A,B,C\n2026-09-30T10:00:00.5+09:00,2026/9/30 7:05,9/30/2026 1:05 PM\n2026-10-01T00:00:00Z,2026/10/1 23:59:59,10/1/2026 11:59:59 AM\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy-MM-ddTHH:mm:ss.FFFFFFFK"
+              ]
+            },
+            {
+              "name": "B",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy/M/d H:mm",
+                "yyyy/M/d H:mm:ss"
+              ]
+            },
+            {
+              "name": "C",
+              "kind": "date",
+              "dateFormats": [
+                "M/d/yyyy h:mm tt",
+                "M/d/yyyy h:mm:ss tt"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2026-09-30T10:00:00.5+09:00",
+              "2026-10-01T00:00:00Z"
+            ]
+          },
+          {
+            "marks": [
+              {
+                "doubt": "mixedDateFormats",
+                "note": "The dates are written in 2 formats: 'yyyy/M/d H:mm', as '2026/9/30 7:05' (row 1), 'yyyy/M/d H:mm:ss', as '2026/10/1 23:59:59' (row 2); all of them are suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "2026/9/30 7:05",
+              "2026/10/1 23:59:59"
+            ]
+          },
+          {
+            "marks": [
+              {
+                "doubt": "mixedDateFormats",
+                "note": "The dates are written in 2 formats: 'M/d/yyyy h:mm tt', as '9/30/2026 1:05 PM' (row 1), 'M/d/yyyy h:mm:ss tt', as '10/1/2026 11:59:59 AM' (row 2); all of them are suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "9/30/2026 1:05 PM",
+              "10/1/2026 11:59:59 AM"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): numbers with both a comma and a full stop are marked",
+      "file": [
+        "Notional\n\"1,234.5\"\n12.75\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Notional",
+              "kind": "decimal",
+              "thousandsSeparator": ","
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "bothSeparators",
+                "note": "'1,234.5' (row 1) is written with both ',' and '.'; '.' is read as the decimal point and ',' as the thousands separator."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1,234.5",
+              "12.75"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): numbers with both separators under a semicolon read the comma as the point",
+      "file": [
+        "Betrag\n1.234,5\n12,75\n"
+      ],
+      "options": {
+        "separator": "semicolon"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Betrag",
+              "kind": "decimal",
+              "decimalPoint": ",",
+              "thousandsSeparator": "."
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "bothSeparators",
+                "note": "'1.234,5' (row 1) is written with both ',' and '.'; ',' is read as the decimal point and '.' as the thousands separator."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1.234,5",
+              "12,75"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a comma that could be either is marked, and read as thousands in the invariant culture",
+      "file": [
+        "Amount\n\"1,234\"\n\"5,678\"\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Amount",
+              "kind": "integer",
+              "thousandsSeparator": ","
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "ambiguousSeparator",
+                "note": "'1,234' (row 1) reads as 1234 with '.' as the decimal point, and as 1.234 with ','; '.' is suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1,234",
+              "5,678"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a comma that could be either is read as the point in de-DE",
+      "file": [
+        "Amount\n\"1,234\"\n\"5,678\"\n"
+      ],
+      "options": {
+        "culture": "de-DE"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Amount",
+              "kind": "decimal",
+              "decimalPoint": ","
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "ambiguousSeparator",
+                "note": "'1,234' (row 1) reads as 1.234 with ',' as the decimal point, and as 1234 with '.'; ',' is suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1,234",
+              "5,678"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a full stop that could be either is read as the point under a comma separator",
+      "file": [
+        "Amount\n1.234\n5.678\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Amount",
+              "kind": "decimal"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "ambiguousSeparator",
+                "note": "'1.234' (row 1) reads as 1.234 with '.' as the decimal point, and as 1234 with ','; '.' is suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1.234",
+              "5.678"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a full stop that could be either is read as thousands under a semicolon",
+      "file": [
+        "Amount;B\n1.234;x\n5.678;y\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Amount",
+              "kind": "integer",
+              "decimalPoint": ",",
+              "thousandsSeparator": "."
+            },
+            {
+              "name": "B",
+              "kind": "text"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "ambiguousSeparator",
+                "note": "'1.234' (row 1) reads as 1234 with ',' as the decimal point, and as 1.234 with '.'; ',' is suggested."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1.234",
+              "5.678"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x",
+              "y"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a no-break space between groups is a thousands separator",
+      "file": [
+        "Amount\n1\u00A0234,5\n12,75\n"
+      ],
+      "options": {
+        "separator": "semicolon"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Amount",
+              "kind": "decimal",
+              "decimalPoint": ",",
+              "thousandsSeparator": "\u00A0"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1\u00A0234,5",
+              "12,75"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a narrow no-break space is not a separator tried, so the column is Text",
+      "file": [
+        "Amount\n1\u202F234,5\n12,75\n"
+      ],
+      "options": {
+        "separator": "semicolon"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Amount",
+              "kind": "text"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1\u202F234,5",
+              "12,75"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): an empty column is marked and suggested as Text",
+      "file": [
+        "Desk,Note\nFX,\nRates,\"\"\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Desk",
+              "kind": "text"
+            },
+            {
+              "name": "Note",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "FX",
+              "Rates"
+            ]
+          },
+          {
+            "marks": [
+              {
+                "doubt": "empty",
+                "note": "The column is empty in every sampled row; it is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": []
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a column of nothing but blank words is marked as empty",
+      "file": [
+        "A,B\nNULL,1\nn/a,2\n(blank),3\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "text"
+            },
+            {
+              "name": "B",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "empty",
+                "note": "The column holds nothing but 'NULL', 'n/a' and '(blank)' in the sampled rows; it is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "NULL",
+              "n/a",
+              "(blank)"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "2",
+              "3"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 3,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): blank words among numbers and dates are suggested as Blanks",
+      "file": [
+        "Qty,When\n5,2026-09-30\nNULL,-\n7,2026-10-01\nN/A,--\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Qty",
+              "kind": "integer",
+              "blankText": [
+                "NULL",
+                "N/A"
+              ]
+            },
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy-MM-dd"
+              ],
+              "blankText": [
+                "-",
+                "--"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "blankText",
+                "note": "'NULL' and 'N/A' stand among the numbers and are read as Blanks."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "5",
+              "NULL",
+              "7",
+              "N/A"
+            ]
+          },
+          {
+            "marks": [
+              {
+                "doubt": "blankText",
+                "note": "'-' and '--' stand among the dates and are read as Blanks."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "2026-09-30",
+              "-",
+              "2026-10-01",
+              "--"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 4,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): blank words among Booleans are suggested as Blanks",
+      "file": [
+        "Live\nTRUE\n #N/A \nfalse\nNone\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Live",
+              "kind": "boolean",
+              "blankText": [
+                " #N/A ",
+                "None"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "blankText",
+                "note": "' #N/A ' and 'None' stand among the true or false and are read as Blanks."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "TRUE",
+              " #N/A ",
+              "false",
+              "None"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 4,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): 0 and 1 and yes and no are marked as possible Booleans",
+      "file": [
+        "Flag,Answer\n0,yes\n1,no\n1,Yes\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Flag",
+              "kind": "integer"
+            },
+            {
+              "name": "Answer",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "couldBeBoolean",
+                "note": "The column holds only 0 and 1; it could be a Boolean, with those spellings declared."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "0",
+              "1"
+            ]
+          },
+          {
+            "marks": [
+              {
+                "doubt": "couldBeBoolean",
+                "note": "The column holds only 'yes' and 'no'; it could be a Boolean, with those spellings declared."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "yes",
+              "no",
+              "Yes"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 3,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): Y and N, written with spaces around them, are marked as possible Booleans",
+      "file": [
+        "Answer\n Y\nn \nN\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Answer",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "couldBeBoolean",
+                "note": "The column holds only 'Y' and 'n'; it could be a Boolean, with those spellings declared."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              " Y",
+              "n ",
+              "N"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 3,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a count never more than one is not marked",
+      "file": [
+        "Count\n1\n1\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Count",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a number too long for a Decimal is Text and marked",
+      "file": [
+        "Card\n123456789012345678901234567890\n1\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Card",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "tooLong",
+                "note": "'123456789012345678901234567890' (row 1) has more digits than a Decimal holds; the column is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "123456789012345678901234567890",
+              "1"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): numbers past twenty-eight places are Text and marked",
+      "file": [
+        "Tiny\n0.00000000000000000000000000001\n0.1\n2\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Tiny",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "tooLong",
+                "note": "'0.00000000000000000000000000001' (row 1) has more digits than a Decimal holds; the column is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "0.00000000000000000000000000001",
+              "0.1",
+              "2"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 3,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a number past a long but within a Decimal is a Decimal",
+      "file": [
+        "Big\n99999999999999999999\n1\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Big",
+              "kind": "decimal"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "99999999999999999999",
+              "1"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): numbers with an exponent, NaN and infinities are Doubles",
+      "file": [
+        "R,S\n1.5e3,NaN\n-2E-2,-Infinity\n.5,infinity\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "R",
+              "kind": "double"
+            },
+            {
+              "name": "S",
+              "kind": "double"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1.5e3",
+              "-2E-2",
+              ".5"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "NaN",
+              "-Infinity",
+              "infinity"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 3,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): numbers with a comma point and an exponent are Doubles read with the comma",
+      "file": [
+        "R;S\n1,5e3;x\n2,5E-2;y\n"
+      ],
+      "options": {
+        "separator": "semicolon"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "R",
+              "kind": "double",
+              "decimalPoint": ","
+            },
+            {
+              "name": "S",
+              "kind": "text"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1,5e3",
+              "2,5E-2"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x",
+              "y"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): an exponent past a double's range is not a Double",
+      "file": [
+        "R\n1e400\n2\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "R",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1e400",
+              "2"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a column of numbers with a text among them is Text and marked",
+      "file": [
+        "Qty\n1\n2\n3\n4\n5\n6\nn/a?\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Qty",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "mixedKinds",
+                "note": "Most values are numbers, but 'n/a?' (row 7) is not; the column is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 20,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a column of dates with a text among them is Text and marked",
+      "file": [
+        "When\n2026-09-01\n2026-09-02\nsoon\n2026-09-04\n2026-09-05\n2026-09-06\n2026-09-07\n2026-09-08\n2026-09-09\n2026-09-10\n2026-09-11\n2026-09-12\n2026-09-13\n2026-09-14\n2026-09-15\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "When",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "mixedKinds",
+                "note": "Most values are dates, but 'soon' (row 3) is not; the column is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "2026-09-01",
+              "2026-09-02",
+              "soon",
+              "2026-09-04",
+              "2026-09-05"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 15,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): nine numbers and a text are marked as mixed, one in ten",
+      "file": [
+        "Qty\n1\n2\n3\n4\n5\n6\n7\n8\n9\nx\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Qty",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "mixedKinds",
+                "note": "Most values are numbers, but 'x' (row 10) is not; the column is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 10,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): eight numbers and a text are too few to be marked as mixed",
+      "file": [
+        "Qty\n1\n2\n3\n4\n5\n6\n7\n8\nx\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Qty",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 9,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two texts among eighteen numbers are marked as mixed",
+      "file": [
+        "Qty\n1\n2\n3\nx\n5\n6\n7\n8\nx\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Qty",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "mixedKinds",
+                "note": "Most values are numbers, but 'x' (row 4) and 'x' (row 9) are not; the column is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1",
+              "2",
+              "3",
+              "x",
+              "5"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 20,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): the separator is a comma when it splits every record alike",
+      "file": [
+        "A,B\n1,2\n3,4\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "integer"
+            },
+            {
+              "name": "B",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "3"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2",
+              "4"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): the separator is a tab when it splits every record alike",
+      "file": [
+        "A\tB\n1,5\t2,5\n3\t4\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "decimal",
+              "decimalPoint": ","
+            },
+            {
+              "name": "B",
+              "kind": "decimal",
+              "decimalPoint": ","
+            }
+          ],
+          "separator": "tab",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1,5",
+              "3"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2,5",
+              "4"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): the separator is a semicolon when it splits every record alike",
+      "file": [
+        "A;B\n1,5;2,5\n3;4\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "decimal",
+              "decimalPoint": ","
+            },
+            {
+              "name": "B",
+              "kind": "decimal",
+              "decimalPoint": ","
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1,5",
+              "3"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2,5",
+              "4"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two separators that split alike are settled by the typed fields",
+      "file": [
+        "A,B;C\n1,2;3\n4,5;6\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A,B",
+              "kind": "decimal",
+              "decimalPoint": ","
+            },
+            {
+              "name": "C",
+              "kind": "integer"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1,2",
+              "4,5"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "3",
+              "6"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "Every record splits evenly at a comma and at a semicolon; a semicolon is suggested, since its fields read best as numbers and dates."
+          }
+        ],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two separators that split alike with text alone take the invariant list separator",
+      "file": [
+        "A,B;C,D\nx,y;z,w\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "text"
+            },
+            {
+              "name": "B;C",
+              "kind": "text"
+            },
+            {
+              "name": "D",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "y;z"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "w"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "Every record splits evenly at a comma and at a semicolon; a comma is suggested, since the fields read alike under each and it is the culture's list separator."
+          },
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two separators that split alike with text alone take de-DE's list separator",
+      "file": [
+        "A,B;C,D\nx,y;z,w\n"
+      ],
+      "options": {
+        "culture": "de-DE"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A,B",
+              "kind": "text"
+            },
+            {
+              "name": "C,D",
+              "kind": "text"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x,y"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "z,w"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "Every record splits evenly at a comma and at a semicolon; a semicolon is suggested, since the fields read alike under each and it is the culture's list separator."
+          },
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two separators that split alike with text alone take de-CH's list separator",
+      "file": [
+        "A,B;C,D\nx,y;z,w\n"
+      ],
+      "options": {
+        "culture": "de-CH"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A,B",
+              "kind": "text"
+            },
+            {
+              "name": "C,D",
+              "kind": "text"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x,y"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "z,w"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "Every record splits evenly at a comma and at a semicolon; a semicolon is suggested, since the fields read alike under each and it is the culture's list separator."
+          },
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two separators that split alike with text alone take en-ZA's list separator",
+      "file": [
+        "A,B;C,D\nx,y;z,w\n"
+      ],
+      "options": {
+        "culture": "en-ZA"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "text"
+            },
+            {
+              "name": "B;C",
+              "kind": "text"
+            },
+            {
+              "name": "D",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "y;z"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "w"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "Every record splits evenly at a comma and at a semicolon; a comma is suggested, since the fields read alike under each and it is the culture's list separator."
+          },
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two separators that split alike with text alone take ar-SA's list separator",
+      "file": [
+        "A,B;C,D\nx,y;z,w\n"
+      ],
+      "options": {
+        "culture": "ar-SA"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A,B",
+              "kind": "text"
+            },
+            {
+              "name": "C,D",
+              "kind": "text"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x,y"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "z,w"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "Every record splits evenly at a comma and at a semicolon; a semicolon is suggested, since the fields read alike under each and it is the culture's list separator."
+          },
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two separators that split alike with text alone under fa-IR, whose list separator is neither, take the comma",
+      "file": [
+        "A,B;C,D\nx,y;z,w\n"
+      ],
+      "options": {
+        "culture": "fa-IR"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "text"
+            },
+            {
+              "name": "B;C",
+              "kind": "text"
+            },
+            {
+              "name": "D",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "y;z"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "w"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "Every record splits evenly at a comma and at a semicolon; a comma is suggested, though the fields read alike under each and the culture's list separator is none of them."
+          },
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): two separators that split alike with text alone take es-MX's list separator",
+      "file": [
+        "A,B;C,D\nx,y;z,w\n"
+      ],
+      "options": {
+        "culture": "es-MX"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "text"
+            },
+            {
+              "name": "B;C",
+              "kind": "text"
+            },
+            {
+              "name": "D",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "y;z"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "w"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "Every record splits evenly at a comma and at a semicolon; a comma is suggested, since the fields read alike under each and it is the culture's list separator."
+          },
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): no separator that splits every record alike is marked",
+      "file": [
+        "A,B\n1,2\n3\n4,5\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "integer"
+            },
+            {
+              "name": "B",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "3",
+              "4"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2",
+              "5"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "No separator splits every record into the same number of fields; a comma is suggested, since it splits the most records alike."
+          },
+          {
+            "doubt": "fieldCount",
+            "note": "Row 2 has other than the 2 fields the header has; reading the file under this Schema refuses it."
+          }
+        ],
+        "sampledRows": 3,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a file of one column has no separator to tell",
+      "file": [
+        "A\n1\n2\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "2"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a file without a header row names its columns by position",
+      "file": [
+        "1,2026-09-30,1.5\n2,2026-10-01,2.5\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Column1",
+              "kind": "integer"
+            },
+            {
+              "name": "Column2",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy-MM-dd"
+              ]
+            },
+            {
+              "name": "Column3",
+              "kind": "decimal"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": false,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2026-09-30",
+              "2026-10-01"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1.5",
+              "2.5"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a first record of numbers is data",
+      "file": [
+        "1,2\n3,4\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Column1",
+              "kind": "integer"
+            },
+            {
+              "name": "Column2",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": false,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "3"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2",
+              "4"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a header row over typed columns is told",
+      "file": [
+        "Id,When\n1,2026-09-30\n2,2026-10-01\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Id",
+              "kind": "integer"
+            },
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy-MM-dd"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2026-09-30",
+              "2026-10-01"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): an empty header over a typed column is data",
+      "file": [
+        ",When\n1,2026-09-30\n2,2026-10-01\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Column1",
+              "kind": "integer",
+              "position": 0
+            },
+            {
+              "name": "When",
+              "kind": "date",
+              "dateFormats": [
+                "yyyy-MM-dd"
+              ]
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "headerName",
+                "note": "The header is empty here, so the column is matched by its position, 0, and named 'Column1'."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1",
+              "2"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2026-09-30",
+              "2026-10-01"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a file of text alone is taken to have a header row, and marked",
+      "file": [
+        "Desk,Book\nFX,B1\nRates,B2\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Desk",
+              "kind": "text"
+            },
+            {
+              "name": "Book",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "FX",
+              "Rates"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "B1",
+              "B2"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 2,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a file of one record is taken as its header row, and marked",
+      "file": [
+        "Desk,Book\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Desk",
+              "kind": "text"
+            },
+            {
+              "name": "Book",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "empty",
+                "note": "The column is empty in every sampled row; it is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": []
+          },
+          {
+            "marks": [
+              {
+                "doubt": "empty",
+                "note": "The column is empty in every sampled row; it is suggested as Text."
+              }
+            ],
+            "isUnclear": true,
+            "examples": []
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "The sample holds one record at most, which is taken as the header row."
+          }
+        ],
+        "sampledRows": 0,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): what the caller knows is taken as given",
+      "file": [
+        "Desk,Book\nFX,B1\n"
+      ],
+      "options": {
+        "hasHeader": false,
+        "separator": "semicolon"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Column1",
+              "kind": "text"
+            }
+          ],
+          "separator": "semicolon",
+          "hasHeader": false,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "Desk,Book",
+              "FX,B1"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a header empty or repeated is matched by position and marked",
+      "file": [
+        "Amount,,Amount\n1,2,3\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Column1",
+              "kind": "integer",
+              "position": 0
+            },
+            {
+              "name": "Column2",
+              "kind": "integer",
+              "position": 1
+            },
+            {
+              "name": "Column3",
+              "kind": "integer",
+              "position": 2
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [
+              {
+                "doubt": "headerName",
+                "note": "The header 'Amount' stands more than once, so the column is matched by its position, 0, and named 'Column1'."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "1"
+            ]
+          },
+          {
+            "marks": [
+              {
+                "doubt": "headerName",
+                "note": "The header is empty here, so the column is matched by its position, 1, and named 'Column2'."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "2"
+            ]
+          },
+          {
+            "marks": [
+              {
+                "doubt": "headerName",
+                "note": "The header 'Amount' stands more than once, so the column is matched by its position, 2, and named 'Column3'."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "3"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a header named like a position name takes the next free one",
+      "file": [
+        "Column2,,x\na,b,c\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Column2",
+              "kind": "text"
+            },
+            {
+              "name": "Column2_2",
+              "kind": "text",
+              "position": 1
+            },
+            {
+              "name": "x",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "a"
+            ]
+          },
+          {
+            "marks": [
+              {
+                "doubt": "headerName",
+                "note": "The header is empty here, so the column is matched by its position, 1, and named 'Column2_2'."
+              }
+            ],
+            "isUnclear": true,
+            "examples": [
+              "b"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "c"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 1,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): records with other fields than the header are marked",
+      "file": [
+        "A,B\n1,2\n3\n4,5\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "integer"
+            },
+            {
+              "name": "B",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "3",
+              "4"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2",
+              "5"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "No separator splits every record into the same number of fields; a comma is suggested, since it splits the most records alike."
+          },
+          {
+            "doubt": "fieldCount",
+            "note": "Row 2 has other than the 2 fields the header has; reading the file under this Schema refuses it."
+          }
+        ],
+        "sampledRows": 3,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): many records with other fields are named and counted",
+      "file": [
+        "A,B\n1\n2\n3\n4\n5\n6,7\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "integer"
+            },
+            {
+              "name": "B",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "7"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "fieldCount",
+            "note": "Rows 1, 2, 3 and 2 more have other than the 2 fields the header has; reading the file under this Schema refuses them."
+          }
+        ],
+        "sampledRows": 6,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): records with other fields than the first record are marked without a header",
+      "file": [
+        "1,2\n3\n4,5\n6,7\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Column1",
+              "kind": "integer"
+            },
+            {
+              "name": "Column2",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": false,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "3",
+              "4",
+              "6"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2",
+              "5",
+              "7"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "separator",
+            "note": "No separator splits every record into the same number of fields; a comma is suggested, since it splits the most records alike."
+          },
+          {
+            "doubt": "fieldCount",
+            "note": "Row 2 has other than the 2 fields the first record has; reading the file under this Schema refuses it."
+          }
+        ],
+        "sampledRows": 4,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): the rows sampled are as many as asked",
+      "file": [
+        {
+          "repeat": "Id,Desk\n",
+          "times": 1
+        },
+        {
+          "repeat": "1,D2\n",
+          "times": 200
+        }
+      ],
+      "options": {
+        "rows": 10
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Id",
+              "kind": "integer"
+            },
+            {
+              "name": "Desk",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "D2"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 10,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a thousand rows are sampled when none are asked",
+      "file": [
+        {
+          "repeat": "Id,Desk,Note\n",
+          "times": 1
+        },
+        {
+          "repeat": "12345,D2,something long enough to pass a chunk\n",
+          "times": 3000
+        }
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Id",
+              "kind": "integer"
+            },
+            {
+              "name": "Desk",
+              "kind": "text"
+            },
+            {
+              "name": "Note",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "12345"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "D2"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "something long enough to pass a chunk"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 1000,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a sample past its first chunk is read to its rows",
+      "file": [
+        {
+          "repeat": "Id,Desk\n",
+          "times": 1
+        },
+        {
+          "repeat": "12345,D2 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n",
+          "times": 1500
+        }
+      ],
+      "options": {
+        "rows": 1200
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Id",
+              "kind": "integer"
+            },
+            {
+              "name": "Desk",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "12345"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "D2 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 1200,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): examples are the first five distinct values",
+      "file": [
+        "A\nx\ny\nx\nz\nw\nv\nu\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "text"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x",
+              "y",
+              "z",
+              "w",
+              "v"
+            ]
+          }
+        ],
+        "marks": [
+          {
+            "doubt": "header",
+            "note": "Every column holds text, so whether the first record is a header row cannot be told; it is taken as one."
+          }
+        ],
+        "sampledRows": 7,
+        "isUnclear": true
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a quoted header with a doubled quote and a line break is its name",
+      "file": [
+        "\"Say \"\"hi\"\"\nthere\",B\nx,1\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Say \"hi\"\nthere",
+              "kind": "text"
+            },
+            {
+              "name": "B",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "x"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 1,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a quote left open is refused by line",
+      "file": [
+        "A\n\"x\ny\"\n\"z\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Line 4: a quoted field is not closed before the sample ends, so no Schema can be suggested."
+        }
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a quote inside a field is refused by line",
+      "file": [
+        "A,B\n1,x\"y\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Line 2: a quote stands inside a field that does not begin with one, so no Schema can be suggested."
+        }
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): text after a closing quote is refused by line",
+      "file": [
+        "A,B\n\"a\"b,c\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Line 2: a quoted field's closing quote is followed by something other than a separator or a line end, so no Schema can be suggested."
+        }
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): an empty file is refused",
+      "file": [
+        ""
+      ],
+      "expect": {
+        "refused": {
+          "message": "The file is empty, so no Schema can be suggested."
+        }
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a file of a byte-order mark alone is refused as empty",
+      "file": [
+        {
+          "hex": "ef bb bf"
+        }
+      ],
+      "expect": {
+        "refused": {
+          "message": "The file is empty, so no Schema can be suggested."
+        }
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): UTF-8's byte-order mark wins over the declared encoding",
+      "file": [
+        {
+          "hex": "ef bb bf"
+        },
+        "Desk,Qty\nFX,1\n"
+      ],
+      "options": {
+        "encoding": "shift-jis"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "Desk",
+              "kind": "text"
+            },
+            {
+              "name": "Qty",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "FX"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 1,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): UTF-16's byte-order mark is refused",
+      "file": [
+        {
+          "hex": "ff fe"
+        },
+        "A\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "The file begins with UTF-16's byte-order mark; a CSV is read in UTF-8 or Shift-JIS, and the Schema declares UTF-8."
+        }
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a Shift-JIS file is suggested in its declared encoding",
+      "file": [
+        {
+          "hex": "8e e6 88 f8 90 e6 2c 8b e0 8a 7a 0d 0a 93 8c 8b 9e 95 5c 2c 31 32 33 34 0d 0a 91 e5 8d e3 2c 2d 35 0d 0a"
+        }
+      ],
+      "options": {
+        "encoding": "shift-jis"
+      },
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "取引先",
+              "kind": "text"
+            },
+            {
+              "name": "金額",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "shift-jis"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "東京表",
+              "大阪"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1234",
+              "-5"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a Shift-JIS file undeclared is refused as not UTF-8",
+      "file": [
+        {
+          "hex": "8e e6 88 f8 90 e6 2c 8b e0 8a 7a 0d 0a 93 8c 8b 9e 95 5c 2c 31 32 33 34 0d 0a 91 e5 8d e3 2c 2d 35 0d 0a"
+        }
+      ],
+      "expect": {
+        "refused": {
+          "message": "Line 1: the text is not valid UTF-8; if the file is in another encoding, say which in the suggestion's options."
+        }
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): text not valid UTF-8 on a later line is refused by line",
+      "file": [
+        "A\nok\n",
+        {
+          "hex": "c3 28"
+        },
+        "\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Line 3: the text is not valid UTF-8; if the file is in another encoding, say which in the suggestion's options."
+        }
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): CR LF and CR alone end records",
+      "file": [
+        "A,B\r\n1,2\r3,4\r\n"
+      ],
+      "expect": {
+        "schema": {
+          "columns": [
+            {
+              "name": "A",
+              "kind": "integer"
+            },
+            {
+              "name": "B",
+              "kind": "integer"
+            }
+          ],
+          "separator": "comma",
+          "hasHeader": true,
+          "encoding": "utf-8"
+        },
+        "columns": [
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "1",
+              "3"
+            ]
+          },
+          {
+            "marks": [],
+            "isUnclear": false,
+            "examples": [
+              "2",
+              "4"
+            ]
+          }
+        ],
+        "marks": [],
+        "sampledRows": 2,
+        "isUnclear": false
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): no rows are refused as an argument",
+      "file": [
+        "A\n1\n"
+      ],
+      "options": {
+        "rows": 0
+      },
+      "expect": {
+        "refused": "argument"
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): a separator not read with is refused as an argument",
+      "file": [
+        "A\n1\n"
+      ],
+      "options": {
+        "separator": "pipe"
+      },
+      "expect": {
+        "refused": "argument"
+      }
+    },
+    {
+      "name": "ADR-0064 (Q33): an encoding not read in is refused as an argument",
+      "file": [
+        "A\n1\n"
+      ],
+      "options": {
+        "encoding": "latin-1"
+      },
+      "expect": {
+        "refused": "argument"
+      }
+    }
+  ]
+}
