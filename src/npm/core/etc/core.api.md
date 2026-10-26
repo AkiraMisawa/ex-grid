@@ -69,6 +69,15 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
 export type DateType = 'dateTime' | 'dateOnly' | 'dateTimeOffset';
 
 // @public
+export interface DensityText {
+    readonly fontSizePx: number;
+    textWidthPx(text: string): number;
+}
+
+// @public
+export function densityText(density: GridDensity): DensityText;
+
+// @public
 export type DistinctValues = {
     readonly kind: 'values';
     readonly values: readonly unknown[];
