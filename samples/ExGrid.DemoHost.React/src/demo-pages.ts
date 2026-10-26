@@ -34,4 +34,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'filter-panel', title: 'Filter panel', group: 'Interaction',
         description: 'The filter panel\'s value list, Blank entry, search, condition form and TooMany under the built-in Chrome, with the Filter it applied written out (ADR-0009, WR-1).',
     },
+    {
+        route: 'chart', title: 'Charts', group: 'ExChart',
+        description: 'An exposure profile in two panels and a hazard curve drawn as steps: the tooltip lists every series at the pointer\'s date, the legend hides a series, a drag narrows the range, and Next run replaces the data keeping what the user changed (ADR-0252, ADR-0270 to ADR-0273).',
+    },
 ]);

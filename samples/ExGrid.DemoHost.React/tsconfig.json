@@ -14,7 +14,9 @@
       "react-dom": ["./node_modules/@types/react-dom/index.d.ts"],
       "react-dom/*": ["./node_modules/@types/react-dom/*"],
       "@ex-grid/core": ["../../src/npm/core/src/index.ts"],
-      "@ex-grid/react": ["../../src/npm/react/src/index.ts"]
+      "@ex-grid/react": ["../../src/npm/react/src/index.ts"],
+      "@ex-grid/chart": ["../../src/npm/chart/src/index.ts"],
+      "@ex-grid/chart-react": ["../../src/npm/chart-react/src/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]
