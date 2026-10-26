@@ -196,6 +196,13 @@
             Keep the delegate in a field. It is asked once per painted cell, so it should be a dictionary lookup. A
             replaced row is asked again; to change answers for rows that were not replaced, hand over a new delegate.
         </p>
+        <p>
+            ExGrid drawn by the Script Core (<code>createGrid</code> from <code>@@ex-grid/core</code>) takes the same
+            declaration as <code>cellChangedAt</code>, asked for a row and a column's name and answering milliseconds
+            since the epoch on the page's monotonic clock (<code>performance.timeOrigin + performance.now()</code>), or
+            <code>undefined</code>; and the duration as <code>changeHighlightDuration</code>, in milliseconds. An <code>InMemoryGridSource</code> with a Row Key
+            offers one as its own <code>cellChangedAt</code>. As in C#, hand over a new function when the times change.
+        </p>
         <DocsExample Title="A live price board" Builtin="typeof(LiveQuotes)" Mud="typeof(LiveQuotesMud)"
                      Files="@(["Examples/Grid/Quote.cs"])" />
         <p>

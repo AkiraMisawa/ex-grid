@@ -24,6 +24,11 @@ export class FakeClock implements GridClock {
         return () => { timer.cancelled = true; };
     }
 
+    /** How many timers are armed and not yet run or cancelled. */
+    get pending(): number {
+        return this.#timers.filter(timer => !timer.cancelled).length;
+    }
+
     /** Moves the time on, then runs every timer due by then, a timer armed by one of them included. */
     advance(milliseconds: number): void {
         this.#now += milliseconds;

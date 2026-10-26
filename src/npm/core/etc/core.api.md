@@ -76,8 +76,10 @@ export type CellChangedAt<Row> = (row: Row, column: string) => number | undefine
 export interface CellPaintOptions<Row> {
     readonly cellAlign?: (row: Row, column: GridColumn<Row>) => CellAlign;
     readonly cellAppearance?: (row: Row, column: GridColumn<Row>) => CellAppearance;
+    readonly cellChangedAt?: CellChangedAt<Row>;
     readonly cellState?: (row: Row, column: GridColumn<Row>) => CellState;
     readonly cellType?: (row: Row, column: GridColumn<Row>) => ColumnType;
+    readonly changeHighlightDuration?: number;
     readonly edgeBorder?: EdgeBorderOf;
     readonly editorAppearance?: (row: Row, column: GridColumn<Row>) => CellAppearance;
     readonly editorText?: (row: Row, column: GridColumn<Row>) => string | undefined;
@@ -170,6 +172,9 @@ export type DateType = 'dateTime' | 'dateOnly' | 'dateTimeOffset';
 
 // @public
 export function declinedSummary(reason: string): GridSummaryResult;
+
+// @public
+export const defaultChangeHighlightMs = 1000;
 
 // @public
 export const defaultSummaryFigures: readonly SummaryFigure[];
@@ -1233,6 +1238,9 @@ export const summaryLabelIds: Readonly<{
 
 // @public
 export function summaryOf<Row>(rows: readonly Row[], request: GridSummaryRequest, valueOf: (column: string) => ((row: Row) => unknown) | undefined): GridSummaryResult;
+
+// @public
+export const systemClock: GridClock;
 
 // @public
 export interface TemporalLike {

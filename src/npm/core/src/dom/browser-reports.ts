@@ -29,7 +29,7 @@ export interface BrowserReports {
     observeCeiling(probe: HTMLElement, tell: (ceilingPx: number) => void): () => void;
     /** Hears the Device Pixel's size: at once, then whenever the scale or the zoom moves it. */
     observeDevicePixel(tell: (devicePixelRatio: number) => void): () => void;
-    /** The clock the settle delay after a fling runs on (ADR-0004), and the announcement's (ADR-0033). */
+    /** The clock the settle delay after a fling runs on (ADR-0004), the announcement's (ADR-0033), and the Change Highlight's (ADR-0068). */
     readonly clock: GridClock;
     /** Calls `callback` before the next frame of `element`'s window is painted; the answer cancels the call
      * if it has not run. A reveal's repaint moves the offset in the frames after the reveal's (ADR-0012). */
