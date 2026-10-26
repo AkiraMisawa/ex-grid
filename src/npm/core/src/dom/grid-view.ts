@@ -6730,7 +6730,8 @@ export class GridView<Row> {
         const metrics = this.#metrics;
         const geometry = this.#styles.geometry;
         const root = this.#root;
-        this.#write(root, 'root', 'class', this.#state.loading ? 'ex-grid ex-loading' : 'ex-grid');
+        // ex-loading while rows are on their way, and ex-editing while the Cell Editor stands (ADR-0029).
+        this.#write(root, 'root', 'class', `ex-grid${this.#state.loading ? ' ex-loading' : ''}${this.#edit === undefined ? '' : ' ex-editing'}`);
         // The Geometry Tokens, inline on the root from the same resolved metrics the arithmetic reads
         // (ADR-0027, ADR-0028), and the Device Pixel once told (ADR-0090).
         this.#write(root, 'root', 'style', `--ex-row-height: ${metrics.rowHeightPx}px; --ex-header-height: ${metrics.headerHeightPx}px; `
