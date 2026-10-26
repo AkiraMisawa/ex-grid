@@ -4,7 +4,7 @@
 // stack (ADR-0048), hands back new instances only for the rows a change names (ADR-0003), and says in its own words
 // what it refuses (ADR-0370 section 10).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CellAddress, Culture, SheetEdit, SheetRefusedError, Workbook } from '@ex-grid/sheet-engine';
+import { CellAddress, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
 import { createSheet, type SheetHandle, type SheetOptions } from '../src/create-sheet';
 
 const mounted: SheetHandle[] = [];
@@ -144,6 +144,51 @@ describe('createSheet (ADR-0046, ADR-0370 section 1)', () => {
         sheet.update({ locale: 'en-us', viewportWidth: 600, viewportHeight: 300 });
         expect(() => { sheet.update({ locale: 'de-DE' }); }).toThrow(/culture is recorded in its document/u);
         expect(() => createSheet(document.createElement('div'), { locale: 'xx-XX' })).toThrow(/xx-XX/u);
+    });
+});
+
+/** A Linked Table's rows of an Id and a PV, as a page pushes them. */
+const rowsOf = (...rows: readonly (readonly [string, number])[]): (readonly Value[])[] => rows.map(([id, pv]) => [Value.fromText(id), Value.fromNumber(pv)]);
+
+describe('Linked Tables (ADR-0049)', () => {
+    it('ADR-0049: a declared table\'s readers wait for its first snapshot, which repaints them; the document hears the declaration, never the rows, and neither is a step to undo', async () => {
+        const documents: unknown[] = [];
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'Total', B1: '=SUM(Positions[PV])', A3: 'Untouched' }), onWorkbookChanged: document => { documents.push(document); } });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        expect(documents).toHaveLength(1);
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
+        // The same declaration again changes nothing the document records.
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        expect(documents).toHaveLength(1);
+        const untouched = cellAt(element, 2, 0);
+        sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1250], ['R-2', -420.5]));
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('829.5'); });
+        expect(cellAt(element, 2, 0)).toBe(untouched);
+        expect(documents).toHaveLength(1);
+        expect(sheet.undo()).toBe(false);
+    });
+
+    it('ADR-0049: a snapshot in which a key repeats is refused with the engine\'s error, and its readers wait again', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ B1: '=SUM(Positions[PV])' }) });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1]));
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('1'); });
+        expect(() => { sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1], ['r-1', 2])); }).toThrow(RepeatedKeyError);
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
+    });
+
+    it('ADR-0049, ADR-0331: a reader on a Sheet other than the first follows a push, and waits again when a key repeats', async () => {
+        const workbook = new Workbook(Culture.of('en-US'), ['Sheet1', 'Second']);
+        workbook.do('Second', SheetEdit.enter(CellAddress.parse('B1'), '=SUM(Positions[PV])'));
+        const { element, sheet } = sheetOf({ document: workbook.toDocument() });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        click(element.querySelectorAll('.ex-sheet-tab')[1]);
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
+        sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1], ['R-2', 2]));
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('3'); });
+        expect(() => { sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1], ['r-1', 2])); }).toThrow(RepeatedKeyError);
+        await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
     });
 });
 
@@ -621,6 +666,27 @@ describe('a copy of the Sheet\'s own (ADR-0050 item 9, ADR-0048)', () => {
     });
 });
 
+// A split control's face or arrow, by the control's name.
+function splitPart(element: HTMLElement, name: string, part: 'face' | 'arrow'): HTMLButtonElement {
+    const found = element.querySelector<HTMLButtonElement>(`.ex-sheet-toolbar-split[aria-label="${name}"] > .ex-sheet-toolbar-${part}`);
+    if (found === null) throw new Error(`No split control is named ${name}.`);
+    return found;
+}
+
+// The list a Toolbar Item opened in the grid's popover frame, and its choices by their names.
+function choicesOf(element: HTMLElement): { readonly list: HTMLElement; readonly choice: (name: string) => HTMLButtonElement } {
+    const list = element.querySelector<HTMLElement>('.ex-popover .ex-sheet-choices');
+    if (list === null) throw new Error('No Toolbar Item\'s list stands.');
+    return {
+        list,
+        choice: (name: string): HTMLButtonElement => {
+            const found = [...list.querySelectorAll<HTMLButtonElement>('button')].find(button => (button.getAttribute('aria-label') ?? button.querySelector('.ex-sheet-choice-label')?.textContent) === name);
+            if (found === undefined) throw new Error(`The list offers no choice named ${name}.`);
+            return found;
+        },
+    };
+}
+
 function toolbarItem(element: HTMLElement, name: string): HTMLButtonElement {
     const found = [...element.querySelectorAll<HTMLButtonElement>('.ex-sheet-toolbar-item')].find(button => button.getAttribute('aria-label') === name);
     if (found === undefined) throw new Error(`No Toolbar Item is named ${name}.`);
@@ -637,8 +703,8 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect(band?.nextElementSibling?.querySelector('.ex-grid, [data-ex-answered]')).not.toBeNull();
         expect([band?.getAttribute('role'), band?.getAttribute('aria-label'), band?.tabIndex]).toEqual(['toolbar', 'Formatting', 0]);
         expect([...element.querySelectorAll('.ex-sheet-toolbar-item')].map(button => button.getAttribute('aria-label'))).toEqual([
-            'Bold', 'Italic', 'Underline', 'Strikethrough', 'Align Left', 'Centre', 'Align Right', 'Percent Style', 'Comma Style',
-            'Format Cells',
+            'Bold', 'Italic', 'Underline', 'Strikethrough', 'Font Colour', 'Fill Colour', 'Borders', 'Align Left', 'Centre', 'Align Right',
+            'Number Format', 'Percent Style', 'Comma Style', 'Format Cells',
         ]);
         expect(toolbarItem(element, 'Bold').title).toBe('Bold (Ctrl+B)');
         expect(toolbarItem(element, 'Comma Style').disabled).toBe(true);
@@ -700,6 +766,207 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         key('Escape');
         expect(document.activeElement).toBe(grid);
         expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.italic).toBe(false);
+    });
+
+    it('ADR-0100: a colour control\'s arrow opens the palette on the Focus cell\'s colour; a choice sets it, and the face sets it from then on', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: 'x', A2: 'y' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        expect(splitPart(element, 'Fill Colour', 'arrow').getAttribute('aria-label')).toBe('Fill Colour, more');
+        splitPart(element, 'Fill Colour', 'arrow').click();
+        const { list, choice } = choicesOf(element);
+        expect(list.getAttribute('aria-label')).toBe('Fill Colour');
+        // No Fill, the Office theme's sixty colours and the ten standard ones; the keyboard on the Focus cell's, none.
+        expect(list.querySelectorAll('button')).toHaveLength(71);
+        expect(document.activeElement).toBe(choice('No Fill'));
+        expect(choice('No Fill').getAttribute('aria-checked')).toBe('true');
+        choice('Red').click();
+        expect(element.querySelector('.ex-sheet-choices')).toBeNull();
+        expect(document.activeElement).toBe(grid);
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).fill.colour?.toString()).toBe('#FF0000');
+        press(element, 1, 0);
+        splitPart(element, 'Fill Colour', 'face').click();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A2')).fill.colour?.toString()).toBe('#FF0000');
+        // Opened over the red cell, the palette marks red; No Fill takes it away, and the face still sets red.
+        splitPart(element, 'Fill Colour', 'arrow').click();
+        expect(choicesOf(element).choice('Red').getAttribute('aria-checked')).toBe('true');
+        choicesOf(element).choice('No Fill').click();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A2')).fill.isNone).toBe(true);
+        splitPart(element, 'Font Colour', 'face').click();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A2')).font.colour.toString()).toBe('#FF0000');
+        sheet.undo();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A2')).font.colour.isAutomatic).toBe(true);
+    });
+
+    it('ADR-0100: the Number Format menu shows the Focus cell\'s category, opens from the band\'s keys, and the keys choose; Accounting says why it cannot be chosen', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: '0.5' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('0.5'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const menu = toolbarItem(element, 'Number Format');
+        expect(menu.textContent).toBe('General');
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        band?.focus();
+        while (band?.getAttribute('aria-activedescendant') !== menu.id) key('ArrowRight');
+        key('Enter');
+        const { choice } = choicesOf(element);
+        expect(document.activeElement).toBe(choice('General'));
+        expect(choice('Accounting').getAttribute('aria-disabled')).toBe('true');
+        expect(choice('Accounting').textContent).toContain('Accounting');
+        expect(() => choice('Special')).toThrow(/no choice named Special/u);
+        // General, Number, Currency, Date, Time, Percentage: ↓ passes over Accounting, which cannot be chosen.
+        for (let i = 0; i < 5; i++) key('ArrowDown');
+        expect(document.activeElement).toBe(choice('Percentage'));
+        key('Enter');
+        expect(document.activeElement).toBe(grid);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('50.00%'); });
+        await vi.waitFor(() => { expect(toolbarItem(element, 'Number Format').textContent).toBe('Percentage'); });
+        // More Number Formats… opens Format Cells in the list's place.
+        toolbarItem(element, 'Number Format').click();
+        choicesOf(element).choice('More Number Formats…').click();
+        expect(element.querySelector('.ex-sheet-choices')).toBeNull();
+        expect(element.querySelector('.ex-popover .ex-format-cells')).not.toBeNull();
+        expect(sheet.undo()).toBe(true);
+    });
+
+    it('ADR-0100: ↓ on Borders opens its presets; one chosen is set relative to every selected range, and the face sets it from then on', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: '1', B2: '2' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        band?.focus();
+        const borders = element.querySelector<HTMLElement>('.ex-sheet-toolbar-split[aria-label="Borders"]');
+        while (band?.getAttribute('aria-activedescendant') !== borders?.id) key('ArrowRight');
+        key('ArrowDown');
+        const { choice } = choicesOf(element);
+        expect(document.activeElement).toBe(choice('Bottom Border'));
+        choice('Thick Outside Borders').click();
+        const a1 = sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).borders;
+        expect([a1.top.style, a1.bottom.style, a1.left.style, a1.right.style]).toEqual(['thick', 'thick', 'thick', 'thick']);
+        press(element, 1, 1);
+        splitPart(element, 'Borders', 'face').click();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('B2')).borders.left.style).toBe('thick');
+    });
+
+    it('ADR-0100, ADR-0331: a list reads the Sheet it opened over: another Sheet shown ends it, and its choices set nothing after', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: twoSheets() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        splitPart(element, 'Fill Colour', 'arrow').click();
+        const red = choicesOf(element).choice('Red');
+        click(element.querySelectorAll('.ex-sheet-tab')[1]);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('there'); });
+        expect(element.querySelector('.ex-sheet-choices')).toBeNull();
+        red.click();
+        expect(sheet.workbook.sheets.map(shown => shown.getCellFormat(CellAddress.parse('A1')).fill.isNone)).toEqual([true, true]);
+    });
+
+    it('ADR-0100: the Alt key alone shows the rows\' KeyTip; H shows the items\' letters, and 1 presses Bold and gives the keyboard back', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: 'x' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        key('Alt', { altKey: true });
+        const release = new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true });
+        grid?.dispatchEvent(release);
+        expect(release.defaultPrevented).toBe(true);
+        expect(document.activeElement).toBe(band);
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['H']);
+        key('h');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual([
+            '1', '2', '3', '4', 'FC', 'H', 'B', 'AL', 'AC', 'AR', 'N', 'P', 'K', 'OE',
+        ]);
+        // A typed letter narrows the level: A leaves the alignments' letters; Escape shows them all again.
+        key('a');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['AL', 'AC', 'AR']);
+        key('Escape');
+        key('1');
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(true);
+        expect(document.activeElement).toBe(grid);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
+        // An Alt that is a chord's starts nothing; F10 starts them too, and a key that is no letter ends them.
+        key('Alt', { altKey: true });
+        key('ArrowDown', { altKey: true });
+        grid?.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true }));
+        expect(document.activeElement).toBe(grid);
+        key('F10');
+        expect(document.activeElement).toBe(band);
+        expect(band?.hasAttribute('aria-activedescendant')).toBe(false);
+        key('ArrowLeft');
+        expect(document.activeElement).toBe(grid);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
+        // A key the Sheet would claim, typed while they stand, is theirs too: it ends them and sets nothing.
+        key('F10');
+        key('b', { ctrlKey: true });
+        expect(document.activeElement).toBe(grid);
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(true);
+        // Shift before a letter waits for the letter: the KeyTips are matched in capitals.
+        key('F10');
+        key('Shift', { shiftKey: true });
+        key('H', { shiftKey: true });
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(14);
+        key('Escape');
+        key('Escape');
+        expect(document.activeElement).toBe(grid);
+        // An Alt held through a press is not alone.
+        key('Alt', { altKey: true });
+        grid?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, altKey: true }));
+        grid?.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true }));
+        expect(document.activeElement).toBe(grid);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
+    });
+
+    it('ADR-0100: the toolbar hidden while the KeyTips stand takes them away, and shown again it shows none', async () => {
+        const options = { showToolbar: true } as const;
+        const { element, sheet } = sheetOf(options);
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        key('F10');
+        key('h');
+        key('h');
+        expect(element.querySelector('.ex-sheet-choices')).not.toBeNull();
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: false });
+        expect(element.querySelector('.ex-sheet-choices')).toBeNull();
+        expect(document.activeElement).toBe(grid);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, ...options });
+        expect(element.querySelector('.ex-sheet-toolbar')).not.toBeNull();
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
+    });
+
+    it('ADR-0100: Alt, H, H opens the Fill\'s palette; Escape there goes back to the row\'s letters, then to the rows\', then to the Sheet', async () => {
+        const { element } = sheetOf({ showToolbar: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        key('F10');
+        key('h');
+        key('h');
+        const { list, choice } = choicesOf(element);
+        expect(document.activeElement).toBe(choice('No Fill'));
+        // ↑ from the palette's first row goes back to No Fill, which stands above it.
+        key('ArrowDown');
+        expect(document.activeElement).toBe(list.querySelectorAll('.ex-sheet-swatch-choice')[0]);
+        key('ArrowUp');
+        expect(document.activeElement).toBe(choice('No Fill'));
+        key('Escape');
+        expect(element.querySelector('.ex-sheet-choices')).toBeNull();
+        expect(document.activeElement).toBe(band);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(14);
+        key('Escape');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['H']);
+        key('Escape');
+        expect(document.activeElement).toBe(grid);
+        // O narrows to Format Cells, and E opens it.
+        key('F10');
+        key('h');
+        key('o');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['OE']);
+        key('e');
+        expect(element.querySelector('.ex-popover .ex-format-cells')).not.toBeNull();
     });
 
     it('ADR-0100: while an edit is open every item is unavailable, and says why', async () => {

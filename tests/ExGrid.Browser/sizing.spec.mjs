@@ -295,9 +295,14 @@ test('columns narrower than a wide box are not stretched, and a resize changes n
 
     await page.setViewportSize({ width: 700, height: 800 });
     await expect.poll(async () => (await grid(page).locator('.ex-scroller').boundingBox()).width).toBeLessThan(700);
-    const narrow = await headerWidths(page);
-    for (const [name, width] of Object.entries(narrow))
-        expect(width, name).toBeCloseTo(wide[name], 1);
+    // Read once the grid has painted the narrower box: the box shrinks before the grid is told of it, and a reading
+    // taken in between found the Book header at 0 under Edge on the React host. So the reading waits for the widths it
+    // judges (ADR-0056), and fails naming the columns that never came back to their width.
+    await settled(grid(page));
+    await expect.poll(async () => {
+        const narrow = await headerWidths(page);
+        return Object.keys(wide).filter((name) => !(Math.abs((narrow[name] ?? -1) - wide[name]) < 0.05));
+    }, { message: 'the columns whose width a resize changed' }).toEqual([]);
 });
 
 test('a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045)', async ({ page }) => {

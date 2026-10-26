@@ -58,6 +58,18 @@ export const englishSheetWordTable: Readonly<Record<SheetWordId, string>> = Obje
     'toolbar.item.percent': "Percent Style",
     'toolbar.item.comma': "Comma Style",
     'toolbar.item.formatCells': "Format Cells",
+    'toolbar.more': "{0}, more",
+    'toolbar.automatic': "Automatic",
+    'toolbar.noFill': "No Fill",
+    'toolbar.border.bottom': "Bottom Border",
+    'toolbar.border.top': "Top Border",
+    'toolbar.border.left': "Left Border",
+    'toolbar.border.right': "Right Border",
+    'toolbar.border.none': "No Border",
+    'toolbar.border.all': "All Borders",
+    'toolbar.border.outside': "Outside Borders",
+    'toolbar.border.thickOutside': "Thick Outside Borders",
+    'toolbar.moreNumberFormats': "More Number Formats…",
     'sheetTabsName': "Sheets",
     'editSheetGone': "The edit was not committed: the Sheet it was typed on is no longer in the Workbook.",
     'sheetSwitchWhileEditing':
@@ -119,6 +131,8 @@ export const englishSheetWordTable: Readonly<Record<SheetWordId, string>> = Obje
         "What was typed was not entered: another Sheet was shown, or another Sheet Document opened, while {0} was being edited, so nothing was written. Press Escape to leave it.",
     'commitRefused.rowLeftTheWindow':
         "What was typed was not entered: the row of {0} is not among the rows the Sheet holds now. Bring it back into view and press Enter again, or press Escape to leave it.",
+    'commitRefused.cancelled':
+        "What was typed was not entered: the edit of {0} was cancelled while it was being checked, so nothing was written.",
     'placementRefused.orderMoved':
         "The selection was not moved: another Sheet was shown, or another Sheet Document opened, after it was asked for.",
     'placementRefused.sourceChanged':
@@ -323,6 +337,18 @@ export const japaneseSheetWordTable: Readonly<Record<SheetWordId, string>> = Obj
     'toolbar.item.percent': "パーセント スタイル",
     'toolbar.item.comma': "桁区切りスタイル",
     'toolbar.item.formatCells': "セルの書式設定",
+    'toolbar.more': "{0}、その他",
+    'toolbar.automatic': "自動",
+    'toolbar.noFill': "塗りつぶしなし",
+    'toolbar.border.bottom': "下罫線",
+    'toolbar.border.top': "上罫線",
+    'toolbar.border.left': "左罫線",
+    'toolbar.border.right': "右罫線",
+    'toolbar.border.none': "枠なし",
+    'toolbar.border.all': "格子",
+    'toolbar.border.outside': "外枠",
+    'toolbar.border.thickOutside': "太い外枠",
+    'toolbar.moreNumberFormats': "その他の表示形式…",
     'sheetTabsName': "シート",
     'editSheetGone': "編集は確定されませんでした: 入力したシートはもうブックにありません。",
     'sheetSwitchWhileEditing':
@@ -384,6 +410,8 @@ export const japaneseSheetWordTable: Readonly<Record<SheetWordId, string>> = Obj
         "入力した内容は確定されませんでした: {0} の編集中に別のシートが表示されたか、別のシート ドキュメントが開かれたため、何も書き込まれませんでした。Esc キーで編集を終了してください。",
     'commitRefused.rowLeftTheWindow':
         "入力した内容は確定されませんでした: {0} の行は、シートが現在保持している行にありません。その行を表示してもう一度 Enter キーを押すか、Esc キーで編集を終了してください。",
+    'commitRefused.cancelled':
+        "入力した内容は確定されませんでした: {0} の編集は確認中に取り消されたため、何も書き込まれませんでした。",
     'placementRefused.orderMoved':
         "選択範囲は移動されませんでした: 要求された後に別のシートが表示されたか、別のシート ドキュメントが開かれました。",
     'placementRefused.sourceChanged':

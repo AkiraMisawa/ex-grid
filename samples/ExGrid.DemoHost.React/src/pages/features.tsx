@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type ReactElement } from 'react';
 import {
-    declinedSummary, GridSource, summaryOf, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
-    type GridCommand, type GridContextMenuContext, type GridEditIntent, type GridHeaderGroup, type GridOverwriteNotice, type GridPasteIntent,
-    type GridRefusal, type GridReplaceRequest, type GridReplaceResult, type GridSummaryRequest, type GridSummaryResult,
+    actionColumn, declinedSummary, type ActionRefusalReason, GridRuleset, GridSource, summaryOf, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
+    type GridActionEvent, type GridCommand, type GridContextMenuContext, type GridDeclaredKeyPress, type GridEditIntent, type GridHeaderGroup, type GridOverwriteNotice, type GridPasteIntent,
+    type EditVerdict, type GridRefusal, type GridReplaceRequest, type GridReplaceResult, type GridSummaryRequest, type GridSummaryResult,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import { Temporal } from 'temporal-polyfill';
@@ -29,20 +29,26 @@ const isoDate = (value: unknown): string => (value as Temporal.PlainDateTime).to
 // places, so they are written here.
 const twoPlaces = (value: unknown): string => (value as number).toFixed(2);
 
+// The Blazor page's rule on Notional, held by the bundled ruleset (ADR-0034): what does not parse is rejected and the
+// editor holds, and a negative value is applied and flagged. Which is which is this side's convention.
+function notionalRule(_row: DemoTrade, text: string): EditVerdict {
+    const value = parsedNumber(text);
+    if (value === undefined) return { kind: 'reject', message: `'${text}' is not a number` };
+    return value < 0 ? { kind: 'flag', message: 'a negative notional needs approval' } : { kind: 'accept' };
+}
+
+// The page's ruleset: the Notional column's editor asks its rule, and the rows are judged by the same one after
+// every change. One page shows it at a time, and each judgement replaces the last whole.
+const rules = new GridRuleset<DemoTrade>().column('Notional', notionalRule);
+const notionalValidate = rules.validatorFor('Notional');
+if (notionalValidate === undefined) throw new Error('The ruleset holds the rule on Notional.');
+
 const columns: readonly GridColumn<DemoTrade>[] = Object.freeze([
     // Book and Trader offer their values and a condition, as on the Blazor page (ADR-0009).
     { name: 'Book', type: 'text', value: (t: DemoTrade) => t.book, width: 110, filterUi: 'both' },
     { name: 'Trader', type: 'text', value: (t: DemoTrade) => t.trader, width: 120, editable: true, filterUi: 'both' },
-    // The Blazor page's rule on Notional: what does not parse is rejected, and a negative value is flagged
-    // (ADR-0034).
-    {
-        name: 'Notional', type: 'number', value: (t: DemoTrade) => t.notional, width: 140, format: twoPlaces, editable: true,
-        validate: (_row: DemoTrade, text: string) => {
-            const value = parsedNumber(text);
-            if (value === undefined) return { kind: 'reject', message: `'${text}' is not a number` } as const;
-            return value < 0 ? { kind: 'flag', message: 'a negative notional needs approval' } as const : { kind: 'accept' } as const;
-        },
-    },
+    // The verdict seam, wired to the ruleset's rule (ADR-0034).
+    { name: 'Notional', type: 'number', value: (t: DemoTrade) => t.notional, width: 140, format: twoPlaces, editable: true, validate: notionalValidate },
     // Deliberately too narrow for its values: what #### looks like, and what the clipboard must never
     // receive (ADR-0016, CP-5). The label is the full word, so the header's own ellipsis is the real thing.
     { name: 'Narrow', type: 'number', value: (t: DemoTrade) => t.notional, width: 48, format: twoPlaces },
@@ -85,6 +91,20 @@ function commitRefused(reason: CommitRefusalReason, column: string): string {
             return `OrderMoved — ${column} was not written: the rows moved while you were typing; press Escape to leave it`;
         case 'rowLeftTheWindow':
             return `RowLeftTheWindow — ${column} was not written: the row is not in the rows the grid holds now; bring it back into view and commit again, or press Escape`;
+        case 'cancelled':
+            return `Cancelled — ${column} was not written: the edit was cancelled while it was being checked`;
+    }
+}
+
+// The Blazor page's sentences for an action the grid did not do (ADR-0142).
+function actionRefused(reason: ActionRefusalReason, action: string): string {
+    switch (reason) {
+        case 'rowLeftTheWindow':
+            return `RowLeftTheWindow — ${action} was not done: the row is not in the rows the grid holds now; bring it back into view and press it again`;
+        case 'orderMoved':
+            return `OrderMoved — ${action} was not done: the rows moved before the press landed; press it on the row again`;
+        case 'sourceChanged':
+            return `SourceChanged — ${action} was not done: the data the grid shows was replaced before the press landed`;
     }
 }
 
@@ -130,6 +150,24 @@ const groups: readonly GridHeaderGroup[] = Object.freeze([
     { label: 'Who', columns: ['Book', 'Trader'] },
     { label: 'What', columns: ['Notional', 'Narrow', 'TradeDate', 'Confirmed'] },
 ]);
+
+// ?upstream=1 lets the browser layer change values under a gesture, as a live feed would (ADR-0142, LV-11 to
+// LV-14): F9, declared to the grid, moves the Notional of the first five rows up by one, with an edit open too,
+// where the grid raises a declared key and changes nothing in the editor (ADR-0050, item 14). An Action Column
+// joins, so a press can be raced against it too. ?rowkey=1 beside it binds the source by the trade's number
+// (ADR-0140) and declares F8: the top row's Notional jumps past every other, as a live amendment can.
+// An action that would write, approving a trade at the notional shown (ADR-0142, LV-12).
+const approveColumn = actionColumn<DemoTrade>('Act', [{ name: 'approve', label: 'Approve' }], { width: 90 });
+const upstreamColumns: readonly GridColumn<DemoTrade>[] = Object.freeze([...columns.slice(0, 3), approveColumn, ...columns.slice(3)]);
+// The Act column stands between Notional and Narrow, so it joins the group: a Header Group's members are
+// adjacent, or the grid refuses it (ADR-0032).
+const upstreamGroups: readonly GridHeaderGroup[] = Object.freeze([
+    { label: 'Who', columns: ['Book', 'Trader'] },
+    { label: 'What', columns: ['Notional', 'Act', 'Narrow', 'TradeDate', 'Confirmed'] },
+]);
+const upstreamKeys: readonly string[] = Object.freeze(['F9']);
+const upstreamAndResortKeys: readonly string[] = Object.freeze(['F9', 'F8']);
+const tradeNumber = (t: DemoTrade): number => t.id;
 
 const secondColumns: readonly GridColumn<DemoTrade>[] = Object.freeze([
     { name: 'Book', type: 'text', value: (t: DemoTrade) => t.book },
@@ -238,8 +276,19 @@ export function Features(): ReactElement {
     const showGroups = useQuery('groups') === '1';
     const heldSummary = useQuery('summary') === 'held';
     const late = useQuery('late') === '1';
-    const source = useMemo(() => GridSource.from(rows), []);
+    const upstream = useQuery('upstream') === '1';
+    const rowKeyAsked = useQuery('rowkey') === '1';
+    const rowKeyOn = upstream && rowKeyAsked;
+    const source = useMemo(() => GridSource.from(rows, rowKeyOn ? { rowKey: tradeNumber } : {}), [rowKeyOn]);
     const second = useMemo(() => GridSource.from(rows.slice(0, 20)), []);
+    // The rows judged again whenever they change, so a paste, a fill or an undo wears the marks a typed edit does;
+    // the ruleset answers the grid's two channels, the Cell State and the message (ADR-0034).
+    const subscribe = useMemo(() => source.subscribe.bind(source), [source]);
+    const held = useSyncExternalStore(subscribe, () => source.snapshot().window);
+    const judged = useMemo(() => {
+        rules.evaluate(held, columns);
+        return { cellState: rules.cellState, cellMessage: rules.cellMessage };
+    }, [held]);
     const [editStatus, setEditStatus] = useState('—');
     const [clearStatus, setClearStatus] = useState('—');
     const [historyStatus, setHistoryStatus] = useState('—');
@@ -281,7 +330,7 @@ export function Features(): ReactElement {
     const [overwriteStatus, setOverwriteStatus] = useState('—');
     // The columns as the user last left them: a resize or a reorder reaches the screen when they are handed
     // back (ADR-0011, ADR-0016).
-    const [shownColumns, setShownColumns] = useState(columns);
+    const [shownColumns, setShownColumns] = useState(upstream ? upstreamColumns : columns);
     const [widthStatus, setWidthStatus] = useState('—');
     // As it came: a MaxWidth bounds only what the grid computes, so a drag past it is recorded as it is.
     const onColumnWidthChanged = useCallback((change: GridColumnWidthChange) => {
@@ -341,8 +390,36 @@ export function Features(): ReactElement {
             case 'find':
                 status(key, pascal(refusal.reason), setFindStatus);
                 return;
+            // An action whose row the grid could not find in the rows it holds when the press landed (ADR-0142,
+            // LV-12, LV-20). Nothing was done; the row's values changing never refuses one.
+            case 'action':
+                status(key, actionRefused(refusal.reason, refusal.action), setActionRefusedStatus);
+                return;
         }
     }, [status]);
+    const [upstreamStatus, setUpstreamStatus] = useState('—');
+    const [actionStatus, setActionStatus] = useState('—');
+    const [actionRefusedStatus, setActionRefusedStatus] = useState('—');
+    const upstreamTicks = useRef(0);
+    // F9 and F8 under ?upstream=1: the data moves on under the user, as a live feed moves it, in new instances
+    // (ADR-0003, ADR-0142). A live change is no step of the user's history.
+    const onUpstreamKey = useCallback((press: GridDeclaredKeyPress) => {
+        const window = source.snapshot().window;
+        upstreamTicks.current += 1;
+        if (press.key === 'F8') {
+            const [top] = window;
+            if (top === undefined) return;
+            source.replaceRow(top, Object.freeze({ ...top, notional: Math.max(...window.map(t => t.notional)) + 1_000_000 }));
+            setUpstreamStatus(`trade #${top.id} amended past every other (×${upstreamTicks.current})`);
+            return;
+        }
+        const count = Math.min(5, window.length);
+        for (const old of window.slice(0, count)) source.replaceRow(old, Object.freeze({ ...old, notional: old.notional + 1 }));
+        setUpstreamStatus(`rows 1-${count} moved (×${upstreamTicks.current})`);
+    }, [source]);
+    const onAction = useCallback((press: GridActionEvent<DemoTrade>) => {
+        setActionStatus(`${press.action} ${press.row.book}/${press.row.trader} at ${press.row.notional.toFixed(2)}`);
+    }, []);
     const onEditDiscarded = useCallback((reason: EditDiscardReason) => {
         status(`discard:${reason}`, editDiscarded(reason), setEditDiscardedStatus);
     }, [status]);
@@ -357,7 +434,7 @@ export function Features(): ReactElement {
     // screen follows the identity change. An unparseable value applies nothing: validation is the Consumer's.
     const onEdit = useCallback((intent: GridEditIntent<DemoTrade>) => {
         setCounts(was => ({ ...was, edits: was.edits + 1 }));
-        const said = `${intent.column}=${intent.value} on ${intent.row.book}/${intent.row.trader}`;
+        const said = `${intent.column}=${intent.value} on ${intent.row.book}/${intent.row.trader}${rowKeyOn ? ` #${intent.row.id}` : ''}`;
         const replacement = edited(intent.row, intent.column, intent.value);
         if (replacement === undefined) {
             setEditStatus(`${said} (not applied: unparseable)`);
@@ -367,7 +444,7 @@ export function Features(): ReactElement {
         replace(step, intent.row, replacement);
         record(step);
         setEditStatus(said);
-    }, [replace, record]);
+    }, [replace, record, rowKeyOn]);
     // Replace All (ADR-0332 §3): GridSource.from plans every match through this page's own write of one cell, the
     // one its edits use, and applies them all, or none; the rows it rewrote are one history step, so one Ctrl+Z
     // undoes the whole Replace All.
@@ -470,6 +547,15 @@ export function Features(): ReactElement {
                 <span id="context-status">Context: {contextStatus}</span>
                 <span id="find-refused-status" role="status">Find: {findStatus}</span>
                 <span id="replace-status">Replace All: {replaceStatus}</span>
+                {upstream
+                    ? (
+                        <>
+                            <span id="action-refused-status" role="status">Action refused: {actionRefusedStatus}</span>
+                            <span id="upstream-status">Upstream: {upstreamStatus}</span>
+                            <span id="action-status">Action: {actionStatus}</span>
+                        </>
+                    )
+                    : null}
             </p>
             <ExGrid
                 columns={shownColumns}
@@ -478,12 +564,14 @@ export function Features(): ReactElement {
                 headerHeight={28}
                 viewportHeight={320}
                 viewportWidth={720}
-                headerGroups={groups}
+                headerGroups={upstream ? upstreamGroups : groups}
                 pinnedColumnCount={pinned}
                 // The polyfill this page's dates are, which a date typed into a filter is made with.
                 temporal={Temporal}
                 onRefused={onRefused}
                 onEdit={onEdit}
+                cellState={judged.cellState}
+                cellMessage={judged.cellMessage}
                 onEditDiscarded={onEditDiscarded}
                 onOverwriteNotice={onOverwriteNotice}
                 onClear={onClear}
@@ -495,13 +583,14 @@ export function Features(): ReactElement {
                 onColumnHidden={onColumnHidden}
                 onPinnedCountChanged={setPinned}
                 onReplace={onReplace}
+                {...(upstream ? { declaredKeys: rowKeyOn ? upstreamAndResortKeys : upstreamKeys, onDeclaredKey: onUpstreamKey, onAction } : {})}
                 contextCommands={contextCommands} />
             <p className="demo-status"><span id="intent-count">Intents: {counts.edits} edits, {counts.pastes} pastes</span></p>
             {showGroups
                 ? (
                     <p className="demo-status">
                         <span id="groups-status">
-                            Groups: {groups.map(g => `${g.label} [${g.columns.join(',')}] tier ${g.tier ?? 1} span ${g.tierSpan ?? 1}`).join('; ')}
+                            Groups: {(upstream ? upstreamGroups : groups).map(g => `${g.label} [${g.columns.join(',')}] tier ${g.tier ?? 1} span ${g.tierSpan ?? 1}`).join('; ')}
                         </span>
                     </p>
                 )

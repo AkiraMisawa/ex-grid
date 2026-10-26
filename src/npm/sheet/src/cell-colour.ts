@@ -15,3 +15,8 @@ export function colourFromRgb(rgb: number): CellColour {
 export function automaticColour(): CellColour {
     return CellFont.default.colour;
 }
+
+/** A colour as a swatch and a preview paint it: Automatic is the Ink of the text around it. */
+export function paintOf(colour: CellColour): string {
+    return colour.isAutomatic ? 'currentColor' : colour.toString();
+}

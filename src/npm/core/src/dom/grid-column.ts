@@ -124,8 +124,11 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
      * comparison. */
     readonly tone?: (value: unknown) => CellTone;
     /** The Consumer's verdict on a commit to this column, asked as it commits (ADR-0034): accept, flag or
-     * reject. None means every commit is accepted. It runs on the commit's path, so it is cheap. */
-    readonly validate?: (row: Row, text: string) => EditVerdict;
+     * reject. None means every commit is accepted. Answered at once, it runs on the commit's path, so it is cheap.
+     * Answered as a promise, the commit is pending until it settles (ADR-0380): the editor stands, input made
+     * meanwhile waits, and Escape cancels it, aborting `signal`. A domain may judge here the object the row would
+     * become with this text, and reject one that cannot exist (ADR-0380 section 4). */
+    readonly validate?: (row: Row, text: string, signal: AbortSignal) => EditVerdict | PromiseLike<EditVerdict>;
     /** What the column's filter panel lays out (ADR-0009): `condition` unless given, the safe default, which
      * never asks the source for the column's values; `valueList`, a list of its distinct values to tick,
      * degraded to the condition form where the source answers TooMany; or `both`. */

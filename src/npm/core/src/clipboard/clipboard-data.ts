@@ -170,6 +170,12 @@ function quoteForTsv(value: string): string {
     return /[\t\n\r"]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
 }
 
+/** The flavours of a text field's own copy, taken at its turn after a Pending Commit (ADR-0380): its selected text,
+ * plain and as HTML text, as a browser's copy from a field carries it. */
+export function fieldCopyFlavours(text: string): CopyFlavours {
+    return { text, html: escapeHtml(text) };
+}
+
 function escapeHtml(value: string): string {
     return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }

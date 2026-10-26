@@ -40,6 +40,11 @@
                 <code>#NAME?</code>, a circular reference is <code>#CIRC!</code>, and a number that does not fit its
                 column shows <code>####</code> — never an approximation.
             </li>
+            <li>
+                <b>A cell takes what is typed, as Excel's does.</b> ExSheet asks no verdict of yours before an Entry
+                is written, so the grid's validation, and a verdict answered later, are not offered on a Sheet. A rule
+                over your data is checked on the document <code>DocumentChanged</code> hands you.
+            </li>
         </ul>
         <p>
             ExSheet ships in three packages: <code>ExSheet</code> (the component), <code>ExSheet.Engine</code>

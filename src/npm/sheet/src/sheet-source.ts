@@ -122,6 +122,15 @@ export class SheetSource implements GridSource<SheetRow> {
         return true;
     }
 
+    /** Renews every row in the Window, so each is read again: a change the engine names no row of, such as a Linked
+     * Table gone back to waiting on another Sheet's account (ADR-0049). */
+    renewWindow(): void {
+        const { window, windowStart } = this.#state;
+        if (window.length === 0) return;
+        this.#state = SheetSource.#stateOf(window.map((_, i) => new SheetRow(this.#sheet, windowStart + i)), windowStart, this.#version);
+        this.#publish();
+    }
+
     #publish(): void {
         // A listener may stop hearing as it hears.
         for (const listener of Array.from(this.#listeners)) listener();

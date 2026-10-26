@@ -5,4 +5,4 @@
  * @packageDocumentation
  */
 export { ExSheet } from './ex-sheet';
-export type { ExSheetProps } from './ex-sheet';
+export type { ExSheetApi, ExSheetProps } from './ex-sheet';
