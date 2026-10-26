@@ -95,7 +95,11 @@ interface Question {
     readonly layout: PivotLayout;
     readonly generation: number;
     readonly controller: AbortController;
-    readonly cause: Cause;
+    /** Whether the layout is the user's, raised once shown: a move of the user's, or one asked again before its
+     * answer came, under new settings or data, as the Razor component carries its pending raise. */
+    readonly raise: boolean;
+    /** Whether the answer marks what changed: new data, or the user's layout asked again under new data. */
+    readonly markChanges: boolean;
     /** The user's moves this question carries: its own, after those of the questions it superseded while they
      * were out, which were taken against them and go with it (ADR-0370 section 3). */
     readonly moves: readonly FieldListMove[];
@@ -338,6 +342,7 @@ export class PivotView {
     destroy(): void {
         if (this.#destroyed) return;
         this.#destroyed = true;
+        this.#listening.abort();
         this.#generation++;
         this.#asked?.controller.abort();
         this.#asked = undefined;
@@ -351,7 +356,6 @@ export class PivotView {
         this.#shownReportSource = undefined;
         asked.dispose();
         if (read !== asked) read?.dispose();
-        this.#listening.abort();
         this.#root.replaceChildren();
         this.#root.classList.remove('ex-pivot');
         this.#root.removeAttribute('data-ex-input-root');
@@ -411,20 +415,22 @@ export class PivotView {
     #ask(layout: PivotLayout, asked: Cause, moved: FieldListMove | undefined): void {
         const superseded = this.#asked;
         superseded?.controller.abort();
-        // The user's layout asked again, under new settings or data, is still the user's: it raises once shown,
-        // and a refusal names its moves.
-        const cause = asked === 'user' || (superseded?.cause === 'user' && superseded.layout === layout) ? 'user' : asked;
+        // A layout asked again before its answer came keeps what that question was owed: the user's raises once
+        // shown and names its moves if refused, and new data's changes are marked.
+        const again = superseded?.layout === layout;
+        const raise = asked === 'user' || (again && superseded.raise);
+        const markChanges = asked === 'data' || (again && superseded.markChanges);
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
-        const moves = [...(cause === 'user' && superseded?.cause === 'user' ? superseded.moves : []), ...(moved === undefined ? [] : [moved])];
+        const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...(moved === undefined ? [] : [moved])];
         const generation = ++this.#generation;
         if (showsNothing(layout)) {
             // Nothing to compute: the report is the empty box that says how to start.
             this.#asked = undefined;
-            this.#showLayout(layout, undefined, cause);
+            this.#showLayout(layout, undefined, raise);
             return;
         }
         const question: Question = {
-            layout, generation, controller: new AbortController(), cause, moves: Object.freeze(moves),
+            layout, generation, controller: new AbortController(), raise, markChanges, moves: Object.freeze(moves),
             reportSource: this.#reportSource, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
         };
         this.#asked = question;
@@ -441,7 +447,7 @@ export class PivotView {
                 settings: question.settings,
                 window: Object.freeze({ start: 0, count: firstWindowRows }),
                 maxLeaves: question.maxLeaves,
-                markChanges: question.cause === 'data',
+                markChanges: question.markChanges,
             }), question.controller.signal);
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a superseded question's failure is nobody's; the newest one's is said where the user sees it and rethrown
             if (!current()) return;
@@ -457,7 +463,7 @@ export class PivotView {
             this.#refuse(update.refusal, question);
             return;
         }
-        this.#showLayout(question.layout, { answer: update, question }, question.cause);
+        this.#showLayout(question.layout, { answer: update, question }, question.raise);
     }
 
     #nextRequestId(): string {
@@ -465,7 +471,7 @@ export class PivotView {
         return `ex-pivot-${this.#requests}`;
     }
 
-    #showLayout(layout: PivotLayout, answered: { readonly answer: PivotReportState; readonly question: Question } | undefined, cause: Cause): void {
+    #showLayout(layout: PivotLayout, answered: { readonly answer: PivotReportState; readonly question: Question } | undefined, raise: boolean): void {
         const answer = answered?.answer;
         this.#shown = { layout, answer, question: answered?.question };
         this.#showReport(answered);
@@ -474,7 +480,7 @@ export class PivotView {
             this.#askCounts();
         }
         this.#draw();
-        if (cause === 'user') {
+        if (raise) {
             this.#raised.add(layout);
             this.#options.onLayoutChanged?.(Object.freeze({ layout }));
         }

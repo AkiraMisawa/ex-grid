@@ -421,7 +421,9 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
         drag(field(root, 'Desk'), 'dragstart');
         drag(area(root, 'columns'), 'dragenter');
         expect(area(root, 'columns').classList.contains('ex-pivot-drop-target')).toBe(true);
-        drag(root.querySelector('.ex-pivot-sheet') ?? root, 'dragenter');
+        const sheet = root.querySelector('.ex-pivot-sheet');
+        if (sheet === null) throw new Error('The pivot draws no report sheet.');
+        drag(sheet, 'dragenter');
         expect(area(root, 'columns').classList.contains('ex-pivot-drop-target')).toBe(false);
         drag(field(root, 'Desk'), 'dragend');
     });
@@ -476,15 +478,16 @@ describe('ExPivot\'s options', () => {
         expect(view.shownLayout).toBe(undone);
     });
 
-    it('ADR-0370 section 10: the user\'s move asked again under a new locale is still the user\'s, and is raised once shown', async () => {
+    it('ADR-0370 section 10: the user\'s move asked again under a new locale is still the user\'s, raised once shown in that locale', async () => {
         const changed: PivotLayout[] = [];
         const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
-        const { root, view } = mount(options);
+        const { root, view, grid } = mount(options);
         await settled();
         tick(root, 'Desk');
         view.update({ ...options, locale: 'de-DE' });
         await settled();
         expect(changed.map(layout => layout.rows.map(p => p.field))).toEqual([['Region', 'Desk']]);
+        expect(grid.current.locale).toBe('de-DE');
     });
 
     it('ADR-0059: layouts this pivot raised, handed back late and in turn, ask for nothing', async () => {

@@ -217,7 +217,9 @@ export class FieldListView {
 
     /** A drag entered `target`: unless it is in an Area, which hears its own entry first, no Area is the target. */
     dragEntered(target: EventTarget | null): void {
-        const box = target instanceof Element ? target.closest('.ex-pivot-area') : null;
+        // A drag over text enters the text itself in some browsers: its element is what it is in.
+        const entered = target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
+        const box = entered === null ? null : entered.closest('.ex-pivot-area');
         if (box instanceof HTMLElement && this.#areaBoxes.has(box)) return;
         this.leaveTargets();
     }
