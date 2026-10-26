@@ -182,6 +182,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
     static fetch<Row>(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options?: FetchingSourceOptions<Row>): FetchingGridSource<Row>;
     readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    get marks(): FetchingRowMarks<Row> | undefined;
     needRange(range: RowRange): Promise<void>;
     requery(): void;
     get rowKey(): RowKeyOf<Row> | undefined;
@@ -196,9 +197,42 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
 }
 
 // @public
+export interface FetchingMarksHost<Row> {
+    clearMarksFailure(seenAtStart: unknown): void;
+    current(): {
+        readonly window: readonly Row[];
+        readonly windowStart: number;
+        readonly totalCount: number | undefined;
+        readonly rowSequenceVersion: number;
+        readonly filter: GridFilter | undefined;
+    };
+    fetchRange(range: RowRange, signal: AbortSignal): Promise<{
+        readonly rows: readonly Row[];
+        readonly totalCount: number;
+    }>;
+    marksFailure(): unknown;
+    reportFailure(error: unknown): boolean;
+    readonly signal: AbortSignal;
+}
+
+// @public
+export class FetchingRowMarks<Row> implements RowMarks<Row> {
+    // @internal
+    constructor(host: FetchingMarksHost<Row>, adapter: RowMarkAdapter<Row>);
+    get counts(): RowMarkCounts | undefined;
+    isMarked(row: Row): boolean;
+    onMarkIntent(intent: RowMarkIntent<Row>): Promise<void>;
+    recount(): Promise<void>;
+    setRowKind(rowKind: ((row: Row) => RowKind) | undefined): void;
+    get state(): RowMarkState;
+    subscribe(listener: () => void): () => void;
+}
+
+// @public
 export interface FetchingSourceOptions<Row> {
     readonly distinctValues?: (column: string, filter: GridFilter | undefined, signal: AbortSignal) => Promise<DistinctValues>;
     readonly find?: (request: GridFindRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridFindResult>;
+    readonly marks?: RowMarkAdapter<Row>;
     readonly onFetchFailed?: (event: FetchFailedEvent) => void;
     readonly readAheadRows?: number;
     readonly rowKey?: RowKeyOf<Row>;
@@ -854,6 +888,14 @@ export type RowKeyOf<Row> = (row: Row) => RowKey;
 export type RowKind = 'detail' | 'group' | 'total';
 
 // @public
+export interface RowMarkAdapter<Row> {
+    readonly belongsTo: (row: Row, snapshot: RowMarkSnapshot) => boolean;
+    readonly count: (state: RowMarkState, filter: GridFilter | undefined, signal: AbortSignal) => Promise<RowMarkCounts>;
+    readonly key: RowKeyOf<Row>;
+    readonly openSnapshot: (filter: GridFilter | undefined, signal: AbortSignal) => Promise<unknown>;
+}
+
+// @public
 export class RowMarkCounts {
     constructor(counts: {
         readonly markedInResult: number;
@@ -893,6 +935,31 @@ export interface RowMarks<Row> {
     setRowKind(rowKind: ((row: Row) => RowKind) | undefined): void;
     subscribe(listener: () => void): () => void;
 }
+
+// @public
+export interface RowMarkSnapshot {
+    readonly asOf: unknown;
+    readonly filter: GridFilter | undefined;
+}
+
+// @public
+export class RowMarkState {
+    constructor(steps: readonly RowMarkStep[]);
+    static readonly empty: RowMarkState;
+    isMarked(key: RowKey, belongsTo: (snapshot: RowMarkSnapshot) => boolean): boolean;
+    readonly steps: readonly RowMarkStep[];
+}
+
+// @public
+export type RowMarkStep = {
+    readonly kind: 'oneKey';
+    readonly key: RowKey;
+    readonly marked: boolean;
+} | {
+    readonly kind: 'allOf';
+    readonly snapshot: RowMarkSnapshot;
+    readonly marked: boolean;
+};
 
 // @public
 export interface RowRange {

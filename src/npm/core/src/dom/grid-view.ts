@@ -1581,7 +1581,7 @@ export class GridView<Row> {
         const marks = options.marks ?? source.marks;
         if (marks === undefined) {
             throw new TypeError(`Column '${column.column.name}' is a Mark Column, but nobody holds the marks. Give marks, or a source `
-                + 'that keeps them, as GridSource.from does (ADR-0043).');
+                + 'that keeps them: GridSource.from does, and GridSource.fetch does given a marks adapter (ADR-0043).');
         }
         return marks;
     }
