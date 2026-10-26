@@ -7,7 +7,7 @@ import { markColumn, type GridColumn } from '../src/dom/grid-column';
 import type { RowMarkIntent } from '../src/rows/row-marks';
 import { GridSource } from '../src/source/grid-source';
 import { PageGeometry } from '../src/viewport/page-geometry';
-import { columns, mount, painted, q, rowsOf, trades, unmountAll, type Trade } from './grid-harness';
+import { columns, mount, painted, q, rowsOf, scrollTo, trades, unmountAll, type Trade } from './grid-harness';
 
 afterEach(unmountAll);
 
@@ -20,6 +20,7 @@ const status = (root: HTMLElement): string => {
 };
 const focus = (root: HTMLElement): string | null => root.getAttribute('aria-activedescendant');
 const firstRow = (root: HTMLElement): string | undefined => rowsOf(root)[0]?.querySelector('[role="gridcell"]')?.id;
+const paintedRow = (root: HTMLElement, row: number): boolean => root.querySelector(`[id="${prefix(root)}r${row}c0"]`) !== null;
 
 function key(root: HTMLElement, name: string, init: KeyboardEventInit = {}): void {
     root.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init }));
@@ -139,6 +140,95 @@ describe('the pager', () => {
         key(root, 'F10', { shiftKey: true });
         await painted();
         expect([pager(root), root.querySelector('[role="menu"]') === null]).toEqual(['‹1 / 3›', false]);
+    });
+
+    it('ADR-0015 ADR-0034: a turn commits an open edit first, and a Reject keeps the page and the editor', async () => {
+        const rejecting = columns.map(column => ({ ...column, editable: true, validate: () => ({ kind: 'reject', message: 'not a number' }) as const }));
+        const held = mount({ columns: rejecting, rows: trades(120), rowHeight: 24, viewportHeight: 480, pageSize: 50, showSelectionSummary: false, onEdit: () => undefined });
+        await painted();
+        press(held.root, 130, 5);
+        await painted();
+        key(q(held.root, '.ex-key-field'), 'F2');
+        await painted();
+        q(held.root, '.ex-pager button:last-child').click();
+        await painted();
+        expect([pager(held.root), held.root.querySelector('.ex-editor') === null, q(held.root, '.ex-message').textContent])
+            .toEqual(['‹1 / 3›', false, 'not a number']);
+
+        const committed: unknown[] = [];
+        const editable = columns.map(column => ({ ...column, editable: true }));
+        const { root } = mount({ columns: editable, rows: trades(120), rowHeight: 24, viewportHeight: 480, pageSize: 50, showSelectionSummary: false, onEdit: intent => { committed.push(intent); } });
+        await painted();
+        press(root, 130, 5);
+        await painted();
+        key(q(root, '.ex-key-field'), 'F2');
+        await painted();
+        const editor = q(root, '.ex-editor') as HTMLInputElement;
+        editor.value = '5';
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        q(root, '.ex-pager button:last-child').click();
+        await painted();
+        expect([pager(root), root.querySelector('.ex-editor'), committed.length]).toEqual(['‹2 / 3›', null, 1]);
+    });
+
+    it('ADR-0015 ADR-0034: a message on the last row of a page goes when the next page is shown', async () => {
+        const { root, told } = mount({ columns, rows: trades(120), rowHeight: 24, viewportHeight: 480, pageSize: 10, showSelectionSummary: false, cellMessage: () => 'out of range' });
+        await painted();
+        press(root, 130, 5 + (9 * 24));
+        await painted();
+        told.clock.advance(300);
+        await painted();
+        expect(q(root, '.ex-message').textContent).toBe('out of range');
+        q(root, '.ex-pager button:last-child').click();
+        await painted();
+        expect([pager(root), root.querySelector('.ex-message')]).toEqual(['‹2 / 12›', null]);
+    });
+
+    it('ADR-0015: a new page size keeps the first row shown at the top, and taking the pager away keeps the page\'s first', async () => {
+        const options = { columns, rows: trades(120), rowHeight: 24, viewportHeight: 480, showSelectionSummary: false };
+        const { root, view, told } = mount(options);
+        await painted();
+        // A jump that far is a fling, painted once the scroll has settled (ADR-0012).
+        await scrollTo(root, 70 * 24);
+        told.clock.advance(1000);
+        await painted();
+        expect(firstRow(root)).toBe(`${prefix(root)}r70c0`);
+        view.update({ ...options, pageSize: 50 });
+        await painted();
+        expect([pager(root), firstRow(root)]).toEqual(['‹2 / 3›', `${prefix(root)}r70c0`]);
+        view.update(options);
+        await painted();
+        expect([root.querySelector('.ex-pager'), firstRow(root)]).toEqual([null, `${prefix(root)}r50c0`]);
+    });
+
+    it('ADR-0015: a result that shrinks under the page shown shows its new last page from the top', async () => {
+        const options = { columns, rowHeight: 24, viewportHeight: 480, pageSize: 50, showSelectionSummary: false };
+        const { root, view } = mount({ ...options, rows: trades(150) });
+        await painted();
+        q(root, '.ex-pager button:last-child').click();
+        q(root, '.ex-pager button:last-child').click();
+        await painted();
+        await scrollTo(root, 10 * 24);
+        expect([pager(root), firstRow(root)]).toEqual(['‹3 / 3›', `${prefix(root)}r110c0`]);
+        view.update({ ...options, rows: trades(60) });
+        await painted();
+        expect([pager(root), q(root, '.ex-scroller').scrollTop, firstRow(root)]).toEqual(['‹2 / 2›', 0, `${prefix(root)}r50c0`]);
+    });
+
+    it('ADR-0015 ADR-0036: the Context Menu from the keyboard reveals the Focus on the page it turns to', async () => {
+        const { root, told } = mount({ columns, rows: trades(300), rowHeight: 24, viewportHeight: 480, pageSize: 100, showSelectionSummary: false });
+        await painted();
+        await scrollTo(root, 70 * 24);
+        told.clock.advance(1000);
+        await painted();
+        press(root, 10, 5 + (15 * 24));
+        await painted();
+        expect(focus(root)).toBe(`${prefix(root)}r85c0`);
+        q(root, '.ex-pager button:last-child').click();
+        await painted();
+        key(root, 'F10', { shiftKey: true });
+        await painted();
+        expect([pager(root), paintedRow(root, 85), root.querySelector('[role="menu"]') === null]).toEqual(['‹1 / 3›', true, false]);
     });
 
     it('ADR-0015: a new page size shows the page that holds the first row of the page shown', async () => {
