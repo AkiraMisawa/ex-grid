@@ -149,9 +149,16 @@ export class FetchingRowMarks<Row> implements RowMarks<Row> {
      * Asks the server for the counts again: after the marks change, the Filter changes or the result grows,
      * and whenever the Consumer knows its data moved, since a row arriving on the server is news only the server
      * has. The counts are unknown until the answer lands; an answer overtaken by a newer question is discarded.
+     * A failure is reported as a marking gesture's is (ADR-0025): to `onFetchFailed` and `lastError`, and thrown
+     * only where nobody hears it.
      */
     async recount(): Promise<void> {
-        await this.#count(this.#host.marksFailure());
+        try {
+            await this.#count(this.#host.marksFailure());
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- ADR-0025: a failure of the Consumer's server is reported to onFetchFailed, and thrown where nobody hears it; after dispose it is nobody's
+            if (this.#host.signal.aborted) return;
+            if (!this.#host.reportFailure(error)) throw error;
+        }
     }
 
     /** Counts again; landed, it lets go of the failure the marks had reported when the work it finishes began. A

@@ -2,11 +2,10 @@
 // the desk, rows that can be added and deleted "elsewhere", and the Consumer's half of the marks, the snapshot
 // marker, the counts and the action, answered from the marks' steps, never from positions. Not a model of a real
 // server's storage; a model of what one has to answer.
-import { markColumn, RowMarkCounts, type GridColumn, type GridFilter, type GridPage, type GridQuery, type RowMarkAdapter, type RowMarkSnapshot, type RowMarkState } from '@ex-grid/core';
+import { markColumn, RowMarkCounts, type GridColumn, type GridFilter, type GridPage, type GridQuery, type RowMarkAdapter, type RowMarkState } from '@ex-grid/core';
 import { pick } from './demo-data';
 
-/** A row of the Row Marks page: every value derives from its index, which is also its key and, because rows are
- * only ever appended, its creation stamp. */
+/** A row of the Row Marks page: every value derives from its index, which is also its key. */
 export interface DemoMarkRow {
     readonly index: number;
     readonly desk: string;
@@ -47,10 +46,44 @@ function matches(index: number, desk: string | undefined): boolean {
     return desk === undefined || deskOf(index).toLowerCase() === desk.toLowerCase();
 }
 
+/**
+ * When rows came and went, on one clock that a snapshot reads too: a snapshot's marker is the clock's reading, and a
+ * row belongs to it when the row was added before it and not deleted before it. The rows the server starts with
+ * were added at 0.
+ */
+class History {
+    #clock = 0;
+    readonly #added = new Map<number, number>();
+    readonly #deleted = new Map<number, number>();
+
+    tick(): number {
+        return ++this.#clock;
+    }
+
+    add(index: number): void {
+        this.#added.set(index, this.tick());
+    }
+
+    delete(index: number): void {
+        this.#deleted.set(index, this.tick());
+    }
+
+    get deleted(): readonly number[] {
+        return [...this.#deleted.keys()];
+    }
+
+    /** Whether the row existed when the clock read `asOf`. */
+    existedAt(index: number, asOf: number): boolean {
+        const added = this.#added.get(index);
+        const deleted = this.#deleted.get(index);
+        return (added === undefined || added < asOf) && (deleted === undefined || deleted > asOf);
+    }
+}
+
 /** The server behind /marks. */
 export class DemoMarkServer {
     readonly #live: number[] = [];
-    readonly #deleted = new Set<number>();
+    readonly #history = new History();
     #next: number;
     #version = 0;
     #filtered: { readonly desk: string; readonly version: number; readonly rows: readonly number[] } | undefined;
@@ -71,6 +104,7 @@ export class DemoMarkServer {
 
     /** A row added elsewhere: it joins the result after any "all" already taken. */
     add(): void {
+        this.#history.add(this.#next);
         this.#live.push(this.#next++);
         this.#version++;
     }
@@ -80,7 +114,7 @@ export class DemoMarkServer {
         const at = this.#live.indexOf(index);
         if (at < 0) return;
         this.#live.splice(at, 1);
-        this.#deleted.add(index);
+        this.#history.delete(index);
         this.#version++;
     }
 
@@ -88,8 +122,8 @@ export class DemoMarkServer {
     adapter(): RowMarkAdapter<DemoMarkRow> {
         return {
             key: row => row.index,
-            openSnapshot: () => Promise.resolve(this.#next),
-            belongsTo: (row, snapshot) => belongsTo(row.index, snapshot),
+            openSnapshot: () => Promise.resolve(this.#history.tick()),
+            belongsTo: (row, snapshot) => this.#history.existedAt(row.index, Number(snapshot.asOf)) && matches(row.index, deskFilter(snapshot.filter)),
             count: (state, filter) => Promise.resolve(this.#count(state, filter)),
         };
     }
@@ -99,10 +133,10 @@ export class DemoMarkServer {
      * went. A mark naming a row deleted elsewhere is counted as gone, never passed off as done.
      */
     approve(state: RowMarkState): { readonly applied: number; readonly gone: number } {
-        const applied = marked(state, this.#live).length;
+        const applied = marked(state, this.#live, this.#history).length;
         // The deleted rows the marks still name, by the same evaluation: a later step that unmarked one, or a
-        // snapshot that took it in, decides as it does for a live row.
-        const gone = marked(state, [...this.#deleted]).length;
+        // snapshot taken while it existed, decides as it does for a live row.
+        const gone = marked(state, this.#history.deleted, this.#history).length;
         return { applied, gone };
     }
 
@@ -120,7 +154,7 @@ export class DemoMarkServer {
         const desk = deskFilter(filter);
         let inResult = 0;
         let total = 0;
-        for (const index of marked(state, this.#live)) {
+        for (const index of marked(state, this.#live, this.#history)) {
             total++;
             if (matches(index, desk)) inResult++;
         }
@@ -128,13 +162,9 @@ export class DemoMarkServer {
     }
 }
 
-function belongsTo(index: number, snapshot: RowMarkSnapshot): boolean {
-    return index < Number(snapshot.asOf) && matches(index, deskFilter(snapshot.filter));
-}
-
 /** The marked live rows, as indices: the same evaluation the source makes per painted row, made here over the
  * whole data with each snapshot's desk read once. */
-function marked(state: RowMarkState, rows: readonly number[]): number[] {
+function marked(state: RowMarkState, rows: readonly number[], history: History): number[] {
     const keyed = new Map<number, { readonly step: number; readonly marked: boolean }>();
     const snapshots: { readonly step: number; readonly asOf: number; readonly desk: string | undefined; readonly marked: boolean }[] = [];
     state.steps.forEach((step, at) => {
@@ -147,7 +177,7 @@ function marked(state: RowMarkState, rows: readonly number[]): number[] {
         for (let s = snapshots.length - 1; s >= 0; s--) {
             const snapshot = snapshots[s];
             if (snapshot === undefined || snapshot.step <= step) break;
-            if (index < snapshot.asOf && matches(index, snapshot.desk)) return snapshot.marked;
+            if (history.existedAt(index, snapshot.asOf) && matches(index, snapshot.desk)) return snapshot.marked;
         }
         return own !== undefined && own.marked;
     });

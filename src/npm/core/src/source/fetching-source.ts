@@ -364,14 +364,8 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     #recount(): void {
         const marks = this.#marks;
         if (marks === undefined || this.#disposed) return;
-        void (async () => {
-            try {
-                await marks.recount();
-            } catch (error) { // oxlint-disable-line ex-grid/no-catch -- ADR-0025: a failed count is reported as a failed fetch is; after dispose it is nobody's
-                if (this.#disposed) return;
-                if (!this.#reportMarksFailure(error)) throw error;
-            }
-        })();
+        // The recount reports its own failure; one nobody hears rejects unheard, and reaches the host.
+        void marks.recount();
     }
 
     /** A failure of the Consumer's server met while keeping the marks, reported as a failed fetch is: held in
@@ -520,7 +514,8 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
             windowStart: page.start,
             totalCount: page.totalCount,
             loading: false,
-            lastError: undefined,
+            // A page answers the fetch, not a count: a failure the marks reported stands until a count lands.
+            lastError: this.#marksFailure,
             rowSequenceVersion: moved ? this.#state.rowSequenceVersion + 1 : this.#state.rowSequenceVersion,
         });
         this.#notify();

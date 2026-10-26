@@ -459,6 +459,32 @@ describe('Row Marks on GridSource.fetch (ADR-0043)', () => {
         expect(marks.counts).toEqual(counts(1, 10, 0));
     });
 
+    it('ADR-0043/0025: a count the Consumer asks for that fails is reported as a gesture\'s is, and thrown only where nobody hears it', async () => {
+        const server = new Server(10);
+        const failures: unknown[] = [];
+        const heard = marksOf(await server.source({ failures }));
+        const unheard = await server.source();
+        server.heldCount = Promise.reject(new Error('the count failed'));
+        await heard.recount();
+        expect(failures.map(failure => (failure as Error).message)).toEqual(['the count failed']);
+
+        await expect(marksOf(unheard).recount()).rejects.toThrow('the count failed');
+        expect(unheard.snapshot().lastError).toBeInstanceOf(Error);
+    });
+
+    it('ADR-0043/0025: a page landing answers the fetch, not the count: the marks\' failure stands in lastError', async () => {
+        const server = new Server(1000);
+        const source = await server.source({ failures: [] });
+        const marks = marksOf(source);
+        server.heldCount = Promise.reject(new Error('the count failed'));
+        await marks.onMarkIntent({ kind: 'oneRow', row: windowRow(source, 0), marked: true });
+
+        await source.needRange(rowRange(900, 20));
+
+        expect([source.snapshot().window.length > 0, (source.snapshot().lastError as Error).message]).toEqual([true, 'the count failed']);
+        expect(marks.counts).toBeUndefined();
+    });
+
     it('ADR-0043: RowMarkState reads a key\'s latest step against the snapshots taken after it', () => {
         const state = new RowMarkState([
             { kind: 'oneKey', key: 1, marked: true },
