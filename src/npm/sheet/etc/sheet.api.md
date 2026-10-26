@@ -369,6 +369,7 @@ export interface SheetOptions {
     readonly rowHeight?: number;
     readonly showFormulaBar?: boolean;
     readonly showSheetTabs?: boolean;
+    readonly showToolbar?: boolean;
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
 }
@@ -421,7 +422,10 @@ export function sheetTabKeysDeclared(): readonly string[];
 export function sheetTabStepOf(key: string): -1 | 1 | undefined;
 
 // @public
-export type SheetWordId = 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened' | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded' | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing' | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete' | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete' | 'toolbarName' | 'toolbarWhileEditing' | 'sheetTabsName' | 'editSheetGone' | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded' | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied' | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName' | 'onlySheet' | 'sheetGone' | 'sheetNotChanged' | 'firstSheet' | 'lastSheet' | 'commaStyleUnread' | 'editDiscardedByNewDocument' | `editDiscarded.${EditDiscardReason}` | 'pasteReadsDifferently' | 'pasteRefusedFormula' | 'summaryRefused' | 'pasteTooNarrowToShow' | `pasteRefused.${PasteRefusalReason}` | `commitRefused.${CommitRefusalReason}` | 'overwritten' | `copyRefused.${CopyRefusalReason}` | `pointingRefused.${PointingRefusalWordCase}` | 'pointingExtendedByKey' | 'nothingToUndo' | 'nothingToRedo' | 'command.insertRows' | 'command.deleteRows' | 'command.insertColumns' | 'command.deleteColumns' | 'command.formatCells' | 'formatCellsTitle' | `formatCells.tab.${FormatCellsTab}` | `formatCells.category.${NumberFormatCategory}` | `formatCells.disabled.${DisabledNumberFormatCategory}` | 'formatCells.noNumberFormatCode' | 'formatCells.numberFormatNotRead' | 'formatCells.notAColour' | `formatCells.alignment.${HorizontalAlignment}` | `formatCells.fontStyle.${FontStyle}` | `formatCells.edge.${BorderEdge}` | `formatCells.preset.${BorderPreset}` | `formatCells.lineStyle.${BorderLineStyle}` | `formatCells.colour.${ThemeColourName | StandardColourName}` | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep';
+export type SheetToolbarCommand = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'fontColour' | 'fill' | 'borders' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'numberFormat' | 'percent' | 'comma' | 'formatCells';
+
+// @public
+export type SheetWordId = 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened' | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded' | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing' | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete' | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete' | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'sheetTabsName' | 'editSheetGone' | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded' | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied' | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName' | 'onlySheet' | 'sheetGone' | 'sheetNotChanged' | 'firstSheet' | 'lastSheet' | 'commaStyleUnread' | 'editDiscardedByNewDocument' | `editDiscarded.${EditDiscardReason}` | 'pasteReadsDifferently' | 'pasteRefusedFormula' | 'summaryRefused' | 'pasteTooNarrowToShow' | `pasteRefused.${PasteRefusalReason}` | `commitRefused.${CommitRefusalReason}` | 'overwritten' | `copyRefused.${CopyRefusalReason}` | `pointingRefused.${PointingRefusalWordCase}` | 'pointingExtendedByKey' | 'nothingToUndo' | 'nothingToRedo' | 'command.insertRows' | 'command.deleteRows' | 'command.insertColumns' | 'command.deleteColumns' | 'command.formatCells' | 'formatCellsTitle' | `formatCells.tab.${FormatCellsTab}` | `formatCells.category.${NumberFormatCategory}` | `formatCells.disabled.${DisabledNumberFormatCategory}` | 'formatCells.noNumberFormatCode' | 'formatCells.numberFormatNotRead' | 'formatCells.notAColour' | `formatCells.alignment.${HorizontalAlignment}` | `formatCells.fontStyle.${FontStyle}` | `formatCells.edge.${BorderEdge}` | `formatCells.preset.${BorderPreset}` | `formatCells.lineStyle.${BorderLineStyle}` | `formatCells.colour.${ThemeColourName | StandardColourName}` | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep';
 
 // @public
 export function sheetWordIdList(): readonly SheetWordId[];
@@ -492,6 +496,9 @@ export class SheetWords {
     static readonly summaryRefusedEnglish: string;
     swatchName(swatch: PaletteSwatch): string;
     tabName(tab: FormatCellsTab): string;
+    get toolbarHomeRow(): string;
+    toolbarItem(command: SheetToolbarCommand): string;
+    toolbarItemWithShortcut(name: string, shortcut: string): string;
     get toolbarName(): string;
     get toolbarWhileEditing(): string;
     word(id: SheetWordId): string;

@@ -15,8 +15,8 @@ import {
     type ViewportSize,
 } from '@ex-grid/core';
 import {
-    CellAddress, CellRange, Culture, Entry, FormulaSyntaxError, SheetEdit, SheetRefusedError, Value, Workbook,
-    Sheet, SheetRefusal, type FillDirection, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
+    CellAddress, CellFormatChange, CellRange, Culture, Entry, FormulaSyntaxError, SheetEdit, SheetRefusedError, Value, Workbook,
+    Sheet, SheetRefusal, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { unreachable } from './must';
 import { exactNumberFor, isTooNarrowToShow, refusedIn, typedFor } from './sheet-clipboard';
@@ -28,12 +28,13 @@ import { planSheetReplace, positionsOf, sheetCellMatches } from './sheet-find';
 import { SheetSource } from './sheet-source';
 import { readNameBoxPlace } from './name-box-text';
 import { SheetEdges } from './sheet-edges';
-import { SheetWords, type SheetLabel } from './sheet-words';
+import { SheetWords, type SheetLabel, type SheetToolbarCommand } from './sheet-words';
 import { SheetTabs } from './sheet-tabs';
+import { SheetToolbar, type SheetToolbarIcon, type SheetToolbarItem, type SheetToolbarPaint } from './sheet-toolbar';
 import { sheetTabKeys, sheetTabStepOf } from './sheet-tab-keys';
 import { sheetFormatChangeFor, sheetFormatKeyOf, type SheetFormatKey } from './sheet-format-keys';
 import { sheetStructureEditFor, sheetStructureKeyOf, type SheetStructureKey } from './sheet-structure-keys';
-import { widensAsAKeyDoes } from './sheet-widening';
+import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes } from './sheet-widening';
 
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
@@ -49,6 +50,9 @@ export interface SheetOptions {
     /** Shows the Sheet Tabs at the Sheet's foot, one per Sheet of the Workbook, as Excel does (ADR-0331); shown unless
      * `false`. Their band, as tall as the Formula Bar, comes off `viewportHeight`. */
     readonly showSheetTabs?: boolean;
+    /** Shows the Sheet Toolbar above the Formula Bar (ADR-0100): Excel's Home tab formatting commands, acting on this
+     * Sheet's Selection. Off unless `true`. Its band, a row as tall as the Formula Bar, comes off `viewportHeight`. */
+    readonly showToolbar?: boolean;
     /** ExSheet's Japanese words in place of its English (ADR-0370, section 10), chosen in one line, never by the
      * locale. */
     readonly japanese?: boolean;
@@ -95,6 +99,7 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
 class SheetView {
     readonly #element: HTMLElement;
     readonly #gridElement: HTMLElement;
+    readonly #toolbar: SheetToolbar;
     readonly #tabs: SheetTabs;
     readonly #notice: HTMLElement;
     readonly #history = new SheetHistory();
@@ -153,6 +158,7 @@ class SheetView {
         this.#notice.className = 'ex-sheet-notice';
         this.#notice.setAttribute('role', 'status');
         this.#tabs = new SheetTabs(document, { pressed: this.#onTabPressed, added: this.#onTabAdded, listKey: this.#onTabListKey });
+        this.#toolbar = new SheetToolbar(document, { giveBack: () => { this.#grid?.focus(); } });
         element.replaceChildren(this.#gridElement, this.#notice);
         // Excel's keys for the Sheet Tabs, heard on the Sheet before its grid hears them, wherever in it the keyboard
         // is, so the browser does not move among its own tabs (ADR-0331 §4).
@@ -503,6 +509,7 @@ class SheetView {
 
     readonly #onSelectionChanged = (selection: GridSelection): void => {
         this.#selection = selection;
+        this.#paintToolbar();
         // A Selection the grid dropped, as another Sheet is shown, is no move of the user's: the notice stands.
         if (selection.isEmpty) return;
         // The user moved on: what the notice said is behind them, unless it was told by the gesture that moved.
@@ -537,6 +544,7 @@ class SheetView {
 
     readonly #onEditingChanged = (open: boolean): void => {
         this.#editing = open;
+        this.#paintToolbar();
     };
 
     readonly #onEditDiscarded = (reason: EditDiscardReason): void => {
@@ -551,23 +559,39 @@ class SheetView {
 
     // ---- The Sheet Tabs (ADR-0331 §4) ------------------------------------------------------------------------
 
-    // The tabs' band: the Formula Bar's height, so the two read as bands of one frame, as the C# Sheet draws them.
+    // A band of the Sheet's own, a Toolbar Row or the tabs: the Formula Bar's height, so they read as bands of one
+    // frame, as the C# Sheet draws them.
+    get #bandRowPx(): number {
+        return SheetView.#bandRowPxOf(this.#options);
+    }
+
+    static #bandRowPxOf(options: SheetOptions): number {
+        return formulaBarHeight(options.density ?? 'compact', options.rowHeight); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
+    }
+
     get #tabsHeightPx(): number {
         return SheetView.#tabsHeightOf(this.#options);
     }
 
     static #tabsHeightOf(options: SheetOptions): number {
-        if (options.showSheetTabs === false) return 0;
-        return formulaBarHeight(options.density ?? 'compact', options.rowHeight); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
+        return options.showSheetTabs === false ? 0 : SheetView.#bandRowPxOf(options);
     }
 
-    // The Sheet's box and its tabs. Without the tabs the element lays out as if they were not there. With them, it
-    // holds the grid and the tabs: at the declared width, or under a stretched height as a column as tall as its
-    // parent, in which the grid takes what the tabs leave.
+    // The Sheet's box, its toolbar and its tabs. With neither band the element lays out as if they were not there.
+    // With either, it holds the grid and its bands: at the declared width, or under a stretched height as a column as
+    // tall as its parent, in which the grid takes what the bands leave.
     #paintFrame(): void {
-        if (this.#options.showSheetTabs === false) {
+        const tabs = this.#options.showSheetTabs !== false;
+        const toolbar = this.#options.showToolbar === true;
+        if (!tabs && this.#tabs.area.isConnected) this.#tabs.area.remove();
+        if (!toolbar && this.#toolbar.band.isConnected) {
+            // A band taken away while it holds the keyboard hands it back first, so the next key is not the page's.
+            const holds = this.#toolbar.holdsKeyboard;
+            this.#toolbar.band.remove();
+            if (holds) this.#grid?.focus();
+        }
+        if (!tabs && !toolbar) {
             this.#frame({});
-            if (this.#tabs.area.isConnected) this.#tabs.area.remove();
             return;
         }
         const { viewportWidth, viewportHeight } = this.#options;
@@ -575,11 +599,17 @@ class SheetView {
         this.#frame(viewportHeight === 'stretch'
             ? { display: 'flex', 'flex-direction': 'column', height: '100%', flex: '1 1 auto', 'min-height': '0', ...width }
             : { display: 'block', ...width });
-        if (!this.#tabs.area.isConnected) this.#gridElement.after(this.#tabs.area);
-        this.#tabs.paint({
-            sheets: this.#workbook.sheets, shown: this.#source.sheet, heightPx: this.#tabsHeightPx,
-            listName: this.#words.sheetTabsName, addName: this.#words.newSheetName,
-        });
+        if (toolbar) {
+            if (!this.#toolbar.band.isConnected) this.#gridElement.before(this.#toolbar.band);
+            this.#paintToolbar();
+        }
+        if (tabs) {
+            if (!this.#tabs.area.isConnected) this.#gridElement.after(this.#tabs.area);
+            this.#tabs.paint({
+                sheets: this.#workbook.sheets, shown: this.#source.sheet, heightPx: this.#tabsHeightPx,
+                listName: this.#words.sheetTabsName, addName: this.#words.newSheetName,
+            });
+        }
     }
 
     // The properties of the element's style the Sheet sets, and only those: one it stops setting gets back the value
@@ -598,14 +628,76 @@ class SheetView {
         }
     }
 
-    // The grid's height under `options`: the Sheet's, less the tabs' band. A Sheet too short to hold the band is
-    // refused by name.
+    // The grid's height under `options`: the Sheet's, less its bands. A Sheet too short to hold them is refused by name.
     #gridHeight(options: SheetOptions): ViewportSize | undefined {
         const height = options.viewportHeight;
         if (typeof height !== 'number') return height;
         const tabs = SheetView.#tabsHeightOf(options);
-        if (height <= tabs) throw new RangeError(`A Sheet of ${String(height)}px cannot hold its Sheet Tabs' ${String(tabs)}px band and a grid (ADR-0331).`);
-        return height - tabs;
+        const toolbar = options.showToolbar === true ? SheetToolbar.heightPx(this.#toolbarRows().length, SheetView.#bandRowPxOf(options)) : 0;
+        if (height <= tabs + toolbar) {
+            const bands = [
+                ...(toolbar > 0 ? [`its Sheet Toolbar's ${String(toolbar)}px band (ADR-0100)`] : []),
+                ...(tabs > 0 ? [`its Sheet Tabs' ${String(tabs)}px band (ADR-0331)`] : []),
+            ];
+            throw new RangeError(`A Sheet of ${String(height)}px cannot hold ${bands.join(', ')} and a grid.`);
+        }
+        return height - tabs - toolbar;
+    }
+
+    // ---- The Sheet Toolbar (ADR-0100) ------------------------------------------------------------------------
+
+    #paintToolbar(): void {
+        if (this.#options.showToolbar !== true) return;
+        this.#toolbar.paint({ name: this.#words.toolbarName, rowHeightPx: this.#bandRowPx, rows: this.#toolbarRows() });
+    }
+
+    // The default row, Excel's Home tab's commands in its order (ADR-0100), each item's state the Focus cell's as the
+    // grid holds it now. While an edit is open every item is unavailable, and says why. The colour, Borders and Number
+    // Format lists, and Format Cells, follow.
+    #toolbarRows(): SheetToolbarPaint['rows'] {
+        const focus = this.#grid?.readView().selection.focus;
+        const format = focus === undefined ? undefined : this.#source.sheet.getCellFormat(new CellAddress(focus.row, focus.column));
+        const words = this.#words;
+        const item = (key: SheetToolbarCommand, icon: SheetToolbarIcon, change: ((focused: CellFormat) => CellFormatChange) | undefined,
+            { pressed, shortcut, disabledReason }: { readonly pressed?: boolean; readonly shortcut?: string; readonly disabledReason?: string } = {}): SheetToolbarItem => {
+            const name = words.toolbarItem(key);
+            return {
+                key, kind: pressed === undefined ? 'button' : 'toggle', name, icon, pressed: pressed === true,
+                tooltip: shortcut === undefined ? name : words.toolbarItemWithShortcut(name, shortcut),
+                // An open edit is the reason over any other, as the C# Sheet's.
+                disabledReason: this.#editing ? words.toolbarWhileEditing : disabledReason,
+                press: change === undefined ? undefined : () => { this.#toolbarPressed(change); },
+            };
+        };
+        const key = (kind: SheetFormatKey) => (focused: CellFormat): CellFormatChange => sheetFormatChangeFor(kind, focused, this.#source.sheet.culture);
+        return [{
+            label: words.toolbarHomeRow,
+            items: [
+                item('bold', 'bold', key('bold'), { pressed: format?.font.bold === true, shortcut: 'Ctrl+B' }),
+                item('italic', 'italic', key('italic'), { pressed: format?.font.italic === true, shortcut: 'Ctrl+I' }),
+                item('underline', 'underline', key('underline'), { pressed: format?.font.underline === true, shortcut: 'Ctrl+U' }),
+                item('strikethrough', 'strikethrough', key('strikethrough'), { pressed: format?.font.strikethrough === true, shortcut: 'Ctrl+5' }),
+                'separator',
+                item('alignLeft', 'alignLeft', align('left'), { pressed: format?.alignment === 'left' }),
+                item('alignCenter', 'alignCenter', align('center'), { pressed: format?.alignment === 'center' }),
+                item('alignRight', 'alignRight', align('right'), { pressed: format?.alignment === 'right' }),
+                'separator',
+                item('percent', 'percent', key('percent'), { shortcut: 'Ctrl+Shift+%' }),
+                // Excel's Comma Style pads with `*`, as Accounting does, which ExSheet does not read: shown, and disabled
+                // with the reason, rather than set as something else under Excel's name.
+                item('comma', 'comma', undefined, { disabledReason: words.commaStyleUnread }),
+            ],
+        }];
+    }
+
+    // A Toolbar Item pressed: its change of the Focus cell's format on the Selection, widening as Excel's Home tab
+    // buttons do. An edit open at the press, whatever the last pass showed, changes nothing, and the notice says why.
+    #toolbarPressed(change: (focused: CellFormat) => CellFormatChange): void {
+        if (this.#editing) {
+            this.#tell(this.#words.toolbarWhileEditing);
+            return;
+        }
+        this.#formatFromFocus(change, widensAsAHomeTabButtonDoes);
     }
 
     // A press on a tab shows its Sheet; the keyboard stays in the grid, where the next key acts on it.
@@ -691,7 +783,9 @@ class SheetView {
         const structure = format === undefined ? sheetStructureKeyOf(key) : undefined;
         if ((format === undefined && structure === undefined) || format === 'formatCells') return;
         const target = event.target;
-        if (!(target instanceof Element) || !this.#gridElement.contains(target) || target.closest('.ex-popover, .ex-name-box') !== null) return;
+        // On the toolbar's band too: its tooltips name these keys, and the band leaves Ctrl's keys to the Sheet.
+        const onToolbar = target === this.#toolbar.band;
+        if (!(target instanceof Element) || (!onToolbar && (!this.#gridElement.contains(target) || target.closest('.ex-popover, .ex-name-box') !== null))) return;
         event.preventDefault();
         event.stopPropagation();
         if (format !== undefined) this.#formatKey(format);
@@ -706,13 +800,18 @@ class SheetView {
             this.#tell(this.#words.formatKeyWhileEditing);
             return;
         }
+        this.#formatFromFocus(focus => sheetFormatChangeFor(kind, focus, this.#source.sheet.culture), widensAsAKeyDoes);
+    }
+
+    // The change `changeOf` makes of the Focus cell's format, set on every range of the Selection as one step, widening
+    // the columns a number no longer fits where `widens` says the gesture does (ADR-0071, ADR-0100).
+    #formatFromFocus(changeOf: (focus: CellFormat) => CellFormatChange, widens: (change: CellFormatChange) => boolean): void {
         const selection = this.#grid?.readView().selection;
         const focus = selection?.focus;
         if (selection === undefined || focus === undefined) return;
-        const sheet = this.#source.sheet;
-        const change = sheetFormatChangeFor(kind, sheet.getCellFormat(new CellAddress(focus.row, focus.column)), sheet.culture);
+        const change = changeOf(this.#source.sheet.getCellFormat(new CellAddress(focus.row, focus.column)));
         const cells = selection.ranges.map(rangeOf);
-        this.#perform(SheetEdit.setCellFormat(cells, change), undefined, widensAsAKeyDoes(change) ? cells : undefined);
+        this.#perform(SheetEdit.setCellFormat(cells, change), undefined, widens(change) ? cells : undefined);
     }
 
     // Ctrl+Plus and Ctrl+Minus: over whole rows they insert or delete those rows, over whole columns those columns,
@@ -840,6 +939,7 @@ class SheetView {
         }
         this.#sheetChanged(changes.map(change => change.for(sheet)));
         if (changes.some(change => change.changesSheets)) this.#paintFrame();
+        else this.#paintToolbar();
         this.#raiseDocument();
     }
 
@@ -941,6 +1041,10 @@ const sheetFindMatch = (row: SheetRow, column: GridColumn<SheetRow>, pattern: Gr
 function unreachableColumn(position: number): never {
     throw new Error(`Internal: no column of the request stands at ${String(position)}.`);
 }
+
+// An alignment item's change: the alignment, or General where the Focus cell has it, as Excel's buttons do (ADR-0100).
+const align = (alignment: HorizontalAlignment) => (focused: CellFormat): CellFormatChange =>
+    new CellFormatChange({ alignment: focused.alignment === alignment ? 'general' : alignment });
 
 // The Name Box names the Focus as A1 does (ADR-0051).
 const nameBoxLabel = (focus: CellPosition): string => new CellAddress(focus.row, focus.column).toString();
