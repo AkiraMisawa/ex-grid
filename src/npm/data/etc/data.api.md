@@ -11,6 +11,29 @@ export function applyChangeBatch(snapshot: Snapshot, batch: ChangeBatch): Snapsh
 export const arrowStreamMediaType = "application/vnd.apache.arrow.stream";
 
 // @public
+export class BoardInput {
+    constructor(name: string, columns: readonly DataShapeColumn[]);
+    bind(snapshot: Snapshot): Snapshot;
+    check(shape: DataShape): void;
+    checkSource(source: ShapedSource, signal?: AbortSignal): Promise<DataShape>;
+    column(name: string): DataShapeColumn | undefined;
+    get columns(): readonly DataShapeColumn[];
+    fromJson(json: string | JsonValue): Snapshot;
+    get name(): string;
+    static read(name: string, declaration: JsonValue, path: string): BoardInput;
+    get shape(): DataShape;
+}
+
+// @public
+export const boardKindNames: readonly SnapshotKind[];
+
+// @public
+export class BoardRefusedError extends Error {
+    constructor(path: string, message: string, options?: ErrorOptions);
+    readonly path: string;
+}
+
+// @public
 export type BooleanColumn = SnapshotColumnBase<'boolean', boolean>;
 
 // @public
@@ -109,6 +132,14 @@ export function readArrowSnapshot(arrow: Uint8Array | ArrayBuffer, options?: Sna
 
 // @public
 export function readJsonText(text: string): JsonValue;
+
+// @public
+export function shapeColumn(shape: DataShape, name: string): DataShapeColumn | undefined;
+
+// @public
+export interface ShapedSource {
+    shape(signal?: AbortSignal): Promise<DataShape | undefined>;
+}
 
 // @public
 export interface Snapshot {
