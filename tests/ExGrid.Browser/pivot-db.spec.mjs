@@ -6,7 +6,9 @@ import { expectCodeIsSource } from './demo-code.mjs';
 // /pivot-db (ADR-0065/0066/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // the demo API server's SQLite trades two ways, side by side. "Database → Snapshot" reads the
 // trades over Arrow into a Snapshot the page pivots in its own process; "database → server Pivot
-// Source" asks the server each question through PivotReportSource.Fetch, and the server computes the report and returns its requested Window.
+// Source" asks the server each question: through PivotReportSource.Fetch on the Blazor hosts, where the server
+// computes the report and returns its requested Window, and through FetchingPivotSource on the React host, where
+// the server answers Leaf Aggregates and the page builds the report (ADR-0370 section 3).
 // What only a browser can say: that both reach the server from either host, read the same trades
 // and show the same numbers for the same layout; that the server's Details are paged from it as
 // the Details tab scrolls; and that the console stays clean throughout (PV-20).
@@ -64,15 +66,15 @@ async function expectSameReports(page) {
     }).toBe('the same');
 }
 
-// The questions that bring the server pivot's report: a report Window on the Blazor hosts, which ask the server's
-// report through PivotReportSource.Fetch, and the Leaf Aggregates on the React host, whose pivot builds the report
-// from them (ADR-0370 section 3).
+// The questions that bring PV-20's server pivot its report: a report Window on the Blazor hosts, which ask the
+// server's report through PivotReportSource.Fetch, and the Leaf Aggregates on the React host, whose pivot builds the
+// report from them (ADR-0370 section 3). The report Windows of LV- are the Blazor hosts' alone.
 const REPORT_QUESTION = REACT ? 'aggregate' : 'Window';
 
 /** How many questions of a kind the page has asked the server, as its status line counts them. */
 async function asked(page, kind) {
     const text = await page.locator('#pivot-db-server-status').textContent();
-    return Number(new RegExp(`(\\d+) ${kind}`).exec(text)?.[1] ?? NaN);
+    return Number(new RegExp(`([\\d,]+) ${kind}`).exec(text)?.[1]?.replaceAll(',', '') ?? NaN);
 }
 
 test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows', async ({ page }) => {
@@ -87,7 +89,7 @@ test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bound
     await scrollRowToTop(grid, last);
     await expect(grid.locator(`[id$='-r${last}c0']`)).toContainText('Grand Total');
     expect(await rows(page, 'server').count()).toBeLessThan(100);
-    expect(await asked(page, REPORT_QUESTION)).toBeGreaterThan(1);
+    expect(await asked(page, 'Window')).toBeGreaterThan(1);
 });
 
 test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows its last rows, and scrolls on', async ({ page }) => {
@@ -154,7 +156,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
         await expect(placeholders).toHaveCount(0);
         await circuitQuiet();
         const onScreen = await rows(page, 'server').count();
-        const atFiveHundred = await asked(page, REPORT_QUESTION);
+        const atFiveHundred = await asked(page, 'Window');
         if (!SERVER) {
             await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 440, count: onScreen + 120 });
         }
@@ -165,16 +167,16 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
             await scrollRowToTop(grid, row);
             await expect(placeholders).toHaveCount(0);
             await circuitQuiet();
-            expect(await asked(page, REPORT_QUESTION), `asked at row ${row}`).toBe(atFiveHundred);
+            expect(await asked(page, 'Window'), `asked at row ${row}`).toBe(atFiveHundred);
         }
 
         // Row 555: every row on screen is held, but the tenth row below them is not. The next Window
         // is asked for, once, and the rows on screen stay painted while it is out.
         await scrollRowToTop(grid, 555);
-        await expect.poll(() => asked(page, REPORT_QUESTION)).toBe(atFiveHundred + 1);
+        await expect.poll(() => asked(page, 'Window')).toBe(atFiveHundred + 1);
         await expect(placeholders).toHaveCount(0);
         await circuitQuiet();
-        expect(await asked(page, REPORT_QUESTION)).toBe(atFiveHundred + 1);
+        expect(await asked(page, 'Window')).toBe(atFiveHundred + 1);
         if (!SERVER) {
             await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 495, count: onScreen + 120 });
         }
@@ -216,19 +218,19 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
         await circuitQuiet();
         const onScreen = await rows(page, 'server').count();
         await expect.poll(lastWindow).toEqual({ start: 440, count: onScreen + 120 });
-        const base = await asked(page, REPORT_QUESTION);
+        const base = await asked(page, 'Window');
         for (let row = 505; row <= 550; row += 5) {
             await scrollRowToTop(grid, row);
         }
         await circuitQuiet();
-        expect(await asked(page, REPORT_QUESTION)).toBe(base);
+        expect(await asked(page, 'Window')).toBe(base);
 
         // Row 555: the tenth row below the rows on screen is not held. The next Window is asked for, and
         // its answer held at the gate. Every row on screen is still held, and the report is not dimmed.
         const sentBefore = (await windowsAsked()).length;
         await gate(true);
         await scrollRowToTop(grid, 555);
-        await expect.poll(() => asked(page, REPORT_QUESTION)).toBe(base + 1);
+        await expect.poll(() => asked(page, 'Window')).toBe(base + 1);
         await expect.poll(lastWindow).toEqual({ start: 495, count: onScreen + 120 });
         await circuitQuiet();
         await expect(placeholders).toHaveCount(0);
@@ -240,7 +242,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
         for (let row = 560; row <= 600; row += 5) {
             await scrollRowToTop(grid, row);
             await circuitQuiet();
-            expect(await asked(page, REPORT_QUESTION), `asked at row ${row}`).toBe(base + 1);
+            expect(await asked(page, 'Window'), `asked at row ${row}`).toBe(base + 1);
         }
         await expect(placeholders).not.toHaveCount(0);
         await expect(grid).toHaveClass(/\bex-loading\b/);
@@ -252,15 +254,15 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
         await expect(placeholders).toHaveCount(0);
         await expect(grid).not.toHaveClass(/\bex-loading\b/);
         await circuitQuiet();
-        expect(await asked(page, REPORT_QUESTION)).toBe(base + 1);
+        expect(await asked(page, 'Window')).toBe(base + 1);
 
         // The new Window reaches sixty rows past the rows asked for at 555: at 605 the tenth row below the
         // rows on screen is its last, and nothing is asked; at 606 it leaves it, and one question more is.
         await scrollRowToTop(grid, 605);
         await circuitQuiet();
-        expect(await asked(page, REPORT_QUESTION)).toBe(base + 1);
+        expect(await asked(page, 'Window')).toBe(base + 1);
         await scrollRowToTop(grid, 606);
-        await expect.poll(() => asked(page, REPORT_QUESTION)).toBe(base + 2);
+        await expect.poll(() => asked(page, 'Window')).toBe(base + 2);
         await expect.poll(lastWindow).toEqual({ start: 546, count: onScreen + 120 });
         await expect(placeholders).toHaveCount(0);
     } finally {
@@ -300,7 +302,7 @@ test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside 
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0069: the database read over Arrow and asked of the server's Pivot Source shows the same numbers (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const status = await api('/api/status');
             // The whole database, read into the page's own Snapshot at the server's version.

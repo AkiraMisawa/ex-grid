@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { readArrowSnapshot } from '@ex-grid/data';
 import {
-    FetchingPivotSource, PivotDetailPage, PivotJson, PivotSourceFeatures, SnapshotPivotSource, createPivotLayout, pivotField,
+    FetchingPivotSource, PivotDetailPage, PivotJson, PivotRefusals, PivotSourceFeatures, SnapshotPivotSource, createPivotLayout, pivotField,
     type PivotAggregation, type PivotDetailRecord, type PivotDetailsQuery, type PivotField, type PivotFieldType, type PivotLayout,
 } from '@ex-grid/pivot-engine';
 import { ExPivot } from '@ex-grid/pivot-react';
@@ -12,7 +12,9 @@ const count = (value: number): string => value.toLocaleString('en-US');
 /** The demo API server, at the page's own port plus 3000, as DemoApiClient finds it (ADR-0069). */
 function apiUrl(path: string): string {
     const { protocol, hostname, port } = window.location;
-    return `${protocol}//${hostname}:${Number(port) + 3000}/${path}`;
+    // A page served on its scheme's own port names none.
+    const served = port === '' ? (protocol === 'https:' ? 443 : 80) : Number(port);
+    return `${protocol}//${hostname}:${served + 3000}/${path}`;
 }
 
 /** The most records the server answers in one Details page. */
@@ -39,19 +41,30 @@ interface Declared {
     readonly features: PivotSourceFeatures;
 }
 
-/** GET /api/pivot/fields: the server's fields, with their captions and formats, and the Aggregations SQLite
- * answers exactly (ADR-0066). */
+/** GET /api/pivot/fields: the server's fields, with their captions and formats, the Aggregations SQLite answers
+ * exactly (ADR-0066), and whether it counts each field's Items and answers a question past its cap with the groups
+ * shown (ADR-0370 section 3). */
 async function declaredFields(signal: AbortSignal): Promise<Declared> {
     const response = await fetch(apiUrl('api/pivot/fields'), { signal });
     if (!response.ok) throw new Error(`GET /api/pivot/fields answered ${response.status}.`);
     const declared = await response.json() as {
         readonly fields: readonly { readonly name: string; readonly type: string; readonly caption: string; readonly format: string | null }[];
-        readonly features: { readonly aggregations: readonly string[]; readonly canRefresh: boolean };
+        readonly features: {
+            readonly aggregations: readonly string[]; readonly canRefresh: boolean; readonly countsItems: boolean; readonly answersLevels: boolean;
+        };
     };
     const fields = declared.fields.map(field => pivotField({
         name: field.name, type: camel(field.type) as PivotFieldType, caption: field.caption, ...(field.format === null ? {} : { format: field.format }),
     }));
-    return { fields, features: new PivotSourceFeatures(declared.features.aggregations.map(each => camel(each) as PivotAggregation), declared.features.canRefresh) };
+    const { aggregations, canRefresh, countsItems, answersLevels } = declared.features;
+    return { fields, features: new PivotSourceFeatures(aggregations.map(each => camel(each) as PivotAggregation), canRefresh, countsItems, answersLevels) };
+}
+
+/** GETs a PivotJson document. */
+async function get(path: string, signal: AbortSignal | undefined): Promise<string> {
+    const response = await fetch(apiUrl(path), signal === undefined ? {} : { signal });
+    if (!response.ok) throw new Error(`GET /${path} answered ${response.status}: ${await response.text()}`);
+    return response.text();
 }
 
 /** POSTs a PivotJson document and reads the answer's. */
@@ -62,7 +75,8 @@ async function post(path: string, body: string, signal: AbortSignal | undefined)
 }
 
 /** The server as a Pivot Source (ADR-0066, ADR-0370 section 3): it answers the Leaf Aggregates of each question
- * in SQL, and the pivot builds the report and its totals from them here. Details come a page at a time. */
+ * in SQL, and the pivot builds the report and its totals from them here. Details come a page at a time, each asked
+ * under the question's Source Version. */
 function serverSource(declared: Declared, asked: (kind: string) => void): FetchingPivotSource {
     return new FetchingPivotSource(declared.fields, declared.features, {
         aggregate: async (query, signal) => {
@@ -82,12 +96,17 @@ function serverSource(declared: Declared, asked: (kind: string) => void): Fetchi
                 asked('details');
                 const page = PivotJson.readDetailPage(await post('api/pivot/details', PivotJson.writeDetailsQuery(next), signal));
                 if (page.isRefused) return page;
+                // Pages of two versions are not one page: the records moved between them.
+                if (page.sourceVersion !== query.sourceVersion) return PivotDetailPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion));
                 records.push(...page.records);
                 if (page.records.length === 0 || records.length >= query.count || query.start + records.length >= page.total) {
                     return PivotDetailPage.of(page.sourceVersion, page.fields, query.start, page.total, records);
                 }
             }
         },
+        ...(declared.features.countsItems ? {
+            itemCounts: async (signal?: AbortSignal) => PivotJson.readItemCounts(await get('api/pivot/item-counts', signal)),
+        } : {}),
     });
 }
 
@@ -110,6 +129,7 @@ export function PivotDb(): ReactElement {
     const [declared, setDeclared] = useState<Declared | undefined>(undefined);
     const [snapshot, setSnapshot] = useState<SnapshotPivotSource | undefined>(undefined);
     const [snapshotStatus, setSnapshotStatus] = useState('Reading the trades from the demo API server…');
+    const [fieldsFailure, setFieldsFailure] = useState<string | undefined>(undefined);
     const [reading, setReading] = useState(false);
     const [asked, setAsked] = useState<Readonly<Record<string, number>>>({});
     const [snapshotLayout, setSnapshotLayout] = useState<PivotLayout>(firstLayout);
@@ -118,12 +138,17 @@ export function PivotDb(): ReactElement {
 
     const read = useCallback(async (fields: readonly PivotField[]): Promise<void> => {
         setReading(true);
+        const { signal } = leaving.current;
         try {
             const started = performance.now();
-            const { source, version } = await readSnapshot(fields, leaving.current.signal);
+            const { source, version } = await readSnapshot(fields, signal);
             // A new source is new data: ExPivot asks it again, and marks what changed (ADR-0067).
             setSnapshot(source);
             setSnapshotStatus(`Read ${count(source.snapshot.rowCount)} trades at version ${version} in ${count(Math.round(performance.now() - started))} ms.`);
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the page leaving stops its read; a failed read is said on the status line and rethrown
+            if (signal.aborted) return;
+            setSnapshotStatus(`The trades could not be read: ${String(error)}`);
+            throw error;
         } finally {
             setReading(false);
         }
@@ -133,14 +158,19 @@ export function PivotDb(): ReactElement {
         const controller = new AbortController();
         leaving.current = controller;
         void (async () => {
-            const fields = await declaredFields(controller.signal);
+            let fields: Declared;
+            try {
+                fields = await declaredFields(controller.signal);
+            } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the page leaving stops its reads; any other failure is said on both status lines and rethrown
+                if (controller.signal.aborted) return;
+                const said = `The demo API server is not answering: ${String(error)}`;
+                setSnapshotStatus(said);
+                setFieldsFailure(said);
+                throw error;
+            }
             setDeclared(fields);
             await read(fields.fields);
-        })().catch((error: unknown) => { // oxlint-disable-line ex-grid/no-catch -- the page leaving stops its reads; any other failure is said on both status lines and rethrown
-            if (controller.signal.aborted) return;
-            setSnapshotStatus(`The demo API server is not answering: ${String(error)}`);
-            throw error;
-        });
+        })();
         return () => { controller.abort(); };
     }, [read]);
 
@@ -199,9 +229,9 @@ export function PivotDb(): ReactElement {
                 <section id="pivot-db-server" aria-labelledby="pivot-db-server-title">
                     <h2 id="pivot-db-server-title">Database → server Pivot Source</h2>
                     <p className="demo-status" id="pivot-db-server-status">
-                        {server === undefined
-                            ? 'Asking the demo API server for its fields…'
-                            : `Asked of the server so far: ${times('aggregate')} aggregate, ${times('items')} items and ${times('details')} details questions, each one POST.`}
+                        {server !== undefined
+                            ? `Asked of the server so far: ${times('aggregate')} aggregate, ${times('items')} items and ${times('details')} details questions, each one POST.`
+                            : fieldsFailure !== undefined ? fieldsFailure : 'Asking the demo API server for its fields…'}
                     </p>
                     {server === undefined ? null : (
                         <ExPivot source={server} layout={serverLayout} onLayoutChanged={({ layout }) => { setServerLayout(layout); }}
