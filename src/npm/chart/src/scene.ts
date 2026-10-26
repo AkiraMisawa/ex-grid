@@ -290,7 +290,8 @@ const bodyShare = 0.7;
 
 type Map1 = (position: number) => number;
 
-interface Frame {
+/** The axis as the viewer switched it, the visible series, the range shown, and the plot's span in pixels and device pixels. */
+export interface Frame {
     readonly axis: ChartAxis;
     readonly visible: readonly ChartSeries[];
     readonly from: number;
@@ -626,6 +627,16 @@ function logarithmicRefusal(visible: readonly ChartSeries[], axis: ChartAxis, fr
     return undefined;
 }
 
+/**
+ * What both the scene and the files read (C#'s `ChartScene.Frame`): the frame of `definition` at `metrics`
+ * narrowed by `view`, its plot as wide as with a legend above or below it, which is how the files take it.
+ */
+export function frameOf(definition: ChartDefinition, metrics: ChartMetrics, view: ChartView): Frame {
+    const { hidden = [] } = view;
+    // Only a legend at the left or the right narrows the plot; C#'s files pass none, which is the top's width.
+    return frame(definition, resolveMetrics(metrics), view, new Set<string>(hidden), 'top');
+}
+
 // The axis as the viewer switched it, the visible series, the range shown, and the plot's span in pixels
 // and in device pixels.
 function frame(definition: ChartDefinition, m: ChartMetricsResolved, view: ChartView, hidden: ReadonlySet<string>, legend: LegendPosition): Frame {
@@ -855,8 +866,8 @@ function legendSeries(all: readonly ChartSeries[], keys: ReadonlyMap<string, str
     return order.map(key => defined(all.find(s => s.panel === panel && s.id === key), `the series '${key}'`));
 }
 
-// The quotes an Interpolated series is paired with: the positions of the series that share its colour key.
-function quotesOf(s: ChartSeries, visible: readonly ChartSeries[]): number[] {
+/** The quotes an Interpolated series is paired with: the positions of the series that share its colour key. */
+export function quotesOf(s: ChartSeries, visible: readonly ChartSeries[]): number[] {
     return s.sampler === undefined ? []
         : visible.filter(o => o.id !== s.id && !o.interpolated && o.effectiveKeys.colour === s.effectiveKeys.colour).flatMap(o => o.points.map(p => p.x));
 }

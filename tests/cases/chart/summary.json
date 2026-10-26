@@ -1,0 +1,898 @@
+{
+  "about": "The summary a screen reader says (ADR-0275): the title, the axis across with its range, each panel's vertical axes, each visible series' maximum, an Observation's ranges and its colour and size (ADR-0290, ADR-0320), nodes and edges (ADR-0321), a volume panel's volume (ADR-0300), then the description, from tests/ExChart.Engine.Tests (ComponentSupportTests, PointScaleTests, PriceRangeTests, EdgeTests).",
+  "kind": "chart",
+  "definitions": {
+    "exposure": {
+      "axis": {
+        "values": "numbers",
+        "title": "Years"
+      },
+      "series": [
+        {
+          "id": "epe-before",
+          "name": "EPE · Before",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              9
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "Before"
+          }
+        },
+        {
+          "id": "epe-after",
+          "name": "EPE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              8
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "After"
+          }
+        },
+        {
+          "id": "ene-after",
+          "name": "ENE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              -1
+            ],
+            [
+              1,
+              -3
+            ],
+            [
+              2,
+              -2
+            ]
+          ],
+          "panel": "ENE",
+          "keys": {
+            "colour": "After"
+          }
+        }
+      ]
+    },
+    "tree": {
+      "axis": {
+        "values": "numbers",
+        "title": "Step"
+      },
+      "series": [
+        {
+          "id": "tree",
+          "name": "Tree",
+          "kind": "observation",
+          "points": [
+            {
+              "x": 0,
+              "y": 100,
+              "row": "0,0"
+            },
+            {
+              "x": 1,
+              "y": 90,
+              "row": "1,0"
+            },
+            {
+              "x": 1,
+              "y": 110,
+              "row": "1,1"
+            },
+            {
+              "x": 2,
+              "y": 81,
+              "row": "2,0"
+            },
+            {
+              "x": 2,
+              "y": 99,
+              "row": "2,1"
+            },
+            {
+              "x": 2,
+              "y": 121,
+              "row": "2,2"
+            }
+          ],
+          "edges": [
+            [
+              "0,0",
+              "1,0"
+            ],
+            [
+              "0,0",
+              "1,1"
+            ],
+            [
+              "1,0",
+              "2,0"
+            ],
+            [
+              "1,0",
+              "2,1"
+            ],
+            [
+              "1,1",
+              "2,1"
+            ],
+            [
+              "1,1",
+              "2,2"
+            ]
+          ]
+        }
+      ]
+    },
+    "volumes": {
+      "axis": {
+        "values": "dates"
+      },
+      "series": [
+        {
+          "id": "idx",
+          "name": "Index",
+          "kind": "priceRange",
+          "bars": {
+            "weekdays": {
+              "count": 10,
+              "volume": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0275, CH-8: the summary names the axis with its range and each visible series with its maximum",
+      "definition": "exposure",
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "epe-before"
+          ]
+        },
+        "title": "Exposure profile",
+        "description": "Netting set 12."
+      },
+      "expect": [
+        {
+          "at": "$",
+          "startsWith": "Exposure profile. Years, 0 to 2."
+        },
+        {
+          "at": "$",
+          "has": "EPE · After: maximum 8 at 2."
+        },
+        {
+          "at": "$",
+          "has": "ENE · After: maximum -1 at 0."
+        },
+        {
+          "at": "$",
+          "lacks": "Before"
+        },
+        {
+          "at": "$",
+          "has": "axis,"
+        },
+        {
+          "at": "$",
+          "is": "Exposure profile. Years, 0 to 2. EPE: Left axis, 0 to 8. EPE · After: maximum 8 at 2. ENE: Left axis, -3 to -0. ENE · After: maximum -1 at 0. Netting set 12."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: a title is said once as a sentence, and a description as given",
+      "definition": "exposure",
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "epe-before"
+          ]
+        },
+        "title": "  Exposure profile.. ",
+        "description": "  Netting set 12. "
+      },
+      "expect": [
+        {
+          "at": "$",
+          "startsWith": "Exposure profile. Years"
+        },
+        {
+          "at": "$",
+          "is": "Exposure profile. Years, 0 to 2. EPE: Left axis, 0 to 8. EPE · After: maximum 8 at 2. ENE: Left axis, -3 to -0. ENE · After: maximum -1 at 0. Netting set 12."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: a blank title and a blank description say nothing",
+      "definition": "exposure",
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "epe-before"
+          ]
+        },
+        "title": "   ",
+        "description": ""
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "Years, 0 to 2. EPE: Left axis, 0 to 8. EPE · After: maximum 8 at 2. ENE: Left axis, -3 to -0. ENE · After: maximum -1 at 0."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: one panel's axes are not named by the panel",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                3
+              ]
+            ],
+            "panel": "Main"
+          },
+          {
+            "id": "r",
+            "name": "R",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                100
+              ],
+              [
+                1,
+                50
+              ]
+            ],
+            "axis": "right",
+            "panel": "Main"
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "X, 0 to 1. Left axis, 0 to 3. Right axis, 0 to 100. A: maximum 3 at 1. R: maximum 100 at 0."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: a Dates axis with no title is said as the Date",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-10-19"
+                },
+                1
+              ],
+              [
+                {
+                  "date": "2026-10-21"
+                },
+                2.5
+              ]
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "Date, 2026-10-19 to 2026-10-21. Left axis, 0 to 2.5. A: maximum 2.5 at 2026-10-21."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: a series with no value in range says so",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                10,
+                2
+              ]
+            ]
+          },
+          {
+            "id": "g",
+            "name": "Gaps",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                null
+              ],
+              [
+                10,
+                null
+              ]
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Gaps: no value in range."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: the maximum is the first of equal maxima, written through the series' format",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                5
+              ],
+              [
+                1,
+                7
+              ],
+              [
+                2,
+                7
+              ]
+            ],
+            "format": {
+              "suffix": "%"
+            }
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "A: maximum 7% at 1."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: the summary reads only the range shown",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                5
+              ],
+              [
+                1,
+                7
+              ],
+              [
+                2,
+                9
+              ]
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "to": 1
+        }
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "X, 0 to 1."
+        },
+        {
+          "at": "$",
+          "has": "A: maximum 7 at 1."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275, ADR-0257: a sampled series' maximum is read at the positions the pointer can be over",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "sampler": {
+              "from": 0,
+              "to": 10,
+              "value": {
+                "line": [
+                  0,
+                  1
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Curve: maximum 10 at 10."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: a sampled series outside the range shown has no value in it",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                5,
+                2
+              ]
+            ]
+          },
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "sampler": {
+              "from": 7,
+              "to": 10,
+              "value": {
+                "line": [
+                  0,
+                  1
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "to": 5
+        }
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Curve: no value in range."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290, ADR-0275: an Observation says its points' count and both ranges",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Names: 3 points, 1 to 3 across, 150 to 260 up."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: an Observation with no point in range says so",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ]
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "from": 10,
+          "to": 20
+        }
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Names: no point in range."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275, ADR-0320: the summary says what the colour and the size run over",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "colourBy": {
+              "title": "Value",
+              "values": [
+                3,
+                7
+              ]
+            },
+            "sizeBy": {
+              "title": "Notional",
+              "values": [
+                10,
+                20
+              ]
+            }
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Names: colour is Value, 3 to 7."
+        },
+        {
+          "at": "$",
+          "has": "Names: size is Notional, 10 to 20."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: a colour or a size with no value says no range",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "colourBy": {
+              "title": "Value",
+              "values": [
+                null,
+                null
+              ]
+            },
+            "sizeBy": {
+              "title": "Notional",
+              "values": [
+                null,
+                null
+              ]
+            }
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "lacks": "colour is"
+        },
+        {
+          "at": "$",
+          "lacks": "size is"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321, ADR-0275: the summary says the nodes and the edges",
+      "definition": "tree",
+      "summary": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Tree: 6 nodes and 6 edges, 0 to 2 across, 81 to 121 up."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300, ADR-0275: the volume panel's summary says the volume, not the prices again",
+      "definition": "volumes",
+      "summary": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Index volume: maximum 1009 at 2026-01-16."
+        },
+        {
+          "at": "$",
+          "has": "Index: maximum "
+        },
+        {
+          "at": "$",
+          "has": "Index volume: Left axis, "
+        },
+        {
+          "at": "$",
+          "is": "Date, 2026-01-05 to 2026-01-16. Left axis, 92 to 102. Index: maximum 100 at 2026-01-13. Index volume: Left axis, 0 to 1250. Index volume: maximum 1009 at 2026-01-16."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a volume panel with no volume in range says so",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 3,
+                "volume": true,
+                "set": {
+                  "0": {
+                    "volume": null
+                  },
+                  "1": {
+                    "volume": null
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "summary": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {
+          "to": {
+            "date": "2026-01-06"
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "$",
+          "has": "Index volume: no value in range."
+        }
+      ]
+    }
+  ]
+}

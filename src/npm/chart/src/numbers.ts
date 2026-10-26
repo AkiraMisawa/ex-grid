@@ -54,6 +54,24 @@ export function least(values: Iterable<number>): number {
     return result;
 }
 
+/**
+ * The first of `items` whose value `before` puts ahead of every other's, as C#'s MinBy and MaxBy take it, so
+ * a tie keeps the earlier item; refused when there are none.
+ */
+export function firstBy<T extends object | number | bigint>(items: readonly T[], value: (item: T) => number, before: (a: number, b: number) => boolean): T {
+    const [head, ...rest] = items;
+    if (head === undefined) {
+        throw new RangeError('There is no first of no items.');
+    }
+    let best = head;
+    for (const item of rest) {
+        if (before(value(item), value(best))) {
+            best = item;
+        }
+    }
+    return best;
+}
+
 /** The greatest of `values`, as `least` reads them; refused when there are none. */
 export function greatest(values: Iterable<number>): number {
     let result = -Infinity;

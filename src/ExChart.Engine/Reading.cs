@@ -151,7 +151,7 @@ public static class ChartReadings
     private static ReadingLine Candle(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartScene scene, ChartAxis axis, double x)
     {
         var vertical = panel.Left;
-        double? Y(double height) => vertical is { } v ? panel.Plot.Y + panel.Plot.Height - (v.Max == v.Min ? 0.5 : (height - v.Min) / (v.Max - v.Min)) * panel.Plot.Height : null;
+        double? Y(double height) => vertical is { } v ? v.YOf(height, panel.Plot) : null;
         ReadingLine Make(string? value, string? note, double? y) => new(s.Id, piece.Name, piece.Look, value, note, y);
         var period = piece.Period;
         // The candles as drawn, over the range shown, so the tooltip reads what the plot draws.
