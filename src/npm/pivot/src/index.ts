@@ -7,6 +7,7 @@
  */
 export { browserPivotLocale } from './browser-locale';
 export { createPivot } from './create-pivot';
+export type { PivotDetailItem, PivotDetailsView, PivotShowDetailsEvent } from './details';
 export type { PivotHandle } from './create-pivot';
 export type {
     PivotFieldListShownEvent, PivotLayoutChangedEvent, PivotRefusedEvent, PivotSelectionChangedEvent, PivotViewOptions,

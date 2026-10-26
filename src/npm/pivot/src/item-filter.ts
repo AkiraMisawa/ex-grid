@@ -60,11 +60,11 @@ interface DrawnItem {
 
 /** The sentence for a source's refusal or failure to list Items, as the Razor component's ProblemText says it. */
 export function itemsProblemText(problem: ItemsProblem, words: PivotScreenWords): string {
-    if ('error' in problem) return words.fill('source-failed', problem.error instanceof Error ? problem.error.message : String(problem.error));
+    if ('error' in problem) return words.failed(problem.error);
     const { refusal } = problem;
-    // A report the source no longer holds, or data that has moved on, asks for a refresh (ADR-0066).
-    if (refusal.kind === 'reportVersionNotHeld' || refusal.sourceRefusal?.kind === 'sourceVersionNotHeld') return words.word('data-changed');
-    return words.fill('source-refused', refusal.sourceRefusal === undefined ? refusal.message : refusal.sourceRefusal.message);
+    if (refusal.sourceRefusal !== undefined) return words.sourceRefused(refusal.sourceRefusal);
+    // A report the source no longer holds asks for a refresh, as data that moved on does (ADR-0066).
+    return refusal.kind === 'reportVersionNotHeld' ? words.word('data-changed') : words.fill('source-refused', refusal.message);
 }
 
 /** Filter…: drawn again by the pivot as the field's Items land. */

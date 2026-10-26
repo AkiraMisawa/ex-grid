@@ -247,6 +247,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * (ADR-0063). The grid changes nothing: what the gesture means is the Consumer's. While an edit is open a
      * double click is the editor's, and on an Editable cell it opens one. */
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
+    /** Hears the Escape that leaves the grid (ADR-0070): pressed on the grid with nothing left to dismiss, beside
+     * the grid's own way out, which releases Tab (ADR-0012). Each Escape before it still peels only its own layer,
+     * and a held Escape's repeats raise it no more. The Consumer decides what leaving means: closing its dialog,
+     * for one, which may destroy this grid from inside the call. */
+    readonly onLeave?: () => void;
     /**
      * Hears a column resized by the user (ADR-0016), once per column: a drag on the grip at a header's right
      * edge, applied on release and never live, or a double click on it, which fits the column to its header and
@@ -544,6 +549,7 @@ interface Taken<Row> {
     readonly onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
     readonly onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
     readonly onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
+    readonly onLeave: (() => void) | undefined;
     readonly onColumnWidthChanged: ((change: GridColumnWidthChange) => void) | undefined;
     readonly onColumnOrderChanged: ((order: readonly string[]) => void) | undefined;
     readonly contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
@@ -926,6 +932,7 @@ export class GridView<Row> {
     #onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
     #onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
     #onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
+    #leaveHeard: (() => void) | undefined;
     // The copies the asynchronous route is still writing, each holding the Settled Mark (ADR-0220), and what
     // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
     #clipboardWrites = 0;
@@ -1418,14 +1425,14 @@ export class GridView<Row> {
         }
         const {
             onSelectionChanged, onRefused, onAction, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
-            onOverwriteNotice, onCellDoubleClick, onColumnWidthChanged, onColumnOrderChanged, contextCommands, commandLabel, hideCopyWithHeaders,
+            onOverwriteNotice, onCellDoubleClick, onLeave, onColumnWidthChanged, onColumnOrderChanged, contextCommands, commandLabel, hideCopyWithHeaders,
             hideColumnMenu, onColumnHidden, onPinnedCountChanged,
         }: {
             readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onAction?: unknown; readonly onPaste?: unknown;
             readonly pasteMaySpill?: unknown;
             readonly onClear?: unknown; readonly onUndo?: unknown; readonly onRedo?: unknown;
             readonly onEdit?: unknown; readonly onEditingChanged?: unknown; readonly onEditDiscarded?: unknown;
-            readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown;
+            readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown; readonly onLeave?: unknown;
             readonly onColumnWidthChanged?: unknown; readonly onColumnOrderChanged?: unknown;
             readonly contextCommands?: unknown; readonly commandLabel?: unknown; readonly hideCopyWithHeaders?: unknown;
             readonly hideColumnMenu?: unknown; readonly onColumnHidden?: unknown; readonly onPinnedCountChanged?: unknown;
@@ -1476,6 +1483,7 @@ export class GridView<Row> {
         if (onCellDoubleClick !== undefined && typeof onCellDoubleClick !== 'function') {
             throw new TypeError('onCellDoubleClick is a function of the cell.');
         }
+        if (onLeave !== undefined && typeof onLeave !== 'function') throw new TypeError('onLeave is a function of nothing.');
         if (onColumnWidthChanged !== undefined && typeof onColumnWidthChanged !== 'function') {
             throw new TypeError('onColumnWidthChanged is a function of the width change.');
         }
@@ -1564,7 +1572,7 @@ export class GridView<Row> {
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
-            onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick,
+            onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick, onLeave: options.onLeave,
             onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
             hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
@@ -1715,6 +1723,7 @@ export class GridView<Row> {
         this.#onEditDiscarded = taken.onEditDiscarded;
         this.#onOverwriteNotice = taken.onOverwriteNotice;
         this.#onCellDoubleClick = taken.onCellDoubleClick;
+        this.#leaveHeard = taken.onLeave;
         this.#onColumnWidthChanged = taken.onColumnWidthChanged;
         this.#onColumnOrderChanged = taken.onColumnOrderChanged;
         this.#contextCommands = taken.contextCommands;
@@ -2314,12 +2323,19 @@ export class GridView<Row> {
             // a copy outlined, Escape removes the outline and does nothing else. With nothing left to dismiss it
             // is the way out of Enter and Tab cycling: the keyboard stays and the next Tab leaves the grid.
             if (this.#interactiveChoice() !== undefined) this.#interactive = undefined;
-            else if (this.#copied === undefined) this.#tabReleased = true;
+            else if (this.#copied === undefined) this.#leave(event.repeat);
             else this.#copied = undefined;
         } else {
             this.#moveByKey(action, event.key);
         }
     };
+
+    // The Escape with nothing left to dismiss: Tab is released, and a Consumer that hears the way out is told, once
+    // per press (ADR-0070).
+    #leave(repeated: boolean): void {
+        this.#tabReleased = true;
+        if (!repeated) this.#leaveHeard?.();
+    }
 
     // A key the grid answers: the browser's own meaning is prevented, nothing inside hears it, and the pass
     // that paints the answer is asked for.

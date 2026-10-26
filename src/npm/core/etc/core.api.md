@@ -595,6 +595,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
+    readonly onLeave?: () => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void;
     readonly onPinnedCountChanged?: (count: number) => void;
