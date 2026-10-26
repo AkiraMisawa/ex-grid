@@ -251,6 +251,36 @@ describe('a copy from the grid', () => {
         const { event, data } = copy(q(root, '.ex-header'));
         expect([event.defaultPrevented, data.size, listener.refusals]).toEqual([false, 0, []]);
     });
+
+    it('ADR-0005 CP-10: a key on the root drops the page\'s text selection, so Ctrl+C copies the grid\'s cell; one in the Keyboard Field keeps it', async () => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = 'Text the user selected on the page';
+        document.body.append(paragraph);
+        const selectParagraph = (): Selection => {
+            const selection = document.getSelection();
+            if (selection === null) throw new Error('The document has a selection.');
+            selection.selectAllChildren(paragraph);
+            return selection;
+        };
+        try {
+            const shown = mount({ columns, rows: dated(10), rowHeight: 24, viewportHeight: 480, temporal: Temporal });
+            await painted();
+            press(shown.root, 10, rowY(0));
+            const onRoot = selectParagraph();
+            key(shown.root, 'c', { ctrlKey: true });
+            expect(onRoot.rangeCount).toBe(0);
+
+            const editable = columns.map(column => ({ ...column, editable: true }));
+            const intents: unknown[] = [];
+            const edits = mount({ columns: editable, rows: dated(10), rowHeight: 24, viewportHeight: 480, temporal: Temporal, onEdit: intent => { intents.push(intent); } });
+            await painted();
+            const inField = selectParagraph();
+            key(q(edits.root, '.ex-key-field'), 'c', { ctrlKey: true });
+            expect([inField.toString(), intents]).toEqual(['Text the user selected on the page', []]);
+        } finally {
+            paragraph.remove();
+        }
+    });
 });
 
 const dashes = (root: HTMLElement): HTMLElement[] => [...root.querySelectorAll<HTMLElement>('.ex-copied-range')];
