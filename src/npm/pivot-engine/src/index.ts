@@ -32,7 +32,7 @@ export type {
 } from './layout/pivot-layout';
 export {
     createPivotFieldPlacement, createPivotLayout, createPivotValueField, emptyPivotLayout, isEmptyLayout, isItemCollapsed, pivotSort,
-    placementOf, placementsIn, placesField, sortsEqual,
+    placementOf, placementsIn, placesField, sortsEqual, valueFieldsEqual,
 } from './layout/pivot-layout';
 export { pivotLayoutJsonVersion, readPivotLayoutJson, writePivotLayoutJson } from './layout/layout-json';
 export type { PivotEditResult, PivotEntry, PivotFieldInfo, PivotLayoutChoice, PivotRefusal } from './layout/layout-edits';

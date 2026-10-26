@@ -3,7 +3,7 @@
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
+import type { GridCommand, GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
     type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotSlicing, type PivotSource,
@@ -1444,6 +1444,115 @@ describe('ExPivot\'s Show Details (ADR-0059, ADR-0063)', () => {
         expect(status?.getAttribute('role')).toBe('alert');
         expect(status?.textContent).toBe('The data has changed — refresh.');
         expect(grid.detailsShown).toEqual([]);
+    });
+});
+
+/** The report's commands in the Context Menu opened on a cell of the rows the grid holds first. */
+async function contextMenu(grid: GridStandIn, row: number, column: number): Promise<readonly GridCommand[]> {
+    const { source, columns, contextCommands } = grid.current;
+    if (source === undefined || contextCommands === undefined) throw new Error('The report offers commands.');
+    await source.needRange({ start: 0, count: 20 });
+    const { window } = source.snapshot();
+    const shown = defined(columns[column], 'the column');
+    return contextCommands({
+        row: defined(window[row], 'the row'), column: shown.name, columnType: shown.type, selection: [], rowSequenceVersion: 0, commands: [],
+    });
+}
+
+function labelled(grid: GridStandIn, commands: readonly GridCommand[]): readonly string[] {
+    // An id the pivot has no word for reads as itself here.
+    return commands.map(offered => `${grid.current.commandLabel?.(offered.id) ?? offered.id}${offered.enabled ? '' : ' (off)'}`);
+}
+
+function run(commands: readonly GridCommand[], id: string): void {
+    defined(commands.find(offered => offered.id === id), `the command ${id}`).invoke();
+}
+
+describe('ExPivot\'s Context Menu (ADR-0036, ADR-0059)', () => {
+    it('ADR-0059: on an outer Item\'s label it offers Expand and Collapse, the field\'s sorts and Remove, and Collapse collapses it', async () => {
+        const changed: PivotLayout[] = [];
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const commands = await contextMenu(grid, 0, 0);
+        expect(labelled(grid, commands)).toEqual([
+            'Expand (off)', 'Collapse', 'Expand Entire Field (off)', 'Collapse Entire Field', 'Sort A to Z (off)', 'Sort Z to A', 'Remove "Region"', 'Hide Field List',
+        ]);
+        expect(grid.current.commandLabel?.('copy')).toBeUndefined();
+        run(commands, 'collapse');
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
+        expect(changed).toHaveLength(1);
+    });
+
+    it('ADR-0059: on a value cell it sorts its row field by the Value Field, shows its records and opens Value Field Settings… in the pane', async () => {
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk, showFieldList: false });
+        await settled();
+        const commands = await contextMenu(grid, 0, 3);
+        expect(labelled(grid, commands)).toEqual([
+            'Sort Smallest to Largest', 'Sort Largest to Smallest', 'Show Details', 'Value Field Settings…', 'Remove "Region"', 'Show Field List',
+        ]);
+        run(commands, 'sort-largest-to-smallest');
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'Grand Total']);
+        run(await contextMenu(grid, 0, 3), 'show-details');
+        expect(tabTitles(root)).toEqual(['PivotTable', 'Details: EU / Rates*']);
+        expect(labelled(grid, await contextMenu(grid, 0, 2)).filter(label => label.startsWith('Show Details'))).toEqual(['Show Details (off)']);
+        run(await contextMenu(grid, 0, 3), 'value-field-settings');
+        expect(root.querySelector<HTMLElement>('.ex-pivot-field-list')?.hidden).toBe(false);
+        expect(panelText(root)?.value).toBe('Sum of Amount');
+        expect(document.activeElement).toBe(panelText(root));
+    });
+
+    it('ADR-0370 section 10: the Consumer\'s words name the report\'s commands and the grid\'s own', async () => {
+        const { grid } = mount({ source: local(), layout: byRegionAndDesk, label: japanesePivotWords });
+        await settled();
+        const labels = labelled(grid, await contextMenu(grid, 0, 3));
+        expect(labels).toContain('値フィールドの設定...');
+        expect(labels.some(label => label.includes('Region'))).toBe(true);
+        expect(grid.current.commandLabel?.('copy')).toBe('コピー');
+    });
+
+    it('spine rule 6: a sort by a Value Field, or its settings, chosen once the pane moved that Value Field, change nothing', async () => {
+        const changed: PivotLayout[] = [];
+        const layout = createPivotLayout({ rows: ['Region'], values: ['Amount', 'Desk'] });
+        const { root, grid } = mount({ source: local(), layout, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const commands = await contextMenu(grid, 0, 1);
+        entryButton(root, 'values', 0).click();
+        command(root, 'Move Down').click();
+        await settled();
+        expect(changed).toHaveLength(1);
+        run(commands, 'sort-largest-to-smallest');
+        run(commands, 'value-field-settings');
+        await settled();
+        expect(changed).toHaveLength(1);
+        expect(root.querySelector('.ex-pivot-panel')).toBeNull();
+    });
+
+    it('a command that would change nothing in the pane now asks nothing: an Item collapsed since the menu opened', async () => {
+        const changed: PivotLayout[] = [];
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const commands = await contextMenu(grid, 0, 0);
+        (await grid.paint(0, 0)).button().click();
+        await settled();
+        run(commands, 'collapse');
+        await settled();
+        expect(changed).toHaveLength(1);
+    });
+
+    it('spine rule 6: a command chosen once the pane no longer holds its field changes nothing', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const commands = await contextMenu(grid, 0, 0);
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Remove Field').click();
+        await settled();
+        expect(changed).toHaveLength(1);
+        run(commands, 'sort-descending');
+        await settled();
+        expect(changed).toHaveLength(1);
     });
 });
 
