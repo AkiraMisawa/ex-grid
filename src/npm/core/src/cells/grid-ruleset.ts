@@ -2,7 +2,11 @@
 // library, as GridSource does (ADR-0001). The grid never references it.
 
 import type { GridColumn } from '../dom/grid-column';
+import { foundAt, notFound, type GridFindResult } from '../finding/find';
 import type { CellState } from '../paint/cell-classes';
+import type { CellPosition } from '../selection/cell';
+import { defined } from '../must';
+import { checkedKey, quoted, type RowKey, type RowKeyOf } from '../source/row-key';
 import { entryFor } from './display-text';
 import { checkedVerdict, type EditVerdict } from './edit-intent';
 
@@ -12,6 +16,48 @@ export interface RuleViolation {
     readonly column: string;
     /** The sentence the cell says when the Focus or the pointer settles on it. */
     readonly message: string;
+}
+
+/** One cell a {@link Breach} involves: the row by its Row Key (ADR-0140), wherever it stands, and the column by
+ * name. */
+export interface BreachCell {
+    /** The row's Row Key, as the ruleset's key function reads it. */
+    readonly rowKey: RowKey;
+    /** The column whose cell is marked. */
+    readonly column: string;
+}
+
+/**
+ * One set rule's complaint over the whole collection (ADR-0381): the rule's name, the sentence every involved cell
+ * says, and the cells it involves. The message names the other side of the breach in the Consumer's own words, a
+ * trade id rather than a row position, which a sort changes.
+ */
+export interface Breach {
+    /** The rule's name. */
+    readonly rule: string;
+    /** The sentence each involved cell says. */
+    readonly message: string;
+    /** The cells the breach involves: at least one. */
+    readonly cells: readonly BreachCell[];
+}
+
+/**
+ * One step to the next or the previous error cell (ADR-0381 section 3), asked of the Consumer as a Find step is
+ * (ADR-0055): the grid knows only the cells it paints, so a step through those alone would skip every error outside
+ * the Window without saying so.
+ */
+export interface GridErrorStepRequest {
+    /** Whether this step runs backward: the previous error cell, Shift+F8. */
+    readonly backward: boolean;
+    /** The Focus the step starts from: it begins at the cell after it (before it, backward) and considers it last,
+     * so a lone error cell finds itself. Absent: from the start (the end, backward). */
+    readonly from?: CellPosition | undefined;
+    /** The visible columns' names in the grid's current order: position `i` here is column `i` of `from` and of
+     * the answer. */
+    readonly columns: readonly string[];
+    /** The order the positions were read in (ADR-0011). An answer the grid receives under another version moves
+     * nothing. */
+    readonly rowSequenceVersion: number;
 }
 
 /**
@@ -28,8 +74,22 @@ export interface RuleViolation {
 export class GridRuleset<Row extends object> {
     readonly #columnRules = new Map<string, (row: Row, text: string) => EditVerdict>();
     readonly #rowRules: ((row: Row) => Iterable<RuleViolation>)[] = [];
+    readonly #setRules: ((rows: readonly Row[]) => Iterable<Breach>)[] = [];
+    readonly #rowKey: RowKeyOf<Row> | undefined;
+    #marked: (row: Row) => ReadonlyMap<string, string> | undefined = () => undefined;
+    #breaches: readonly Breach[] = Object.freeze([]);
     #cellState: (row: Row, column: GridColumn<Row>) => CellState = () => 'normal';
     #cellMessage: (row: Row, column: GridColumn<Row>) => string | undefined = () => undefined;
+
+    /**
+     * A ruleset keyed by row instance, or, given the Source's Row Key function (ADR-0140), by Row Key (ADR-0381):
+     * only a ruleset with one may hold {@link GridRuleset.set} rules, whose Breaches name rows by their keys.
+     */
+    constructor(rowKey?: RowKeyOf<Row>) {
+        const given: unknown = rowKey;
+        if (given !== undefined && typeof given !== 'function') throw new TypeError('A ruleset\'s Row Key is a function of the row (ADR-0140, ADR-0381).');
+        this.#rowKey = rowKey;
+    }
 
     /** A rule on one column's committed text, asked at the editor. The intended split is the ADR's: an unparseable
      * text rejects, a parseable value a rule dislikes flags; which is which stays the Consumer's convention. */
@@ -50,6 +110,30 @@ export class GridRuleset<Row extends object> {
         return this;
     }
 
+    /**
+     * A rule over the whole collection (ADR-0381), judged after apply by {@link GridRuleset.evaluate} over every row
+     * it is handed. Flag-tier by construction: the way to a valid collection often passes through invalid ones, so
+     * it never holds the Cell Editor, and its refusal is the Consumer's own save while {@link GridRuleset.breaches}
+     * is not empty. Every cell a Breach names wears `error` and its message. Throws on a ruleset made without a Row
+     * Key function: a Breach names rows wherever they stand, which a row instance outside the Window cannot.
+     */
+    set(rule: (rows: readonly Row[]) => Iterable<Breach>): this {
+        const given: unknown = rule;
+        if (typeof given !== 'function') throw new TypeError('A set rule is a function of the rows (ADR-0381).');
+        if (this.#rowKey === undefined) {
+            throw new TypeError('A set rule names its rows by Row Key, so the ruleset is made with the Source\'s Row Key function: '
+                + 'new GridRuleset(rowKey) (ADR-0381).');
+        }
+        this.#setRules.push(rule);
+        return this;
+    }
+
+    /** The Breaches the last {@link GridRuleset.evaluate} found, in the order the set rules were declared and each
+     * answered them: an order that does not depend on the Window (ADR-0381 section 3). */
+    get breaches(): readonly Breach[] {
+        return this.#breaches;
+    }
+
     /** What a column's `validate` is set to, or `undefined` where no rule was declared, which the grid reads as
      * accept. */
     validatorFor(column: string): ((row: Row, text: string) => EditVerdict) | undefined {
@@ -60,11 +144,20 @@ export class GridRuleset<Row extends object> {
      * Judges the rows again, after applying: called by the Consumer with the rows it now holds, and it replaces
      * what was known before. Column rules run here too, on the text the editor would open on, which is what makes
      * a paste and a change from program code wear the same marks as a typed edit; a reject arriving this way is a
-     * flag, since the value is applied and there is no editor left to hold.
+     * flag, since the value is applied and there is no editor left to hold. A ruleset holding set rules is handed
+     * the whole collection: a breach between a row on screen and one far below is still a breach (ADR-0381).
      */
     evaluate(rows: Iterable<Row>, columns: readonly GridColumn<Row>[]): void {
-        const next = new WeakMap<Row, ReadonlyMap<string, string>>();
-        for (const row of rows) {
+        const all = [...rows];
+        const rowKey = this.#rowKey;
+        const byKey = new Map<RowKey, Map<string, string>>();
+        const byRow = new WeakMap<Row, Map<string, string>>();
+        const keyOf = (row: Row): RowKey => checkedKey(defined(rowKey, 'the ruleset\'s Row Key function')(row), 'A row handed to evaluate');
+        const put = (row: Row, found: Map<string, string>): void => {
+            if (rowKey === undefined) byRow.set(row, found);
+            else byKey.set(keyOf(row), found);
+        };
+        for (const row of all) {
             const found = new Map<string, string>();
             for (const column of columns) {
                 const rule = this.#columnRules.get(column.name);
@@ -75,12 +168,75 @@ export class GridRuleset<Row extends object> {
             for (const rule of this.#rowRules) {
                 for (const violation of rule(row)) found.set(violation.column, violation.message);
             }
-            if (found.size > 0) next.set(row, found);
+            if (found.size > 0) put(row, found);
         }
+        const breaches: Breach[] = [];
+        if (this.#setRules.length > 0) {
+            // A Breach naming a key no row has would mark nothing, and the save would refuse with no cell to show
+            // why: refused here instead (spine rule 1).
+            const keys = new Set(all.map(keyOf));
+            for (const rule of this.#setRules) {
+                for (const breach of rule(all)) {
+                    const checked = checkedBreach(breach);
+                    for (const { rowKey: key, column } of checked.cells) {
+                        if (!keys.has(key)) {
+                            throw new RangeError(`Breach '${checked.rule}' names Row Key ${quoted(key)}, which no row handed to evaluate has (ADR-0381).`);
+                        }
+                        let found = byKey.get(key);
+                        if (found === undefined) {
+                            found = new Map();
+                            byKey.set(key, found);
+                        }
+                        // A cell two rules complain about says both: neither sentence outranks the other.
+                        const earlier = found.get(column);
+                        found.set(column, earlier === undefined || earlier === checked.message ? checked.message : `${earlier} ${checked.message}`);
+                    }
+                    breaches.push(checked);
+                }
+            }
+        }
+        this.#breaches = Object.freeze(breaches);
+        const marked = rowKey === undefined ? (row: Row) => byRow.get(row) : (row: Row) => byKey.get(keyOf(row));
+        this.#marked = marked;
         // New functions, deliberately: a grid paints its rows again when the function it was given is another
         // one, and a verdict that changed under the same row instance would otherwise never be painted (ADR-0003).
-        this.#cellState = (row, column) => (next.get(row)?.has(column.name) === true ? 'error' : 'normal');
-        this.#cellMessage = (row, column) => next.get(row)?.get(column.name);
+        this.#cellState = (row, column) => (marked(row)?.has(column.name) === true ? 'error' : 'normal');
+        this.#cellMessage = (row, column) => marked(row)?.get(column.name);
+    }
+
+    /**
+     * The next or the previous error cell (ADR-0381 section 3), for a grid's `findError`: every cell the last
+     * {@link GridRuleset.evaluate} marked, walked in Find's order (ADR-0055) through `rowsInOrder`, the result in the
+     * order the grid shows it, which a Consumer reads from its Source. A marked row the Filter hides is not stepped
+     * to, nor a marked column that is hidden.
+     */
+    findError(request: GridErrorStepRequest, rowsInOrder: readonly Row[]): GridFindResult {
+        const { columns, backward, from } = request;
+        const total = rowsInOrder.length * columns.length;
+        if (total === 0) return notFound;
+        const start = from !== undefined && from.row >= 0 && from.row < rowsInOrder.length && from.column >= 0 && from.column < columns.length
+            ? from.row * columns.length + from.column
+            : backward ? 0 : total - 1;
+        // The nearest marked cell past the start, counted in the steps the walk would take: one pass over the rows,
+        // never one over every cell.
+        let best = Number.POSITIVE_INFINITY;
+        let found: GridFindResult = notFound;
+        rowsInOrder.forEach((row, index) => {
+            const marked = this.#marked(row);
+            if (marked === undefined) return;
+            columns.forEach((column, at) => {
+                if (!marked.has(column)) return;
+                const ordinal = index * columns.length + at;
+                // The start itself is considered last, so a lone error cell finds itself.
+                const ahead = (((backward ? start - ordinal : ordinal - start) % total) + total) % total;
+                const steps = ahead === 0 ? total : ahead;
+                if (steps < best) {
+                    best = steps;
+                    found = foundAt(index, column);
+                }
+            });
+        });
+        return found;
     }
 
     /** The grid's `cellState`, replaced by every {@link GridRuleset.evaluate}: hand the grid this, read again after
@@ -93,4 +249,24 @@ export class GridRuleset<Row extends object> {
     get cellMessage(): (row: Row, column: GridColumn<Row>) => string | undefined {
         return this.#cellMessage;
     }
+}
+
+// A Breach as an untyped caller may answer one, checked where it arrives: one that says nothing, or names no cell,
+// would refuse a save with nothing on screen to say why (ADR-0381, spine rule 1).
+function checkedBreach(breach: unknown): Breach {
+    if (typeof breach === 'object' && breach !== null) {
+        const { rule, message, cells }: { readonly rule?: unknown; readonly message?: unknown; readonly cells?: unknown } = breach;
+        if (typeof rule === 'string' && rule.trim() !== '' && typeof message === 'string' && message.trim() !== '' && Array.isArray(cells) && cells.length > 0) {
+            const checked = cells.map((cell: unknown): BreachCell => {
+                if (typeof cell === 'object' && cell !== null) {
+                    const { rowKey, column }: { readonly rowKey?: unknown; readonly column?: unknown } = cell;
+                    if (typeof column === 'string' && column !== '') return Object.freeze({ rowKey: checkedKey(rowKey, `A cell of Breach '${rule}'`), column });
+                }
+                throw new TypeError(`Breach '${rule}' names a cell as { rowKey, column }, not ${JSON.stringify(cell)} (ADR-0381).`);
+            });
+            return Object.freeze({ rule, message, cells: Object.freeze(checked) });
+        }
+    }
+    throw new TypeError(`A set rule answers Breaches as { rule, message, cells: [{ rowKey, column }, …] }, with a sentence that says why and at `
+        + `least one cell, not ${JSON.stringify(breach)} (ADR-0381).`);
 }

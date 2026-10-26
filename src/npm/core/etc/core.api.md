@@ -47,6 +47,19 @@ export interface AutoColumnWidth {
 export type BorderStyle = 'none' | 'hair' | 'thin' | 'medium' | 'thick' | 'double' | 'dotted' | 'dashed' | 'dashDot' | 'dashDotDot' | 'mediumDashed' | 'mediumDashDot' | 'mediumDashDotDot' | 'slantedDashDot';
 
 // @public
+export interface Breach {
+    readonly cells: readonly BreachCell[];
+    readonly message: string;
+    readonly rule: string;
+}
+
+// @public
+export interface BreachCell {
+    readonly column: string;
+    readonly rowKey: RowKey;
+}
+
+// @public
 export type CellAlign = 'auto' | 'left' | 'center' | 'right';
 
 // @public
@@ -527,6 +540,14 @@ export class GridEditIntent<Row> {
 }
 
 // @public
+export interface GridErrorStepRequest {
+    readonly backward: boolean;
+    readonly columns: readonly string[];
+    readonly from?: CellPosition | undefined;
+    readonly rowSequenceVersion: number;
+}
+
+// @public
 export interface GridExtent {
     readonly columnCount: number;
     readonly rowCount: number;
@@ -618,6 +639,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly declaredKeys?: readonly string[];
     readonly density?: GridDensity;
+    readonly findError?: (request: GridErrorStepRequest, signal: AbortSignal) => GridFindResult | PromiseLike<GridFindResult>;
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
     readonly findsHeaders?: boolean;
     readonly headerClickSelects?: boolean;
@@ -819,11 +841,15 @@ export type GridReplaceWrite<Row> = {
 
 // @public
 export class GridRuleset<Row extends object> {
+    constructor(rowKey?: RowKeyOf<Row>);
+    get breaches(): readonly Breach[];
     get cellMessage(): (row: Row, column: GridColumn<Row>) => string | undefined;
     get cellState(): (row: Row, column: GridColumn<Row>) => CellState;
     column(column: string, rule: (row: Row, text: string) => EditVerdict): this;
     evaluate(rows: Iterable<Row>, columns: readonly GridColumn<Row>[]): void;
+    findError(request: GridErrorStepRequest, rowsInOrder: readonly Row[]): GridFindResult;
     row(rule: (row: Row) => Iterable<RuleViolation>): this;
+    set(rule: (rows: readonly Row[]) => Iterable<Breach>): this;
     validatorFor(column: string): ((row: Row, text: string) => EditVerdict) | undefined;
 }
 

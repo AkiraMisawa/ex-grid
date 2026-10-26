@@ -13,7 +13,7 @@ import { assembleCopy, checkedCopyAnswer, fieldCopyFlavours, type CopyFlavours, 
 import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
 import { GridClearIntent } from '../clipboard/clear-intent';
 import {
-    columnPlaceholder, commitCancelledId, copyRefusalWords, heldInputLostId, pasteRefusalWords, replaceCellChangedId, rowCommandRefusalId,
+    columnPlaceholder, commitCancelledId, copyRefusalWords, errorStepMovedId, errorStepNoneId, heldInputLostId, pasteRefusalWords, replaceCellChangedId, rowCommandRefusalId,
     shapeMismatchMaySpillWords,
 } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
@@ -47,7 +47,8 @@ import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-wa
 import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '../finding/replace';
 import { defined, itemAt } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
-import { canonicalKey, declareKeys, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
+import { canonicalKey, declareKeys, errorStepOf, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
+import type { GridErrorStepRequest } from '../cells/grid-ruleset';
 import { cellClasses, type CellTone, type MatchMark } from '../paint/cell-classes';
 import { columnMark, rowMark } from '../paint/heading-mark-styles';
 import { rowClasses, type RowKind } from '../paint/row-classes';
@@ -412,6 +413,15 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * function makes every painted row judge its cells again (ADR-0003).
      */
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
+    /**
+     * The next or the previous error cell (ADR-0381 section 3), asked when F8 or Shift+F8 is typed on the grid:
+     * answered as a Find step is, with a row in the order the request was read in and a column name, or nothing
+     * found. The grid knows only the cells it paints, so the step is the Consumer's; `GridRuleset.findError` answers
+     * it from what the ruleset marked, given the rows in the grid's order. Without it the grid offers no step and
+     * leaves F8 to the page; with it, F8 and Shift+F8 cannot be among `declaredKeys`. An answer about rows or columns
+     * that moved while it was out moves nothing, and is said; none found is said too.
+     */
+    readonly findError?: (request: GridErrorStepRequest, signal: AbortSignal) => GridFindResult | PromiseLike<GridFindResult>;
     /** Whether Find searches the column headers and Header Group labels too (ADR-0333): true unless given. A
      * header found is the current match, marked and named in the panel, and the Focus stays where it is. Turn
      * it off where the headers are addresses rather than content. */
@@ -710,6 +720,7 @@ interface Taken<Row> {
     readonly temporal: TemporalLike | undefined;
     readonly onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
     readonly findMatch: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
+    readonly findError: ((request: GridErrorStepRequest, signal: AbortSignal) => GridFindResult | PromiseLike<GridFindResult>) | undefined;
     readonly findsHeaders: boolean;
     readonly cellPaint: CellPaint<Row>;
     readonly headerClickSelects: boolean;
@@ -1343,6 +1354,9 @@ export class GridView<Row> {
     // was found under. The marks are judged once per search, never per frame (ADR-0332 §4).
     #onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
     #findMatch: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
+    // The error step (ADR-0381 section 3): who answers it, and the question still out.
+    #findError: ((request: GridErrorStepRequest, signal: AbortSignal) => GridFindResult | PromiseLike<GridFindResult>) | undefined;
+    #errorStepping: AbortController | undefined;
     #findsHeaders = true;
     // The per-cell declarations (ADR-0050, items 6, 7, 11 and 15), the row appearances resolved from them, and
     // the generated stylesheet their classes name, last in the root (ADR-0071).
@@ -1712,6 +1726,8 @@ export class GridView<Row> {
         this.#stopHighlightTimer();
         this.#copy?.abort();
         this.#fill?.abort();
+        this.#errorStepping?.abort();
+        this.#errorStepping = undefined;
         this.#findStepping?.abort();
         this.#findStepping = undefined;
         // A commit pending as the grid goes is cancelled: nothing is to be written, and its held inputs go with it.
@@ -1847,6 +1863,15 @@ export class GridView<Row> {
             throw new TypeError('onDeclaredKey is a function of the key pressed (ADR-0050, item 14).');
         }
         const declaredKeys = declareKeys(options.declaredKeys);
+        const { findError }: { readonly findError?: unknown } = options;
+        if (findError !== undefined && typeof findError !== 'function') {
+            throw new TypeError('findError is a function of the error step\'s request and an abort signal (ADR-0381).');
+        }
+        const stepKey = findError === undefined ? undefined : ['F8', 'Shift+F8'].find(key => declaredKeys.has(key));
+        if (stepKey !== undefined) {
+            throw new TypeError(`declaredKeys names ${stepKey}, which is the error step on a grid given findError: the key would mean two things `
+                + '(ADR-0381, ADR-0050 item 14).');
+        }
         if (declaredKeys.size > 0 && onDeclaredKey === undefined) {
             throw new TypeError('declaredKeys names keys, but no onDeclaredKey hears them: the keys would be taken from the page and nobody told '
                 + '(ADR-0050, item 14).');
@@ -1990,7 +2015,7 @@ export class GridView<Row> {
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
             hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
-            onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
+            onReplace: options.onReplace, findMatch: options.findMatch, findError: options.findError, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
             rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
             dataEdge: options.dataEdge, ...summary,
@@ -2233,6 +2258,7 @@ export class GridView<Row> {
         this.#temporal = taken.temporal;
         this.#onReplace = taken.onReplace;
         this.#findMatch = taken.findMatch;
+        this.#findError = taken.findError;
         this.#findsHeaders = taken.findsHeaders;
         this.#cellPaint = taken.cellPaint;
         this.#headerClickSelects = taken.headerClickSelects;
@@ -2383,7 +2409,7 @@ export class GridView<Row> {
             && this.#cancelFollow === undefined
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
             && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
-            && this.#findStepping === undefined && this.#replacing === 0 && this.#pending === undefined);
+            && this.#findStepping === undefined && this.#errorStepping === undefined && this.#replacing === 0 && this.#pending === undefined);
     }
 
     #showSettled(settled: boolean): void {
@@ -2905,6 +2931,14 @@ export class GridView<Row> {
         if (action.kind === 'openColumnMenu' && !this.#hideColumnMenu) {
             this.#taken(event);
             this.#openColumnMenuAtFocus();
+            return;
+        }
+        // F8 and Shift+F8 step to the next and the previous error cell, on a grid given findError (ADR-0381). Not
+        // past an edit left open (ED-26): the step would move the Focus out from under it.
+        const errorStep = this.#findError === undefined || this.#edit !== undefined ? undefined : errorStepOf(press);
+        if (errorStep !== undefined) {
+            this.#taken(event);
+            this.#stepToError(errorStep === 'previous');
             return;
         }
         if (action.kind !== 'leave' && !movingKinds.has(action.kind)) return;
@@ -5319,6 +5353,76 @@ export class GridView<Row> {
             if (error instanceof DOMException && error.name === 'AbortError') return;
             throw error;
         });
+    }
+
+    /**
+     * The error step (ADR-0381 section 3): asked of the Consumer from the Focus, in the columns' current order and
+     * the source's version, as a Find step is. A found cell becomes the Focus and is revealed, wherever it stands in
+     * the result. An answer under another version or source, or naming a column that has left, moves nothing and is
+     * said, and so is none found. A new step makes the answer of the one still out nobody's.
+     */
+    #stepToError(backward: boolean): void {
+        const ask = defined(this.#findError, 'the error step\'s findError');
+        this.#errorStepping?.abort();
+        this.#errorStepping = undefined;
+        this.#reconcileSelection();
+        const source = this.#source;
+        const selection = this.#held.selection;
+        const request: GridErrorStepRequest = Object.freeze({
+            backward, from: selection.focus, columns: Object.freeze(this.#columns.map(({ column }) => column.name)),
+            rowSequenceVersion: this.#state.rowSequenceVersion,
+        });
+        const stepping = new AbortController();
+        this.#errorStepping = stepping;
+        this.#invalidate();
+        // oxlint-disable-next-line ex-grid/no-catch -- a step given up by whoever answers moves nothing; any other failure is rethrown
+        Promise.resolve().then(() => ask(request, stepping.signal)).then(answer => {
+            if (this.#destroyed || this.#errorStepping !== stepping) return;
+            this.#errorStepping = undefined;
+            this.#invalidate();
+            this.#errorAnswered(request, answer, source);
+        }, (error: unknown) => {
+            if (this.#destroyed || this.#errorStepping !== stepping) return;
+            this.#errorStepping = undefined;
+            this.#invalidate();
+            // Given up by whoever answers, who says why itself: nothing moves, and no "no error" is claimed for cells
+            // nobody read (ADR-0055's rule for a Find step).
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+            throw error;
+        });
+    }
+
+    // An error step's answer, judged against what it was asked under (ADR-0381, ADR-0011, ADR-0142).
+    #errorAnswered(request: GridErrorStepRequest, answer: GridFindResult, source: GridSource<Row>): void {
+        if (source !== this.#source || request.rowSequenceVersion !== this.#state.rowSequenceVersion) {
+            this.#sayRefusal(this.#labelOf(errorStepMovedId));
+            return;
+        }
+        const given: unknown = answer;
+        if (typeof given !== 'object' || given === null || typeof (given as { readonly found?: unknown }).found !== 'boolean') {
+            throw new TypeError('findError answered something other than a Find result: { found: true, row, column } or { found: false } (ADR-0381).');
+        }
+        const total = this.#totalRows;
+        if (answer.found && (!request.columns.includes(answer.column) || !Number.isInteger(answer.row) || answer.row < 0 || answer.row >= total)) {
+            throw new RangeError(`The error step's answer (row ${answer.row}, column '${answer.column}') is outside the request: it asked about `
+                + `the columns [${request.columns.join(', ')}] of a result of ${total} rows (ADR-0381).`);
+        }
+        if (!answer.found) {
+            this.#sayRefusal(this.#labelOf(errorStepNoneId));
+            return;
+        }
+        const column = this.#columns.findIndex(({ column: declared }) => declared.name === answer.column);
+        if (column < 0) {
+            this.#sayRefusal(this.#labelOf(errorStepMovedId));
+            return;
+        }
+        this.#reconcileSelection();
+        const found = cellPosition(answer.row, column);
+        this.#apply(this.#held.selection.click(found, this.#extent));
+        this.#revealOwed = { target: found, extending: undefined, rowStart: false, stepRows: 0 };
+        this.#revealHeaderOwed = undefined;
+        this.#followArmed = { focus: found, target: found };
+        this.#invalidate();
     }
 
     // A step's answer, judged against what it was asked under (ADR-0055, ADR-0333 §3).

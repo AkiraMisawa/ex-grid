@@ -27,7 +27,7 @@ export type { PasteFieldOrigin } from './clipboard/clipboard-parse';
 export type { GridPasteIntent } from './clipboard/paste-intent';
 export type { GridClearIntent } from './clipboard/clear-intent';
 export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent, GridOverwriteNotice } from './cells/edit-intent';
-export { GridRuleset, type RuleViolation } from './cells/grid-ruleset';
+export { GridRuleset, type Breach, type BreachCell, type GridErrorStepRequest, type RuleViolation } from './cells/grid-ruleset';
 export { actionColumn, markColumn } from './dom/grid-column';
 export type {
     AutoColumnWidth, FixedColumnWidth, GridAction, GridActionEvent, GridColumn, GridColumnWidth, GridTemplate, GridTemplateCell,
