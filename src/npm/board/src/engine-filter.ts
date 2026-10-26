@@ -23,7 +23,8 @@ export function engineFilter(filter: GridFilter | undefined, columns: readonly S
             return {
                 ...clause,
                 ...(value === undefined ? {} : { value: operand(value, kind, name, path) }),
-                ...(values === undefined ? {} : { values: values.map(one => operand(one, kind, name, path)) }),
+                // A Blank among In's operands, as the View State's reader keeps it.
+                ...(values === undefined ? {} : { values: values.map(one => one === null ? null : operand(one, kind, name, path)) }),
             };
         });
         return [name, { ...spec, clauses }] as const;
@@ -32,8 +33,6 @@ export function engineFilter(filter: GridFilter | undefined, columns: readonly S
 }
 
 function operand(written: unknown, kind: SnapshotKind, column: string, path: string): unknown {
-    // A Blank among In's operands, as the View State's reader keeps it.
-    if (written === null) return null;
     if (!isOperand(written)) throw new Error(`Internal: the filter on column '${column}' holds an operand without its type.`);
     const tagged = written;
     const refuse = (): never => {

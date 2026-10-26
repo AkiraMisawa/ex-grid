@@ -209,7 +209,9 @@ describe('a grid view (ADR-0342)', () => {
         expect(() => bindBoard(sorted, data(sorted))).toThrow(expect.objectContaining({ path: 'views[0].grid.sorts[0]' }));
         const filtered = withGrid('{"data": "trades", "columns": [{"column": "desk"}], "filter": {"columns": {"desk": {"combinator": "And", '
             + '"clauses": [{"operator": "Equals", "value": {"type": "Int32", "value": "1"}}]}}}}');
-        expect(() => bindBoard(filtered, data(filtered))).toThrow(new BoardRefusedError('views[0].grid.filter', "Column 'desk' is text, and its filter compares it with a int32."));
+        expect(() => bindBoard(filtered, data(filtered))).toThrow(expect.objectContaining({
+            path: 'views[0].grid.filter', message: "Column 'desk' is text, and its filter compares it with a int32.",
+        }));
     });
 });
 

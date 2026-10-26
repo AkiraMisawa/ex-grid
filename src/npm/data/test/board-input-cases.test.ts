@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
     BoardInput, BoardRefusedError, createSnapshot, decimalText, readJsonText, ticksText, type DataShapeColumn, type Snapshot, type SnapshotColumn,
 } from '../src/index';
-import { isObject, key, kindOf, list, text, type Json, type JsonObject } from './case-json';
+import { cases, isObject, key, kindOf, list, startingWith, text, type Json, type JsonObject } from './case-json';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases/data');
 
@@ -88,14 +88,9 @@ async function answer(entry: JsonObject): Promise<Json> {
     return snapshotOf(input.fromJson(text(key(entry, 'fromJson'))));
 }
 
-/** `text` as a pattern that matches it at the start of a message. */
-function startingWith(words: string): RegExp {
-    return new RegExp(`^${words.replaceAll(/[\\^$.*+?()[\]{}|/-]/g, '\\$&')}`);
-}
-
 for (const { name: file, json } of files) {
     describe(`data/${file}`, () => {
-        for (const entry of list(key(json, 'cases')).map(case_ => { if (!isObject(case_)) throw new Error('A case is an object.'); return case_; })) {
+        for (const entry of cases(json)) {
             it(text(key(entry, 'name')), async () => {
                 expect.hasAssertions();
                 const refused = entry['refused'];

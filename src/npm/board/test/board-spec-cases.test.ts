@@ -6,37 +6,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { BoardRefusedError } from '@ex-grid/data';
+import { cases, isObject, key, startingWith, text, type Json, type JsonObject } from '../../data/test/case-json';
 import { readBoard, type BoardReading, type BoardView } from '../src/index';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases/board');
-
-type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
-type JsonObject = { readonly [key: string]: Json };
-
-function isObject(value: Json | undefined): value is JsonObject {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function key(object: Json | undefined, name: string): Json {
-    if (!isObject(object)) throw new Error(`Expected an object holding '${name}'.`);
-    const value = object[name];
-    if (value === undefined) throw new Error(`The case leaves out '${name}'.`);
-    return value;
-}
-
-function text(value: Json): string {
-    if (typeof value !== 'string') throw new Error(`Expected a string, not ${JSON.stringify(value)}.`);
-    return value;
-}
-
-function isList(value: Json): value is readonly Json[] {
-    return Array.isArray(value);
-}
-
-function list(value: Json): readonly Json[] {
-    if (!isList(value)) throw new Error(`Expected a list, not ${JSON.stringify(value)}.`);
-    return value;
-}
 
 function view(shown: BoardView): Json {
     const base = { id: shown.id, kind: shown.kind, title: shown.title, data: [...shown.data] };
@@ -70,14 +43,9 @@ const files = fs.readdirSync(root)
     .map(name => ({ name, json: JSON.parse(fs.readFileSync(path.join(root, name), 'utf8')) as Json }))
     .filter(({ json }) => key(json, 'kind') === 'boardSpec');
 
-/** `text` as a pattern that matches it at the start of a message. */
-function startingWith(words: string): RegExp {
-    return new RegExp(`^${words.replaceAll(/[\\^$.*+?()[\]{}|/-]/g, '\\$&')}`);
-}
-
 for (const { name: file, json } of files) {
     describe(`board/${file}`, () => {
-        for (const entry of list(key(json, 'cases')).map(case_ => { if (!isObject(case_)) throw new Error('A case is an object.'); return case_; })) {
+        for (const entry of cases(json)) {
             it(text(key(entry, 'name')), () => {
                 expect.hasAssertions();
                 const read = (): BoardReading => readBoard(text(key(entry, 'read')));

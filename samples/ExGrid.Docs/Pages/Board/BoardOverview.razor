@@ -184,16 +184,19 @@
             what <code>BoardSpec.Read</code> refuses, at the same path and in the same words: both readers run the same
             cases, under <code>tests/cases/board/</code>. <code>bindBoard</code> binds it to Snapshots from
             <code>@@ex-grid/data</code>: each grid view's columns are built from its input's shape, a grid's or a pivot's
-            selection narrows the views its links reach, and an output is raised only by <code>confirm</code>. A Board
-            over a server is not yet bound in TypeScript, and the Board Diff is not yet read there.
+            selection narrows the views its links reach, and an output is raised only by <code>confirm</code>, which
+            answers nothing while nothing is chosen. Binding also refuses, naming the path, what a grid over a Snapshot
+            cannot do: a sort by a column the grid does not show, and a filter that compares a column with a value of
+            another type. A Board over a server is not yet bound in TypeScript, and the Board Diff is not yet read there.
         </p>
         <pre class="docs-code"><code>import { bindBoard, boardInput, readBoard } from '@@ex-grid/board';
 
 const board = readBoard(json);                                  // throws a BoardRefusedError naming the path
-const trades = boardInput(board, 'trades')!.fromJson(rowsJson);  // or a Snapshot read from Arrow
-const bound = bindBoard(board, { trades });
+const input = boardInput(board, 'trades');                      // undefined for an input the Board does not declare
+if (input === undefined) throw new Error("The Board declares no input 'trades'.");
+const bound = bindBoard(board, { trades: input.fromJson(rowsJson) });  // or a Snapshot read from Arrow
 bound.select('blotter', selection);                             // a grid's selection narrows its links' views
-const output = bound.confirm('chosen');                         // the values chosen, with their version</code></pre>
+const output = bound.confirm('chosen');                         // the values chosen with their version, or undefined while none are</code></pre>
         <p>
             There is no Example here, because this site is a Blazor app and runs no package script of its own.
         </p>

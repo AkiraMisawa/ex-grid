@@ -323,9 +323,10 @@ export class BoundGridView {
         this.source = InMemoryGridSource.from(this.#rows, { rowKey: row => row.at });
         this.source.gatherInterval = 0;
         this.source.setColumns(columns);
-        // The spec's reader reads the sort against every column the input declares; the grid sorts by those it shows.
+        // The spec's reader reads the sort against every column the input declares, as a server's grid may sort by any;
+        // a grid over a Snapshot sorts by those it shows (C#'s GridSource.From refuses the rest by name).
         view.grid.viewState.sorts.forEach((sort, i) => {
-            if (!columns.some(column => column.name === sort.column)) {
+            if (!this.#declared.has(sort.column)) {
                 throw new BoardRefusedError(`${path}.sorts[${i}]`, `The grid sorts by column '${sort.column}', which it does not show.`);
             }
         });
