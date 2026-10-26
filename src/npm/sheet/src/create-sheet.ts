@@ -34,7 +34,10 @@ import { SheetToolbar, type SheetToolbarIcon, type SheetToolbarItem, type SheetT
 import { sheetTabKeys, sheetTabStepOf } from './sheet-tab-keys';
 import { sheetFormatChangeFor, sheetFormatKeyOf, type SheetFormatKey } from './sheet-format-keys';
 import { sheetStructureEditFor, sheetStructureKeyOf, type SheetStructureKey } from './sheet-structure-keys';
-import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes } from './sheet-widening';
+import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes } from './sheet-widening';
+import { FormatCellsDraft } from './format-cells-draft';
+import type { FormatCellsTab } from './format-cells-offer';
+import { FormatCellsPanel } from './format-cells-panel';
 
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
@@ -121,6 +124,15 @@ class SheetView {
     // copy of the Sheet's own was last refused with (ADR-0049).
     #ownCopy: SheetOwnCopy | undefined;
     #copyRefusal: string | undefined;
+    // Format Cells while it stands in the grid's popover, and the Sheet, the Selection and the ranges it was opened
+    // over; and the tab it last showed, which the next opening shows again (ADR-0071). The grid closing the popover
+    // itself, by Escape or a press elsewhere, tells the Sheet nothing: the record stands, its frame gone, until the
+    // next opening or move drops it, and nothing reads it as open meanwhile, as only the frame's OK sets anything.
+    #formatCells: {
+        readonly panel: FormatCellsPanel; readonly draft: FormatCellsDraft; readonly sheet: Sheet; readonly selection: GridSelection;
+        readonly ranges: readonly CellRange[];
+    } | undefined;
+    #formatCellsTab: FormatCellsTab = 'number';
     // A resize of several whole columns, reported a column at a time: its first step, and the columns still to
     // come, which join that step on the undo stack (FN-12c, ADR-0048).
     #resizing: { readonly first: WorkbookStep; readonly pending: Set<number> } | undefined;
@@ -508,8 +520,15 @@ class SheetView {
     }
 
     readonly #onSelectionChanged = (selection: GridSelection): void => {
+        const before = this.#selection?.focus;
         this.#selection = selection;
-        this.#paintToolbar();
+        // The Toolbar shows the Focus cell's state: a Selection grown or shrunk around the same Focus changes none of it.
+        const focus = selection.focus;
+        if (before === undefined || focus === undefined || before.row !== focus.row || before.column !== focus.column) this.#paintToolbar();
+        // Format Cells shows the Selection it opened over and sets what OK names on it: a Selection moved under it,
+        // by the Name Box or a Consumer, ends it. The notice of the Selection it opened over, which the grid gives after
+        // its paint, is no move.
+        if (this.#formatCells?.selection.equals(selection) === false) this.#endFormatCells();
         // A Selection the grid dropped, as another Sheet is shown, is no move of the user's: the notice stands.
         if (selection.isEmpty) return;
         // The user moved on: what the notice said is behind them, unless it was told by the gesture that moved.
@@ -633,7 +652,7 @@ class SheetView {
         const height = options.viewportHeight;
         if (typeof height !== 'number') return height;
         const tabs = SheetView.#tabsHeightOf(options);
-        const toolbar = options.showToolbar === true ? SheetToolbar.heightPx(this.#toolbarRows().length, SheetView.#bandRowPxOf(options)) : 0;
+        const toolbar = options.showToolbar === true ? SheetToolbar.heightPx(toolbarRowCount, SheetView.#bandRowPxOf(options)) : 0;
         if (height <= tabs + toolbar) {
             const bands = [
                 ...(toolbar > 0 ? [`its Sheet Toolbar's ${String(toolbar)}px band (ADR-0100)`] : []),
@@ -648,17 +667,19 @@ class SheetView {
 
     #paintToolbar(): void {
         if (this.#options.showToolbar !== true) return;
-        this.#toolbar.paint({ name: this.#words.toolbarName, rowHeightPx: this.#bandRowPx, rows: this.#toolbarRows() });
+        const rows = this.#toolbarRows();
+        if (rows.length !== toolbarRowCount) throw new Error(`Internal: the Toolbar draws ${String(rows.length)} rows, and its band is laid out for ${String(toolbarRowCount)}.`);
+        this.#toolbar.paint({ name: this.#words.toolbarName, rowHeightPx: this.#bandRowPx, rows });
     }
 
     // The default row, Excel's Home tab's commands in its order (ADR-0100), each item's state the Focus cell's as the
     // grid holds it now. While an edit is open every item is unavailable, and says why. The colour, Borders and Number
-    // Format lists, and Format Cells, follow.
+    // Format lists follow.
     #toolbarRows(): SheetToolbarPaint['rows'] {
         const focus = this.#grid?.readView().selection.focus;
         const format = focus === undefined ? undefined : this.#source.sheet.getCellFormat(new CellAddress(focus.row, focus.column));
         const words = this.#words;
-        const item = (key: SheetToolbarCommand, icon: SheetToolbarIcon, change: ((focused: CellFormat) => CellFormatChange) | undefined,
+        const item = (key: SheetToolbarCommand, icon: SheetToolbarIcon, act: ((focused: CellFormat) => CellFormatChange) | 'formatCells' | undefined,
             { pressed, shortcut, disabledReason }: { readonly pressed?: boolean; readonly shortcut?: string; readonly disabledReason?: string } = {}): SheetToolbarItem => {
             const name = words.toolbarItem(key);
             return {
@@ -666,7 +687,7 @@ class SheetView {
                 tooltip: shortcut === undefined ? name : words.toolbarItemWithShortcut(name, shortcut),
                 // An open edit is the reason over any other, as the C# Sheet's.
                 disabledReason: this.#editing ? words.toolbarWhileEditing : disabledReason,
-                press: change === undefined ? undefined : () => { this.#toolbarPressed(change); },
+                press: act === undefined ? undefined : () => { this.#toolbarPressed(act); },
             };
         };
         const key = (kind: SheetFormatKey) => (focused: CellFormat): CellFormatChange => sheetFormatChangeFor(kind, focused, this.#source.sheet.culture);
@@ -686,18 +707,22 @@ class SheetView {
                 // Excel's Comma Style pads with `*`, as Accounting does, which ExSheet does not read: shown, and disabled
                 // with the reason, rather than set as something else under Excel's name.
                 item('comma', 'comma', undefined, { disabledReason: words.commaStyleUnread }),
+                'separator',
+                item('formatCells', 'formatCells', 'formatCells', { shortcut: 'Ctrl+1' }),
             ],
         }];
     }
 
     // A Toolbar Item pressed: its change of the Focus cell's format on the Selection, widening as Excel's Home tab
-    // buttons do. An edit open at the press, whatever the last pass showed, changes nothing, and the notice says why.
-    #toolbarPressed(change: (focused: CellFormat) => CellFormatChange): void {
+    // buttons do, or Format Cells… opened. An edit open at the press, whatever the last pass showed, changes nothing,
+    // and the notice says why.
+    #toolbarPressed(act: ((focused: CellFormat) => CellFormatChange) | 'formatCells'): void {
         if (this.#editing) {
             this.#tell(this.#words.toolbarWhileEditing);
             return;
         }
-        this.#formatFromFocus(change, widensAsAHomeTabButtonDoes);
+        if (act === 'formatCells') this.#openFormatCells();
+        else this.#formatFromFocus(act, widensAsAHomeTabButtonDoes);
     }
 
     // A press on a tab shows its Sheet; the keyboard stays in the grid, where the next key acts on it.
@@ -781,8 +806,13 @@ class SheetView {
     #onCellKey(event: KeyboardEvent, key: string): void {
         const format = sheetFormatKeyOf(key);
         const structure = format === undefined ? sheetStructureKeyOf(key) : undefined;
-        if ((format === undefined && structure === undefined) || format === 'formatCells') return;
+        if (format === undefined && structure === undefined) return;
         const target = event.target;
+        // Ctrl+1 inside Format Cells opens nothing more, and is not the browser's, whose Ctrl+1 leaves the page.
+        if (format === 'formatCells' && target instanceof Element && target.closest('.ex-format-cells') !== null) {
+            event.preventDefault();
+            return;
+        }
         // On the toolbar's band too: its tooltips name these keys, and the band leaves Ctrl's keys to the Sheet.
         const onToolbar = target === this.#toolbar.band;
         if (!(target instanceof Element) || (!onToolbar && (!this.#gridElement.contains(target) || target.closest('.ex-popover, .ex-name-box') !== null))) return;
@@ -800,6 +830,11 @@ class SheetView {
             this.#tell(this.#words.formatKeyWhileEditing);
             return;
         }
+        // Ctrl+1 opens Format Cells and sets nothing itself (ADR-0071, case 22).
+        if (kind === 'formatCells') {
+            this.#openFormatCells();
+            return;
+        }
         this.#formatFromFocus(focus => sheetFormatChangeFor(kind, focus, this.#source.sheet.culture), widensAsAKeyDoes);
     }
 
@@ -812,6 +847,56 @@ class SheetView {
         const change = changeOf(this.#source.sheet.getCellFormat(new CellAddress(focus.row, focus.column)));
         const cells = selection.ranges.map(rangeOf);
         this.#perform(SheetEdit.setCellFormat(cells, change), undefined, widens(change) ? cells : undefined);
+    }
+
+    // Format Cells over the Selection the grid holds, in the grid's popover frame (ADR-0071, ADR-0050 item 16), opening
+    // on the Focus cell's Cell Format and on the tab it last showed. Opened while it stands, it opens afresh.
+    #openFormatCells(): void {
+        const grid = this.#grid;
+        const selection = grid?.readView().selection;
+        const focus = selection?.focus;
+        if (grid === undefined || selection === undefined || focus === undefined) return;
+        const ranges = selection.ranges.map(rangeOf);
+        const draft = FormatCellsDraft.open(this.#source.sheet, new CellAddress(focus.row, focus.column), ranges);
+        const panel = new FormatCellsPanel(this.#element.ownerDocument, draft, this.#words, this.#formatCellsTab, {
+            ok: () => this.#formatCellsOk(panel),
+            cancel: () => { if (this.#formatCells?.panel === panel) this.#endFormatCells(); },
+            tabShown: tab => { this.#formatCellsTab = tab; },
+        });
+        this.#endFormatCells();
+        this.#clearNotice();
+        const sheet = this.#source.sheet;
+        if (grid.openPopover(() => panel.element, this.#words.formatCellsTitle)) this.#formatCells = { panel, draft, sheet, selection, ranges };
+    }
+
+    // Format Cells' OK (ADR-0071, SH-45): the parts the user touched, set on the ranges it was opened over as one undo
+    // step, widening the columns whose numbers no longer fit where a Number Format or any part of the Font is among
+    // them; with nothing touched nothing is set and no step recorded. A draft holding a refusal sets nothing and
+    // stays open, for the panel to show why. It is taken against the Sheet it was opened over: shown another, which
+    // ends it, an OK that still arrives sets nothing (the spine's sixth rule).
+    #formatCellsOk(panel: FormatCellsPanel): boolean {
+        const standing = this.#formatCells;
+        if (standing?.panel !== panel) return true;
+        if (standing.draft.refusal !== undefined) return false;
+        const change = standing.draft.change;
+        this.#endFormatCells();
+        if (change.isEmpty || standing.sheet !== this.#source.sheet) return true;
+        if (this.#editing) {
+            this.#tell(this.#words.formatKeyWhileEditing);
+            return true;
+        }
+        this.#perform(SheetEdit.setCellFormat(standing.ranges, change), undefined, widensAsFormatCellsOkDoes(change) ? standing.ranges : undefined);
+        return true;
+    }
+
+    // Ends Format Cells where it stands: the grid's popover closes and gives the keyboard back. One the grid already
+    // closed, by Escape or a press elsewhere, has left its frame, and only the record goes.
+    #endFormatCells(): void {
+        const standing = this.#formatCells;
+        if (standing === undefined) return;
+        this.#formatCells = undefined;
+        // Its frame is in the grid's element, attached to the page or not, until the grid closes it.
+        if (this.#gridElement.contains(standing.panel.element)) this.#grid?.closePopover();
     }
 
     // Ctrl+Plus and Ctrl+Minus: over whole rows they insert or delete those rows, over whole columns those columns,
@@ -931,6 +1016,9 @@ class SheetView {
 
     /** What one operation changed across the Workbook: the Sheet shown paints what it changed there. */
     #changed(changes: readonly WorkbookChange[]): void {
+        // Format Cells read the cells it was opened over: an operation under it, an undo or a Toolbar press, ends it,
+        // so its OK never sets a draft read from formats or places that no longer stand (the spine's sixth rule).
+        this.#endFormatCells();
         const sheet = this.#source.sheet;
         if (changes.some(change => change.changesSheets) && !this.#workbook.sheets.includes(sheet)) {
             this.#showSheet(this.#workbook.shown);
@@ -962,6 +1050,8 @@ class SheetView {
     }
 
     #showSheet(sheet: Sheet): void {
+        // Format Cells read the Sheet it was opened over: another shown, or this one opened again, ends it.
+        this.#endFormatCells();
         const grid = this.#grid;
         const leaving = this.#source.sheet;
         if (grid !== undefined && leaving !== sheet) this.#views.set(leaving, grid.readView());
@@ -1045,6 +1135,9 @@ function unreachableColumn(position: number): never {
 // An alignment item's change: the alignment, or General where the Focus cell has it, as Excel's buttons do (ADR-0100).
 const align = (alignment: HorizontalAlignment) => (focused: CellFormat): CellFormatChange =>
     new CellFormatChange({ alignment: focused.alignment === alignment ? 'general' : alignment });
+
+// The Toolbar's rows: Excel's Home tab, one row. The grid's height is laid out from it without drawing the rows.
+const toolbarRowCount = 1;
 
 // The Name Box names the Focus as A1 does (ADR-0051).
 const nameBoxLabel = (focus: CellPosition): string => new CellAddress(focus.row, focus.column).toString();

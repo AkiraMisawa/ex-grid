@@ -42,7 +42,8 @@ export function SheetDemo(): ReactElement {
                 ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid&apos;s
                 Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, paste from Excel, press Delete,
                 Ctrl+D or Ctrl+Enter, and Ctrl+Z to undo. The Sheet Toolbar above the Formula Bar sets Bold, the
-                alignment and Percent on the Selection, as Excel&apos;s Home tab does (ADR-0100). The status line counts the cells of the Workbook Document the
+                alignment and Percent on the Selection, as Excel&apos;s Home tab does (ADR-0100), and Ctrl+1 opens Format
+                Cells (ADR-0071). The status line counts the cells of the Workbook Document the
                 page receives after every change (ADR-0048).
             </p>
             <p className="demo-status"><span id="sheet-status">{status}</span></p>

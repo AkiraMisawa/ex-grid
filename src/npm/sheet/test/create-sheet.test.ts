@@ -613,6 +613,7 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect([band?.getAttribute('role'), band?.getAttribute('aria-label'), band?.tabIndex]).toEqual(['toolbar', 'Formatting', 0]);
         expect([...element.querySelectorAll('.ex-sheet-toolbar-item')].map(button => button.getAttribute('aria-label'))).toEqual([
             'Bold', 'Italic', 'Underline', 'Strikethrough', 'Align Left', 'Centre', 'Align Right', 'Percent Style', 'Comma Style',
+            'Format Cells',
         ]);
         expect(toolbarItem(element, 'Bold').title).toBe('Bold (Ctrl+B)');
         expect(toolbarItem(element, 'Comma Style').disabled).toBe(true);
@@ -654,7 +655,9 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         band?.focus();
         expect(band?.getAttribute('aria-activedescendant')).toBe(toolbarItem(element, 'Bold').id);
         key('End');
-        // Comma Style cannot be pressed, so End stops on Percent Style.
+        expect(band?.getAttribute('aria-activedescendant')).toBe(toolbarItem(element, 'Format Cells').id);
+        // Comma Style cannot be pressed, so ← passes over it.
+        key('ArrowLeft');
         expect(band?.getAttribute('aria-activedescendant')).toBe(toolbarItem(element, 'Percent Style').id);
         key('Enter');
         expect(document.activeElement).toBe(grid);

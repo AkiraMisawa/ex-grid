@@ -128,6 +128,9 @@ export class FormatCellsDraft {
 }
 
 // @public
+export type FormatCellsLabel = 'tabs' | 'category' | 'generalHint' | 'textHint' | 'decimalPlaces' | 'thousandsSeparator' | 'negativeNumbers' | 'type' | 'codes' | 'horizontal' | 'fontStyle' | 'underline' | 'underlineNone' | 'underlineSingle' | 'strikethrough' | 'normalFont' | 'colour' | 'lineStyle' | 'presets' | 'border' | 'preview' | 'backgroundColour' | 'automatic' | 'noColour' | 'moreColours' | 'ok' | 'cancel';
+
+// @public
 export const formatCellsOffer: Readonly<{
     tabs: readonly FormatCellsTab[];
     categories: readonly NumberFormatCategoryOffer[];
@@ -425,7 +428,7 @@ export function sheetTabStepOf(key: string): -1 | 1 | undefined;
 export type SheetToolbarCommand = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'fontColour' | 'fill' | 'borders' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'numberFormat' | 'percent' | 'comma' | 'formatCells';
 
 // @public
-export type SheetWordId = 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened' | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded' | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing' | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete' | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete' | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'sheetTabsName' | 'editSheetGone' | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded' | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied' | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName' | 'onlySheet' | 'sheetGone' | 'sheetNotChanged' | 'firstSheet' | 'lastSheet' | 'commaStyleUnread' | 'editDiscardedByNewDocument' | `editDiscarded.${EditDiscardReason}` | 'pasteReadsDifferently' | 'pasteRefusedFormula' | 'summaryRefused' | 'pasteTooNarrowToShow' | `pasteRefused.${PasteRefusalReason}` | `commitRefused.${CommitRefusalReason}` | 'overwritten' | `copyRefused.${CopyRefusalReason}` | `pointingRefused.${PointingRefusalWordCase}` | 'pointingExtendedByKey' | 'nothingToUndo' | 'nothingToRedo' | 'command.insertRows' | 'command.deleteRows' | 'command.insertColumns' | 'command.deleteColumns' | 'command.formatCells' | 'formatCellsTitle' | `formatCells.tab.${FormatCellsTab}` | `formatCells.category.${NumberFormatCategory}` | `formatCells.disabled.${DisabledNumberFormatCategory}` | 'formatCells.noNumberFormatCode' | 'formatCells.numberFormatNotRead' | 'formatCells.notAColour' | `formatCells.alignment.${HorizontalAlignment}` | `formatCells.fontStyle.${FontStyle}` | `formatCells.edge.${BorderEdge}` | `formatCells.preset.${BorderPreset}` | `formatCells.lineStyle.${BorderLineStyle}` | `formatCells.colour.${ThemeColourName | StandardColourName}` | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep';
+export type SheetWordId = 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened' | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded' | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing' | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete' | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete' | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'sheetTabsName' | 'editSheetGone' | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded' | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied' | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName' | 'onlySheet' | 'sheetGone' | 'sheetNotChanged' | 'firstSheet' | 'lastSheet' | 'commaStyleUnread' | 'editDiscardedByNewDocument' | `editDiscarded.${EditDiscardReason}` | 'pasteReadsDifferently' | 'pasteRefusedFormula' | 'summaryRefused' | 'pasteTooNarrowToShow' | `pasteRefused.${PasteRefusalReason}` | `commitRefused.${CommitRefusalReason}` | 'overwritten' | `copyRefused.${CopyRefusalReason}` | `pointingRefused.${PointingRefusalWordCase}` | 'pointingExtendedByKey' | 'nothingToUndo' | 'nothingToRedo' | 'command.insertRows' | 'command.deleteRows' | 'command.insertColumns' | 'command.deleteColumns' | 'command.formatCells' | 'formatCellsTitle' | `formatCells.tab.${FormatCellsTab}` | `formatCells.category.${NumberFormatCategory}` | `formatCells.disabled.${DisabledNumberFormatCategory}` | 'formatCells.noNumberFormatCode' | 'formatCells.numberFormatNotRead' | 'formatCells.notAColour' | `formatCells.alignment.${HorizontalAlignment}` | `formatCells.fontStyle.${FontStyle}` | `formatCells.edge.${BorderEdge}` | `formatCells.preset.${BorderPreset}` | `formatCells.lineStyle.${BorderLineStyle}` | `formatCells.colour.${ThemeColourName | StandardColourName}` | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep' | `formatCells.label.${FormatCellsLabel}` | 'formatCells.symbol';
 
 // @public
 export function sheetWordIdList(): readonly SheetWordId[];
@@ -440,6 +443,7 @@ export class SheetWords {
     get commaStyleUnread(): string;
     commitRefused(address: string, reason: CommitRefusalReason): string;
     copyRefused(reason: CopyRefusalReason): string;
+    currencySymbolShown(symbol: string): string;
     edgeName(edge: BorderEdge): string;
     editDiscarded(reason: EditDiscardReason): string;
     get editDiscardedByNewDocument(): string;
@@ -449,6 +453,7 @@ export class SheetWords {
     static readonly english: SheetWords;
     get firstSheet(): string;
     fontStyleName(style: FontStyle): string;
+    formatCellsLabel(label: FormatCellsLabel): string;
     formatCellsRefusal(refusal: FormatCellsRefusal): string;
     get formatCellsTitle(): string;
     get formatKeyWhileEditing(): string;

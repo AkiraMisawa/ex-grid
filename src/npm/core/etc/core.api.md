@@ -485,9 +485,11 @@ export type GridFindResult = {
 
 // @public
 export interface GridHandle<Row> {
+    closePopover(): void;
     destroy(): void;
     focus(): void;
     keyName(event: KeyboardEvent): string;
+    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     readView(): GridViewRead;
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
@@ -598,6 +600,12 @@ export class GridPasteIntent {
     seal(): void;
     valueFor(target: CellPosition): string;
     readonly values: readonly (readonly string[])[];
+}
+
+// @public
+export interface GridPopoverContext {
+    readonly close: () => void;
+    readonly innerPopupChanged: (open: boolean) => void;
 }
 
 // @public

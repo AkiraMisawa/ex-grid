@@ -10,7 +10,8 @@ import { preventDefault, setAttr } from './dom-attributes';
 
 /** A picture the built-in Chrome draws for a Toolbar Item. */
 export type SheetToolbarIcon =
-    | 'bold' | 'italic' | 'underline' | 'strikethrough' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'percent' | 'comma';
+    | 'bold' | 'italic' | 'underline' | 'strikethrough' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'percent' | 'comma'
+    | 'formatCells';
 
 /** One Toolbar Item as one pass shows it. */
 export interface SheetToolbarItem {
@@ -54,6 +55,7 @@ const pictures: Readonly<Record<SheetToolbarIcon, string>> = {
     alignCenter: '<path stroke-width="1.5" d="M2 3h12M4 6.5h8M2 10h12M4 13.5h8"/>',
     alignRight: '<path stroke-width="1.5" d="M2 3h12M6 6.5h8M2 10h12M6 13.5h8"/>',
     percent: '<path stroke-width="1.5" d="M3 13 13 3"/><circle cx="4.5" cy="4.5" r="1.75" stroke-width="1.25"/><circle cx="11.5" cy="11.5" r="1.75" stroke-width="1.25"/>',
+    formatCells: '<path stroke-width="1.25" d="M2 2.5h12v11H2zM2 5.5h12M5 5.5v8"/><path stroke-width="1.25" d="M8 9h4M8 11.5h3"/>',
     comma: '<circle cx="8" cy="9" r="1.5" fill="currentColor" stroke="none"/><path stroke-width="1.5" d="M9.4 9.2c0 2.2-.8 3.6-2.4 4.6"/>',
 };
 
@@ -190,18 +192,15 @@ export class SheetToolbar {
         button.tabIndex = -1;
         // A press keeps the keyboard where it is: on the Sheet, where the next key acts on what the command left.
         button.addEventListener('mousedown', preventDefault);
-        button.addEventListener('click', () => { this.#pressKey(item.key); });
+        button.addEventListener('click', () => { this.#pressOf(item.key)?.(); });
         this.#buttons.set(item.key, button);
         return button;
     }
 
     // The item by its key, as the last pass described it: a press acts on what is shown now, never on a closure
     // a pass replaced.
-    #pressKey(key: string): boolean {
-        const press = this.#items.find(shown => shown.key === key && shown.disabledReason === undefined)?.press;
-        if (press === undefined) return false;
-        press();
-        return true;
+    #pressOf(key: string): (() => void) | undefined {
+        return this.#items.find(shown => shown.key === key && shown.disabledReason === undefined)?.press;
     }
 
     #enabled(): SheetToolbarItem[] {
@@ -235,9 +234,11 @@ export class SheetToolbar {
             case 'End': move(enabled.at(-1)); break;
             case 'Enter':
             case ' ': {
-                const key = this.#active;
-                if (key === undefined || !this.#pressKey(key)) return;
+                const press = this.#active === undefined ? undefined : this.#pressOf(this.#active);
+                if (press === undefined) return;
+                // The keyboard goes back before the press, so an item that opens what takes it (Format Cells) keeps it.
                 this.#hooks.giveBack();
+                press();
                 break;
             }
             case 'Escape': this.#hooks.giveBack(); break;
