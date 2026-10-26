@@ -236,6 +236,18 @@ describe('the Cell Editor', () => {
         expect(focusOf(listener.selections)).toEqual({ row: 3, column: 1 });
     });
 
+    it('ADR-0029: ex-editing joins the root while the Cell Editor stands, and goes with it', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(3));
+        await painted();
+        key('F2');
+        await painted();
+        const open = root.className;
+        key('Escape');
+        await painted();
+        expect([open, root.className]).toEqual(['ex-grid ex-editing', 'ex-grid']);
+    });
+
     it('ADR-0006: an unformatted number shows 15 digits, and the editor opens on it whole, so a commit unchanged writes the same number', async () => {
         const listener = heard();
         const rows = trades(20).map((trade, index) => (index === 3 ? { ...trade, notional: 0.1 + 0.2 } : trade));

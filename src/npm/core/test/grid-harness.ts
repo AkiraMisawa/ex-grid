@@ -53,6 +53,26 @@ export class Told implements BrowserReports {
     }
 
     #frames: (() => void)[] = [];
+    #layouts: (() => void)[] = [];
+    /** Whether the emulation holds what is written until `laidOut()`, as a browser lays it out in a later frame.
+     * Otherwise nothing is laid out, and the grid is told so as it asks. */
+    holdLayout = false;
+
+    afterLayout(_element: HTMLElement, callback: () => void): () => void {
+        if (!this.holdLayout) {
+            callback();
+            return () => { /* run already */ };
+        }
+        this.#layouts.push(callback);
+        return () => { this.#layouts = this.#layouts.filter(layout => layout !== callback); };
+    }
+
+    /** Lays out what was held, telling the grid the boxes it changed are told. */
+    laidOut(): void {
+        const due = this.#layouts;
+        this.#layouts = [];
+        for (const callback of due) callback();
+    }
     /** Whether the test's platform is an Apple one, where Meta is the primary modifier. */
     primaryIsMeta = false;
 

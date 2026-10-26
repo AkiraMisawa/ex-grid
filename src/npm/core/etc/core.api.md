@@ -47,6 +47,19 @@ export interface AutoColumnWidth {
 export type BorderStyle = 'none' | 'hair' | 'thin' | 'medium' | 'thick' | 'double' | 'dotted' | 'dashed' | 'dashDot' | 'dashDotDot' | 'mediumDashed' | 'mediumDashDot' | 'mediumDashDotDot' | 'slantedDashDot';
 
 // @public
+export interface Breach {
+    readonly cells: readonly BreachCell[];
+    readonly message: string;
+    readonly rule: string;
+}
+
+// @public
+export interface BreachCell {
+    readonly column: string;
+    readonly rowKey: RowKey;
+}
+
+// @public
 export type CellAlign = 'auto' | 'left' | 'center' | 'right';
 
 // @public
@@ -252,12 +265,18 @@ export interface FetchFailedEvent {
 
 // @public
 export class FetchingGridSource<Row> implements GridSource<Row> {
+    get cellChangedAt(): CellChangedAt<Row> | undefined;
+    get changeTimesKeptFor(): number;
+    set changeTimesKeptFor(milliseconds: number);
     dispose(): void;
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
     static fetch<Row>(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options?: FetchingSourceOptions<Row>): FetchingGridSource<Row>;
     readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    get gatherInterval(): number;
+    set gatherInterval(milliseconds: number);
     get marks(): FetchingRowMarks<Row> | undefined;
     needRange(range: RowRange): Promise<void>;
+    notifyChanged(addedKeys?: readonly RowKey[]): void;
     requery(): void;
     get rowKey(): RowKeyOf<Row> | undefined;
     rows(range: RowRange, signal: AbortSignal): Promise<readonly Row[]>;
@@ -304,6 +323,7 @@ export class FetchingRowMarks<Row> implements RowMarks<Row> {
 
 // @public
 export interface FetchingSourceOptions<Row> {
+    readonly clock?: GridClock;
     readonly distinctValues?: (column: string, filter: GridFilter | undefined, signal: AbortSignal) => Promise<DistinctValues>;
     readonly find?: (request: GridFindRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridFindResult>;
     readonly marks?: RowMarkAdapter<Row>;
@@ -527,6 +547,14 @@ export class GridEditIntent<Row> {
 }
 
 // @public
+export interface GridErrorStepRequest {
+    readonly backward: boolean;
+    readonly columns: readonly string[];
+    readonly from?: CellPosition | undefined;
+    readonly rowSequenceVersion: number;
+}
+
+// @public
 export interface GridExtent {
     readonly columnCount: number;
     readonly rowCount: number;
@@ -618,6 +646,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly declaredKeys?: readonly string[];
     readonly density?: GridDensity;
+    readonly findError?: (request: GridErrorStepRequest, signal: AbortSignal) => GridFindResult | PromiseLike<GridFindResult>;
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
     readonly findsHeaders?: boolean;
     readonly headerClickSelects?: boolean;
@@ -652,6 +681,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onSummarize?: (request: GridSummaryRequest, signal: AbortSignal) => GridSummaryResult | Promise<GridSummaryResult>;
     readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
     readonly onUndo?: () => void;
+    readonly pageSize?: number;
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
@@ -819,11 +849,15 @@ export type GridReplaceWrite<Row> = {
 
 // @public
 export class GridRuleset<Row extends object> {
+    constructor(rowKey?: RowKeyOf<Row>);
+    get breaches(): readonly Breach[];
     get cellMessage(): (row: Row, column: GridColumn<Row>) => string | undefined;
     get cellState(): (row: Row, column: GridColumn<Row>) => CellState;
     column(column: string, rule: (row: Row, text: string) => EditVerdict): this;
     evaluate(rows: Iterable<Row>, columns: readonly GridColumn<Row>[]): void;
+    findError(request: GridErrorStepRequest, rowsInOrder: readonly Row[]): GridFindResult;
     row(rule: (row: Row) => Iterable<RuleViolation>): this;
+    set(rule: (rows: readonly Row[]) => Iterable<Breach>): this;
     validatorFor(column: string): ((row: Row, text: string) => EditVerdict) | undefined;
 }
 
@@ -1036,6 +1070,7 @@ export const markLabelIds: Readonly<{
     readonly markAllRows: 'mark-all-rows';
     readonly marked: 'mark-count';
     readonly markedOutside: 'mark-count-outside-filter';
+    readonly markAllResultRows: 'mark-all-result-rows';
 }>;
 
 // @public
@@ -1218,6 +1253,8 @@ export function sameGridQuery(a: GridQuery, b: GridQuery): boolean;
 export const selectionLabelIds: Readonly<{
     readonly selectedOutsideView: 'selected-outside-view';
     readonly goToSelection: 'go-to-selection';
+    readonly selectedCells: 'selected-cells';
+    readonly selectAllRows: 'select-all-rows';
 }>;
 
 // @public

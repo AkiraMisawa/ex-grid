@@ -44,6 +44,9 @@ public class LiveFetchTests
 
         public bool Holds { get; set; }
 
+        /// <summary>Every question fails, as an unreachable server's does.</summary>
+        public bool Fails { get; set; }
+
         public List<GridQuery> Asked { get; } = [];
 
         public List<(GridQuery Query, TaskCompletionSource<GridPage<Deal>> Answer)> Held { get; } = [];
@@ -51,6 +54,8 @@ public class LiveFetchTests
         public ValueTask<GridPage<Deal>> Fetch(GridQuery query, CancellationToken cancellation)
         {
             Asked.Add(query);
+            if (Fails)
+                return ValueTask.FromException<GridPage<Deal>>(new HttpRequestException("The server cannot be reached."));
             if (!Holds)
                 return ValueTask.FromResult(Answer(query));
             var answer = new TaskCompletionSource<GridPage<Deal>>();
@@ -187,6 +192,32 @@ public class LiveFetchTests
 
         // A scroll is not a change of data, and moves nothing (ADR-0025).
         _ = source.OnRangeNeededAsync(new RowRange(150, 20));
+        Assert.Equal(version + 1, source.RowSequenceVersion);
+    }
+
+    [Fact] // ADR-0141 / LV-8 / ADR-0025: a change a failed read could not show is carried by the next question asked
+    public void A_change_a_failed_read_could_not_show_is_carried_by_the_next_question()
+    {
+        var server = new Server(300) { SendsToken = false };
+        var source = Live(server, new FakeTimeProvider());
+        Exception? failure = null;
+        source.FetchFailed += error => failure = error;
+        var version = source.RowSequenceVersion;
+
+        server.Fails = true;
+        server.Change(3, d => d with { Amount = 77 });
+        source.NotifyChanged();
+        Assert.IsType<HttpRequestException>(failure);
+        Assert.Equal(version, source.RowSequenceVersion);
+
+        // Nothing retries on its own; the next question, a scroll here, answers with the newer data, so it
+        // carries the change the failed read owed, and a server that sends no token moves the order with it.
+        server.Fails = false;
+        _ = source.OnRangeNeededAsync(new RowRange(150, 20));
+        Assert.Equal(version + 1, source.RowSequenceVersion);
+
+        // Carried once: the scroll after it is a scroll.
+        _ = source.OnRangeNeededAsync(new RowRange(0, 20));
         Assert.Equal(version + 1, source.RowSequenceVersion);
     }
 
