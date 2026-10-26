@@ -40,11 +40,22 @@ public class SheetCallCaseTests
     [Theory, MemberData(nameof(Calls))] // ADR-0370: the engine's surface, called as the shared cases call it
     public void Sheet_call(string file, string name)
     {
-        var (_, entry) = SheetCases.Find(file, name);
+        var (document, entry) = SheetCases.Find(file, name);
         var differences = new List<string>();
         var call = (string)entry["call"]!;
         var args = entry["args"]?.AsArray();
-        Hold("call", () => Read(call, args), entry, differences);
+        // A case or its file may name the culture the thread is in, so that a call that leaked it would show.
+        var (previous, previousUi) = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        if ((string?)(entry["culture"] ?? document["culture"]) is { } culture)
+            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = SheetCases.Culture(culture);
+        try
+        {
+            Hold("call", () => Read(call, args), entry, differences, outermost: true);
+        }
+        finally
+        {
+            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = (previous, previousUi);
+        }
         Assert.True(differences.Count == 0, $"sheet/{file}, \"{name}\":\n  {string.Join("\n  ", differences)}");
     }
 
@@ -244,9 +255,9 @@ public class SheetCallCaseTests
     private static readonly HashSet<string> Parts = ["call", "get", "args", "is", "throws", "then", "name", "note"];
 
     /// <summary>Holds the case's expectation of one reading: its answer (<c>is</c>), or its refusal (<c>throws</c>), then the checks on the answer.</summary>
-    private static void Hold(string where, Func<object?> read, JsonObject check, List<string> differences)
+    private static void Hold(string where, Func<object?> read, JsonObject check, List<string> differences, bool outermost = false)
     {
-        if (check.Select(p => p.Key).FirstOrDefault(k => !Parts.Contains(k)) is { } stray)
+        if (check.Select(p => p.Key).FirstOrDefault(k => !Parts.Contains(k) && !(outermost && k == "culture")) is { } stray)
             throw new InvalidDataException($"{where}: '{stray}' is no part of a call.");
         object? answer;
         try

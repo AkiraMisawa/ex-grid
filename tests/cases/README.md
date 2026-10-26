@@ -689,7 +689,8 @@ Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in f
 `"refused": true` is never a refusal; a Value a case gives written so is a refusal as a Consumer holds one read from a
 refused cell), `displays`, `texts`, `formulas`, `entryTexts`,
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
-text being edited, `references` (the References the Sheet answers in it, each `{start, length, cells, linkedColumn}`, `cells` a range
+text being typed, its caret marked `|`, `completions` (the Sheet's completion there, `{start, length, candidates}`, each
+candidate `{name, kind, insertText, description}`, or `null` for none); per text being edited, `references` (the References the Sheet answers in it, each `{start, length, cells, linkedColumn}`, `cells` a range
 and `linkedColumn` a `{table, column}`, the other `null`); per
 range, `cellFormats` (the Cell Formats it shows, each once), `entryAddressesIn` (its cells that hold an Entry, in row order) and `edgeLines` (the lines along each outer edge),
 each a set written in the ordinal order of its members' JSON text as `JSON.stringify` writes it; `alike`, groups of

@@ -995,6 +995,28 @@ internal sealed class Run(CultureInfo culture)
             case "spilledFrom":
                 actual = PerCell(expected, a => sheet.SpilledFrom(a)?.ToString());
                 break;
+            case "completions":
+                // Per text being typed, its caret marked |, the Sheet's completion there: what it replaces and each candidate.
+                actual = new JsonObject([.. expected!.AsObject().Select(p =>
+                {
+                    var caret = p.Key.IndexOf('|', StringComparison.Ordinal);
+                    if (caret < 0 || p.Key.IndexOf('|', caret + 1) >= 0)
+                        throw new InvalidDataException($"'{p.Key}' marks no caret: one | is the caret.");
+                    var completion = sheet.Complete(p.Key.Remove(caret, 1), caret);
+                    return KeyValuePair.Create(p.Key, (JsonNode?)(completion is null ? null : new JsonObject
+                    {
+                        ["start"] = completion.Start,
+                        ["length"] = completion.Length,
+                        ["candidates"] = new JsonArray([.. completion.Candidates.Select(c => (JsonNode)new JsonObject
+                        {
+                            ["name"] = c.Name,
+                            ["kind"] = SheetCases.Camel(c.Kind),
+                            ["insertText"] = c.InsertText,
+                            ["description"] = c.Description,
+                        })]),
+                    }));
+                })]);
+                break;
             case "references":
                 // Per text being edited, the References the Sheet answers in it: each span, and its cells or its Linked Table's column.
                 actual = new JsonObject([.. expected!.AsObject().Select(p => KeyValuePair.Create(p.Key, (JsonNode?)new JsonArray([.. sheet.References(p.Key).Select(r => (JsonNode)new JsonObject

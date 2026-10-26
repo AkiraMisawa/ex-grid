@@ -36,6 +36,8 @@ const subjects: Readonly<Record<string, object>> = {
 /** An argument as a case writes it: JSON as it stands, or one of the engine's own values, tagged. */
 function argument(node: Json): unknown {
     if (Array.isArray(node)) return (node as readonly Json[]).map(argument);
+    // null is the engine's absence, which the Script Core spells undefined.
+    if (node === null) return undefined;
     if (!isObject(node)) return node;
     const keys = Object.keys(node);
     const tag = keys[0];
@@ -103,8 +105,9 @@ function invoke(target: object, member: string, args: readonly unknown[] | undef
 }
 
 /** Holds the case's expectation of one reading: its answer (`is`), or its refusal (`throws`), then the checks on the answer. */
-function hold(where: string, read: () => unknown, check: JsonObject, differences: string[]): void {
-    const known = new Set(['call', 'get', 'args', 'is', 'throws', 'then', 'name', 'note']);
+function hold(where: string, read: () => unknown, check: JsonObject, differences: string[], outermost = false): void {
+    // The culture a case names is the thread's, which C# has and JavaScript does not.
+    const known = new Set(['call', 'get', 'args', 'is', 'throws', 'then', 'name', 'note', ...(outermost ? ['culture'] : [])]);
     const stray = Object.keys(check).find(k => !known.has(k));
     if (stray !== undefined) throw new CaseError(`${where}: '${stray}' is no part of a call.`);
     let answer: unknown;
@@ -153,6 +156,6 @@ export function runSheetCall(entry: JsonObject): string[] {
         if (subject === undefined) throw new CaseError(`'${named[1]}' is no subject this runner knows.`);
         return invoke(subject, named[2], args);
     };
-    hold('call', read, entry, differences);
+    hold('call', read, entry, differences, true);
     return differences;
 }

@@ -879,6 +879,19 @@ class Run {
             case 'spilledFrom':
                 actual = perCell(a => orNull(sheet.spilledFrom(a)?.toString()));
                 break;
+            case 'completions':
+                // Per text being typed, its caret marked |, the Sheet's completion there: what it replaces and each candidate.
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(marked => {
+                    const caret = marked.indexOf('|');
+                    if (caret < 0 || marked.includes('|', caret + 1)) throw new CaseError(`'${marked}' marks no caret: one | is the caret.`);
+                    const completion = sheet.complete(marked.slice(0, caret) + marked.slice(caret + 1), caret);
+                    return [marked, completion === undefined ? null : {
+                        start: completion.start,
+                        length: completion.length,
+                        candidates: completion.candidates.map(c => ({ name: c.name, kind: c.kind, insertText: c.insertText, description: orNull(c.description) })),
+                    }];
+                }));
+                break;
             case 'references':
                 // Per text being edited, the References the Sheet answers in it: each span, and its cells or its Linked Table's column.
                 actual = Object.fromEntries(Object.keys(object(expected, key)).map(t => [t, sheet.references(t).map(r => ({

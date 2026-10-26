@@ -1,0 +1,15 @@
+{
+  "about": "What a Pointing Scope writes, read back (ADR-0058, SH-32): each lookup reads the cell it was written for. Transcribed from ExSheet.Engine.Tests' PointedTextTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind (each Formula is what pointed-text.json's lookupText and structuredReferenceText write)",
+      "steps": [
+        {"declareTable": {"name": "T", "columns": ["Key", "Rate#", "PV"], "key": "Key"}},
+        {"pushTable": {"name": "T", "rows": [["R-\"5\"", 1, 10], [0.1, 2, 20], [true, 3, 30], ["1250", 4, 40]]}},
+        {"enter": {"A1": "=XLOOKUP(\"R-\"\"5\"\"\", T[Key], T[PV])", "A2": "=XLOOKUP(0.1, T[Key], T[Rate'#])", "A3": "=XLOOKUP(TRUE, T[Key], T[PV])", "A4": "=XLOOKUP(\"1250\", T[Key], T[PV])", "A5": "=SUM(T[PV])"}, "expect": {"values": {"A1": 10, "A2": 2, "A3": 30, "A4": 40, "A5": 100}}}
+      ]
+    }
+  ]
+}
