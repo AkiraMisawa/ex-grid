@@ -6,7 +6,7 @@ import * as engine from '../src/index';
 import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
 import { Entry } from '../src/entry';
-import { numberFormatColourRgb } from '../src/number-format';
+import { NumberFormat, numberFormatColourRgb } from '../src/number-format';
 import { Sheet } from '../src/sheet';
 import { Workbook } from '../src/workbook';
 
@@ -83,5 +83,10 @@ describe('the engine surface', () => {
         ['yellow', 0xffff00],
     ] as const)('paints %s in Excel\'s legacy palette', (colour, rgb) => {
         expect(numberFormatColourRgb(colour)).toBe(rgb);
+    });
+
+    // ADR-0071, ticket 103: d-mmm-yy typed under en-GB, which spells built-in 15 otherwise, is a code of its own.
+    it('reads d-mmm-yy under en-GB as a code of its own', () => {
+        expect(NumberFormat.tryParseLocal('d-mmm-yy', Culture.of('en-GB')).format?.code).toBe('d\\-mmm\\-yy');
     });
 });

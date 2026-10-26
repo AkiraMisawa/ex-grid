@@ -110,4 +110,11 @@ public class EngineSurfaceTests
     {
         Assert.Equal(rgb, colour.Rgb());
     }
+
+    [Fact] // ADR-0071, ticket 103: d-mmm-yy typed under en-GB, which spells built-in 15 otherwise, is a code of its own
+    public void A_local_code_that_is_no_built_in_of_the_culture_is_a_code_of_its_own()
+    {
+        Assert.True(NumberFormat.TryParseLocal("d-mmm-yy", CultureInfo.GetCultureInfo("en-GB"), out var own, out _));
+        Assert.Equal("d\\-mmm\\-yy", own.Code);
+    }
 }
