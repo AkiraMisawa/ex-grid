@@ -7,7 +7,8 @@ namespace ExSheet.Engine.Tests;
 /// <summary>
 /// ADR-0046 (SH-22): column widths are part of the Sheet Document, in characters (ADR-0047). What a width records, refuses
 /// and carries is in the shared cases (<c>tests/cases/sheet/column-width.json</c>); what stays here is the widths JSON
-/// cannot write, refused as any other width outside Excel's range.
+/// cannot write, refused as any other width outside Excel's range, and an older document's widths as it reads them,
+/// before a Sheet opens it.
 /// </summary>
 public class ColumnWidthTests
 {
@@ -24,5 +25,16 @@ public class ColumnWidthTests
         Assert.Throws<ArgumentOutOfRangeException>(() => SheetEdit.SetAutomaticColumnWidth(columns, width));
         Assert.Throws<ArgumentOutOfRangeException>(() => sheet.SetAutomaticColumnWidth(columns, width));
         Assert.Null(sheet.GetColumnWidth(1));
+    }
+
+    [Theory] // ADR-0046 (2026-09-28)/0048: an older document's widths read as custom, as Excel marks the user's and an entry's alike; a Sheet opens them by their kind (column-width.json)
+    [InlineData("""{"version":4,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":20}],"cells":[]}""")]
+    [InlineData("""{"version":5,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"custom":true},{"at":"C:C","width":11,"custom":false}],"cells":[]}""")]
+    public void An_older_documents_widths_read_as_custom(string json)
+    {
+        var widths = SheetDocument.FromJson(json).ColumnWidths;
+
+        Assert.NotEmpty(widths);
+        Assert.All(widths, w => Assert.True(w.IsCustom));
     }
 }

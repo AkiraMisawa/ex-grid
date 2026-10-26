@@ -28,9 +28,12 @@ public class CultureTests
         var sheet = In(culture);
         var a1 = CellAddress.Parse("A1");
 
+        // The year is read on both sides of the entry, so a run across New Year's midnight holds either way.
+        var before = DateTime.Today.Year;
         sheet.Enter(a1, typed);
+        var after = DateTime.Today.Year;
 
-        Assert.Equal(Serial(DateTime.Today.Year, 9, 26), sheet.GetValue(a1)!.Value.Number);
+        Assert.Contains(sheet.GetValue(a1)!.Value.Number, new[] { Serial(before, 9, 26), Serial(after, 9, 26) });
         Assert.Equal("d-mmm", sheet.GetNumberFormat(a1).Code);
     }
 

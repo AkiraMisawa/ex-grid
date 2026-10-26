@@ -214,128 +214,144 @@
     {
       "name": "ADR-0048: the Cell Editor reopens a date as the culture's short date, which types back to the same Entry",
       "steps": [
-        {"enter": {"A1": "2026-09-26"}, "expect": {"entryTexts": {"A1": "9/26/2026"}, "entries": {"A1": {"constant": 46291}}}},
-        {"enter": {"A1": "9/26/2026"}, "expect": {"entries": {"A1": {"constant": 46291}}}}
+        {"enter": {"A1": "2026-09-26"}, "expect": {"entryTexts": {"A1": "9/26/2026"}}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 1,234.5 under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "1,234.5"}, "expect": {"entryTexts": {"A1": "1234.5"}, "entries": {"A1": {"constant": 1234.5}}}},
-        {"enter": {"A1": "1234.5"}, "expect": {"entries": {"A1": {"constant": 1234.5}}}}
+        {"enter": {"A1": "1,234.5"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 9/26/2026 1:45 PM under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "9/26/2026 1:45 PM"}, "expect": {"entryTexts": {"A1": "9/26/2026 1:45:00 PM"}, "entries": {"A1": {"constant": 46291.572916666664}}}},
-        {"enter": {"A1": "9/26/2026 1:45:00 PM"}, "expect": {"entries": {"A1": {"constant": 46291.572916666664}}}}
+        {"enter": {"A1": "9/26/2026 1:45 PM"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 0.000123 under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "0.000123"}, "expect": {"entryTexts": {"A1": "0.000123"}, "entries": {"A1": {"constant": 0.000123}}}},
-        {"enter": {"A1": "0.000123"}, "expect": {"entries": {"A1": {"constant": 0.000123}}}}
+        {"enter": {"A1": "0.000123"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 12.5% under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "12.5%"}, "expect": {"entryTexts": {"A1": "12.5%"}, "entries": {"A1": {"constant": 0.125}}}},
-        {"enter": {"A1": "12.5%"}, "expect": {"entries": {"A1": {"constant": 0.125}}}}
+        {"enter": {"A1": "12.5%"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 1.234,5 under de-DE",
       "culture": "de-DE",
       "steps": [
-        {"enter": {"A1": "1.234,5"}, "expect": {"entryTexts": {"A1": "1234,5"}, "entries": {"A1": {"constant": 1234.5}}}},
-        {"enter": {"A1": "1234,5"}, "expect": {"entries": {"A1": {"constant": 1234.5}}}}
+        {"enter": {"A1": "1.234,5"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 26.9.2026 under de-DE",
       "culture": "de-DE",
       "steps": [
-        {"enter": {"A1": "26.9.2026"}, "expect": {"entryTexts": {"A1": "26.09.2026"}, "entries": {"A1": {"constant": 46291}}}},
-        {"enter": {"A1": "26.09.2026"}, "expect": {"entries": {"A1": {"constant": 46291}}}}
+        {"enter": {"A1": "26.9.2026"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 2026/9/26 under ja-JP",
       "culture": "ja-JP",
       "steps": [
-        {"enter": {"A1": "2026/9/26"}, "expect": {"entryTexts": {"A1": "2026/09/26"}, "entries": {"A1": {"constant": 46291}}}},
-        {"enter": {"A1": "2026/09/26"}, "expect": {"entries": {"A1": {"constant": 46291}}}}
+        {"enter": {"A1": "2026/9/26"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 13:45:10 under ja-JP",
       "culture": "ja-JP",
       "steps": [
-        {"enter": {"A1": "13:45:10"}, "expect": {"entryTexts": {"A1": "13:45:10"}, "entries": {"A1": {"constant": 0.5730324074074075}}}},
-        {"enter": {"A1": "13:45:10"}, "expect": {"entries": {"A1": {"constant": 0.5730324074074075}}}}
+        {"enter": {"A1": "13:45:10"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: '1,234 under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "'1,234"}, "expect": {"entryTexts": {"A1": "'1,234"}, "entries": {"A1": {"constant": "1,234"}}}},
-        {"enter": {"A1": "'1,234"}, "expect": {"entries": {"A1": {"constant": "1,234"}}}}
+        {"enter": {"A1": "'1,234"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: '+A1 under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "'+A1"}, "expect": {"entryTexts": {"A1": "'+A1"}, "entries": {"A1": {"constant": "+A1"}}}},
-        {"enter": {"A1": "'+A1"}, "expect": {"entries": {"A1": {"constant": "+A1"}}}}
+        {"enter": {"A1": "'+A1"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: '-abc under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "'-abc"}, "expect": {"entryTexts": {"A1": "'-abc"}, "entries": {"A1": {"constant": "-abc"}}}},
-        {"enter": {"A1": "'-abc"}, "expect": {"entries": {"A1": {"constant": "-abc"}}}}
+        {"enter": {"A1": "'-abc"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 26-Sep under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "26-Sep"}, "expect": {"entryTexts": {"A1": "9/26/2026"}, "entries": {"A1": {"constant": 46291}}}},
-        {"enter": {"A1": "9/26/2026"}, "expect": {"entries": {"A1": {"constant": 46291}}}}
+        {"enter": {"A1": "26-Sep"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 1E15 under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "1E15"}, "expect": {"entryTexts": {"A1": "1000000000000000"}, "entries": {"A1": {"constant": 1000000000000000}}}},
-        {"enter": {"A1": "1000000000000000"}, "expect": {"entries": {"A1": {"constant": 1000000000000000}}}}
+        {"enter": {"A1": "1E15"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 1E-10 under en-US",
       "culture": "en-US",
       "steps": [
-        {"enter": {"A1": "1E-10"}, "expect": {"entryTexts": {"A1": "0.0000000001"}, "entries": {"A1": {"constant": 1e-10}}}},
-        {"enter": {"A1": "0.0000000001"}, "expect": {"entries": {"A1": {"constant": 1e-10}}}}
+        {"enter": {"A1": "1E-10"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {
       "name": "ADR-0048: every constant's editor text types back to the same Entry: 26-Okt under de-DE",
       "culture": "de-DE",
       "steps": [
-        {"enter": {"A1": "26-Okt"}, "expect": {"entryTexts": {"A1": "26.10.2026"}, "entries": {"A1": {"constant": 46321}}}},
-        {"enter": {"A1": "26.10.2026"}, "expect": {"entries": {"A1": {"constant": 46321}}}}
+        {"enter": {"A1": "26-Okt"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
       ]
     },
     {

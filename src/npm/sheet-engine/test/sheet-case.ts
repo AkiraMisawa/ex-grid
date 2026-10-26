@@ -345,7 +345,7 @@ function cultureOf(name: string): Culture {
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
     'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat', 'show',
-    'doAll', 'readTable', 'setColumnWidth', 'setAutomaticColumnWidth',
+    'doAll', 'readTable', 'setColumnWidth', 'setAutomaticColumnWidth', 'rename', 'retype',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
@@ -574,13 +574,25 @@ class Run {
             case 'setColumnWidth': {
                 // The Sheet's own forms, outside any step.
                 const width = object(argument, 'setColumnWidth')['width'];
+                if (width === undefined) throw new CaseError('setColumnWidth names no width: write null for the default.');
                 outcome.change = sheet.setColumnWidth(CellRange.parse(text(object(argument, 'setColumnWidth')['columns'], 'columns')),
-                    width === undefined || width === null ? undefined : caseNumber(width, 'width'));
+                    width === null ? undefined : caseNumber(width, 'width'));
                 break;
             }
             case 'setAutomaticColumnWidth':
                 outcome.change = sheet.setAutomaticColumnWidth(CellRange.parse(text(object(argument, 'setAutomaticColumnWidth')['columns'], 'columns')),
                     caseNumber(object(argument, 'setAutomaticColumnWidth')['width'], 'width'));
+                break;
+            case 'rename':
+                // The Sheet's own rename, outside any step.
+                outcome.change = sheet.rename(text(argument, 'rename'));
+                break;
+            case 'retype':
+                // Each cell's Entry text, as the Cell Editor opens it, typed back into the cell.
+                for (const cell of list(argument, 'retype')) {
+                    const address = CellAddress.parse(text(cell, 'retype'));
+                    outcome.change = sheet.enter(address, sheet.getEntryText(address));
+                }
                 break;
             case 'setCellFormat': {
                 // The Sheet's own form, outside any step.
@@ -622,6 +634,7 @@ class Run {
                 // A seed, or {"seed", "changes"}: the seed and the count of changes together.
                 const seedOf = (node: Json | undefined): bigint | undefined =>
                     node === null || node === undefined ? undefined : BigInt(typeof node === 'number' ? node : text(node, 'setSeed'));
+                if (isObject(argument) && argument['seed'] === undefined) throw new CaseError('setSeed names no seed: write null for none.');
                 outcome.change = (isObject(argument)
                     ? this.workbook.setSeed(seedOf(argument['seed']), integer(argument['changes'], 'changes'))
                     : this.workbook.setSeed(seedOf(argument))).for(sheet);
@@ -856,7 +869,7 @@ class Run {
                 break;
             case 'entryAddressesIn':
                 // The cells of each range that hold an Entry, in row order and then column order.
-                actual = perRange(r => addresses(sheet.entryAddressesIn(r).toSorted((a, b) => (a.row === b.row ? a.column - b.column : a.row - b.row))));
+                actual = perRange(r => addresses(sheet.entryAddressesIn(r).toSorted((a, b) => a.compareTo(b))));
                 break;
             case 'spilledFrom':
                 actual = perCell(a => orNull(sheet.spilledFrom(a)?.toString()));
@@ -916,6 +929,13 @@ class Run {
                 break;
             case 'valueAddresses':
                 actual = addresses(sheet.valueAddresses);
+                break;
+            case 'alike':
+                // Groups of cells whose Values are one another's, a refusal alike only to a refusal.
+                actual = list(expected, 'alike').map(group => {
+                    const values = list(group, 'a group of alike cells').map(c => JSON.stringify(encode(sheet.getValue(CellAddress.parse(text(c, 'a cell'))))));
+                    return new Set(values).size === 1 ? group : `unlike: ${values.join(', ')}`;
+                });
                 break;
             case 'recalculationPasses':
                 actual = sheet.recalculationPasses;

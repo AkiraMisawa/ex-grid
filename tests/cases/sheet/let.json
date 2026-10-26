@@ -342,55 +342,55 @@
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,IF(FALSE,1,x))&\"a\"",
       "steps": [
-        {"enter": {"ZZ1000": "=IF(FALSE,1,)&\"a\"", "ZZ1001": "=LET(x,,IF(FALSE,1,x))&\"a\""}, "expect": {"values": {"ZZ1000": "0a", "ZZ1001": "0a"}}}
+        {"enter": {"ZZ1000": "=IF(FALSE,1,)&\"a\"", "ZZ1001": "=LET(x,,IF(FALSE,1,x))&\"a\""}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,y,x,IF(FALSE,1,y))&\"a\"",
       "steps": [
-        {"enter": {"ZZ1000": "=IF(FALSE,1,)&\"a\"", "ZZ1001": "=LET(x,,y,x,IF(FALSE,1,y))&\"a\""}, "expect": {"values": {"ZZ1000": "0a", "ZZ1001": "0a"}}}
+        {"enter": {"ZZ1000": "=IF(FALSE,1,)&\"a\"", "ZZ1001": "=LET(x,,y,x,IF(FALSE,1,y))&\"a\""}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,LOG(100,x))",
       "steps": [
-        {"enter": {"ZZ1000": "=LOG(100,)", "ZZ1001": "=LET(x,,LOG(100,x))"}, "expect": {"values": {"ZZ1000": 2, "ZZ1001": 2}}}
+        {"enter": {"ZZ1000": "=LOG(100,)", "ZZ1001": "=LET(x,,LOG(100,x))"}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,ROUND(2.5,x))",
       "steps": [
-        {"enter": {"ZZ1000": "=ROUND(2.5,)", "ZZ1001": "=LET(x,,ROUND(2.5,x))"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 3}}}
+        {"enter": {"ZZ1000": "=ROUND(2.5,)", "ZZ1001": "=LET(x,,ROUND(2.5,x))"}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,SUM(x,1))",
       "steps": [
-        {"enter": {"ZZ1000": "=SUM(,1)", "ZZ1001": "=LET(x,,SUM(x,1))"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+        {"enter": {"ZZ1000": "=SUM(,1)", "ZZ1001": "=LET(x,,SUM(x,1))"}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,COUNTA(x,1))",
       "steps": [
-        {"enter": {"ZZ1000": "=COUNTA(,1)", "ZZ1001": "=LET(x,,COUNTA(x,1))"}, "expect": {"values": {"ZZ1000": 2, "ZZ1001": 2}}}
+        {"enter": {"ZZ1000": "=COUNTA(,1)", "ZZ1001": "=LET(x,,COUNTA(x,1))"}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,CONCAT(\"a\",x,\"b\"))",
       "steps": [
-        {"enter": {"ZZ1000": "=CONCAT(\"a\",,\"b\")", "ZZ1001": "=LET(x,,CONCAT(\"a\",x,\"b\"))"}, "expect": {"values": {"ZZ1000": "ab", "ZZ1001": "ab"}}}
+        {"enter": {"ZZ1000": "=CONCAT(\"a\",,\"b\")", "ZZ1001": "=LET(x,,CONCAT(\"a\",x,\"b\"))"}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,x+1)",
       "steps": [
-        {"enter": {"ZZ1000": "=1+0", "ZZ1001": "=LET(x,,x+1)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+        {"enter": {"ZZ1000": "=1+0", "ZZ1001": "=LET(x,,x+1)"}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
       "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,x&\"a\")",
       "steps": [
-        {"enter": {"ZZ1000": "=\"a\"", "ZZ1001": "=LET(x,,x&\"a\")"}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": "a"}}}
+        {"enter": {"ZZ1000": "=\"a\"", "ZZ1001": "=LET(x,,x&\"a\")"}, "expect": {"alike": [["ZZ1000", "ZZ1001"]]}}
       ]
     },
     {
