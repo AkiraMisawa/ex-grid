@@ -1,0 +1,670 @@
+{
+  "about": "A Board Input (ADR-0341): its declaration read, a source's shape checked against it, and JSON rows made a Snapshot by the declared kinds, each refusal naming its path. Transcribed from ExGrid.Data.Tests' BoardInputTests.",
+  "kind": "boardInput",
+  "cases": [
+    {
+      "name": "ADR-0341: a declaration reads each column and its kind, in order",
+      "read": "{\"columns\": [{\"name\": \"desk\", \"type\": \"text\"}, {\"name\": \"pnl\", \"type\": \"decimal\"}]}",
+      "columns": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "pnl",
+          "type": "decimal"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0341: a column that does not say its type is refused by path",
+      "read": "{\"columns\": [{\"name\": \"pnl\"}]}",
+      "refused": {
+        "path": "inputs.trades.columns[0].type",
+        "message": "Column 'pnl' of input 'trades' declares no type; it is one of text, decimal, double, integer, date, boolean, never guessed from the data."
+      }
+    },
+    {
+      "name": "ADR-0341: a type that is no kind is refused by path",
+      "read": "{\"columns\": [{\"name\": \"pnl\", \"type\": \"money\"}]}",
+      "refused": {
+        "path": "inputs.trades.columns[0].type",
+        "message": "Column 'pnl' of input 'trades' declares no type; it is one of text, decimal, double, integer, date, boolean, never guessed from the data."
+      }
+    },
+    {
+      "name": "ADR-0341: a column declared twice is refused by path",
+      "read": "{\"columns\": [{\"name\": \"a\", \"type\": \"text\"}, {\"name\": \"a\", \"type\": \"text\"}]}",
+      "refused": {
+        "path": "inputs.trades.columns[1].name",
+        "message": "Input 'trades' declares column 'a' twice."
+      }
+    },
+    {
+      "name": "ADR-0341: a declaration of no column is refused",
+      "read": "{\"columns\": []}",
+      "refused": {
+        "path": "inputs.trades.columns",
+        "message": "Input 'trades' declares no column."
+      }
+    },
+    {
+      "name": "ADR-0341: a column's member the declaration does not have is refused",
+      "read": "{\"columns\": [{\"name\": \"a\", \"type\": \"text\", \"format\": \"0\"}]}",
+      "refused": {
+        "path": "inputs.trades.columns[0].format",
+        "message": "A column of input 'trades' has no member 'format'."
+      }
+    },
+    {
+      "name": "ADR-0341: a declaration's member it does not have is refused",
+      "read": "{\"rows\": []}",
+      "refused": {
+        "path": "inputs.trades.rows",
+        "message": "Input 'trades' has no member 'rows'."
+      }
+    },
+    {
+      "name": "ADR-0341: a declaration that is not an object is refused",
+      "read": "[]",
+      "refused": {
+        "path": "inputs.trades",
+        "message": "Input 'trades' is not an object."
+      }
+    },
+    {
+      "name": "ADR-0341: a source missing a declared column is refused naming the input and the column",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "pnl",
+          "type": "decimal"
+        }
+      ],
+      "check": [
+        {
+          "name": "desk",
+          "type": "text"
+        }
+      ],
+      "refused": {
+        "path": "trades",
+        "message": "Input 'trades' declares column 'pnl', which its source does not have."
+      }
+    },
+    {
+      "name": "ADR-0341: a source holding a column of another kind is refused",
+      "declared": [
+        {
+          "name": "pnl",
+          "type": "decimal"
+        }
+      ],
+      "check": [
+        {
+          "name": "pnl",
+          "type": "double"
+        }
+      ],
+      "refused": {
+        "path": "trades",
+        "message": "Input 'trades', column 'pnl': declared decimal, and its source holds double."
+      }
+    },
+    {
+      "name": "ADR-0341: a column the input does not declare is no mismatch",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        }
+      ],
+      "check": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "extra",
+          "type": "double"
+        }
+      ],
+      "binds": true
+    },
+    {
+      "name": "ADR-0341: a Snapshot is bound to its input as it is, its shape checked",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        }
+      ],
+      "bind": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "extra",
+          "type": "double"
+        }
+      ],
+      "binds": true
+    },
+    {
+      "name": "ADR-0341: a Snapshot of another kind is refused when bound",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        }
+      ],
+      "bind": [
+        {
+          "name": "desk",
+          "type": "integer"
+        }
+      ],
+      "refused": {
+        "path": "trades",
+        "message": "Input 'trades', column 'desk': declared text, and its source holds integer."
+      }
+    },
+    {
+      "name": "ADR-0341: a source held where the data lives is checked by the shape it answers, before any row",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "pnl",
+          "type": "decimal"
+        }
+      ],
+      "checkSource": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "pnl",
+          "type": "decimal"
+        },
+        {
+          "name": "book",
+          "type": "text"
+        }
+      ],
+      "binds": true
+    },
+    {
+      "name": "ADR-0341: a source answering another kind is refused when asked its shape",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "pnl",
+          "type": "decimal"
+        }
+      ],
+      "checkSource": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "pnl",
+          "type": "double"
+        }
+      ],
+      "refused": {
+        "path": "trades",
+        "message": "Input 'trades', column 'pnl': declared decimal, and its source holds double."
+      }
+    },
+    {
+      "name": "ADR-0341: a source that says no shape is refused, its kinds never guessed from its rows",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        }
+      ],
+      "checkSource": null,
+      "refused": {
+        "path": "trades",
+        "message": "Input 'trades' is bound to a source that does not say its shape, and its kinds are not guessed from its rows."
+      }
+    },
+    {
+      "name": "ADR-0341: JSON rows become a Snapshot by the declared kinds",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        },
+        {
+          "name": "notional",
+          "type": "decimal"
+        },
+        {
+          "name": "rate",
+          "type": "double"
+        },
+        {
+          "name": "count",
+          "type": "integer"
+        },
+        {
+          "name": "tradeDate",
+          "type": "date"
+        },
+        {
+          "name": "hedged",
+          "type": "boolean"
+        }
+      ],
+      "fromJson": "[{\"desk\": \"Rates\", \"notional\": 1000000.10, \"rate\": 1.08734, \"count\": 3, \"tradeDate\": \"2026-10-20\", \"hedged\": true, \"ignored\": [1]}, {\"desk\": null, \"notional\": \"12345678901234567890.123456789\", \"rate\": \"NaN\", \"count\": \"-7\", \"tradeDate\": \"2026-10-20T09:30:15.5\"}]",
+      "snapshot": [
+        {
+          "name": "desk",
+          "kind": "text",
+          "values": [
+            "Rates",
+            null
+          ]
+        },
+        {
+          "name": "notional",
+          "kind": "decimal",
+          "values": [
+            "1000000.1",
+            "12345678901234567890.123456789"
+          ]
+        },
+        {
+          "name": "rate",
+          "kind": "double",
+          "values": [
+            1.08734,
+            "NaN"
+          ]
+        },
+        {
+          "name": "count",
+          "kind": "integer",
+          "values": [
+            3,
+            -7
+          ]
+        },
+        {
+          "name": "tradeDate",
+          "kind": "date",
+          "values": [
+            "2026-10-20",
+            "2026-10-20T09:30:15.5"
+          ]
+        },
+        {
+          "name": "hedged",
+          "kind": "boolean",
+          "values": [
+            true,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0341: a decimal written with an exponent is read exactly, and a double as Infinity by name",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        },
+        {
+          "name": "rate",
+          "type": "double"
+        },
+        {
+          "name": "count",
+          "type": "integer"
+        }
+      ],
+      "fromJson": "[{\"notional\": 1.5e3, \"rate\": \"-Infinity\", \"count\": \"+12\"}, {\"notional\": \"-.25\", \"rate\": \"Infinity\", \"count\": -9007199254740993}]",
+      "snapshot": [
+        {
+          "name": "notional",
+          "kind": "decimal",
+          "values": [
+            "1500",
+            "-0.25"
+          ]
+        },
+        {
+          "name": "rate",
+          "kind": "double",
+          "values": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        {
+          "name": "count",
+          "kind": "integer",
+          "values": [
+            12,
+            "-9007199254740993"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0341: types are never inferred from rows, so a first page of nulls still gives the declared kinds",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[{\"notional\": null}, {}]",
+      "snapshot": [
+        {
+          "name": "notional",
+          "kind": "decimal",
+          "values": [
+            null,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0341: a decimal that does not convert is refused by row and column, never read as zero",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[{\"notional\": \"abc\"}]",
+      "refused": {
+        "path": "trades[0].notional",
+        "message": "Input 'trades', row 1, column 'notional': \"abc\" is not a decimal."
+      }
+    },
+    {
+      "name": "ADR-0341: a number where text is declared is refused by row and column",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        }
+      ],
+      "fromJson": "[{\"desk\": \"a\"}, {\"desk\": 12}]",
+      "refused": {
+        "path": "trades[1].desk",
+        "message": "Input 'trades', row 2, column 'desk': 12 is not text."
+      }
+    },
+    {
+      "name": "ADR-0341: a fraction where an integer is declared is refused",
+      "declared": [
+        {
+          "name": "count",
+          "type": "integer"
+        }
+      ],
+      "fromJson": "[{\"count\": 1.5}]",
+      "refused": {
+        "path": "trades[0].count",
+        "message": "Input 'trades', row 1, column 'count': 1.5 is not an integer."
+      }
+    },
+    {
+      "name": "ADR-0341: an integer written as 1.0 is not one, as C# reads its spelling",
+      "declared": [
+        {
+          "name": "count",
+          "type": "integer"
+        }
+      ],
+      "fromJson": "[{\"count\": 1.0}]",
+      "refused": {
+        "path": "trades[0].count",
+        "message": "Input 'trades', row 1, column 'count': 1.0 is not an integer."
+      }
+    },
+    {
+      "name": "ADR-0341: a date with an offset is refused, its clock value never guessed",
+      "declared": [
+        {
+          "name": "tradeDate",
+          "type": "date"
+        }
+      ],
+      "fromJson": "[{\"tradeDate\": \"2026-10-20T09:30:00Z\"}]",
+      "refused": {
+        "path": "trades[0].tradeDate",
+        "message": "Input 'trades', row 1, column 'tradeDate': \"2026-10-20T09:30:00Z\" is not a date."
+      }
+    },
+    {
+      "name": "ADR-0341: a date in another culture's order is refused",
+      "declared": [
+        {
+          "name": "tradeDate",
+          "type": "date"
+        }
+      ],
+      "fromJson": "[{\"tradeDate\": \"20/10/2026\"}]",
+      "refused": {
+        "path": "trades[0].tradeDate",
+        "message": "Input 'trades', row 1, column 'tradeDate': \"20/10/2026\" is not a date."
+      }
+    },
+    {
+      "name": "ADR-0341: a day the month does not have is refused",
+      "declared": [
+        {
+          "name": "tradeDate",
+          "type": "date"
+        }
+      ],
+      "fromJson": "[{\"tradeDate\": \"2026-02-29\"}]",
+      "refused": {
+        "path": "trades[0].tradeDate",
+        "message": "Input 'trades', row 1, column 'tradeDate': \"2026-02-29\" is not a date."
+      }
+    },
+    {
+      "name": "ADR-0341: text where a boolean is declared is refused",
+      "declared": [
+        {
+          "name": "hedged",
+          "type": "boolean"
+        }
+      ],
+      "fromJson": "[{\"hedged\": \"yes\"}]",
+      "refused": {
+        "path": "trades[0].hedged",
+        "message": "Input 'trades', row 1, column 'hedged': \"yes\" is not a boolean."
+      }
+    },
+    {
+      "name": "ADR-0341: a double's digits as a string are refused, only its names are read",
+      "declared": [
+        {
+          "name": "rate",
+          "type": "double"
+        }
+      ],
+      "fromJson": "[{\"rate\": \"1.5\"}]",
+      "refused": {
+        "path": "trades[0].rate",
+        "message": "Input 'trades', row 1, column 'rate': \"1.5\" is not a double."
+      }
+    },
+    {
+      "name": "ADR-0341: a row that is not an object is refused by row",
+      "declared": [
+        {
+          "name": "rate",
+          "type": "double"
+        }
+      ],
+      "fromJson": "[1]",
+      "refused": {
+        "path": "trades[0]",
+        "message": "Input 'trades', row 1: is not an object."
+      }
+    },
+    {
+      "name": "ADR-0341: data that is not a list of rows is refused",
+      "declared": [
+        {
+          "name": "rate",
+          "type": "double"
+        }
+      ],
+      "fromJson": "{\"rate\": 1}",
+      "refused": {
+        "path": "trades",
+        "message": "The data of input 'trades' is not a list of rows."
+      }
+    },
+    {
+      "name": "ADR-0341: a long value is shown cut short in its refusal",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        }
+      ],
+      "fromJson": "[{\"desk\": [1234567890,1234567890,1234567890,1234567890]}]",
+      "refused": {
+        "path": "trades[0].desk",
+        "message": "Input 'trades', row 1, column 'desk': [1234567890,1234567890,1234567890,123... is not text."
+      }
+    },
+    {
+      "name": "ADR-0341: a value is shown in its refusal as the data wrote it",
+      "declared": [
+        {
+          "name": "desk",
+          "type": "text"
+        }
+      ],
+      "fromJson": "[{\"desk\": {\"a\": 1,  \"b\": [true]}}]",
+      "refused": {
+        "path": "trades[0].desk",
+        "message": "Input 'trades', row 1, column 'desk': {\"a\": 1,  \"b\": [true]} is not text."
+      }
+    },
+    {
+      "name": "ADR-0341: a decimal with more places than a decimal holds is refused, never rounded",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[{\"notional\": 0.12345678901234567890123456789}]",
+      "refused": {
+        "path": "trades[0].notional",
+        "message": "Input 'trades', row 1, column 'notional': 0.12345678901234567890123456789 is not a decimal."
+      }
+    },
+    {
+      "name": "ADR-0341: a decimal's digits past what a decimal holds are refused, never rounded",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[{\"notional\": \"79228162514264337593543950335.5\"}]",
+      "refused": {
+        "path": "trades[0].notional",
+        "message": "Input 'trades', row 1, column 'notional': \"79228162514264337593543950335.5\" is not a decimal."
+      }
+    },
+    {
+      "name": "ADR-0341: a decimal written with an exponent past a decimal's range is refused",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[{\"notional\": 1e999999999}]",
+      "refused": {
+        "path": "trades[0].notional",
+        "message": "Input 'trades', row 1, column 'notional': 1e999999999 is not a decimal."
+      }
+    },
+    {
+      "name": "ADR-0341: data nested as deeply as a reader takes is read",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",
+      "refused": {
+        "path": "trades[0]",
+        "message": "Input 'trades', row 1: is not an object."
+      }
+    },
+    {
+      "name": "ADR-0341: data nested deeper than a reader takes is refused as not JSON",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",
+      "refused": {
+        "path": "trades",
+        "saying": "The data of input 'trades' is not JSON"
+      }
+    },
+    {
+      "name": "ADR-0341: a member written twice in a row is refused, never settled by whichever came last",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[{\"notional\": 1, \"notional\": 1000000}]",
+      "refused": {
+        "path": "trades",
+        "saying": "The data of input 'trades' is not JSON"
+      }
+    },
+    {
+      "name": "ADR-0341: text that is not JSON is refused",
+      "declared": [
+        {
+          "name": "notional",
+          "type": "decimal"
+        }
+      ],
+      "fromJson": "[{\"notional\": 1",
+      "refused": {
+        "path": "trades",
+        "saying": "The data of input 'trades' is not JSON"
+      }
+    }
+  ]
+}

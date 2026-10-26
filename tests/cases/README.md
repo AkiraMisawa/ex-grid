@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `chart`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `boardInput`, `chart`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -504,6 +504,21 @@ grows. A refused batch is `{"refused": {message, row, column, key}}` as an `arro
 "argument"}` where the batch itself cannot be made (`ArgumentException`, `TypeError`). Each runner also holds, at every step,
 that the version a batch was applied to still reads as it did, and ADR-0067's fold: the rows the next version holds that
 the batch did not bring are the rows of the version before less those it removed, in their order.
+
+## `boardInput`
+
+A Board Input ([ADR-0341](../../docs/adr/0341-a-board-input-declares-its-columns-and-a-source-answers-its-shape-first.md),
+ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/BoardInputCaseTests.cs`)
+and Vitest against `@ex-grid/data` (`src/npm/data/test/board-input-cases.test.ts`). Both stay, because a .NET server reads a
+Board's inputs as a browser does.
+
+A case does one of four things. `read` is a declaration's text, read as input `trades` standing at `inputs.trades`, and
+`columns` is what it declares, each `name` and `type`. The other three start from `declared`, a declaration's columns:
+`check` is a source's shape, checked against it; `checkSource` is the shape a source answers when asked, or `null` for one
+that says none; and `fromJson` is rows as JSON text, made a Snapshot. `binds: true` says a check passed, and `snapshot` is
+each column's `name`, `kind` and `values`, written as an `arrowRead` case writes them except that a double that is no
+number is written by its name, `"NaN"`, because .NET's NaN and JavaScript's carry different bits. A refusal is `refused`,
+its `path` and its `message` whole, or `saying`, the words before a platform's own JSON parser speaks.
 
 ## ExPivot's engine, under `pivot/`
 
