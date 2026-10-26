@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 14:01:26 |
+| Generated on: | 10/26/2026 - 14:37:27 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1199 |
 | Files: | 609 |
-| **Line coverage:** | 94.6% (83537 of 88218) |
-| Covered lines: | 83537 |
-| Uncovered lines: | 4681 |
+| **Line coverage:** | 94.6% (83538 of 88218) |
+| Covered lines: | 83538 |
+| Uncovered lines: | 4680 |
 | Coverable lines: | 88218 |
 | Total lines: | 140834 |
-| **Branch coverage:** | 87.6% (50590 of 57722) |
-| Covered branches: | 50590 |
+| **Branch coverage:** | 87.6% (50593 of 57722) |
+| Covered branches: | 50593 |
 | Total branches: | 57722 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1046,12 +1046,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
