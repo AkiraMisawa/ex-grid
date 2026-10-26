@@ -19,18 +19,26 @@ public class ListSeparatorCaseTests
     [Fact] // ADR-0064 (Q33): the list separators the Script Core carries are .NET's
     public void Every_cultures_list_separator_is_dotnets()
     {
-        var cultures = new JsonObject();
-        foreach (var culture in CultureInfo.GetCultures(CultureTypes.AllCultures).Where(c => c.Name.Length > 0).OrderBy(c => c.Name, StringComparer.Ordinal))
-        {
-            var separator = culture.TextInfo.ListSeparator;
-            cultures[culture.Name] = separator is "," or ";" ? separator : null;
-        }
         if (CsvReadCaseTests.Writing)
         {
+            var cultures = new JsonObject();
+            foreach (var culture in CultureInfo.GetCultures(CultureTypes.AllCultures).Where(c => c.Name.Length > 0).OrderBy(c => c.Name, StringComparer.Ordinal))
+                cultures[culture.Name] = SeparatorOf(culture);
             CsvReadCaseTests.WriteKey(File, "cultures", cultures);
             return;
         }
-        var expected = CsvReadCaseTests.Must(CsvReadCaseTests.Read(Path.Combine(AppContext.BaseDirectory, "cases", "data", File)), "cultures");
-        Assert.True(JsonNode.DeepEquals(expected, cultures), "The list separators .NET gives differ from list-separators.json; write it again and update the Script Core's copy.");
+        // Judged by the cultures the file names: which cultures .NET lists is its ICU's, and moves with the ICU a
+        // machine has, while each one's separator is .NET's own table.
+        var expected = CsvReadCaseTests.Must(CsvReadCaseTests.Read(Path.Combine(AppContext.BaseDirectory, "cases", "data", File)), "cultures").AsObject();
+        var differing = expected
+            .Where(entry => SeparatorOf(CultureInfo.GetCultureInfo(entry.Key)) != (string?)entry.Value)
+            .Select(entry => $"{entry.Key}: '{SeparatorOf(CultureInfo.GetCultureInfo(entry.Key))}' where the file says '{(string?)entry.Value}'")
+            .ToList();
+        Assert.True(differing.Count == 0,
+            "The list separators .NET gives differ from list-separators.json; write it again and update the Script Core's copy. " + string.Join("; ", differing));
     }
+
+    // A separator other than a comma or a semicolon is null: a CSV is never split at it.
+    private static string? SeparatorOf(CultureInfo culture)
+        => culture.TextInfo.ListSeparator is "," or ";" ? culture.TextInfo.ListSeparator : null;
 }
