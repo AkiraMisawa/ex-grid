@@ -113,9 +113,12 @@ internal static class SheetCases
             case null:
                 return null;
             case JsonObject error:
-                if (!ErrorValues.TryParseWritten((string?)error["error"], out var parsed) || error.Count != 1)
+                // The two states of a computation are no Error Value typed, but a case may give one to be refused.
+                var written = (string?)error["error"];
+                var parsed = ErrorValue.Circ;
+                if (written is not ("#CIRC!" or "#GETTING_DATA") && !ErrorValues.TryParseWritten(written, out parsed) || error.Count != 1)
                     throw new InvalidDataException($"{error.ToJsonString()} is no Error Value a case gives.");
-                return Value.FromError(parsed);
+                return Value.FromError(written switch { "#CIRC!" => ErrorValue.Circ, "#GETTING_DATA" => ErrorValue.GettingData, _ => parsed });
             case JsonValue value when value.GetValueKind() == JsonValueKind.String:
                 return Value.FromText((string)value!);
             case JsonValue value when value.GetValueKind() is JsonValueKind.True or JsonValueKind.False:

@@ -119,7 +119,9 @@ export function decode(node: Json | undefined): Value | undefined {
     if (typeof node === 'boolean') return Value.fromBoolean(node);
     if (typeof node === 'number') return Value.fromNumber(node);
     if (isObject(node)) {
-        const error = typeof node['error'] === 'string' ? parseWrittenError(node['error']) : undefined;
+        // The two states of a computation are no Error Value typed, but a case may give one to be refused.
+        const written = node['error'];
+        const error = written === '#CIRC!' || written === '#GETTING_DATA' ? written : typeof written === 'string' ? parseWrittenError(written) : undefined;
         if (error === undefined || Object.keys(node).length !== 1) throw new CaseError(`${JSON.stringify(node)} is no Error Value a case gives.`);
         return Value.fromError(error);
     }
