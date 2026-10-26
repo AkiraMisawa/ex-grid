@@ -309,6 +309,22 @@ describe('the Sheet Tabs (ADR-0331)', () => {
         expect([sheet.workbook.shown.name, selectedTab(element), document.activeElement]).toEqual(['Second', 'Second', grid]);
     });
 
+    it('ADR-0331 §1: each Sheet keeps the Selection it was left with, given back when its tab is selected again; a Sheet not yet shown opens on A1', async () => {
+        const { element } = sheetOf({ document: twoSheets() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 2, 1);
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('B3'); });
+        key('PageDown', { ctrlKey: true });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('there'); });
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A1'); });
+        press(element, 4, 0);
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A5'); });
+        key('PageUp', { ctrlKey: true });
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('B3'); });
+        click(element.querySelectorAll('.ex-sheet-tab')[1]);
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A5'); });
+    });
+
     it('ADR-0331 §3: + adds a Sheet after the one shown and shows it, saying so; one undo takes it out and shows the Sheet it was added from', async () => {
         const documents: ReturnType<Workbook['toDocument']>[] = [];
         const { element, sheet } = sheetOf({ document: twoSheets(), onWorkbookChanged: raised => { documents.push(raised); } });

@@ -86,6 +86,23 @@ import { hashesWhenOverflowing } from '../columns/overflow-rules';
 export type ViewportSize = number | 'stretch';
 
 /**
+ * What a reader of the grid looks at (ADR-0331): the Selection, with the Row Sequence Version its positions are
+ * written in, and where the rows and columns are scrolled to. A Consumer that shows several sets of rows in one grid,
+ * one at a time, as a Sheet shows its Sheets behind their tabs, keeps each set's view with `readView` and hands it
+ * back with `showViewWith` when that set is shown again.
+ */
+export interface GridViewRead {
+    /** The Row Sequence Version the Selection's positions are written in. */
+    readonly rowSequenceVersion: number;
+    /** The Selection. */
+    readonly selection: GridSelection;
+    /** The scroller's vertical offset, in pixels. */
+    readonly scrollTopPx: number;
+    /** The scroller's horizontal offset, in pixels. */
+    readonly scrollLeftPx: number;
+}
+
+/**
  * A labelled rectangle over adjacent columns, in a tier above the header row (ADR-0032): colspan and rowspan
  * without a column tree. Its members are named, as a set: the painted order is the columns' own.
  */
@@ -1086,6 +1103,12 @@ export class GridView<Row> {
     #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
     #cancelEdgeTick: (() => void) | undefined;
     #scrollOwed = false;
+    // The views this grid read (readView), each holding the grid's own Selection; the one handed back to be shown
+    // when the grid takes the version it names, in place of the empty Selection a new version leaves (ADR-0331).
+    readonly #viewsRead = new WeakMap<GridViewRead, Selection>();
+    #viewAhead: { readonly selection: Selection; readonly version: number; readonly topPx: number; readonly leftPx: number } | undefined;
+    // Whether the offsets taken from a view are still to be kept inside the rows shown, as the browser keeps them.
+    #viewScrollUnclamped = false;
     #layerInputs: Readonly<Record<string, unknown>> | undefined;
     #shadeHolds = false;
 
@@ -1864,9 +1887,15 @@ export class GridView<Row> {
             totalRowCount: total,
             scrollRoomPx: Math.max(1, (this.#ceilingPx ?? ViewportGeometry.maxScrollHeightPx) - band),
         });
+        // Offsets from a view of other rows may lie past these rows' end. They are kept inside here, as the browser
+        // keeps the ones written, from the arithmetic and never read back (ADR-0331, ADR-0021).
+        const clampView = this.#viewScrollUnclamped;
+        this.#viewScrollUnclamped = false;
+        if (clampView) this.#scrollTopPx = Math.min(Math.max(this.#scrollTopPx, 0), this.#geometry.maxScrollTopPx);
         this.#visible = this.#geometry.sliceAt(this.#scrollTopPx);
         this.#observeAutoWidths();
         this.#resolveColumnGeometry(visibleWidthPx);
+        if (clampView) this.#scrollLeftPx = Math.min(Math.max(this.#scrollLeftPx, 0), this.#styles.geometry.maxScrollLeftPx);
         this.#scrollable = this.#styles.geometry.scrollableSliceAt(this.#scrollLeftPx, this.#virtualiseColumns);
     }
 
@@ -1961,6 +1990,21 @@ export class GridView<Row> {
         const columnsMoved = !sameItems(names, this.#columnNames);
         const was = this.#held.selection;
         this.#held = columnsMoved ? HeldSelection.empty(version) : this.#held.under(version);
+        // A view handed ahead is taken with the version it names, so the Selection and the version arrive together
+        // and nothing between them meets an empty one (ADR-0331). One that does not fit the rows shown is not.
+        const ahead = this.#viewAhead;
+        if (ahead !== undefined && ahead.version === this.#state.rowSequenceVersion) {
+            this.#viewAhead = undefined;
+            const extent = this.#extent;
+            if (!columnsMoved && ahead.selection.ranges.every(range => bottomRow(range) < extent.rowCount && range.leftColumn + range.columnCount <= extent.columnCount)) {
+                this.#held = HeldSelection.of(version, ahead.selection);
+            }
+            // The offsets come back either way: the browser keeps them inside the rows shown.
+            this.#scrollTopPx = ahead.topPx;
+            this.#scrollLeftPx = ahead.leftPx;
+            this.#scrollOwed = true;
+            this.#viewScrollUnclamped = true;
+        }
         if (!was.isEmpty && this.#held.selection.isEmpty) {
             const interactive = this.#interactive;
             this.#droppedAim = {
@@ -3253,6 +3297,36 @@ export class GridView<Row> {
         return canonicalKey({
             key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey, metaIsPrimary: this.#metaIsPrimary,
         });
+    }
+
+    /** The view as the grid holds it now (ADR-0331): the Selection with the version it is written in, and the
+     * offsets the grid last knew. */
+    readView(): GridViewRead {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        this.#reconcileSelection();
+        const selection = this.#held.selection;
+        const view: GridViewRead = Object.freeze({
+            rowSequenceVersion: this.#state.rowSequenceVersion, selection, scrollTopPx: this.#scrollTopPx, scrollLeftPx: this.#scrollLeftPx,
+        });
+        this.#viewsRead.set(view, selection);
+        return view;
+    }
+
+    /**
+     * Shows `view`, which this grid read, once the grid takes rows under `rowSequenceVersion`, the source's own, as
+     * a find request names it, since a Consumer knows it before the grid takes the rows (ADR-0331): its Selection in place of the empty one a new version leaves (ADR-0011),
+     * and its offsets. A Consumer that swaps the rows the grid shows hands the view of the rows it brings, under the
+     * version it brings them with, as it brings them: the grid takes both in its next pass. A view
+     * handed later replaces one not yet taken; one whose version the grid never takes is never shown, and a Selection
+     * that does not fit the rows then shown is dropped, as a new version drops any, while the offsets still come back.
+     */
+    showViewWith(view: GridViewRead, rowSequenceVersion: number): void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        const selection = this.#viewsRead.get(view);
+        if (selection === undefined) throw new TypeError('A view handed back is one this grid read with readView (ADR-0331).');
+        if (!Number.isInteger(rowSequenceVersion)) throw new TypeError('rowSequenceVersion is a whole number.');
+        this.#viewAhead = { selection, version: rowSequenceVersion, topPx: view.scrollTopPx, leftPx: view.scrollLeftPx };
+        this.#invalidate();
     }
 
     /** Hands the keyboard to the grid: to the field an open edit is typed in, else to where the grid takes keys

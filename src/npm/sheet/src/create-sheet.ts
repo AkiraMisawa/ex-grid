@@ -10,7 +10,7 @@
 import {
     createGrid, formulaBarHeight, type CellPosition, type GridDirection,
     type GridClearIntent, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridHandle, type GridOptions,
-    type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type EditDiscardReason, type SelectionRange,
+    type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
     type ViewportSize,
 } from '@ex-grid/core';
 import {
@@ -113,6 +113,9 @@ class SheetView {
     // with every change after (ADR-0050, item 2).
     #edges: SheetEdges | undefined;
     #destroyed = false;
+    // Each Sheet's view as it was left: its Selection and scroll offsets, given back when its tab is selected
+    // again (ADR-0331 §1). A Sheet not yet shown has none, and opens on A1.
+    readonly #views = new WeakMap<Sheet, GridViewRead>();
     // The style properties the Sheet set on its element (#frame), each with the value the Consumer had given it.
     readonly #framed = new Map<string, { readonly value: string; readonly priority: string }>();
     // The documents this Sheet handed out: one handed back as `document`, as a controlled component's state comes
@@ -623,7 +626,7 @@ class SheetView {
         this.#raiseDocument();
         // The tabs moved to make room lose the keyboard: one on the list goes to the new Sheet's tab, selected now.
         if (onTabs) this.#tabs.focus(step.sheet);
-        this.#tell(this.#words.sheetAdded(step.sheet.name));
+        this.#tell(this.#words.sheetAdded(step.sheet.name), { outlivesMove: true });
     }
 
     // ---- Operations ------------------------------------------------------------------------------------------
@@ -722,6 +725,9 @@ class SheetView {
     }
 
     #showSheet(sheet: Sheet): void {
+        const grid = this.#grid;
+        const leaving = this.#source.sheet;
+        if (grid !== undefined && leaving !== sheet) this.#views.set(leaving, grid.readView());
         // The Workbook records the Sheet shown: its document reopens on it, and its volatile functions recalculate
         // there (ADR-0331).
         this.#workbook.shown = sheet;
@@ -730,8 +736,13 @@ class SheetView {
         this.#columns.read(sheet);
         this.#appearance = appearanceLookup(++this.#reading);
         this.#source.show(sheet);
-        this.#grid?.update(this.#gridOptions());
+        // The view it was left with comes with its rows, under the version they are shown with.
+        const view = this.#views.get(sheet);
+        if (grid !== undefined && view !== undefined) grid.showViewWith(view, this.#source.snapshot().rowSequenceVersion);
+        grid?.update(this.#gridOptions());
         this.#paintFrame();
+        // A Sheet shown for the first time opens on A1, scrolled to it, as Excel's does.
+        if (view === undefined) this.#select(new CellRange(new CellAddress(0, 0)));
     }
 
     #raiseDocument(): void {
