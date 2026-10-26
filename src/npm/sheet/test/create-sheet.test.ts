@@ -540,3 +540,58 @@ describe('the formatting and structure keys (ADR-0071, ADR-0050 item 14)', () =>
         await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('two'); });
     });
 });
+
+/** The copy event the browser's copy command fires on the keyboard's element, and what the grid wrote on it. */
+function copyEvent(): { readonly event: Event; readonly data: Map<string, string> } {
+    const target = document.activeElement;
+    if (target === null) throw new Error('Nothing holds the keyboard.');
+    const data = new Map<string, string>();
+    const event = new Event('copy', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', { value: { setData: (type: string, value: string) => { data.set(type, value); } } });
+    target.dispatchEvent(event);
+    return { event, data };
+}
+
+/** The paste event the browser's paste command fires on the keyboard's element, carrying `data`. */
+function pasteEvent(data: ReadonlyMap<string, string>): void {
+    const target = document.activeElement;
+    if (target === null) throw new Error('Nothing holds the keyboard.');
+    const event = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', { value: { getData: (type: string) => data.get(type) ?? '' } }); // oxlint-disable-line ex-grid/no-stand-in-default -- a flavour the copy did not write reads as the browser's empty one
+    target.dispatchEvent(event);
+}
+
+describe('a copy of the Sheet\'s own (ADR-0050 item 9, ADR-0048)', () => {
+    it('ADR-0048: a copy pasted back carries its Entries, relative References shifted, as one step on the undo stack', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '=B1', A2: '=B2*2', B1: '5', B2: '7' }) });
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('14'); });
+        press(element, 0, 0);
+        key('ArrowDown', { shiftKey: true });
+        await vi.waitFor(() => { expect(sheet.workbook.shown.getEntryText(CellAddress.parse('A1'))).toBe('=B1'); });
+        const { event, data } = copyEvent();
+        expect(event.defaultPrevented).toBe(true);
+        // The engine's copy: the Values as shown for text/plain.
+        expect(data.get('text/plain')).toBe('5\r\n14\r\n');
+        press(element, 0, 2);
+        pasteEvent(data);
+        const shown = sheet.workbook.shown;
+        await vi.waitFor(() => { expect([shown.getEntryText(CellAddress.parse('C1')), shown.getEntryText(CellAddress.parse('C2'))]).toEqual(['=D1', '=D2*2']); });
+        key('z', { ctrlKey: true });
+        await vi.waitFor(() => { expect([shown.getEntryText(CellAddress.parse('C1')), shown.getEntryText(CellAddress.parse('C2'))]).toEqual(['', '']); });
+    });
+
+    it('ADR-0050 item 10: what another program put on the clipboard is pasted as the Values it holds, even where it reads as the Sheet\'s copy did', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '=B1', B1: '5' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('5'); });
+        press(element, 0, 0);
+        const { data } = copyEvent();
+        press(element, 0, 2);
+        pasteEvent(new Map([['text/plain', '6\r\n']]));
+        await vi.waitFor(() => { expect(sheet.workbook.shown.getEntryText(CellAddress.parse('C1'))).toBe('6'); });
+        expect(data.get('text/plain')).toBe('5\r\n');
+        // Text from another program that reads as the copy did is still its text: the copy's Formula is not pasted.
+        press(element, 0, 3);
+        pasteEvent(new Map([['text/plain', '5\r\n']]));
+        await vi.waitFor(() => { expect(sheet.workbook.shown.getEntryText(CellAddress.parse('D1'))).toBe('5'); });
+    });
+});

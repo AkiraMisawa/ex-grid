@@ -509,3 +509,56 @@ describe('the Copied Range', () => {
         expect([data.get('text/plain'), dashes(root), escapeLeaves(root)]).toEqual(['Book-0\r\n', [], true]);
     });
 });
+
+describe('a copy the Consumer answers (ADR-0050, item 9)', () => {
+    it('ADR-0050 item 9: the Consumer\'s two flavours are written as given, for the plan the grid approved; a refusal writes nothing and says the Consumer\'s sentence', async () => {
+        const listener = heard();
+        const asked: { readonly rows: number; readonly columns: number; readonly version: number }[] = [];
+        let refuse = false;
+        const { root } = mount({
+            columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal, ...listener,
+            copyAnswer: request => {
+                asked.push({ rows: request.plan.totalRows, columns: request.plan.totalColumns, version: request.rowSequenceVersion });
+                return refuse ? { kind: 'refuse', sentence: 'Nothing was copied: the Consumer says no.' } : { kind: 'write', text: 'mine', html: '<table><tr><td>mine</td></tr></table>' };
+            },
+        });
+        await painted();
+        press(root, 10, rowY(0));
+        key(root, 'ArrowDown', { shiftKey: true });
+        await painted();
+        const { event, data } = copy(root);
+        expect(event.defaultPrevented).toBe(true);
+        expect([...data]).toEqual([['text/plain', 'mine'], ['text/html', '<table><tr><td>mine</td></tr></table>']]);
+        expect(asked).toEqual([{ rows: 2, columns: 1, version: 0 }]);
+
+        refuse = true;
+        const refused = copy(root);
+        expect([refused.event.defaultPrevented, refused.data.size]).toEqual([false, 0]);
+        expect(listener.refusals).toEqual([{ kind: 'copy', reason: 'refusedByConsumer' }]);
+        expect(q(root, '[role="status"], [aria-live]').textContent).toBe('Nothing was copied: the Consumer says no.');
+    });
+
+    it('ADR-0170: an answer written by the asynchronous route is outlined and counted as the grid\'s own; a newer copy supersedes it unwritten', async () => {
+        let answered = 0;
+        const { root, told } = mount({
+            columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal,
+            copyAnswer: () => { answered += 1; return { kind: 'write', text: `mine-${String(answered)}`, html: '<table><tr><td>mine</td></tr></table>' }; },
+        });
+        await painted();
+        press(root, 10, rowY(0));
+        await painted();
+        // A copy event without its data, as the menu's copy is: twice, at machine speed.
+        for (let i = 0; i < 2; i++) {
+            const event = new Event('copy', { bubbles: true, cancelable: true });
+            Object.defineProperty(event, 'clipboardData', { value: null });
+            root.dispatchEvent(event);
+        }
+        await settle();
+        await painted();
+        expect(told.clipboard.map(flavours => flavours.text)).toEqual(['mine-2']);
+        expect(dashes(root)).toHaveLength(1);
+        told.clipboardChanged();
+        await painted();
+        expect(dashes(root)).toHaveLength(1);
+    });
+});

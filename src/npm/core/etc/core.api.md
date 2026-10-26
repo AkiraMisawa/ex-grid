@@ -29,6 +29,9 @@ export type AggregateResult = {
 };
 
 // @public
+export function assembleCopy(plan: CopyPlan, values: CopyValues): CopyFlavours;
+
+// @public
 export interface AutoColumnWidth {
     readonly auto: true;
     readonly maxPx?: number;
@@ -106,7 +109,32 @@ export type CommitRefusalReason =
 | 'orderMoved';
 
 // @public
+export interface CopyFlavours {
+    readonly html: string;
+    readonly text: string;
+}
+
+// @public
+export type CopyOrientation = 'vertical' | 'horizontal';
+
+// @public
+export interface CopyPlan {
+    readonly orientation: CopyOrientation;
+    readonly segments: readonly SelectionRange[];
+    readonly totalColumns: number;
+    readonly totalRows: number;
+}
+
+// @public
 export type CopyRefusalReason = 'emptySelection' | 'misalignedShape' | 'tooLarge' | 'rowsUnavailable' | 'clipboardUnavailable' | 'refusedByConsumer';
+
+// @public
+export interface CopyValues {
+    readonly displayAt: (row: number, column: number) => string;
+    readonly headerAt?: (column: number) => string;
+    readonly headerRawAt?: (column: number) => string | undefined;
+    readonly rawAt: (row: number, column: number) => string;
+}
 
 // @public
 export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>): GridHandle<Row>;
@@ -346,6 +374,23 @@ export interface GridContextMenuContext<Row> {
 }
 
 // @public
+export type GridCopyAnswer = {
+    readonly kind: 'write';
+    readonly text: string;
+    readonly html: string;
+} | {
+    readonly kind: 'refuse';
+    readonly sentence: string;
+};
+
+// @public
+export interface GridCopyRequest {
+    readonly plan: CopyPlan;
+    readonly rowSequenceVersion: number;
+    readonly withHeaders: boolean;
+}
+
+// @public
 export type GridDensity = 'compact' | 'comfortable' | 'standard' | 'excel';
 
 // @public
@@ -441,6 +486,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
+    readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
     readonly copyCellCap?: number;
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly density?: GridDensity;
@@ -773,6 +819,12 @@ export interface InMemorySourceOptions<Row> {
 }
 
 // @public
+export const invariantMarker = "data-ex-grid=\"invariant\"";
+
+// @public
+export const markAttribute = "data-ex-mark";
+
+// @public
 export function markColumn<Row>(options?: {
     readonly name?: string;
     readonly header?: string;
@@ -799,6 +851,9 @@ export interface MarksHost<Row> {
     heldRows(): readonly Row[];
     shown(key: RowKey): Row | undefined;
 }
+
+// @public
+export function parseClipboard(html: string | undefined, text: string | undefined): readonly (readonly string[])[] | undefined;
 
 // @public
 export type PasteFieldOrigin = 'shownText' | 'invariant';
