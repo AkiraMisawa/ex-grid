@@ -637,17 +637,22 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"window\.addEventListener\('(?!(submit|focus)', onClaimedAhead, true\))|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
         // A submission on a surface joined to the instance's order is its own too (ADR-0240 section 6, ticket 06).
         Assert.Matches(new Regex(@"const onClaimedAhead = \(event\) => \{\s*if \(!root \|\| !\(event\.target instanceof Node\)\) \{\s*return;\s*\}\s*if \(!root\.contains\(event\.target\)\) \{\s*if \(event\.type === 'submit' && joinedControl\(event\.target\) !== null\) \{\s*onClaimedEvent\(event\);\s*\}\s*return;"), script.Text);
-        // And no state outside an instance: the module's top-level statements are attach, the stamp
-        // the grid reads before it (ADR-0123), and the focus of a box where no grid stands (ADR-0360)
-        // with the two pure functions it shares with attach, none of which holds anything; so
-        // everything above lives in one instance's closure and no instance keeps another's.
+        // And no state outside an instance but the clipboard's: the module's top-level statements are
+        // attach, the stamp the grid reads before it (ADR-0123), the focus of a box where no grid stands
+        // (ADR-0360) with the two pure functions it shares with attach, none of which holds anything,
+        // and the writes every grid counts until a clipboardchange reports them (ADR-0170, 2026-10-26),
+        // the one thing the event cannot tell apart per instance; so everything above lives in one
+        // instance's closure and no instance keeps another's.
         var topLevel = script.Text.Split('\n')
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
         Assert.Equal(["export function stamp() {", "}",
             "const isTextField = (element) => (element instanceof HTMLTextAreaElement", "const boxTarget = (element) => {", "};",
-            "export function focusBox(element) {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace) {", "}"], topLevel);
+            "export function focusBox(element) {", "}",
+            "const clipboardLedger = { pending: [], heard: new WeakMap(), listeners: new Set() };",
+            "const countWrite = (owner, inFlight) => {", "};", "const writeReported = (change) => {", "};",
+            "const withdrawWrite = (write) => {", "};", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
