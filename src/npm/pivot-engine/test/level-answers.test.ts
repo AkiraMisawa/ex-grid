@@ -6,9 +6,11 @@
 import { decimalFromText } from '@ex-grid/data';
 import { describe, expect, it } from 'vitest';
 import {
-    PivotJson, pivotQuery, pivotRecordField, RecordPivotSource, pivotItemKey, type PivotAnswer, type PivotAnswerValues, type PivotLevelRuleInput,
+    createPivotLayout, levelQueryForLayout, pivotCube, PivotJson, pivotQuery, pivotRecordField, pivotReport, queryForLayout, RecordPivotSource, pivotItemKey, type PivotAnswer, type PivotAnswerValues, type PivotLevelRuleInput,
 } from '../src/index';
 import { levelMismatch, type LevelParts } from '../src/levels/level-check';
+import { everyReading, read } from './readings';
+import type { DataSet } from './cases';
 import { elementAt } from '../src/must';
 
 /** A reproducible stream of numbers in [0, 1). */
@@ -30,6 +32,9 @@ interface Trade {
     readonly live: boolean;
     readonly amount: unknown;
 }
+
+// The readings taken need no data set.
+const noData: DataSet = { fields: [], records: [], keyCalls: [] };
 
 const fields = [
     pivotRecordField<Trade>({ name: 'Region', type: 'text', value: t => t.region }),
@@ -134,6 +139,20 @@ describe('ADR-0370: the bundled sources\' Level Aggregates are what a server is 
                     expect(answer.isLevels).toBe(true);
                     expect(answer.mismatch(query)).toBeUndefined();
                     expect(checkSiblings(answer)).toBeGreaterThan(0);
+                    // The cube checks the same sets, and the report is the leaves' report, to the last bit.
+                    const layout = createPivotLayout({
+                        rows: rule.rows.map((r, i) => ({ field: elementAt(asked.rows, i), ...r })),
+                        columns: [{ field: 'Live' }],
+                        values: [
+                            { field: 'Amount', aggregation: 'sum' }, { field: 'Amount', aggregation: 'max' },
+                            { field: 'Amount', aggregation: 'product' }, { field: 'Amount', aggregation: 'stdDev' },
+                        ],
+                    });
+                    const leafQuery = queryForLayout(layout, 1000);
+                    const fromLeaves = pivotReport(pivotCube(leafQuery, await source.aggregate(leafQuery), fields), layout);
+                    const levelQuery = levelQueryForLayout(layout, leaves.leafCount - 1);
+                    const fromLevels = pivotReport(pivotCube(levelQuery, await source.aggregate(levelQuery), fields), layout);
+                    expect(read(fromLevels, everyReading, noData)).toEqual(read(fromLeaves, everyReading, noData));
                     const written = PivotJson.writeAnswer(answer);
                     expect(PivotJson.writeAnswer(PivotJson.readAnswer(written))).toBe(written);
                 }

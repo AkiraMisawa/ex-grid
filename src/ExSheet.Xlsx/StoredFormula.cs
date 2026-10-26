@@ -171,6 +171,6 @@ internal static partial class StoredFormula
     private static partial Regex SinglePattern();
 
     /// <summary>One cell, as a Spill Range reference names its anchor: <c>A1</c>, <c>$B$2</c>, <c>Sheet2!A1</c>, <c>'My Sheet'!A1</c>.</summary>
-    [GeneratedRegex(@"^(?:'(?:[^']|'')+'!|[A-Za-z0-9_.\\]+!)?\$?[A-Za-z]{1,3}\$?[0-9]+$")]
+    [GeneratedRegex(@"^(?:'(?:[^']|'')+'!|[A-Za-z0-9_.\\]+!)?\$?[A-Za-z]{1,3}\$?[0-9]+\z")]
     private static partial Regex CellPattern();
 }

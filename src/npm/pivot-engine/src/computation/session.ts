@@ -15,7 +15,7 @@
 import type { SnapshotChange } from '@ex-grid/data';
 import type { PivotSourceRefusal } from '../cube/answer';
 import { buildCubeSteps, type CubeBuild, type PivotCube } from '../cube/cube';
-import { queriesEqual, queryForLayout } from '../cube/query';
+import { levelQueryForLayout, queriesEqual, queryForLayout } from '../cube/query';
 import { checkCubeHolds } from '../engine';
 import { fieldMetas, type PivotField } from '../fields/pivot-field';
 import { writePivotLayoutJson } from '../layout/layout-json';
@@ -155,8 +155,10 @@ export class PivotComputationSession {
         const aside = request.slicer;
         const signal = aside.signal;
         signal?.throwIfAborted();
-        const query = queryForLayout(layout, maxLeaves);
         const source = this.#source;
+        // A source that answers Level Aggregates is asked with the groups the layout shows (ADR-0370 section 3): it
+        // answers with the leaves when they fit the cap, and with the groups' cells when they do not.
+        const query = source.features.answersLevels ? levelQueryForLayout(layout, maxLeaves) : queryForLayout(layout, maxLeaves);
         const layoutName = writePivotLayoutJson(layout);
         // Where it is not: the work that carries batches folded in place through to a whole state.
         let whole: Slicer | undefined;

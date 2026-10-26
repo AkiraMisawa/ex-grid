@@ -238,10 +238,10 @@ internal static partial class ConstantParser
     /// </summary>
     private const int FirstTwentiethCenturyYear = 50;
 
-    [GeneratedRegex(@"^(?<a>\d{1,4})(?<s1>[/\-.])(?<b>\d{1,2})(?:\k<s1>(?<c>\d{1,4}))?$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?<a>[0-9]{1,4})(?<s1>[/\-.])(?<b>[0-9]{1,2})(?:\k<s1>(?<c>[0-9]{1,4}))?\z", RegexOptions.CultureInvariant)]
     private static partial Regex DatePattern();
 
-    [GeneratedRegex(@"^(?<h>\d{1,2}):(?<m>\d{1,2})(?::(?<s>\d{1,2}))?(?:\s*(?<ampm>[AaPp][Mm]?))?$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?<h>[0-9]{1,2}):(?<m>[0-9]{1,2})(?::(?<s>[0-9]{1,2}))?(?:\s*(?<ampm>[AaPp][Mm]?))?\z", RegexOptions.CultureInvariant)]
     private static partial Regex TimePattern();
 
     /// <summary>
@@ -259,10 +259,10 @@ internal static partial class ConstantParser
         string datePart = text;
         string? timePart = null;
         var space = text.IndexOf(' ');
-        if (space > 0 && TimePattern().IsMatch(text[(space + 1)..].Trim()))
+        if (space > 0 && TimePattern().IsMatch(text[(space + 1)..].Trim(' ')))
         {
             datePart = text[..space];
-            timePart = text[(space + 1)..].Trim();
+            timePart = text[(space + 1)..].Trim(' ');
         }
 
         if (timePart is null && TryParseTime(text, out var timeOnly, out var timeFormat))
@@ -335,7 +335,7 @@ internal static partial class ConstantParser
         }
     }
 
-    [GeneratedRegex(@"^(?:(?<d1>\d{1,2})[\-/ ](?<m1>\p{L}+\.?)(?:[\-/ ](?<y1>\d{2}|\d{4}))?|(?<m2>\p{L}+\.?)[\-/ ](?<n2>\d{1,2}|\d{4}))$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?:(?<d1>[0-9]{1,2})[\-/ ](?<m1>\p{L}+\.?)(?:[\-/ ](?<y1>[0-9]{2}|[0-9]{4}))?|(?<m2>\p{L}+\.?)[\-/ ](?<n2>[0-9]{1,2}|[0-9]{4}))\z", RegexOptions.CultureInvariant)]
     private static partial Regex MonthNamePattern();
 
     /// <summary>

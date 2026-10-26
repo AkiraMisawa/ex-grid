@@ -8,17 +8,20 @@
 
 import type { PivotAnswer, PivotAnswerAxis } from '../cube/answer';
 import type { PivotLevelRule, PivotLevels } from '../cube/query';
-import { itemKeyText, publicKeyId } from '../items/item-key';
+import { itemKeyText, publicKeyId, type PivotItemKey } from '../items/item-key';
 import { elementAt } from '../must';
+
+/** Whether the groups below an Item of a level are shown, by each level's rule: an Item is expanded when its
+ * field's Items are not collapsed, or it is toggled from that. */
+export function levelExpander(rules: readonly PivotLevelRule[]): (level: number, item: PivotItemKey) => boolean {
+    const toggled = rules.map(rule => new Set(rule.toggledItems.map(publicKeyId)));
+    return (level, item) => elementAt(rules, level).collapsed === elementAt(toggled, level).has(publicKeyId(item));
+}
 
 /** Each level's Items: whether the groups below each are shown. */
 export function expandedItems(rules: readonly PivotLevelRule[], axes: readonly PivotAnswerAxis[]): readonly (readonly boolean[])[] {
-    return axes.map((axis, level) => {
-        const rule = elementAt(rules, level);
-        // Each Item is expanded when its field's Items are not collapsed, or it is toggled from that.
-        const toggled = new Set(rule.toggledItems.map(publicKeyId));
-        return axis.items.map(item => rule.collapsed === toggled.has(publicKeyId(item)));
-    });
+    const expanded = levelExpander(rules);
+    return axes.map((axis, level) => axis.items.map(item => expanded(level, item)));
 }
 
 // How deep a cell is named along one axis.
@@ -65,8 +68,8 @@ function aboveKey(path: readonly number[], level: number): string {
     return pathKey(above);
 }
 
-// [Region=Text:East] × [] — a cell's Items, for a refusal.
-function describe(answer: PivotAnswer, cell: number): string {
+/** [Region=Text:East] × [] — a cell's Items, for a refusal. */
+export function describe(answer: PivotAnswer, cell: number): string {
     const path = (axes: readonly PivotAnswerAxis[]): string => {
         const named = axes.slice(0, depthOf(axes, cell));
         return `[${named.map(axis => `${axis.field}=${itemKeyText(elementAt(axis.items, axis.itemAt(cell)))}`).join(', ')}]`;
