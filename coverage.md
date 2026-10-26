@@ -5,7 +5,7 @@
 | ExGrid | 95.2% | 88.5% |
 | ExSheet | 95.4% | 88.6% |
 | ExPivot | 94.4% | 86.3% |
-| ExChart | 90.5% | 81.6% |
+| ExChart | 90.7% | 83.4% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 94% | 88.8% |
 
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 00:55:21 |
+| Generated on: | 10/26/2026 - 01:11:27 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1187 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (82404 of 87147) |
-| Covered lines: | 82404 |
-| Uncovered lines: | 4743 |
+| **Line coverage:** | 94.5% (82420 of 87147) |
+| Covered lines: | 82420 |
+| Uncovered lines: | 4727 |
 | Coverable lines: | 87147 |
 | Total lines: | 139279 |
-| **Branch coverage:** | 87.3% (49764 of 56970) |
-| Covered branches: | 49764 |
-| Total branches: | 56970 |
+| **Branch coverage:** | 87.5% (49871 of 56968) |
+| Covered branches: | 49871 |
+| Total branches: | 56968 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -109,8 +109,8 @@
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
 |ExChart.GridChart|25%|0%|
-|ExChart.GridChartBridge<TRow>|46.3%|17.5%|
 |ExChart.GridChartBridge<TRow>|70.3%|42.3%|
+|ExChart.GridChartBridge<TRow>|46.3%|17.5%|
 |ExChart.GridChartCommands|62.5%|62.5%|
 |ExChart.GridChartDeclarations<TRow>|100%||
 |ExChart.GridChartSeries|100%||
@@ -123,11 +123,11 @@
 |ExChart.SnapshotChartData|100%|100%|
 
 </details>
-<details><summary>ExChart.Engine - 95.5%</summary>
+<details><summary>ExChart.Engine - 95.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**95.5%**|**84.9%**|
+|**ExChart.Engine**|**95.9%**|**87.5%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -135,7 +135,7 @@
 |ExChart.Engine.AxisTicks|100%|100%|
 |ExChart.Engine.Box|100%||
 |ExChart.Engine.ChartAxis|96%|81.8%|
-|ExChart.Engine.ChartCsv|97.7%|79.5%|
+|ExChart.Engine.ChartCsv|100%|90.5%|
 |ExChart.Engine.ChartData|95.4%|80%|
 |ExChart.Engine.ChartDefinition|85.9%|85.3%|
 |ExChart.Engine.ChartEdge|100%||
@@ -144,9 +144,9 @@
 |ExChart.Engine.ChartMetrics|100%|100%|
 |ExChart.Engine.ChartPoint|100%||
 |ExChart.Engine.ChartReading|100%||
-|ExChart.Engine.ChartReadings|91.4%|62%|
+|ExChart.Engine.ChartReadings|100%|96.1%|
 |ExChart.Engine.ChartRefusedException|100%||
-|ExChart.Engine.ChartScene|98.9%|90%|
+|ExChart.Engine.ChartScene|98.9%|90.3%|
 |ExChart.Engine.ChartSeries|100%|100%|
 |ExChart.Engine.ChartSource|91.4%|73.9%|
 |ExChart.Engine.ChartSource.InMemory|100%||
@@ -159,7 +159,7 @@
 |ExChart.Engine.ChartSpecReading|91.3%|75%|
 |ExChart.Engine.ChartSpecRefusedException|100%||
 |ExChart.Engine.ChartSpecTool|100%||
-|ExChart.Engine.ChartSummary|100%|91.8%|
+|ExChart.Engine.ChartSummary|100%|100%|
 |ExChart.Engine.ChartTable|100%||
 |ExChart.Engine.ChartValue|92.8%|100%|
 |ExChart.Engine.ChartView|100%||
@@ -187,13 +187,13 @@
 |ExChart.Engine.PlacedVolume|100%||
 |ExChart.Engine.PointColour|100%||
 |ExChart.Engine.PointDetail|100%||
-|ExChart.Engine.PointScales|98%|86.3%|
+|ExChart.Engine.PointScales|98%|92.7%|
 |ExChart.Engine.PointSize|100%||
 |ExChart.Engine.PriceBar|100%||
-|ExChart.Engine.PriceRanges|96.4%|94.2%|
+|ExChart.Engine.PriceRanges|96.4%|95.6%|
 |ExChart.Engine.ReadingLine|100%||
 |ExChart.Engine.Segment|100%||
-|ExChart.Engine.SeriesDrawing|98.5%|93.1%|
+|ExChart.Engine.SeriesDrawing|98.5%|94.5%|
 |ExChart.Engine.SeriesInterval|100%||
 |ExChart.Engine.SeriesLook|100%||
 |ExChart.Engine.SeriesPiece|100%||
@@ -216,7 +216,7 @@
 |ExChart.Engine.SurfaceTriangle|100%||
 |ExChart.Engine.SurfaceView|100%||
 |ExChart.Engine.ThinnedDrawing|100%||
-|ExChart.Engine.Thinning|98.8%|96%|
+|ExChart.Engine.Thinning|100%|97.3%|
 |ExChart.Engine.TickLayout|95.3%|80%|
 |ExChart.Engine.TickLayout.CalendarStep|100%||
 |ExChart.Engine.VerticalAxis|100%|62.5%|
