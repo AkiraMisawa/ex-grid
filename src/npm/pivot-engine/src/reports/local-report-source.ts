@@ -11,8 +11,8 @@ import {
 } from '../aggregates/parts';
 import { decimalEquals } from '../aggregates/exact-decimal';
 import { PivotComputationSession, type PivotComputationResult } from '../computation/session';
-import type { PivotCube } from '../cube/cube';
-import { defaultMaxLeaves, pivotItemsQuery, type PivotDetailsQuery, type PivotItemsQuery } from '../cube/query';
+import { cubeParts, type PivotCube } from '../cube/cube';
+import { defaultMaxLeaves, levelQueryForLayout, pivotItemsQuery, type PivotDetailsQuery, type PivotItemsQuery, type PivotLevelWindowInput, type PivotWindowStart } from '../cube/query';
 import type { PivotNumber } from '../cube/answer';
 import { checkCubeHolds, itemsOfPage } from '../engine';
 import { PivotOrderKeyError } from '../errors';
@@ -20,8 +20,13 @@ import type { PivotField, PivotOrderKey } from '../fields/pivot-field';
 import { readPivotLayoutJson, writePivotLayoutJson } from '../layout/layout-json';
 import { defined, elementAt } from '../must';
 import { resolveOptions, type PivotOptions } from '../report/labels';
-import { buildReportSteps, rowIdOf, rowLabelsAlike, sameRowsSteps, type PivotReport, type PivotReportRow, type PivotRowKey } from '../report/report';
+import {
+    buildReportSteps, pendingSpans, reachesPending, rowIdOf, rowLabelsAlike, sameRowsSteps, shownSiblings, siblingPlace, type PendingSpan, type PivotReport,
+    type PivotReportRow, type PivotRowKey,
+} from '../report/report';
 import type { PivotValue } from '../report/value';
+import { publicKeyId } from '../items/item-key';
+import { PivotJson } from '../source/pivot-json';
 import { invariantNumbers } from '../text/invariant';
 import { formatDouble } from '../text/number-text';
 import {
@@ -281,8 +286,24 @@ function checkRanges(report: PivotReport, names: readonly string[], ranges: read
         if (cells > maxCells - count) return invalid(`Copy exceeds the limit of ${maxCells} cells.`);
         count += cells;
     }
+    if (ranges.some(r => reachesPending(report, r.top, r.bottom))) return notAnswered('The selection reaches');
     return undefined;
 }
+
+function notAnswered(what: string): PivotReportRefusal {
+    return Object.freeze({
+        kind: 'rowsNotAnswered',
+        message: `${what} rows the Pivot Source has not answered: it answered a window of siblings too many to answer whole, `
+            + 'and the rows beside it are read only once the report is scrolled to them (ADR-0370 section 3).',
+    });
+}
+
+// The most times a report Window asks again for Sibling Windows that hold it, each time because the data moved
+// on between two answers.
+const windowAsks = 3;
+
+// The most siblings of a set ordered by a value answered whole, unless a report Window holds more rows.
+const siblingWindowLimit = 1000;
 
 function checkRangeShape(ranges: unknown): void {
     if (!Array.isArray(ranges)) throw new TypeError('A selection is a list of rectangles.');
@@ -328,6 +349,16 @@ function copiedCell(report: PivotReport, row: PivotReportRow, column: SelectedCo
     if (cell === undefined) return Object.freeze({ text: '', isNumber: false });
     const raw = cell.error ?? (cell.exact === undefined ? invariantText(cell.number) : decimalText(cell.exact));
     return Object.freeze({ text: cell.text, raw, isNumber: cell.error === undefined });
+}
+
+// Whether the older report answered the place of a row the newer one shows: a row it does not hold is new where
+// it answered that place, and not known to be where the place stood beside a Sibling Window, among its Pending Rows.
+function answeredBy(older: PivotReport, newer: PivotReport, row: PivotReportRow): boolean {
+    if (cubeParts(older.cube).windows.size === 0) return true;
+    const place = siblingPlace(newer, row);
+    if (place === undefined) return true;
+    const shown = shownSiblings(older, place.parent);
+    return shown === undefined || (place.rank >= shown[0] && place.rank < shown[1]);
 }
 
 function exactOrDouble(inexact: boolean, exact: SnapshotDecimal, value: number): PivotNumber {
@@ -389,6 +420,12 @@ export class LocalPivotReportSource implements PivotReportSource {
     #session: PivotComputationSession | undefined;
     #policies: string | undefined;
     #unpublished: Unpublished | undefined;
+    // Where the Sibling Windows start, by their parent, for the layout last laid out; and the most siblings a set
+    // is answered with whole, which grows to hold the largest report Window asked (ADR-0370 section 3).
+    readonly #windowStarts = new Map<string, PivotWindowStart>();
+    #windowLimit = siblingWindowLimit;
+    // The question the starts are for, written in one form: a layout that asks another starts every window afresh.
+    #startsQuestion: string | undefined;
     readonly #labelSizing = new PivotLabelSizing();
 
     /** A report source over `source`, which it does not own. Refuses, with a RangeError, a `versionsKept` that
@@ -523,8 +560,16 @@ export class LocalPivotReportSource implements PivotReportSource {
         // The Window the Consumer holds, read before a publication below evicts its version.
         const baseline = request.baseline === undefined ? undefined : this.#windows.get(request.baseline);
         const previous = baseline !== undefined && windowsEqual(baseline.window, request.window) ? baseline : undefined;
+        const from = request.window.start;
+        const pendingIn = (report: PivotReport): readonly PendingSpan[] => pendingSpans(report, from, Math.min(report.rows.length, from + request.window.count));
+        if (this.#source.features.answersLevels) {
+            // The question as a window would carry it, its starts left out: the fields, the collapse and the orders.
+            const question = PivotJson.writeQuery(levelQueryForLayout(request.layout, maxLeaves, { limit: 1 }));
+            if (this.#startsQuestion !== question) this.#windowStarts.clear();
+            this.#startsQuestion = question;
+        }
         if (request.refreshData === true || this.#dirty || this.#unpublished !== undefined || this.#settings !== settings || this.#layout !== layout
-            || this.#maxLeaves !== maxLeaves || last === undefined) {
+            || this.#maxLeaves !== maxLeaves || last === undefined || pendingIn(last.report).length > 0) {
             const wasDirty = this.#dirty;
             this.#dirty = false;
             const resolved = resolveOptions(optionsOf(request.settings));
@@ -547,21 +592,37 @@ export class LocalPivotReportSource implements PivotReportSource {
                 (this.#unpublished ??= new Unpublished()).reset = true;
                 detached = true;
             } else {
-                const result = await this.#session.compute({
+                const session = this.#session;
+                const compute = (): Promise<PivotComputationResult> => session.compute({
                     layout: request.layout, options: resolved, optionsKey: optionsKeyOf(request.settings), maxLeaves, slicing: this.#slicing, slicer,
-                    refreshData: request.refreshData === true, preferHeld: !markChanges,
+                    refreshData: request.refreshData === true, preferHeld: !markChanges, window: this.#levelWindow(),
                 });
-                if (result.report === undefined) {
-                    this.#dirty = true;
-                    const computed = defined(result.refusal, "the computation's refusal");
-                    return refusedWith(Object.freeze({ kind: 'sourceRefused', message: computed.message, ...(computed.field === undefined ? {} : { field: computed.field }), sourceRefusal: computed }));
+                let computed: PivotReport | undefined;
+                let answeredAt: string | undefined;
+                // A report Window that reaches Pending Rows asks again, each Sibling Window it reaches moved to hold
+                // the rows asked for; that answer is checked, and holds them (ADR-0370 section 3). Only data that moved
+                // on between two answers can leave the rows pending again, which asks once more, and then refuses.
+                for (let asked = 0; computed === undefined; asked++) {
+                    if (asked === windowAsks) return refusedWith(notAnswered('The data changed each time it was asked for, and the report Window reaches'));
+                    const result = await compute();
+                    if (result.report === undefined) {
+                        this.#dirty = true;
+                        const refusal = defined(result.refusal, "the computation's refusal");
+                        return refusedWith(Object.freeze({ kind: 'sourceRefused', message: refusal.message, ...(refusal.field === undefined ? {} : { field: refusal.field }), sourceRefusal: refusal }));
+                    }
+                    // Kept until a version publishes it: a cancellation below must not lose the computation's changes,
+                    // which it returns once.
+                    (this.#unpublished ??= new Unpublished()).add(result);
+                    const spans = pendingIn(result.report);
+                    const at = result.report.cube.sourceVersion;
+                    if (spans.length === 0) computed = result.report;
+                    else if (answeredAt === at) throw new Error('Internal: the Sibling Windows asked for do not hold the report Window asked for (ADR-0370 section 3).');
+                    else this.#moveWindows(spans, request.window.count);
+                    answeredAt = at;
                 }
-                // Kept until a version publishes it: a cancellation below must not lose the computation's changes,
-                // which it returns once.
-                (this.#unpublished ??= new Unpublished()).add(result);
-                report = result.report;
+                report = computed;
             }
-            const unpublished = this.#unpublished;
+            const unpublished = defined(this.#unpublished, 'what the computation returned, unpublished');
             const cube = report.cube;
             if (!markChanges && wasDirty && last?.metadata.sourceVersion === cube.sourceVersion) this.#dirty = true;
             const sameRows = last !== undefined && (last.report === report
@@ -626,6 +687,23 @@ export class LocalPivotReportSource implements PivotReportSource {
         return Object.freeze({ requestId: request.requestId, ...state });
     }
 
+    // The window of the sets ordered by a value, as the session asks it once a question is refused whole.
+    #levelWindow(): PivotLevelWindowInput {
+        return Object.freeze({ limit: this.#windowLimit, starts: Object.freeze([...this.#windowStarts.values()]) });
+    }
+
+    // Moves each Sibling Window a report Window reaches so that it holds the siblings the Window's rows stand for,
+    // centred on them, and grows the limit to hold every row the Window asks for.
+    #moveWindows(spans: readonly PendingSpan[], rows: number): void {
+        this.#windowLimit = Math.max(this.#windowLimit, rows);
+        const limit = this.#windowLimit;
+        for (const span of spans) {
+            const held = span.last - span.first + 1;
+            const start = Math.min(Math.max(0, span.first - Math.floor((limit - held) / 2)), Math.max(0, span.siblings - limit));
+            this.#windowStarts.set(span.parent.map(publicKeyId).join('\u0000'), Object.freeze({ rows: span.parent, start }));
+        }
+    }
+
     // The cube of the version the request names as its baseline — the data the Consumer shows — when a layout
     // gesture should lay it out rather than the newest computation's: held, from this Pivot Source under the
     // same Order Key policies, older than the newest cube, and holding the layout.
@@ -635,6 +713,8 @@ export class LocalPivotReportSource implements PivotReportSource {
         const shown = this.#held(request.baseline);
         if (shown === undefined || shown.report.cube === newest || shown.source !== this.#source || policiesKey(shown.metadata.settings) !== policies) return undefined;
         const cube = shown.report.cube;
+        // A cube of Sibling Windows is laid out by the computation, which moves its windows where the request reaches.
+        if (cubeParts(cube).windows.size > 0) return undefined;
         return cube.holds(request.layout) && cube.query.maxLeaves === maxLeaves ? cube : undefined;
     }
 
@@ -744,7 +824,10 @@ export class LocalPivotReportSource implements PivotReportSource {
         for (let i = 0; i + 1 < this.#highlight.length; i++) {
             const newer = elementAt(this.#highlight, i);
             const older = elementAt(this.#highlight, i + 1);
-            pairs.push({ newer, newRow: newer.row(key, id, rowIndex), older, oldRow: older.row(key, id, rowIndex) });
+            const newRow = newer.row(key, id, rowIndex);
+            const oldRow = older.row(key, id, rowIndex);
+            if (oldRow === undefined && newRow !== undefined && !answeredBy(older.report, newer.report, newRow)) continue;
+            pairs.push({ newer, newRow, older, oldRow });
         }
         return pairs;
     }
@@ -835,6 +918,7 @@ export class LocalPivotReportSource implements PivotReportSource {
         const focusColumn = query.focusColumn;
         const focus = focusColumn === undefined ? undefined : columns[focusColumn];
         if (focusRow !== undefined && focusRow >= 0 && focusRow < report.rows.length && focus?.value === true) {
+            if (elementAt(report.rows, focusRow).role === 'pending') return refused(notAnswered('The Focus is on one of the'));
             const vf = report.valueFieldAt(elementAt(report.rows, focusRow), focus.index);
             if (vf >= 0) {
                 const field = elementAt(report.layout.values, vf);

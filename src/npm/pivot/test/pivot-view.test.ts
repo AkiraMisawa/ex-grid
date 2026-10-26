@@ -3,12 +3,14 @@
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
+import type { GridCommand, GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
 import {
-    FetchingPivotSource, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
-    type PivotDisplayRow, type PivotLayout, type PivotSlicing, type PivotSource,
+    FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
+    type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotSlicing, type PivotSource,
 } from '@ex-grid/pivot-engine';
 import { browserPivotLocale } from '../src/browser-locale';
+import { defined } from '../src/must';
+import type { PivotShowDetailsEvent } from '../src/details';
 import { PivotView, type PivotSelectionChangedEvent, type PivotViewOptions } from '../src/pivot-view';
 
 interface Trade {
@@ -75,25 +77,50 @@ interface PaintedCell {
     readonly button: () => HTMLButtonElement;
 }
 
-/** The grid as the pivot sees it: the options it was last handed. */
+/** A details grid as the pivot handed it: its element, the options it was last handed, and whether it is gone. */
+interface DetailsGrid {
+    readonly element: HTMLElement;
+    options: GridOptions<PivotDetailRecord>;
+    destroyed: boolean;
+}
+
+/** The grids as the pivot sees them: the report's, by the options it was last handed, and each details grid. */
 class GridStandIn {
     options: GridOptions<PivotDisplayRow> | undefined;
     mounts = 0;
     destroyed = false;
+    readonly details: DetailsGrid[] = [];
 
-    readonly mount = (_element: HTMLElement, options: GridOptions<PivotDisplayRow>): GridHandle<PivotDisplayRow> => {
-        this.mounts++;
-        this.options = options;
-        return {
-            update: next => { this.options = next; },
+    readonly mount = <Row>(element: HTMLElement, options: GridOptions<Row>): GridHandle<Row> => {
+        const handle = (update: (next: GridOptions<Row>) => void, destroy: () => void): GridHandle<Row> => ({
+            update,
+            destroy,
             placeSelection: () => { throw new Error('The pivot places no selection.'); },
             readView: () => { throw new Error('The pivot reads no view.'); },
             showViewWith: () => { throw new Error('The pivot shows no view.'); },
             focus: () => { throw new Error('The pivot focuses no grid.'); },
             keyName: () => { throw new Error('The pivot names no key.'); },
-            destroy: () => { this.destroyed = true; },
-        };
+            openPopover: () => { throw new Error('The pivot opens no popover.'); },
+            closePopover: () => { throw new Error('The pivot closes no popover.'); },
+        });
+        // A details grid stands in a details panel or the dialog; the report's in the report's sheet.
+        if (element.closest('.ex-pivot-details-panel, .ex-pivot-dialog') !== null) {
+            element.tabIndex = 0;
+            const grid: DetailsGrid = { element, options: options as unknown as GridOptions<PivotDetailRecord>, destroyed: false };
+            this.details.push(grid);
+            return handle(next => { grid.options = next as unknown as GridOptions<PivotDetailRecord>; }, () => { grid.destroyed = true; });
+        }
+        this.mounts++;
+        // The grid's root holds the keyboard on a grid that does not edit (ADR-0080).
+        element.tabIndex = 0;
+        this.options = options as unknown as GridOptions<PivotDisplayRow>;
+        return handle(next => { this.options = next as unknown as GridOptions<PivotDisplayRow>; }, () => { this.destroyed = true; });
     };
+
+    /** The details grids standing now. */
+    get detailsShown(): readonly DetailsGrid[] {
+        return this.details.filter(grid => !grid.destroyed);
+    }
 
     get current(): GridOptions<PivotDisplayRow> {
         if (this.options === undefined) throw new Error('No grid was mounted.');
@@ -477,6 +504,43 @@ describe('ExPivot\'s Field List', () => {
 });
 
 describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => {
+    it('ADR-0066: Refresh is offered by a source that can be asked again, and asks it again under the layout on screen', async () => {
+        let behind = local();
+        const source = new FetchingPivotSource(behind.fields, new PivotSourceFeatures(['sum', 'count'], true, false), {
+            aggregate: (query, signal) => behind.aggregate(query, signal),
+            details: (query, signal) => behind.details(query, signal),
+            items: (query, signal) => behind.items(query, signal),
+        });
+        const { root, grid } = mount({ source, layout: byRegion });
+        await settled();
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
+        behind = new RecordPivotSource([...trades, { region: 'US', desk: 'FX', amount: 100 }], fields);
+        const refresh = root.querySelector<HTMLButtonElement>('.ex-pivot-toolbar-end .ex-pivot-refresh-button');
+        expect(refresh?.textContent).toBe('Refresh');
+        refresh?.click();
+        await settled();
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '112'], ['Grand Total', '142']]);
+        const { root: other } = mount({ source: local(), layout: byRegion });
+        expect(other.querySelector('.ex-pivot-refresh-button')).toBeNull();
+    });
+
+    it('ADR-0066, spine rule 6: a move made while a Refresh is out is answered from the source asked again, never from the data before it', async () => {
+        let behind = local();
+        const source = new FetchingPivotSource(behind.fields, new PivotSourceFeatures(['sum', 'count'], true, false), {
+            aggregate: (query, signal) => behind.aggregate(query, signal),
+            details: (query, signal) => behind.details(query, signal),
+            items: (query, signal) => behind.items(query, signal),
+        });
+        const { root, grid } = mount({ source, layout: byRegion });
+        await settled();
+        behind = new RecordPivotSource([...trades, { region: 'US', desk: 'FX', amount: 100 }], fields);
+        root.querySelector<HTMLButtonElement>('.ex-pivot-refresh-button')?.click();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Sort Z to A').click();
+        await settled();
+        expect(await grid.texts()).toEqual([['US', '112'], ['EU', '30'], ['Grand Total', '142']]);
+    });
+
     it('ADR-0370 section 3: a source that counts its Items has each count written beside its field, in the pivot\'s locale', async () => {
         const { root } = mount({ source: server(), locale: 'de-DE' });
         await settled();
@@ -1113,6 +1177,8 @@ describe('ExPivot\'s Filter… (ADR-0061, ADR-0066)', () => {
         expect(filterItems(root)).toEqual(['☑ (Select All)', '☑ Credit', '☑ FX', '☑ Rates']);
     });
 
+    // Drawing 10,001 Items in jsdom takes about 3.5 s on its own, past Vitest's 5 s default on a loaded runner:
+    // the longer budget is CPU time for the DOM, not a wait for anything to happen.
     it('ADR-0061: past the Items Filter… holds, the list says so, and a search is the source\'s to answer', async () => {
         const source = new ManyCodes(10_001);
         const { root } = mount({ source, layout: createPivotLayout({ rows: ['Code'], values: ['Amount'] }) });
@@ -1138,6 +1204,355 @@ describe('ExPivot\'s Filter… (ADR-0061, ADR-0066)', () => {
         await settled();
         tickItem(root, 'C10000');
         expect(panel(root).querySelector<HTMLButtonElement>('.ex-pivot-ok')?.disabled).toBe(false);
+    }, 30_000);
+});
+
+function bandButton(root: HTMLElement, caption: string): HTMLButtonElement {
+    const filter = [...root.querySelectorAll('.ex-pivot-filters .ex-pivot-filter')].find(f => f.querySelector('.ex-pivot-filter-caption')?.textContent === caption);
+    const button = filter?.querySelector<HTMLButtonElement>('.ex-pivot-filter-button');
+    if (button === undefined || button === null) throw new Error(`The band has no report filter '${caption}'.`);
+    return button;
+}
+
+describe('ExPivot\'s report filter band (ADR-0061)', () => {
+    it('ADR-0061: each field in Filters stands in the band with what it shows, and its Filter… opens over the report and applies there', async () => {
+        const { root, view } = mount({ source: local(), layout: createPivotLayout({ filters: ['Region'], rows: ['Desk'], values: ['Amount'] }) });
+        await settled();
+        const band = root.querySelector('.ex-pivot-toolbar-start .ex-pivot-filters');
+        expect(band?.getAttribute('aria-label')).toBe('Report filters');
+        const button = bandButton(root, 'Region');
+        expect(button.textContent).toBe('(All)▾');
+        expect(button.getAttribute('aria-label')).toBe('Filter Region');
+        expect(button.classList.contains('ex-pivot-filter-active')).toBe(false);
+        button.click();
+        const frame = panel(root);
+        expect(frame.className).toBe('ex-pivot-popup ex-pivot-popup-overlay');
+        expect(frame.parentElement?.className).toBe('ex-pivot-filter-anchor');
+        expect(button.getAttribute('aria-expanded')).toBe('true');
+        expect(root.querySelector('.ex-pivot-backdrop')).not.toBeNull();
+        expect(document.activeElement).toBe(search(root));
+        await settled();
+        tickItem(root, 'US');
+        press(root, 'ex-pivot-ok');
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(root.querySelector('.ex-pivot-backdrop')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        await settled();
+        expect(view.shownLayout.filters[0]?.hiddenItems).toEqual([{ kind: 'text', value: 'US' }]);
+        expect(button.textContent).toBe('EU▾');
+        expect(button.classList.contains('ex-pivot-filter-active')).toBe(true);
+    });
+
+    it('ADR-0061: a filter showing several Items says (Multiple Items), and the backdrop and Escape close its Filter… with the draft', async () => {
+        const changed: PivotLayout[] = [];
+        const { root } = mount({
+            source: local(),
+            layout: createPivotLayout({ filters: [{ field: 'Desk', hiddenItems: [{ kind: 'text', value: 'FX' }] }], rows: ['Region'], values: ['Amount'] }),
+            onLayoutChanged: event => changed.push(event.layout),
+        });
+        await settled();
+        const button = bandButton(root, 'Desk');
+        expect(button.textContent).toBe('(Multiple Items)▾');
+        button.click();
+        await settled();
+        tickItem(root, 'Rates');
+        root.querySelector<HTMLElement>('.ex-pivot-backdrop')?.click();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        button.click();
+        await settled();
+        expect(filterItems(root)).toEqual(['☐ (Select All)', '☑ Credit', '☐ FX', '☑ Rates']);
+        panel(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        await settled();
+        expect(changed).toHaveLength(0);
+    });
+
+    it('ADR-0061, spine rule 6: a report filter\'s Filter… goes when the pane leaves its layout, and the keyboard it held goes to the button', async () => {
+        const options: PivotViewOptions = { source: local(), layout: createPivotLayout({ filters: ['Region'], rows: ['Desk'], values: ['Amount'] }) };
+        const { root, view } = mount(options);
+        await settled();
+        bandButton(root, 'Region').click();
+        await settled();
+        tickItem(root, 'US');
+        view.update({ ...options, layout: createPivotLayout({ filters: ['Region'], columns: ['Desk'], values: ['Amount'] }) });
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(root.querySelector('.ex-pivot-backdrop')).toBeNull();
+        expect(document.activeElement).toBe(bandButton(root, 'Region'));
+        await settled();
+        expect(view.shownLayout.filters[0]?.hiddenItems).toEqual([]);
+    });
+
+    it('ADR-0061: the band stands only while Filters holds a field', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        expect(root.querySelector('.ex-pivot-filters')).toBeNull();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Move to Report Filter').click();
+        expect(bandButton(root, 'Region').textContent).toBe('(All)▾');
+    });
+});
+
+const byRegionAndDesk: PivotLayout = createPivotLayout({ rows: ['Region'], columns: ['Desk'], values: ['Amount'] });
+
+/** Double clicks a cell of the report, once its first rows are held. */
+async function doubleClick(grid: GridStandIn, row: number, column: number): Promise<void> {
+    await grid.current.source?.needRange({ start: 0, count: 10 });
+    grid.current.onCellDoubleClick?.({ row, column });
+    await settled();
+}
+
+/** The painted text of a details grid's records. */
+async function recordTexts(grid: DetailsGrid): Promise<readonly (readonly string[])[]> {
+    const { source, columns } = grid.options;
+    if (source === undefined) throw new Error('The details grid was handed no source.');
+    const rows = await source.rows({ start: 0, count: 20 }, new AbortController().signal);
+    return rows.map(row => columns.map(column => column.format?.(column.value(row)) ?? '')); // oxlint-disable-line ex-grid/no-stand-in-default -- a column without format shows nothing here
+}
+
+function tabTitles(root: HTMLElement): readonly string[] {
+    return [...root.querySelectorAll('.ex-pivot-tab-button')].map(tab => `${tab.textContent}${tab.getAttribute('aria-selected') === 'true' ? '*' : ''}`);
+}
+
+/** A source that holds no Source Version the records are asked under: the data moved on under the report. */
+function movedOn(): PivotSource {
+    const behind = local();
+    return {
+        fields: behind.fields,
+        features: behind.features,
+        aggregate: (...args) => behind.aggregate(...args),
+        items: (...args) => behind.items(...args),
+        details: () => Promise.resolve(PivotDetailPage.refused({ kind: 'sourceVersionNotHeld', message: 'Moved on.' })),
+    };
+}
+
+describe('ExPivot\'s Show Details (ADR-0059, ADR-0063)', () => {
+    it('ADR-0063: a double click on a value cell opens its records in a tab that covers the report and takes the keyboard', async () => {
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk });
+        await settled();
+        await doubleClick(grid, 0, 3);
+        expect(tabTitles(root)).toEqual(['PivotTable', 'Details: EU / Rates*']);
+        expect(root.querySelector('.ex-pivot-tabs')?.getAttribute('aria-label')).toBe('Sheets');
+        const sheet = root.querySelector('.ex-pivot-sheet');
+        expect(sheet?.classList.contains('ex-pivot-sheet-covered')).toBe(true);
+        const covering = sheet?.querySelector('.ex-pivot-details-panel');
+        const tab = root.querySelectorAll('.ex-pivot-tab-button')[1];
+        expect(covering?.getAttribute('aria-labelledby')).toBe(tab?.id);
+        expect(tab?.getAttribute('aria-controls')).toBe(covering?.id);
+        expect(document.activeElement).toBe(tab);
+        const [details] = grid.detailsShown;
+        if (details === undefined) throw new Error('A details grid stands.');
+        expect(details.element.parentElement?.getAttribute('data-ex-input-root')).toBe('');
+        expect(details.options.columns.map(column => column.header)).toEqual(['Region', 'Desk', 'Amount']);
+        expect(details.options).toMatchObject({ headerClickSelects: true, hideColumnMenu: true, viewportHeight: 'stretch' });
+        expect(details.options.onLeave).toBeUndefined();
+        expect(await recordTexts(details)).toEqual([['EU', 'Rates', '10']]);
+    });
+
+    it('ADR-0063: an empty cell has no records, a total\'s are its Items\', and the grand total\'s are named so', async () => {
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk });
+        await settled();
+        await doubleClick(grid, 0, 2);
+        expect(tabTitles(root)).toEqual([]);
+        await doubleClick(grid, 0, 4);
+        await doubleClick(grid, 2, 4);
+        expect(tabTitles(root)).toEqual(['PivotTable', 'Details: EU', 'Details: Grand Total*']);
+        expect(await recordTexts(defined(grid.detailsShown[0], 'a details grid'))).toHaveLength(4);
+        expect(grid.details.map(details => details.destroyed)).toEqual([true, false]);
+    });
+
+    it('ADR-0059: closing the selected tab selects the next, and closing the last gives the keyboard back to the report', async () => {
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk });
+        await settled();
+        await doubleClick(grid, 0, 3);
+        await doubleClick(grid, 1, 3);
+        const closes = (): HTMLButtonElement[] => [...root.querySelectorAll<HTMLButtonElement>('.ex-pivot-tab-close')];
+        expect(closes().map(close => close.getAttribute('aria-label'))).toEqual(['Close Details: EU / Rates', 'Close Details: US / Rates']);
+        root.querySelectorAll<HTMLButtonElement>('.ex-pivot-tab-button')[1]?.click();
+        expect(tabTitles(root)).toEqual(['PivotTable', 'Details: EU / Rates*', 'Details: US / Rates']);
+        closes()[0]?.click();
+        expect(tabTitles(root)).toEqual(['PivotTable', 'Details: US / Rates*']);
+        expect(document.activeElement).toBe(root.querySelectorAll('.ex-pivot-tab-button')[1]);
+        // A tab behind the selected one closes and leaves the selected one as it was, holding the keyboard.
+        await doubleClick(grid, 0, 3);
+        root.querySelectorAll<HTMLButtonElement>('.ex-pivot-tab-button')[1]?.click();
+        const shownGrid = grid.detailsShown.at(-1);
+        closes()[1]?.click();
+        expect(tabTitles(root)).toEqual(['PivotTable', 'Details: US / Rates*']);
+        expect(grid.detailsShown.at(-1)).toBe(shownGrid);
+        expect(document.activeElement).toBe(root.querySelectorAll('.ex-pivot-tab-button')[1]);
+        closes()[0]?.click();
+        expect(root.querySelector('.ex-pivot-tabs')).toBeNull();
+        expect(root.querySelector('.ex-pivot-sheet')?.className).toBe('ex-pivot-sheet');
+        expect(document.activeElement?.parentElement?.classList.contains('ex-pivot-sheet')).toBe(true);
+        expect(grid.detailsShown).toEqual([]);
+    });
+
+    it('ADR-0059: in the dialog, the report and the Field List are inert, Close holds the keyboard, and Escape closes it', async () => {
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk, detailsView: 'dialog' });
+        await settled();
+        await doubleClick(grid, 0, 3);
+        const dialog = root.querySelector<HTMLElement>('.ex-pivot-dialog');
+        expect(dialog?.getAttribute('aria-label')).toBe('Details: EU / Rates');
+        expect(dialog?.querySelector('.ex-pivot-dialog-title')?.textContent).toBe('Details: EU / Rates');
+        expect(root.querySelector('.ex-pivot-dialog-backdrop')).not.toBeNull();
+        expect([root.querySelector<HTMLElement>('.ex-pivot-report')?.inert, root.querySelector<HTMLElement>('.ex-pivot-field-list')?.inert]).toEqual([true, true]);
+        expect(document.activeElement?.className).toBe('ex-pivot-close');
+        expect(tabTitles(root)).toEqual([]);
+        document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        expect(root.querySelector('.ex-pivot-dialog')).toBeNull();
+        expect(root.querySelector<HTMLElement>('.ex-pivot-report')?.inert).toBe(false);
+        expect(document.activeElement?.parentElement?.classList.contains('ex-pivot-sheet')).toBe(true);
+
+        // The Escape the dialog's grid has nothing left to dismiss closes it too (ADR-0070).
+        await doubleClick(grid, 0, 3);
+        defined(grid.detailsShown[0], 'a details grid').options.onLeave?.();
+        expect(root.querySelector('.ex-pivot-dialog')).toBeNull();
+        expect(grid.detailsShown).toEqual([]);
+    });
+
+    it('ADR-0059: a Consumer that hears Show Details takes the records, and the pivot opens nothing', async () => {
+        const heard: PivotShowDetailsEvent[] = [];
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk, onShowDetails: event => heard.push(event) });
+        await settled();
+        await doubleClick(grid, 0, 3);
+        expect(root.querySelector('.ex-pivot-tabs')).toBeNull();
+        const [event] = heard;
+        if (event === undefined) throw new Error('Show Details was heard.');
+        expect([event.title, event.rowItems, event.columnItems, event.valueField]).toEqual([
+            'Details: EU / Rates', [{ field: 'Region', item: 'EU' }], [{ field: 'Desk', item: 'Rates' }], 'Sum of Amount',
+        ]);
+        const page = await event.records(0, 10);
+        expect(page.records.map(record => record.values)).toEqual([['EU', 'Rates', 10]]);
+        // The question is plain data the Consumer may send elsewhere, and a page it asks for is checked as the question is.
+        expect(event.query.rowItems).toEqual([{ field: 'Region', item: { kind: 'text', value: 'EU' } }]);
+        expect(() => event.records(-1, 10)).toThrow(RangeError);
+    });
+
+    it('ADR-0063: records the source no longer holds under the report\'s Source Version are refused in words, never shown', async () => {
+        const { root, grid } = mount({ source: movedOn(), layout: byRegionAndDesk });
+        await settled();
+        await doubleClick(grid, 0, 3);
+        // The keyboard in the records' grid goes to the tab when the sentence replaces the grid.
+        const details = defined(grid.detailsShown[0], 'a details grid');
+        details.element.focus();
+        await details.options.source?.needRange({ start: 0, count: 10 });
+        await settled();
+        expect(document.activeElement).toBe(root.querySelectorAll('.ex-pivot-tab-button')[1]);
+        const status = root.querySelector('.ex-pivot-details-panel .ex-pivot-details-status');
+        expect(status?.getAttribute('role')).toBe('alert');
+        expect(status?.textContent).toBe('The data has changed — refresh.');
+        expect(grid.detailsShown).toEqual([]);
+    });
+});
+
+/** The report's commands in the Context Menu opened on a cell of the rows the grid holds first. */
+async function contextMenu(grid: GridStandIn, row: number, column: number): Promise<readonly GridCommand[]> {
+    const { source, columns, contextCommands } = grid.current;
+    if (source === undefined || contextCommands === undefined) throw new Error('The report offers commands.');
+    await source.needRange({ start: 0, count: 20 });
+    const { window } = source.snapshot();
+    const shown = defined(columns[column], 'the column');
+    return contextCommands({
+        row: defined(window[row], 'the row'), column: shown.name, columnType: shown.type, selection: [], rowSequenceVersion: 0, commands: [],
+    });
+}
+
+function labelled(grid: GridStandIn, commands: readonly GridCommand[]): readonly string[] {
+    // An id the pivot has no word for reads as itself here.
+    return commands.map(offered => `${grid.current.commandLabel?.(offered.id) ?? offered.id}${offered.enabled ? '' : ' (off)'}`);
+}
+
+function run(commands: readonly GridCommand[], id: string): void {
+    defined(commands.find(offered => offered.id === id), `the command ${id}`).invoke();
+}
+
+describe('ExPivot\'s Context Menu (ADR-0036, ADR-0059)', () => {
+    it('ADR-0059: on an outer Item\'s label it offers Expand and Collapse, the field\'s sorts and Remove, and Collapse collapses it', async () => {
+        const changed: PivotLayout[] = [];
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const commands = await contextMenu(grid, 0, 0);
+        expect(labelled(grid, commands)).toEqual([
+            'Expand (off)', 'Collapse', 'Expand Entire Field (off)', 'Collapse Entire Field', 'Sort A to Z (off)', 'Sort Z to A', 'Remove "Region"', 'Hide Field List',
+        ]);
+        expect(grid.current.commandLabel?.('copy')).toBeUndefined();
+        run(commands, 'collapse');
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
+        expect(changed).toHaveLength(1);
+    });
+
+    it('ADR-0059: on a value cell it sorts its row field by the Value Field, shows its records and opens Value Field Settings… in the pane', async () => {
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk, showFieldList: false });
+        await settled();
+        const commands = await contextMenu(grid, 0, 3);
+        expect(labelled(grid, commands)).toEqual([
+            'Sort Smallest to Largest', 'Sort Largest to Smallest', 'Show Details', 'Value Field Settings…', 'Remove "Region"', 'Show Field List',
+        ]);
+        run(commands, 'sort-largest-to-smallest');
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'Grand Total']);
+        run(await contextMenu(grid, 0, 3), 'show-details');
+        expect(tabTitles(root)).toEqual(['PivotTable', 'Details: EU / Rates*']);
+        expect(labelled(grid, await contextMenu(grid, 0, 2)).filter(label => label.startsWith('Show Details'))).toEqual(['Show Details (off)']);
+        run(await contextMenu(grid, 0, 3), 'value-field-settings');
+        expect(root.querySelector<HTMLElement>('.ex-pivot-field-list')?.hidden).toBe(false);
+        expect(panelText(root)?.value).toBe('Sum of Amount');
+        expect(document.activeElement).toBe(panelText(root));
+    });
+
+    it('ADR-0370 section 10: the Consumer\'s words name the report\'s commands and the grid\'s own', async () => {
+        const { grid } = mount({ source: local(), layout: byRegionAndDesk, label: japanesePivotWords });
+        await settled();
+        const labels = labelled(grid, await contextMenu(grid, 0, 3));
+        expect(labels).toContain('値フィールドの設定...');
+        expect(labels.some(label => label.includes('Region'))).toBe(true);
+        expect(grid.current.commandLabel?.('copy')).toBe('コピー');
+    });
+
+    it('spine rule 6: a sort by a Value Field, or its settings, chosen once the pane moved that Value Field, change nothing', async () => {
+        const changed: PivotLayout[] = [];
+        const layout = createPivotLayout({ rows: ['Region'], values: ['Amount', 'Desk'] });
+        const { root, grid } = mount({ source: local(), layout, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const commands = await contextMenu(grid, 0, 1);
+        entryButton(root, 'values', 0).click();
+        command(root, 'Move Down').click();
+        await settled();
+        expect(changed).toHaveLength(1);
+        run(commands, 'sort-largest-to-smallest');
+        run(commands, 'value-field-settings');
+        await settled();
+        expect(changed).toHaveLength(1);
+        expect(root.querySelector('.ex-pivot-panel')).toBeNull();
+    });
+
+    it('a command that would change nothing in the pane now asks nothing: an Item collapsed since the menu opened', async () => {
+        const changed: PivotLayout[] = [];
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const commands = await contextMenu(grid, 0, 0);
+        (await grid.paint(0, 0)).button().click();
+        await settled();
+        run(commands, 'collapse');
+        await settled();
+        expect(changed).toHaveLength(1);
+    });
+
+    it('spine rule 6: a command chosen once the pane no longer holds its field changes nothing', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, grid } = mount({ source: local(), layout: byRegionAndDesk, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const commands = await contextMenu(grid, 0, 0);
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Remove Field').click();
+        await settled();
+        expect(changed).toHaveLength(1);
+        run(commands, 'sort-descending');
+        await settled();
+        expect(changed).toHaveLength(1);
     });
 });
 

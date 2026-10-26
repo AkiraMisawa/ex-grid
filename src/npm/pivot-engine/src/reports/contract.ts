@@ -139,8 +139,9 @@ export interface PivotReportMetadata {
     readonly changeMarks: readonly string[];
 }
 
-/** Why a report source did not answer. */
-export type PivotReportRefusalKind = 'reportVersionNotHeld' | 'unknownOrderKeyPolicy' | 'sourceRefused' | 'invalidRequest' | 'orderKeyFailed';
+/** Why a report source did not answer: `rowsNotAnswered` is a Copy or a Selection Summary that reaches Pending
+ * Rows, the siblings a Pivot Source answered a Sibling Window beside (ADR-0370 section 3). */
+export type PivotReportRefusalKind = 'reportVersionNotHeld' | 'unknownOrderKeyPolicy' | 'sourceRefused' | 'invalidRequest' | 'orderKeyFailed' | 'rowsNotAnswered';
 
 /** A refusal by name; an empty answer is never given in its place. */
 export interface PivotReportRefusal {

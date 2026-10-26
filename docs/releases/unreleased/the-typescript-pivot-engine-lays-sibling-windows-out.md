@@ -1,0 +1,5 @@
+Product: ExPivot
+Kind: Added
+ADR: 0370
+
+`@ex-grid/pivot-engine` lays a Sibling Window out: its cube checks that the window, its margins and its rest cells compose to the parent and that each margin sorts strictly beyond its edge, and the report gives every sibling outside the window a Pending Row (`PivotRowRole` `pending`), so the row count is the whole set's; `valueAt`, `rowPath` and `detailsQuery` refuse a Pending Row by name. `LocalPivotReportSource` asks a server that answers Level Aggregates for windows only once it refuses the question whole past the cap, asks again with the windows moved when a report Window reaches Pending Rows, keeping the rows' sequence, and refuses a Copy or a Selection Summary that reaches one with `rowsNotAnswered`. `levelQueryForLayout` takes the window as a third argument and carries the order of each field sorted by a value shown as computed.

@@ -9,11 +9,12 @@ export type { SelectionRange } from './selection/range';
 export type { GridSelection } from './selection/selection';
 export { createGrid } from './dom/create-grid';
 export type { GridHandle } from './dom/create-grid';
+export type { GridPopoverContext } from './dom/consumer-popover';
 export type { GridHeaderGroup, GridOptions, GridViewRead, ViewportSize } from './dom/grid-view';
 export { cellTextMeasure, type CellPaintOptions } from './dom/cell-paint';
 export { formulaBarHeight, type FormulaBarOptions } from './dom/formula-bar';
 export type { BorderStyle, CellAppearance, CellBorder, CellTextMeasure, EdgeBorderOf } from './cells/cell-appearance';
-export type { ActionRefusalReason, FindRefusalReason, GridRefusal } from './dom/grid-refusal';
+export type { ActionRefusalReason, FindRefusalReason, GridRefusal, PlacementRefusalReason } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { gridCommandIds, gridLabelIds } from './chrome/command-ids';
@@ -33,6 +34,7 @@ export type { FilterUi } from './dom/filter-panel';
 export type { TemporalLike } from './chrome/operand-reading';
 export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';
+export { foldCase } from './query/text-casing';
 export type { CellAlign } from './paint/cell-classes';
 export type { GridDensity } from './grid-metrics';
 export { densityText } from './density-text';
@@ -75,3 +77,15 @@ export type { FilterClause, FilterCombinator, FilterOperator } from './query/fil
 export type { GridReplaceResult, GridReplacedRow } from './finding/replace';
 export type { MarksHost } from './source/in-memory-row-marks';
 export type { GridReplaceRefusedCell } from './finding/replace';
+export { FormatCode } from './shaped/format-code';
+export type { FormatCodeReading, FormatCodeValue } from './shaped/format-code';
+export { GridViewState, sameGridFilter, sameGridQuery } from './view-state/view-state';
+export { engineFilterOf, exactDecimalDigits, gridNumberOf, instantOf, plainDateOf, plainDateTimeOf, significantDigits } from './view-state/engine-values';
+export type { FilteredColumn } from './view-state/engine-values';
+export type {
+    ColumnViewState, ColumnViewStateWidth, GridViewStateOptions, ViewStateColumnSource, ViewStateDateTimeKind, ViewStateIntegerType,
+    ViewStateOperand,
+} from './view-state/view-state';
+export {
+    GridViewStateJson, GridViewStateJsonError, readGridQueryJson, readGridViewStateJson, writeGridQueryJson, writeGridViewStateJson,
+} from './view-state/view-state-json';

@@ -202,6 +202,20 @@ describe('the Selection in the grid', () => {
         expect(root.getAttribute('aria-activedescendant')).toBe(`${prefix(root)}r0c1`);
     });
 
+    it('ADR-0070: onLeave hears the Escape with nothing left to dismiss, once per press, beside the release of Tab', async () => {
+        let left = 0;
+        const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, onLeave: () => { left++; } });
+        await painted();
+        press(root, 10, rowY(0));
+        await painted();
+        key(root, 'Escape');
+        key(root, 'Escape', { repeat: true });
+        expect(left).toBe(1);
+        expect(key(root, 'Tab').defaultPrevented).toBe(false);
+        key(root, 'Escape');
+        expect(left).toBe(2);
+    });
+
     it('ADR-0206: the pinned shade layer stands only while a range tints a Pinned Column', async () => {
         const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, pinnedColumnCount: 1 });
         await painted();

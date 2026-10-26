@@ -14,6 +14,7 @@ export {
 } from './words/pivot-words';
 export { pivotLocales } from './culture/culture-data';
 export { formatPivotCount, formatPivotNumber } from './text/number-text';
+export { formatPivotDetailValue } from './text/detail-text';
 export { PivotFormatError, PivotOrderKeyError, PivotVersionError } from './errors';
 export type {
     PivotAggregation, PivotArea, PivotAxis, PivotColumnRole, PivotDatePart, PivotFieldType, PivotItemKind, PivotReportForm, PivotRowRole,
@@ -25,12 +26,13 @@ export {
     blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, publicKeyId as pivotItemKeyId,
     textItemKey,
 } from './items/item-key';
+export { pivotItemKeyAt } from './items/snapshot-item';
 export type {
     PivotFieldPlacement, PivotFieldPlacementInput, PivotLayout, PivotLayoutInput, PivotSort, PivotValueField, PivotValueFieldInput,
 } from './layout/pivot-layout';
 export {
     createPivotFieldPlacement, createPivotLayout, createPivotValueField, emptyPivotLayout, isEmptyLayout, isItemCollapsed, pivotSort,
-    placementOf, placementsIn, placesField, sortsEqual,
+    placementOf, placementsIn, placesField, sortsEqual, valueFieldsEqual,
 } from './layout/pivot-layout';
 export { pivotLayoutJsonVersion, readPivotLayoutJson, writePivotLayoutJson } from './layout/layout-json';
 export type { PivotEditResult, PivotEntry, PivotFieldInfo, PivotLayoutChoice, PivotRefusal } from './layout/layout-edits';

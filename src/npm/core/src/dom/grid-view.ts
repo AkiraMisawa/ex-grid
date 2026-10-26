@@ -64,7 +64,7 @@ import {
 } from './column-gestures';
 import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
-import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, type MenuKeyTable } from './menu-popover';
+import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, popoverMinWidthPx, type MenuKeyTable } from './menu-popover';
 import { FilterPanel } from './filter-panel';
 import { FindPanel, type FindHeld } from './find-panel';
 import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
@@ -82,6 +82,7 @@ import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type F
 import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
+import { ConsumerPopoverFrame, type GridPopoverContext } from './consumer-popover';
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
 export type ViewportSize = number | 'stretch';
@@ -246,6 +247,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * (ADR-0063). The grid changes nothing: what the gesture means is the Consumer's. While an edit is open a
      * double click is the editor's, and on an Editable cell it opens one. */
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
+    /** Hears the Escape that leaves the grid (ADR-0070): pressed on the grid with nothing left to dismiss, beside
+     * the grid's own way out, which releases Tab (ADR-0012). Each Escape before it still peels only its own layer,
+     * and a held Escape's repeats raise it no more. The Consumer decides what leaving means: closing its dialog,
+     * for one, which may destroy this grid from inside the call. */
+    readonly onLeave?: () => void;
     /**
      * Hears a column resized by the user (ADR-0016), once per column: a drag on the grip at a header's right
      * edge, applied on release and never live, or a double click on it, which fits the column to its header and
@@ -543,6 +549,7 @@ interface Taken<Row> {
     readonly onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
     readonly onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
     readonly onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
+    readonly onLeave: (() => void) | undefined;
     readonly onColumnWidthChanged: ((change: GridColumnWidthChange) => void) | undefined;
     readonly onColumnOrderChanged: ((order: readonly string[]) => void) | undefined;
     readonly contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
@@ -567,7 +574,9 @@ interface Taken<Row> {
 // or a source that moved take the Selection its commands act on, and the menu with it (ADR-0011, ADR-0036).
 // A column's menu stands under its column's header, followed by the column's name (ADR-0010).
 // The find panel stands in the grid's top right under the header, and holds no commands (ADR-0055).
-type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPanel };
+// A Consumer's popover stands under the header band, centred across the grid (ADR-0050, item 16).
+type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPanel }
+    | { readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object };
 
 type MenuPopover = {
     readonly element: HTMLElement;
@@ -923,6 +932,7 @@ export class GridView<Row> {
     #onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
     #onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
     #onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
+    #leaveHeard: (() => void) | undefined;
     // The copies the asynchronous route is still writing, each holding the Settled Mark (ADR-0220), and what
     // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
     #clipboardWrites = 0;
@@ -1317,6 +1327,78 @@ export class GridView<Row> {
         this.#invalidate();
     }
 
+    /**
+     * The Consumer asks the grid to place the Selection and the Focus (ADR-0050, item 4): `range` becomes the
+     * one range, with the Focus on `focus` inside it, and the grid then does what it does after a click: an open
+     * edit commits first, a menu closes, and the Focus is scrolled into view. The Selection stays the grid's; the
+     * Consumer asks and the grid places. Positions mean something only under the order they were written in, so
+     * a request under another Row Sequence Version than the one the grid's source says (its `snapshot()`) places
+     * nothing and is refused (`onRefused`, kind `placement`, reason `orderMoved`), as is one whose edit commit
+     * brought in another source (`sourceChanged`, ADR-0142) or moved the columns (`columnsMoved`, ADR-0011). The
+     * version is all a request carries, so one made after the source was replaced is taken as written for the
+     * new one, as the C# grid takes it. True once placed; false when refused, or when a Reject or a refusal held
+     * the open edit (ADR-0034), which says so itself. A range reaching outside the grid, a Focus outside the
+     * range, or a grid with no cells throws a RangeError and changes nothing.
+     */
+    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
+        if (this.#destroyed) throw new Error('This grid was destroyed: a grid destroyed places nothing.');
+        // Changes a live source gathered are the order's before the check, as a commit's are (ADR-0142 D5).
+        this.#source.publishGathered?.();
+        const extent = this.#extent;
+        if (extent.rowCount === 0 || extent.columnCount === 0) {
+            throw new RangeError(`The grid has no cells to place a Selection on (${String(extent.rowCount)} rows × ${String(extent.columnCount)} columns) (ADR-0050).`);
+        }
+        // Checked first, and before anything changes: a place outside the grid is the Consumer's mistake, whatever
+        // else holds, and commits nothing.
+        this.#held.selection.place(range, focus, extent);
+        // The source's own version, which is the one a Consumer reads; the grid's written one carries an offset
+        // past every change of source.
+        if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
+            this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
+            return false;
+        }
+        // The source and the columns the request was made under: the version alone cannot tell a replaced source
+        // (ADR-0142), and column positions name other columns once the columns move (ADR-0011).
+        const source = this.#source;
+        const names = this.#columns.map(({ column }) => column.name);
+        this.#answered += 1;
+        this.#invalidate();
+        if (!this.#commitEdit()) return false;
+        // A menu standing at the old place closes, and a drag ends, so its next move does not reshape the place
+        // from the old anchor.
+        this.#closePopover(true);
+        this.#setDragging(false);
+        this.#interactive = undefined;
+        // The commit's intent may have moved the order or handed over another source: the positions name other
+        // rows now (ADR-0011, ADR-0142).
+        if (source !== this.#source) {
+            this.#onRefused?.({ kind: 'placement', reason: 'sourceChanged' });
+            return false;
+        }
+        if (!sameItems(names, this.#columns.map(({ column }) => column.name))) {
+            this.#onRefused?.({ kind: 'placement', reason: 'columnsMoved' });
+            return false;
+        }
+        if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
+            this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
+            return false;
+        }
+        this.#reconcileSelection();
+        // The commit may have changed how many rows there are under the same order, as a fetching source's total
+        // can: a place that no longer fits names rows that are not there, which the order moving says.
+        const now = this.#extent;
+        if (range.topRow + range.rowCount > now.rowCount || range.leftColumn + range.columnCount > now.columnCount) {
+            this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
+            return false;
+        }
+        if (this.#apply(this.#held.selection.place(range, focus, now))) {
+            this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
+            this.#revealHeaderOwed = undefined;
+            this.#followArmed = { focus, target: focus };
+        }
+        return true;
+    }
+
     /** Stops hearing everything and empties the root. */
     destroy(): void {
         if (this.#destroyed) return;
@@ -1415,14 +1497,14 @@ export class GridView<Row> {
         }
         const {
             onSelectionChanged, onRefused, onAction, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
-            onOverwriteNotice, onCellDoubleClick, onColumnWidthChanged, onColumnOrderChanged, contextCommands, commandLabel, hideCopyWithHeaders,
+            onOverwriteNotice, onCellDoubleClick, onLeave, onColumnWidthChanged, onColumnOrderChanged, contextCommands, commandLabel, hideCopyWithHeaders,
             hideColumnMenu, onColumnHidden, onPinnedCountChanged,
         }: {
             readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onAction?: unknown; readonly onPaste?: unknown;
             readonly pasteMaySpill?: unknown;
             readonly onClear?: unknown; readonly onUndo?: unknown; readonly onRedo?: unknown;
             readonly onEdit?: unknown; readonly onEditingChanged?: unknown; readonly onEditDiscarded?: unknown;
-            readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown;
+            readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown; readonly onLeave?: unknown;
             readonly onColumnWidthChanged?: unknown; readonly onColumnOrderChanged?: unknown;
             readonly contextCommands?: unknown; readonly commandLabel?: unknown; readonly hideCopyWithHeaders?: unknown;
             readonly hideColumnMenu?: unknown; readonly onColumnHidden?: unknown; readonly onPinnedCountChanged?: unknown;
@@ -1473,6 +1555,7 @@ export class GridView<Row> {
         if (onCellDoubleClick !== undefined && typeof onCellDoubleClick !== 'function') {
             throw new TypeError('onCellDoubleClick is a function of the cell.');
         }
+        if (onLeave !== undefined && typeof onLeave !== 'function') throw new TypeError('onLeave is a function of nothing.');
         if (onColumnWidthChanged !== undefined && typeof onColumnWidthChanged !== 'function') {
             throw new TypeError('onColumnWidthChanged is a function of the width change.');
         }
@@ -1561,7 +1644,7 @@ export class GridView<Row> {
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
-            onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick,
+            onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick, onLeave: options.onLeave,
             onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
             hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
@@ -1712,6 +1795,7 @@ export class GridView<Row> {
         this.#onEditDiscarded = taken.onEditDiscarded;
         this.#onOverwriteNotice = taken.onOverwriteNotice;
         this.#onCellDoubleClick = taken.onCellDoubleClick;
+        this.#leaveHeard = taken.onLeave;
         this.#onColumnWidthChanged = taken.onColumnWidthChanged;
         this.#onColumnOrderChanged = taken.onColumnOrderChanged;
         this.#contextCommands = taken.contextCommands;
@@ -2045,7 +2129,8 @@ export class GridView<Row> {
         // menu is hidden.
         // The find panel stands through both: a step's answer is judged against the order it was asked under.
         const popover = this.#popover;
-        if (popover !== undefined && popover.kind !== 'find' && (popover.kind === 'context'
+        // So does a Consumer's popover: what it acts on is the Consumer's to judge (ADR-0050, item 16).
+        if (popover !== undefined && popover.kind !== 'find' && popover.kind !== 'consumer' && (popover.kind === 'context'
             ? columnsMoved || popover.version !== version || popover.source !== this.#source
             : !names.includes(popover.column) || this.#hideColumnMenu)) {
             this.#closePopover(true);
@@ -2143,6 +2228,7 @@ export class GridView<Row> {
         // ADR-0039); the keyboard comes back to the grid.
         const popover = this.#popover;
         if (popover !== undefined && event.key === 'Escape' && !event.ctrlKey && !event.altKey && !event.metaKey
+            && !(popover.kind === 'consumer' && popover.frame.innerPopupOpen)
             && (event.target === this.#root || event.target === this.#keyField
                 || (event.target instanceof Node && popover.element.contains(event.target)))) {
             this.#taken(event);
@@ -2181,7 +2267,9 @@ export class GridView<Row> {
             const { kind } = resolveKey(press);
             if (kind === 'find' || kind === 'replace') {
                 this.#taken(event);
-                this.#openFind(kind === 'replace');
+                // A Consumer's popover holds work of the Consumer's, as Format Cells holds a draft: the find panel does
+                // not take its place, and the browser's find stays shut too.
+                if (!(inPopover && popover.kind === 'consumer')) this.#openFind(kind === 'replace');
                 return;
             }
         }
@@ -2307,12 +2395,19 @@ export class GridView<Row> {
             // a copy outlined, Escape removes the outline and does nothing else. With nothing left to dismiss it
             // is the way out of Enter and Tab cycling: the keyboard stays and the next Tab leaves the grid.
             if (this.#interactiveChoice() !== undefined) this.#interactive = undefined;
-            else if (this.#copied === undefined) this.#tabReleased = true;
+            else if (this.#copied === undefined) this.#leave(event.repeat);
             else this.#copied = undefined;
         } else {
             this.#moveByKey(action, event.key);
         }
     };
+
+    // The Escape with nothing left to dismiss: Tab is released, and a Consumer that hears the way out is told, once
+    // per press (ADR-0070).
+    #leave(repeated: boolean): void {
+        this.#tabReleased = true;
+        if (!repeated) this.#leaveHeard?.();
+    }
 
     // A key the grid answers: the browser's own meaning is prevented, nothing inside hears it, and the pass
     // that paints the answer is asked for.
@@ -3283,35 +3378,6 @@ export class GridView<Row> {
 
     // ---- The Formula Bar (ADR-0051) ---------------------------------------------------------------------------
 
-    /**
-     * A Consumer's placement of the Selection (ADR-0050, item 4): `range` becomes the one range, with the Focus on
-     * `focus`, revealed. Taken against `rowSequenceVersion`, the one the grid reports (an intent's, `data-ex-sequence`),
-     * which is the source's own until the source is replaced; refused (false) once that moved, or
-     * while an edit stands; a range outside the grid is refused by name (the spine's sixth rule).
-     */
-    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
-        if (this.#destroyed) throw new Error('This grid was destroyed.');
-        // Changes a live source gathered are the order's before the check, as a commit's are (ADR-0142 D5).
-        this.#source.publishGathered?.();
-        this.#reconcileSelection();
-        // Checked first: a place outside the grid is the Consumer's mistake, whatever else holds.
-        const placed = this.#held.selection.place(range, focus, this.#extent);
-        if (this.#edit !== undefined || rowSequenceVersion !== this.#sequence()) return false;
-        // The place is the Selection's now: a menu standing at the old one closes, and a drag ends, so its next
-        // move does not reshape the place from the old anchor.
-        this.#closePopover(true);
-        this.#setDragging(false);
-        this.#apply(placed);
-        const target = placed.focus;
-        if (target !== undefined) {
-            this.#revealOwed = { target, extending: undefined, rowStart: false, stepRows: 0 };
-            this.#followArmed = { focus: target, target };
-        }
-        this.#answered += 1;
-        this.#invalidate();
-        return true;
-    }
-
     /** A key press in the grid's canonical form (ADR-0012), as this grid reads its own keys. */
     keyName(event: KeyboardEvent): string {
         return canonicalKey({
@@ -3776,7 +3842,7 @@ export class GridView<Row> {
     // 2026-10-12).
     #runCommand(index: number): void {
         const popover = this.#popover;
-        if (popover === undefined || popover.kind === 'find') return;
+        if (popover === undefined || popover.kind === 'find' || popover.kind === 'consumer') return;
         const shown = itemAt(popover.commands, index);
         if (!shown.enabled) return;
         // A column's commands are asked again as the grid stands now: the column may have moved, or the pinned
@@ -3823,6 +3889,56 @@ export class GridView<Row> {
         this.#invalidate();
     }
 
+    /**
+     * Shows a Consumer's own contents in the grid's popover frame (ADR-0050, item 16), in place of any popover that
+     * stands. The frame stands under the header band, centred across the grid and inside its box, and contents taller
+     * or wider than the room scroll inside it (ADR-0040). Its first control takes the keyboard, Tab and Shift+Tab wrap
+     * inside it, and Escape, a press elsewhere in
+     * the instance and the box shrinking below a row close it as a Cancel; however it closes, the keyboard returns to
+     * the grid (ADR-0039). Refused (false) while an edit is open, which the popover would take the keyboard from with
+     * its text uncommitted. A label that names nothing is refused by name: a dialog that names nothing says nothing
+     * to assistive technology (ADR-0033). The opening, a wrap and a close by the handle are each an input answered
+     * (ADR-0220); a popover that stood before is closed only once the new contents are made.
+     */
+    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        if (typeof content !== 'function') throw new TypeError("A Consumer's popover's content is a function that makes its element (ADR-0050, item 16).");
+        if (typeof label !== 'string' || label.trim() === '') throw new TypeError("A Consumer's popover is named in the Consumer's words: its label is not empty (ADR-0033).");
+        if (this.#edit !== undefined) return false;
+        // The context speaks for this opening only: once another popover stands, its close closes nothing.
+        const opening = {};
+        const standing = (): ConsumerPopoverFrame | undefined => {
+            const popover = this.#popover;
+            return popover?.kind === 'consumer' && popover.opening === opening ? popover.frame : undefined;
+        };
+        const context: GridPopoverContext = Object.freeze({
+            close: () => { if (standing() !== undefined) this.#closePopover(true); },
+            innerPopupChanged: (open: boolean) => {
+                const frame = standing();
+                if (frame !== undefined) frame.innerPopupOpen = open;
+            },
+        });
+        const contents: unknown = content(context);
+        if (!(contents instanceof HTMLElement)) throw new TypeError("A Consumer's popover's content function answers the element to show (ADR-0050, item 16).");
+        // The contents may have opened another popover as they were made: this one takes its place.
+        this.#closePopover(false);
+        const frame = new ConsumerPopoverFrame(this.#root.ownerDocument, label, contents, this.#answer);
+        this.#popover = { kind: 'consumer', element: frame.element, frame, opening };
+        this.#placePopover();
+        this.#scroller.after(frame.element);
+        frame.focusFirst();
+        this.#answer();
+        return true;
+    }
+
+    /** Closes a Consumer's popover where one stands (ADR-0050, item 16); the keyboard returns to the grid. */
+    closePopover(): void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        if (this.#popover?.kind !== 'consumer') return;
+        this.#closePopover(true);
+        this.#answer();
+    }
+
     // The popover's place and bounds, from the geometry the grid already holds (ADR-0040): written again as the
     // box changes, never measured.
     #placePopover(): void {
@@ -3831,6 +3947,15 @@ export class GridView<Row> {
         if (popover.kind === 'context') {
             setAttribute(popover.element, 'style',
                 this.#underBar(contextMenuStyle(popover.leftPx, this.#bandHeightPx + popover.topPx, this.#visibleWidthPx, this.#visibleHeightPx)));
+            return;
+        }
+        // A Consumer's popover under the header, centred across the grid, as wide as its contents within the grid's
+        // width (ADR-0050, item 16).
+        if (popover.kind === 'consumer') {
+            const widest = Math.max(0, this.#visibleWidthPx);
+            setAttribute(popover.element, 'style', this.#underBar(`left: ${widest / 2}px; top: ${this.#bandHeightPx}px; transform: translateX(-50%); `
+                + `width: max-content; min-width: ${Math.min(popoverMinWidthPx, widest)}px; max-width: ${widest}px; `
+                + `max-height: ${this.#popoverRoomPx(popover, this.#visibleHeightPx)}px`));
             return;
         }
         // The find panel in the grid's top right, under the header, anchored by its right edge at the Viewport's

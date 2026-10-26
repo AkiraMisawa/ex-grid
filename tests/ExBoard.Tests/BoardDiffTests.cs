@@ -175,38 +175,17 @@ public sealed class BoardDiffTests : BunitContext
         Assert.Empty(grid.Grid!.Source.Sorts);
     }
 
-    [Fact] // ADR-0340 Q7: a pivot layout placing a field its input no longer declares is dropped whole
-    public void A_pivot_layout_on_a_field_gone_is_dropped()
+    // What a Diff refuses, writes, and drops when laid against a Board is the shared cases' (tests/cases/board/diff.json).
+    [Fact] // ADR-0340 Q7, spine rule 1: a filter keeps the kind its column was declared as when it was set
+    public void A_filter_keeps_the_kind_of_its_column()
     {
-        var reading = BoardSpec.Read(Board());
-        var diff = new BoardDiff(null, new Dictionary<string, BoardPivotChange> { ["byDesk"] = new(PivotLayoutJson.Read("""
-            {"version": 1, "rows": [{"field": "book"}]}
-            """)) }, null);
-
-        var fitted = diff.FitTo(reading);
-
-        Assert.Equal(["views.byDesk.pivot: the layout places field 'book', which input 'trades' no longer declares."], fitted.Dropped);
-        Assert.True(fitted.Diff.IsEmpty);
-    }
-
-    [Fact] // ADR-0340 Q7, spine rule 1: a filter set on a column declared another kind since is dropped, not laid over it
-    public void A_filter_on_a_column_of_another_kind_is_dropped()
-    {
-        var reading = BoardSpec.Read(Board());
-        var board = Bound(reading);
+        var board = Bound(BoardSpec.Read(Board()));
         ((BoundGridView)board["blotter"]).Grid!.Source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
         {
             ["desk"] = new FilterSpec([new FilterClause(FilterOperator.Equals, "Rates")]),
         }));
-        var json = board.Diff.ToJson();
-        Assert.Contains("\"kinds\":{\"desk\":\"text\"}", json, StringComparison.Ordinal);
-        // Next time the input declares desk an integer.
-        var changed = BoardSpec.Read(Board().Replace("""{"name": "desk", "type": "text"}""", """{"name": "desk", "type": "integer"}""", StringComparison.Ordinal));
 
-        var fitted = BoardDiff.Read(json).FitTo(changed);
-
-        Assert.Equal(["views.blotter.grid: the filter on column 'desk', set on text, which the column now is not; it is integer."], fitted.Dropped);
-        Assert.True(fitted.Diff.IsEmpty);
+        Assert.Contains("\"kinds\":{\"desk\":\"text\"}", board.Diff.ToJson(), StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0340 Q7, spine rule 6: a gesture naming a column no longer shown is refused, not applied to others
@@ -220,37 +199,6 @@ public sealed class BoardDiffTests : BunitContext
         Assert.False(grid.Hide("desk"));
         Assert.False(grid.Pin(3));
         Assert.Equal(["id", "pnl"], grid.Columns.Select(c => c.Name));
-    }
-
-    [Fact] // ADR-0340 Q7: a hidden column the Board no longer has is named among what was dropped
-    public void A_hidden_column_gone_is_named()
-    {
-        var reading = BoardSpec.Read(Board());
-        var board = Bound(reading);
-        ((BoundGridView)board["blotter"]).Hide("desk");
-        var changed = BoardSpec.Read(Board(grid: """{"id": "blotter", "grid": {"data": "trades", "columns": [{"column": "id", "pinned": true}, {"column": "pnl", "format": "#,##0", "width": 90}]}}"""));
-
-        Assert.Equal(["views.blotter.grid: column 'desk', hidden, is no longer shown by view 'blotter'."], Bound(changed, board.Diff).Dropped);
-    }
-
-    public static TheoryData<string, string, string> Refusals => new()
-    {
-        { """{"version": 2, "views": {}}""", "version", "Version 2 is not one this reader reads; it reads version 1." },
-        { """{"views": {}}""", "version", "A Board Diff names its version; this reader reads version 1." },
-        { """{"version": 1, "views": {}, "board": "desk"}""", "board", "A Board Diff has no member 'board'." },
-        { """{"version": 1, "views": []}""", "views", "A Board Diff holds its views' parts in 'views', an object keyed by view id." },
-        { """{"version": 1, "views": {"curve": {"chart": {}, "grid": {}}}}""", "views.curve", "View 'curve''s part is an object holding one of grid, pivot and chart." },
-        { """{"version": 1, "views": {"curve": {"chart": {"scale": "log"}}}}""", "views.curve.chart.scale", "A chart's scale is one of proportional, categories, logarithmic." },
-        { """{"version": 1, "views": {"curve": {"chart": {"range": {"from": "2026"}}}}}""", "views.curve.chart.range.from", "An end of a range is a number in the axis' values." },
-        { """{"version": 1, "views": {"blotter": {"grid": {"hidden": []}}}}""", "views.blotter.grid.viewState", "A grid's part holds its View State in 'viewState'." },
-    };
-
-    [Theory, MemberData(nameof(Refusals))] // ADR-0340 Q7: a Diff this reader cannot read is refused by path, not half-read
-    public void A_diff_that_cannot_be_read_is_refused(string json, string path, string message)
-    {
-        var refused = Assert.Throws<BoardRefusedException>(() => BoardDiff.Read(json));
-        Assert.Equal(path, refused.Path);
-        Assert.Equal(message, refused.Message);
     }
 
     [Fact] // ADR-0340 Q7: the last column shown is kept, so the grid can still be shown one

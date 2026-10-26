@@ -15,7 +15,7 @@ import {
 } from '@ex-grid/pivot-engine';
 import { lowered } from './field-list';
 import { itemListCap, type FieldItems, type ItemsProblem } from './items';
-import { popupFrame } from './menu';
+import { popupFrame, type PivotMenuPlace } from './menu';
 import { defined, elementAt } from './must';
 import { actions, element, type PanelHandlers, type PivotPanel } from './panels';
 import type { PivotScreenWords } from './words';
@@ -26,6 +26,8 @@ export interface ItemFilterModel {
     readonly layout: PivotLayout;
     readonly field: string;
     readonly caption: string;
+    /** Where it stands: under the field's entry in the Field List, or under its button in the report filter band. */
+    readonly place: PivotMenuPlace;
     /** The locale the search lowers text in, and the count in the note is written in. */
     readonly locale: string;
     readonly words: PivotScreenWords;
@@ -58,11 +60,11 @@ interface DrawnItem {
 
 /** The sentence for a source's refusal or failure to list Items, as the Razor component's ProblemText says it. */
 export function itemsProblemText(problem: ItemsProblem, words: PivotScreenWords): string {
-    if ('error' in problem) return words.fill('source-failed', problem.error instanceof Error ? problem.error.message : String(problem.error));
+    if ('error' in problem) return words.failed(problem.error);
     const { refusal } = problem;
-    // A report the source no longer holds, or data that has moved on, asks for a refresh (ADR-0066).
-    if (refusal.kind === 'reportVersionNotHeld' || refusal.sourceRefusal?.kind === 'sourceVersionNotHeld') return words.word('data-changed');
-    return words.fill('source-refused', refusal.sourceRefusal === undefined ? refusal.message : refusal.sourceRefusal.message);
+    if (refusal.sourceRefusal !== undefined) return words.sourceRefused(refusal.sourceRefusal);
+    // A report the source no longer holds asks for a refresh, as data that moved on does (ADR-0066).
+    return refusal.kind === 'reportVersionNotHeld' ? words.word('data-changed') : words.fill('source-refused', refusal.message);
 }
 
 /** Filter…: drawn again by the pivot as the field's Items land. */
@@ -103,7 +105,7 @@ export class ItemFilterPanel implements PivotPanel {
         this.#handlers = handlers;
         const { words } = model;
         for (const key of placementHidden(model.layout, model.field)) this.#hidden.set(pivotItemKeyId(key), key);
-        this.element = popupFrame(document, 'field-list', 'dialog', handlers.cancel);
+        this.element = popupFrame(document, model.place, 'dialog', handlers.cancel);
         this.element.setAttribute('aria-label', words.fill('filter-of', model.caption));
         const panel = element(document, 'div', 'ex-pivot-panel ex-pivot-item-filter');
         this.#searchBox = element(document, 'input', 'ex-pivot-search');

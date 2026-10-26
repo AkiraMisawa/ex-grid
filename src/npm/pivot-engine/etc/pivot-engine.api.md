@@ -7,6 +7,7 @@
 import { ChangeBatch } from '@ex-grid/data';
 import { Snapshot } from '@ex-grid/data';
 import { SnapshotChange } from '@ex-grid/data';
+import type { SnapshotColumn } from '@ex-grid/data';
 import { SnapshotDecimal } from '@ex-grid/data';
 
 // @public
@@ -75,6 +76,9 @@ export function fillPivotWord(template: string, ...args: readonly string[]): str
 export function formatPivotCount(count: number, locale: string): string;
 
 // @public
+export function formatPivotDetailValue(value: PivotDetailValue, format: string | undefined, locale: string): string;
+
+// @public
 export function formatPivotNumber(value: number, format: string, locale: string): string;
 
 // @public
@@ -108,7 +112,7 @@ export const japanesePivotWords: PivotLabel;
 export function layoutChoiceChanges(layout: PivotLayout, choice: PivotLayoutChoice): boolean;
 
 // @public
-export function levelQueryForLayout(layout: PivotLayout, maxLeaves?: number): PivotQuery;
+export function levelQueryForLayout(layout: PivotLayout, maxLeaves?: number, window?: PivotLevelWindowInput): PivotQuery;
 
 // @public
 export function levelsOfLayout(layout: PivotLayout): PivotLevels;
@@ -443,6 +447,9 @@ export interface PivotItemKey {
 
 // @public
 export function pivotItemKey(kind: PivotItemKind, value?: string): PivotItemKey;
+
+// @public
+export function pivotItemKeyAt(column: SnapshotColumn, row: number): PivotItemKey;
 
 // @public
 export function pivotItemKeyId(key: PivotItemKey): string;
@@ -850,7 +857,7 @@ export interface PivotReportRefusal {
 }
 
 // @public
-export type PivotReportRefusalKind = 'reportVersionNotHeld' | 'unknownOrderKeyPolicy' | 'sourceRefused' | 'invalidRequest' | 'orderKeyFailed';
+export type PivotReportRefusalKind = 'reportVersionNotHeld' | 'unknownOrderKeyPolicy' | 'sourceRefused' | 'invalidRequest' | 'orderKeyFailed' | 'rowsNotAnswered';
 
 // @public
 export interface PivotReportRefused {
@@ -968,7 +975,7 @@ export interface PivotRowLabel {
 }
 
 // @public
-export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal';
+export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal' | 'pending';
 
 // @public
 export type PivotShowValuesAs = 'noCalculation' | 'percentOfGrandTotal' | 'percentOfColumnTotal' | 'percentOfRowTotal';
@@ -1204,6 +1211,9 @@ export function untickField(layout: PivotLayout, field: string): PivotLayout;
 
 // @public
 export function validateLayout(layout: PivotLayout, declared: ReadonlyMap<string, unknown>): void;
+
+// @public
+export function valueFieldsEqual(a: PivotValueField, b: PivotValueField): boolean;
 
 // @public
 export function valuesPseudoField(axis: PivotAxis): PivotEntry;

@@ -5,6 +5,7 @@
 // out both. What a press or a key means is the Sheet's: this draws, and reports what was pressed.
 
 import type { Sheet } from '@ex-grid/sheet-engine';
+import { preventDefault, setAttr } from './dom-attributes';
 
 /** What the tabs tell the Sheet they hear. */
 export interface SheetTabsHooks {
@@ -109,12 +110,4 @@ export class SheetTabs {
         this.#tabs.set(sheet, tab);
         return tab;
     }
-}
-
-function preventDefault(event: Event): void {
-    event.preventDefault();
-}
-
-function setAttr(element: HTMLElement, name: string, value: string): void {
-    if (element.getAttribute(name) !== value) element.setAttribute(name, value);
 }

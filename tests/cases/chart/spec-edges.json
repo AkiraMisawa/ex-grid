@@ -1,0 +1,626 @@
+{
+  "about": "A Chart Spec's nodes and edges, two tables whose keys meet as text, and the columns a node's tooltip says (ADR-0321), from tests/ExChart.Engine.Tests/ChartSpecTests.cs (ChartSpecEdgeTests).",
+  "kind": "chart",
+  "tables": {
+    "nodes": {
+      "id": [
+        {
+          "integer": 0
+        },
+        {
+          "integer": 1
+        },
+        {
+          "integer": 2
+        }
+      ],
+      "step": [
+        {
+          "integer": 0
+        },
+        {
+          "integer": 1
+        },
+        {
+          "integer": 1
+        }
+      ],
+      "price": [
+        {
+          "decimal": "100"
+        },
+        {
+          "decimal": "90"
+        },
+        {
+          "decimal": "110"
+        }
+      ],
+      "probability": [
+        {
+          "decimal": "1"
+        },
+        {
+          "decimal": "0.5"
+        },
+        null
+      ],
+      "exercise": [
+        "no",
+        "yes",
+        "no"
+      ]
+    },
+    "links": {
+      "from": [
+        "0",
+        "0"
+      ],
+      "to": [
+        "1",
+        "2"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0321: the nodes and the edges are two tables; keys meet as text",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.edges",
+          "is": [
+            {
+              "from": "0",
+              "to": "1"
+            },
+            {
+              "from": "0",
+              "to": "2"
+            }
+          ]
+        },
+        {
+          "at": "definition.series.0.points",
+          "is": [
+            {
+              "x": 0,
+              "y": 100,
+              "row": "0"
+            },
+            {
+              "x": 1,
+              "y": 90,
+              "row": "1"
+            },
+            {
+              "x": 1,
+              "y": 110,
+              "row": "2"
+            }
+          ]
+        },
+        {
+          "at": "definition.axis.title",
+          "is": "Step"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: a node's tooltip says the columns the spec names, and no other",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "tooltip": [
+              "probability"
+            ],
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.details",
+          "is": [
+            {
+              "title": "probability",
+              "values": [
+                "1",
+                "0.5",
+                null
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: a tooltip's column is one of its table's",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "tooltip": [
+              "probability",
+              "delta"
+            ],
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].tooltip[1]",
+        "message": "series[0].tooltip[1]: \"nodes\" has no column \"delta\"; its columns are id, step, price, probability, exercise."
+      }
+    },
+    {
+      "name": "ADR-0321: a tooltip is a list of columns",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "tooltip": "probability",
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].tooltip",
+        "message": "series[0].tooltip is a list of the columns its tooltip says."
+      }
+    },
+    {
+      "name": "ADR-0321: a tooltip names each column as text",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "tooltip": [
+              "probability",
+              2
+            ],
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].tooltip[1]",
+        "message": "series[0].tooltip[1] names a column, as text."
+      }
+    },
+    {
+      "name": "ADR-0321: a tooltip names a column once",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "tooltip": [
+              "probability",
+              "exercise",
+              "probability"
+            ],
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].tooltip[2]",
+        "message": "series[0].tooltip[2] names \"probability\" twice."
+      }
+    },
+    {
+      "name": "ADR-0321: the tooltip's columns are an observation's",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "T",
+            "kind": "level",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "tooltip": [
+              "probability"
+            ]
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].tooltip",
+        "message": "series[0].tooltip belongs to an observation, whose tooltip names one point; a line's tooltip reads every series at a position."
+      }
+    },
+    {
+      "name": "ADR-0321: edges need the nodes' keys",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].key",
+        "message": "series[0].key is missing: an edge names its nodes by key, so the nodes say which column holds theirs."
+      }
+    },
+    {
+      "name": "ADR-0321: edges belong to an observation",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "level",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].edges",
+        "message": "series[0].edges belongs to an observation, whose points are the nodes."
+      }
+    },
+    {
+      "name": "ADR-0321: edges are an object naming their table",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "edges": "links"
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].edges",
+        "message": "series[0].edges is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0321: the edges' table is one the host knows",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "edges": {
+              "data": "paths",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].edges.data",
+        "message": "series[0].edges.data \"paths\" is not known: name a Data Handle a capability returned."
+      }
+    },
+    {
+      "name": "ADR-0321: an edge's end is read from its column",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "edges": {
+              "data": "links",
+              "from": "from"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].edges.to",
+        "message": "series[0].edges.to is missing: the column it is read from."
+      }
+    },
+    {
+      "name": "ADR-0321: an edge to a missing node comes back with the series' path",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "tables": {
+        "links": {
+          "from": [
+            "0"
+          ],
+          "to": [
+            "7"
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0]",
+        "message": "series[0]: 'Tree' has an edge from 0 to 7, but no node is keyed 7."
+      }
+    },
+    {
+      "name": "ADR-0321: a node without a key is refused naming the row",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "tables": {
+        "nodes": {
+          "id": [
+            {
+              "integer": 0
+            },
+            null
+          ],
+          "step": [
+            {
+              "integer": 0
+            },
+            {
+              "integer": 1
+            }
+          ],
+          "price": [
+            {
+              "decimal": "100"
+            },
+            {
+              "decimal": "90"
+            }
+          ],
+          "probability": [
+            null,
+            null
+          ],
+          "exercise": [
+            "no",
+            "no"
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].key",
+        "message": "series[0].key: row 2 of \"nodes\" has no key."
+      }
+    },
+    {
+      "name": "ADR-0321: an edge without an end is refused naming the row",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "Tree",
+            "kind": "observation",
+            "data": "nodes",
+            "x": "step",
+            "y": "price",
+            "key": "id",
+            "edges": {
+              "data": "links",
+              "from": "from",
+              "to": "to"
+            }
+          }
+        ]
+      },
+      "tables": {
+        "links": {
+          "from": [
+            "0",
+            null
+          ],
+          "to": [
+            "1",
+            "2"
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].edges.from",
+        "message": "series[0].edges.from: row 2 of \"links\" has no key."
+      }
+    }
+  ]
+}

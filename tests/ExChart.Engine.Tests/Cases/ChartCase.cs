@@ -36,6 +36,11 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     public void Run()
     {
+        if (IsSpecCase)
+        {
+            RunSpec();
+            return;
+        }
         Allow(entry, "the case", CaseKeys);
         if (entry.TryGetProperty("throws", out var throws))
         {
@@ -1157,4 +1162,106 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             : Items(value, where).Any(item => Matches(wanted, item, near));
 
     private static string Text(JsonNode? node) => node is null ? "null" : node.ToJsonString();
+
+    // ---- The Chart Spec reader (ADR-0320; ADR-0370, section 3) ----
+
+    // A spec case reads a Chart Spec against tables, and expects the reading or a refusal at a path.
+    private static readonly string[] SpecCaseKeys = ["name", "spec", "specText", "tables", "refused", "expect"];
+
+    private bool IsSpecCase => entry.TryGetProperty("spec", out _) || entry.TryGetProperty("specText", out _);
+
+    private void RunSpec()
+    {
+        Allow(entry, "the spec case", SpecCaseKeys);
+        if (entry.TryGetProperty("spec", out _) == entry.TryGetProperty("specText", out _))
+            throw new InvalidOperationException($"\"{Name}\" gives its spec as one of spec and specText.");
+        // An object is read as the file writes it; specText is the spec's text as it is, for text that is not
+        // JSON, or a number whose spelling the reader reads.
+        var text = entry.TryGetProperty("spec", out var spec) ? spec.GetRawText() : entry.GetProperty("specText").GetString()!;
+        var tables = SpecTables();
+        IChartData? Lookup(string handle) => tables.TryGetValue(handle, out var table) ? table : null;
+        if (entry.TryGetProperty("refused", out var refused) == entry.TryGetProperty("expect", out var checks))
+            throw new InvalidOperationException($"\"{Name}\" is either refused or expects a reading.");
+        if (entry.TryGetProperty("refused", out _))
+        {
+            Allow(refused, "refused", "path", "message", "startsWith");
+            var e = Assert.Throws<ChartSpecRefusedException>(() => ChartSpec.Read(text, Lookup));
+            var path = refused.GetProperty("path").GetString()!;
+            Assert.True(e.Path == path, $"\"{Name}\": refused at \"{e.Path}\", not \"{path}\": {e.Message}");
+            if (refused.TryGetProperty("message", out _) == refused.TryGetProperty("startsWith", out _))
+                throw new InvalidOperationException($"\"{Name}\"'s refusal says one of message and startsWith.");
+            if (refused.TryGetProperty("message", out var message))
+                Assert.True(e.Message == message.GetString(), $"\"{Name}\": the refusal says \"{e.Message}\".");
+            else
+                Assert.True(e.Message.StartsWith(refused.GetProperty("startsWith").GetString()!, StringComparison.Ordinal), $"\"{Name}\": the refusal says \"{e.Message}\".");
+            return;
+        }
+        var reading = ChartSpec.Read(text, Lookup);
+        JsonNode? definition;
+        try
+        {
+            definition = Serialise(reading.Definition);
+        }
+        catch (InvalidOperationException e)
+        {
+            definition = new JsonObject { ["refused"] = Refusal(e) };
+        }
+        var answer = new JsonObject { ["title"] = reading.Title, ["definition"] = definition, ["surface"] = Serialise(reading.Surface) };
+        Assert.True(checks.GetArrayLength() > 0, $"\"{Name}\" checks nothing.");
+        foreach (var check in checks.EnumerateArray())
+            Check(answer, answer, check);
+    }
+
+    // The file's tables by handle, a case's own taking the place of the file's of the same handle.
+    private Dictionary<string, IChartData> SpecTables()
+    {
+        var tables = new Dictionary<string, IChartData>(StringComparer.Ordinal);
+        foreach (var source in new[] { file, entry })
+            if (source.TryGetProperty("tables", out var named))
+                foreach (var table in named.EnumerateObject())
+                    tables[table.Name] = ChartData.Of(table.Value.EnumerateObject()
+                        .Select(column => (column.Name, (IList)column.Value.EnumerateArray().Select(SpecCell).ToArray())).ToArray());
+        return tables;
+    }
+
+    // A table's value: null, a text, a bool, a number as a double, or one of {"decimal": "1.25"},
+    // {"integer": 3} (a long), {"date": "yyyy-MM-dd"} (a DateOnly), {"dateTime": "yyyy-MM-ddTHH:mm:ss"} and
+    // {"double": "NaN" | "Infinity" | "-Infinity"}.
+    private static object? SpecCell(JsonElement e)
+    {
+        switch (e.ValueKind)
+        {
+            case JsonValueKind.Null:
+                return null;
+            case JsonValueKind.String:
+                return e.GetString();
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+                return e.GetBoolean();
+            case JsonValueKind.Number:
+                return e.GetDouble();
+        }
+        var form = e.EnumerateObject().Single();
+        switch (form.Name)
+        {
+            case "decimal":
+            {
+                var written = form.Value.GetString()!;
+                // TypeScript holds a decimal by its value, so 1.50 is written as 1.5 in both.
+                if (written.Contains('.', StringComparison.Ordinal) && written.EndsWith('0'))
+                    throw new InvalidOperationException($"The decimal {written} is written with a trailing zero; write it as its value.");
+                return decimal.Parse(written, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture);
+            }
+            case "integer":
+                return form.Value.GetInt64();
+            case "date":
+                return DateOnly.ParseExact(form.Value.GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+            case "dateTime":
+                return DateTime.ParseExact(form.Value.GetString()!, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+            case "double":
+                return Number(form.Value);
+            default:
+                throw new InvalidOperationException($"{e} is not a value a table holds.");
+        }
+    }
 }

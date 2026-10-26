@@ -494,7 +494,7 @@ public static partial class BoardSpec
         {
             layout = PivotLayoutJson.Read(layoutValue.GetRawText());
         }
-        catch (Exception e) when (e is FormatException or JsonException or ArgumentException)
+        catch (Exception e) when (e is FormatException or JsonException or ArgumentException or NotSupportedException)
         {
             throw new BoardRefusedException($"{path}.layout", $"The pivot's layout cannot be read: {e.Message}");
         }

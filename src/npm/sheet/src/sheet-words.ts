@@ -8,7 +8,7 @@
 // A sentence with arguments is a function of them here, and a template by its id: {0}, {1} and {2} stand for
 // its arguments in the order the function takes them, so a language that orders them otherwise moves them.
 
-import type { CommitRefusalReason, CopyRefusalReason, EditDiscardReason, PasteRefusalReason } from '@ex-grid/core';
+import type { CommitRefusalReason, CopyRefusalReason, EditDiscardReason, PasteRefusalReason, PlacementRefusalReason } from '@ex-grid/core';
 import type { BorderLineStyle, CellAddress, Culture, FormulaSyntaxError, HorizontalAlignment, SheetRefusal } from '@ex-grid/sheet-engine';
 import type {
     BorderEdge, BorderPreset, ColourTarget, DisabledNumberFormatCategory, FontStyle, FormatCellsTab, NumberFormatCategory,
@@ -29,6 +29,21 @@ export type FormatCellsRefusal =
     | { readonly kind: 'notAColour'; readonly target: ColourTarget; readonly text: string };
 
 /**
+ * A label of Format Cells' own under the built-in Chrome (ADR-0071): its legends, fields and buttons, worded by
+ * {@link SheetWords.formatCellsLabel}.
+ */
+export type FormatCellsLabel =
+    | 'tabs' | 'category' | 'generalHint' | 'textHint' | 'decimalPlaces' | 'thousandsSeparator' | 'negativeNumbers'
+    | 'type' | 'codes' | 'horizontal' | 'fontStyle' | 'underline' | 'underlineNone' | 'underlineSingle'
+    | 'strikethrough' | 'normalFont' | 'colour' | 'lineStyle' | 'presets' | 'border' | 'preview' | 'backgroundColour'
+    | 'automatic' | 'noColour' | 'moreColours' | 'ok' | 'cancel';
+
+/** A command of the Sheet Toolbar's default row (ADR-0100), in Excel's Home tab order. */
+export type SheetToolbarCommand =
+    | 'bold' | 'italic' | 'underline' | 'strikethrough' | 'fontColour' | 'fill' | 'borders' | 'alignLeft' | 'alignCenter'
+    | 'alignRight' | 'numberFormat' | 'percent' | 'comma' | 'formatCells';
+
+/**
  * The id of every word ExSheet shows: stable, so a Consumer's label function can answer it. An id with a
  * reason or a name in it takes the reason or the name as the union beside it spells it.
  */
@@ -39,7 +54,7 @@ export type SheetWordId =
     | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing'
     | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete'
     | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete'
-    | 'toolbarName' | 'toolbarWhileEditing' | 'sheetTabsName' | 'editSheetGone'
+    | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'sheetTabsName' | 'editSheetGone'
     | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded'
     | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied'
     | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName'
@@ -50,6 +65,7 @@ export type SheetWordId =
     | 'pasteTooNarrowToShow'
     | `pasteRefused.${PasteRefusalReason}`
     | `commitRefused.${CommitRefusalReason}`
+    | `placementRefused.${PlacementRefusalReason}`
     | 'overwritten'
     | `copyRefused.${CopyRefusalReason}`
     | `pointingRefused.${PointingRefusalWordCase}`
@@ -67,7 +83,8 @@ export type SheetWordId =
     | `formatCells.preset.${BorderPreset}`
     | `formatCells.lineStyle.${BorderLineStyle}`
     | `formatCells.colour.${ThemeColourName | StandardColourName}`
-    | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep';
+    | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep'
+    | `formatCells.label.${FormatCellsLabel}` | 'formatCells.symbol';
 
 /**
  * A Consumer's word for an id, or `undefined` to keep ExSheet's own (its Japanese where that was chosen, else
@@ -240,6 +257,21 @@ export class SheetWords {
         return this.word('toolbarName');
     }
 
+    /** The Sheet Toolbar's default row, Excel's Home tab (ADR-0100). */
+    get toolbarHomeRow(): string {
+        return this.word('toolbar.row.home');
+    }
+
+    /** A Toolbar Item's name (ADR-0100): `Bold`. */
+    toolbarItem(command: SheetToolbarCommand): string {
+        return this.word(`toolbar.item.${command}`);
+    }
+
+    /** A Toolbar Item's tooltip, its name with its key (ADR-0100): `Bold (Ctrl+B)`. */
+    toolbarItemWithShortcut(name: string, shortcut: string): string {
+        return this.#say('toolbar.withShortcut', name, shortcut);
+    }
+
     /** Why the Sheet Toolbar's items cannot be pressed while an edit is open (ADR-0100). */
     get toolbarWhileEditing(): string {
         return this.word('toolbarWhileEditing');
@@ -390,6 +422,12 @@ export class SheetWords {
         return this.#say(`commitRefused.${reason}`, address);
     }
 
+    /** A selection the Consumer asked the grid to place, refused because the rows or columns it was taken
+     * against have moved since (ADR-0005): the Selection stands where it was. */
+    placementRefused(reason: PlacementRefusalReason): string {
+        return this.word(`placementRefused.${reason}`);
+    }
+
     /** A commit that landed over a cell changed while it was being edited (ADR-0142, LV-11): what it showed when
      * editing began, and just before. */
     overwritten(address: string, seen: string, replaced: string): string {
@@ -500,6 +538,16 @@ export class SheetWords {
             swatch.step.shade === 'darker' ? 'formatCells.colourDarker' : 'formatCells.colourLighter',
             String(swatch.step.percent));
         return this.#say('formatCells.colourStep', name, step);
+    }
+
+    /** A label of Format Cells' own under the built-in Chrome: a legend, a field or a button (ADR-0071). */
+    formatCellsLabel(label: FormatCellsLabel): string {
+        return this.word(`formatCells.label.${label}`);
+    }
+
+    /** The Currency category's symbol, as the Number tab shows it: `Symbol: $`. */
+    currencySymbolShown(symbol: string): string {
+        return this.#say('formatCells.symbol', symbol);
     }
 
     /** Why Format Cells' OK cannot set what it shows (ADR-0071). */

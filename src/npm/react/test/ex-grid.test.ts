@@ -2,12 +2,12 @@
 // The adapter's own tests (ADR-0350 section 13): React Testing Library mounts it. What the grid paints is
 // the core's, tested there; here, that the adapter mounts the core once, hands it each render's props, and
 // destroys it with the component.
-import { createElement, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { createElement, createRef, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { StrictMode } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { GridSource, type GridColumn, type GridTemplateCell } from '@ex-grid/core';
-import { ExGrid } from '../src/ex-grid';
+import { ExGrid, type ExGridApi } from '../src/ex-grid';
 import { templateColumn } from '../src/template-column';
 
 interface Trade {
@@ -35,6 +35,22 @@ describe('ExGrid', () => {
         await Promise.resolve();
         expect(container.firstElementChild).toBe(root);
         expect(root?.getAttribute('aria-rowcount')).toBe('3');
+    });
+
+    it('ADR-0050: a ref reaches the grid\'s placement, which places the Selection, and throws once the grid is unmounted', async () => {
+        const ref = createRef<ExGridApi<Trade>>();
+        const { container, unmount } = render(createElement(ExGrid<Trade>, { columns, rows: [{ book: 'Rates' }, { book: 'Credit' }], ref }));
+        const api = ref.current;
+        if (api === null) throw new Error('The ref was handed the grid.');
+        let placed = false;
+        await act(async () => {
+            placed = api.placeSelection({ topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 1 }, { row: 1, column: 0 }, 0);
+            await Promise.resolve();
+        });
+        expect(placed).toBe(true);
+        expect(container.firstElementChild?.getAttribute('aria-activedescendant')).toMatch(/r1c0$/);
+        unmount();
+        expect(() => api.placeSelection({ topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }, { row: 0, column: 0 }, 0)).toThrow(/not mounted/);
     });
 
     it('ADR-0370 section 10: given no locale, the grid reads typed text in the browser\'s language, read once when it is made', () => {

@@ -1,0 +1,166 @@
+{
+  "about": "Reading a Query's JSON alone (ADR-0207, FN-13): what the reader refuses, in the C# core's words and at the path it names, and what it takes, written again. Transcribed from tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
+  "kind": "viewStateJson",
+  "columns": [],
+  "cases": [
+    {
+      "name": "FN-13: a Query of version 0 is refused by name",
+      "readQuery": "{\"version\":0,\"range\":{\"start\":0,\"count\":1},\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A Query of version 0 cannot be read; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a Query of version 2 is refused by name",
+      "readQuery": "{\"version\":2,\"range\":{\"start\":0,\"count\":1},\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A Query of version 2 cannot be read; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a Query that names no version is refused",
+      "readQuery": "{\"range\":{\"start\":0,\"count\":1},\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A Query names its version as a number; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: text that is not JSON is not a Query",
+      "readQuery": "not json",
+      "refused": {
+        "path": null,
+        "saying": "A Query cannot be read: "
+      }
+    },
+    {
+      "name": "FN-13: an array is not a Query",
+      "readQuery": "[]",
+      "refused": {
+        "path": null,
+        "says": "A Query is a JSON object."
+      }
+    },
+    {
+      "name": "FN-13: a range no grid could ask for is refused on the way in: 0 rows at 0",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0,\"count\":0},\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A Query's range is a run of at least one row at a position of 0 or more, and 0 rows at 0 is not (ADR-0001)."
+      }
+    },
+    {
+      "name": "FN-13: a range no grid could ask for is refused on the way in: 5 rows at -1",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":-1,\"count\":5},\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A Query's range is a run of at least one row at a position of 0 or more, and 5 rows at -1 is not (ADR-0001)."
+      }
+    },
+    {
+      "name": "FN-13: a range no grid could ask for is refused on the way in: -3 rows at 0",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0,\"count\":-3},\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A Query's range is a run of at least one row at a position of 0 or more, and -3 rows at 0 is not (ADR-0001)."
+      }
+    },
+    {
+      "name": "FN-13: a misshapen Query is refused in the form's words, at where it stands: a start with a fraction",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":1.5,\"count\":2},\"sorts\":[]}",
+      "refused": {
+        "path": "$.range.start",
+        "says": "A Query cannot be read at $.range.start: 'start' is a whole number, and here it is the number 1.5 (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a misshapen Query is refused in the form's words, at where it stands: a count past 32 bits",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0,\"count\":3000000000},\"sorts\":[]}",
+      "refused": {
+        "path": "$.range.count",
+        "says": "A Query cannot be read at $.range.count: 'count' is a whole number, and here it is the number 3000000000 (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a misshapen Query is refused in the form's words, at where it stands: a count written with a point",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0,\"count\":2.0},\"sorts\":[]}",
+      "refused": {
+        "path": "$.range.count",
+        "says": "A Query cannot be read at $.range.count: 'count' is a whole number, and here it is the number 2.0 (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a misshapen Query is refused in the form's words, at where it stands: a range null",
+      "readQuery": "{\"version\":1,\"range\":null,\"sorts\":[]}",
+      "refused": {
+        "path": "$.range",
+        "says": "A Query cannot be read at $.range: 'range' is null, and it is an object (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a misshapen Query is refused in the form's words, at where it stands: a range missing",
+      "readQuery": "{\"version\":1,\"sorts\":[]}",
+      "refused": {
+        "path": "$",
+        "says": "A Query cannot be read at $: its member 'range' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a misshapen Query is refused in the form's words, at where it stands: a range's count missing",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0},\"sorts\":[]}",
+      "refused": {
+        "path": "$.range",
+        "says": "A Query cannot be read at $.range: its member 'count' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a misshapen Query is refused in the form's words, at where it stands: a View State's member",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0,\"count\":1},\"sorts\":[],\"columns\":[]}",
+      "refused": {
+        "path": "$",
+        "says": "A Query cannot be read at $: it has no member 'columns' in version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a Query is read without a grid's columns, and names any column",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":3,\"count\":2},\"sorts\":[{\"column\":\"Anything\",\"direction\":\"Descending\"}],\"filter\":{\"columns\":{\"Anywhere\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"IsBlank\"}]}}}}",
+      "writes": "{\"version\":1,\"range\":{\"start\":3,\"count\":2},\"sorts\":[{\"column\":\"Anything\",\"direction\":\"Descending\"}],\"filter\":{\"columns\":{\"Anywhere\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"IsBlank\"}]}}}}"
+    },
+    {
+      "name": "FN-13: a Query's sort level that names no column is refused",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":3,\"count\":2},\"sorts\":[{\"column\":\"\",\"direction\":\"Descending\"}]}",
+      "refused": {
+        "path": null,
+        "says": "Sort level 1 names no column."
+      }
+    },
+    {
+      "name": "FN-13: a Query's filter on an empty column name is refused",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0,\"count\":1},\"sorts\":[],\"filter\":{\"columns\":{\"\":{\"combinator\":\"And\",\"clauses\":[]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter names no column."
+      }
+    },
+    {
+      "name": "FN-13: a Query's operand is read as a View State's is",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0,\"count\":1},\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1e3\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e3' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "FN-13: a Query with no filter and no sort reads back as itself",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":0,\"count\":1},\"sorts\":[]}",
+      "writes": "{\"version\":1,\"range\":{\"start\":0,\"count\":1},\"sorts\":[]}"
+    },
+    {
+      "name": "FN-13: a Query at the last range a grid can ask for reads back as itself",
+      "readQuery": "{\"version\":1,\"range\":{\"start\":2147483646,\"count\":1},\"sorts\":[]}",
+      "writes": "{\"version\":1,\"range\":{\"start\":2147483646,\"count\":1},\"sorts\":[]}"
+    }
+  ]
+}

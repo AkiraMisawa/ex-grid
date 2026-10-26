@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
     BoardInput, BoardRefusedError, createSnapshot, decimalText, readJsonText, ticksText, type DataShapeColumn, type Snapshot, type SnapshotColumn,
 } from '../src/index';
-import { isObject, key, kindOf, list, text, type Json, type JsonObject } from './case-json';
+import { cases, isObject, key, kindOf, list, startingWith, text, type Json, type JsonObject } from './case-json';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases/data');
 
@@ -90,7 +90,7 @@ async function answer(entry: JsonObject): Promise<Json> {
 
 for (const { name: file, json } of files) {
     describe(`data/${file}`, () => {
-        for (const entry of list(key(json, 'cases')).filter(isObject)) {
+        for (const entry of cases(json)) {
             it(text(key(entry, 'name')), async () => {
                 expect.hasAssertions();
                 const refused = entry['refused'];
@@ -100,7 +100,7 @@ for (const { name: file, json } of files) {
                     await expect(answer(entry)).rejects.toMatchObject({ path: text(key(refused, 'path')) });
                     // A message quoting the platform's JSON parser is held to the words before it.
                     if (saying === undefined) await expect(answer(entry)).rejects.toMatchObject({ message: text(key(refused, 'message')) });
-                    else await expect(answer(entry)).rejects.toThrow(text(saying));
+                    else await expect(answer(entry)).rejects.toThrow(startingWith(text(saying)));
                     return;
                 }
                 const want = entry['columns'] ?? entry['snapshot'] ?? key(entry, 'binds');

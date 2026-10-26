@@ -1,0 +1,4006 @@
+{
+  "about": "Whether two View States hold the same view, and two Queries ask for the same thing (ADR-0207, ST-4, FN-13): by what they hold, an operand by its type and that type's own equality (ADR-0023). Transcribed from tests/ExGrid.Tests/QuerySerialisationTests.cs.",
+  "kind": "viewStateJson",
+  "columns": [
+    "Notional",
+    "Book",
+    "AsOf",
+    "Active",
+    "Settles",
+    "Stamped",
+    "Hidden"
+  ],
+  "cases": [
+    {
+      "name": "ADR-0207: two View States built apart holding the same view are equal",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "ADR-0207: the filter's columns in another order are the same view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "ADR-0023: a Decimal 1.00 is the Decimal 1, by its own equality",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1.00"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "ADR-0023: a DateTime compares by its ticks, whatever its kind",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Utc"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "ADR-0023: a DateTimeOffset compares by its instant",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Stamped": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "DateTimeOffset",
+                      "value": "2026-01-05T09:30:00.0000000+09:00"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Stamped": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "DateTimeOffset",
+                      "value": "2026-01-05T00:30:00.0000000+00:00"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "ADR-0023: a Double 0 and -0 are one value",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "Double",
+                      "value": "0"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "Double",
+                      "value": "-0"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "ADR-0207: two View States with no filter are equal",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ]
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "ADR-0207: a View State that differs in a width is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 121,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in Auto for Fixed is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": "Auto",
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in the order is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in a pin is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": true
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in a column hidden is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in a sort's direction is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in the sort's order is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Book",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in no filter is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ]
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in a filtered column fewer is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in the combinator is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in an operator is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThanOrEqual",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in an operand's value is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000001"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in an operand's type is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Double",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in an operand's whole-number type is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Int64",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in a Blank among In's values is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in the clauses' order is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  },
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "ADR-0207: a View State that differs in an Opaque Filter is another view",
+      "equal": [
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "columns": [
+            {
+              "column": "Notional",
+              "width": 120,
+              "pinned": true
+            },
+            {
+              "column": "Book",
+              "width": "Auto",
+              "pinned": false
+            },
+            {
+              "column": "AsOf",
+              "width": 90,
+              "pinned": false
+            }
+          ],
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Descending"
+            },
+            {
+              "column": "AsOf",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Notional": {
+                "combinator": "Or",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1000000"
+                    }
+                  },
+                  {
+                    "operator": "In",
+                    "values": [
+                      {
+                        "type": "Decimal",
+                        "value": "1"
+                      },
+                      null
+                    ]
+                  }
+                ]
+              },
+              "AsOf": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "LessThan",
+                    "value": {
+                      "type": "DateTime",
+                      "value": "2026-01-05T00:00:00.0000000",
+                      "kind": "Unspecified"
+                    }
+                  }
+                ]
+              }
+            },
+            "opaque": "region = EMEA"
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "FN-13: two Queries asking for the same thing are equal",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "FN-13: a Decimal 1.5 asks what 1.50 asks",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.5"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": true
+    },
+    {
+      "name": "FN-13: a Query that differs in another range asks for something else",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 180,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "FN-13: a Query that differs in another direction asks for something else",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Ascending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "FN-13: a Query that differs in another value asks for something else",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "2"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "FN-13: a Query that differs in another type asks for something else",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Double",
+                      "value": "1.5"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "FN-13: a Query that differs in an Opaque Filter asks for something else",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            },
+            "opaque": "desk"
+          }
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "FN-13: a Query that differs in no filter asks for something else",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ]
+        }
+      ],
+      "is": false
+    },
+    {
+      "name": "FN-13: a Query that differs in no sort asks for something else",
+      "equalQuery": [
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [
+            {
+              "column": "Book",
+              "direction": "Ascending"
+            },
+            {
+              "column": "Notional",
+              "direction": "Descending"
+            }
+          ],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "range": {
+            "start": 120,
+            "count": 60
+          },
+          "sorts": [],
+          "filter": {
+            "columns": {
+              "Book": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "Equals",
+                    "value": {
+                      "type": "String",
+                      "value": "Rates"
+                    }
+                  }
+                ]
+              },
+              "Notional": {
+                "combinator": "And",
+                "clauses": [
+                  {
+                    "operator": "GreaterThan",
+                    "value": {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "is": false
+    }
+  ]
+}
