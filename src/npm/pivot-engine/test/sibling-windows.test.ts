@@ -1,14 +1,14 @@
 // Layer 1: a report laid out from Sibling Windows (ADR-0370 section 3). Every sibling of a windowed set has its
 // rows, those outside the window Pending Rows, so the row count is the whole report's; each answered row is the
-// whole report's row at its place, in every form; and a report source over a server asks for windows only once
+// whole report's row at its place, in every form; a report source over a server asks for windows only once
 // the question is refused whole, moves them where a report Window reaches Pending Rows, and refuses a Copy that
-// reaches one by name.
+// reaches one by name; and a window over a hundred thousand siblings is laid out in slices (PV-40).
 import { decimalFromText } from '@ex-grid/data';
 import { describe, expect, it } from 'vitest';
 import {
-    createPivotLayout, FetchingPivotSource, levelQueryForLayout, LocalPivotReportSource, pivotCube, PivotJson, pivotRecordField, pivotReport,
-    PivotSourceFeatures, RecordPivotSource, textItemKey, type PivotLayout, type PivotLayoutInput, type PivotQuery, type PivotReport,
-    type PivotReportAnswer, type PivotReportUpdate,
+    createPivotLayout, FetchingPivotSource, levelQueryForLayout, LocalPivotReportSource, PivotAnswer, PivotAnswerBuilder, pivotCube, PivotJson,
+    pivotRecordField, PivotRefusals, pivotReport, pivotReportAsync, PivotSourceFeatures, RecordPivotSource, textItemKey, type PivotLayout,
+    type PivotLayoutInput, type PivotQuery, type PivotReport, type PivotReportAnswer, type PivotReportUpdate, type PivotSlicing,
 } from '../src/index';
 import { elementAt } from '../src/must';
 
@@ -211,5 +211,91 @@ describe('ADR-0370: a report source over a server that answers Sibling Windows',
         expect(focused.refusal?.kind).toBe('rowsNotAnswered');
         const within = await reports.copy({ version, columns, ranges: [{ top: 0, left: 0, bottom: 39, right: 2 }] });
                 expect(within.blocks).toEqual((await everything.copy({ version: all.metadata.version, columns, ranges: [{ top: 0, left: 0, bottom: 39, right: 2 }] })).blocks);
+    });
+});
+
+// Slices that end after every step, counted.
+function everyStep(): { readonly slicing: PivotSlicing; readonly yields: () => number } {
+    let yields = 0;
+    return {
+        slicing: {
+            sliceBudgetMs: 0,
+            yield: () => {
+                yields++;
+                return Promise.resolve();
+            },
+        },
+        yields: () => yields,
+    };
+}
+
+// A piece of the work makes 256 rows at most (a piece's 1,024 units, four a row), so `rows` take at least half as
+// many pieces as that. Made in one step, as a window's Pending Rows once were, a hundred thousand took 15 yields
+// in all, the cube's and the answer's included.
+const piecesAtLeast = (rows: number): number => rows / 512;
+
+describe('ADR-0370, PV-40: a window over a hundred thousand siblings', { timeout: 20_000 }, () => {
+    const siblings = 100_000;
+    const shown = 1000;
+    const customers = [
+        pivotRecordField<unknown>({ name: 'Region', type: 'text', value: () => 'East' }),
+        pivotRecordField<unknown>({ name: 'Customer', type: 'text', value: () => 'C' }),
+        pivotRecordField<unknown>({ name: 'Orders', type: 'number', value: () => null }),
+    ];
+    const layout = createPivotLayout({
+        rows: ['Region', { field: 'Customer', sort: { direction: 'descending', byValue: 0 } }],
+        values: [{ field: 'Orders', aggregation: 'count' }],
+    });
+    const east = textItemKey('East');
+
+    // East's customers by how many orders they hold, the window `before` siblings from the first: a margin and a
+    // rest on each side of it that has siblings, the first sibling holding the most orders and each the next one fewer.
+    function answerFor(query: PivotQuery, before: number): PivotAnswer {
+        const builder = new PivotAnswerBuilder(query, 'v1');
+        const after = siblings - before - shown;
+        const orders = (sibling: number): number => siblings - sibling + 1;
+        const count = (cell: number, records: number): void => {
+            builder.setCounts(cell, 0, records, records);
+        };
+        const sum = (from: number, to: number): number => ((orders(from) + orders(to - 1)) * (to - from)) / 2;
+        count(builder.addCell([], [], sum(0, siblings)), sum(0, siblings));
+        count(builder.addCell([east], [], sum(0, siblings)), sum(0, siblings));
+        const window = builder.addWindow([east], before, after);
+        for (let sibling = Math.max(0, before - 1); sibling <= Math.min(siblings - 1, before + shown); sibling++) {
+            count(builder.addCell([east, textItemKey(`C${sibling}`)], [], orders(sibling)), orders(sibling));
+        }
+        if (before > 1) count(builder.addRest(window, 'before', [], sum(0, before - 1)), sum(0, before - 1));
+        if (after > 1) count(builder.addRest(window, 'after', [], sum(before + shown + 1, siblings)), sum(before + shown + 1, siblings));
+        return builder.build();
+    }
+
+    it('ADR-0370, PV-40: its Pending Rows on both sides are made a piece at a time, as at once', async () => {
+        const query = levelQueryForLayout(layout, 10_000, { limit: shown, starts: [{ rows: [east], start: 40_000 }] });
+        const cube = pivotCube(query, answerFor(query, 40_000), customers);
+        const pieces = everyStep();
+        const sliced = await pivotReportAsync(cube, layout, { locale: 'invariant' }, pieces.slicing);
+        const whole = pivotReport(cube, layout, { locale: 'invariant' });
+        expect(sliced.rows).toHaveLength(siblings + 2);
+        expect(sliced.rows.map(row => row.role)).toEqual(whole.rows.map(row => row.role));
+        expect(sliced.rows.filter(row => row.role === 'pending')).toHaveLength(siblings - shown);
+        expect(lineOf(sliced, 40_001)).toBe(lineOf(whole, 40_001));
+        expect(pieces.yields()).toBeGreaterThan(piecesAtLeast(siblings));
+    });
+
+    it('ADR-0370, PV-40: a report source lays a window\'s Pending Rows out a piece at a time', async () => {
+        const inner = new RecordPivotSource([], customers);
+        const server = new FetchingPivotSource(inner.fields, new PivotSourceFeatures(inner.features.aggregations, false, false, true), {
+            aggregate: question => Promise.resolve(question.levels?.window === undefined
+                ? PivotAnswer.refused(PivotRefusals.tooManyLeaves(question.maxLeaves))
+                : answerFor(question, 0)),
+            items: (question, signal) => inner.items(question, signal),
+            details: (question, signal) => inner.details(question, signal),
+        });
+        const pieces = everyStep();
+        const reports = new LocalPivotReportSource(server, { slicing: pieces.slicing });
+        const top = answered(await reports.window({ requestId: 'r1', layout, settings: { locale: 'invariant', words: {} }, window: at(0), maxLeaves: 10_000 }));
+        expect(top.metadata.rowCount).toBe(siblings + 2);
+        expect(top.rows.map(row => row.labels[0]?.text).slice(0, 3)).toEqual(['East', 'C0', 'C1']);
+        expect(pieces.yields()).toBeGreaterThan(piecesAtLeast(siblings));
     });
 });

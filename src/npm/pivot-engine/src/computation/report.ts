@@ -11,6 +11,7 @@ import { cubeParts, type AxisNode, type PivotCube } from '../cube/cube';
 import type { PivotLayout } from '../layout/pivot-layout';
 import { defined, elementAt } from '../must';
 import { ReportBuilder, rowLabelsAlike, type PivotReport, type PivotReportRow, type PivotRowKey, type PivotRowLabel } from '../report/report';
+import { inPieces } from '../source/slicing';
 import { Pace, type ComputationCube } from './cube';
 
 // A node laid out.
@@ -176,8 +177,8 @@ export class ComputationReport {
     // their order, then its own rows after them.
     *#layOut(node: AxisNode, position: number, pendingFrom: number, rows: PivotReportRow[]): Generator<void, void> {
         const start = rows.length;
-        const own = this.#made.rowsOf(node, pendingFrom);
-        for (const row of own.before) rows.push(row);
+        const own = yield* this.#made.rowsOf(node, pendingFrom);
+        yield* appended(rows, own.before);
         let order: readonly number[] = [];
         if (own.descend) {
             const ordered = yield* this.#made.orderedChildren(node);
@@ -187,7 +188,7 @@ export class ComputationReport {
                 if (this.#pace.spent(1)) yield;
             }
         }
-        for (const row of own.after) rows.push(row);
+        yield* appended(rows, own.after);
         this.#nodes[node.id] = {
             pendingFrom, order, position, before: own.before.length, after: own.after.length, rows: rows.length - start, published: undefined,
         };
@@ -261,7 +262,7 @@ export class ComputationReport {
         }
         // Laid out again: split out of the part it was first laid out in.
         const branch = held === undefined ? undefined : this.#split(node.id);
-        const own = this.#made.rowsOf(node, pendingFrom);
+        const own = yield* this.#made.rowsOf(node, pendingFrom);
         const before = this.#keep(own.before, branch?.before);
         const after = this.#keep(own.after, branch?.after);
         const forceChildren = (ancestorLabelChanged || relabelled) && layout.repeatItemLabels;
@@ -393,6 +394,13 @@ export class ComputationReport {
 }
 
 // Two keys of one row, whose Items are spelt alike.
+// A node's own rows appended to `rows` a piece at a time: a Sibling Window's Pending Rows may be a million.
+function* appended(rows: PivotReportRow[], own: readonly PivotReportRow[]): Generator<void, void> {
+    yield* inPieces(own.length, 1, (from, to) => {
+        for (let at = from; at < to; at++) rows.push(elementAt(own, at));
+    });
+}
+
 function spelledAlike(a: PivotRowKey, b: PivotRowKey): boolean {
     return a.items.every((item, i) => item.kind === elementAt(b.items, i).kind && item.value === elementAt(b.items, i).value);
 }
