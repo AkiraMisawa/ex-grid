@@ -23,6 +23,9 @@
     <None Include="ExcelCases\*.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Excel's answers for 3D References (ADR-0331 §7): read by ThreeDExcelReadingsTests. -->
     <None Include="ThreeDReadings\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The engine's shared cases (ADR-0370 sections 2 and 5): written once as data, run here against the
+         C# engine and by Vitest against @ex-grid/sheet-engine. tests/cases/README.md says what a file holds. -->
+    <None Include="..\cases\sheet\**\*.json" Link="cases\sheet\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

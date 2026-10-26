@@ -215,6 +215,7 @@ export type PivotColumnRole = 'item' | 'subtotal' | 'grandTotal';
 export class PivotCube {
     holds(layout: PivotLayout): boolean;
     readonly includedRecordCount: number;
+    readonly isLevels: boolean;
     readonly query: PivotQuery;
     readonly sourceVersion: string;
 }

@@ -6,12 +6,14 @@
 import { PartColumns, emptyValue, type AggregateValue } from '../aggregates/parts';
 import { fromPublicKey, type ItemKey, type PivotItemKey } from '../items/item-key';
 import type { FieldMeta, PivotOrderKeyValue } from '../fields/pivot-field';
-import { sameKeys, hidingFilters, placedFields, type PivotQuery, type PivotQueryField } from './query';
+import { sameKeys, hidingFilters, levelsOfLayout, placedFields, type PivotQuery, type PivotQueryField } from './query';
 import { answerColumns, type PivotAnswer, type PivotAnswerAxis } from './answer';
 import type { PivotLayout, PivotFieldPlacement } from '../layout/pivot-layout';
 import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums';
 import { elementAt } from '../must';
 import { inPieces, runWhole } from '../source/slicing';
+import { describe, levelExpander } from '../levels/level-shown';
+import { expandsBelow, levelSumsSteps } from '../levels/level-sums';
 
 /** An Item as the report reads it: its key, the value an Order Key and a format read, and its public key. */
 export class ItemRef {
@@ -185,8 +187,9 @@ export function readCell(parts: CubeParts, row: AxisNode, column: AxisNode, sour
 }
 
 let partsOfCube: (cube: PivotCube) => CubeParts;
-let makeCube: (query: PivotQuery, sourceVersion: string, included: number, parts: CubeParts, values: readonly PartColumns[]) => PivotCube;
+let makeCube: (query: PivotQuery, sourceVersion: string, included: number, parts: CubeParts, values: readonly PartColumns[], levels: boolean) => PivotCube;
 let withCells: (cube: PivotCube, sourceVersion: string, included: number, rows: CubeAxis, columns: CubeAxis, cells: CubeCells) => PivotCube;
+let fieldsHeld: (cube: PivotCube, layout: PivotLayout) => boolean;
 
 /** The cube a report is laid out from (ADR-0060/0066): the answer's leaves, each axis's tree of Items, and
  * every total merged from the leaves beneath it. Made by {@link pivotCube} or {@link aggregatePivot}. */
@@ -197,13 +200,17 @@ export class PivotCube {
     readonly sourceVersion: string;
     /** How many records its leaves hold: those no Hidden Item left out. */
     readonly includedRecordCount: number;
+    /** Whether it was made from Level Aggregates (ADR-0370 section 3): it holds the groups the question's levels
+     * show and no others, so a layout that shows others is asked again. */
+    readonly isLevels: boolean;
     readonly #parts: CubeParts;
     readonly #values: readonly PartColumns[];
 
-    private constructor(query: PivotQuery, sourceVersion: string, included: number, parts: CubeParts, values: readonly PartColumns[]) {
+    private constructor(query: PivotQuery, sourceVersion: string, included: number, parts: CubeParts, values: readonly PartColumns[], levels: boolean) {
         this.query = query;
         this.sourceVersion = sourceVersion;
         this.includedRecordCount = included;
+        this.isLevels = levels;
         this.#parts = parts;
         this.#values = values;
         Object.freeze(this);
@@ -211,14 +218,21 @@ export class PivotCube {
 
     static {
         partsOfCube = cube => cube.#parts;
-        makeCube = (query, sourceVersion, included, parts, values) => new PivotCube(query, sourceVersion, included, parts, values);
+        fieldsHeld = (cube, layout) => cube.#holdsFields(layout);
+        makeCube = (query, sourceVersion, included, parts, values, levels) => new PivotCube(query, sourceVersion, included, parts, values, levels);
         withCells = (cube, sourceVersion, included, rows, columns, cells) =>
-            new PivotCube(cube.query, sourceVersion, included, Object.freeze({ ...cube.#parts, rows, columns, cells }), cube.#values);
+            new PivotCube(cube.query, sourceVersion, included, Object.freeze({ ...cube.#parts, rows, columns, cells }), cube.#values, cube.isLevels);
     }
 
     /** Whether the cube was aggregated under the layout's placed fields, Hidden Items and Value Fields, with
-     * the parts each of its Aggregations reads. */
+     * the parts each of its Aggregations reads; one made from Level Aggregates, also under the groups the layout
+     * shows. */
     holds(layout: PivotLayout): boolean {
+        return this.#holdsFields(layout) && this.#showsGroups(layout);
+    }
+
+    // The fields, Hidden Items and parts the layout lays out.
+    #holdsFields(layout: PivotLayout): boolean {
         if (!sameFields(layout.rows, this.query.rows, true)
             || !sameFields(layout.columns, this.query.columns, true)
             || !sameFields(hidingFilters(layout.filters), this.query.filters.filter(f => f.hiddenItems.length > 0), false)) {
@@ -230,6 +244,33 @@ export class PivotCube {
         }
         return true;
     }
+
+    // Whether every group the layout shows is one the cube holds: always, for a cube of leaves; for one of Level
+    // Aggregates, where every group the layout expands, reached through groups it expands, the question expanded
+    // too. A group the question expanded and the layout collapses is laid out from its own cell.
+    #showsGroups(layout: PivotLayout): boolean {
+        const asked = this.query.levels;
+        if (!this.isLevels || asked === undefined) return true;
+        const shown = levelsOfLayout(layout);
+        const axes = [
+            [this.#parts.rows, levelExpander(shown.rows), levelExpander(asked.rows), layout.rows.length],
+            [this.#parts.columns, levelExpander(shown.columns), levelExpander(asked.columns), layout.columns.length],
+        ] as const;
+        return axes.every(([axis, shows, held, fields]) => {
+            const pending = [axis.root];
+            for (let node = pending.pop(); node !== undefined; node = pending.pop()) {
+                if (!expandsBelow(node, fields, shows)) continue;
+                if (!expandsBelow(node, fields, held)) return false;
+                pending.push(...axis.childrenOf(node));
+            }
+            return true;
+        });
+    }
+}
+
+/** Whether the cube holds the layout's fields, Hidden Items and parts, whichever groups it shows. */
+export function cubeHoldsFields(cube: PivotCube, layout: PivotLayout): boolean {
+    return fieldsHeld(cube, layout);
 }
 
 /** The parts of a cube the report reads. */
@@ -258,8 +299,6 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
     allItems?: (field: string) => readonly ItemKey[], made?: (build: CubeBuild) => void): Generator<void, PivotCube> {
     const mismatch = answer.mismatch(query);
     if (mismatch !== undefined) throw new Error(`The answer does not answer the question: ${mismatch} (ADR-0066).`);
-    // The report from Level Aggregates, each sibling set checked against its parent, is not built yet.
-    if (answer.isLevels) throw new Error('The answer holds Level Aggregates, which a cube is not made from yet (ADR-0370 section 3).');
     for (const field of [...placedFields(query).map(f => f.field), ...query.values.map(v => v.field)]) {
         if (!meta.has(field)) throw new Error(`The question names '${field}', and no Pivot Field of that name is declared (ADR-0060).`);
     }
@@ -274,13 +313,15 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
     for (const answered of answer.values) {
         const held = answerColumns(answered);
         const columns = new PartColumns(held.parts);
+        // A level answer's double sums carry their magnitudes, which its check reads.
+        if (held.absolutes !== undefined) columns.trackAbsolutes();
         yield* inPieces(leafCount, 1, (from, to) => {
             for (let leaf = from; leaf < to; leaf++) columns.copyCell(held, leaf);
         });
         values.push(columns);
     }
 
-    // The leaves are the first cells, as the source answered them.
+    // The leaves are the first cells, as the source answered them; a level answer's cells are all of them.
     const cells = new Map<number, number>();
     let included = 0;
     yield* inPieces(leafCount, 2, (from, to) => {
@@ -290,13 +331,31 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
                 throw new Error(`The answer has two leaves for one cell (leaf ${leaf}); a source answers each combination of Items once (ADR-0066).`);
             }
             cells.set(key, leaf);
-            included += answer.recordsAt(leaf);
+            if (!answer.isLevels) included += answer.recordsAt(leaf);
         }
     });
 
-    // Every total from its leaves (ADR-0060): each leaf is merged into every cell whose row and column
-    // are its own or their ancestors. An ancestor's cell is never a leaf's, so nothing is counted twice.
-    if (values.length > 0) {
+    const levels = query.levels;
+    if (answer.isLevels) {
+        if (levels === undefined) throw new Error('Internal: a level answer is laid out only for a question with levels.');
+        // Level Aggregates (ADR-0370 section 3): every total is the server's, and is checked against the groups
+        // below it rather than merged from them; the grand total, at both roots (id 0), holds every record included.
+        const total = cells.get(cellKey(0, 0));
+        if (total !== undefined) included = answer.recordsAt(total);
+        yield* levelSumsSteps({
+            levels,
+            rowFields: answer.rows.length,
+            columnFields: answer.columns.length,
+            rowOf: rowLeaves,
+            columnOf: columnLeaves,
+            cellAt: (row, column) => cells.get(cellKey(row.id, column.id)),
+            records: cell => answer.recordsAt(cell),
+            values: values.map((columns, v) => ({ field: elementAt(sources, v), columns })),
+            describe: cell => describe(answer, cell),
+        });
+    } else if (values.length > 0) {
+        // Every total from its leaves (ADR-0060): each leaf is merged into every cell whose row and column
+        // are its own or their ancestors. An ancestor's cell is never a leaf's, so nothing is counted twice.
         // What one leaf costs: a cell looked up, and every field merged into it, for each pair of its row and
         // column or their ancestors.
         const weight = (answer.rows.length + 1) * (answer.columns.length + 1) * (1 + values.length);
@@ -330,7 +389,7 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
         cells: new BuiltCells(cells, values),
     });
     made?.(Object.freeze({ rowNodes: rowTree.nodes, columnNodes: columnTree.nodes, rowLeaves, columnLeaves, cells, values }));
-    return makeCube(query, answer.sourceVersion, included, parts, values);
+    return makeCube(query, answer.sourceVersion, included, parts, values, answer.isLevels);
 }
 
 function sameFields(placements: readonly PivotFieldPlacement[], held: readonly PivotQueryField[], ordered: boolean): boolean {
@@ -342,7 +401,8 @@ function sameFields(placements: readonly PivotFieldPlacement[], held: readonly P
 }
 
 // One axis's tree from the leaves' Items, level by level, a piece of leaves at a time: its nodes by id, and the
-// node each leaf ends at.
+// node each leaf ends at. A level answer's cell ends at the group it names, above the first level it names none
+// of.
 function* tree(axes: readonly PivotAnswerAxis[], leafCount: number): Generator<void, { readonly nodes: AxisNode[]; readonly leaves: AxisNode[] }> {
     const root = new AxisNode(0, -1, undefined, undefined);
     const nodes: AxisNode[] = [root];
@@ -358,10 +418,11 @@ function* tree(axes: readonly PivotAnswerAxis[], leafCount: number): Generator<v
     yield* inPieces(leafCount, Math.max(1, axes.length), (from, to) => {
         for (let leaf = from; leaf < to; leaf++) {
             let node = root;
-            axes.forEach((axis, level) => {
-                const item = axis.itemAt(leaf);
+            for (let level = 0; level < axes.length; level++) {
+                const item = elementAt(axes, level).itemAt(leaf);
+                if (item < 0) break;
                 node = node.child(item, elementAt(elementAt(refs, level), item), nodes);
-            });
+            }
             leaves.push(node);
         }
     });

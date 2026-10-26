@@ -1,0 +1,69 @@
+{
+  "about": "Incremental recalculation (ADR-0047, SH-8; ADR-0048): what a change recomputes, in what order, and that a batch publishes its Values at once. Transcribed from ExSheet.Engine.Tests' RecalculationTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047 (SH-8): only the dependents of a change recompute, counted",
+      "steps": [
+        { "enter": { "A1": "1", "B1": "=A1*2", "C1": "=B1+1", "D1": "5", "E1": "=D1*2", "F1": "=E1+C1", "G1": "=D1" } },
+        { "enter": { "A1": "2" }, "expect": { "change": { "recalculated": ["B1", "C1", "F1"] }, "values": { "F1": 15 } } }
+      ]
+    },
+    {
+      "name": "ADR-0047 (SH-8): a change to a cell nothing reads recomputes nothing",
+      "steps": [
+        { "enter": { "A1": "1", "B1": "=A1*2" } },
+        { "enter": { "Z9": "7" }, "expect": { "change": { "recalculated": [] } } }
+      ]
+    },
+    {
+      "name": "ADR-0047 (SH-8): entering a Formula recomputes it and what reads it, not its precedents",
+      "steps": [
+        { "enter": { "A1": "=1+1", "A2": "=A3*2", "B1": "=A1" } },
+        { "enter": { "A3": "=A1+1" }, "expect": { "change": { "recalculated": ["A2", "A3"] }, "values": { "A2": 6 } } }
+      ]
+    },
+    {
+      "name": "ADR-0047: a diamond recomputes each cell once, after all of its precedents",
+      "steps": [
+        { "enter": { "A1": "1", "B1": "=A1+1", "B2": "=A1*10", "C1": "=B1+B2" } },
+        { "enter": { "A1": "2" }, "expect": { "change": { "recalculated": ["B1", "C1", "B2"] }, "values": { "C1": 23 } } }
+      ]
+    },
+    {
+      "name": "ADR-0047: a long chain recomputes in dependency order without running out of stack",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "=A1+1" } },
+        { "do": { "fill": { "source": "A2", "target": "A2:A50001", "direction": "down" } } },
+        { "enter": { "A1": "2" }, "expect": { "values": { "A50001": 50002 }, "change": { "recalculatedCount": 50000 } } }
+      ]
+    },
+    {
+      "name": "ADR-0047: a long chain entered in one batch recomputes in dependency order without running out of stack",
+      "steps": [
+        { "enter": { "A1": "1" } },
+        { "enterRun": { "range": "A2:A50001", "typed": "=A{row-1}+1" }, "expect": { "values": { "A50001": 50001 } } },
+        { "enter": { "A1": "2" }, "expect": { "values": { "A50001": 50002 }, "change": { "recalculatedCount": 50000 } } }
+      ]
+    },
+    {
+      "name": "ADR-0047 (SH-8): Values are published only from a completed recalculation",
+      "note": "A batch is one change and one recalculation: every Value it reports is from the end state, and none from a state between its parts.",
+      "steps": [
+        { "enter": { "A1": "1", "B1": "=A1+1", "C1": "=B1+1" } },
+        {
+          "enterAll": { "A1": "10", "B1": "=A1*2" },
+          "expect": { "change": { "valueChanges": ["A1", "B1", "C1"], "recalculated": ["B1", "C1"] }, "values": { "C1": 21 } }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048: opening a document computes every Value again, cycles included",
+      "steps": [
+        { "enter": { "A1": "=B1", "B1": "=A1", "C1": "2", "D1": "=C1*C1" } },
+        { "reopen": "document", "expect": { "values": { "A1": { "error": "#CIRC!" }, "B1": { "error": "#CIRC!" }, "D1": 4 } } }
+      ]
+    }
+  ]
+}
