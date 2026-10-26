@@ -404,6 +404,28 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
         }]);
     });
 
+    it('ADR-0370 section 3: a number ticked into Values is named when the question it went with is refused', async () => {
+        const refused: (readonly string[])[] = [];
+        const { root } = mount({ source: server(), maxLeaves: 1, onRefused: event => refused.push(event.fields) });
+        tick(root, 'Amount');
+        drag(field(root, 'Region'), 'dragstart');
+        drag(area(root, 'rows'), 'dragenter');
+        drag(area(root, 'rows'), 'drop');
+        await settled();
+        expect(refused).toEqual([['Amount', 'Region']]);
+    });
+
+    it('ADR-0061: a drag that moves on from an Area to the report leaves the Area unmarked', async () => {
+        const { root } = mount({ source: server(), layout: byRegion });
+        await settled();
+        drag(field(root, 'Desk'), 'dragstart');
+        drag(area(root, 'columns'), 'dragenter');
+        expect(area(root, 'columns').classList.contains('ex-pivot-drop-target')).toBe(true);
+        drag(root.querySelector('.ex-pivot-sheet') ?? root, 'dragenter');
+        expect(area(root, 'columns').classList.contains('ex-pivot-drop-target')).toBe(false);
+        drag(field(root, 'Desk'), 'dragend');
+    });
+
     it('ADR-0061: a drag that moves on from an Area to the list leaves the Area unmarked', async () => {
         const { root } = mount({ source: server(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
         await settled();
@@ -432,7 +454,7 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
 });
 
 describe('ExPivot\'s options', () => {
-    it('ADR-0059: a layout this pivot raised before, handed back again, is asked for again', async () => {
+    it('ADR-0059: a layout this pivot raised is never asked for when handed back, and a copy of an earlier one is', async () => {
         const changed: PivotLayout[] = [];
         const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
         const { root, view } = mount(options);
@@ -443,28 +465,26 @@ describe('ExPivot\'s options', () => {
         await settled();
         const [both, deskOnly] = changed;
         if (both === undefined || deskOnly === undefined) throw new Error('Two layouts were raised.');
-        view.update({ ...options, layout: deskOnly });
-        await settled();
-        expect(view.shownLayout).toBe(deskOnly);
-        // An undo: the earlier layout, handed back.
+        // Bound back, however late: the pivot's own layout, which asks nothing, as the Razor component's.
         view.update({ ...options, layout: both });
         await settled();
-        expect(view.shownLayout).toBe(both);
+        expect(view.shownLayout).toBe(deskOnly);
+        // An undo hands in a layout of the Consumer's own making.
+        const undone = createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] });
+        view.update({ ...options, layout: undone });
+        await settled();
+        expect(view.shownLayout).toBe(undone);
     });
 
-    it('ADR-0059: an earlier layout the user made, handed in by a Consumer that never handed the layouts back, is asked for', async () => {
+    it('ADR-0370 section 10: the user\'s move asked again under a new locale is still the user\'s, and is raised once shown', async () => {
         const changed: PivotLayout[] = [];
-        const options: PivotViewOptions = { source: local(), onLayoutChanged: event => changed.push(event.layout) };
+        const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
         const { root, view } = mount(options);
-        tick(root, 'Region');
         await settled();
         tick(root, 'Desk');
+        view.update({ ...options, locale: 'de-DE' });
         await settled();
-        const [regionOnly] = changed;
-        if (regionOnly === undefined) throw new Error('A layout was raised.');
-        view.update({ ...options, layout: regionOnly });
-        await settled();
-        expect(view.shownLayout).toBe(regionOnly);
+        expect(changed.map(layout => layout.rows.map(p => p.field))).toEqual([['Region', 'Desk']]);
     });
 
     it('ADR-0059: layouts this pivot raised, handed back late and in turn, ask for nothing', async () => {
@@ -485,7 +505,7 @@ describe('ExPivot\'s options', () => {
         expect(changed).toHaveLength(2);
     });
 
-    it('spine rule 6: the layout last raised, handed back while the user\'s newer move is out, does not undo that move', async () => {
+    it('ADR-0059, spine rule 6: a layout raised, handed back while the user\'s newer move is out, does not undo that move', async () => {
         const changed: PivotLayout[] = [];
         const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
         const { root, view } = mount(options);

@@ -46,7 +46,8 @@ export interface PivotViewOptions {
      * instance is a refresh. */
     readonly source: PivotSource;
     /** The Pivot Layout, View State the Consumer holds (ADR-0059). A layout handed in replaces the one on
-     * screen; one this pivot raised through `onLayoutChanged` and handed back is the one on screen. Left out,
+     * screen; one this pivot raised through `onLayoutChanged` and handed back, however late, is its own and asks
+     * nothing, so an earlier layout is asked for again by handing in one of the Consumer's own making. Left out,
      * the pivot starts from nothing and keeps the user's changes itself. A layout naming a field the source
      * does not offer is refused by name. */
     readonly layout?: PivotLayout;
@@ -110,6 +111,8 @@ interface Shown {
     readonly layout: PivotLayout;
     /** The answer the report was drawn from; none for a layout with nothing to show. */
     readonly answer: PivotReportState | undefined;
+    /** The question it answered, whose locale the grid writes the report in. */
+    readonly question: Question | undefined;
 }
 
 // The rows a first answer brings: a screen's worth and more. The grid asks for the rest as it scrolls.
@@ -182,11 +185,13 @@ export class PivotView {
     #reportSource: LocalPivotReportSource;
     // The report source the rows on screen read their Windows from: the one before a new source's answer lands.
     #shownReportSource: LocalPivotReportSource | undefined;
-    // The layout last raised through onLayoutChanged. Handed back while a newer move of the user's is out, it is
-    // the Consumer catching up, not a layout asked for; at any other time the Consumer's layout is the one shown.
-    #raised: PivotLayout | undefined;
-    // The locale of the report on screen, which the grid writes it in until another report replaces it.
-    #shownLocale: string | undefined;
+    // Every layout raised through onLayoutChanged, as the Razor component holds them: one handed back is the
+    // Consumer binding the pivot's own layout back, never a layout it asks for, however late it comes. An earlier
+    // layout is asked for again by handing in a layout of the Consumer's own making. Held weakly, so the user's
+    // moves cost nothing once nobody holds them.
+    readonly #raised = new WeakSet<PivotLayout>();
+    // Unhooks the listeners on the root, which is the Consumer's element and outlives the pivot.
+    readonly #listening = new AbortController();
     #layoutGiven: PivotLayout | undefined;
     #shown: Shown;
     #asked: Question | undefined;
@@ -211,7 +216,7 @@ export class PivotView {
         this.#fieldListShown = options.showFieldList !== false;
         this.#layoutGiven = options.layout;
         if (options.layout !== undefined) validateLayout(options.layout, this.#declared(options.source));
-        this.#shown = { layout: emptyPivotLayout, answer: undefined };
+        this.#shown = { layout: emptyPivotLayout, answer: undefined, question: undefined };
         this.#reportSource = this.#reportSourceOf(options.source);
 
         const document = root.ownerDocument;
@@ -266,11 +271,12 @@ export class PivotView {
         // A drag that moves on from an Area, anywhere in the pivot, leaves it unmarked; and one that leaves the
         // pivot for an element the browser names. WebKit names none on leaving one element for another, so a
         // leave that names nothing is not taken as one.
-        root.addEventListener('dragenter', event => { this.#fieldList.dragEntered(event.target); });
+        const listening = { signal: this.#listening.signal };
+        root.addEventListener('dragenter', event => { this.#fieldList.dragEntered(event.target); }, listening);
         root.addEventListener('dragleave', event => {
             const to = event.relatedTarget;
             if (to instanceof Node && !root.contains(to)) this.#fieldList.leaveTargets();
-        });
+        }, listening);
 
         this.#askCounts();
         if (options.layout !== undefined) this.#ask(options.layout, 'consumer', undefined);
@@ -287,18 +293,15 @@ export class PivotView {
         if (reportSource !== undefined && reportSource !== this.#reportSource && reportSource !== this.#shownReportSource) reportSource.dispose();
     }
 
-
     /** Takes the options again, whole. Options refused leave the pivot as it was. */
     update(options: PivotViewOptions): void {
         if (this.#destroyed) throw new Error('This ExPivot was destroyed: make a new one.');
         checkedOptions(options);
         const before = this.#options;
         const sourceMoved = options.source !== before.source;
-        // A layout handed in is a question, unless the pane holds it already, or it is the one this pivot last
-        // raised, handed back while the user's newer move is out.
+        // A layout handed in is a question, unless the pane holds it already or this pivot raised it.
         const layoutMoved = options.layout !== this.#layoutGiven;
-        const echo = options.layout === this.#raised && this.#asked?.cause === 'user';
-        const consumerLayout = layoutMoved && options.layout !== undefined && options.layout !== this.#paneLayout && !echo
+        const consumerLayout = layoutMoved && options.layout !== undefined && options.layout !== this.#paneLayout && !this.#raised.has(options.layout)
             ? options.layout
             : undefined;
         const asked = consumerLayout ?? (sourceMoved ? this.#paneLayout : undefined);
@@ -348,6 +351,7 @@ export class PivotView {
         this.#shownReportSource = undefined;
         asked.dispose();
         if (read !== asked) read?.dispose();
+        this.#listening.abort();
         this.#root.replaceChildren();
         this.#root.classList.remove('ex-pivot');
         this.#root.removeAttribute('data-ex-input-root');
@@ -404,9 +408,12 @@ export class PivotView {
         this.#draw();
     }
 
-    #ask(layout: PivotLayout, cause: Cause, moved: FieldListMove | undefined): void {
+    #ask(layout: PivotLayout, asked: Cause, moved: FieldListMove | undefined): void {
         const superseded = this.#asked;
         superseded?.controller.abort();
+        // The user's layout asked again, under new settings or data, is still the user's: it raises once shown,
+        // and a refusal names its moves.
+        const cause = asked === 'user' || (superseded?.cause === 'user' && superseded.layout === layout) ? 'user' : asked;
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
         const moves = [...(cause === 'user' && superseded?.cause === 'user' ? superseded.moves : []), ...(moved === undefined ? [] : [moved])];
         const generation = ++this.#generation;
@@ -460,7 +467,7 @@ export class PivotView {
 
     #showLayout(layout: PivotLayout, answered: { readonly answer: PivotReportState; readonly question: Question } | undefined, cause: Cause): void {
         const answer = answered?.answer;
-        this.#shown = { layout, answer };
+        this.#shown = { layout, answer, question: answered?.question };
         this.#showReport(answered);
         if (answer !== undefined && this.#counts !== undefined && this.#counts.sourceVersion !== answer.metadata.sourceVersion) {
             // Counted under another Source Version: asked again, so the marks follow the data (ADR-0370 section 3).
@@ -468,7 +475,7 @@ export class PivotView {
         }
         this.#draw();
         if (cause === 'user') {
-            this.#raised = layout;
+            this.#raised.add(layout);
             this.#options.onLayoutChanged?.(Object.freeze({ layout }));
         }
     }
@@ -563,7 +570,6 @@ export class PivotView {
             return;
         }
         const { answer, question } = answered;
-        this.#shownLocale = question.locale;
         this.#rows = reportRows({
             source: question.reportSource,
             layout: question.layout,
@@ -587,8 +593,9 @@ export class PivotView {
     #drawGrid(): void {
         const answer = this.#shown.answer;
         const rows = this.#rows;
-        const locale = this.#shownLocale;
-        if (answer === undefined || rows === undefined || locale === undefined) return;
+        const question = this.#shown.question;
+        if (answer === undefined || rows === undefined || question === undefined) return;
+        const { locale } = question;
         const { columns, headerGroups, pinnedColumnCount } = reportColumns(answer.metadata, this.#userWidths);
         const { rowHeight, density, label } = this.#options;
         const options: GridOptions<PivotDisplayRow> = {

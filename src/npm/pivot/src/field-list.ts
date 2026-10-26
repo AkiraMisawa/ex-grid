@@ -119,6 +119,7 @@ export class FieldListView {
     readonly #list: HTMLUListElement;
     readonly #dragCaption: HTMLElement;
     readonly #areas = new Map<PivotArea, AreaElements>();
+    readonly #areaBoxes = new Set<HTMLElement>();
     #model: FieldListModel | undefined;
     #searchText = '';
     #drag: Drag | undefined;
@@ -179,6 +180,7 @@ export class FieldListView {
                 this.#drop(area, this.#endOf(area));
             });
             this.#areas.set(area, { area: box, entries, cap });
+            this.#areaBoxes.add(box);
             areas.append(box);
         }
         body.append(this.#chooseCaption, this.#search, this.#list, this.#dragCaption, areas);
@@ -215,7 +217,8 @@ export class FieldListView {
 
     /** A drag entered `target`: unless it is in an Area, which hears its own entry first, no Area is the target. */
     dragEntered(target: EventTarget | null): void {
-        if (target instanceof Node && [...this.#areas.values()].some(({ area }) => area.contains(target))) return;
+        const box = target instanceof Element ? target.closest('.ex-pivot-area') : null;
+        if (box instanceof HTMLElement && this.#areaBoxes.has(box)) return;
         this.leaveTargets();
     }
 
@@ -381,8 +384,11 @@ export class FieldListView {
             return;
         }
         const next = tickField(layout, field);
+        // A tick puts a field in Rows, or a number in Values, as Excel's does.
         const at = placementOf(next, field.name);
-        this.#handlers.edit({ layout: next, against: layout, moved: at === undefined ? undefined : { field: field.name, area: at.area } });
+        const inValues = next.values.some(value => value.field === field.name);
+        const area = at !== undefined ? at.area : inValues ? 'values' : undefined;
+        this.#handlers.edit({ layout: next, against: layout, moved: area === undefined ? undefined : { field: field.name, area } });
     }
 
     #startDrag(event: DragEvent, subject: DragSubject): void {
