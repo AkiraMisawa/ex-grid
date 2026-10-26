@@ -7,6 +7,7 @@ import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
 import '../../../src/ExChart/wwwroot/ex-chart.min.css';
 import '../../../src/ExPivot/wwwroot/ex-pivot.min.css';
 import '../../../src/ExSheet/wwwroot/ex-sheet.min.css';
+import { Appearance } from './pages/appearance';
 import { Board } from './pages/board';
 import { Cells } from './pages/cells';
 import { Chart } from './pages/chart';
@@ -18,6 +19,7 @@ import { Features } from './pages/features';
 import { Fetch } from './pages/fetch';
 import { FilterPanel } from './pages/filter-panel';
 import { Home } from './pages/home';
+import { Lifecycle } from './pages/lifecycle';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
@@ -61,7 +63,9 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: 
     marks: Marks,
     stripes: Stripes,
     tones: Tones,
+    appearance: Appearance,
     density: Density,
+    lifecycle: Lifecycle,
     stretch: Stretch,
     sizing: Sizing,
     board: Board,

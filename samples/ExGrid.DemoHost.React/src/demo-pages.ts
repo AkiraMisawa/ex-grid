@@ -39,6 +39,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'A tone rule\'s gains and losses in a theme\'s colours, and a Cell State that outranks them on the same cell (ADR-0006, ADR-0029).',
     },
     {
+        route: 'appearance', title: 'Cell appearance', group: 'Cells and rows',
+        description: 'A per-cell Font, Fill and Borders as Excel paints them; bold judged by bold widths, italic never cut (ADR-0050, ADR-0071).',
+    },
+    {
         route: 'sizing', title: 'Sizing', group: 'Layout',
         description: 'Column width gestures and a box that narrows until pinning is suspended (ADR-0016, ADR-0045).',
     },
@@ -49,6 +53,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
     {
         route: 'density', title: 'Density', group: 'Layout',
         description: 'A density preset changed while the grid is on screen: rows, header band and Selection follow the resolved Grid Metrics together (ADR-0027, ADR-0028).',
+    },
+    {
+        route: 'lifecycle', title: 'Lifecycle', group: 'Layout',
+        description: 'Mount and dispose a grid repeatedly; nothing it attached stays behind (ADR-0018, ADR-0021).',
     },
     {
         route: 'marks', title: 'Row Marks', group: 'Cells and rows',
