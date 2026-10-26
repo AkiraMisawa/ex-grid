@@ -1,0 +1,420 @@
+{
+  "about": "Spilled arrays (ADR-0125): the layout of a spill, its obstacles, what reads it, how it moves with the Sheet's structure, and the recalculation passes a layout costs (ADR-0124). Transcribed from SpillTests.cs.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0125: a Reference to several cells spills from its Anchor, and the cells it covers hold no Entry",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"C1": "=A1:A3*10"}, "expect": {"values": {"C1": 10, "C2": 20, "C3": 30}, "spilledFrom": {"C1": null, "C3": "C1"}, "entries": {"C2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a spill is not recorded in a Sheet Document, and reopening lays it out again",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"C1": "=A1:A2"}, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":1},{\"at\":\"C1\",\"formula\":\"=A1:A2\"},{\"at\":\"A2\",\"number\":2}]}"}},
+        {"reopen": "json", "expect": {"values": {"C2": 2}, "spilledFrom": {"C2": "C1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a blank in the array shows as 0, as Excel's spill of a blank cell does",
+      "steps": [
+        {"enter": {"A1": "1", "A3": "3", "C1": "=A1:A3"}, "expect": {"values": {"C2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: an Entry in the way is #SPILL!, nothing is overwritten, and clearing it lets the Formula spill",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"C3": "x", "C1": "=A1:A3"}, "expect": {"values": {"C1": {"error": "#SPILL!"}, "C2": null, "C3": "x"}}},
+        {"do": {"enter": {"C3": ""}}, "expect": {"values": {"C1": 1, "C3": 3}, "change": {"valueChanges": ["C1", "C2", "C3"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: typing into a spilled cell enters an Entry there, and the Anchor becomes #SPILL!",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"C1": "=A1:A3"}},
+        {"enter": {"C2": "7"}, "expect": {"values": {"C1": {"error": "#SPILL!"}, "C2": 7, "C3": null}, "spilledFrom": {"C3": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a spill past the Sheet's edge is #SPILL!",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"ZZ1000": "=A:A"}, "expect": {"values": {"ZZ1000": {"error": "#SPILL!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: of two spills that would overlap, the Anchor first in address order spills, whichever was entered first: D1 then C2",
+      "note": "D1 spills D1:D3 down; C2 would spill C2:D2 across, and D2 is D1's. D1 comes first.",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"B1": "4"}},
+        {"enter": {"D1": "=A1:A3"}},
+        {"enter": {"C2": "=A1:B1"}},
+        {"read": true, "expect": {"values": {"D2": 2, "C2": {"error": "#SPILL!"}}, "spilledFrom": {"D2": "D1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: of two spills that would overlap, the Anchor first in address order spills, whichever was entered first: C2 then D1",
+      "note": "D1 spills D1:D3 down; C2 would spill C2:D2 across, and D2 is D1's. D1 comes first.",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"B1": "4"}},
+        {"enter": {"C2": "=A1:B1"}},
+        {"enter": {"D1": "=A1:A3"}},
+        {"read": true, "expect": {"values": {"D2": 2, "C2": {"error": "#SPILL!"}}, "spilledFrom": {"D2": "D1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a Formula that reads a spilled cell is recalculated when the spill changes",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"C1": "=A1:A2*2", "E1": "=C2+1"}, "expect": {"values": {"E1": 5}}},
+        {"enter": {"A2": "10"}, "expect": {"values": {"E1": 21}}},
+        {"enter": {"C2": "x"}, "expect": {"values": {"E1": {"error": "#VALUE!"}}}},
+        {"enter": {"C2": ""}, "expect": {"values": {"E1": 21}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a spill that shrinks releases the cells it no longer covers",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"C1": "=A1:A3"}, "expect": {"values": {"C3": 3}}},
+        {"enter": {"C1": "=A1:A2"}, "expect": {"values": {"C3": null}, "spilledFrom": {"C3": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: clearing the Anchor clears its spill",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"C1": "=A1:A2"}},
+        {"enter": {"C1": ""}, "expect": {"values": {"C2": null}, "spilledFrom": {"C2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a function that reduces an array takes it whole",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"Z1": "=SUM(A1:A3*2)", "Z2": "=SUM((A1:A3>1)*1)"}, "expect": {"values": {"Z1": 12, "Z2": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a spill moves with its Anchor when rows are inserted above it",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"C1": "=A1:A2"}},
+        {"do": {"insertRows": [0, 1]}, "expect": {"values": {"C2": 1, "C3": 2, "C1": null}, "spilledFrom": {"C3": "C2"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a row inserted inside the spill grows the range it reads, and the spill with it",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"C1": "=A1:A2"}},
+        {"do": {"insertRows": [1, 1]}, "expect": {"values": {"C1": 1, "C2": 0, "C3": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 / ADR-0049: a Linked Table's column spills, and follows its rows",
+      "steps": [
+        {"declareTable": {"name": "T", "columns": ["V"]}},
+        {"enter": {"A1": "=T[V]"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
+        {"pushTable": {"name": "T", "rows": [[1], [2], [3]]}, "expect": {"values": {"A3": 3}}},
+        {"pushTable": {"name": "T", "rows": [[1]]}, "expect": {"values": {"A1": 1, "A2": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: #SPILL! propagates as any Error Value does",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"C2": "x", "C1": "=A1:A2", "E1": "=C1+1"}, "expect": {"values": {"E1": {"error": "#SPILL!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: A1# reads the Spill Range of the Formula in A1, and follows it as it grows",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"C1": "=A1:A2*2", "E1": "=SUM(C1#)", "F1": "=ROWS(C1#)"}, "expect": {"values": {"E1": 6, "F1": 2}}},
+        {"enter": {"C1": "=A1:A3*2"}, "expect": {"values": {"E1": 12, "F1": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: A1# spills itself, as a Reference to several cells does",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"C1": "=A1:A2", "E1": "=C1#+10"}, "expect": {"values": {"E1": 11, "E2": 12}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: A1# is #REF! when A1 does not spill: no Formula, one Value, or #SPILL!",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"E1": "=SUM(C1#)"}, "expect": {"values": {"E1": {"error": "#REF!"}}}},
+        {"enter": {"C1": "=A1"}, "expect": {"values": {"E1": {"error": "#REF!"}}}},
+        {"enter": {"C1": "=A1:A2"}, "expect": {"values": {"E1": 3}}},
+        {"enter": {"C2": "x"}, "expect": {"values": {"E1": {"error": "#REF!"}}}},
+        {"enter": {"C2": ""}, "expect": {"values": {"E1": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: A1# is written as typed, moves with A1, and is #REF! when A1 is deleted",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"C2": "=A1:A2", "E1": "=sum(c2#)"}, "expect": {"entryTexts": {"E1": "=SUM(C2#)"}}},
+        {"do": {"insertRows": [0, 1]}, "expect": {"entryTexts": {"E2": "=SUM(C3#)"}, "values": {"E2": 3}}},
+        {"do": {"deleteRows": [2, 1]}, "expect": {"entryTexts": {"E2": "=SUM(#REF!)"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: # follows one cell only, and the @ operator is refused on entry: =A1:A2#",
+      "steps": [
+        {"do": {"enter": {"B1": "=A1:A2#"}}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: # follows one cell only, and the @ operator is refused on entry: =A:A#",
+      "steps": [
+        {"do": {"enter": {"B1": "=A:A#"}}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: # follows one cell only, and the @ operator is refused on entry: =@A1:A2",
+      "steps": [
+        {"do": {"enter": {"B1": "=@A1:A2"}}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: # follows one cell only, and the @ operator is refused on entry: =SUM(@A1:A2)",
+      "steps": [
+        {"do": {"enter": {"B1": "=SUM(@A1:A2)"}}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: an array larger than the engine holds is refused with #NUM!, never cut short: =SUM(1001:2025*1)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"ZZ1000": "=SUM(1001:2025*1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: an array larger than the engine holds is refused with #NUM!, never cut short: =SUM(A:Q*1)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"ZZ1000": "=SUM(A:Q*1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: an array larger than the engine holds is refused with #NUM!, never cut short: =SEQUENCE(1048576,17)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"ZZ1000": "=SEQUENCE(1048576,17)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: an array larger than the engine holds is refused with #NUM!, never cut short: =SUM(A1:A1048576+B1:XFD1)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2"}},
+        {"enter": {"ZZ1000": "=SUM(A1:A1048576+B1:XFD1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: part of a spill copied without its Anchor pastes as Values, as Excel's does",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"C1": "=A1:A3*10"}},
+        {"copy": {"range": "C2:C3", "as": "part"}, "expect": {"copies": {"part": {"text": "20\r\n30\r\n"}}}},
+        {"do": {"paste": {"copy": "part", "at": "E1"}}, "expect": {"entryTexts": {"E1": "20"}, "values": {"E2": 30}, "spilledFrom": {"E1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a spill copied with its Anchor pastes the Formula, which spills again",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"C1": "=A1:A3*10"}},
+        {"copy": {"range": "C1:C3", "as": "whole"}},
+        {"do": {"paste": {"copy": "whole", "at": "D1"}}, "expect": {"entryTexts": {"D1": "=B1:B3*10"}, "entries": {"D2": null}, "spilledFrom": {"D2": "D1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0124: a Reference OFFSET computes into a Spill Range reads it as the layout leaves it, blocked or freed, as a typed one does",
+      "steps": [
+        {"enter": {"A1": "=SEQUENCE(3)", "C1": "=SUM(OFFSET(B1,0,-1,3,1))", "D1": "=SUM(A1:A3)"}, "expect": {"values": {"C1": 6, "D1": 6}}},
+        {"enter": {"A3": "x"}, "expect": {"values": {"A1": {"error": "#SPILL!"}, "D1": {"error": "#SPILL!"}, "C1": {"error": "#SPILL!"}}}},
+        {"enter": {"A3": ""}, "expect": {"values": {"D1": 6, "C1": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0124, ADR-0180: a volatile Formula read again after a layout draws as it drew before the layout: the obstacle in A2",
+      "note": "B1 draws the same whether A1's spill is blocked or not.",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"B1": "=RAND()", "A1": "=SEQUENCE(2)", "A2": "x"}, "expect": {"values": {"A1": {"error": "#SPILL!"}, "B1": 0.5021724869127135}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0124, ADR-0180: a volatile Formula read again after a layout draws as it drew before the layout: the obstacle in A5",
+      "note": "B1 draws the same whether A1's spill is blocked or not.",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"B1": "=RAND()", "A1": "=SEQUENCE(2)", "A5": "x"}, "expect": {"values": {"A1": 1, "B1": 0.5021724869127135}}}
+      ]
+    },
+    {
+      "name": "ADR-0124, ADR-0125: a blocked Anchor whose INDIRECT is read again after the layout stays #SPILL!, and spills when freed",
+      "steps": [
+        {"enter": {"C1": "1", "C2": "2", "C3": "3", "A1": "=INDIRECT(\"C1:C3\")", "D1": "=A1"}, "expect": {"values": {"A1": 1}}},
+        {"enter": {"A2": "x"}, "expect": {"values": {"A1": {"error": "#SPILL!"}, "D1": {"error": "#SPILL!"}}, "recalculationPasses": 2}},
+        {"enter": {"E5": "7"}, "expect": {"values": {"A1": {"error": "#SPILL!"}}, "recalculationPasses": 1}},
+        {"enter": {"A2": ""}, "expect": {"values": {"A1": 1, "A2": 2, "A3": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0124, ADR-0125: a blocked OFFSET Anchor stays #SPILL! through a change elsewhere",
+      "steps": [
+        {"enter": {"C1": "1", "C2": "2", "C3": "3", "A2": "x", "A1": "=OFFSET(C1,0,0,3,1)"}, "expect": {"values": {"A1": {"error": "#SPILL!"}}}},
+        {"enter": {"E5": "7"}, "expect": {"values": {"A1": {"error": "#SPILL!"}, "A3": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, ADR-0125: a blocked Anchor that draws stays #SPILL!, whether it is entered or recalculated after",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A2": "x", "A1": "=SEQUENCE(3)+0*RAND()"}, "expect": {"values": {"A1": {"error": "#SPILL!"}}, "recalculationPasses": 2}},
+        {"enter": {"E5": "7"}, "expect": {"values": {"A1": {"error": "#SPILL!"}}, "recalculationPasses": 1}},
+        {"enter": {"A2": ""}, "expect": {"values": {"A1": 1, "A3": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0124, ADR-0125: every volatile Formula is computed once, and once more after each layout that changes something",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"E1": "=RAND()", "A1": "=SEQUENCE(3)", "C1": "=SEQUENCE(IFERROR(ROWS(A1#),1)+1)", "E2": "=SUM(INDIRECT(\"C1:C4\"))"}, "expect": {"values": {"E2": 10}}},
+        {"enter": {"G9": "7"}, "expect": {"recalculationPasses": 1}, "note": "No spill moves: one pass."},
+        {"enter": {"A3": "x"}, "expect": {"recalculationPasses": 3, "values": {"A1": {"error": "#SPILL!"}, "C2": 2, "C3": null, "E2": 3}}, "note": "A3 blocks A1's spill (one layout), which shrinks C1's (a second): three passes, and the INDIRECT reads the second layout, which no Dependent would have told it of."}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =IFERROR(A1:A3,0)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(A1:A3,0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =IFERROR(LEN(A1:A3),0)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(LEN(A1:A3),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =IFERROR(ROUND(A1:A3,0),0)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(ROUND(A1:A3,0),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =ISERROR(ROUND(A1:A3,0))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=ISERROR(ROUND(A1:A3,0))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =ISNUMBER(LEN(A1:A3))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=ISNUMBER(LEN(A1:A3))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =COUNTA(ROUND(A1:A3,0))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=COUNTA(ROUND(A1:A3,0))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =COUNT(IF(A1:A3>1,1))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=COUNT(IF(A1:A3>1,1))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =ERROR.TYPE(IF(A1:A3>1,1,0))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=ERROR.TYPE(IF(A1:A3>1,1,0))"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =IFERROR(COUNTIF(A1:A3,A1:A2),0)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(COUNTIF(A1:A3,A1:A2),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =IFERROR(XLOOKUP(A1:A2,A1:A3,A1:A3),0)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(XLOOKUP(A1:A2,A1:A3,A1:A3),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =IFERROR(XMATCH(1,A1:A3,A1:A2),0)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(XMATCH(1,A1:A3,A1:A2),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =IFERROR(ISBLANK(A1:A3),0)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(ISBLANK(A1:A3),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125 (\"Not yet: functions lifted over arrays\"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer: =IFERROR(IFNA(A1:A3,0),0)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(IFNA(A1:A3,0),0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047: a call never evaluated reads no array, so it refuses nothing: =IF(FALSE,LEN(A1:A3),1)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IF(FALSE,LEN(A1:A3),1)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047: a call never evaluated reads no array, so it refuses nothing: =IFERROR(1,LEN(A1:A3))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(1,LEN(A1:A3))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047: a call never evaluated reads no array, so it refuses nothing: =IFERROR(1/0,7)",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=IFERROR(1/0,7)"}, "expect": {"values": {"ZZ1000": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0125, ADR-0047: a call never evaluated reads no array, so it refuses nothing: =SUM(LEN(A1))",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "2", "A3": "3"}},
+        {"enter": {"ZZ1000": "=SUM(LEN(A1))"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    }
+  ]
+}

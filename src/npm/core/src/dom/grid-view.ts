@@ -16,7 +16,7 @@ import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, rowCommandRefus
 import { builtInCommandLabel } from '../chrome/command-labels';
 import { markLabelIds } from '../chrome/mark-words';
 import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
-import { gridCommandIds } from '../chrome/command-ids';
+import { gridCommandIds, gridLabelIds } from '../chrome/command-ids';
 import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
 import { canApply } from '../chrome/filter-panel-choices';
 import { gridCulture, invariantLocale, type GridCulture } from '../chrome/grid-culture';
@@ -77,6 +77,7 @@ import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
 import { selectionLayers, type LayerPiece } from './selection-layers';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { CellPaint, type CellPaintOptions } from './cell-paint';
+import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type FormulaBarOptions } from './formula-bar';
 import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
@@ -100,7 +101,7 @@ export interface GridHeaderGroup {
 }
 
 /** What a grid is drawn from. Rows reach it only through a Grid Source; `rows` is `GridSource.from(rows)`. */
-export interface GridOptions<Row> extends CellPaintOptions<Row> {
+export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptions<Row> {
     /** The columns, in display order. */
     readonly columns: readonly GridColumn<Row>[];
     /** Where the rows come from. Exactly one of `source` and `rows` is given. */
@@ -526,6 +527,7 @@ interface Taken<Row> {
     readonly findsHeaders: boolean;
     readonly cellPaint: CellPaint<Row>;
     readonly headerClickSelects: boolean;
+    readonly formulaBar: FormulaBarDeclarations<Row>;
 }
 
 // The popover standing (ADR-0039, ADR-0040): its element and the commands it shows, and where it stands. The
@@ -690,6 +692,26 @@ interface OpenEdit<Row> {
     readonly openedOn: Row;
     /** The sentence a Reject or a refusal holds it with (ADR-0034), shown at it while it stands. */
     error: string | undefined;
+    /** Where the text is typed: the Cell Editor over the cell, or the Formula Bar, its second surface (ADR-0051). */
+    surface: 'cell' | 'bar';
+}
+
+// What the Formula Bar last read of the Focus, and what it was read through (ADR-0051).
+interface BarReading<Row> {
+    readonly focus: CellPosition | undefined;
+    readonly row: Row | undefined;
+    readonly declared: FormulaBarDeclarations<Row>;
+    readonly cellPaint: CellPaint<Row>;
+    readonly columns: readonly ResolvedColumn<Row>[];
+    readonly commandLabel: ((id: string) => string | undefined) | undefined;
+    readonly editHeard: unknown;
+    readonly placeholder: boolean;
+    readonly text: string;
+    readonly borrowed: boolean;
+    readonly named: string;
+    readonly editable: boolean;
+    readonly nameBoxLabel: string;
+    readonly textLabel: string;
 }
 
 /** The refusals the grid words itself (ADR-0203); a commit's is the Consumer's to word (A11Y-16). */
@@ -1031,6 +1053,10 @@ export class GridView<Row> {
     // The per-cell declarations (ADR-0050, items 6, 7, 11 and 15), the row appearances resolved from them, and
     // the generated stylesheet their classes name, last in the root (ADR-0071).
     #cellPaint: CellPaint<Row> = CellPaint.empty();
+    // The Formula Bar (ADR-0051): its declarations, and its band, made once and in the root while it is shown.
+    #formulaBarDeclared: FormulaBarDeclarations<Row> = { shown: false, nameBoxLabel: undefined, onNameBoxEntered: undefined, borrowedText: undefined };
+    readonly #bar: FormulaBar;
+    #barRead: BarReading<Row> | undefined;
     readonly #appearances = new RowAppearances<Row>();
     #appearanceStyle: HTMLStyleElement | undefined;
     #appearanceVersion = -1;
@@ -1129,6 +1155,10 @@ export class GridView<Row> {
         this.#message = element('div', { class: 'ex-message', id: `${this.#ids}message`, role: 'tooltip' });
         this.#rowMarks = new GridMarks(doc, () => {
             this.#invalidate();
+        });
+        this.#bar = new FormulaBar(doc, {
+            textTyped: this.#onBarTyped, textFocused: this.#onBarFocused, nameBoxEntered: this.#onNameBoxEntered, nameBoxLeft: this.#onNameBoxLeft,
+            nameBoxFocused: this.#onNameBoxFocused,
         });
         this.#spacer.append(this.#header, this.#viewport);
         this.#scroller.append(this.#spacer);
@@ -1460,6 +1490,13 @@ export class GridView<Row> {
         // The band comes off the scroll budget, and the refusal names the band (ADR-0032): a Viewport that
         // cannot hold it and one row shows headers and no data, which reads as an empty result.
         const bandPx = bandHeightPxOf(headerLayout, metrics);
+        const formulaBar = formulaBarDeclarations(options);
+        // The Formula Bar takes its band of the declared height as well, and the rows what both leave (ADR-0051).
+        const barPx = formulaBar.shown ? metrics.formulaBarHeightPx : 0;
+        if (formulaBar.shown && height !== 'stretch' && height <= barPx + bandPx + metrics.rowHeightPx) {
+            throw new RangeError(`viewportHeight (${height}px) must exceed the Formula Bar's ${barPx}px, the header band's `
+                + `${bandPx}px and one row of ${metrics.rowHeightPx}px: each takes its band of it (ADR-0051, ADR-0028).`);
+        }
         if (headerLayout.tierCount > 0 && height !== 'stretch' && height <= bandPx + metrics.rowHeightPx) {
             throw new RangeError(`viewportHeight (${height}px) must exceed the header band — ${headerRowsOf(headerLayout)} tiers × `
                 + `${metrics.headerHeightPx}px = ${bandPx}px — plus one row of ${metrics.rowHeightPx}px (ADR-0032).`);
@@ -1478,7 +1515,7 @@ export class GridView<Row> {
             hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
-            cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true,
+            cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
         };
     }
 
@@ -1636,6 +1673,7 @@ export class GridView<Row> {
         this.#findsHeaders = taken.findsHeaders;
         this.#cellPaint = taken.cellPaint;
         this.#headerClickSelects = taken.headerClickSelects;
+        this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
         const popover = this.#popover;
@@ -1755,6 +1793,18 @@ export class GridView<Row> {
         return bandHeightPxOf(this.#headerLayout, this.#metrics);
     }
 
+    // The Formula Bar's band, or nothing while it is off (ADR-0051).
+    get #barPx(): number {
+        return this.#formulaBarDeclared.shown ? this.#metrics.formulaBarHeightPx : 0;
+    }
+
+    // A popover's place below the Formula Bar: its `top` is the root's padding box's, which the bar's band starts
+    // (ADR-0051, ADR-0040).
+    #underBar(style: string): string {
+        const barPx = this.#barPx;
+        return barPx === 0 ? style : `${style}; margin-top: ${barPx}px`;
+    }
+
     // The rows the header stands for in the accessibility tree, ahead of the data rows (ADR-0033).
     get #headerRowCount(): number {
         return headerRowsOf(this.#headerLayout);
@@ -1768,7 +1818,7 @@ export class GridView<Row> {
         this.#visibleWidthPx = visibleWidthPx;
         const visibleHeightPx = this.#height === 'stretch'
             ? Math.max(0, report?.contentHeightPx ?? 0) // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: as the width
-            : ViewportBox.visibleHeightOf(this.#height, report?.gutterHeightPx ?? 0); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: as the width
+            : ViewportBox.visibleHeightOf(this.#height - this.#barPx, report?.gutterHeightPx ?? 0); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: as the width
         // A box that shrinks until the popover has less than a row of room would leave it showing no item,
         // and still holding the keyboard: it closes as a Cancel. Only a shrink does: one opened in a box that
         // small is the Consumer's box, not a change (ADR-0040).
@@ -1784,7 +1834,7 @@ export class GridView<Row> {
             // A declared height this small is the Consumer's defect, said by name; a reported zero is a
             // hidden tab, and paints nothing until the next report (ADR-0013, ADR-0028).
             if (visibleHeightPx <= band && this.#height !== 'stretch') {
-                throw new Error(`A horizontal scrollbar takes ${report?.gutterHeightPx ?? 0}px out of the ${this.#height}px Viewport, ` // oxlint-disable-line ex-grid/no-stand-in-default -- the message names the gutter, 0 until reported
+                throw new Error(`A horizontal scrollbar takes ${report?.gutterHeightPx ?? 0}px out of the ${this.#height - this.#barPx}px Viewport${this.#barPx === 0 ? '' : ` left under the ${this.#barPx}px Formula Bar`}, ` // oxlint-disable-line ex-grid/no-stand-in-default -- the message names the gutter, 0 until reported
                     + `leaving ${visibleHeightPx}px — not enough for the header band's own ${band}px, let alone a row. `
                     + 'Declare a Viewport tall enough to hold its own scrollbar (ADR-0013).');
             }
@@ -2024,8 +2074,17 @@ export class GridView<Row> {
             return;
         }
         const edit = this.#edit;
-        if (edit !== undefined && event.target === edit.element) {
+        // The Formula Bar's text is the editor's second surface, and its keys are the editor's (ADR-0051).
+        if (edit !== undefined && (event.target === edit.element || event.target === this.#bar.text)) {
             this.#onEditorKey(event, press, edit);
+            return;
+        }
+        // The bar's text with no edit open reads a cell that does not edit: Escape, Enter and Tab hand the keyboard
+        // back to the grid, since the field is no tab stop to leave by (ADR-0051, ADR-0020).
+        if (edit === undefined && event.target === this.#bar.text
+            && (event.key === 'Escape' || event.key === 'Enter' || event.key === 'Tab')) {
+            this.#taken(event);
+            this.#takeKeyboard();
             return;
         }
         // A key the IME did not take, typed while the editor a composition opened still waits for the keyboard
@@ -2672,17 +2731,7 @@ export class GridView<Row> {
     // Whether the key is answered: opened, or thrown away with the Selection it was aimed at.
     #tryOpenEdit(mode: OpenEdit<Row>['mode'], typed: string | undefined): boolean {
         this.#reconcileSelection();
-        // Typing aimed at a Selection the rows or the source took away since it was painted is thrown away,
-        // never opened on the first cell of an order the user has not seen; the Consumer hears it once
-        // (ADR-0142, decided 2026-10-08).
-        const dropped = this.#droppedAim;
-        if (dropped !== undefined) {
-            if (!dropped.told && dropped.focus !== undefined && this.#isEditableCell(dropped.focus)) {
-                dropped.told = true;
-                this.#onEditDiscarded?.(dropped.reason);
-            }
-            return true;
-        }
+        if (this.#discardedAim()) return true;
         const extent = this.#extent;
         if (extent.rowCount <= 0 || extent.columnCount <= 0) return false;
         let selection = this.#held.selection;
@@ -2698,19 +2747,36 @@ export class GridView<Row> {
         return true;
     }
 
-    #startEdit(at: CellPosition, mode: OpenEdit<Row>['mode'], text: string): void {
+    // Typing aimed at a Selection the rows or the source took away since it was painted is thrown away, never
+    // opened on the first cell of an order the user has not seen; the Consumer hears it once (ADR-0142, decided
+    // 2026-10-08). Whether there was such an aim.
+    #discardedAim(): boolean {
+        const dropped = this.#droppedAim;
+        if (dropped === undefined) return false;
+        if (!dropped.told && dropped.focus !== undefined && this.#isEditableCell(dropped.focus)) {
+            dropped.told = true;
+            this.#onEditDiscarded?.(dropped.reason);
+        }
+        return true;
+    }
+
+    #startEdit(at: CellPosition, mode: OpenEdit<Row>['mode'], text: string, surface: OpenEdit<Row>['surface'] = 'cell'): void {
         // An edit opening ends the Copied Range, as an edit ends Excel's copy mode (ADR-0170).
         this.#copied = undefined;
         const element = this.#root.ownerDocument.createElement('input');
         element.className = 'ex-editor';
         element.value = text;
+        // One uncommitted text in two places: what is typed in the cell is shown in the bar (ADR-0051), and a
+        // press back into the cell types there again.
+        element.addEventListener('input', this.#onEditorTyped);
+        element.addEventListener('focus', this.#onEditorFocused);
         const rowKey = this.#source.rowKey;
         const held = defined(this.#rowAt(at.row), 'the row an edit opens on');
         this.#edit = {
             cell: at, mode, element, source: this.#source, columnNames: this.#columnNames, sequence: this.#sequence(),
             key: rowKey === undefined ? undefined : keyOf(rowKey, held.row, 'The row an edit opens on'),
             seenText: this.#paintedTextAt(at), openedOn: held.row, error: undefined,
-            awaits: this.#userWritesOver(at), rebaseOwed: false,
+            awaits: this.#userWritesOver(at), rebaseOwed: false, surface,
         };
         // The editor takes the keyboard in the task that opened it, with the caret placed by the core at the end
         // of the opening text: a key typed next lands in it whenever the pass paints, never in the Keyboard
@@ -3126,13 +3192,196 @@ export class GridView<Row> {
         this.#editorFocusOwed = false;
         const element = edit.element;
         const doc = this.#root.ownerDocument;
-        // Handed back before the editor goes, so DOM focus never falls to the page between the two.
-        if (doc.activeElement === element) this.#takeKeyboard();
+        // Handed back before the editor goes, so DOM focus never falls to the page between the two; from the
+        // Formula Bar too, whose text then reads the Focus cell's again (ADR-0051).
+        if (doc.activeElement === element || doc.activeElement === this.#bar.text) this.#takeKeyboard();
         element.remove();
         this.#invalidate();
         if (endedIn !== undefined) endedIn();
         if (discarded !== undefined) this.#onEditDiscarded?.(discarded);
         this.#tellEditing();
+    }
+
+    // ---- The Formula Bar (ADR-0051) ---------------------------------------------------------------------------
+
+    /**
+     * A Consumer's placement of the Selection (ADR-0050, item 4): `range` becomes the one range, with the Focus on
+     * `focus`, revealed. Taken against `rowSequenceVersion`, the one the grid reports (an intent's, `data-ex-sequence`),
+     * which is the source's own until the source is replaced; refused (false) once that moved, or
+     * while an edit stands; a range outside the grid is refused by name (the spine's sixth rule).
+     */
+    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        // Changes a live source gathered are the order's before the check, as a commit's are (ADR-0142 D5).
+        this.#source.publishGathered?.();
+        this.#reconcileSelection();
+        // Checked first: a place outside the grid is the Consumer's mistake, whatever else holds.
+        const placed = this.#held.selection.place(range, focus, this.#extent);
+        if (this.#edit !== undefined || rowSequenceVersion !== this.#sequence()) return false;
+        // The place is the Selection's now: a menu standing at the old one closes, and a drag ends, so its next
+        // move does not reshape the place from the old anchor.
+        this.#closePopover(true);
+        this.#setDragging(false);
+        this.#apply(placed);
+        const target = placed.focus;
+        if (target !== undefined) {
+            this.#revealOwed = { target, extending: undefined, rowStart: false, stepRows: 0 };
+            this.#followArmed = { focus: target, target };
+        }
+        this.#answered += 1;
+        this.#invalidate();
+        return true;
+    }
+
+    // A press or a key into the bar's text opens an edit on the Focus there, in Caret, its caret where the press
+    // put it; an edit standing in the cell moves to the bar, in Caret (ADR-0051).
+    readonly #onBarFocused = (): void => {
+        const edit = this.#edit;
+        if (edit !== undefined) {
+            // Only a move from the cell is a new surface; the grid giving the bar its keyboard back keeps the mode
+            // the user chose there with F2.
+            if (edit.surface !== 'bar') {
+                edit.surface = 'bar';
+                edit.mode = 'caret';
+            }
+            return;
+        }
+        // The bar holds the keyboard now: a menu standing closes without taking it back (ADR-0050, item 16).
+        this.#closePopover(false);
+        this.#reconcileSelection();
+        if (this.#discardedAim()) return;
+        const focus = this.#held.selection.focus;
+        if (focus === undefined || !this.#isEditableCell(focus) || this.#bar.text.readOnly) return;
+        this.#startEdit(focus, 'caret', this.#openingTextAt(focus), 'bar');
+    };
+
+    // Typed in the bar: the one uncommitted text, shown over the cell as well (ADR-0051).
+    readonly #onBarTyped = (text: string): void => {
+        if (this.#edit === undefined) this.#onBarFocused();
+        const edit = this.#edit;
+        // No edit could open, though the last pass left the field writable (the column, the Selection or the rows
+        // moved since): what was typed goes, and the next pass shows the Focus's text again, as the C# core does.
+        if (edit === undefined) {
+            this.#invalidate();
+            return;
+        }
+        edit.element.value = text;
+    };
+
+    // Typed in the cell: shown in the bar as well (ADR-0051).
+    readonly #onEditorTyped = (): void => {
+        const edit = this.#edit;
+        if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.text.value = edit.element.value;
+    };
+
+    // A press back into the cell's editor: the edit is typed there again.
+    readonly #onEditorFocused = (): void => {
+        const edit = this.#edit;
+        if (edit !== undefined) edit.surface = 'cell';
+    };
+
+    // A press into the Name Box commits an edit standing, in place, as Excel's does; one a Reject or a refusal holds
+    // takes the keyboard back to where it was typed (ADR-0051, ADR-0034).
+    readonly #onNameBoxFocused = (): void => {
+        const edit = this.#edit;
+        if (edit === undefined || this.#commitEdit()) return;
+        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
+        if (surface.isConnected) surface.focus({ preventScroll: true });
+    };
+
+    // Enter in the Name Box: the keyboard is the grid's again, and the Consumer resolves what was typed and places
+    // the Selection (ADR-0051; ADR-0050, item 4).
+    readonly #onNameBoxEntered = (typed: string): void => {
+        this.#takeKeyboard();
+        this.#answered += 1;
+        this.#invalidate();
+        this.#formulaBarDeclared.onNameBoxEntered?.(typed);
+    };
+
+    // Escape in the Name Box: what was typed goes, and the keyboard is the grid's again.
+    readonly #onNameBoxLeft = (): void => {
+        this.#takeKeyboard();
+        this.#answered += 1;
+        this.#invalidate();
+    };
+
+    // The bar shows the Focus: the Name Box names it in the Consumer's words, and the text field holds the text an
+    // edit would open on, the Entry on a Sheet, or, while an edit stands, its uncommitted text (ADR-0051). A cell
+    // whose own text is empty may show the Consumer's borrowed text, dimmed and read only (ADR-0125).
+    #paintFormulaBar(): void {
+        const declared = this.#formulaBarDeclared;
+        const bar = this.#bar;
+        if (!declared.shown) {
+            // A band taken away while it holds the keyboard hands it back first: to the editor, where an edit was
+            // typed in the bar, or to the grid, so the next key is not the page's.
+            if (bar.band.contains(this.#root.ownerDocument.activeElement)) {
+                const edit = this.#edit;
+                if (edit !== undefined) {
+                    edit.surface = 'cell';
+                    edit.element.focus({ preventScroll: true });
+                } else {
+                    this.#takeKeyboard();
+                }
+            }
+            bar.band.remove();
+            return;
+        }
+        if (bar.band.parentNode !== this.#root) this.#scroller.after(bar.band);
+        const edit = this.#edit;
+        const read = this.#barReading();
+        bar.paint({
+            heightPx: this.#barPx,
+            widthPx: this.#width === 'stretch' ? undefined : this.#width,
+            nameBoxWidthPx: this.#metrics.nameBoxWidthPx,
+            nameBox: read.named,
+            text: edit === undefined ? read.text : edit.element.value,
+            borrowed: edit === undefined && read.borrowed,
+            editable: edit !== undefined || read.editable,
+            nameBoxLabel: read.nameBoxLabel,
+            textLabel: read.textLabel,
+        });
+    }
+
+    // What the bar reads of the Focus, asked of the Consumer again only when the Focus, its row's instance or a
+    // declaration it is read through changed: a scroll's passes ask nothing (ADR-0003).
+    #barReading(): BarReading<Row> {
+        const declared = this.#formulaBarDeclared;
+        const focus = this.#held.selection.focus;
+        const held = focus === undefined ? undefined : this.#rowAt(focus.row);
+        const last = this.#barRead;
+        if (last !== undefined && last.declared === declared && last.cellPaint === this.#cellPaint && last.columns === this.#columns
+            && last.commandLabel === this.#commandLabel && last.editHeard === this.#editHeard
+            && last.placeholder === this.#placeholderMode && last.row === held?.row
+            && (focus === undefined ? last.focus === undefined : last.focus !== undefined && sameCell(last.focus, focus))) {
+            return last;
+        }
+        let text = '';
+        let borrowed = false;
+        if (focus !== undefined && held !== undefined) {
+            // Borrowed text, where the Consumer lends any, wins over the cell's own, as the C# core's does: a spilled
+            // cell paints its Value, and the bar shows the Anchor's Formula in its place (ADR-0125).
+            const borrow = declared.borrowedText;
+            const lent: unknown = borrow?.(held.row, itemAt(this.#columns, focus.column).column);
+            if (lent !== undefined && typeof lent !== 'string') throw new TypeError(`formulaBarBorrowedText answers text or undefined, not ${typeof lent}.`);
+            if (lent === undefined) {
+                text = this.#openingTextAt(focus);
+            } else {
+                text = lent;
+                borrowed = true;
+            }
+        }
+        const label = declared.nameBoxLabel;
+        const named: unknown = focus === undefined || label === undefined ? '' : label(focus);
+        if (typeof named !== 'string') throw new TypeError(`nameBoxLabel answers the Name Box's text, not ${typeof named} (ADR-0051).`);
+        const read: BarReading<Row> = {
+            focus, row: held?.row, declared, cellPaint: this.#cellPaint, columns: this.#columns, commandLabel: this.#commandLabel,
+            editHeard: this.#editHeard, placeholder: this.#placeholderMode, text, borrowed, named,
+            editable: focus !== undefined && held !== undefined && !borrowed && this.#isEditableCell(focus),
+            nameBoxLabel: this.#labelOf(gridLabelIds.nameBox),
+            textLabel: this.#labelOf(gridLabelIds.formulaBar),
+        };
+        this.#barRead = read;
+        return read;
     }
 
     // The Consumer hears whether an edit is open when that is not what it last heard (ADR-0050 section 6).
@@ -3452,16 +3701,16 @@ export class GridView<Row> {
         if (popover === undefined) return;
         if (popover.kind === 'context') {
             setAttribute(popover.element, 'style',
-                contextMenuStyle(popover.leftPx, this.#bandHeightPx + popover.topPx, this.#visibleWidthPx, this.#visibleHeightPx));
+                this.#underBar(contextMenuStyle(popover.leftPx, this.#bandHeightPx + popover.topPx, this.#visibleWidthPx, this.#visibleHeightPx)));
             return;
         }
         // The find panel in the grid's top right, under the header, anchored by its right edge at the Viewport's
         // with the width bounds every popover is clamped with, so it never reaches past the grid's left edge
         // either (ADR-0040).
         if (popover.kind === 'find') {
-            setAttribute(popover.element, 'style', `left: ${Math.max(0, this.#visibleWidthPx)}px; top: ${this.#bandHeightPx}px; `
+            setAttribute(popover.element, 'style', this.#underBar(`left: ${Math.max(0, this.#visibleWidthPx)}px; top: ${this.#bandHeightPx}px; `
                 + `transform: translateX(-100%); ${popoverAcross(0, this.#visibleWidthPx).widths}; `
-                + `max-height: ${this.#popoverRoomPx(popover, this.#visibleHeightPx)}px`);
+                + `max-height: ${this.#popoverRoomPx(popover, this.#visibleHeightPx)}px`));
             return;
         }
         // Under its column's header, from the band's foot to the box's (ADR-0040).
@@ -3469,7 +3718,7 @@ export class GridView<Row> {
         if (column < 0) return;
         const { leftPx, widths } = popoverAcross(this.#cellLeftPx(column), this.#visibleWidthPx);
         setAttribute(popover.element, 'style',
-            `left: ${leftPx}px; top: ${this.#bandHeightPx}px; ${widths}; max-height: ${this.#popoverRoomPx(popover, this.#visibleHeightPx)}px`);
+            this.#underBar(`left: ${leftPx}px; top: ${this.#bandHeightPx}px; ${widths}; max-height: ${this.#popoverRoomPx(popover, this.#visibleHeightPx)}px`));
     }
 
     // How tall the popover may be in a box `visibleHeightPx` tall: the Context Menu's side of the pointer, a
@@ -4436,8 +4685,9 @@ export class GridView<Row> {
         const target = event.target;
         const edit = this.#edit;
         if (edit !== undefined && (target === this.#root || target === this.#scroller || target === this.#keyField)) {
-            // Back into a grid whose edit stands, the keyboard is the edit's (ED-26).
-            if (edit.element.isConnected) edit.element.focus({ preventScroll: true });
+            // Back into a grid whose edit stands, the keyboard is the edit's (ED-26), on the surface it was typed on.
+            const surface = edit.surface === 'bar' && this.#bar.text.isConnected ? this.#bar.text : edit.element;
+            if (surface.isConnected) surface.focus({ preventScroll: true });
             return;
         }
         if (target === this.#root || target === this.#scroller) {
@@ -5339,6 +5589,8 @@ export class GridView<Row> {
             + `--ex-menu-button-inset: ${metrics.menuButtonInsetPx}px; --ex-sort-mark-width: ${metrics.sortMarkWidthPx}px; `
             + `--ex-resize-grip-width: ${metrics.resizeGripWidthPx}px; --ex-column-guide-width: ${metrics.columnGuideWidthPx}px`
             + stretchRootStyle(this.#width, this.#height)
+            // The room at the root's top the Formula Bar stands in: the scroller starts below it (ADR-0051).
+            + (this.#barPx === 0 ? '' : `; padding-top: ${this.#barPx}px; box-sizing: border-box`)
             + (this.#devicePixelRatio === undefined ? '' : `; --ex-dp: ${1 / this.#devicePixelRatio}px`));
         this.#write(root, 'root', 'aria-rowcount', String(this.#totalRows + this.#headerRowCount));
         this.#write(root, 'root', 'aria-colcount', String(this.#columns.length));
@@ -5374,6 +5626,7 @@ export class GridView<Row> {
         this.#paintViewport();
         this.#paintMarkCount();
         this.#paintMessage();
+        this.#paintFormulaBar();
         this.#placePopover();
     }
 
@@ -5392,7 +5645,7 @@ export class GridView<Row> {
 
     #scrollerStyle(): string {
         const width = this.#width;
-        const height = this.#height;
+        const height = this.#height === 'stretch' ? 'stretch' : this.#height - this.#barPx;
         if (width === 'stretch' && height === 'stretch') return 'flex: 1 1 auto; min-height: 0';
         if (width === 'stretch') return `height: ${height}px`;
         if (height === 'stretch') return `width: ${width}px; flex: 1 1 auto; min-height: 0`;
@@ -5962,7 +6215,7 @@ export class GridView<Row> {
         const width = Math.min(messageMaxWidthPx, this.#visibleWidthPx);
         const left = Math.min(Math.max(0, this.#cellLeftPx(edit.cell.column)), Math.max(0, this.#visibleWidthPx - width));
         const top = this.#bandHeightPx + geometry.viewportTopPxOf(edit.cell.row, this.#scrollTopPx) + this.#metrics.rowHeightPx;
-        setAttribute(this.#message, 'style', `left: ${left}px; top: ${top}px; max-width: ${width}px`);
+        setAttribute(this.#message, 'style', this.#underBar(`left: ${left}px; top: ${top}px; max-width: ${width}px`));
         if (this.#message.textContent !== error) this.#message.textContent = error;
         if (this.#message.parentNode !== this.#root) this.#scroller.after(this.#message);
     }
@@ -5976,6 +6229,11 @@ export class GridView<Row> {
         this.#editorFocusOwed = false;
         const edit = this.#edit;
         if (edit === undefined || !edit.element.isConnected || !this.#keyboardHere(toward)) return;
+        // An edit typed in the Formula Bar keeps the keyboard there, its caret where the user put it (ADR-0051).
+        if (edit.surface === 'bar' && this.#bar.text.isConnected) {
+            if (this.#root.ownerDocument.activeElement !== this.#bar.text) this.#bar.text.focus({ preventScroll: true });
+            return;
+        }
         const { element } = edit;
         if (this.#root.ownerDocument.activeElement === element) return;
         element.focus({ preventScroll: true });

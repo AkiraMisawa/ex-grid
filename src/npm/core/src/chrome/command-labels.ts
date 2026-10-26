@@ -1,4 +1,4 @@
-import { gridCommandIds } from './command-ids';
+import { gridCommandIds, gridLabelIds } from './command-ids';
 import { findPanelWords } from './find-panel-labels';
 import { markWords } from './mark-words';
 import { rowCommandRefusalWords } from './refusal-words';
@@ -18,6 +18,8 @@ const words: ReadonlyMap<string, string> = new Map([
     [gridCommandIds.sizeToFit, 'Size to fit'],
     [gridCommandIds.copy, 'Copy'],
     [gridCommandIds.copyWithHeaders, 'Copy with headers'],
+    [gridLabelIds.nameBox, 'Name Box'],
+    [gridLabelIds.formulaBar, 'Formula Bar'],
     ...findPanelWords,
     ...rowCommandRefusalWords,
     ...markWords,

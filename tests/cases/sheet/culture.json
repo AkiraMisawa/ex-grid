@@ -1,0 +1,452 @@
+{
+  "about": "What a Sheet's culture reads and shows (ADR-0047, ADR-0048, ADR-0071): constants typed, the built-in dates, times and currency in each culture's form, the Cell Editor's text, and the culture a Sheet Document records. Transcribed from CultureTests.cs.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0048 (SH-11): 1,234.5 under en-US is recorded as the number, not as the text typed",
+      "steps": [
+        {"enter": {"A1": "1,234.5"}, "expect": {"entries": {"A1": {"constant": 1234.5}}, "entryTexts": {"A1": "1234.5"}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":1234.5,\"format\":\"#,##0.00\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-11): 2026/9/26 under ja-JP is that date's serial number, shown as a date",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "2026/9/26"}, "expect": {"values": {"A1": 46291}, "numberFormats": {"A1": "m/d/yyyy"}, "displays": {"A1": {"width": null, "text": "2026/09/26", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a typed date records Excel's built-in short date, which shows in each culture's own pattern: en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=46291"}},
+        {"setNumberFormat": {"A1": "m/d/yyyy"}, "expect": {"texts": {"A1": "9/26/2026"}, "numberFormats": {"A1": "m/d/yyyy"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a typed date records Excel's built-in short date, which shows in each culture's own pattern: en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=46291"}},
+        {"setNumberFormat": {"A1": "m/d/yyyy"}, "expect": {"texts": {"A1": "26/09/2026"}, "numberFormats": {"A1": "m/d/yyyy"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a typed date records Excel's built-in short date, which shows in each culture's own pattern: de-DE",
+      "culture": "de-DE",
+      "steps": [
+        {"enter": {"A1": "=46291"}},
+        {"setNumberFormat": {"A1": "m/d/yyyy"}, "expect": {"texts": {"A1": "26.09.2026"}, "numberFormats": {"A1": "m/d/yyyy"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a typed date records Excel's built-in short date, which shows in each culture's own pattern: ja-JP",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46291"}},
+        {"setNumberFormat": {"A1": "m/d/yyyy"}, "expect": {"texts": {"A1": "2026/09/26"}, "numberFormats": {"A1": "m/d/yyyy"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-42 (the eleventh Windows run, case 20): the built-in currency shows in the Sheet culture's own currency, its negative section red, and is recorded as the built-in: 1234.5 under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=1234.5"}},
+        {"setNumberFormat": {"A1": "$#,##0.00_);[Red]($#,##0.00)"}, "expect": {"displays": {"A1": {"width": null, "text": "$1,234.50 ", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}}, "numberFormats": {"A1": "$#,##0.00_);[Red]($#,##0.00)"}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=1234.5\",\"format\":\"$#,##0.00_);[Red]($#,##0.00)\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-42 (the eleventh Windows run, case 20): the built-in currency shows in the Sheet culture's own currency, its negative section red, and is recorded as the built-in: -1234.5 under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=-1234.5"}},
+        {"setNumberFormat": {"A1": "$#,##0.00_);[Red]($#,##0.00)"}, "expect": {"displays": {"A1": {"width": null, "text": "($1,234.50)", "cannotShow": false, "alignment": "right", "colour": "red", "isNumber": true}}, "numberFormats": {"A1": "$#,##0.00_);[Red]($#,##0.00)"}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=-1234.5\",\"format\":\"$#,##0.00_);[Red]($#,##0.00)\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-42 (the eleventh Windows run, case 20): the built-in currency shows in the Sheet culture's own currency, its negative section red, and is recorded as the built-in: 1234.5 under en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=1234.5"}},
+        {"setNumberFormat": {"A1": "$#,##0.00_);[Red]($#,##0.00)"}, "expect": {"displays": {"A1": {"width": null, "text": "£1,234.50", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}}, "numberFormats": {"A1": "$#,##0.00_);[Red]($#,##0.00)"}, "documentJson": "{\"version\":9,\"culture\":\"en-GB\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=1234.5\",\"format\":\"$#,##0.00_);[Red]($#,##0.00)\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-42 (the eleventh Windows run, case 20): the built-in currency shows in the Sheet culture's own currency, its negative section red, and is recorded as the built-in: -1234.5 under en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=-1234.5"}},
+        {"setNumberFormat": {"A1": "$#,##0.00_);[Red]($#,##0.00)"}, "expect": {"displays": {"A1": {"width": null, "text": "-£1,234.50", "cannotShow": false, "alignment": "right", "colour": "red", "isNumber": true}}, "numberFormats": {"A1": "$#,##0.00_);[Red]($#,##0.00)"}, "documentJson": "{\"version\":9,\"culture\":\"en-GB\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=-1234.5\",\"format\":\"$#,##0.00_);[Red]($#,##0.00)\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-42 (the eleventh Windows run, case 20): the built-in currency shows in the Sheet culture's own currency, its negative section red, and is recorded as the built-in: 1234.5 under ja-JP",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=1234.5"}},
+        {"setNumberFormat": {"A1": "$#,##0_);[Red]($#,##0)"}, "expect": {"displays": {"A1": {"width": null, "text": "¥1,235", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}}, "numberFormats": {"A1": "$#,##0_);[Red]($#,##0)"}, "documentJson": "{\"version\":9,\"culture\":\"ja-JP\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=1234.5\",\"format\":\"$#,##0_);[Red]($#,##0)\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071, SH-42 (the eleventh Windows run, case 20): the built-in currency shows in the Sheet culture's own currency, its negative section red, and is recorded as the built-in: -1234.5 under ja-JP",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=-1234.5"}},
+        {"setNumberFormat": {"A1": "$#,##0_);[Red]($#,##0)"}, "expect": {"displays": {"A1": {"width": null, "text": "-¥1,235", "cannotShow": false, "alignment": "right", "colour": "red", "isNumber": true}}, "numberFormats": {"A1": "$#,##0_);[Red]($#,##0)"}, "documentJson": "{\"version\":9,\"culture\":\"ja-JP\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=-1234.5\",\"format\":\"$#,##0_);[Red]($#,##0)\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled, recorded as the built-in: d-mmm-yy under en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "d-mmm-yy"}, "expect": {"texts": {"A1": "05-Jan-26"}, "numberFormats": {"A1": "d-mmm-yy"}, "documentJson": "{\"version\":9,\"culture\":\"en-GB\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=46027\\u002B545/1440\",\"format\":\"d-mmm-yy\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled, recorded as the built-in: d-mmm-yy under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "d-mmm-yy"}, "expect": {"texts": {"A1": "5-Jan-26"}, "numberFormats": {"A1": "d-mmm-yy"}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=46027\\u002B545/1440\",\"format\":\"d-mmm-yy\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled, recorded as the built-in: d-mmm-yy under ja-JP",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "d-mmm-yy"}, "expect": {"texts": {"A1": "05-1-26"}, "numberFormats": {"A1": "d-mmm-yy"}, "documentJson": "{\"version\":9,\"culture\":\"ja-JP\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=46027\\u002B545/1440\",\"format\":\"d-mmm-yy\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled, recorded as the built-in: h:mm under en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "h:mm"}, "expect": {"texts": {"A1": "09:05"}, "numberFormats": {"A1": "h:mm"}, "documentJson": "{\"version\":9,\"culture\":\"en-GB\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=46027\\u002B545/1440\",\"format\":\"h:mm\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled, recorded as the built-in: h:mm under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "h:mm"}, "expect": {"texts": {"A1": "9:05"}, "numberFormats": {"A1": "h:mm"}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=46027\\u002B545/1440\",\"format\":\"h:mm\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled, recorded as the built-in: h:mm under ja-JP",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "h:mm"}, "expect": {"texts": {"A1": "9:05"}, "numberFormats": {"A1": "h:mm"}, "documentJson": "{\"version\":9,\"culture\":\"ja-JP\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=46027\\u002B545/1440\",\"format\":\"h:mm\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled, recorded as the built-in: h:mm AM/PM under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "h:mm AM/PM"}, "expect": {"texts": {"A1": "9:05 AM"}, "numberFormats": {"A1": "h:mm AM/PM"}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=46027\\u002B545/1440\",\"format\":\"h:mm AM/PM\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19: the built-ins open under another culture in that culture's form, as Excel's do",
+      "culture": "en-GB",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-GB\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=46027\",\"format\":\"d-mmm-yy\"},{\"at\":\"A2\",\"formula\":\"=545/1440\",\"format\":\"h:mm\"}]}"}, "expect": {"texts": {"A1": "05-Jan-26", "A2": "09:05"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19, ADR-0047: a date typed with a month name and a year records built-in 15, so it too shows in the culture's form: en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "5-Jan-2026"}, "expect": {"numberFormats": {"A1": "d-mmm-yy"}, "texts": {"A1": "05-Jan-26"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 19, ADR-0047: a date typed with a month name and a year records built-in 15, so it too shows in the culture's form: en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "5-Jan-2026"}, "expect": {"numberFormats": {"A1": "d-mmm-yy"}, "texts": {"A1": "5-Jan-26"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 17, ADR-0047: the width a number needs is read in the culture's form of its built-in, so a key widens its column to the text it shows: d-mmm-yy under en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "d-mmm-yy"}, "expect": {"widthOnEntry": {"A1": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 17, ADR-0047: the width a number needs is read in the culture's form of its built-in, so a key widens its column to the text it shows: d-mmm-yy under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "d-mmm-yy"}, "expect": {"widthOnEntry": {"A1": 8}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 17, ADR-0047: the width a number needs is read in the culture's form of its built-in, so a key widens its column to the text it shows: h:mm under en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "h:mm"}, "expect": {"widthOnEntry": {"A1": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 17, ADR-0047: the width a number needs is read in the culture's form of its built-in, so a key widens its column to the text it shows: h:mm under ja-JP",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46027+545/1440"}},
+        {"setNumberFormat": {"A1": "h:mm"}, "expect": {"widthOnEntry": {"A1": 4}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a percentage typed reopens in the Cell Editor as a percentage (its Value is in ExcelCases/typed-constants.json)",
+      "steps": [
+        {"enter": {"A1": "50%"}, "expect": {"entryTexts": {"A1": "50%"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: the Cell Editor reopens a date as the culture's short date, which types back to the same Entry",
+      "steps": [
+        {"enter": {"A1": "2026-09-26"}, "expect": {"entryTexts": {"A1": "9/26/2026"}}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 1,234.5 under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "1,234.5"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 9/26/2026 1:45 PM under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "9/26/2026 1:45 PM"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 0.000123 under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "0.000123"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 12.5% under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "12.5%"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 1.234,5 under de-DE",
+      "culture": "de-DE",
+      "steps": [
+        {"enter": {"A1": "1.234,5"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 26.9.2026 under de-DE",
+      "culture": "de-DE",
+      "steps": [
+        {"enter": {"A1": "26.9.2026"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 2026/9/26 under ja-JP",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "2026/9/26"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 13:45:10 under ja-JP",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "13:45:10"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: '1,234 under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "'1,234"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: '+A1 under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "'+A1"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: '-abc under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "'-abc"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 26-Sep under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "26-Sep"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 1E15 under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "1E15"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 1E-10 under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "1E-10"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: every constant's editor text types back to the same Entry: 26-Okt under de-DE",
+      "culture": "de-DE",
+      "steps": [
+        {"enter": {"A1": "26-Okt"}},
+        {"remember": "typed"},
+        {"retype": ["A1"], "expect": {"picture": "typed"}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-11): a document saved under en-US and opened where the thread is under de-DE shows the same numbers",
+      "culture": "de-DE",
+      "note": "The case runs with the thread under de-DE; the document's own culture is en-US.",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":1234.5,\"format\":\"#,##0.00\"},{\"at\":\"A2\",\"number\":46291,\"format\":\"m/d/yyyy\"},{\"at\":\"A3\",\"formula\":\"=A1*2\",\"format\":\"#,##0.00\"},{\"at\":\"A4\",\"formula\":\"=\\u00221,5\\u0022\\u002B1\"}]}"}, "expect": {"workbook": {"culture": "en-US"}, "values": {"A1": 1234.5, "A2": 46291, "A3": 2469, "A4": {"error": "#VALUE!"}}, "displays": {"A1": {"width": null, "text": "1,234.50", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}, "A2": {"width": null, "text": "9/26/2026", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}, "A3": {"width": null, "text": "2,469.00", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}, "A4": {"width": null, "text": "#VALUE!", "cannotShow": false, "alignment": "center", "colour": null, "isNumber": false}}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-11): the same Sheet under en-US, whose readings the document opened under de-DE keeps",
+      "steps": [
+        {"enter": {"A1": "1,234.5", "A2": "9/26/2026", "A3": "=A1*2", "A4": "=\"1,5\"+1"}, "expect": {"values": {"A4": {"error": "#VALUE!"}}, "displays": {"A1": {"width": null, "text": "1,234.50", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}, "A2": {"width": null, "text": "9/26/2026", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}, "A3": {"width": null, "text": "2,469.00", "cannotShow": false, "alignment": "right", "colour": null, "isNumber": true}, "A4": {"width": null, "text": "#VALUE!", "cannotShow": false, "alignment": "center", "colour": null, "isNumber": false}}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":1234.5,\"format\":\"#,##0.00\"},{\"at\":\"A2\",\"number\":46291,\"format\":\"m/d/yyyy\"},{\"at\":\"A3\",\"formula\":\"=A1*2\",\"format\":\"#,##0.00\"},{\"at\":\"A4\",\"formula\":\"=\\u00221,5\\u0022\\u002B1\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0048: the culture is recorded in the document, because it is part of what the Entries meant",
+      "culture": "de-DE",
+      "steps": [
+        {"enter": {"A1": "1,5"}, "expect": {"documentJson": "{\"version\":9,\"culture\":\"de-DE\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":1.5}]}"}},
+        {"reopen": "json", "expect": {"values": {"A1": 1.5}, "texts": {"A1": "1,5"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: under ja-JP mmm is the month as a number with no leading zero in every code, and mmmm is 1月, Windows' month names, which Excel shows: dd-mmm-yy",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "dd-mmm-yy"}, "expect": {"texts": {"A1": "05-1-26"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: under ja-JP mmm is the month as a number with no leading zero in every code, and mmmm is 1月, Windows' month names, which Excel shows: d-mmm-yy",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "d-mmm-yy"}, "expect": {"texts": {"A1": "05-1-26"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: under ja-JP mmm is the month as a number with no leading zero in every code, and mmmm is 1月, Windows' month names, which Excel shows: mmm d, yyyy",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "mmm d, yyyy"}, "expect": {"texts": {"A1": "1 5, 2026"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: under ja-JP mmm is the month as a number with no leading zero in every code, and mmmm is 1月, Windows' month names, which Excel shows: mmmm",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "mmmm"}, "expect": {"texts": {"A1": "1月"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: under ja-JP mmm is the month as a number with no leading zero in every code, and mmmm is 1月, Windows' month names, which Excel shows: yyyy/mmm/dd",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "yyyy/mmm/dd"}, "expect": {"texts": {"A1": "2026/1/05"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: en-GB and en-US keep their month names: d-mmm-yy under en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "d-mmm-yy"}, "expect": {"texts": {"A1": "05-Jan-26"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: en-GB and en-US keep their month names: d-mmm-yy under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "d-mmm-yy"}, "expect": {"texts": {"A1": "5-Jan-26"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: en-GB and en-US keep their month names: mmm d, yyyy under en-GB",
+      "culture": "en-GB",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "mmm d, yyyy"}, "expect": {"texts": {"A1": "Jan 5, 2026"}}}
+      ]
+    },
+    {
+      "name": "ADR-0071, case 14-10: en-GB and en-US keep their month names: mmmm under en-US",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"A1": "=46027"}},
+        {"setNumberFormat": {"A1": "mmmm"}, "expect": {"texts": {"A1": "January"}}}
+      ]
+    }
+  ]
+}
