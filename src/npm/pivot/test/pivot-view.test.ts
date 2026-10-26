@@ -477,6 +477,43 @@ describe('ExPivot\'s Field List', () => {
 });
 
 describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => {
+    it('ADR-0066: Refresh is offered by a source that can be asked again, and asks it again under the layout on screen', async () => {
+        let behind = local();
+        const source = new FetchingPivotSource(behind.fields, new PivotSourceFeatures(['sum', 'count'], true, false), {
+            aggregate: (query, signal) => behind.aggregate(query, signal),
+            details: (query, signal) => behind.details(query, signal),
+            items: (query, signal) => behind.items(query, signal),
+        });
+        const { root, grid } = mount({ source, layout: byRegion });
+        await settled();
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
+        behind = new RecordPivotSource([...trades, { region: 'US', desk: 'FX', amount: 100 }], fields);
+        const refresh = root.querySelector<HTMLButtonElement>('.ex-pivot-toolbar-end .ex-pivot-refresh-button');
+        expect(refresh?.textContent).toBe('Refresh');
+        refresh?.click();
+        await settled();
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '112'], ['Grand Total', '142']]);
+        const { root: other } = mount({ source: local(), layout: byRegion });
+        expect(other.querySelector('.ex-pivot-refresh-button')).toBeNull();
+    });
+
+    it('ADR-0066, spine rule 6: a move made while a Refresh is out is answered from the source asked again, never from the data before it', async () => {
+        let behind = local();
+        const source = new FetchingPivotSource(behind.fields, new PivotSourceFeatures(['sum', 'count'], true, false), {
+            aggregate: (query, signal) => behind.aggregate(query, signal),
+            details: (query, signal) => behind.details(query, signal),
+            items: (query, signal) => behind.items(query, signal),
+        });
+        const { root, grid } = mount({ source, layout: byRegion });
+        await settled();
+        behind = new RecordPivotSource([...trades, { region: 'US', desk: 'FX', amount: 100 }], fields);
+        root.querySelector<HTMLButtonElement>('.ex-pivot-refresh-button')?.click();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Sort Z to A').click();
+        await settled();
+        expect(await grid.texts()).toEqual([['US', '112'], ['EU', '30'], ['Grand Total', '142']]);
+    });
+
     it('ADR-0370 section 3: a source that counts its Items has each count written beside its field, in the pivot\'s locale', async () => {
         const { root } = mount({ source: server(), locale: 'de-DE' });
         await settled();
@@ -1138,6 +1175,93 @@ describe('ExPivot\'s Filter… (ADR-0061, ADR-0066)', () => {
         await settled();
         tickItem(root, 'C10000');
         expect(panel(root).querySelector<HTMLButtonElement>('.ex-pivot-ok')?.disabled).toBe(false);
+    });
+});
+
+function bandButton(root: HTMLElement, caption: string): HTMLButtonElement {
+    const filter = [...root.querySelectorAll('.ex-pivot-filters .ex-pivot-filter')].find(f => f.querySelector('.ex-pivot-filter-caption')?.textContent === caption);
+    const button = filter?.querySelector<HTMLButtonElement>('.ex-pivot-filter-button');
+    if (button === undefined || button === null) throw new Error(`The band has no report filter '${caption}'.`);
+    return button;
+}
+
+describe('ExPivot\'s report filter band (ADR-0061)', () => {
+    it('ADR-0061: each field in Filters stands in the band with what it shows, and its Filter… opens over the report and applies there', async () => {
+        const { root, view } = mount({ source: local(), layout: createPivotLayout({ filters: ['Region'], rows: ['Desk'], values: ['Amount'] }) });
+        await settled();
+        const band = root.querySelector('.ex-pivot-toolbar-start .ex-pivot-filters');
+        expect(band?.getAttribute('aria-label')).toBe('Report filters');
+        const button = bandButton(root, 'Region');
+        expect(button.textContent).toBe('(All)▾');
+        expect(button.getAttribute('aria-label')).toBe('Filter Region');
+        expect(button.classList.contains('ex-pivot-filter-active')).toBe(false);
+        button.click();
+        const frame = panel(root);
+        expect(frame.className).toBe('ex-pivot-popup ex-pivot-popup-overlay');
+        expect(frame.parentElement?.className).toBe('ex-pivot-filter-anchor');
+        expect(button.getAttribute('aria-expanded')).toBe('true');
+        expect(root.querySelector('.ex-pivot-backdrop')).not.toBeNull();
+        expect(document.activeElement).toBe(search(root));
+        await settled();
+        tickItem(root, 'US');
+        press(root, 'ex-pivot-ok');
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(root.querySelector('.ex-pivot-backdrop')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        await settled();
+        expect(view.shownLayout.filters[0]?.hiddenItems).toEqual([{ kind: 'text', value: 'US' }]);
+        expect(button.textContent).toBe('EU▾');
+        expect(button.classList.contains('ex-pivot-filter-active')).toBe(true);
+    });
+
+    it('ADR-0061: a filter showing several Items says (Multiple Items), and the backdrop and Escape close its Filter… with the draft', async () => {
+        const changed: PivotLayout[] = [];
+        const { root } = mount({
+            source: local(),
+            layout: createPivotLayout({ filters: [{ field: 'Desk', hiddenItems: [{ kind: 'text', value: 'FX' }] }], rows: ['Region'], values: ['Amount'] }),
+            onLayoutChanged: event => changed.push(event.layout),
+        });
+        await settled();
+        const button = bandButton(root, 'Desk');
+        expect(button.textContent).toBe('(Multiple Items)▾');
+        button.click();
+        await settled();
+        tickItem(root, 'Rates');
+        root.querySelector<HTMLElement>('.ex-pivot-backdrop')?.click();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        button.click();
+        await settled();
+        expect(filterItems(root)).toEqual(['☐ (Select All)', '☑ Credit', '☐ FX', '☑ Rates']);
+        panel(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(button);
+        await settled();
+        expect(changed).toHaveLength(0);
+    });
+
+    it('ADR-0061, spine rule 6: a report filter\'s Filter… goes when the pane leaves its layout, and the keyboard it held goes to the button', async () => {
+        const options: PivotViewOptions = { source: local(), layout: createPivotLayout({ filters: ['Region'], rows: ['Desk'], values: ['Amount'] }) };
+        const { root, view } = mount(options);
+        await settled();
+        bandButton(root, 'Region').click();
+        await settled();
+        tickItem(root, 'US');
+        view.update({ ...options, layout: createPivotLayout({ filters: ['Region'], columns: ['Desk'], values: ['Amount'] }) });
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(root.querySelector('.ex-pivot-backdrop')).toBeNull();
+        expect(document.activeElement).toBe(bandButton(root, 'Region'));
+        await settled();
+        expect(view.shownLayout.filters[0]?.hiddenItems).toEqual([]);
+    });
+
+    it('ADR-0061: the band stands only while Filters holds a field', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        expect(root.querySelector('.ex-pivot-filters')).toBeNull();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Move to Report Filter').click();
+        expect(bandButton(root, 'Region').textContent).toBe('(All)▾');
     });
 });
 

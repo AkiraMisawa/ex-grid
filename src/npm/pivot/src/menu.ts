@@ -19,9 +19,9 @@ export interface PivotMenuCommand {
     readonly invoke: () => void;
 }
 
-/** Where a frame stands: in the Field List under its entry, or from the Pivot Toolbar over the report at its
- * button's right edge. */
-export type PivotMenuPlace = 'field-list' | 'toolbar-end';
+/** Where a frame stands: in the Field List under its entry, or from the Pivot Toolbar over the report, at its
+ * button's left edge (the report filter band) or its right edge (Layout ▾). */
+export type PivotMenuPlace = 'field-list' | 'toolbar-start' | 'toolbar-end';
 
 /**
  * ExPivot's frame around a menu or a panel (ADR-0061), as the Razor component's PivotPopupFrame draws it: where it
@@ -30,7 +30,11 @@ export type PivotMenuPlace = 'field-list' | 'toolbar-end';
  */
 export function popupFrame(document: Document, place: PivotMenuPlace, role: 'menu' | 'dialog', escape: () => void): HTMLDivElement {
     const frame = document.createElement('div');
-    frame.className = place === 'toolbar-end' ? 'ex-pivot-popup ex-pivot-popup-overlay ex-pivot-popup-end' : 'ex-pivot-popup';
+    frame.className = {
+        'field-list': 'ex-pivot-popup',
+        'toolbar-start': 'ex-pivot-popup ex-pivot-popup-overlay',
+        'toolbar-end': 'ex-pivot-popup ex-pivot-popup-overlay ex-pivot-popup-end',
+    }[place];
     frame.setAttribute('role', role);
     // A press on its padding, its text or a disabled command gives the frame the keyboard, so Escape stays inside it
     // without another Tab stop (ADR-0061).
