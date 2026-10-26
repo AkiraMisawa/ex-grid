@@ -11,13 +11,14 @@
 import {
     gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions, type GridSelection, type GridTextGeometry,
     type CellPosition, type GridCommand, type GridContextMenuContext,
-    type FetchingGridSource, type GridRefusal, type ViewportSize,
+    type FetchingGridSource, type GridRefusal, type ViewportSize, type GridColumn, type GridCopyAnswer, type GridCopyRequest,
+    assembleCopy,
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
     layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWord, pivotWordIdList, setCollapsed, setHiddenItems,
     itemKeysEqual, pivotItemKeyId, validateLayout, writePivotLayoutJson, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
-    type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
+    type PivotReportCopyCell, type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
     pivotReportDetailsQuery, PivotItemPage, itemsOfPage, type PivotFieldItem,
 } from '@ex-grid/pivot-engine';
 import { detailsEvent, detailsProblemText, type PivotDetailItem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
@@ -281,6 +282,11 @@ function wordsRecord(label: PivotLabel | undefined): Readonly<Record<string, str
     return Object.freeze(words);
 }
 
+// A copy refused, in the sentence the grid says.
+function refuse(sentence: string): GridCopyAnswer {
+    return Object.freeze({ kind: 'refuse', sentence });
+}
+
 /** One ExPivot, drawn into its root. */
 export class PivotView {
     readonly #root: HTMLElement;
@@ -342,6 +348,8 @@ export class PivotView {
     #countsAsked: AbortController | undefined;
     #grid: GridHandle<PivotDisplayRow> | undefined;
     #rows: FetchingGridSource<PivotDisplayRow> | undefined;
+    // The grid's columns as last drawn, whose names a copy asks the report source for.
+    #gridColumns: readonly GridColumn<PivotDisplayRow>[] = [];
     #dropRemoveShown = false;
     #open: OpenSurface | undefined;
     // The Items Filter… lists, asked of the source under the report on screen (ADR-0066).
@@ -970,6 +978,7 @@ export class PivotView {
         if (answer === undefined || rows === undefined || question === undefined) return;
         const { locale } = question;
         const { columns, headerGroups, pinnedColumnCount } = this.#columns.of(answer.metadata, this.#userWidths);
+        this.#gridColumns = columns;
         const { rowHeight, density } = this.#options;
         const options: GridOptions<PivotDisplayRow> = {
             columns,
@@ -989,6 +998,7 @@ export class PivotView {
             // Find over the report as shown, and its painted matches marked by the rule it finds by (ADR-0332).
             findMatch: reportMatch,
             onRefused: this.#gridRefused,
+            copyAnswerAsync: this.#copyReport,
             commandLabel: this.#commandLabel,
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
@@ -1009,6 +1019,93 @@ export class PivotView {
         }
         this.#draw();
     }
+
+    // A copy is the report source's, of the report on screen, as the Razor component's is (ADR-0152): each cell's text
+    // and its locale-free form, and a number column Item's header in full in the HTML flavour (ADR-0005's note of
+    // 2026-10-13). Every refusal is said in ExPivot's words, a source's own inside one (ADR-0060). Held in a field: its
+    // identity reaches the grid.
+    readonly #copyReport = async (request: GridCopyRequest, signal: AbortSignal): Promise<GridCopyAnswer> => {
+        // The whole question is captured before awaiting: a new Window never rebinds this gesture.
+        const metadata = this.#shown.answer?.metadata;
+        const source = this.#shownReportSource;
+        const rows = this.#rows;
+        if (metadata === undefined || source === undefined || rows === undefined || request.rowSequenceVersion !== rows.snapshot().rowSequenceVersion) {
+            return refuse(this.#words.word('data-changed'));
+        }
+        const { plan } = request;
+        const version = metadata.version;
+        const answer = await source.copy(Object.freeze({
+            version,
+            columns: Object.freeze(this.#gridColumns.map(column => column.name)),
+            ranges: Object.freeze(plan.segments.map(range => Object.freeze({
+                top: range.topRow, left: range.leftColumn, bottom: range.topRow + range.rowCount - 1, right: range.leftColumn + range.columnCount - 1,
+            }))),
+        }), signal);
+        if (answer.version !== version) return refuse(this.#words.word('copy-another-version'));
+        if (answer.refusal !== undefined) return refuse(this.#words.fill('source-refused', answer.refusal.message));
+        if (answer.blocks.length !== plan.segments.length) return refuse(this.#words.word('copy-missing-range'));
+        const whole = plan.segments.every((range, i) => {
+            const block = elementAt(answer.blocks, i);
+            return block.rows.length === range.rowCount && block.headers.length === range.columnCount
+                && (block.headerRaws === undefined || block.headerRaws.length === range.columnCount)
+                && block.rows.every(cells => cells.length === range.columnCount);
+        });
+        if (!whole) return refuse(this.#words.word('copy-incomplete-range'));
+        // The block a position lies in: the one the last position lay in, which assembly mostly asks again, or the one
+        // found by halves along the plan's order, as the Razor component finds it.
+        const vertical = plan.orientation === 'vertical';
+        let hint = 0;
+        const blockAt = (row: number, column: number): number => {
+            const at = vertical ? row : column;
+            const within = (index: number): number => {
+                const range = elementAt(plan.segments, index);
+                const start = vertical ? range.topRow : range.leftColumn;
+                const end = start + (vertical ? range.rowCount : range.columnCount) - 1;
+                return at < start ? -1 : at > end ? 1 : 0;
+            };
+            if (within(hint) === 0) return hint;
+            let low = 0;
+            let high = plan.segments.length - 1;
+            while (low <= high) {
+                const middle = low + Math.floor((high - low) / 2);
+                const side = within(middle);
+                if (side === 0) {
+                    hint = middle;
+                    return middle;
+                }
+                if (side < 0) high = middle - 1;
+                else low = middle + 1;
+            }
+            throw new Error('The copied position is outside the approved plan.');
+        };
+        const cellAt = (row: number, column: number): PivotReportCopyCell => {
+            const index = blockAt(row, column);
+            const range = elementAt(plan.segments, index);
+            return elementAt(elementAt(elementAt(answer.blocks, index).rows, row - range.topRow), column - range.leftColumn);
+        };
+        const headerBlock = (column: number): number => {
+            const index = plan.segments.findIndex(range => column >= range.leftColumn && column < range.leftColumn + range.columnCount);
+            if (index < 0) throw new Error('The copy header is outside the approved plan.');
+            return index;
+        };
+        const flavours = assembleCopy(plan, {
+            displayAt: (row, column) => cellAt(row, column).text,
+            // A blank carries no raw form, and is written empty, as the Razor component writes it.
+            // oxlint-disable-next-line ex-grid/no-stand-in-default -- ADR-0005: a blank cell's HTML flavour is empty
+            rawAt: (row, column) => cellAt(row, column).raw ?? '',
+            ...(request.withHeaders ? {
+                headerAt: (column: number) => {
+                    const index = headerBlock(column);
+                    return elementAt(elementAt(answer.blocks, index).headers, column - elementAt(plan.segments, index).leftColumn);
+                },
+                headerRawAt: (column: number) => {
+                    const index = headerBlock(column);
+                    return elementAt(answer.blocks, index).headerRaws?.[column - elementAt(plan.segments, index).leftColumn];
+                },
+            } : {}),
+        });
+        return Object.freeze({ kind: 'write', text: flavours.text, html: flavours.html });
+    };
 
     // The report grid's refusals: Ctrl+H on a report, which is not written, is said on the Pivot Toolbar in Excel's
     // words (ADR-0332 §2). The refusals the find panel shows itself are left to it. Held in a field: its identity

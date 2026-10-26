@@ -20,6 +20,7 @@ import { Home } from './pages/home';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
+import { PivotCsv } from './pages/pivot-csv';
 import { PivotDb } from './pages/pivot-db';
 import { PivotRisk } from './pages/pivot-risk';
 import { SheetDemo } from './pages/sheet';
@@ -51,6 +52,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: 
     pivot: Pivot,
     'pivot-risk': PivotRisk,
     'pivot-db': PivotDb,
+    'pivot-csv': PivotCsv,
     sheet: SheetDemo,
     marks: Marks,
     stripes: Stripes,

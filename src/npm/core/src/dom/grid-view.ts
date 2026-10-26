@@ -165,6 +165,15 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * holds Entries, answers from it however far the copy runs past the rows in hand.
      */
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
+    /**
+     * Answers each approved copy later (ADR-0152), as `copyAnswer` does now, for a Consumer that asks elsewhere for
+     * what it copies: ExPivot asks its report source. A copy event then takes the asynchronous write, even when the
+     * Window holds every cell. The Consumer captures what the copy reads, such as the report on screen, before it
+     * awaits, and the grid never puts the rows in hand in place of an answer. The signal aborts when a newer copy
+     * supersedes this one or the grid is destroyed; the answer is then written nowhere. `copyAnswer` takes
+     * precedence where both are given.
+     */
+    readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     /** Hears every gesture the grid refused, by kind and reason (ADR-0005): nothing it would have done was
      * done, and the grid has said why through its live region. */
     readonly onRefused?: (refusal: GridRefusal<Row>) => void;
@@ -603,6 +612,7 @@ interface Taken<Row> {
     readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     readonly copyCellCap: number;
     readonly copyAnswer: ((request: GridCopyRequest) => GridCopyAnswer) | undefined;
+    readonly copyAnswerAsync: ((request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>) | undefined;
     readonly onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
     readonly onAction: ((event: GridActionEvent<Row>) => void) | undefined;
     /** Who holds the marks of the Mark Column, while one is declared. */
@@ -989,6 +999,7 @@ export class GridView<Row> {
     #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     #copyCellCap = defaultCellCap;
     #copyAnswer: ((request: GridCopyRequest) => GridCopyAnswer) | undefined;
+    #copyAnswerAsync: ((request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>) | undefined;
     #onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
     #onAction: ((event: GridActionEvent<Row>) => void) | undefined;
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the action chosen in it.
@@ -1781,6 +1792,8 @@ export class GridView<Row> {
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         const { copyAnswer }: { readonly copyAnswer?: unknown } = options;
         if (copyAnswer !== undefined && typeof copyAnswer !== 'function') throw new TypeError('copyAnswer is a function of the copy asked (ADR-0050, item 9).');
+        const { copyAnswerAsync }: { readonly copyAnswerAsync?: unknown } = options;
+        if (copyAnswerAsync !== undefined && typeof copyAnswerAsync !== 'function') throw new TypeError('copyAnswerAsync is a function of the copy asked (ADR-0152).');
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
                 + 'not used to switch copying off (ADR-0005).');
@@ -1808,7 +1821,7 @@ export class GridView<Row> {
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
-            onSelectionChanged: options.onSelectionChanged, copyCellCap, copyAnswer: options.copyAnswer, onRefused: options.onRefused, onAction: options.onAction,
+            onSelectionChanged: options.onSelectionChanged, copyCellCap, copyAnswer: options.copyAnswer, copyAnswerAsync: options.copyAnswerAsync, onRefused: options.onRefused, onAction: options.onAction,
             marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
@@ -1985,6 +1998,7 @@ export class GridView<Row> {
         this.#onSelectionChanged = taken.onSelectionChanged;
         this.#copyCellCap = taken.copyCellCap;
         this.#copyAnswer = taken.copyAnswer;
+        this.#copyAnswerAsync = taken.copyAnswerAsync;
         this.#onRefused = taken.onRefused;
         this.#onAction = taken.onAction;
         this.#rowMarks.bind(taken.marks, taken.rowKind);
@@ -4971,6 +4985,12 @@ export class GridView<Row> {
         // has said.
         const answered = this.#copyAnswer === undefined ? undefined : this.#answeredCopy(plan, false);
         if (this.#copyAnswer !== undefined && answered === undefined) return;
+        // A Consumer that answers later answers on the asynchronous write, whatever the Window holds (ADR-0152).
+        if (this.#copyAnswer === undefined && this.#copyAnswerAsync !== undefined) {
+            this.#writeAnsweredLater(plan, false);
+            event.preventDefault();
+            return;
+        }
         const covered = windowCovers(plan, state);
         if (data !== null && (answered !== undefined || covered)) {
             // Both flavours in one operation: what was on screen in text/plain, and the raw value in
@@ -5012,13 +5032,22 @@ export class GridView<Row> {
             if (answer !== undefined) this.#writeAnswered(decision.plan, answer);
             return;
         }
+        if (this.#copyAnswerAsync !== undefined) {
+            this.#writeAnsweredLater(decision.plan, withHeaders);
+            return;
+        }
         this.#writeCopy(decision.plan, withHeaders);
     }
 
     // The Consumer's answer to an approved copy (ADR-0050, item 9), or nothing where it refused, which is said in its
     // own sentence.
     #answeredCopy(plan: CopyPlan, withHeaders: boolean): { readonly text: string; readonly html: string } | undefined {
-        const answer = checkedCopyAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#handedVersion() }));
+        return this.#takenAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#handedVersion() }));
+    }
+
+    // A Consumer's answer, checked: its flavours, or nothing where it refused, which is said in its own sentence.
+    #takenAnswer(given: unknown): CopyFlavours | undefined {
+        const answer = checkedCopyAnswer(given);
         if (answer.kind === 'write') return answer;
         this.#sayRefusal(answer.sentence);
         this.#onRefused?.({ kind: 'copy', reason: 'refusedByConsumer' });
@@ -5037,6 +5066,36 @@ export class GridView<Row> {
         this.#writeGathered(signal => Promise.resolve().then(() => (signal.aborted ? undefined : {
             flavours: answered, outline: () => (outlined ? CopiedRange.of(plan, version, columns, windowRowAt(state)) : undefined),
         })));
+    }
+
+    // The Consumer's later answer to an approved copy (ADR-0152), written as it comes, held as a gathered copy is: one a
+    // newer copy superseded, or one answered after the grid was destroyed, writes nothing and says nothing. Its outline is
+    // taken as the copy is asked, as the rows in hand stand then, and lands with its write (ADR-0170).
+    #writeAnsweredLater(plan: CopyPlan, withHeaders: boolean): void {
+        const answerAsync = defined(this.#copyAnswerAsync, 'the asynchronous copy answer');
+        const request: GridCopyRequest = { plan, withHeaders, rowSequenceVersion: this.#handedVersion() };
+        const state = this.#state;
+        const columns = this.#columns;
+        const version = this.#sequence();
+        const outlined = windowCovers(plan, state);
+        this.#writeGathered(async signal => {
+            let given: unknown;
+            try {
+                given = await answerAsync(request, signal);
+            // oxlint-disable-next-line ex-grid/no-catch -- a superseded copy's own abort writes nothing; any other failure is said and rethrown
+            } catch (error) {
+                if (signal.aborted || this.#destroyed) return undefined;
+                // Said, and the failure itself left to surface, as a gather's is: the refusal is the user's, the error
+                // the Consumer's.
+                this.#refuse({ kind: 'copy', reason: 'rowsUnavailable' });
+                throw error;
+            }
+            if (signal.aborted || this.#destroyed) return undefined;
+            const flavours = this.#takenAnswer(given);
+            return flavours === undefined ? undefined : {
+                flavours, outline: () => (outlined ? CopiedRange.of(plan, version, columns, windowRowAt(state)) : undefined),
+            };
+        });
     }
 
     // The asynchronous write of a copy (ADR-0005): the rows gathered while the browser waits.
