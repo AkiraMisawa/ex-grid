@@ -60,4 +60,13 @@ describe('the engine surface', () => {
         expect(range.isWholeColumns).toBe(columns);
         expect(range.isWholeRows).toBe(rows);
     });
+
+    // ADR-0331: the Sheet shown is one of the Workbook's, and a Sheet of another is refused.
+    it('refuses to show a Sheet of another Workbook', () => {
+        const workbook = new Workbook(Culture.of('en-US'), ['Sheet1', 'Sheet2']);
+        const other = new Workbook(Culture.of('en-US')).shown;
+        expect(() => {
+            workbook.shown = other;
+        }).toThrow(RangeError);
+    });
 });

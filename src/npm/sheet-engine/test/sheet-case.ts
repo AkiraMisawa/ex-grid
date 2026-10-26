@@ -361,7 +361,7 @@ function thrown(e: unknown): JsonObject {
     if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', saying: e.message };
     if (e instanceof SheetRefusedError) return { refusal: 'refused', reason: e.refusal.reason, saying: e.refusal.message };
     if (e instanceof RepeatedKeyError) return { refusal: 'repeatedKey', saying: e.message };
-    if (e instanceof SheetDocumentError) return { refusal: 'document', saying: e.message };
+    if (e instanceof SheetDocumentError) return { refusal: 'document', saying: e.message, documentVersion: orNull(e.documentVersion) };
     if (e instanceof FormatError) return { refusal: 'format', saying: e.message };
     if (e instanceof RangeError && e.message !== 'Maximum call stack size exceeded') return { refusal: 'argument', saying: e.message };
     if (e instanceof TypeError || e instanceof RangeError) throw e;
@@ -731,6 +731,10 @@ class Run {
                 });
                 break;
             }
+            case 'workbookJson':
+                // The Workbook Document's JSON as written, which the two engines write alike.
+                actual = this.workbook.toDocument().toJson();
+                break;
             case 'documentJson':
                 // The Sheet Document's JSON as written, which the two engines write alike.
                 actual = this.workbook.toSheetDocument(sheet.name).toJson();
@@ -827,6 +831,7 @@ class Run {
                     culture: this.workbook.culture.name,
                     today: today === undefined ? null : `${padded(today.year, 4)}-${padded(today.month, 2)}-${padded(today.day, 2)}`,
                     hasVolatileFormulas: this.workbook.hasVolatileFormulas,
+                    changes: this.workbook.changes,
                     linkedTables: this.workbook.linkedTables.map(t => ({
                         name: t.name, columns: [...t.columns], keyColumns: [...t.keyColumns], isWaiting: t.isWaiting, rowCount: t.rowCount,
                     })),

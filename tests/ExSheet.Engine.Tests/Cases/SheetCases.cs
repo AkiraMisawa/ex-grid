@@ -460,7 +460,7 @@ internal sealed class Run(CultureInfo culture)
         FormulaSyntaxException => new JsonObject { ["refusal"] = "formulaSyntax", ["saying"] = e.Message },
         SheetRefusedException r => new JsonObject { ["refusal"] = "refused", ["reason"] = SheetCases.Camel(r.Refusal.Reason), ["saying"] = r.Refusal.Message },
         RepeatedKeyException => new JsonObject { ["refusal"] = "repeatedKey", ["saying"] = e.Message },
-        SheetDocumentException => new JsonObject { ["refusal"] = "document", ["saying"] = e.Message },
+        SheetDocumentException document => new JsonObject { ["refusal"] = "document", ["saying"] = e.Message, ["documentVersion"] = document.DocumentVersion },
         ArgumentException a => new JsonObject { ["refusal"] = "argument", ["saying"] = Saying(a) },
         FormatException => new JsonObject { ["refusal"] = "format", ["saying"] = e.Message },
         _ => new JsonObject { ["refusal"] = "invalidOperation", ["saying"] = e.Message },
@@ -795,6 +795,10 @@ internal sealed class Run(CultureInfo culture)
                     ["right"] = SheetCases.Sorted(lines.Right.Select(SheetCases.Line)),
                 } : null);
                 break;
+            case "workbookJson":
+                // The Workbook Document's JSON as written, which the two engines write alike.
+                actual = Workbook.ToDocument().ToJson();
+                break;
             case "documentJson":
                 // The Sheet Document's JSON as written, which the two engines write alike.
                 actual = Workbook.ToDocument(sheet.Name).ToJson();
@@ -894,6 +898,7 @@ internal sealed class Run(CultureInfo culture)
                     ["culture"] = Workbook.Culture.Name,
                     ["today"] = Workbook.Today?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     ["hasVolatileFormulas"] = Workbook.HasVolatileFormulas,
+                    ["changes"] = Workbook.Changes,
                     ["linkedTables"] = new JsonArray([.. Workbook.LinkedTables.Select(t => (JsonNode)new JsonObject
                     {
                         ["name"] = t.Name,

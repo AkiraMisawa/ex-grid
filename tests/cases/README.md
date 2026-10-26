@@ -678,14 +678,15 @@ the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which bot
 `changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`
 (a `check`'s), `isUndone`, `ranges`, `stepSheet` (the Sheet a step was done on or made), `changesSheets`, and
 `clockReads` (how often the step read the clock); of the Workbook,
-`sheets`, `shown`, `workbook` (its `culture`, `today`, `hasVolatileFormulas` and `linkedTables`), and
+`sheets`, `shown`, `workbook` (its `culture`, `today`, `hasVolatileFormulas`, `linkedTables` and `changes`),
+`workbookJson` (its Workbook Document's JSON text), and
 `picture` or `pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
 exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
 
 A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type
 on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaSyntaxException`,
 `FormulaSyntaxError`), `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
-`repeatedKey`, `document` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
+`repeatedKey`, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
 `RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
 (`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's
 own reading of a malformed case, an engine defect, and what JavaScript throws by itself fail the case.

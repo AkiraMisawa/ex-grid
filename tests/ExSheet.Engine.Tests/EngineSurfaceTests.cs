@@ -88,4 +88,12 @@ public class EngineSurfaceTests
         Assert.Equal(columns, range.IsWholeColumns);
         Assert.Equal(rows, range.IsWholeRows);
     }
+
+    [Fact] // ADR-0331: the Sheet shown is one of the Workbook's, and a Sheet of another is refused
+    public void Only_a_sheet_of_the_workbook_is_shown()
+    {
+        var workbook = new Workbook(EnUs, ["Sheet1", "Sheet2"]);
+
+        Assert.Throws<ArgumentException>(() => workbook.Shown = NewSheet());
+    }
 }
