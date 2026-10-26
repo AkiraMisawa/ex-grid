@@ -345,8 +345,10 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * panel holds a search, every painted cell it says matches wears `ex-match-mark`, and the current match, the
      * Focus a found step moved to, `ex-match-mark-current` as well. Unless given, the reference rule marks the
      * cells where the source is `GridSource.from`'s, which finds by it, and nothing is marked anywhere else: a
-     * source that finds by a rule of its own passes it here to have the marks. Hold it in a field: its identity
-     * is the change signal, and a new function makes every painted row judge its cells again (ADR-0003).
+     * source that finds by a rule of its own passes it here to have the marks. It is asked about every painted cell
+     * that carries a value, a column that is not queryable included, since the Consumer's own Find says where a step
+     * lands; never about an Action or Mark cell. Hold it in a field: its identity is the change signal, and a new
+     * function makes every painted row judge its cells again (ADR-0003).
      */
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
     /** Whether Find searches the column headers and Header Group labels too (ADR-0333): true unless given. A
@@ -4473,6 +4475,12 @@ export class GridView<Row> {
         }, (error: unknown) => {
             if (this.#destroyed || this.#findStepping !== stepping) return;
             this.#findStepping = undefined;
+            // Given up by a source since replaced: whatever stopped it, it was about rows the grid no longer shows,
+            // which the panel says as any answer from such a source (ADR-0142).
+            if (source !== this.#source && error instanceof DOMException && error.name === 'AbortError') {
+                this.#refuseFind('sourceChanged');
+                return;
+            }
             this.#setFindOutcome({ kind: 'none' });
             // Given up by whoever answers, who says why itself: nothing moves, and no "No match" is claimed for
             // cells nobody read (ADR-0055, ADR-0025).
@@ -6917,9 +6925,13 @@ export class GridView<Row> {
 
     // The Match Mark a painted cell wears (ADR-0332 §4): only on a cell Find can land on, which a column with
     // no value of its own to search is not, judged by its displayed text where the caller has it.
+    // An Action or Mark cell carries no value and is never marked. The reference rule skips a column that is not
+    // queryable, as `GridSource.from` finds in none; a Consumer's rule is asked about every other cell, since the
+    // Consumer's own Find says where a step lands (ExPivot's report columns are not queryable, and are searched).
     #markOf(row: Row, c: number, marks: MatchMarks<Row> | undefined, current: number, shown?: string): MatchMark {
-        const { column } = itemAt(this.#columns, c);
-        if (marks === undefined || column.queryable === false || !marks.matches(row, column, shown)) return 'none';
+        const { column, actions, mark } = itemAt(this.#columns, c);
+        if (marks === undefined || actions.length > 0 || mark || (marks.rule === undefined && column.queryable === false)
+            || !marks.matches(row, column, shown)) return 'none';
         return c === current ? 'current' : 'match';
     }
 

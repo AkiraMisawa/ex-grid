@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
 import type { GridEditIntent } from '../src/cells/edit-intent';
-import type { GridColumn } from '../src/dom/grid-column';
+import { actionColumn, type GridColumn } from '../src/dom/grid-column';
 import type { GridRefusal } from '../src/dom/grid-refusal';
 import type { GridOptions } from '../src/dom/grid-view';
 import { notFound, type GridFindRequest, type GridFindResult } from '../src/finding/find';
@@ -256,6 +256,23 @@ describe('a Find step', () => {
         expect(refusals).toEqual([{ kind: 'find', reason: 'sourceChanged' }]);
     });
 
+    it('ADR-0142 / ADR-0055: a step given up by a source since replaced is said as the data replaced', async () => {
+        let giveUp: (() => void) | undefined;
+        const { source } = asking(GridSource.from(deals), () => new Promise((_resolve, reject) => {
+            giveUp = () => { reject(new DOMException('The report it read is gone.', 'AbortError')); };
+        }));
+        const options = { columns, source, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, findsHeaders: false } as const;
+        const { root, view, refusals } = grid(options);
+        await painted();
+        await find(root, 'novak');
+        enter(root, field(root));
+        view.update({ ...options, source: GridSource.from(deals), onRefused: refusal => { refusals.push(refusal); } });
+        defined(giveUp, 'the step')();
+        await settle();
+        expect(outcome(root)).toBe('The data was replaced; find again');
+        expect(refusals).toEqual([{ kind: 'find', reason: 'sourceChanged' }]);
+    });
+
     it('ADR-0055 / ADR-0025: a step given up by whoever answers moves nothing, and claims no "No match"', async () => {
         const { source } = asking(GridSource.from(deals), async () => { throw new DOMException('The server went away.', 'AbortError'); });
         const { root, refusals } = grid({ source });
@@ -370,6 +387,25 @@ describe('the Match Mark (ADR-0332 §4)', () => {
         await painted();
         expect(cell(root, 1, 0).className).toMatch(/ex-match-mark/);
         expect(cell(root, 3, 1).className).not.toMatch(/ex-match-mark/);
+    });
+
+    it('ADR-0332 §4: a Consumer\'s rule is asked about a column that is not queryable, and never about an Action cell', async () => {
+        // ExPivot's report columns carry values and are neither sorted nor filtered: its own Find searches them.
+        const unqueryable: readonly GridColumn<Deal>[] = [
+            { ...defined(columns[0], 'Book'), queryable: false },
+            actionColumn<Deal>('Open', [{ name: 'open', label: 'Open' }], { width: 80 }),
+        ];
+        const asked: string[] = [];
+        const { source } = asking(GridSource.from(deals), async () => notFound);
+        const { root } = grid({
+            columns: unqueryable, source, findsHeaders: false,
+            findMatch: (deal, column) => { asked.push(column.name); return deal.book === 'B1'; },
+        });
+        await painted();
+        await find(root, 'b1');
+        expect(cell(root, 1, 0).className).toMatch(/ex-match-mark/);
+        expect(cell(root, 1, 1).className).not.toMatch(/ex-match-mark/);
+        expect(new Set(asked)).toEqual(new Set(['Book']));
     });
 });
 

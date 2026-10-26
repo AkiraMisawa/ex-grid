@@ -3,13 +3,16 @@
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it } from 'vitest';
-import type { CellPosition, GridCommand, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
+import type { CellPosition, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
-    type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotSlicing, type PivotSource,
+    type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotReportCopyQuery, type PivotReportCopyResult, type PivotReportMetadata, type PivotReportRange, type PivotReportRefusal,
+    type PivotReportSource, type PivotSlicing,
+    type PivotSource,
 } from '@ex-grid/pivot-engine';
+import { findInReport } from '../src/report-find';
 import { browserPivotLocale } from '../src/browser-locale';
-import { defined } from '../src/must';
+import { defined, elementAt } from '../src/must';
 import type { PivotShowDetailsEvent } from '../src/details';
 import { PivotView, type PivotSelectionChangedEvent, type PivotViewOptions } from '../src/pivot-view';
 
@@ -1883,6 +1886,130 @@ describe('ExPivot\'s Context Menu (ADR-0036, ADR-0059)', () => {
         run(commands, 'sort-descending');
         await settled();
         expect(changed).toHaveLength(1);
+    });
+});
+
+// Region then Desk on Rows, Compact: 0 EU 30, 1 Credit 20, 2 Rates 10, 3 US 12, 4 FX 7, 5 Rates 5, 6 Grand Total 42.
+const regionThenDesk: PivotLayout = createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] });
+
+function cellAt(row: number, column: number): CellPosition {
+    return Object.freeze({ row, column });
+}
+
+/** One step of the report grid's Find, asked as the grid asks it. */
+async function findStepOf(grid: GridStandIn, text: string, from: CellPosition | undefined, extra: Partial<GridFindRequest> = {}): Promise<GridFindResult> {
+    const { source, columns } = grid.current;
+    if (source?.find === undefined) throw new Error('The report grid was handed a source that does not find.');
+    return source.find(Object.freeze({
+        text, matchCase: false, wholeCell: false, backward: false, from,
+        columns: columns.map(column => column.name), rowSequenceVersion: source.snapshot().rowSequenceVersion, ...extra,
+    }), new AbortController().signal);
+}
+
+/** A report source whose Copy answers `answer` for each query: what a source that misbehaves says. */
+function copyingWith(answer: (query: PivotReportCopyQuery) => PivotReportCopyResult): PivotReportSource {
+    return { copy: async (query: PivotReportCopyQuery) => answer(query) } as unknown as PivotReportSource;
+}
+
+function refusalOf(kind: PivotReportRefusal['kind']): PivotReportRefusal {
+    return Object.freeze({ kind, message: 'No.' });
+}
+
+describe('ExPivot\'s Find over the report (ADR-0332, ADR-0333)', () => {
+    it('ADR-0332 §1: a step walks the labels as shown, by rows, wrapping, and backward the other way', async () => {
+        const { grid } = mount({ source: local(), layout: regionThenDesk });
+        await settled();
+        const label = elementAt(grid.current.columns, 0).name;
+        expect(await findStepOf(grid, 'rates', cellAt(0, 0))).toEqual({ found: true, row: 2, column: label });
+        expect(await findStepOf(grid, 'rates', cellAt(2, 0))).toEqual({ found: true, row: 5, column: label });
+        expect(await findStepOf(grid, 'rates', cellAt(5, 0))).toEqual({ found: true, row: 2, column: label });
+        expect(await findStepOf(grid, 'rates', cellAt(2, 0), { backward: true })).toEqual({ found: true, row: 5, column: label });
+        expect(await findStepOf(grid, 'Asia', cellAt(0, 0))).toEqual({ found: false });
+    });
+
+    it('ADR-0332 §1: a value is found by the text the report shows, and a selection keeps the step inside it', async () => {
+        const { grid } = mount({ source: local(), layout: regionThenDesk });
+        await settled();
+        const label = elementAt(grid.current.columns, 0).name;
+        expect(await findStepOf(grid, '30', undefined)).toEqual({ found: true, row: 0, column: elementAt(grid.current.columns, 1).name });
+        // Whole cell: "2" is none of 20, 12 and 42.
+        expect(await findStepOf(grid, '2', undefined, { wholeCell: true })).toEqual({ found: false });
+        // Within rows 3 to 6, the one Rates is US's, which finds itself.
+        const scope = [Object.freeze({ topRow: 3, leftColumn: 0, rowCount: 4, columnCount: 2 })];
+        expect(await findStepOf(grid, 'rates', cellAt(3, 0), { scope })).toEqual({ found: true, row: 5, column: label });
+        expect(await findStepOf(grid, 'rates', cellAt(5, 0), { scope })).toEqual({ found: true, row: 5, column: label });
+    });
+
+    it('ADR-0332 §4: the painted matches are judged by the rule the step finds by, over the same text', async () => {
+        const { grid } = mount({ source: local(), layout: regionThenDesk });
+        await settled();
+        const { source, columns, findMatch } = grid.current;
+        if (source === undefined || findMatch === undefined) throw new Error('The report grid was handed no match rule.');
+        const rows = await source.rows({ start: 0, count: 7 }, new AbortController().signal);
+        const pattern = Object.freeze({ text: 'rates', matchCase: false, wholeCell: false });
+        const marked = rows.flatMap((row, r) => columns.flatMap((column, c) => (findMatch(row, column, pattern) ? [`${r},${c}`] : [])));
+        expect(marked).toEqual(['2,0', '5,0']);
+        expect(findMatch(elementAt(rows, 0), elementAt(columns, 1), Object.freeze({ text: '30', matchCase: false, wholeCell: true }))).toBe(true);
+    });
+
+    it('ADR-0332 §2: Ctrl+H on a report opens nothing, and the Pivot Toolbar says why in Excel\'s words', async () => {
+        const { grid, root } = mount({ source: local(), layout: regionThenDesk });
+        await settled();
+        grid.current.onRefused?.({ kind: 'find', reason: 'notFound' });
+        expect(root.querySelector('.ex-pivot-refusal-notice')?.textContent).toBe('');
+        grid.current.onRefused?.({ kind: 'find', reason: 'replaceUnavailable' });
+        expect(root.querySelector('.ex-pivot-refusal-notice')?.textContent).toBe('Cannot change this part of a PivotTable report.');
+    });
+
+    it('ADR-0332 §1: a step the source cannot answer is given up, never answered "no match"', async () => {
+        const metadata = { version: 'v1', rowCount: 2, labelColumns: [{ name: 'L' }], valueColumns: [] } as unknown as PivotReportMetadata;
+        const request: GridFindRequest = Object.freeze({
+            text: 'x', matchCase: false, wholeCell: false, backward: false, columns: ['L'], rowSequenceVersion: 0,
+        });
+        const signal = new AbortController().signal;
+        const cells = [[{ text: 'x', isNumber: false }], [{ text: 'y', isNumber: false }]];
+        // The rows each query asks for, as a source holding the report answers them.
+        const rowsAsked = (query: PivotReportCopyQuery): typeof cells => {
+            const range = elementAt(query.ranges, 0);
+            return cells.slice(range.top, range.bottom + 1);
+        };
+        const answered = (version: string, rows: (query: PivotReportCopyQuery) => typeof cells): PivotReportSource =>
+            copyingWith(query => ({ version, blocks: [{ headers: ['L'], rows: rows(query) }] }));
+        expect(await findInReport(copyingWith(() => ({ version: 'v1', blocks: [], refusal: refusalOf('reportVersionNotHeld') })), metadata, request, signal))
+            .toEqual({ kind: 'notHeld' });
+        expect(await findInReport(copyingWith(() => ({ version: 'v1', blocks: [], refusal: refusalOf('sourceRefused') })), metadata, request, signal))
+            .toEqual({ kind: 'refused', refusal: refusalOf('sourceRefused') });
+        expect(await findInReport(answered('v2', rowsAsked), metadata, request, signal)).toEqual({ kind: 'invalid' });
+        expect(await findInReport(answered('v1', () => cells.slice(1)), metadata, request, signal)).toEqual({ kind: 'invalid' });
+        expect(await findInReport(answered('v1', rowsAsked), metadata, request, signal))
+            .toEqual({ kind: 'answered', answer: { found: true, row: 0, column: 'L' } });
+    });
+
+    it('ADR-0332 §1: a step from the start reads the report once, from its first row, and a selection\'s step only its rows', async () => {
+        const metadata = { version: 'v1', rowCount: 100, labelColumns: [{ name: 'L' }], valueColumns: [] } as unknown as PivotReportMetadata;
+        const asked: PivotReportRange[] = [];
+        const source = copyingWith(query => {
+            const range = elementAt(query.ranges, 0);
+            asked.push(range);
+            const rows = Array.from({ length: range.bottom - range.top + 1 }, (_, i) => [{ text: range.top + i === 70 ? 'x' : 'y', isNumber: false }]);
+            return { version: 'v1', blocks: [{ headers: ['L'], rows }] };
+        });
+        const request: GridFindRequest = Object.freeze({
+            text: 'x', matchCase: false, wholeCell: false, backward: false, columns: ['L'], rowSequenceVersion: 0,
+        });
+        const signal = new AbortController().signal;
+        expect(await findInReport(source, metadata, request, signal)).toEqual({ kind: 'answered', answer: { found: true, row: 70, column: 'L' } });
+        expect(asked).toEqual([{ top: 0, left: 0, bottom: 99, right: 0 }]);
+        asked.length = 0;
+        const scope = [Object.freeze({ topRow: 60, leftColumn: 0, rowCount: 20, columnCount: 1 })];
+        expect(await findInReport(source, metadata, { ...request, from: cellAt(60, 0), scope }, signal))
+            .toEqual({ kind: 'answered', answer: { found: true, row: 70, column: 'L' } });
+        expect(asked).toEqual([{ top: 61, left: 0, bottom: 79, right: 0 }]);
+        // Nothing found: the walk wraps to the Focus's row and reads that row alone again.
+        asked.length = 0;
+        expect(await findInReport(source, metadata, { ...request, text: 'z', from: cellAt(60, 0), scope }, signal))
+            .toEqual({ kind: 'answered', answer: { found: false } });
+        expect(asked).toEqual([{ top: 61, left: 0, bottom: 79, right: 0 }, { top: 60, left: 0, bottom: 60, right: 0 }]);
     });
 });
 
