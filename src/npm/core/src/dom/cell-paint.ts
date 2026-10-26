@@ -6,6 +6,7 @@
 
 import type { CellAppearance, CellTextMeasure, EdgeBorderOf } from '../cells/cell-appearance';
 import type { CellAlign } from '../paint/cell-classes';
+import { GridMetrics, type GridDensity } from '../grid-metrics';
 import type { ColumnType } from '../query/columns';
 import type { GridColumn } from './grid-column';
 
@@ -93,4 +94,10 @@ export class CellPaint<Row> {
     get paintsAppearance(): boolean {
         return this.cellAppearance !== undefined || this.editorAppearance !== undefined;
     }
+}
+
+/** The Cell Metrics a grid of `density` judges its cells by (ADR-0016, ADR-0028), for a Consumer that sizes its
+ * columns in the grid's digits before the grid is drawn, as a Sheet sizes Excel's 8.43 characters. */
+export function cellTextMeasure(density: GridDensity): CellTextMeasure {
+    return GridMetrics.resolve({ density }).cellMetrics;
 }

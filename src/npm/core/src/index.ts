@@ -10,7 +10,7 @@ export type { GridSelection } from './selection/selection';
 export { createGrid } from './dom/create-grid';
 export type { GridHandle } from './dom/create-grid';
 export type { GridHeaderGroup, GridOptions, ViewportSize } from './dom/grid-view';
-export type { CellPaintOptions } from './dom/cell-paint';
+export { cellTextMeasure, type CellPaintOptions } from './dom/cell-paint';
 export type { BorderStyle, CellAppearance, CellBorder, CellTextMeasure, EdgeBorderOf } from './cells/cell-appearance';
 export type { FindRefusalReason, GridRefusal } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';

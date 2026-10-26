@@ -82,6 +82,9 @@ export interface CellTextMeasure {
 }
 
 // @public
+export function cellTextMeasure(density: GridDensity): CellTextMeasure;
+
+// @public
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
 
 // @public
