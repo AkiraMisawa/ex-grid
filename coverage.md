@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.2% | 88.5% |
-| ExSheet | 95.2% | 87.7% |
+| ExSheet | 95.2% | 87.5% |
 | ExPivot | 94.4% | 86.3% |
 | ExChart | 90.9% | 83.8% |
 | ExBoard | 91.7% | 81.8% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 07:06:22 |
+| Generated on: | 10/26/2026 - 07:53:10 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1197 |
-| Files: | 607 |
-| **Line coverage:** | 94.5% (83039 of 87861) |
-| Covered lines: | 83039 |
-| Uncovered lines: | 4822 |
-| Coverable lines: | 87861 |
-| Total lines: | 140244 |
-| **Branch coverage:** | 87.2% (50162 of 57480) |
-| Covered branches: | 50162 |
-| Total branches: | 57480 |
+| Classes: | 1199 |
+| Files: | 609 |
+| **Line coverage:** | 94.5% (83379 of 88212) |
+| Covered lines: | 83379 |
+| Uncovered lines: | 4833 |
+| Coverable lines: | 88212 |
+| Total lines: | 140819 |
+| **Branch coverage:** | 87.2% (50339 of 57718) |
+| Covered branches: | 50339 |
+| Total branches: | 57718 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -109,8 +109,8 @@
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
 |ExChart.GridChart|25%|0%|
-|ExChart.GridChartBridge<TRow>|46.3%|17.5%|
 |ExChart.GridChartBridge<TRow>|70.3%|42.3%|
+|ExChart.GridChartBridge<TRow>|46.3%|17.5%|
 |ExChart.GridChartCommands|62.5%|62.5%|
 |ExChart.GridChartDeclarations<TRow>|100%||
 |ExChart.GridChartSeries|100%||
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1133,7 +1133,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.2%**|**90.3%**|
+|**ExSheet.Engine**|**97.2%**|**90%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1163,10 +1163,11 @@
 |ExSheet.Engine.FormulaEntry.Token|100%||
 |ExSheet.Engine.FormulaReference|100%||
 |ExSheet.Engine.Formulas.Area|100%|100%|
-|ExSheet.Engine.Formulas.Arithmetic|100%|88.8%|
+|ExSheet.Engine.Formulas.Arithmetic|100%|86%|
+|ExSheet.Engine.Formulas.BigReal|99.5%|84.6%|
 |ExSheet.Engine.Formulas.BinaryNode|79.1%|83.3%|
 |ExSheet.Engine.Formulas.BooleanNode|100%||
-|ExSheet.Engine.Formulas.CorrectlyRounded|100%|89.2%|
+|ExSheet.Engine.Formulas.CorrectlyRounded|97.8%|87.7%|
 |ExSheet.Engine.Formulas.Draws|100%|100%|
 |ExSheet.Engine.Formulas.Dyadic|100%|89.4%|
 |ExSheet.Engine.Formulas.Enclosure|93.8%|79.6%|
@@ -1205,6 +1206,7 @@
 |ExSheet.Engine.Formulas.Parser|99.6%|90.7%|
 |ExSheet.Engine.Formulas.Parser.LetScope|100%||
 |ExSheet.Engine.Formulas.PercentNode|100%||
+|ExSheet.Engine.Formulas.PortableMath|92.9%|65.4%|
 |ExSheet.Engine.Formulas.PortableRegex|94.6%|90.7%|
 |ExSheet.Engine.Formulas.Reference|100%|97.6%|
 |ExSheet.Engine.Formulas.ReferenceNode|100%||
@@ -1223,13 +1225,13 @@
 |ExSheet.Engine.FormulaSyntaxException|90.9%||
 |ExSheet.Engine.LinkedTable|100%|100%|
 |ExSheet.Engine.LinkedTableColumn|100%|100%|
-|ExSheet.Engine.NumberFormat|95.1%|92%|
+|ExSheet.Engine.NumberFormat|95.1%|92.1%|
 |ExSheet.Engine.NumberFormat.Part|100%||
-|ExSheet.Engine.NumberFormat.Section|95.5%|91.9%|
+|ExSheet.Engine.NumberFormat.Section|95.4%|92%|
 |ExSheet.Engine.NumberFormatColours|94.7%|92.3%|
 |ExSheet.Engine.NumberText|100%|98.7%|
 |ExSheet.Engine.PlaceInRange|100%|100%|
-|ExSheet.Engine.PointSite|0%||
+|ExSheet.Engine.PointSite|100%||
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
@@ -1243,7 +1245,7 @@
 |ExSheet.Engine.Sheet.StagedReader|100%|92.5%|
 |ExSheet.Engine.Sheet.StructuralOutcome|100%||
 |ExSheet.Engine.Sheet.TableState|100%||
-|ExSheet.Engine.Sheet.TrendDigits|92%|78.1%|
+|ExSheet.Engine.Sheet.TrendDigits|91.3%|75%|
 |ExSheet.Engine.SheetBlock|93.3%|50%|
 |ExSheet.Engine.SheetCell|100%||
 |ExSheet.Engine.SheetChange|100%|95.8%|
