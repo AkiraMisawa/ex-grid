@@ -127,6 +127,22 @@ describe('the engine surface', () => {
         expect(Entry.fromValue(Value.fromError('#VALUE!')).constant?.error).toBe('#VALUE!');
     });
 
+    // ADR-0047/0048: a day and a month name without a year is that day of the current year, as Excel reads it
+    // (TYPED-022). The year is the machine's clock's, which a sheet case does not set.
+    it.each([
+        ['en-US', '26-Sep'],
+        ['en-US', 'Sep 26'],
+        ['en-US', '9/26'],
+        ['de-DE', '26-Sep'],
+    ] as const)('reads %s %s as 26 September of the current year', (culture, typed) => {
+        const sheet = new Workbook(Culture.of(culture)).shown;
+        const a1 = CellAddress.parse('A1');
+        sheet.enter(a1, typed);
+        const year = new Date().getFullYear();
+        expect(sheet.getValue(a1)?.number).toBe((Date.UTC(year, 8, 26) - Date.UTC(1899, 11, 30)) / 86_400_000);
+        expect(sheet.getNumberFormat(a1).code).toBe('d-mmm');
+    });
+
     // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette.
     it.each([
         ['black', 0x000000],
