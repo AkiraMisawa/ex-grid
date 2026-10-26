@@ -88,7 +88,6 @@ class GridStandIn {
             update: next => { this.options = next; },
             placeSelection: () => { throw new Error('The pivot places no selection.'); },
             destroy: () => { this.destroyed = true; },
-            placeSelection: () => { throw new Error('The pivot places no selection on its grid.'); },
         };
     };
 
@@ -617,6 +616,199 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
         await settled();
         expect(box.checked).toBe(true);
         expect(root.ownerDocument.activeElement).toBe(box);
+    });
+});
+
+function menu(root: HTMLElement): HTMLElement {
+    const frame = root.querySelector<HTMLElement>('.ex-pivot-popup[role="menu"]');
+    if (frame === null) throw new Error('No menu is open.');
+    return frame;
+}
+
+function command(root: HTMLElement, label: string): HTMLButtonElement {
+    const found = [...menu(root).querySelectorAll<HTMLButtonElement>('.ex-pivot-menu-item')].find(button => button.textContent.endsWith(label));
+    if (found === undefined) throw new Error(`The menu has no command '${label}'.`);
+    return found;
+}
+
+function entryButton(root: HTMLElement, areaName: string, index: number): HTMLButtonElement {
+    const button = area(root, areaName).querySelectorAll<HTMLButtonElement>('.ex-pivot-entry-button')[index];
+    if (button === undefined) throw new Error(`The Area '${areaName}' has no entry ${index}.`);
+    return button;
+}
+
+function layoutButton(root: HTMLElement): HTMLButtonElement {
+    const button = root.querySelector<HTMLButtonElement>('.ex-pivot-layout-button');
+    if (button === null) throw new Error('The Pivot Toolbar has no Layout button.');
+    return button;
+}
+
+describe('ExPivot\'s menus (ADR-0061)', () => {
+    it('ADR-0061: Layout opens Excel\'s Design choices under their headings, the current ones marked and a choice that changes nothing disabled', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        const button = layoutButton(root);
+        expect(button.getAttribute('aria-expanded')).toBe('false');
+        button.click();
+        expect(button.getAttribute('aria-expanded')).toBe('true');
+        const frame = menu(root);
+        expect(frame.parentElement?.className).toBe('ex-pivot-toolbar-anchor');
+        expect(frame.className).toBe('ex-pivot-popup ex-pivot-popup-overlay ex-pivot-popup-end');
+        expect([...frame.querySelectorAll('.ex-pivot-menu-heading')].map(heading => heading.textContent)).toEqual(['Subtotals', 'Grand Totals', 'Report Layout']);
+        const compact = command(root, 'Show in Compact Form');
+        expect(compact.getAttribute('role')).toBe('menuitemradio');
+        expect(compact.getAttribute('aria-checked')).toBe('true');
+        expect(compact.disabled).toBe(true);
+        expect(command(root, 'Show in Tabular Form').getAttribute('aria-checked')).toBe('false');
+        expect(root.querySelector('.ex-pivot-backdrop')).not.toBeNull();
+        // The first enabled choice takes the keyboard.
+        const first = [...frame.querySelectorAll<HTMLButtonElement>('.ex-pivot-menu-item')].find(item => !item.disabled);
+        expect(document.activeElement).toBe(first);
+    });
+
+    it('ADR-0061: a Layout choice closes the menu, lays the report out under it and hands the keyboard back to Layout', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, view } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        layoutButton(root).click();
+        command(root, 'Show in Tabular Form').click();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(root.querySelector('.ex-pivot-backdrop')).toBeNull();
+        expect(document.activeElement).toBe(layoutButton(root));
+        await settled();
+        expect(changed).toHaveLength(1);
+        expect(view.shownLayout.form).toBe('tabular');
+        layoutButton(root).click();
+        expect(command(root, 'Show in Tabular Form').getAttribute('aria-checked')).toBe('true');
+    });
+
+    it('ADR-0061: Escape and a press on the backdrop close the Layout menu and hand the keyboard back', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        layoutButton(root).click();
+        menu(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(layoutButton(root));
+        layoutButton(root).click();
+        root.querySelector<HTMLElement>('.ex-pivot-backdrop')?.click();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(layoutButton(root));
+    });
+
+    it('ADR-0061: a placed field\'s menu stands under its entry, offers only the moves that change something, and a move hands the keyboard to the field\'s entry where it went', async () => {
+        const { root, view } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        const region = entryButton(root, 'rows', 0);
+        expect(region.getAttribute('aria-label')).toBe('Options for Region');
+        region.click();
+        expect(region.getAttribute('aria-expanded')).toBe('true');
+        expect(menu(root).parentElement).toBe(region.parentElement);
+        expect(menu(root).getAttribute('aria-label')).toBe('Options for Region');
+        expect(command(root, 'Move Up').disabled).toBe(true);
+        expect(command(root, 'Move to Row Labels').disabled).toBe(true);
+        expect(command(root, 'Collapse Entire Field').disabled).toBe(false);
+        expect(command(root, 'Expand Entire Field').disabled).toBe(true);
+        expect(document.activeElement).toBe(command(root, 'Move Down'));
+        command(root, 'Move to Column Labels').click();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(entryButton(root, 'columns', 0));
+        expect(entryButton(root, 'columns', 0).textContent).toContain('Region');
+        await settled();
+        expect(view.shownLayout.columns.map(placement => placement.field)).toEqual(['Region']);
+        // Moved back, it stands last in Rows, and its entry there takes the keyboard; moved up, the keyboard goes with it.
+        entryButton(root, 'columns', 0).click();
+        command(root, 'Move to Row Labels').click();
+        expect(document.activeElement).toBe(entryButton(root, 'rows', 1));
+        expect(entryButton(root, 'rows', 1).textContent).toContain('Region');
+        entryButton(root, 'rows', 1).click();
+        command(root, 'Move Up').click();
+        expect(document.activeElement).toBe(entryButton(root, 'rows', 0));
+        expect(entryButton(root, 'rows', 0).textContent).toContain('Region');
+    });
+
+    it('ADR-0061: a Value Field removed while its field stands in Rows hands the keyboard to that entry', async () => {
+        const { root } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Amount'], values: ['Amount'] }) });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        command(root, 'Remove Field').click();
+        expect(document.activeElement).toBe(entryButton(root, 'rows', 1));
+    });
+
+    it('ADR-0061: a field menu hidden with the Field List hands the keyboard it held to the toggle', async () => {
+        const source = local();
+        const { root, view } = mount({ source, layout: byRegion });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        view.update({ source, slicing: inTurn, layout: byRegion, showFieldList: false });
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(root.querySelector('.ex-pivot-field-list-toggle'));
+    });
+
+    it('ADR-0061: a field removed from its menu hands the keyboard to its tick box, never to the page', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Remove Field').click();
+        expect(document.activeElement).toBe(field(root, 'Region').querySelector('input'));
+    });
+
+    it('ADR-0061: a press elsewhere in the pivot dismisses a field menu and leaves the keyboard where it went; a press on its entry closes it', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        expect(menu(root)).not.toBeNull();
+        command(root, 'Move Down').dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        expect(root.querySelector('.ex-pivot-popup')).not.toBeNull();
+        layoutButton(root).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        entryButton(root, 'rows', 0).click();
+        entryButton(root, 'rows', 0).click();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(entryButton(root, 'rows', 0));
+    });
+
+    it('ADR-0061, spine rule 6: a field menu goes when the pane leaves the layout it was opened on, and the keyboard it held goes to its field\'s entry', async () => {
+        const source = local();
+        const { root, view } = mount({ source, layout: byRegion });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        view.update({ source, slicing: inTurn, layout: createPivotLayout({ rows: ['Desk'], columns: ['Region'], values: ['Amount'] }) });
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(entryButton(root, 'rows', 0).getAttribute('aria-expanded')).toBe('false');
+        expect(document.activeElement).toBe(entryButton(root, 'columns', 0));
+    });
+
+    it('ADR-0061: the keyboard leaving the Layout menu closes it, so its backdrop takes no press meant elsewhere', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        layoutButton(root).click();
+        const toggle = root.querySelector<HTMLButtonElement>('.ex-pivot-field-list-toggle');
+        toggle?.focus();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(root.querySelector('.ex-pivot-backdrop')).toBeNull();
+        expect(document.activeElement).toBe(toggle);
+    });
+
+    it('ADR-0061: Escape in a menu goes no further than the menu', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        let heard = 0;
+        const listening = new AbortController();
+        document.body.addEventListener('keydown', () => { heard++; }, { signal: listening.signal });
+        layoutButton(root).click();
+        command(root, 'Show in Tabular Form').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        listening.abort();
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(heard).toBe(0);
+    });
+
+    it('ADR-0061: Σ Values moves only between Rows and Columns', async () => {
+        const { root } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region'], values: ['Amount', { field: 'Amount', aggregation: 'count' }] }) });
+        await settled();
+        const values = root.querySelector<HTMLButtonElement>('.ex-pivot-entry-values .ex-pivot-entry-button');
+        values?.click();
+        const labels = [...menu(root).querySelectorAll<HTMLButtonElement>('.ex-pivot-menu-item')].map(item => [item.textContent, item.disabled]);
+        expect(labels).toEqual([['Move to Row Labels', false], ['Move to Column Labels', true]]);
     });
 });
 
