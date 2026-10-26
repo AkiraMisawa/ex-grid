@@ -118,6 +118,12 @@ export interface FetchingSourceState<Row> extends GridSourceState<Row> {
     readonly lastError: unknown;
 }
 
+/** What a source keeps for live data under a Row Key (ADR-0141). */
+interface LiveState<Row> {
+    readonly gatherer: ChangeGatherer;
+    readonly times: CellChangeTimes<Row>;
+}
+
 /** A Grid Source over a result a server holds: the counterpart of C#'s `FetchingGridSource`. */
 export class FetchingGridSource<Row> implements GridSource<Row> {
     readonly #fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>;
@@ -153,13 +159,16 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     #answered = false;
 
     // ---- Live data, under a Row Key (ADR-0141). Undefined without one. ----------------------------------
-    readonly #live: { readonly gatherer: ChangeGatherer; readonly times: CellChangeTimes<Row> } | undefined;
+    readonly #live: LiveState<Row> | undefined;
     // The columns the grid paints by: what the displayed text of a row is read from.
     #columns: readonly QueryColumn<Row>[] = [];
     // The data moved on, and no question asked since carries it.
     #changeWaiting = false;
     // Whether the question in flight was asked after the data moved on, so its answer carries it.
     #inFlightCarries = false;
+    // A question that carried a change failed: nothing asks again on its own (ADR-0025), and the next question
+    // asked, a scroll's or a notice's, carries the change, since its answer shows it.
+    #changeUnshown = false;
     // The rows the grid last said it needs: what a Window read again must still reach.
     #lastNeeded: RowRange | undefined;
     // The range the question that brought the Window asked for; undefined while there is no Window.
@@ -305,11 +314,14 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
      * `addedKeys` names the Row Keys of the rows the Consumer knows were added, a trade booked, and so that no
      * other key was (D6): a row under a named key that the read shows, not painted before, is marked whole
      * wherever it lands, an edge included. An empty list says nothing was added. Left out, the source guesses
-     * at a row it was not painting (see `cellChangedAt`). Refused without a Row Key, and for a key that names
-     * no row; nothing is heard then.
+     * at a row it was not painting (see `cellChangedAt`). Refused without a Row Key, for a list that is not an
+     * array, and for a key that is no Row Key (missing, `NaN`, or not a string, number or bigint); nothing is
+     * heard then. A key of another type than the source's Row Key names no row it will show, and marks nothing.
      */
     notifyChanged(addedKeys?: readonly RowKey[]): void {
         this.#requireLive('notifyChanged');
+        const given: unknown = addedKeys;
+        if (given !== undefined && !Array.isArray(given)) throw new TypeError('notifyChanged takes the added keys as an array, or nothing.');
         // Taken now, and checked before anything is heard: the Consumer's list may change once this returns.
         const keys = addedKeys === undefined ? undefined : Array.from(addedKeys, (key, at) => checkedKey(key, `Added key ${at}`));
         if (this.#disposed) return;
@@ -325,7 +337,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         this.#askIfDue();
     }
 
-    #requireLive(member: string): { readonly gatherer: ChangeGatherer; readonly times: CellChangeTimes<Row> } {
+    #requireLive(member: string): LiveState<Row> {
         if (this.#live === undefined) {
             throw new Error(`${member} needs a Row Key, and this source was given none: GridSource.fetch(fetch, { rowKey }) takes one, `
                 + 'or a Row Mark adapter\'s key serves. Without one, rows read again cannot be paired with the rows painted (ADR-0141).');
@@ -379,6 +391,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
      * Sort and a Filter. Binding is when the first page is worth fetching, so the first binding fetches it,
      * unless a Sort or a Filter set before it already has. */
     setColumns(columns: readonly QueryColumn<Row>[]): void {
+        // Held under its declared type: the check below narrows `columns` itself to an array of anything.
         const given: readonly QueryColumn<Row>[] = columns;
         if (!Array.isArray(columns)) throw new TypeError('setColumns takes the grid\'s columns.');
         // Kept for the Change Highlight, which compares the text the columns display; new columns mark nothing by
@@ -606,8 +619,9 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         // Any question asked after the data moved on answers with the newer data, so it carries the change, a
         // scroll or a Sort as much as a read of the Window for it (ADR-0067). One that supersedes a question that
         // carried it carries it on.
-        const carries = this.#changeWaiting || (this.#inFlightCarries && this.#inFlight !== undefined);
+        const carries = this.#changeWaiting || this.#changeUnshown || (this.#inFlightCarries && this.#inFlight !== undefined);
         this.#inFlightCarries = carries;
+        this.#changeUnshown = false;
         // Every notice heard so far is carried by it: what its landing lets go of (D6).
         if (carries) this.#noticesAsked = this.#notices;
         if (this.#changeWaiting) {
@@ -636,18 +650,23 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
             // Late and superseded: a newer question was asked, and this answers the old one. Taken, it would
             // put rows on screen that nothing asked for (ADR-0001).
             if (generation !== this.#generation || this.#disposed) return;
-            this.#apply(defined(this.#inFlightNeeded, 'the rows the question in flight needs'), checkedPage(page), carries);
-            this.#windowAsked = wanted;
-            this.#landed(carries);
+            this.#apply(wanted, defined(this.#inFlightNeeded, 'the rows the question in flight needs'), checkedPage(page), carries);
+            this.#askIfDue();
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- ADR-0025: a superseded failure is nobody's, and a heard one is reported and held in lastError
             if (generation !== this.#generation || this.#disposed) return;
             this.#inFlight = undefined;
             this.#inFlightNeeded = undefined;
             this.#state = Object.freeze({ ...this.#state, loading: false, lastError: error });
-            this.#notify();
             // A change of data that could not be shown reached the screen as far as gathering is concerned
-            // (ADR-0067): the next read waits the interval from here. Nothing retries it on its own (ADR-0025).
-            this.#landed(carries);
+            // (ADR-0067): the next read waits the interval from here. Nothing retries it on its own (ADR-0025),
+            // and the next question asked carries it. Told before the listeners hear, so a notice one of them
+            // passes on is gathered from here.
+            if (carries) {
+                this.#changeUnshown = true;
+                this.#live?.gatherer.shown();
+            }
+            this.#notify();
+            this.#askIfDue();
             if (this.#onFetchFailed !== undefined) {
                 this.#onFetchFailed(Object.freeze({ error }));
                 return;
@@ -658,9 +677,9 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         }
     }
 
-    /** Takes an answer that reaches `asked`, the rows the grid needs; `carries` when its question was asked
-     * after the data moved on. */
-    #apply(asked: RowRange, page: GridPage<Row>, carries: boolean): void {
+    /** Takes an answer to a question for `wanted` that reaches `asked`, the rows the grid needs; `carries` when
+     * the question was asked after the data moved on. */
+    #apply(wanted: RowRange, asked: RowRange, page: GridPage<Row>, carries: boolean): void {
         // A server free to clamp is not free to answer somewhere else: a page that does not reach the row
         // asked for leaves the Viewport on Placeholders, and the grid asks again for the same range and gets
         // the same answer. Refused by name rather than spun on. Answering short because the result shrank
@@ -682,6 +701,10 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         if (carries) this.#letGoOfNotices();
         this.#orderToken = page.orderToken;
         this.#answered = true;
+        // Kept before the listeners hear, so one that restarts the source, or passes on a notice, meets this
+        // answer's Window and a gathering that waits from it.
+        this.#windowAsked = wanted;
+        if (carries) this.#live?.gatherer.shown();
         this.#inFlight = undefined;
         this.#inFlightNeeded = undefined;
         this.#state = Object.freeze({
@@ -697,16 +720,6 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         this.#notify();
         // A result that grew or shrank changed what the counts are made of.
         if (totalMoved) this.#recount();
-    }
-
-    /** A question landed, answered or failed. One that carried a change of data brought it to the screen, or
-     * found it unshowable, and the next read waits `gatherInterval` from here; a change heard meanwhile is asked
-     * for then. */
-    #landed(carried: boolean): void {
-        const live = this.#live;
-        if (live === undefined || this.#disposed) return;
-        if (carried) live.gatherer.shown();
-        this.#askIfDue();
     }
 
     /** The Change Highlight of one answer (ADR-0141, ADR-0067): its rows paired by key with the Window it
