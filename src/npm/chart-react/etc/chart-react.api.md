@@ -8,6 +8,7 @@ import { ChartFileFormat } from '@ex-grid/chart';
 import { ChartOptions } from '@ex-grid/chart';
 import { ReactElement } from 'react';
 import { Ref } from 'react';
+import { SurfaceOptions } from '@ex-grid/chart';
 
 // @public
 export function ExChart(props: ExChartProps): ReactElement;
@@ -20,6 +21,20 @@ export interface ExChartApi {
 // @public
 export type ExChartProps = ChartOptions & {
     readonly ref?: Ref<ExChartApi>;
+};
+
+// @public
+export function ExSurface(props: ExSurfaceProps): ReactElement;
+
+// @public
+export interface ExSurfaceApi {
+    download(format: ChartFileFormat): Promise<boolean>;
+    svgText(): string | undefined;
+}
+
+// @public
+export type ExSurfaceProps = SurfaceOptions & {
+    readonly ref?: Ref<ExSurfaceApi>;
 };
 
 ```

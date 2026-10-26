@@ -42,5 +42,8 @@ export { createChart } from './dom/create-chart';
 export type { ChartHandle } from './dom/create-chart';
 export type { ChartOptions, ChartPointClick, ChartRange, SeriesVisibility } from './dom/chart-element';
 export type { ChartFileFormat } from './dom/chart-files';
+export { createSurface } from './dom/create-surface';
+export type { SurfaceHandle } from './dom/create-surface';
+export type { SurfaceOptions } from './dom/surface-element';
 export { chartWordIdList, chartWordIds, japaneseChartWords } from './dom/chart-words';
 export type { ChartLabel } from './dom/chart-words';

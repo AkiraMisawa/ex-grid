@@ -42,4 +42,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'chart-candles', title: 'Candles and intervals', group: 'ExChart',
         description: 'Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers; strategies\' risk and return with intervals both ways (ADR-0300 to ADR-0304).',
     },
+    {
+        route: 'surface', title: '3D surface', group: 'ExChart',
+        description: 'An FX volatility surface turned by dragging or with the arrow keys, zoomed and panned, read at the grid point nearest the pointer, sliced into a smile or a term structure by a click, with a hole drawn as a hole (ADR-0274).',
+    },
 ]);

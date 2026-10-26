@@ -332,6 +332,15 @@ export const chartWordIds: Readonly<{
     oneMoreSeries: "exchart.tooltip.one-more";
     moreSeries: "exchart.tooltip.more";
     stylesheetNotice: "exchart.notice.stylesheet";
+    resetView: "exchart.surface.reset-view";
+    surface: "exchart.surface";
+    surfaceData: "exchart.surface.data";
+    surfaceRole: "exchart.surface.role";
+    surfaceValue: "exchart.surface.value";
+    quoted: "exchart.surface.quoted";
+    interpolated: "exchart.surface.interpolated";
+    noSliceOnGrid: "exchart.surface.no-slice.grid";
+    noSliceOnMesh: "exchart.surface.no-slice.mesh";
 }>;
 
 // @public
@@ -348,6 +357,9 @@ export interface ColourKey {
 
 // @public
 export function createChart(element: HTMLElement, options: ChartOptions): ChartHandle;
+
+// @public
+export function createSurface(element: HTMLElement, options: SurfaceOptions): SurfaceHandle;
 
 // @public
 export type DateLabel = 'auto' | 'year' | 'yearMonth' | 'date' | 'monthYear' | 'tenor';
@@ -744,6 +756,14 @@ export interface SurfaceGridOptions extends SurfaceScaleOptions {
 }
 
 // @public
+export interface SurfaceHandle {
+    destroy(): void;
+    download(format: ChartFileFormat): Promise<boolean>;
+    svgText(): string | undefined;
+    update(options: SurfaceOptions): void;
+}
+
+// @public
 export interface SurfaceMesh {
     readonly bar: SurfaceColourBar;
     readonly columns: readonly (readonly number[])[];
@@ -784,6 +804,23 @@ export interface SurfaceNode {
     readonly x: number;
     readonly y: number;
     readonly z: ChartValue | null;
+}
+
+// @public
+export interface SurfaceOptions {
+    readonly definition: SurfaceDefinition;
+    readonly density?: GridDensity;
+    readonly description?: string;
+    readonly fileName?: string;
+    readonly height?: number;
+    readonly label?: ChartLabel;
+    readonly onSliceChanged?: (slice: SurfaceSlice) => void;
+    readonly onViewChanged?: (view: SurfaceView) => void;
+    readonly slice?: SurfaceSlice | null;
+    readonly sliceWidth?: number;
+    readonly title?: string;
+    readonly view?: SurfaceView | null;
+    readonly width?: number;
 }
 
 // @public

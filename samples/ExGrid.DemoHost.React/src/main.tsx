@@ -12,6 +12,7 @@ import { Features } from './pages/features';
 import { Fetch } from './pages/fetch';
 import { FilterPanel } from './pages/filter-panel';
 import { Home } from './pages/home';
+import { Surface } from './pages/surface';
 import { Virtual } from './pages/virtual';
 import { Wide } from './pages/wide';
 import { navigateTo, Router } from './router';
@@ -25,7 +26,7 @@ declare global {
 
 window.exDemo = Object.freeze({ navigateTo });
 
-const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-candles': ChartCandles };
+const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-candles': ChartCandles, surface: Surface };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */
 function Interactive(): ReactElement | null {
