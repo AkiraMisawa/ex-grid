@@ -10,9 +10,9 @@ export interface GridHandle<Row> {
     update(options: GridOptions<Row>): void;
     /**
      * Places the Selection (ADR-0050, item 4): `range` becomes the one range, with the Focus on `focus`, scrolled
-     * into view, as the Name Box's address or an undo's range asks. Taken against `rowSequenceVersion`, the
-     * source's when the Consumer chose the place: false, and nothing placed, once the rows' order has moved since,
-     * or while an edit stands. A range or a Focus outside the grid is refused with a RangeError.
+     * into view, as the Name Box's address or an undo's range asks. Taken against `rowSequenceVersion`, the one the
+     * grid reported when the Consumer chose the place (an intent's), the source's own until the source is replaced:
+     * false, and nothing placed, once the rows' order has moved since, or while an edit stands. A range or a Focus outside the grid is refused with a RangeError.
      */
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     /** Stops the grid: it hears nothing more and empties its element. A source it was handed stays the
