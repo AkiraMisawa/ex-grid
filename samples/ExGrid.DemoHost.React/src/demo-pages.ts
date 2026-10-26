@@ -51,6 +51,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'CDS spreads against leverage beside their grid, with the least-squares and the Theil–Sen line; Old Faithful; and PRML\'s polynomial curve fitting of degree 0, 1, 3 and 9. The nearest point\'s tooltip, a click to the row, a rectangle that narrows both axes, a logarithmic spread axis (ADR-0290, ADR-0291).',
     },
     {
+        route: 'chart-spec', title: 'Charts from a Chart Spec', group: 'ExChart',
+        description: 'An American put\'s 4-step lattice, as two tables a capability would return, drawn from the Chart Spec in the field: coloured by value, sized by the chance of reaching each node, its branches as edges; the tool\'s answer under the field, and a spec with numbers in it refused with its path and reason (ADR-0320, ADR-0321).',
+    },
+    {
         route: 'chart-candles', title: 'Candles and intervals', group: 'ExChart',
         description: 'Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers; strategies\' risk and return with intervals both ways (ADR-0300 to ADR-0304).',
     },

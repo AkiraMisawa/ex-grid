@@ -3,7 +3,7 @@
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridCommand, GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
+import type { CellPosition, GridCommand, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
     type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotSlicing, type PivotSource,
@@ -84,18 +84,35 @@ interface DetailsGrid {
     destroyed: boolean;
 }
 
+/** A Selection the pivot placed in the report's grid, and the Row Sequence Version it placed it under. */
+interface Placed {
+    readonly range: SelectionRange;
+    readonly focus: CellPosition;
+    readonly version: number;
+}
+
 /** The grids as the pivot sees them: the report's, by the options it was last handed, and each details grid. */
 class GridStandIn {
     options: GridOptions<PivotDisplayRow> | undefined;
     mounts = 0;
     destroyed = false;
     readonly details: DetailsGrid[] = [];
+    readonly placed: Placed[] = [];
+    /** The element the report's grid was mounted into. */
+    element: HTMLElement | undefined;
 
     readonly mount = <Row>(element: HTMLElement, options: GridOptions<Row>): GridHandle<Row> => {
         const handle = (update: (next: GridOptions<Row>) => void, destroy: () => void): GridHandle<Row> => ({
             update,
             destroy,
-            placeSelection: () => { throw new Error('The pivot places no selection.'); },
+            placeSelection: (range, focus, version) => {
+                if (element.closest('.ex-pivot-details-panel, .ex-pivot-dialog') !== null) throw new Error('The pivot places no selection in a details grid.');
+                // The real grid refuses a version its source has moved past: the pivot places under the one it holds.
+                const held = this.options?.source?.snapshot().rowSequenceVersion;
+                if (version !== held) throw new Error(`A placement under version ${version}, but the source holds ${String(held)}.`);
+                this.placed.push({ range, focus, version });
+                return true;
+            },
             readView: () => { throw new Error('The pivot reads no view.'); },
             showViewWith: () => { throw new Error('The pivot shows no view.'); },
             focus: () => { throw new Error('The pivot focuses no grid.'); },
@@ -111,6 +128,7 @@ class GridStandIn {
             return handle(next => { grid.options = next as unknown as GridOptions<PivotDetailRecord>; }, () => { grid.destroyed = true; });
         }
         this.mounts++;
+        this.element = element;
         // The grid's root holds the keyboard on a grid that does not edit (ADR-0080).
         element.tabIndex = 0;
         this.options = options as unknown as GridOptions<PivotDisplayRow>;
@@ -309,6 +327,92 @@ describe('ExPivot\'s report', () => {
         await settled();
         expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'Credit', 'Rates', 'US', 'FX', 'Rates', 'Grand Total']);
         expect(changed).toHaveLength(2);
+    });
+
+    it('ADR-0050: the Item expanded or collapsed keeps the Focus, placed once the grid holds the report it brings', async () => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        (await grid.paint(3, 0)).button().click();
+        await settled();
+        expect(grid.placed).toEqual([]);
+        // The grid asks for its rows once it holds the new source; the Focus is placed under the order they came in.
+        const source = defined(grid.current.source, 'the report\'s rows');
+        await source.needRange({ start: 0, count: 10 });
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'Credit', 'Rates', 'US', 'Grand Total']);
+        const at = { row: 3, column: 0 };
+        expect(grid.placed).toEqual([{ range: { topRow: 3, leftColumn: 0, rowCount: 1, columnCount: 1 }, focus: at, version: source.snapshot().rowSequenceVersion }]);
+    });
+
+    it('ADR-0050: an Item under several parents keeps the Focus on the row it was toggled on', async () => {
+        interface Booked { readonly region: string; readonly desk: string; readonly book: string; readonly amount: number }
+        const booked: readonly Booked[] = [
+            { region: 'EU', desk: 'Rates', book: 'B1', amount: 1 },
+            { region: 'EU', desk: 'Rates', book: 'B2', amount: 2 },
+            { region: 'US', desk: 'Rates', book: 'B3', amount: 3 },
+            { region: 'US', desk: 'FX', book: 'B4', amount: 4 },
+        ];
+        const source = new RecordPivotSource(booked, [
+            pivotRecordField<Booked>({ name: 'Region', type: 'text', value: trade => trade.region }),
+            pivotRecordField<Booked>({ name: 'Desk', type: 'text', value: trade => trade.desk }),
+            pivotRecordField<Booked>({ name: 'Book', type: 'text', value: trade => trade.book }),
+            pivotRecordField<Booked>({ name: 'Amount', type: 'number', value: trade => trade.amount }),
+        ]);
+        const { grid } = mount({ source, layout: createPivotLayout({ rows: ['Region', 'Desk', 'Book'], values: ['Amount'] }) });
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'Rates', 'B1', 'B2', 'US', 'FX', 'B4', 'Rates', 'B3', 'Grand Total']);
+        // US > Rates: an Item is collapsed wherever it stands, and the Focus stays on the one pressed.
+        (await grid.paint(7, 0)).button().click();
+        await settled();
+        await grid.current.source?.needRange({ start: 0, count: 10 });
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'Rates', 'US', 'FX', 'B4', 'Rates', 'Grand Total']);
+        expect(grid.placed.map(placed => placed.focus)).toEqual([{ row: 5, column: 0 }]);
+    });
+
+    const gestures: readonly (readonly [string, () => Event])[] = [
+        ['a press', () => new PointerEvent('pointerdown', { bubbles: true })],
+        ['a wheel', () => new WheelEvent('wheel', { bubbles: true })],
+        ['a key', () => new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })],
+    ];
+    it.each(gestures)('spine rule 6: %s in the grid after the toggle, while its question is out, is newer, and the toggle places nothing', async (_, gesture) => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        (await grid.paint(3, 0)).button().click();
+        defined(grid.element, 'the report\'s grid').dispatchEvent(gesture());
+        await settled();
+        await grid.current.source?.needRange({ start: 0, count: 10 });
+        expect(grid.placed).toEqual([]);
+    });
+
+    it('spine rule 6: a key pressed once the toggled report is shown, before its rows come, is newer too', async () => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        (await grid.paint(3, 0)).button().click();
+        await settled();
+        defined(grid.element, 'the report\'s grid').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        await grid.current.source?.needRange({ start: 0, count: 10 });
+        expect(grid.placed).toEqual([]);
+    });
+
+    it('ADR-0050: a modifier pressed alone before the toggled report\'s rows come is no gesture, and the Item keeps the Focus', async () => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        (await grid.paint(3, 0)).button().click();
+        await settled();
+        const element = defined(grid.element, 'the report\'s grid');
+        element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control', bubbles: true }));
+        element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Process', bubbles: true }));
+        await grid.current.source?.needRange({ start: 0, count: 10 });
+        expect(grid.placed.map(placed => placed.focus)).toEqual([{ row: 3, column: 0 }]);
+    });
+
+    it('spine rule 6: an Item toggled and then moved past keeps no Focus: only the newest question\'s report is shown', async () => {
+        const { root, grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        (await grid.paint(0, 0)).button().click();
+        tick(root, 'Amount');
+        await settled();
+        await grid.current.source?.needRange({ start: 0, count: 10 });
+        expect(grid.placed).toEqual([]);
     });
 
     it('spine rule 6: a press does what its button said, and one taken on a button a press already acted on is refused', async () => {
@@ -1482,6 +1586,9 @@ describe('ExPivot\'s Context Menu (ADR-0036, ADR-0059)', () => {
         await settled();
         expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
         expect(changed).toHaveLength(1);
+        // The collapsed Item keeps the Focus, as one collapsed by its button does.
+        await grid.current.source?.needRange({ start: 0, count: 10 });
+        expect(grid.placed.map(placed => placed.focus)).toEqual([{ row: 0, column: 0 }]);
     });
 
     it('ADR-0059: on a value cell it sorts its row field by the Value Field, shows its records and opens Value Field Settings… in the pane', async () => {

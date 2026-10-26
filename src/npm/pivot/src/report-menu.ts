@@ -6,7 +6,7 @@
 import type { GridCommand } from '@ex-grid/core';
 import {
     isItemCollapsed, placementOf, removeEntry, setCollapsed, setFieldCollapsed, setSort, sortsEqual, valueFieldsEqual,
-    type PivotDisplayRow, type PivotFieldPlacement, type PivotItemKey, type PivotLayout, type PivotReportMetadata, type PivotSort,
+    type PivotDisplayRow, type PivotFieldItem, type PivotFieldPlacement, type PivotLayout, type PivotReportMetadata, type PivotSort,
 } from '@ex-grid/pivot-engine';
 import { defined, elementAt } from './must';
 
@@ -26,8 +26,9 @@ export interface ReportMenuModel {
 
 /** What the commands do. */
 export interface ReportMenuActions {
-    /** A change of the pane's layout, made from the pane's layout when chosen; `undefined` changes nothing. */
-    readonly edit: (edit: (pane: PivotLayout) => PivotLayout | undefined) => void;
+    /** A change of the pane's layout, made from the pane's layout when chosen; `undefined` changes nothing. An Item
+     * expanded or collapsed is named, and keeps the Focus in the report the change brings. */
+    readonly edit: (edit: (pane: PivotLayout) => PivotLayout | undefined, toggled?: PivotFieldItem) => void;
     /** Show Details on the row's value cell in `valueColumn`. */
     readonly showDetails: (valueColumn: number) => void;
     /** Value Field Settings… for the Value Field at `valueField`, in the pane, while `holds` says the pane holds the
@@ -46,7 +47,7 @@ export function captionOfRemove(id: string): string | undefined {
 }
 
 // The outer Item a row's Expand and Collapse act on: the innermost of its row Items that has Items under it.
-function collapsibleItemOf(metadata: PivotReportMetadata, row: PivotDisplayRow): { readonly field: string; readonly item: PivotItemKey } | undefined {
+function collapsibleItemOf(metadata: PivotReportMetadata, row: PivotDisplayRow): PivotFieldItem | undefined {
     const path = row.rowPath;
     for (let level = path.length - 1; level >= 0; level--) {
         if (level < metadata.layout.rows.length - 1) return elementAt(path, level);
@@ -79,8 +80,8 @@ export function reportMenuCommands(model: ReportMenuModel, actions: ReportMenuAc
     const commands: GridCommand[] = [];
     const add = (id: string, enabled: boolean, invoke: () => void): void => { commands.push(Object.freeze({ id, enabled, invoke })); };
     // A change of a field in Rows, made while the pane still holds it there.
-    const editRows = (field: string, edit: (pane: PivotLayout) => PivotLayout | undefined): () => void =>
-        () => { actions.edit(now => (inRows(now, field) ? edit(now) : undefined)); };
+    const editRows = (field: string, edit: (pane: PivotLayout) => PivotLayout | undefined, toggled?: PivotFieldItem): () => void =>
+        () => { actions.edit(now => (inRows(now, field) ? edit(now) : undefined), toggled); };
     const inPane = (field: string): PivotFieldPlacement | undefined => pane.rows.find(placement => placement.field === field);
 
     const item = collapsibleItemOf(metadata, row);
@@ -88,8 +89,8 @@ export function reportMenuCommands(model: ReportMenuModel, actions: ReportMenuAc
         const placement = inPane(item.field);
         const collapsed = placement !== undefined && isItemCollapsed(placement, item.item);
         const toggled = placement !== undefined && placement.toggledItems.length > 0;
-        add('expand', collapsed, editRows(item.field, now => setCollapsed(now, item.field, item.item, false)));
-        add('collapse', placement !== undefined && !collapsed, editRows(item.field, now => setCollapsed(now, item.field, item.item, true)));
+        add('expand', collapsed, editRows(item.field, now => setCollapsed(now, item.field, item.item, false), item));
+        add('collapse', placement !== undefined && !collapsed, editRows(item.field, now => setCollapsed(now, item.field, item.item, true), item));
         add('expand-field', placement !== undefined && (placement.collapsed || toggled), editRows(item.field, now => setFieldCollapsed(now, item.field, false)));
         add('collapse-field', placement !== undefined && (!placement.collapsed || toggled), editRows(item.field, now => setFieldCollapsed(now, item.field, true)));
     }
