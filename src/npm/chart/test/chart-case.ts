@@ -12,7 +12,10 @@ import type {
     AppearanceKeys, ChartAxisOptions, ChartEdge, ChartPoint, ChartSeriesOptions, ChartValue, IntervalBound, PixelSummary, PointDetail, PriceBar,
     AxisScale, Segment, SeriesInterval, SeriesKind, SeriesSampler,
 } from '../src/model';
+import { chartCsvLong, chartCsvWide, chartTable } from '../src/csv';
 import { candlesOf } from '../src/price-ranges';
+import { readingAt, readingOfEdge, readingOfMark } from '../src/reading';
+import { chartSummary } from '../src/summary';
 import { buildScene, legendMembers, positionAt, yOf, type ChartScene, type LegendPlacement } from '../src/scene';
 import { drawSeries, marker, seriesDrawing, type DrawnPoint, type SeriesDrawing } from '../src/series-drawing';
 import { thin, thinnedThrough } from '../src/thinning';
@@ -40,8 +43,11 @@ export interface ChartFile {
 
 const operations = [
     'scene', 'drawing', 'thin', 'through', 'tenor', 'nice', 'steps', 'decades', 'logSteps', 'fit', 'horizontal', 'candles', 'legendMembers',
-    'format', 'appearance', 'mesh', 'slice', 'slicePath',
+    'format', 'appearance', 'mesh', 'slice', 'slicePath', 'reading', 'summary', 'csv',
 ] as const;
+
+// What a scene is laid out with, which the tooltip and the summary read their scene by.
+const sceneKeys = ['metrics', 'view', 'style', 'independentScales', 'legend'];
 
 type Operation = (typeof operations)[number];
 
@@ -236,14 +242,48 @@ export class ChartCase {
 
     #run(key: Operation, args: Json | undefined, op: JsonObject): unknown {
         switch (key) {
-            case 'scene': {
-                const a = allow(args, 'scene', ['metrics', 'view', 'style', 'independentScales', 'legend']);
-                return buildScene(this.#definition(op['definition']), metrics(a['metrics']), {
-                    ...optionalPart('view', optional(a, 'view', view)),
-                    ...optionalPart('style', optional(a, 'style', style)),
-                    ...optionalPart('independentScales', optional(a, 'independentScales', v => list(v, 'independentScales').map(s => string(s, 'a panel')))),
-                    ...optionalPart('legend', optional(a, 'legend', legend)),
-                });
+            case 'scene':
+                return laidOut(this.#definition(op['definition']), allow(args, 'scene', sceneKeys));
+            case 'reading': {
+                // The tooltip of the scene the case lays out, at a position, over a mark or over an edge.
+                const a = allow(args, 'reading', [...sceneKeys, 'at']);
+                const d = this.#definition(op['definition']);
+                // A reading names the view its scene is laid out with, as the tooltip is always read of one.
+                const v = view(a['view']);
+                const laid = laidOut(d, a);
+                const at = a['at'];
+                if (isObject(at) && at['mark'] !== undefined) {
+                    return readingOfMark(d, laid, whole(allow(at, 'at', ['mark'])['mark'], 'mark'));
+                }
+                if (isObject(at) && at['edge'] !== undefined) {
+                    return readingOfEdge(d, laid, whole(allow(at, 'at', ['edge'])['edge'], 'edge'));
+                }
+                const p = allow(at, 'at', ['position', 'panel', 'pointerY']);
+                return readingAt(d, laid, metrics(a['metrics']), v, position(p['position']), whole(p['panel'], 'panel'), number(p['pointerY']));
+            }
+            case 'summary': {
+                const a = allow(args, 'summary', [...sceneKeys, 'title', 'description']);
+                const d = this.#definition(op['definition']);
+                const title = optional(a, 'title', t => string(t, 'title'));
+                const description = optional(a, 'description', t => string(t, 'description'));
+                return chartSummary(d, laidOut(d, a), view(a['view']), title, description);
+            }
+            case 'csv': {
+                const a = allow(args, 'csv', ['form', 'metrics', 'view']);
+                const d = this.#definition(op['definition']);
+                const m = metrics(a['metrics']);
+                const v = view(a['view']);
+                const form = oneOf(a['form'], ['long', 'wide', 'table'], 'form of the files');
+                switch (form) {
+                    case 'long':
+                        return chartCsvLong(d, m, v);
+                    case 'wide':
+                        return chartCsvWide(d, m, v);
+                    case 'table':
+                        return chartTable(d, m, v);
+                    default:
+                        throw new Error(`Internal: ${String(form)} is a form and not written.`);
+                }
             }
             case 'drawing': {
                 const a = allow(args, 'drawing', ['axis', 'series', 'from', 'to', 'pixels', 'quotes']);
@@ -724,6 +764,16 @@ function oneOf<const T extends string>(v: Json | undefined, names: readonly T[],
     return found;
 }
 
+// The scene a case lays out: its metrics, and its view, style, independent panels and legend where it names them.
+function laidOut(definition: ChartDefinition, a: JsonObject): ChartScene {
+    return buildScene(definition, metrics(a['metrics']), {
+        ...optionalPart('view', optional(a, 'view', view)),
+        ...optionalPart('style', optional(a, 'style', style)),
+        ...optionalPart('independentScales', optional(a, 'independentScales', v => list(v, 'independentScales').map(s => string(s, 'a panel')))),
+        ...optionalPart('legend', optional(a, 'legend', legend)),
+    });
+}
+
 function axis(given: Json | undefined): ChartAxisOptions {
     const e = allow(given, 'an axis', ['values', 'title', 'scale', 'labels', 'named', 'daysPerYear', 'packed']);
     return {
@@ -977,7 +1027,7 @@ const undeclared = undefined as unknown as SeriesKind;
 
 const scales: readonly AxisScale[] = ['proportional', 'categories', 'logarithmic'];
 
-function view(given: Json): ChartView {
+function view(given: Json | undefined): ChartView {
     const e = allow(given, 'a view', ['hidden', 'from', 'to', 'scale', 'yFrom', 'yTo', 'yScale']);
     return {
         hidden: e['hidden'] === undefined ? [] : list(e['hidden'], 'hidden').map(h => string(h, 'a hidden key')),

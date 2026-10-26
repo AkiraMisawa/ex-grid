@@ -70,6 +70,12 @@ export interface ChartAxisOptions {
 }
 
 // @public
+export function chartCsvLong(definition: ChartDefinition, metrics: ChartMetrics, view?: ChartView): string;
+
+// @public
+export function chartCsvWide(definition: ChartDefinition, metrics: ChartMetrics, view?: ChartView): string;
+
+// @public
 export class ChartDefinition {
     constructor(options: ChartDefinitionOptions);
     get axis(): ChartAxis;
@@ -125,6 +131,13 @@ export interface ChartPoint {
     readonly row?: unknown;
     readonly x: number;
     readonly y: ChartValue | null;
+}
+
+// @public
+export interface ChartReading {
+    readonly lines: readonly ReadingLine[];
+    readonly more: number;
+    readonly position: string;
 }
 
 // @public
@@ -202,6 +215,18 @@ export interface ChartSeriesOptions {
     readonly thinned?: readonly PixelSummary[];
     readonly xInterval?: SeriesInterval;
 }
+
+// @public
+export function chartSummary(definition: ChartDefinition, scene: ChartScene, _view: ChartView, title?: string, description?: string): string;
+
+// @public
+export interface ChartTable {
+    readonly header: readonly string[];
+    readonly rows: readonly (readonly string[])[];
+}
+
+// @public
+export function chartTable(definition: ChartDefinition, metrics: ChartMetrics, view?: ChartView): ChartTable;
 
 // @public
 export type ChartValue = number | bigint;
@@ -413,6 +438,25 @@ export interface PriceBar {
     readonly volume?: ChartValue | null;
     readonly x: number;
 }
+
+// @public
+export function readingAt(definition: ChartDefinition, scene: ChartScene, metrics: ChartMetrics, _view: ChartView, position: number, panel: number, pointerY: number): ChartReading;
+
+// @public
+export interface ReadingLine {
+    readonly id: string;
+    readonly look: SeriesLook;
+    readonly name: string;
+    readonly note: string | null;
+    readonly value: string | null;
+    readonly y: number | null;
+}
+
+// @public
+export function readingOfEdge(definition: ChartDefinition, scene: ChartScene, edge: number): ChartReading;
+
+// @public
+export function readingOfMark(definition: ChartDefinition, scene: ChartScene, mark: number): ChartReading;
 
 // @public
 export interface SceneOptions {
