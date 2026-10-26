@@ -30,8 +30,7 @@ export function columnMark(run: ColumnRange, columns: ColumnGeometry, pinnedLaye
 /**
  * A run of marked rows over the Row Headings, `leadWidthPx` wide, in the coordinates of the painted slice
  * `painted`: cut to the painted rows, one row beyond each end, or `undefined` when it shares none of them
- * (ADR-0053). The Script Core paints no Row Headings yet: until it does, this is held to the shared cases
- * alone.
+ * (ADR-0053).
  */
 export function rowMark(run: RowRange, painted: RowRange, rowHeightPx: number, leadWidthPx: number): string | undefined {
     const top = Math.max(run.start, painted.start - 1);

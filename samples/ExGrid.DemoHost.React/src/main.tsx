@@ -20,6 +20,8 @@ import { Home } from './pages/home';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
+import { PivotDb } from './pages/pivot-db';
+import { PivotRisk } from './pages/pivot-risk';
 import { SheetDemo } from './pages/sheet';
 import { Stripes } from './pages/stripes';
 import { Marks } from './pages/marks';
@@ -47,6 +49,8 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: 
     'chart-showcase/fx-volatility': FxVolatilityShowcase, 'chart-showcase/equity-index': EquityIndexShowcase,
     'chart-showcase/binomial-lattice': BinomialLatticeShowcase, 'chart-showcase/curves': CurvesShowcase,
     pivot: Pivot,
+    'pivot-risk': PivotRisk,
+    'pivot-db': PivotDb,
     sheet: SheetDemo,
     marks: Marks,
     stripes: Stripes,

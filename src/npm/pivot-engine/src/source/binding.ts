@@ -157,20 +157,69 @@ export function recordSnapshot<TRecord>(records: readonly TRecord[], fields: rea
     readonly snapshot: Snapshot;
     readonly bindings: ReadonlyMap<string, FieldBinding>;
 } {
+    return snapshotOfValues(records, fields, (record, row, f) => {
+        const field = elementAt(fields, f);
+        let raw: unknown;
+        try {
+            raw = field.value(record);
+        } catch (error) {
+            const reason = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+            throw new SnapshotError(`reading the value threw ${reason}`, { row: row + 1, column: field.name });
+        }
+        return readRecordValue(raw);
+    });
+}
+
+/**
+ * The Snapshot of records as a record behind a cell carries them (ADR-0370 section 3): each record's values in
+ * `fields`' order — text, an exact number as a SnapshotDecimal, a double, a date by its ticks, a Boolean, or
+ * `null` for a Blank — and a date part by its number, as {@link detailAt} gives it, so a date part is bound as
+ * the number it is. A value of another kind, or a record of another length, fails the build whole, naming the
+ * record and the field.
+ */
+export function detailSnapshot(records: readonly (readonly DetailValue[])[], fields: readonly PivotField[]): {
+    readonly snapshot: Snapshot;
+    readonly bindings: ReadonlyMap<string, FieldBinding>;
+} {
+    records.forEach((record, row) => {
+        if (!Array.isArray(record) || record.length !== fields.length) {
+            throw new SnapshotError(`the record carries ${Array.isArray(record) ? String(record.length) : 'no array of'} values, and there are ${fields.length} fields`, { row: row + 1 });
+        }
+    });
+    const asNumbers = fields.map(withoutDatePart);
+    return snapshotOfValues(records, asNumbers, (record, _row, f) => {
+        const value = elementAt(record, f);
+        const part = elementAt(fields, f).datePart;
+        if (part !== undefined && value !== null && typeof value !== 'number') {
+            throw new TypeError(`The ${datePartTitle(part)} of a date travels as its number, and the record carries a ${typeof value === 'object' ? 'decimal' : typeof value}.`);
+        }
+        // A date travels by its ticks; every other value is read as a Consumer's is.
+        return typeof value === 'bigint' ? { kind: 'date', ticks: value } : readRecordValue(value);
+    });
+}
+
+// A field read as the values it carries: a date part's are its numbers.
+function withoutDatePart(field: PivotField): PivotField {
+    const { datePart, ...rest } = field;
+    return datePart === undefined ? field : Object.freeze(rest);
+}
+
+/** A value of a record behind a cell: text, an exact number, a double, a date by its ticks, a Boolean, or a
+ * Blank. */
+export type DetailValue = string | number | bigint | boolean | SnapshotDecimal | null;
+
+// The Snapshot of `records`, each field's value in a record read by `read`, held as recordSnapshot holds it.
+function snapshotOfValues<TRecord>(records: readonly TRecord[], fields: readonly PivotField[], read: (record: TRecord, row: number, field: number) => RecordValue): {
+    readonly snapshot: Snapshot;
+    readonly bindings: ReadonlyMap<string, FieldBinding>;
+} {
     declaredFields(fields);
     const made = fields.map(() => new FieldColumns());
     records.forEach((record, row) => {
         fields.forEach((field, f) => {
-            let raw: unknown;
-            try {
-                raw = field.value(record);
-            } catch (error) {
-                const reason = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-                throw new SnapshotError(`reading the value threw ${reason}`, { row: row + 1, column: field.name });
-            }
             let value: RecordValue;
             try {
-                value = readRecordValue(raw);
+                value = read(record, row, f);
             } catch (error) {
                 if (error instanceof TypeError || error instanceof RangeError) {
                     throw new SnapshotError(error.message, { row: row + 1, column: field.name });
@@ -235,7 +284,7 @@ export function itemKeyAt(binding: FieldBinding, row: number): ItemKey {
 
 /** A row's value as a record behind a cell carries it: text, an exact number as a SnapshotDecimal, a double,
  * a date by its ticks, a Boolean, or `null` for a Blank. A date part is its number. */
-export function detailAt(binding: FieldBinding, row: number): string | number | bigint | boolean | SnapshotDecimal | null {
+export function detailAt(binding: FieldBinding, row: number): DetailValue {
     for (const column of binding.columns) {
         if (column.isBlank(row)) continue;
         switch (column.kind) {

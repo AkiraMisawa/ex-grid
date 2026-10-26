@@ -34,13 +34,25 @@ const cellAt = (element: HTMLElement, row: number, column: number): HTMLElement 
 
 const textAt = (element: HTMLElement, row: number, column: number): string | undefined => cellAt(element, row, column)?.textContent ?? undefined; // oxlint-disable-line ex-grid/no-stand-in-default -- a cell not painted reads as missing, which the expectation names
 
+/** The Row Headings' width, as the grid emitted it inline, or none where the band does not stand (ADR-0050). */
+function rowHeadingWidthPx(element: HTMLElement): number {
+    const style = element.querySelector('.ex-row-heading')?.getAttribute('style');
+    if (style === null || style === undefined) return 0;
+    const width = /width: ([\d.]+)px/u.exec(style);
+    if (width?.[1] === undefined) throw new Error(`A Row Heading carries no width: ${style}`);
+    return Number(width[1]);
+}
+
 /** A press on the cell at `row`, `column` of a default Sheet, where the keyboard then is. */
 function press(element: HTMLElement, row: number, column: number): void {
     const viewport = element.querySelector<HTMLElement>('.ex-viewport');
     if (viewport === null) throw new Error('The grid has no viewport.');
+    // The Row Headings stand at the Viewport's left edge, and a press in that band selects a whole row
+    // (ADR-0050): the columns start after it.
+    const headingPx = rowHeadingWidthPx(element);
     for (const type of ['mousedown', 'mouseup']) {
         const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, buttons: type === 'mousedown' ? 1 : 0 });
-        Object.defineProperty(event, 'offsetX', { value: column * 99 + 20 });
+        Object.defineProperty(event, 'offsetX', { value: headingPx + (column * 99) + 20 });
         Object.defineProperty(event, 'offsetY', { value: row * 28 + 5 });
         viewport.dispatchEvent(event);
         if (type === 'mousedown' && !event.defaultPrevented) element.querySelector<HTMLElement>('.ex-scroller')?.focus();
@@ -464,6 +476,19 @@ describe('Find and Replace (ADR-0055, ADR-0332)', () => {
         findField(element, 'input.ex-find-field').closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
         await settle();
         await vi.waitFor(() => { expect(nameBox(element).value).toBe('C5'); });
+    });
+
+    it('ADR-0332 §4: while the panel holds a search, the painted cells it finds wear the Match Mark, by the rule the step finds by', async () => {
+        const { element } = sheetOf({ document: documentOf({ A1: 'apple', B3: '=40+2', C5: '42 apples' }) });
+        await vi.waitFor(() => { expect(textAt(element, 2, 1)).toBe('42'); });
+        press(element, 0, 0);
+        key('f', { ctrlKey: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-popover-find')).not.toBeNull(); });
+        typeInFind(element, 'input.ex-find-field', '42');
+        await vi.waitFor(() => { expect(element.querySelectorAll('.ex-viewport .ex-match-mark')).toHaveLength(2); });
+        expect(cellAt(element, 2, 1)?.className).toMatch(/ex-match-mark/);
+        expect(cellAt(element, 4, 2)?.className).toMatch(/ex-match-mark/);
+        expect(cellAt(element, 0, 0)?.className).not.toMatch(/ex-match-mark/);
     });
 
     it('ADR-0332 §3: Replace All rewrites the Entries that match, Formulas included, as one step on the undo stack', async () => {

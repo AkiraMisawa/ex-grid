@@ -445,7 +445,9 @@ export class LocalPivotReportSource implements PivotReportSource {
         this.#versionsKept = kept;
         this.#now = now;
         this.#slicing = checkedSlicing(options.slicing);
-        this.#unsubscribe = source instanceof SnapshotPivotSource ? source.subscribe(changed => { this.#sourceChanged(changed); }) : undefined;
+        this.#unsubscribe = source.subscribe?.(changed => {
+            this.#sourceChanged(changed);
+        });
     }
 
     /** The Pivot Source's fields. */
@@ -465,6 +467,7 @@ export class LocalPivotReportSource implements PivotReportSource {
 
     #sourceChanged(changed: PivotSourceChanged): void {
         this.#dirty = true;
+        this.#session?.sourceMoved();
         for (const listener of Array.from(this.#listeners)) {
             try {
                 listener(changed);
@@ -476,8 +479,8 @@ export class LocalPivotReportSource implements PivotReportSource {
         }
     }
 
-    /** Tells `listener` each new Source Version of a Pivot Source over a Snapshot; the function returned stops
-     * telling it. */
+    /** Tells `listener` each new Source Version the Pivot Source reports — over a Snapshot, or from a server's
+     * transport (ADR-0370 section 3); the function returned stops telling it. */
     subscribe(listener: (changed: PivotSourceChanged) => void): () => void {
         if (typeof listener !== 'function') throw new TypeError('A listener is a function.');
         const held = (changed: PivotSourceChanged): void => {

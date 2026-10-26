@@ -4,23 +4,21 @@ import { ExSheet } from '@ex-grid/sheet-react';
 import { DemoNav } from '../demo-nav';
 import { useQuery } from '../router';
 
-/** The page's own Sheet: a small book of positions whose totals are Formulas. */
+/** The page's own Sheet, the table SheetPage.razor opens with, so the specs written against that page read the
+ * same cells here: a small order whose Amount column and total are Formulas. */
 function seed(): WorkbookDocument {
     const workbook = new Workbook(Culture.of('en-US'));
     const rows: readonly (readonly string[])[] = [
-        ['Book', 'Notional', 'Rate', 'Accrued'],
-        ['Rates', '1250000', '0.0325', '=B2*C2/4'],
-        ['Credit', '830000', '0.0475', '=B3*C3/4'],
-        ['FX', '2400000', '0.0110', '=B4*C4/4'],
-        ['Total', '=SUM(B2:B4)', '=D5/B5*4', '=SUM(D2:D4)'],
+        ['Item', 'Qty', 'Price', 'Amount'],
+        ['Apples', '12', '0.5', '=B2*C2'],
+        ['Pears', '7', '0.75', '=B3*C3'],
+        ['Plums', '20', '0.2', '=B4*C4'],
+        ['Total', '=SUM(B2:B4)', '', '=SUM(D2:D4)'],
     ];
-    const typed = rows.flatMap((row, r) => row.map((text, c) => [new CellAddress(r, c), text] as const));
+    const typed = rows.flatMap((row, r) => row.flatMap((text, c) => (text === '' ? [] : [[new CellAddress(r, c), text] as const])));
     workbook.do('Sheet1', SheetEdit.enterMany(typed));
     workbook.do('Sheet1', SheetEdit.setCellFormat([CellRange.parse('A1:D1'), CellRange.parse('A5:D5')], new CellFormatChange({ bold: true })));
-    workbook.do('Sheet1', SheetEdit.setCellFormat([CellRange.parse('B2:B5'), CellRange.parse('D2:D5')], new CellFormatChange({ numberFormat: NumberFormat.parse('#,##0.00') })));
-    workbook.do('Sheet1', SheetEdit.setCellFormat([CellRange.parse('C2:C5')], new CellFormatChange({ numberFormat: NumberFormat.parse('0.00%') })));
-    // Notional's amounts are wider than Excel's default column, as a typed number would have widened it to.
-    workbook.do('Sheet1', SheetEdit.setAutomaticColumnWidth(CellRange.wholeColumns(1, 1), 13));
+    workbook.do('Sheet1', SheetEdit.setCellFormat([CellRange.parse('C2:C5'), CellRange.parse('D2:D5')], new CellFormatChange({ numberFormat: NumberFormat.parse('#,##0.00') })));
     return workbook.toDocument();
 }
 
@@ -47,8 +45,9 @@ export function SheetDemo(): ReactElement {
                 page receives after every change (ADR-0048).
             </p>
             <p className="demo-status"><span id="sheet-status">{status}</span></p>
+            {/* Column A is pinned, as SheetPage.razor pins it: the Headings' specs read the pinned layer (ADR-0046). */}
             <ExSheet document={document} viewportWidth={900} viewportHeight={420} onWorkbookChanged={onWorkbookChanged}
-                japanese={japanese} showToolbar />
+                japanese={japanese} showToolbar pinnedColumnCount={1} />
         </>
     );
 }

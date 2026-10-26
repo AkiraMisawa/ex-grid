@@ -57,6 +57,47 @@ export function createChangeBatch(input?: ChangeBatchInput): ChangeBatch;
 export function createSnapshot(input: SnapshotInput): Snapshot;
 
 // @public
+export interface CsvColumn {
+    readonly blankText?: readonly string[];
+    readonly caption?: string;
+    readonly culture?: string;
+    readonly dateFormats?: readonly string[];
+    readonly decimalPoint?: string;
+    readonly falseText?: readonly string[];
+    readonly header?: string;
+    readonly kind: SnapshotKind;
+    readonly name: string;
+    readonly position?: number;
+    readonly thousandsSeparator?: string;
+    readonly trueText?: readonly string[];
+}
+
+// @public
+export type CsvEncoding = 'utf-8' | 'shift-jis';
+
+// @public
+export const csvExcelFalse: readonly string[];
+
+// @public
+export const csvExcelTrue: readonly string[];
+
+// @public
+export const csvIsoDateFormats: readonly string[];
+
+// @public
+export interface CsvSchema {
+    readonly blankText?: readonly string[];
+    readonly columns: readonly CsvColumn[];
+    readonly encoding?: CsvEncoding;
+    readonly hasHeader?: boolean;
+    readonly recordKey?: string;
+    readonly separator?: CsvSeparator;
+}
+
+// @public
+export type CsvSeparator = 'comma' | 'tab' | 'semicolon';
+
+// @public
 export interface DataShape {
     readonly columns: readonly DataShapeColumn[];
 }
@@ -135,6 +176,9 @@ export function readArrowShape(arrow: Uint8Array | ArrayBuffer): DataShape;
 
 // @public
 export function readArrowSnapshot(arrow: Uint8Array | ArrayBuffer, options?: SnapshotReadOptions): Promise<Snapshot>;
+
+// @public
+export function readCsvSnapshot(schema: CsvSchema, file: Uint8Array | ArrayBuffer | Blob, options?: SnapshotReadOptions): Promise<Snapshot>;
 
 // @public
 export function readJsonText(text: string): JsonValue;

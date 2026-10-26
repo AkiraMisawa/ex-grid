@@ -221,6 +221,21 @@ describe('the Cell Editor', () => {
         expect(focusOf(listener.selections)).toEqual({ row: 3, column: 1 });
     });
 
+    it('ADR-0006: an unformatted number shows 15 digits, and the editor opens on it whole, so a commit unchanged writes the same number', async () => {
+        const listener = heard();
+        const rows = trades(20).map((trade, index) => (index === 3 ? { ...trade, notional: 0.1 + 0.2 } : trade));
+        const root = await grid(listener, { rows });
+        expect(q(root, '[id$="r3c1"]').textContent).toBe('0.3');
+        press(root, notional, rowY(3));
+        await painted();
+        key('F2');
+        await painted();
+        expect(editor(root).value).toBe('0.30000000000000004');
+        key('Enter');
+        await painted();
+        expect(Number(defined(listener.edits[0], 'the intent').value)).toBe(0.1 + 0.2);
+    });
+
     it('ED-2: in Overwrite Shift+↓ commits and extends the Selection, as it does with no edit open', async () => {
         const listener = heard();
         const root = await grid(listener);

@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
-import { actionColumn, type GridActionEvent, type GridColumn, type GridEditIntent, type GridTemplateCell } from '@ex-grid/core';
+import { actionColumn, type CellState, type GridActionEvent, type GridColumn, type GridEditIntent, type GridTemplateCell, type RowKind } from '@ex-grid/core';
 import { ExGrid, templateColumn } from '@ex-grid/react';
 import { DemoNav } from '../demo-nav';
 import { demoPositions, type DemoPosition } from '../demo-data';
@@ -44,6 +44,27 @@ const columns: readonly GridColumn<DemoPosition>[] = Object.freeze([
     ], { header: 'Review' }),
 ]);
 
+// The Row Kind the Consumer computed its subtotals with; the grid is only told the role (ADR-0024).
+const kindOf = (row: DemoPosition): RowKind => row.kind;
+
+// The books the page's batch did not reach, and the one a desk overrode: the Consumer's own vocabulary, mapped
+// onto the grid's five Cell States on the way in (ADR-0006). One lookup for the page's life, so the same answer
+// paints no cell again; a Consumer whose metadata moves hands in a new function, as a new row is a new row.
+const staleBooks = new Set(['EMEA · Credit', 'EMEA · FX']);
+const overriddenBooks = new Set(['Americas · Rates']);
+
+const stateOf = (row: DemoPosition, column: GridColumn<DemoPosition>): CellState => {
+    if (column.name === 'Intraday') {
+        if (staleBooks.has(row.book)) return 'stale';
+        if (overriddenBooks.has(row.book)) return 'modified';
+    }
+    if (column.name === 'CloseOfBusiness') {
+        if (row.book === 'Americas · Commodity') return 'error';
+        if (row.book === 'Americas · Equity') return 'missing';
+    }
+    return 'normal';
+};
+
 // ?editable=1: Book takes typing, so the grid holds the keyboard in its Keyboard Field (ADR-0080) beside an
 // Interactive cell.
 const editableColumns: readonly GridColumn<DemoPosition>[] = Object.freeze([{ ...book, editable: true }, ...columns.slice(1)]);
@@ -78,9 +99,11 @@ export function Cells(): ReactElement {
             <DemoNav route="cells" />
             <h1>Cells and rows — actions and a template</h1>
             <p>
-                Everything on this page is something the value alone cannot say. The last columns are two <b>Template
-                Columns</b> and two <b>Action Columns</b> (ADR-0020). Cell State and Row Kind, which the Blazor hosts show
-                here, join as the Script Core comes to paint them.
+                Everything on this page is something the value alone cannot say. The region rows and the last row are a
+                group and a total row, painted from their <b>Row Kind</b> (ADR-0024); <i>Intraday</i> and <i>Close of
+                business</i> carry a <b>Cell State</b> on the books this batch did not reach, one a desk overrode, and two
+                the page has nothing for (ADR-0006). The last columns are two <b>Template Columns</b> and two <b>Action
+                Columns</b> (ADR-0020).
             </p>
             <p>
                 Everything here is reachable from the keyboard (ADR-0037). <b>Space</b> on an <i>Open</i> cell fires it.
@@ -97,6 +120,8 @@ export function Cells(): ReactElement {
                 // The Blazor page pushes its Window and nobody answers a Selection Summary there: no strip here either
                 // (ADR-0130).
                 showSelectionSummary={false}
+                cellState={stateOf}
+                rowKind={kindOf}
                 onAction={onAction}
                 {...(editable ? { onEdit } : {})}
                 {...(listensToLeave ? { onLeave } : {})}

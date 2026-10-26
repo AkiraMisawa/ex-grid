@@ -1,12 +1,14 @@
 import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip, dataRowCount, setTicked } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
-import { API_URL, SERVER } from './hosting.mjs';
+import { API_URL, REACT, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
 // /pivot-db (ADR-0065/0066/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // the demo API server's SQLite trades two ways, side by side. "Database → Snapshot" reads the
 // trades over Arrow into a Snapshot the page pivots in its own process; "database → server Pivot
-// Source" asks the server each question through PivotReportSource.Fetch, and the server computes the report and returns its requested Window.
+// Source" asks the server each question: through PivotReportSource.Fetch on the Blazor hosts, where the server
+// computes the report and returns its requested Window, and through FetchingPivotSource on the React host, where
+// the server answers Leaf Aggregates and the page builds the report (ADR-0370 section 3).
 // What only a browser can say: that both reach the server from either host, read the same trades
 // and show the same numbers for the same layout; that the server's Details are paged from it as
 // the Details tab scrolls; and that the console stays clean throughout (PV-20).
@@ -64,10 +66,15 @@ async function expectSameReports(page) {
     }).toBe('the same');
 }
 
+// The questions that bring PV-20's server pivot its report: a report Window on the Blazor hosts, which ask the
+// server's report through PivotReportSource.Fetch, and the Leaf Aggregates on the React host, whose pivot builds the
+// report from them (ADR-0370 section 3). The report Windows of LV- are the Blazor hosts' alone.
+const REPORT_QUESTION = REACT ? 'aggregate' : 'Window';
+
 /** How many questions of a kind the page has asked the server, as its status line counts them. */
 async function asked(page, kind) {
     const text = await page.locator('#pivot-db-server-status').textContent();
-    return Number(new RegExp(`(\\d+) ${kind}`).exec(text)?.[1] ?? NaN);
+    return Number(new RegExp(`([\\d,]+) ${kind}`).exec(text)?.[1]?.replaceAll(',', '') ?? NaN);
 }
 
 test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows', async ({ page }) => {
@@ -295,23 +302,23 @@ test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside 
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0069: the database read over Arrow and asked of the server's Pivot Source shows the same numbers (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const status = await api('/api/status');
             // The whole database, read into the page's own Snapshot at the server's version.
             await expect(page.locator('#pivot-db-snapshot-status'))
                 .toContainText(`Read ${status.trades.toLocaleString('en-US')} trades at version ${status.version} `);
             await expectSameReports(page);
-            expect(await asked(page, 'Window')).toBeGreaterThanOrEqual(1);
+            expect(await asked(page, REPORT_QUESTION)).toBeGreaterThanOrEqual(1);
             // A server's source can be refreshed; the bundled source is refreshed by a new source
             // instead, and shows no Refresh (ADR-0066).
             await expect(toolbarButton(page, 'server', 'Refresh')).toBeVisible();
             await expect(toolbarButton(page, 'snapshot', 'Refresh')).toHaveCount(0);
             // The server's data holds still while live updates are off: a Refresh asks again and
             // shows the same numbers.
-            const aggregates = await asked(page, 'Window');
+            const aggregates = await asked(page, REPORT_QUESTION);
             await toolbarButton(page, 'server', 'Refresh').click();
-            await expect.poll(() => asked(page, 'Window')).toBe(aggregates + 1);
+            await expect.poll(() => asked(page, REPORT_QUESTION)).toBe(aggregates + 1);
             await expectSameReports(page);
         });
 
@@ -323,9 +330,9 @@ for (const chrome of ['builtin', 'mud']) {
             await setTicked(section(page, 'snapshot').getByRole('checkbox', { name: 'Month', exact: true }));
             await expect.poll(async () => (await painted(page, 'snapshot')).rows).toBeGreaterThan(before.rows);
             // The same layout on the server's pivot: a GROUP BY over three fields, answered in SQL.
-            const aggregates = await asked(page, 'Window');
+            const aggregates = await asked(page, REPORT_QUESTION);
             await page.locator('#pivot-db-same-layout').click();
-            await expect.poll(() => asked(page, 'Window')).toBeGreaterThan(aggregates);
+            await expect.poll(() => asked(page, REPORT_QUESTION)).toBeGreaterThan(aggregates);
             await expectSameReports(page);
             await expect(section(page, 'server').getByRole('checkbox', { name: 'Month', exact: true })).toBeChecked();
         });

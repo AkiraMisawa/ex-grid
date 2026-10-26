@@ -380,8 +380,12 @@ than its spelling, Blazor's surface follows it under section 14.
   or `False` and a date one ISO form by its type, `yyyy-MM-dd HH:mm:ss ±hh:mm` for an instant in the offset
   it holds, so a column reads alike on either core; a `Date`, which holds no offset, reads in UTC's, and a
   date held in another calendar shows the ISO day it names, the day its filter and sort read. A
-  number is JavaScript's own shortest text for it: a `number` keeps no trailing zeros, where C#'s decimal
-  keeps its scale, so a column that wants a fixed number of places declares a `format`. An object of the Consumer's own
+  `number` reads as Excel's General does, rounded to 15 significant digits and written in JavaScript's
+  shortest text for them, so `0.1 + 0.2` shows `0.3`; a `bigint` shows every digit. *(2026-10-26, decided
+  with the user: this replaced "a number is JavaScript's own shortest text for it", which showed
+  `0.30000000000000004`. The C# core's `double` reads the same way, ADR-0006's note of that day.)* A
+  `number` keeps no trailing zeros, where C#'s decimal keeps its scale, so a column that wants a fixed
+  number of places declares a `format`. An object of the Consumer's own
   shows its own `toString`. The cell paints by this text and a source compares by it, so a change the format
   hides is not marked (ADR-0067).
 - **A Row Key is a `string`, a `number` or a `bigint`**, given as `GridSource.from(rows, { rowKey })`.

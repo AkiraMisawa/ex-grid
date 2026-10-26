@@ -80,6 +80,21 @@ describe('the Selection in the grid', () => {
         expect(root.hasAttribute('data-ex-settled')).toBe(true);
     });
 
+    it('ADR-0220, ADR-0204: Shift+\u2193 on whole rows settles, though the page follow stays armed for a cell no view paints', async () => {
+        const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        // Ctrl+Space selects whole rows: the Extent is then the last column, which the Viewport never paints, so the
+        // follow stays armed for ever. It is waiting, not owed, and the mark says the grid has settled.
+        key(root, ' ', { shiftKey: true });
+        await painted();
+        key(root, 'ArrowDown', { shiftKey: true });
+        await painted();
+        told.clock.advance(150);
+        told.frame();
+        told.clock.advance(0);
+        expect(root.hasAttribute('data-ex-settled')).toBe(true);
+    });
+
     it('ADR-0052, ADR-0033: Shift+arrows extend the range, heard once a pass, and announced once it stands still', async () => {
         const listener = heard();
         const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...listener });

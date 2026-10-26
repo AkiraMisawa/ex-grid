@@ -342,6 +342,40 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
             and a differential run over random batches hold both.
         </p>
         <p>
+            A <code>FetchingPivotSource</code> is live too, over a transport you own: a WebSocket, Server-Sent Events,
+            SignalR or a poll, whatever your server already speaks. Give its fetchers a <code>subscribe</code> that starts
+            your transport, hands each message on to <code>notify</code>, and returns the function that stops it; the source
+            starts it when its first listener subscribes and stops it when its last one goes. A message is one of two
+            notices. <code>changed</code> says the data moved on and asks the question again, as AG Grid's
+            <code>refreshServerSide</code> does. <code>changeBatch</code> names the records the data lost and gained between
+            two Source Versions, each as its values in the order of the fields, as AG Grid's
+            <code>applyServerSideTransaction</code> does; the engine finds the leaves they fall in and folds them into the
+            answer it holds, so a total moves without a round trip:
+        </p>
+        <pre class="docs-code"><code>const source = new FetchingPivotSource(fields, features, {
+    aggregate, items, details,
+    subscribe: notify => {
+        const socket = new WebSocket('/pivot/live');                  // your transport
+        socket.onmessage = event => notify(readNotice(event.data));  // your message to a notice
+        return () => socket.close();
+    },
+});
+// { kind: 'changed', sourceVersion: 'v8' }
+// { kind: 'changeBatch', from: 'v8', to: 'v9',
+//   removed: [['East', 'FX', { mantissa: 1000n, scale: 2 }]], added: [['East', 'FX', { mantissa: 1250n, scale: 2 }]] }</code></pre>
+        <p>
+            A count is folded, and so is an exact sum and an extreme numbers only came to. Anything the records alone
+            cannot carry is asked of the server again rather than guessed: a sum of doubles, a product, a variance, an
+            extreme a number left, a number that is not finite, a batch that does not start where the last one ended, a
+            record whose leaf the answer does not hold, and an answer of Level Aggregates. A malformed notice throws to your
+            transport and changes nothing. A batch is folded when the question is next asked, so a burst of them costs one
+            fold. An answer is held only while your transport runs, and Refresh asks the server (a source that wraps
+            another passes its <code>refresh</code> on). A changed record is the old one removed and the new one added. A record
+            carries its values as a record behind a cell does: an exact number as a <code>SnapshotDecimal</code>, a date as
+            its ticks, and a date part as its number; a JavaScript number is a double, whose sum is asked again. A <code>LocalPivotReportSource</code> over the source tells
+            its own listeners each notice, as it does over a Snapshot.
+        </p>
+        <p>
             The cube and the report run in slices too. <code>pivotCubeAsync</code> and <code>pivotReportAsync</code> take
             the same slicing and an <code>AbortSignal</code>, and give what <code>pivotCube</code> and
             <code>pivotReport</code> give, so an answer of a hundred thousand leaves, or a field with thousands of Items

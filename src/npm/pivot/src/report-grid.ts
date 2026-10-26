@@ -4,8 +4,8 @@
 // DOM and the memory grow with the rows on screen, not with the report (ADR-0151, ADR-0027 P1).
 
 import {
-    GridSource, gridHeaderRequiredPx, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridDensity, type GridHeaderGroup,
-    type GridPage, type GridQuery, type GridSelection, type GridTemplate,
+    GridSource, findMatches, gridHeaderRequiredPx, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridDensity, type GridHeaderGroup,
+    type GridFindPattern, type GridFindRequest, type GridFindResult, type GridPage, type GridQuery, type GridSelection, type GridTemplate,
 } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
 import {
@@ -13,6 +13,7 @@ import {
     type PivotReportState, type PivotToggle, type PivotValue,
 } from '@ex-grid/pivot-engine';
 import { elementAt } from './must';
+import { findInReport, type ReportFindGivenUp } from './report-find';
 
 /**
  * A value cell's value as the grid holds it: the report's own text is what the cell paints, and the value's
@@ -38,6 +39,20 @@ export class ReportCellValue {
         if (error !== undefined) return error;
         return exact === undefined ? String(number) : decimalText(exact);
     }
+}
+
+/**
+ * The Match Mark's rule over the report (ADR-0332 §4): the reference rule over the text a cell shows, which is the
+ * text its Copy reads and `findInReport` finds by, so the mark and the step agree. One function for every pivot:
+ * its identity reaches the grid (ADR-0003).
+ */
+export function reportMatch(row: PivotDisplayRow, column: GridColumn<PivotDisplayRow>, pattern: GridFindPattern): boolean {
+    const value = column.value(row);
+    // A label with no text, or a cell with no value, shows nothing.
+    if (value === undefined) return findMatches('', pattern);
+    if (value instanceof ReportCellValue) return findMatches(value.text, pattern);
+    if (typeof value === 'string') return findMatches(value, pattern);
+    throw new TypeError(`Internal: the report column '${column.name}' holds neither a label nor a value.`);
 }
 
 /** A display row's identity across Windows and reports: its role, its Value Field and its Items. */
@@ -254,6 +269,8 @@ export interface ReportRowsRequest {
     readonly nextRequestId: () => string;
     /** Told when a Window came from another report: the report is to be asked again. */
     readonly moved: () => void;
+    /** Told when a Find step over the report cannot go on, before the step is given up (ADR-0332 §1). */
+    readonly findGivenUp: (why: ReportFindGivenUp) => void;
 }
 
 /**
@@ -283,9 +300,19 @@ export function reportRows(request: ReportRowsRequest): FetchingGridSource<Pivot
         if (update.metadata.version !== version) throw new ReportMovedError();
         return pageOf(update);
     };
+    // A step that cannot go on is given up: nothing moves, and nothing claims "no match" for cells it could not read
+    // (ADR-0025). The grid takes an AbortError as a step its Consumer gave up; the pivot says why while the report is
+    // the one shown, and over one since replaced the grid says its source changed.
+    const find = async (step: GridFindRequest, _query: unknown, signal: AbortSignal): Promise<GridFindResult> => {
+        const read = await findInReport(request.source, answered.metadata, step, signal);
+        if (read.kind === 'answered') return read.answer;
+        request.findGivenUp(read);
+        throw new DOMException('The Find step over the report was given up.', 'AbortError');
+    };
     return GridSource.fetch(fetch, {
         rowKey: reportRowKey,
         readAheadRows: 60,
+        find,
         // A Window of another report is never shown beside this one's rows: the pivot asks again, and the grid
         // stands on what it holds meanwhile. Any other failure is the grid's to say (ADR-0025).
         onFetchFailed: ({ error }) => {

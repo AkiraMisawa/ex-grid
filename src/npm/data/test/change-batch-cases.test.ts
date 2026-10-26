@@ -8,10 +8,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
-    SnapshotError, applyChangeBatch, createChangeBatch, createSnapshot, decimalText, ticksText, type ChangeBatch, type Snapshot,
-    type SnapshotChange, type SnapshotColumn,
+    SnapshotError, applyChangeBatch, createChangeBatch, createSnapshot, type ChangeBatch, type Snapshot, type SnapshotChange,
 } from '../src/index';
-import { build, columnInput, isObject, key, list, text, type Json, type JsonObject } from './case-json';
+import { build, columnInput, integer, isObject, key, list, text, valueOf, type Json, type JsonObject } from './case-json';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases/data');
 
@@ -46,45 +45,6 @@ function batchOf(step: JsonObject): ChangeBatch {
         ...(changed === undefined ? {} : { changed }),
         ...(removed === undefined ? {} : { removedKeys: list(removed).map(removedKey) }),
     });
-}
-
-/** An integer as the cases write one: a number where a double holds it exactly, its text past that. */
-function integer(value: bigint): Json {
-    return value >= -(2n ** 53n) && value <= 2n ** 53n ? Number(value) : value.toString();
-}
-
-/** A row's value as tests/cases/README.md writes it for its kind, a Blank `null`. */
-function valueOf(column: SnapshotColumn, row: number): Json {
-    if (column.isBlank(row)) return null;
-    switch (column.kind) {
-        case 'text': return column.valueAt(row);
-        case 'decimal': {
-            const value = column.valueAt(row);
-            if (value === null) throw new Error('Internal: a held decimal is Blank.');
-            return decimalText(value);
-        }
-        case 'double': {
-            const value = column.valueAt(row);
-            if (value === null) throw new Error('Internal: a held double is Blank.');
-            if (value === Number.POSITIVE_INFINITY) return 'Infinity';
-            if (value === Number.NEGATIVE_INFINITY) return '-Infinity';
-            if (Number.isNaN(value) || Object.is(value, -0)) return { bits: column.bitsAt(row).toString(16).padStart(16, '0') };
-            return value;
-        }
-        case 'integer': {
-            const value = column.valueAt(row);
-            if (value === null) throw new Error('Internal: a held integer is Blank.');
-            return integer(value);
-        }
-        case 'date': {
-            const value = column.valueAt(row);
-            if (value === null) throw new Error('Internal: a held date is Blank.');
-            const written = ticksText(value);
-            return written.endsWith('T00:00:00') ? written.slice(0, -'T00:00:00'.length) : written;
-        }
-        case 'boolean': return column.valueAt(row);
-        default: throw new Error(`'${String(column satisfies never)}' is not a column.`);
-    }
 }
 
 function rowOf(snapshot: Snapshot, row: number): string {

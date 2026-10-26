@@ -50,6 +50,14 @@ export interface SheetOptions {
     readonly locale?: string;
     /** Shows the Formula Bar and its Name Box above the columns (ADR-0051); shown unless `false`. */
     readonly showFormulaBar?: boolean;
+    /** How many leading columns are pinned — the Sheet's frozen panes, columns only (ADR-0046). */
+    readonly pinnedColumnCount?: number;
+    /** Shows the Row Headings, the row numbers, beside the rows (ADR-0050); shown unless `false`. The Sheet still
+     * addresses `A1` without them. */
+    readonly showRowHeadings?: boolean;
+    /** Shows the Column Headings, the column letters, above the rows (ADR-0050); shown unless `false`. The Sheet
+     * still addresses `A1` without them. */
+    readonly showColumnHeadings?: boolean;
     /** Shows the Sheet Tabs at the Sheet's foot, one per Sheet of the Workbook, as Excel does (ADR-0331); shown unless
      * `false`. Their band, as tall as the Formula Bar, comes off `viewportHeight`. */
     readonly showSheetTabs?: boolean;
@@ -267,6 +275,9 @@ class SheetView {
             ...sheetCellPaint,
             cellAppearance: this.#appearance,
             headerClickSelects: true,
+            ...(this.#options.pinnedColumnCount === undefined ? {} : { pinnedColumnCount: this.#options.pinnedColumnCount }),
+            ...(this.#options.showRowHeadings === false ? {} : { rowHeadings: rowLabel }),
+            hideHeader: this.#options.showColumnHeadings === false,
             showFormulaBar: this.#options.showFormulaBar !== false,
             nameBoxLabel,
             onNameBoxEntered: this.#onNameBoxEntered,
@@ -1142,6 +1153,9 @@ const toolbarRowCount = 1;
 
 // The Name Box names the Focus as A1 does (ADR-0051).
 const nameBoxLabel = (focus: CellPosition): string => new CellAddress(focus.row, focus.column).toString();
+
+// A Row Heading is Excel's row number, which is the position plus one in every culture (ADR-0050, ADR-0048).
+const rowLabel = (row: number): string => String(row + 1);
 
 /** The cell the first pasted field ExSheet marked refused was copied from, in the order of the copied block, or
  * `undefined` for a paste that holds none. */

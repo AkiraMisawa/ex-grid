@@ -56,7 +56,9 @@ export {
 export type { PivotAnswerRest, PivotAnswerWindow, PivotNumber, PivotRestSide, PivotSourceRefusal, PivotSourceRefusalKind } from './cube/answer';
 export { PivotAnswer, PivotAnswerAxis, PivotAnswerBuilder, PivotAnswerValues, PivotRefusals } from './cube/answer';
 export { PivotCube } from './cube/cube';
-export type { PivotDetailRecord, PivotDetailValue, PivotFetchers, PivotSource, PivotSourceChanged } from './source/pivot-source';
+export type {
+    PivotDetailRecord, PivotDetailValue, PivotFetchers, PivotServerChangeBatch, PivotServerChanged, PivotServerNotice, PivotSource, PivotSourceChanged,
+} from './source/pivot-source';
 export type { PivotSlicing } from './source/slicing';
 export {
     FetchingPivotSource, PivotDetailPage, PivotItemCounts, PivotItemPage, PivotSourceFeatures, RecordPivotSource, SnapshotPivotSource,

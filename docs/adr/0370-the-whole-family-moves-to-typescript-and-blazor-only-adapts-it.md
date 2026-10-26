@@ -17,7 +17,8 @@ already hold Excel's answers. It does not, which section 2 records. The user the
 3, 4, 6 and 7 changed; the products' UIs moving to Script Cores of their own, the packages' names and
 the Docs Site did not. Section 3's server pivot was settled with the user last, the same day.
 Section 11, and section 10's words, were added with the user after this ADR merged, and section 2's
-note on the platform's math library on 2026-10-26.)*
+note on the platform's math library on 2026-10-26. Section 3's live server data was settled with the user
+on 2026-10-26 too: the Consumer's transport tells the source by a notice or a Change Batch.)*
 
 ## Context
 
@@ -398,14 +399,63 @@ that does, a layout past `MaxLeaves` is not refused:
     for them when pressed. It would window expanded sets too, but it scrolls unlike any other report
     and puts a control of the grid's own among the report's rows.
 
-**Live server data re-asks what is shown.** ADR-0066 refused answers that name the leaves that changed,
-because a source naming too few painted totals that did not add up with nothing to say so, and
-ADR-0151's Window Changes end with its report Windows. Under a new Source Version the engine asks the
-question again, so nothing a source leaves out goes unseen: under Leaf Aggregates that is the whole
-question, at most `MaxLeaves`, and under Level Aggregates it is the screen, checked as above. Until
-Level Aggregates are built, every live re-ask is the whole question (ADR-0066's `Changed`: ask again),
-and the re-ask near the cap is measured against ADR-0151's record before ExPivot's step 1 is called
-done.
+**Live server data: the Consumer's transport tells the source, by a notice or a Change Batch** *(decided
+with the user, 2026-10-26)*. The user asked whether how the server's data is sent depends on the server's
+application, and how this differs from AG Grid, and took the recommendation. ExGrid opens no connection,
+as ADR-0066 has it: `PivotSource.Fetch`'s fetchers take a `subscribe` callback, which the source calls when
+its first listener subscribes, and whose returned function it calls when its last one leaves. The
+Consumer's transport — WebSocket, server-sent events, SignalR, polling — calls the `notify` it was handed
+with one of two things:
+
+- **A notice**, `changed`, with the new Source Version where the Consumer knows it: the data moved on, and
+  the question is asked again — ADR-0066's `Changed`, and AG Grid's `refreshServerSide`. The re-ask near
+  the cap is measured against ADR-0151's record before ExPivot's step 1 is called done.
+- **A Change Batch**, `changeBatch`: the records the data lost and the records it gained between two
+  Source Versions, `from` and `to`, each with its values in the source's field order. A changed record is
+  the old one lost and the new one gained, as a Snapshot's batch's `removed` and `added` are. The engine
+  reads them as the bundled source reads records, into Leaf Aggregates of their own under the question it
+  holds, and folds them into the answer it holds: held, less what was lost, plus what was gained, leaf by
+  leaf — AG Grid's `applyServerSideTransaction`, with the totals made in the browser.
+
+What a fold keeps, and when the question is asked again instead:
+
+- **A part is folded only where subtraction and addition keep it as the server answers it**: the counts,
+  an exact sum while it stays within the 128 bits an exact sum is kept in, and the extremes where the batch
+  brings numbers to a leaf and takes none from it. A batch that touches a sum that is a double, a product, a
+  variance, an extreme it takes a number from, or a non-finite number is not folded: the question is asked
+  again, whole. ADR-0067's bundled source recomputes such a leaf from its records; a server's source holds
+  none.
+- **A batch is folded only into the answer held under its `from`**, and batches only in a chain from it.
+  One that starts elsewhere — a batch missed, or one older than the answer — lets the answer go, and the
+  question is asked again. A leaf a batch would leave with fewer than no records, or more numbers than
+  values, does not match the answer, and is asked again too; so is a fold that passes the cap, which the
+  server then refuses or answers with levels.
+- **Level Aggregates are not folded.** A Sibling Window's places depend on the order of its whole set, and
+  a cell above the leaves on records the batch cannot place: under them, live data re-asks what is shown,
+  checked as above.
+- **Batches are gathered, and folded when the question is next asked**, so batches that arrive faster than
+  the report redraws cost one fold (ADR-0067's 250 ms). An answer fetched while a notice or a batch arrived
+  is shown, and not held, so the next question goes to the server. An answer is held only while the
+  transport runs: with no listener, nothing would say it went stale. Refresh lets go of what is held and asks
+  the server, through the source's `refresh`, which a source wrapping another passes on.
+
+This is not ADR-0066's refused answer naming the leaves that changed. There the server named the leaves and
+their new parts, and a server that named too few painted totals that did not add up, with nothing to say
+so. Here the server names records, as a Snapshot's Change Batch does, and the engine finds their leaves by
+the binding that answers the question, so a leaf cannot be named wrongly, and what it cannot keep exactly it
+asks again. The server stays trusted for what only it knows — that the records it sends are all that
+changed — as a Snapshot's Change Batch is trusted to be the batch.
+
+- **Rejected: notices alone** (AG Grid's `refreshServerSide` and nothing else). Every change asks the whole
+  question again, up to `MaxLeaves` leaves from the server; the user wants totals made in the browser.
+- **Rejected: the server sends the changed leaves' parts.** ADR-0066's refusal stands.
+- **Rejected: ExGrid owns the transport**, a WebSocket client of its own. Authentication, retries and the
+  protocol are the Consumer's, as every fetcher's are (ADR-0066).
+
+*(Until 2026-10-26 this paragraph read "Live server data re-asks what is shown": under a new Source Version
+the engine asked the question again — the whole question under Leaf Aggregates, the screen under Level
+Aggregates — and how the Consumer told the source was left open. Re-asking stands for a notice, for Level
+Aggregates and for every batch the engine cannot fold.)*
 
 ### 4. Where an engine runs
 
@@ -627,8 +677,9 @@ step 3, and those criteria are rewritten then, naming the host each is checked o
 - A .NET server keeps the packages of section 3 in C#: ExGrid.Data, ExGrid.Data.Arrow, ExPivot.Server,
   ExBoard.Spec and the reduced ExChart.Engine, each held to its TypeScript counterpart by shared cases.
 - A server pivot past the cap is refused by name until Level Aggregates are built, and is then asked
-  for the groups it shows, a round trip per expand, with every level checked against its parent; live
-  server data re-asks what is shown. A sibling set too large to fetch is a window checked with what lies
+  for the groups it shows, a round trip per expand, with every level checked against its parent. Live
+  server data reaches the source through the Consumer's transport, as a notice that re-asks what is shown
+  or a Change Batch of records the engine folds into the Leaf Aggregates it holds. A sibling set too large to fetch is a window checked with what lies
   on either side (section 3).
 - CI's layer 3 grows while a product's C# UI and Script Core both ship. From its step 3, behaviour runs
   on the React host and Blazor's hosts run what passes through Blazor; each step 3 records the minutes

@@ -370,8 +370,11 @@ export interface SheetOptions {
     readonly label?: SheetLabel;
     readonly locale?: string;
     readonly onWorkbookChanged?: (document: WorkbookDocument) => void;
+    readonly pinnedColumnCount?: number;
     readonly rowHeight?: number;
+    readonly showColumnHeadings?: boolean;
     readonly showFormulaBar?: boolean;
+    readonly showRowHeadings?: boolean;
     readonly showSheetTabs?: boolean;
     readonly showToolbar?: boolean;
     readonly viewportHeight?: ViewportSize;

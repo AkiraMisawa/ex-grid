@@ -371,9 +371,11 @@ _Avoid_: import settings, mapping, dialect, type inference (there is none)
 **Change Batch**:
 The records added, the records changed and the keys removed since one version of the data, applied
 as one to make the next: a Snapshot's next Snapshot, by Record Key, or a bundled Grid Source's next
-rows, by Row Key. A component shows the version before it or the one after it, never a batch half
-applied
-([ADR-0141](./docs/adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md)).
+rows, by Row Key. A server's Pivot Source, which holds no records, is told the records its data lost
+and gained between two Source Versions instead, each with its values. A component shows the version
+before it or the one after it, never a batch half applied
+([ADR-0141](./docs/adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md),
+[ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
 _Avoid_: delta (a risk measure here — rate delta, credit delta), diff, patch, transaction
 
 **Record Key**:

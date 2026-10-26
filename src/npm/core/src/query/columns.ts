@@ -20,8 +20,10 @@ export interface QueryColumn<Row> {
      * the Temporal value of its date type: `Temporal.PlainDateTime`, `Temporal.PlainDate`, or for an
      * instant `Temporal.ZonedDateTime`, `Temporal.Instant` or `Date`. */
     readonly value: (row: Row) => unknown;
-    /** False for a column that carries no value (an Action Column, a Mark Column), which cannot be sorted
-     * or filtered (ADR-0020). True unless given. */
+    /** False for a column the grid's own query neither sorts, filters nor searches: one that carries no value
+     * (an Action Column, a Mark Column, ADR-0020), or one whose Consumer orders and searches its rows itself, as
+     * ExPivot's report and ExSheet's Sheet do. A Consumer's `findMatch` still judges a cell of the latter, which
+     * carries a value. True unless given. */
     readonly queryable?: boolean;
     /** A Date column's kind of date; `dateTime` unless given, and given only on a Date column. */
     readonly dateType?: DateType;

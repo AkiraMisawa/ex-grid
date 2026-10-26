@@ -420,6 +420,15 @@ export function nextSnapshot(columns: readonly SnapshotColumn[], rowCount: numbe
 
 // ---- building ------------------------------------------------------------------------------------
 
+// Each kind's room, made once rather than as a closure on every append.
+const uint8s = (length: number): Uint8Array<ArrayBuffer> => new Uint8Array(length);
+const int32s = (length: number): Int32Array<ArrayBuffer> => new Int32Array(length);
+const float64s = (length: number): Float64Array<ArrayBuffer> => new Float64Array(length);
+const bigInt64s = (length: number): BigInt64Array<ArrayBuffer> => new BigInt64Array(length);
+
+/** Whether the platform lays a 64-bit integer out low word first, as every one a browser runs on does. */
+const littleEndian = new Uint8Array(Uint32Array.of(1).buffer)[0] === 1;
+
 /** Room that grows as rows are appended, and is cut to the rows held when the column is sealed. */
 function grown<T extends Uint8Array | Int32Array | Float64Array | BigInt64Array>(array: T, needed: number, make: (length: number) => T): T {
     if (needed <= array.length) return array;
@@ -448,7 +457,7 @@ export abstract class ColumnBuilder {
 
     /** Marks row `row`, which has just been given room, a Blank. */
     protected markBlank(row: number): void {
-        this.#blanks = grown(this.#blanks ?? new Uint8Array(0), row + 1, length => new Uint8Array(length));
+        this.#blanks = grown(this.#blanks ?? new Uint8Array(0), row + 1, uint8s);
         this.#blanks[row] = 1;
     }
 
@@ -485,7 +494,7 @@ export class TextBuilder extends ColumnBuilder {
 
     /** Appends the row whose code is `code`, -1 for a Blank. */
     appendCode(code: number): void {
-        this.#codes = grown(this.#codes, this.count + 1, length => new Int32Array(length));
+        this.#codes = grown(this.#codes, this.count + 1, int32s);
         this.#codes[this.count++] = code;
     }
 
@@ -521,13 +530,13 @@ export class DecimalBuilder extends ColumnBuilder {
     append(mantissa: bigint, scale: number): void {
         const value = canonicalDecimal(mantissa, scale);
         this.#mantissas.push(value.mantissa);
-        this.#scales = grown(this.#scales, this.count + 1, length => new Uint8Array(length));
+        this.#scales = grown(this.#scales, this.count + 1, uint8s);
         this.#scales[this.count++] = value.scale;
     }
 
     appendBlank(): void {
         this.#mantissas.push(0n);
-        this.#scales = grown(this.#scales, this.count + 1, length => new Uint8Array(length));
+        this.#scales = grown(this.#scales, this.count + 1, uint8s);
         this.markBlank(this.count++);
     }
 
@@ -542,18 +551,18 @@ export class DoubleBuilder extends ColumnBuilder {
 
     /** Appends a double from its eight little-endian bytes, as they are, a NaN's payload included. */
     appendBytes(bytes: Uint8Array, offset: number): void {
-        this.#values = grown(this.#values, this.count + 1, length => new Float64Array(length));
+        this.#values = grown(this.#values, this.count + 1, float64s);
         new Uint8Array(this.#values.buffer, this.count * 8, 8).set(bytes.subarray(offset, offset + 8));
         this.count++;
     }
 
     append(value: number): void {
-        this.#values = grown(this.#values, this.count + 1, length => new Float64Array(length));
+        this.#values = grown(this.#values, this.count + 1, float64s);
         this.#values[this.count++] = value;
     }
 
     appendBlank(): void {
-        this.#values = grown(this.#values, this.count + 1, length => new Float64Array(length));
+        this.#values = grown(this.#values, this.count + 1, float64s);
         this.markBlank(this.count++);
     }
 
@@ -565,6 +574,8 @@ export class DoubleBuilder extends ColumnBuilder {
 export class WholeBuilder<K extends 'integer' | 'date'> extends ColumnBuilder {
     readonly kind: K;
     #values = new BigInt64Array(0);
+    /** The values' 32-bit words, low first: where a safe integer is written without a bigint made of it. */
+    #words = new Uint32Array(0);
 
     constructor(kind: K, name: string, caption: string) {
         super(name, caption);
@@ -572,12 +583,30 @@ export class WholeBuilder<K extends 'integer' | 'date'> extends ColumnBuilder {
     }
 
     append(value: bigint): void {
-        this.#values = grown(this.#values, this.count + 1, length => new BigInt64Array(length));
+        this.#values = grown(this.#values, this.count + 1, bigInt64s);
         this.#values[this.count++] = value;
     }
 
+    /** Appends `value`, an integer a double holds exactly, as {@link append} appends its bigint. A read of a
+     * million rows makes no bigint of each, which is most of what it would otherwise collect. */
+    appendSafe(value: number): void {
+        if (!littleEndian) {
+            this.append(BigInt(value));
+            return;
+        }
+        if (this.count + 1 > this.#values.length || this.#words.buffer !== this.#values.buffer) {
+            this.#values = grown(this.#values, this.count + 1, bigInt64s);
+            this.#words = new Uint32Array(this.#values.buffer, this.#values.byteOffset, this.#values.length * 2);
+        }
+        const high = Math.floor(value / 0x1_0000_0000);
+        const at = this.count++ * 2;
+        this.#words[at] = value - high * 0x1_0000_0000;
+        // A negative high word is kept modulo 2^32, which is its two's complement.
+        this.#words[at + 1] = high;
+    }
+
     appendBlank(): void {
-        this.#values = grown(this.#values, this.count + 1, length => new BigInt64Array(length));
+        this.#values = grown(this.#values, this.count + 1, bigInt64s);
         this.markBlank(this.count++);
     }
 
@@ -599,12 +628,12 @@ export class BooleanBuilder extends ColumnBuilder {
     #values = new Uint8Array(0);
 
     append(value: boolean): void {
-        this.#values = grown(this.#values, this.count + 1, length => new Uint8Array(length));
+        this.#values = grown(this.#values, this.count + 1, uint8s);
         this.#values[this.count++] = value ? 1 : 0;
     }
 
     appendBlank(): void {
-        this.#values = grown(this.#values, this.count + 1, length => new Uint8Array(length));
+        this.#values = grown(this.#values, this.count + 1, uint8s);
         this.markBlank(this.count++);
     }
 

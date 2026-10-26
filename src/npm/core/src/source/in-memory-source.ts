@@ -13,7 +13,7 @@
 // sequence moved; and the source names its rows by the key and vouches that no Window holds a row twice.
 // Without a key it is the source it always was.
 
-import { textOf } from '../cells/display-text';
+import { entryFor, textFor, textOf } from '../cells/display-text';
 import { defined, itemAt } from '../must';
 import type { QueryColumn } from '../query/columns';
 import { dateIdentity } from '../query/dates';
@@ -373,7 +373,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
     async find(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult> {
         signal.throwIfAborted();
         const columns = this.#queryColumns();
-        return findStep(this.#state.window, request, name => displayedTextOf(columns, name));
+        return findStep(this.#state.window, request, name => textsOf(columns, name, textFor));
     }
 
     /**
@@ -403,8 +403,9 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
      * `write` is your write of one cell: the row as written so far, the column's name and the replaced
      * entry, answered with a new row holding it or a refusal in your words. It must only plan; this source
      * applies. `entryOf` answers the entry a cell's editor opens with, where you give the grid one: the row
-     * and the column's name, answered with the entry, or `undefined` for the displayed text. Without it,
-     * every entry is the column's displayed text, which is what the editor opens with by default.
+     * and the column's name, answered with the entry, or `undefined` for the default. Without it, every
+     * entry is what the editor opens with by default: the column's displayed text, but a number in a column
+     * with no format whole, so a Replace never writes the 15 digits it shows back over the value.
      */
     replace(
         request: GridReplaceRequest,
@@ -414,12 +415,9 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         const columns = this.#queryColumns();
         const { window, rowSequenceVersion } = this.#state;
         const answer = planReplace(window, rowSequenceVersion, request, name => {
-            const shown = displayedTextOf(columns, name);
-            if (shown === undefined || entryOf === undefined) return shown;
-            return (row: Row) => {
-                const entry = entryOf(row, name);
-                return entry === undefined ? shown(row) : entry;
-            };
+            const entry = textsOf(columns, name, entryFor);
+            if (entry === undefined || entryOf === undefined) return entry;
+            return (row: Row) => entryOf(row, name) ?? entry(row);
         }, write);
         // A row changed under the plan, by a change taken in while the Consumer's write planned: nothing is
         // applied, and the answer is under no version the request was read in, which the grid refuses as the
@@ -873,11 +871,17 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
 /** No columns: the Query of a source the grid has not bound yet. */
 const noColumns: readonly never[] = Object.freeze([]);
 
-/** A column's displayed text by name, as Find and Replace All read it (ADR-0055, ADR-0332), or `undefined`
- * for a column this source was not told about or one with no value of its own, which is skipped. */
-function displayedTextOf<Row>(columns: readonly QueryColumn<Row>[], name: string): ((row: Row) => string) | undefined {
+/** A column's texts by name, `text` of each row's value: its displayed text (`textFor`), as Find reads it
+ * (ADR-0055), or its entry (`entryFor`), as Replace All reads and rewrites it where the Consumer gives none
+ * (ADR-0332, ADR-0006 note of 2026-10-26). `undefined` for a column this source was not told about or one with
+ * no value of its own, which is skipped. */
+function textsOf<Row>(
+    columns: readonly QueryColumn<Row>[],
+    name: string,
+    text: (column: QueryColumn<Row>, value: unknown) => string,
+): ((row: Row) => string) | undefined {
     const column = columns.find(each => each.name === name);
-    return column === undefined || column.queryable === false ? undefined : (row: Row) => textOf(column, row);
+    return column === undefined || column.queryable === false ? undefined : (row: Row) => text(column, column.value(row));
 }
 
 function isEmpty<Row>(plan: ChangePlan<Row>): boolean {

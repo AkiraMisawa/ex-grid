@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -575,6 +575,28 @@ grows. A refused batch is `{"refused": {message, row, column, key}}` as an `arro
 "argument"}` where the batch itself cannot be made (`ArgumentException`, `TypeError`). Each runner also holds, at every step,
 that the version a batch was applied to still reads as it did, and ADR-0067's fold: the rows the next version holds that
 the batch did not bring are the rows of the version before less those it removed, in their order.
+
+## `csvRead`
+
+A CSV read under a declared Schema ([ADR-0064](../../docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
+ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/CsvReadCaseTests.cs`)
+and Vitest against `@ex-grid/data` (`src/npm/data/test/csv-read-cases.test.ts`). These are not the Script Core's either,
+and both stay. The C# runner writes the answers, with `EXGRID_WRITE_DATA_CASES=1`, as for `changeBatch`; it reads every
+file under a mebibyte twice, through its default buffer and through one of sixteen bytes filled five at a time, and both must
+answer alike, because how the bytes arrive is ExGrid.Data's own.
+
+A case gives a `schema`, written as `@ex-grid/data`'s `CsvSchema` is (`columns`, each with its `name` and `kind` and any
+of `header`, `position`, `caption`, `culture` as a language tag, `decimalPoint`, `thousandsSeparator`, `dateFormats`,
+`trueText`, `falseText` and `blankText`; and any of `separator`, `hasHeader`, `encoding`, `blankText` and `recordKey`), a
+key left out being one the Schema leaves out; and a `file`, a list of pieces joined in order: a string is its UTF-8 bytes,
+`{"hex": "ef bb bf"}` the bytes written, and `{"repeat": "1\n", "times": 1500}` the string's UTF-8 bytes that many times.
+
+Its `expect` is the Snapshot read, its `rows`, `recordKey` (`null` for none) and `columns`, each with its `name`, `caption`,
+`kind`, `values` written as an `arrowRead` case writes them, and a Text column's `dictionary`; or `{"refused": {message,
+row, column}}`, the `SnapshotException` or `SnapshotError` whole; or `{"refused": "argument"}` for a Schema refused before a
+byte is read (`ArgumentException`, `TypeError`). A reading the Script Core refuses where .NET reads it (a calendar other
+than the Gregorian or the Thai Buddhist, a standard date format in a culture, `U`, the era) is not a shared case; Vitest holds
+it in `csv-read.test.ts`.
 
 ## `boardInput`
 

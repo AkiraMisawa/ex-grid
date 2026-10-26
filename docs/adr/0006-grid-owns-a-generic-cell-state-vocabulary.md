@@ -118,6 +118,33 @@ the culture; the grid takes no view on separators.
   Numbers have the same fault under a comma-decimal culture: `1234.5` reopens as `1234,5`, which
   reads back as 12345. Ticket 96 fixes it.
 
+*(2026-10-26, decided with the user: without a Format, a `double` shows Excel's General digits.)*
+- "Numbers are unchanged" above left a `double` showing its own `ToString()`, the shortest text that
+  reads back to the same binary value. So `0.1 + 0.2` showed `0.30000000000000004`: a digit nobody
+  typed, which reads as an error in a grid that shows money. Excel shows `0.3`, because its General
+  format, and the precision it holds, stop at 15 significant digits.
+- **So a `double` with no `Format` is rounded to 15 significant digits and written in the shortest
+  text of the number they round to**, in the culture `ToString()` wrote it in before. `0.1 + 0.2`
+  shows `0.3`, `1/3` shows `0.333333333333333`, and `2^53 + 2` shows `9007199254740990`, as Excel
+  shows them. A `decimal`, a `long` and an `int` are exact and unchanged; a `float` already shows
+  fewer digits than 15 and is unchanged too.
+- **Only the display moves.** The value is the Consumer's and is not rounded: copy's raw
+  `text/html` carries it whole, so a spreadsheet pasted into gets back the value the source holds.
+  A sort and a filter already compared a `double` as the decimal of at most 15 significant digits
+  it converts to (ADR-0023), so `0.1 + 0.2` already equalled `0.3` there: the shown text now agrees
+  with them. Copy's `text/plain`, the value list's labels, the Auto width, Find and the Change
+  Highlight read the shown text, as they do for any Format, so a change in the sixteenth digit is
+  not marked.
+- **The entry keeps the value whole.** The editor opens on the `double`'s own shortest text, the
+  Formula Bar shows it, and Replace reads and rewrites it, so committing an edit unchanged, or
+  replacing other digits, never writes the 15 shown digits back over the value: a General that
+  rounds what is shown must not round what is kept. This is Excel's too, whose formula bar shows
+  the entry and whose cell shows General. Where the Consumer declares the editor's opening text
+  (`EditorTextOf`), that is still the entry.
+- A negative zero shows `0`, as Excel and JavaScript write it.
+- The Script Core reads its `number` the same way (ADR-0350 section 16), and the shared cases in
+  `tests/cases/cells/display-text.json` hold both cores to it.
+
 **Value-derived decoration** is a second delegate on the column, the **tone rule**
 `Func<object, CellTone>`, answering a closed enum — `None / Positive / Negative` — that is
 painted as an interned class (`ex-tone-positive`, `ex-tone-negative`) and coloured by a

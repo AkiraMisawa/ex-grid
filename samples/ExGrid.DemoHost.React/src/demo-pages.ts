@@ -28,7 +28,7 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
     },
     {
         route: 'cells', title: 'Cells and rows', group: 'Cells and rows',
-        description: 'Template Columns and Action Columns, what the value alone cannot say (ADR-0020); Cell State and Row Kind join as the Script Core comes to them.',
+        description: 'Cell State, Row Kind, Template Columns and Action Columns — what the value alone cannot say (ADR-0006, ADR-0020, ADR-0024).',
     },
     {
         route: 'stripes', title: 'Row Stripes', group: 'Cells and rows',
@@ -69,6 +69,14 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
     {
         route: 'pivot', title: 'Pivot', group: 'ExPivot',
         description: 'Excel\'s PivotTable drawn by ExGrid: Month as a part of the trade date, the Fields pane with drag and drop, saving the layout, and Excel\'s Japanese words (ADR-0059, ADR-0060, ADR-0061).',
+    },
+    {
+        route: 'pivot-risk', title: 'Pivot risk', group: 'ExPivot',
+        description: 'A rate-delta report by tenor: desks and curves in Rows, tenors in Columns, ordered ON to 30Y by the page\'s Order Key, with 18M and 1Y6M two Items side by side (ADR-0060).',
+    },
+    {
+        route: 'pivot-db', title: 'Pivot over a database', group: 'ExPivot',
+        description: 'The demo API server\'s SQLite trades two ways, side by side: read over Arrow into a Snapshot and pivoted here, and asked of the server\'s Pivot Source, which answers each question\'s Leaf Aggregates in SQL (ADR-0066, ADR-0069, ADR-0370).',
     },
     {
         route: 'sheet', title: 'Sheet', group: 'ExSheet',
