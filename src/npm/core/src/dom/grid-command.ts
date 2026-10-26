@@ -33,7 +33,8 @@ export interface GridContextMenuContext<Row> {
     readonly columnType: ColumnType;
     /** The Selection, in the order its ranges were made. */
     readonly selection: readonly SelectionRange[];
-    /** The Row Sequence Version the Selection's positions are written in. */
+    /** The Row Sequence Version the Selection's positions are written in: the source's own, which its `snapshot()`
+     * says and `placeSelection` takes (ADR-0011, ADR-0050). */
     readonly rowSequenceVersion: number;
     /** The core's own commands, which the menu shows first: the clipboard's, since only the grid can build
      * that payload under the copy's rules (ADR-0005). */

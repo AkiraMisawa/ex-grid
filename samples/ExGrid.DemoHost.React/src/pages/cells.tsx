@@ -94,6 +94,9 @@ export function Cells(): ReactElement {
             <ExGrid
                 columns={editable ? editableColumns : columns}
                 rows={demoPositions}
+                // The Blazor page pushes its Window and nobody answers a Selection Summary there: no strip here either
+                // (ADR-0130).
+                showSelectionSummary={false}
                 onAction={onAction}
                 {...(editable ? { onEdit } : {})}
                 {...(listensToLeave ? { onLeave } : {})}

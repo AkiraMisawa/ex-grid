@@ -14,6 +14,7 @@ import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPla
 import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, rowCommandRefusalId, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
+import { summaryLabelIds } from '../chrome/summary-words';
 import { markLabelIds } from '../chrome/mark-words';
 import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
 import { gridCommandIds, gridLabelIds } from '../chrome/command-ids';
@@ -51,6 +52,8 @@ import { Selection, type EdgeAnswer, type GridSelection } from '../selection/sel
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
 import { InMemoryGridSource } from '../source/in-memory-source';
+import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
+import { isSummaryFigure, summaryFigureOrder, defaultSummaryFigures, type SummaryFigure } from '../summary/summary-accumulator';
 import { keyOf, type RowKey } from '../source/row-key';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import { ViewportBox } from '../viewport/viewport-box';
@@ -76,6 +79,8 @@ import {
 } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
 import { selectionLayers, type LayerPiece } from './selection-layers';
+import { SummaryMenu, toggledFigures } from './summary-menu';
+import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { CellPaint, type CellPaintOptions } from './cell-paint';
 import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type FormulaBarOptions } from './formula-bar';
@@ -346,6 +351,31 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * and Ctrl+Shift+arrow only; Home and End keep their meaning. An answer off the Focus's line, behind it or
      * outside the grid is refused by name. The grid's edge unless given (ADR-0012). */
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
+    /**
+     * The answer to a Selection Summary (ADR-0130): the figures over the cells the request names, in the order it
+     * was read in, or a decline with a reason, never a partial figure; `summaryOf` is the reference for what each
+     * figure is. A `source` that summarises, as `GridSource.from` does, answers through its own `summarize`, and
+     * passing this beside one is refused by name; over `rows` this answers in place of the source the grid makes.
+     * The signal aborts when the selection the request was asked of is gone: its answer is shown nowhere anyway.
+     */
+    readonly onSummarize?: (request: GridSummaryRequest, signal: AbortSignal) => GridSummaryResult | Promise<GridSummaryResult>;
+    /** Whether the grid's own status line shows the Selection Summary (ADR-0130): on unless given, so a grid that
+     * can summarise shows Excel's status-bar figures without being asked. Off: no strip and no figure on the
+     * grid; a Consumer hearing `onSelectionSummaryChanged` is still told, and with nobody hearing either, nothing
+     * is asked. */
+    readonly showSelectionSummary?: boolean;
+    /** The figures the status line shows, Excel's Average, Count and Sum unless given (ADR-0130). Shown in Excel's
+     * order whatever the order given; none, and nothing is asked. */
+    readonly summaryFigures?: readonly SummaryFigure[];
+    /** Hears the Selection Summary as it now stands, after the pass that shows each change (ADR-0130): for a
+     * Consumer that shows the figures elsewhere, such as an application-wide status bar. The grid never writes
+     * them to a live region. */
+    readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
+    /** Hears a change of figures made on the status line (ADR-0130): given, a right-click there opens Excel's menu
+     * of the six figures, each ticked while shown, and a press on one reports the figures with it ticked or
+     * unticked, in Excel's order. The grid holds no choice: the figures stay as `summaryFigures` says until the
+     * Consumer hands the new ones back. Not given, the right-click is the browser's. */
+    readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
 }
 
 const defaultViewportWidthPx = 800;
@@ -571,6 +601,11 @@ interface Taken<Row> {
     readonly cellPaint: CellPaint<Row>;
     readonly headerClickSelects: boolean;
     readonly dataEdge: EdgeAnswer | undefined;
+    readonly onSummarize: SummaryAnswerer | undefined;
+    readonly showSelectionSummary: boolean;
+    readonly summaryFigures: readonly SummaryFigure[];
+    readonly onSelectionSummaryChanged: ((summary: SelectionSummary) => void) | undefined;
+    readonly onSummaryFiguresChanged: ((figures: readonly SummaryFigure[]) => void) | undefined;
     readonly formulaBar: FormulaBarDeclarations<Row>;
 }
 
@@ -581,7 +616,11 @@ interface Taken<Row> {
 // The find panel stands in the grid's top right under the header, and holds no commands (ADR-0055).
 // A Consumer's popover stands under the header band, centred across the grid (ADR-0050, item 16).
 type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPanel }
-    | { readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object };
+    | {
+        readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object;
+        // The grid's own contents in the frame, the figures menu, which the Consumer's closePopover leaves alone.
+        readonly own: boolean;
+    };
 
 type MenuPopover = {
     readonly element: HTMLElement;
@@ -924,7 +963,24 @@ export class GridView<Row> {
     readonly #markBoxes = new WeakMap<Element, boolean>();
     #markPress: { readonly box: Element; readonly pressed: PressedRow<Row> } | undefined;
     #headerMarkPress: { readonly sequence: number; readonly source: unknown } | undefined;
-    #markCountShown: HTMLElement | undefined;
+    // The status line after the rows (ADR-0014): the marks' count and the Selection Summary, standing while either
+    // has its place in it.
+    readonly #status: HTMLElement;
+    #statusShown: readonly HTMLElement[] = [];
+    // The Selection Summary (ADR-0130): who answers it, the figures shown, who hears it, the question in force and
+    // its box, and how many times the rows under a standing selection may have moved.
+    #onSummarize: SummaryAnswerer | undefined;
+    #showSelectionSummary = true;
+    #summaryFigures: readonly SummaryFigure[] = defaultSummaryFigures;
+    #onSelectionSummaryChanged: ((summary: SelectionSummary) => void) | undefined;
+    #onSummaryFiguresChanged: ((figures: readonly SummaryFigure[]) => void) | undefined;
+    // The figures menu while it stands, or since it last did (ADR-0130), and the figures it last reported, until the
+    // Consumer hands others back.
+    #summaryMenu: SummaryMenu | undefined;
+    #summaryChoice: readonly SummaryFigure[] | undefined;
+    readonly #summary: SummaryQuestions;
+    readonly #summaryBox: SummaryBox;
+    #summaryRowsStamp = 0;
     #pasteHeard: ((intent: GridPasteIntent) => void) | undefined;
     #pasteMaySpill = false;
     #highlightFocusRow = false;
@@ -1217,6 +1273,15 @@ export class GridView<Row> {
         this.#rowMarks = new GridMarks(doc, () => {
             this.#invalidate();
         });
+        // The status line sits where the C# core's holds it (ADR-0014, ADR-0043, ADR-0130): after the rows, outside
+        // the scroller.
+        this.#status = element('div', { class: 'ex-status', role: 'presentation' });
+        this.#summary = new SummaryQuestions(() => {
+            this.#invalidate();
+        });
+        this.#summaryBox = new SummaryBox(doc);
+        this.#summaryBox.element.addEventListener('contextmenu', this.#onSummaryContextMenu);
+        this.#stops.push(() => { this.#summaryBox.element.removeEventListener('contextmenu', this.#onSummaryContextMenu); });
         this.#bar = new FormulaBar(doc, {
             textTyped: this.#onBarTyped, textFocused: this.#onBarFocused, nameBoxEntered: this.#onNameBoxEntered, nameBoxLeft: this.#onNameBoxLeft,
             nameBoxFocused: this.#onNameBoxFocused,
@@ -1358,9 +1423,8 @@ export class GridView<Row> {
         // Checked first, and before anything changes: a place outside the grid is the Consumer's mistake, whatever
         // else holds, and commits nothing.
         this.#held.selection.place(range, focus, extent);
-        // The source's own version, which is the one a Consumer reads; the grid's written one carries an offset
-        // past every change of source.
-        if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
+        // The version the grid hands, which is the source's own and the one a Consumer reads.
+        if (rowSequenceVersion !== this.#handedVersion()) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
@@ -1386,7 +1450,7 @@ export class GridView<Row> {
             this.#onRefused?.({ kind: 'placement', reason: 'columnsMoved' });
             return false;
         }
-        if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
+        if (rowSequenceVersion !== this.#handedVersion()) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
@@ -1427,6 +1491,7 @@ export class GridView<Row> {
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#rowMarks.destroy();
+        this.#summary.destroy();
         // Every Template cell's content is taken away with the grid (ADR-0020).
         for (const byColumn of this.#templates.values()) {
             for (const mounted of byColumn.values()) this.#unmount(mounted);
@@ -1618,6 +1683,7 @@ export class GridView<Row> {
         if (headerClickSelects === true && onColumnOrderChanged !== undefined) {
             throw new TypeError('headerClickSelects and onColumnOrderChanged both claim a press on a header: declare one of them.');
         }
+        const summary = this.#summaryOptionsOf(options);
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         const { copyAnswer }: { readonly copyAnswer?: unknown } = options;
         if (copyAnswer !== undefined && typeof copyAnswer !== 'function') throw new TypeError('copyAnswer is a function of the copy asked (ADR-0050, item 9).');
@@ -1660,7 +1726,53 @@ export class GridView<Row> {
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
-            dataEdge: options.dataEdge,
+            dataEdge: options.dataEdge, ...summary,
+        };
+    }
+
+    // The Selection Summary's options checked (ADR-0130): `onSummarize` beside a source that summarises is refused,
+    // since one of the two would have to silently win, and the figures are taken in Excel's order.
+    #summaryOptionsOf(options: GridOptions<Row>): Pick<Taken<Row>,
+        'onSummarize' | 'showSelectionSummary' | 'summaryFigures' | 'onSelectionSummaryChanged' | 'onSummaryFiguresChanged'> {
+        const { onSummarize, showSelectionSummary, summaryFigures, onSelectionSummaryChanged, onSummaryFiguresChanged }: {
+            readonly onSummarize?: unknown; readonly showSelectionSummary?: unknown; readonly summaryFigures?: unknown;
+            readonly onSelectionSummaryChanged?: unknown; readonly onSummaryFiguresChanged?: unknown;
+        } = options;
+        if (onSummarize !== undefined && typeof onSummarize !== 'function') {
+            throw new TypeError('onSummarize is a function of the Selection Summary\'s request and an abort signal (ADR-0130).');
+        }
+        if (onSummarize !== undefined && options.source?.summarize !== undefined) {
+            throw new TypeError('onSummarize was given together with a source that summarises. One of the two would have to silently win; '
+                + 'give the source alone, or a source that does not summarise (ADR-0130).');
+        }
+        if (showSelectionSummary !== undefined && typeof showSelectionSummary !== 'boolean') {
+            throw new TypeError('showSelectionSummary is true or false.');
+        }
+        if (onSelectionSummaryChanged !== undefined && typeof onSelectionSummaryChanged !== 'function') {
+            throw new TypeError('onSelectionSummaryChanged is a function of the Selection Summary.');
+        }
+        if (onSummaryFiguresChanged !== undefined && typeof onSummaryFiguresChanged !== 'function') {
+            throw new TypeError('onSummaryFiguresChanged is a function of the figures chosen (ADR-0130).');
+        }
+        let figures = defaultSummaryFigures;
+        if (summaryFigures !== undefined) {
+            if (!Array.isArray(summaryFigures)) throw new TypeError('summaryFigures is a list of figures (ADR-0130).');
+            const given: readonly unknown[] = summaryFigures;
+            const unknown = given.find(figure => typeof figure !== 'string' || !isSummaryFigure(figure));
+            if (unknown !== undefined) {
+                throw new TypeError(`summaryFigures holds ${JSON.stringify(unknown)}, which is none of the figures: ${summaryFigureOrder.join(', ')} (ADR-0130).`);
+            }
+            const ordered = summaryFigureOrder.filter(figure => given.includes(figure));
+            // The same figures as before are the same array, so a Framework Adapter's new one each render asks nothing.
+            figures = sameItems(ordered, this.#summaryFigures) ? this.#summaryFigures : Object.freeze(ordered);
+        }
+        const answer = options.onSummarize;
+        return {
+            onSummarize: answer === undefined ? undefined : async (request, signal) => answer(request, signal),
+            showSelectionSummary: showSelectionSummary !== false,
+            summaryFigures: figures,
+            onSelectionSummaryChanged: options.onSelectionSummaryChanged,
+            onSummaryFiguresChanged: options.onSummaryFiguresChanged,
         };
     }
 
@@ -1740,8 +1852,8 @@ export class GridView<Row> {
     #commit(taken: Taken<Row>): void {
         const { source } = taken;
         if (source !== this.#sourceIfAny()) {
-            // The Row Sequence Version the grid shows moves on whenever its source is another one: every
-            // position may now name another row (ADR-0011). Each source counts from where it stood.
+            // The order the grid judges its gestures under moves on whenever its source is another one: every
+            // position may now name another row (ADR-0011), whatever version the new source counts from.
             const shown = this.#unsubscribe === undefined ? undefined : this.#sequence();
             this.#unsubscribe?.();
             this.#source = source;
@@ -1821,6 +1933,12 @@ export class GridView<Row> {
         this.#cellPaint = taken.cellPaint;
         this.#headerClickSelects = taken.headerClickSelects;
         this.#dataEdge = taken.dataEdge;
+        this.#onSummarize = taken.onSummarize;
+        this.#showSelectionSummary = taken.showSelectionSummary;
+        if (taken.summaryFigures !== this.#summaryFigures) this.#summaryChoice = undefined;
+        this.#summaryFigures = taken.summaryFigures;
+        this.#onSelectionSummaryChanged = taken.onSelectionSummaryChanged;
+        this.#onSummaryFiguresChanged = taken.onSummaryFiguresChanged;
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -1834,17 +1952,40 @@ export class GridView<Row> {
         }
     }
 
-    // The Row Sequence Version the grid writes: its source's, carried past every change of source.
+    // The order the grid's own gestures are judged under: the source's Row Sequence Version, carried past every
+    // change of source, so a gesture taken under one source is never taken as under the next. Never handed to a
+    // Consumer, who is handed the source's own (`#state.rowSequenceVersion`), the one its `snapshot()` says and
+    // `placeSelection` and `showViewWith` take (ADR-0050, ADR-0142, ADR-0331), as the C# grid hands it. Rows handed
+    // as a new array are a source of their own, which counts from 0 as any new source does.
     #sequence(): number {
         return this.#state.rowSequenceVersion + this.#sequenceOffset;
     }
 
+    // The Row Sequence Version every value handed to a Consumer carries: an intent, the Context Menu's context, a
+    // view read, the copy request and the viewport's `data-ex-sequence` (ADR-0011, ADR-0050). Never `#sequence()`.
+    #handedVersion(): number {
+        return this.#state.rowSequenceVersion;
+    }
+
     readonly #onSource = (): void => {
-        const { window, windowStart } = this.#state;
+        const previous = this.#state;
+        const { window, windowStart } = previous;
         this.#state = this.#source.snapshot();
+        this.#noteRowsForSummary(previous);
         this.#userWritesTakenIn(window, windowStart);
         this.#invalidate();
     };
+
+    // Notes whether the rows moved under the figures (ADR-0130). Walked only while a question stands, of this source
+    // and under this order; with none, nothing on screen can be wrong, and the stamp moves so that the next question
+    // asks afresh. A question asked under another order or of another source goes with the Selection (ADR-0011).
+    #noteRowsForSummary(previous: GridSourceState<Row>): void {
+        const question = this.#summary.standing;
+        if (question === undefined || question.binding !== this.#source || question.rowSequenceVersion !== this.#state.rowSequenceVersion
+            || rowsMovedUnder(question.ranges, previous, this.#state)) {
+            this.#summaryRowsStamp += 1;
+        }
+    }
 
     #onScroll(): void {
         // A reveal's repaint is the browser's business: meanwhile the grid stands where the reveal left the
@@ -1915,6 +2056,7 @@ export class GridView<Row> {
         this.#focusEditor();
         this.#raiseRangeIfUncovered();
         this.#raiseSelection();
+        void this.#summary.settle(() => this.#summaryAnswerer, this.#onSelectionSummaryChanged);
         this.#lookSettled();
     }
 
@@ -2106,7 +2248,7 @@ export class GridView<Row> {
         // A view handed ahead is taken with the version it names, so the Selection and the version arrive together
         // and nothing between them meets an empty one (ADR-0331). One that does not fit the rows shown is not.
         const ahead = this.#viewAhead;
-        if (ahead !== undefined && ahead.version === this.#state.rowSequenceVersion) {
+        if (ahead !== undefined && ahead.version === this.#handedVersion()) {
             this.#viewAhead = undefined;
             const extent = this.#extent;
             if (!columnsMoved && ahead.selection.ranges.every(range => bottomRow(range) < extent.rowCount && range.leftColumn + range.columnCount <= extent.columnCount)) {
@@ -3130,6 +3272,8 @@ export class GridView<Row> {
         if (visible !== undefined) this.#followUserWriteCells(targets, visible.start, visible.start + visible.count - 1, write);
         const { window, windowStart } = this.#state;
         this.#followUserWriteCells(targets, windowStart, windowStart + window.length - 1, write);
+        // The values summed may move with it (ADR-0130).
+        this.#askSummaryAgain();
         if (write.cellCount > 0) {
             this.#userWrites.push(write);
             if (this.#userWrites.length > userWritesKept) {
@@ -3358,7 +3502,7 @@ export class GridView<Row> {
             return;
         }
         this.#supersedeFill();
-        const intent = new GridPasteIntent(decision.plan, [[text]], [['shownText']], edit.sequence, undefined, edit.cell);
+        const intent = new GridPasteIntent(decision.plan, [[text]], [['shownText']], this.#handedVersion(), undefined, edit.cell);
         // The fill lands over its target as entered (ADR-0142, LV-13). The edited cell lay under the editor: a
         // change there is told once the fill lands (LV-11).
         const seen = edit.seenText;
@@ -3418,7 +3562,7 @@ export class GridView<Row> {
         this.#reconcileSelection();
         const selection = this.#held.selection;
         const view: GridViewRead = Object.freeze({
-            rowSequenceVersion: this.#state.rowSequenceVersion, selection, scrollTopPx: this.#scrollTopPx, scrollLeftPx: this.#scrollLeftPx,
+            rowSequenceVersion: this.#handedVersion(), selection, scrollTopPx: this.#scrollTopPx, scrollLeftPx: this.#scrollLeftPx,
         });
         this.#viewsRead.set(view, selection);
         return view;
@@ -3672,7 +3816,7 @@ export class GridView<Row> {
         const written = this.#noteUserWrite(decision.plan.targets);
         let returned = false;
         try {
-            heard(new GridClearIntent(decision.plan.targets, this.#sequence()));
+            heard(new GridClearIntent(decision.plan.targets, this.#handedVersion()));
             returned = true;
         } finally {
             // What the source gathered while the Consumer wrote is put out as its handler returns (D5).
@@ -3745,7 +3889,7 @@ export class GridView<Row> {
         // Raw values are written in the invariant notation, and read so (ADR-0050, item 10): never shown text,
         // which a Consumer reads under its own culture, `1234.5` becoming 12345 under de-DE.
         const intent = new GridPasteIntent(plan.paste, values, values.map(row => row.map(() => 'invariant' as const)),
-            this.#sequence(), undefined, undefined, source);
+            this.#handedVersion(), undefined, undefined, source);
         const written = this.#noteUserWrite(plan.paste.targets);
         let returned = false;
         try {
@@ -3820,7 +3964,7 @@ export class GridView<Row> {
         const version = this.#sequence();
         const context: GridContextMenuContext<Row> = Object.freeze({
             row: itemAt(window, slice), column: column.name, columnType: column.type,
-            selection: this.#held.selection.ranges, rowSequenceVersion: version, commands: Object.freeze(core),
+            selection: this.#held.selection.ranges, rowSequenceVersion: this.#handedVersion(), commands: Object.freeze(core),
         });
         const commands = this.#contextCommands === undefined ? core : [...core, ...checkedCommands(this.#contextCommands(context))];
         this.#closePopover(false);
@@ -3931,6 +4075,12 @@ export class GridView<Row> {
         if (typeof content !== 'function') throw new TypeError("A Consumer's popover's content is a function that makes its element (ADR-0050, item 16).");
         if (typeof label !== 'string' || label.trim() === '') throw new TypeError("A Consumer's popover is named in the Consumer's words: its label is not empty (ADR-0033).");
         if (this.#edit !== undefined) return false;
+        this.#standFrame(content, label, false);
+        return true;
+    }
+
+    // Stands contents in the popover frame, the Consumer's or the grid's own, in place of any popover that stands.
+    #standFrame(content: (context: GridPopoverContext) => HTMLElement, label: string, own: boolean): void {
         // The context speaks for this opening only: once another popover stands, its close closes nothing.
         const opening = {};
         const standing = (): ConsumerPopoverFrame | undefined => {
@@ -3949,18 +4099,17 @@ export class GridView<Row> {
         // The contents may have opened another popover as they were made: this one takes its place.
         this.#closePopover(false);
         const frame = new ConsumerPopoverFrame(this.#root.ownerDocument, label, contents, this.#answer);
-        this.#popover = { kind: 'consumer', element: frame.element, frame, opening };
+        this.#popover = { kind: 'consumer', element: frame.element, frame, opening, own };
         this.#placePopover();
         this.#scroller.after(frame.element);
         frame.focusFirst();
         this.#answer();
-        return true;
     }
 
     /** Closes a Consumer's popover where one stands (ADR-0050, item 16); the keyboard returns to the grid. */
     closePopover(): void {
         if (this.#destroyed) throw new Error('This grid was destroyed.');
-        if (this.#popover?.kind !== 'consumer') return;
+        if (this.#popover?.kind !== 'consumer' || this.#popover.own) return;
         this.#closePopover(true);
         this.#answer();
     }
@@ -4630,6 +4779,7 @@ export class GridView<Row> {
             this.#refuseFind('notFound');
             return;
         }
+        this.#askSummaryAgain();
         this.#setFindOutcome({ kind: 'replaced', count: result.count });
     }
 
@@ -4714,7 +4864,7 @@ export class GridView<Row> {
     // The Consumer's answer to an approved copy (ADR-0050, item 9), or nothing where it refused, which is said in its
     // own sentence.
     #answeredCopy(plan: CopyPlan, withHeaders: boolean): { readonly text: string; readonly html: string } | undefined {
-        const answer = checkedCopyAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#state.rowSequenceVersion }));
+        const answer = checkedCopyAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#handedVersion() }));
         if (answer.kind === 'write') return answer;
         this.#sayRefusal(answer.sentence);
         this.#onRefused?.({ kind: 'copy', reason: 'refusedByConsumer' });
@@ -4947,7 +5097,7 @@ export class GridView<Row> {
         const { plan } = decision;
         const version = this.#sequence();
         this.#supersedeFill();
-        const intent = new GridPasteIntent(plan, block.values, block.origins, version, block.marks);
+        const intent = new GridPasteIntent(plan, block.values, block.origins, this.#handedVersion(), block.marks);
         const noted = this.#noteUserWrite(plan.targets);
         let returned = false;
         try {
@@ -5948,23 +6098,124 @@ export class GridView<Row> {
         this.#forgetCurrentMatchOffFocus();
         this.#paintHeader();
         this.#paintViewport();
-        this.#paintMarkCount();
+        this.#paintStatus();
         this.#paintMessage();
         this.#paintFormulaBar();
         this.#placePopover();
     }
 
-    // The header's checkbox from the counts the Consumer answers, and the marks' count after the rows, outside
-    // the scroller, standing while it says something (ADR-0043, ADR-0014).
-    #paintMarkCount(): void {
-        const status = this.#rowMarks.marks === undefined ? undefined : this.#rowMarks.paint(id => this.#labelOf(id));
-        if (status === undefined) {
-            this.#markCountShown?.remove();
-            this.#markCountShown = undefined;
-        } else if (status !== this.#markCountShown || !status.isConnected) {
-            this.#root.insertBefore(status, this.#announce);
-            this.#markCountShown = status;
+    // A right-click on the status line opens the figures menu where a Consumer hears the choice (ADR-0130), and is
+    // the browser's otherwise. The grid's popover frame holds it, so it closes as any popover does.
+    // An open edit commits first, as for the Context Menu (ADR-0036), and one held by a Reject keeps the keyboard.
+    readonly #onSummaryContextMenu = (event: MouseEvent): void => {
+        if (this.#destroyed || this.#onSummaryFiguresChanged === undefined) return;
+        event.preventDefault();
+        event.stopPropagation();
+        this.#answer();
+        if (!this.#commitEdit()) return;
+        const menu = new SummaryMenu(this.#root.ownerDocument, figure => { this.#toggleSummaryFigure(menu, figure); });
+        menu.paint(this.#summaryFigures, id => this.#labelOf(id), this.#commandLabel);
+        this.#standFrame(() => menu.element, this.#labelOf(summaryLabelIds.menu), true);
+        this.#summaryMenu = menu;
+        this.#summaryChoice = undefined;
+    };
+
+    // A press in the figures menu reports the figures with that one ticked or unticked. Presses come faster than a
+    // Consumer may hand the figures back, so each builds on the choice last reported until the Consumer hands figures
+    // that differ from the ones shown: two presses report the same choices however the Consumer is timed (the spine's
+    // sixth rule).
+    #toggleSummaryFigure(menu: SummaryMenu, figure: SummaryFigure): void {
+        this.#answer();
+        const heard = this.#onSummaryFiguresChanged;
+        if (!menu.standing || heard === undefined) return;
+        const choice = toggledFigures(this.#summaryChoice ?? this.#summaryFigures, figure);
+        this.#summaryChoice = choice;
+        heard(choice);
+    }
+
+    // The status line after the rows, outside the scroller (ADR-0014): the header's checkbox and the marks' count
+    // from the counts the Consumer answers, standing while it says something (ADR-0043), and the Selection
+    // Summary, standing whenever the grid can summarise, figures or none, so the strip does not come and go with
+    // every selection (ADR-0130).
+    #paintStatus(): void {
+        const count = this.#rowMarks.marks === undefined ? undefined : this.#rowMarks.paint(id => this.#labelOf(id));
+        this.#reviewSummary();
+        const shown: HTMLElement[] = [];
+        if (count !== undefined) shown.push(count);
+        if (this.#showSelectionSummary && this.canSummarize) {
+            const summary = this.#summary.summary;
+            const focus = this.#held.selection.focus;
+            const column = focus === undefined ? undefined : this.#columns[focus.column]?.column;
+            this.#summaryBox.paint(summary, summaryFiguresShown(summary.result, column), id => this.#labelOf(id));
+            this.#summaryBox.claimMenu(this.#onSummaryFiguresChanged !== undefined);
+            shown.push(this.#summaryBox.element);
         }
+        // The menu's ticks are the figures handed back, which a press on it does not change by itself. It goes with
+        // the line it was opened on, or with the Consumer that heard it, rather than stand with presses that do nothing.
+        const menu = this.#summaryMenu;
+        if (menu?.standing !== true) {
+            this.#summaryMenu = undefined;
+        } else if (this.#onSummaryFiguresChanged === undefined || !shown.includes(this.#summaryBox.element)) {
+            this.#summaryMenu = undefined;
+            const popover = this.#popover;
+            if (popover?.kind === 'consumer' && popover.element.contains(menu.element)) this.#closePopover(true);
+        } else {
+            menu.paint(this.#summaryFigures, id => this.#labelOf(id), this.#commandLabel);
+        }
+        if (!sameItems(shown, this.#statusShown)) {
+            this.#status.replaceChildren(...shown);
+            this.#statusShown = shown;
+        }
+        if (shown.length === 0) {
+            this.#status.remove();
+        } else if (!this.#status.isConnected) {
+            this.#root.insertBefore(this.#status, this.#announce);
+        }
+    }
+
+    /** Whether anything can answer a Selection Summary (ADR-0130): `onSummarize`, or a source that summarises.
+     * False: no figure ever appears. */
+    get canSummarize(): boolean {
+        return this.#onSummarize !== undefined || this.#source.summarize !== undefined;
+    }
+
+    get #summaryAnswerer(): SummaryAnswerer | undefined {
+        if (this.#onSummarize !== undefined) return this.#onSummarize;
+        const source = this.#source;
+        if (source.summarize === undefined) return undefined;
+        return async (request, signal) => {
+            if (source.summarize === undefined) throw new Error('Internal: a source that summarised no longer does.');
+            return source.summarize(request, signal);
+        };
+    }
+
+    // The question the grid's state asks (ADR-0130), run as the status line paints: a different one from the question
+    // in force clears the figures in this very pass and owes the asking to the pass's end.
+    #reviewSummary(): void {
+        const selection = this.#held.selection;
+        const asks = this.canSummarize && (this.#showSelectionSummary || this.#onSelectionSummaryChanged !== undefined)
+            && this.#summaryFigures.length > 0 && selectsTwoCells(selection.ranges);
+        this.#summary.review(asks ? {
+            ranges: selection.ranges, focus: selection.focus, binding: this.#source, rowSequenceVersion: this.#state.rowSequenceVersion,
+            columns: this.#columnNames, figures: this.#summaryFigures, rowsStamp: this.#summaryRowsStamp,
+        } : undefined);
+    }
+
+    /**
+     * Tells the grid that the values under the selection may have moved where it cannot see them, a change outside
+     * the Window or a recalculation (ADR-0130): the figures clear at once and the question is asked again. Nothing
+     * happens while no figure stands or is being asked for.
+     */
+    refreshSummary(): void {
+        if (this.#destroyed || this.#summary.standing === undefined) return;
+        this.#askSummaryAgain();
+    }
+
+    // The values summed may have moved, an edit the grid handed over or a change it was told of: the next pass clears
+    // the figures and asks again.
+    #askSummaryAgain(): void {
+        this.#summaryRowsStamp += 1;
+        this.#invalidate();
     }
 
     #scrollerStyle(): string {
@@ -6248,7 +6499,7 @@ export class GridView<Row> {
         const transform = `transform: translateY(round(nearest, ${topPx}px, var(--ex-dp, 1px)))`;
         this.#write(viewport, 'viewport', 'style', this.#headerLayout.tierCount === 0 ? transform : `top: ${this.#bandHeightPx}px; ${transform}`);
         this.#write(viewport, 'viewport', 'data-ex-first-row', visible === undefined ? undefined : String(visible.start));
-        this.#write(viewport, 'viewport', 'data-ex-sequence', String(this.#sequence()));
+        this.#write(viewport, 'viewport', 'data-ex-sequence', String(this.#handedVersion()));
         this.#write(viewport, 'viewport', 'data-ex-layout', String(this.#layoutId));
 
         const layers = this.#paintLayers();

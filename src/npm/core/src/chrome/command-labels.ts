@@ -2,6 +2,7 @@ import { gridCommandIds, gridLabelIds } from './command-ids';
 import { findPanelWords } from './find-panel-labels';
 import { markWords } from './mark-words';
 import { rowCommandRefusalWords } from './refusal-words';
+import { summaryWords } from './summary-words';
 
 // The built-in Chrome's English for the core's commands, as the C# core's BuiltInCommandLabels says them
 // (ADR-0036). A command is an id, whether it may run, and what running it does: what it is called is
@@ -23,6 +24,7 @@ const words: ReadonlyMap<string, string> = new Map([
     ...findPanelWords,
     ...rowCommandRefusalWords,
     ...markWords,
+    ...summaryWords,
 ]);
 
 /**

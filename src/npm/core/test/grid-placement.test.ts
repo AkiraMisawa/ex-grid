@@ -6,7 +6,10 @@
 import { describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
 import type { GridEditIntent } from '../src/cells/edit-intent';
+import type { GridClearIntent } from '../src/clipboard/clear-intent';
+import type { GridPasteIntent } from '../src/clipboard/paste-intent';
 import type { GridColumn } from '../src/dom/grid-column';
+import type { GridContextMenuContext } from '../src/dom/grid-command';
 import type { GridOptions } from '../src/dom/grid-view';
 import type { GridRefusal } from '../src/dom/grid-refusal';
 import type { GridSelection } from '../src/selection/selection';
@@ -34,10 +37,10 @@ function press(root: HTMLElement, x: number, y: number): void {
     }
 }
 
-function key(name: string): void {
+function key(name: string, init: KeyboardEventInit = {}): void {
     const target = document.activeElement;
     if (target === null) throw new Error('Nothing holds the keyboard.');
-    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init }));
 }
 
 function heard(): {
@@ -169,22 +172,55 @@ describe('a placement of the Selection', () => {
         expect(listener.refusals).toEqual([{ kind: 'placement', reason: 'columnsMoved' }]);
     });
 
-    it('ADR-0050, ADR-0142: after the source is replaced, a request carries the new source\'s own version, not the one the grid writes', async () => {
+    it('ADR-0050, ADR-0142: after the source is replaced, the grid hands the new source\'s own version, and placeSelection takes it', async () => {
         const listener = heard();
-        const options: GridOptions<Trade> = { columns, source: GridSource.from(trades(20)), rowHeight: 24, viewportHeight: 480, ...listener.options };
+        const cleared: GridClearIntent[] = [];
+        const pasted: GridPasteIntent[] = [];
+        const contexts: GridContextMenuContext<Trade>[] = [];
+        const options: GridOptions<Trade> = {
+            columns, source: GridSource.from(trades(20)), rowHeight: 24, viewportHeight: 480, ...listener.options,
+            onClear: intent => { cleared.push(intent); },
+            onPaste: intent => { pasted.push(intent); },
+            contextCommands: context => { contexts.push(context); return []; },
+        };
         const { root, view } = mount(options);
         await painted();
         const next = GridSource.from(trades(30));
         view.update({ ...options, source: next });
         await painted();
-        // The version the grid writes moves on past a change of source; a Consumer reads the source's own.
-        const written = Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence'));
-        expect(written).not.toBe(next.snapshot().rowSequenceVersion);
-        expect(view.placeSelection(range(25, 0, 1, 1), { row: 25, column: 0 }, written)).toBe(false);
-        expect(view.placeSelection(range(25, 0, 1, 1), { row: 25, column: 0 }, next.snapshot().rowSequenceVersion)).toBe(true);
+        // Sorted twice, the new source stands at a version the grid's own count, carried past the old source,
+        // does not: what the grid hands is told apart from what it judges by.
+        next.setSorts([{ column: 'Book', direction: 'descending' }]);
+        next.setSorts([{ column: 'Book', direction: 'ascending' }]);
+        await painted();
+        const own = next.snapshot().rowSequenceVersion;
+        expect(own).toBe(2);
+        // What a Consumer is handed is what the source says, as the C# grid hands it: the version the attribute,
+        // the intents, the menu's context and a view read carry is the one placeSelection compares.
+        press(root, 10, rowY(1));
+        key('ArrowDown', { shiftKey: true });
+        await painted();
+        key('Delete');
+        key('d', { ctrlKey: true });
+        const clipboard = new Event('paste', { bubbles: true, cancelable: true });
+        Object.defineProperty(clipboard, 'clipboardData', { value: { getData: (type: string) => (type === 'text/plain' ? 'X' : '') } });
+        document.activeElement?.dispatchEvent(clipboard);
+        const menu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
+        Object.defineProperty(menu, 'offsetX', { value: 10 });
+        Object.defineProperty(menu, 'offsetY', { value: rowY(1) });
+        q(root, '.ex-viewport').dispatchEvent(menu);
+        await painted();
+        expect([
+            Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence')),
+            defined(cleared[0], 'the clear').rowSequenceVersion,
+            ...pasted.map(intent => intent.rowSequenceVersion),
+            defined(contexts[0], 'the menu\'s context').rowSequenceVersion,
+            view.readView().rowSequenceVersion,
+        ]).toEqual([own, own, own, own, own, own]);
+        expect(view.placeSelection(range(25, 0, 1, 1), { row: 25, column: 0 }, own)).toBe(true);
         await painted();
         expect([listener.refusals, defined(listener.selections.at(-1), 'the Selection heard').focus])
-            .toEqual([[{ kind: 'placement', reason: 'orderMoved' }], { row: 25, column: 0 }]);
+            .toEqual([[], { row: 25, column: 0 }]);
     });
 
     it('ADR-0050: a grid with no rows has no cell to place on, and says so', async () => {

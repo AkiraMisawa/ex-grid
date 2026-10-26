@@ -25,8 +25,9 @@ describe('createGrid', () => {
             dir: 'ltr', role: 'grid', 'aria-multiselectable': 'true', 'aria-rowcount': '1001', 'aria-colcount': '2', tabindex: '0',
         });
         expect(root.id).toMatch(/^ex\d+-root$/);
+        // The status line stands after the rows whenever the grid can summarise, as this one's source does (ADR-0130).
         expect([...root.children].map(child => (child.className === '' ? child.tagName : child.className)))
-            .toEqual(['SPAN', 'DIV', 'ex-scroller', 'ex-announce', 'ex-ceiling-probe']);
+            .toEqual(['SPAN', 'DIV', 'ex-scroller', 'ex-status', 'ex-announce', 'ex-ceiling-probe']);
         expect(q(root, '[data-ex-notice]').getAttribute('data-ex-stamp')).toBe(stylesheetStamp);
         expect(q(root, '.ex-scroller').getAttribute('style')).toBe('width: 800px; height: 480px');
         expect(q(root, '.ex-spacer').getAttribute('style')).toBe(`width: 220px; height: ${24 + (1000 * 24)}px`);
@@ -181,13 +182,16 @@ describe('createGrid', () => {
         expect(q(root, '.ex-viewport .ex-cell').textContent).toBe('Book-99');
     });
 
-    it('ADR-0011: rows handed as a new array are another sequence, and the Row Sequence Version moves on', async () => {
+    it('ADR-0011: rows handed as a new array are another sequence, whose source counts from 0 as any new one does', async () => {
         const { root, view } = mount({ columns, rows: trades(100), rowHeight: 24, viewportHeight: 480 });
         await painted();
-        const before = Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence'));
+        view.placeSelection({ topRow: 3, leftColumn: 0, rowCount: 2, columnCount: 1 }, { row: 3, column: 0 }, 0);
+        await painted();
         view.update({ columns, rows: trades(100).toReversed(), rowHeight: 24, viewportHeight: 480 });
         await painted();
-        expect(Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence'))).toBeGreaterThan(before);
+        // The positions named the rows of the old array, so the Selection goes, though the version a Consumer is
+        // handed, the new source's own, is the one the old source began at.
+        expect([view.readView().selection.isEmpty, q(root, '.ex-viewport').getAttribute('data-ex-sequence')]).toEqual([true, '0']);
     });
 
     it('ADR-0350: a grid that cannot be drawn leaves nothing listening, and the source it was handed unsubscribed', () => {

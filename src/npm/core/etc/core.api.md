@@ -31,6 +31,9 @@ export type AggregateResult = {
 };
 
 // @public
+export function answeredSummary(figures: Readonly<Partial<Record<SummaryFigure, AggregateResult>>>, texts?: Readonly<Partial<Record<SummaryFigure, string>>>): GridSummaryResult;
+
+// @public
 export function assembleCopy(plan: CopyPlan, values: CopyValues): CopyFlavours;
 
 // @public
@@ -157,6 +160,12 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
 
 // @public
 export type DateType = 'dateTime' | 'dateOnly' | 'dateTimeOffset';
+
+// @public
+export function declinedSummary(reason: string): GridSummaryResult;
+
+// @public
+export const defaultSummaryFigures: readonly SummaryFigure[];
 
 // @public
 export interface DensityText {
@@ -531,6 +540,7 @@ export type GridFindResult = {
 
 // @public
 export interface GridHandle<Row> {
+    readonly canSummarize: boolean;
     closePopover(): void;
     destroy(): void;
     focus(): void;
@@ -538,6 +548,7 @@ export interface GridHandle<Row> {
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     readView(): GridViewRead;
+    refreshSummary(): void;
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
     update(options: GridOptions<Row>): void;
 }
@@ -603,13 +614,18 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onRefused?: (refusal: GridRefusal<Row>) => void;
     readonly onReplace?: (request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
+    readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
+    readonly onSummarize?: (request: GridSummaryRequest, signal: AbortSignal) => GridSummaryResult | Promise<GridSummaryResult>;
+    readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
     readonly onUndo?: () => void;
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
     readonly rowHeight?: number;
     readonly rows?: readonly Row[];
+    readonly showSelectionSummary?: boolean;
     readonly source?: GridSource<Row>;
+    readonly summaryFigures?: readonly SummaryFigure[];
     readonly temporal?: TemporalLike;
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
@@ -1152,6 +1168,16 @@ export interface SelectionRange {
 }
 
 // @public
+export interface SelectionSummary {
+    readonly request: GridSummaryRequest | undefined;
+    readonly result: GridSummaryResult | undefined;
+    readonly status: SelectionSummaryStatus;
+}
+
+// @public
+export type SelectionSummaryStatus = 'none' | 'pending' | 'answered' | 'declined';
+
+// @public
 export function significantDigits(value: SnapshotDecimal): number;
 
 // @public
@@ -1171,6 +1197,24 @@ export interface SourceCell {
 
 // @public
 export type SummaryFigure = 'average' | 'count' | 'numericalCount' | 'min' | 'max' | 'sum';
+
+// @public
+export const summaryFigureOrder: readonly SummaryFigure[];
+
+// @public
+export const summaryLabelIds: Readonly<{
+    readonly average: 'summary-average';
+    readonly count: 'summary-count';
+    readonly numericalCount: 'summary-numerical-count';
+    readonly min: 'summary-min';
+    readonly max: 'summary-max';
+    readonly sum: 'summary-sum';
+    readonly pending: 'summary-pending';
+    readonly menu: 'summary-menu';
+}>;
+
+// @public
+export function summaryOf<Row>(rows: readonly Row[], request: GridSummaryRequest, valueOf: (column: string) => ((row: Row) => unknown) | undefined): GridSummaryResult;
 
 // @public
 export interface TemporalLike {

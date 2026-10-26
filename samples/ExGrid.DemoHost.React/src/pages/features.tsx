@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
-    GridSource, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
+    declinedSummary, GridSource, summaryOf, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
     type GridCommand, type GridContextMenuContext, type GridEditIntent, type GridHeaderGroup, type GridOverwriteNotice, type GridPasteIntent,
-    type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
+    type GridRefusal, type GridReplaceRequest, type GridReplaceResult, type GridSummaryRequest, type GridSummaryResult,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import { Temporal } from 'temporal-polyfill';
@@ -136,6 +136,98 @@ const secondColumns: readonly GridColumn<DemoTrade>[] = Object.freeze([
     { name: 'Trader', type: 'text', value: (t: DemoTrade) => t.trader },
 ]);
 
+/** The most cells the held summary sums: more are declined at once, with the reason shown in place of the figures. */
+const heldMostCells = 4;
+const summaryRows: readonly DemoTrade[] = Object.freeze(rows.slice(0, 20));
+// Notional with no format: the figures are the numbers' own text, as the Blazor page's decimal column shows them.
+const heldColumns: readonly GridColumn<DemoTrade>[] = Object.freeze([
+    { name: 'Book', type: 'text', value: (t: DemoTrade) => t.book },
+    { name: 'Notional', type: 'number', value: (t: DemoTrade) => t.notional },
+]);
+const heldValueOf = (name: string): ((row: DemoTrade) => unknown) | undefined => heldColumns.find(c => c.name === name)?.value;
+
+/** How many distinct cells a request names, each counted once, as C#'s GridSummary.Cells counts them. */
+function cellsNamed(request: GridSummaryRequest): number {
+    const cells = new Set<number>();
+    for (const range of request.ranges) {
+        for (let row = range.topRow; row < Math.min(range.topRow + range.rowCount, summaryRows.length); row++) {
+            for (let column = range.leftColumn; column < Math.min(range.leftColumn + range.columnCount, request.columns.length); column++) {
+                cells.add((row * request.columns.length) + column);
+            }
+        }
+    }
+    return cells.size;
+}
+
+/** A question the page holds until a button answers it. */
+interface HeldQuestion {
+    readonly request: GridSummaryRequest;
+    readonly answer: (result: GridSummaryResult) => void;
+    done: boolean;
+}
+
+/**
+ * The Blazor page's `?summary=held` grid: its Selection Summary is answered by this page through `onSummarize`
+ * (ADR-0130), each question held until the Answer button is pressed, so the pending words stand meanwhile, and a
+ * selection of more than four cells declined at once with a reason. With `?late=1` the page ignores the signal, as
+ * a careless Consumer may, and can answer the question a new selection replaced after the grid let it go.
+ */
+function HeldSummary({ late }: { readonly late: boolean }): ReactElement {
+    const [counts, setCounts] = useState({ asked: 0, cancelled: 0, answered: 0, late: 0 });
+    const waiting = useRef<HeldQuestion | undefined>(undefined);
+    const replaced = useRef<HeldQuestion | undefined>(undefined);
+    const onSummarize = useCallback(async (request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult> => {
+        setCounts(was => ({ ...was, asked: was.asked + 1 }));
+        if (cellsNamed(request) > heldMostCells) return declinedSummary(`Not summed: this page sums ${heldMostCells} cells at most.`);
+        return new Promise((resolve, reject) => {
+            const question: HeldQuestion = { request, answer: resolve, done: false };
+            signal.addEventListener('abort', () => {
+                if (question.done) return;
+                setCounts(was => ({ ...was, cancelled: was.cancelled + 1 }));
+                if (late) return;
+                question.done = true;
+                reject(signal.reason);
+            }, { once: true });
+            if (late && waiting.current !== undefined && !waiting.current.done) replaced.current = waiting.current;
+            waiting.current = question;
+        });
+    }, [late]);
+    // Answers a held question with its own figures; one already answered or cancelled can no longer be.
+    const answer = useCallback((held: { current: HeldQuestion | undefined }, counted: 'answered' | 'late') => {
+        const question = held.current;
+        held.current = undefined;
+        if (question === undefined || question.done) return;
+        question.done = true;
+        question.answer(summaryOf(summaryRows, question.request, heldValueOf));
+        setCounts(was => ({ ...was, [counted]: was[counted] + 1 }));
+    }, []);
+    return (
+        <>
+            <h2>A Selection Summary the page answers when asked to</h2>
+            <p>
+                A grid the page hands its rows answers its Selection Summary through <code>onSummarize</code> (ADR-0130). This
+                one holds each answer until the button is pressed, so the pending mark stands meanwhile, and declines a selection
+                of more than {heldMostCells} cells with a reason, which the line shows in place of the figures.
+            </p>
+            <p className="demo-status">
+                <button type="button" id="summary-answer" onClick={() => { answer(waiting, 'answered'); }}>Answer the summary</button>
+                <span id="summary-asked">Asked: {counts.asked}; cancelled: {counts.cancelled}; answered: {counts.answered}</span>
+                {late
+                    ? (
+                        <>
+                            <button type="button" id="summary-answer-late" onClick={() => { answer(replaced, 'late'); }}>Answer the replaced question</button>
+                            <span id="summary-late">Answered late: {counts.late}</span>
+                        </>
+                    )
+                    : null}
+            </p>
+            <div id="held-summary">
+                <ExGrid columns={heldColumns} rows={summaryRows} rowHeight={20} viewportHeight={140} viewportWidth={480} onSummarize={onSummarize} />
+            </div>
+        </>
+    );
+}
+
 /**
  * The page /features of the Blazor hosts: an interaction surface on one page. The Blazor page writes every
  * notification to status lines below the heading; a line comes here with the notification it shows, so a
@@ -144,6 +236,8 @@ const secondColumns: readonly GridColumn<DemoTrade>[] = Object.freeze([
  */
 export function Features(): ReactElement {
     const showGroups = useQuery('groups') === '1';
+    const heldSummary = useQuery('summary') === 'held';
+    const late = useQuery('late') === '1';
     const source = useMemo(() => GridSource.from(rows), []);
     const second = useMemo(() => GridSource.from(rows.slice(0, 20)), []);
     const [editStatus, setEditStatus] = useState('—');
@@ -415,6 +509,7 @@ export function Features(): ReactElement {
             <h2>A second, independent instance</h2>
             <p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
             <ExGrid columns={secondColumns} source={second} rowHeight={20} viewportHeight={140} viewportWidth={480} />
+            {heldSummary ? <HeldSummary late={late} /> : null}
         </>
     );
 }

@@ -74,6 +74,8 @@ class StandIns implements BoardMounts {
             keyName: unused('name a grid\'s keys'),
             openPopover: unused('open a grid\'s popover'),
             closePopover: unused('close a grid\'s popover'),
+            canSummarize: false,
+            refreshSummary: unused('refresh a grid\'s summary'),
         };
     };
 

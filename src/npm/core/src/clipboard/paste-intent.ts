@@ -32,7 +32,8 @@ export class GridPasteIntent {
      * Excel's `x:num` and the family's own unformatted HTML, read under the invariant culture; `shownText`
      * for everything else, read as typed. */
     readonly origins: readonly (readonly PasteFieldOrigin[])[];
-    /** The order these positions are written in (ADR-0011). */
+    /** The order these positions are written in (ADR-0011): the source's own Row Sequence Version, the one its
+     * `snapshot()` says and `placeSelection` takes. */
     readonly rowSequenceVersion: number;
     /** The cell the text was typed in, for a Ctrl+Enter fill from the Cell Editor (ADR-0007, ADR-0050 item 5);
      * `undefined` for a paste from the clipboard, whose text was typed nowhere in this grid. */
