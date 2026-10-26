@@ -76,6 +76,8 @@ class StandIns implements BoardMounts {
             closePopover: unused('close a grid\'s popover'),
             canSummarize: false,
             refreshSummary: unused('refresh a grid\'s summary'),
+            returnKeyboard: unused('return a grid\'s keyboard'),
+            handKeyboardTo: unused('hand a grid\'s keyboard on'),
         };
     };
 
