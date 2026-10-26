@@ -243,6 +243,9 @@ export interface FixedColumnWidth {
 }
 
 // @public
+export function formulaBarHeight(density: GridDensity, rowHeight?: number): number;
+
+// @public
 export interface FormulaBarOptions<Row> {
     readonly formulaBarBorrowedText?: (row: Row, column: GridColumn<Row>) => string | undefined;
     readonly nameBoxLabel?: (cell: CellPosition) => string;
@@ -401,6 +404,8 @@ export type GridFindResult = {
 // @public
 export interface GridHandle<Row> {
     destroy(): void;
+    focus(): void;
+    keyName(event: KeyboardEvent): string;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     update(options: GridOptions<Row>): void;
 }

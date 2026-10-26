@@ -368,6 +368,7 @@ export interface SheetOptions {
     readonly onWorkbookChanged?: (document: WorkbookDocument) => void;
     readonly rowHeight?: number;
     readonly showFormulaBar?: boolean;
+    readonly showSheetTabs?: boolean;
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
 }

@@ -15,6 +15,12 @@ export interface GridHandle<Row> {
      * false, and nothing placed, once the rows' order has moved since, or while an edit stands. A range or a Focus outside the grid is refused with a RangeError.
      */
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
+    /** Hands the keyboard to the grid: to the field an open edit is typed in, else to where the grid takes keys
+     * (ADR-0080). A Consumer's control beside the grid, such as a Sheet's tabs, gives it back with this. */
+    focus(): void;
+    /** A key press in the grid's canonical form (ADR-0012), `Control+PageUp`, as this grid reads its own keys: Command
+     * stands for Control on an Apple platform. A Consumer that hears keys beside the grid's names them so. */
+    keyName(event: KeyboardEvent): string;
     /** Stops the grid: it hears nothing more and empties its element. A source it was handed stays the
      * Consumer's. */
     destroy(): void;
@@ -30,6 +36,8 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
     return Object.freeze({
         update: (next: GridOptions<Row>) => { view.update(next); },
         placeSelection: (range: SelectionRange, focus: CellPosition, rowSequenceVersion: number) => view.placeSelection(range, focus, rowSequenceVersion),
+        focus: () => { view.focus(); },
+        keyName: (event: KeyboardEvent) => view.keyName(event),
         destroy: () => { view.destroy(); },
     });
 }

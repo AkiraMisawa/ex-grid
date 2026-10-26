@@ -3248,6 +3248,26 @@ export class GridView<Row> {
         return true;
     }
 
+    /** A key press in the grid's canonical form (ADR-0012), as this grid reads its own keys. */
+    keyName(event: KeyboardEvent): string {
+        return canonicalKey({
+            key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey, metaIsPrimary: this.#metaIsPrimary,
+        });
+    }
+
+    /** Hands the keyboard to the grid: to the field an open edit is typed in, else to where the grid takes keys
+     * (ADR-0080). For a Consumer's own control beside the grid, such as a Sheet's tabs, that gives it back. */
+    focus(): void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        const edit = this.#edit;
+        if (edit === undefined) {
+            this.#takeKeyboard();
+            return;
+        }
+        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
+        if (surface.isConnected) surface.focus({ preventScroll: true });
+    }
+
     // A press or a key into the bar's text opens an edit on the Focus there, in Caret, its caret where the press
     // put it; an edit standing in the cell moves to the bar, in Caret (ADR-0051).
     readonly #onBarFocused = (): void => {

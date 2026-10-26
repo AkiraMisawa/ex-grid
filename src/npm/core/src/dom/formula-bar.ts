@@ -5,6 +5,7 @@
 // is a tab stop: the grid is one (ADR-0020). The fields wear the C# core's classes, so one stylesheet lays out
 // both cores' bars.
 
+import { GridMetrics, type GridDensity } from '../grid-metrics';
 import type { CellPosition } from '../selection/cell';
 import type { GridColumn } from './grid-column';
 
@@ -22,6 +23,12 @@ export interface FormulaBarOptions<Row> {
      * the Formula of the array a cell is spilled into (ADR-0125). Hold it in a field: its identity is the change
      * signal. */
     readonly formulaBarBorrowedText?: (row: Row, column: GridColumn<Row>) => string | undefined;
+}
+
+/** The Formula Bar's height in pixels for a grid of `density` and `rowHeight` (ADR-0051, ADR-0028): the header's,
+ * for a Consumer that draws a band of its own beside the grid at the same height, as a Sheet's tabs are. */
+export function formulaBarHeight(density: GridDensity, rowHeight?: number): number {
+    return GridMetrics.resolve({ density, ...(rowHeight === undefined ? {} : { rowHeightPx: rowHeight }) }).formulaBarHeightPx;
 }
 
 /** The Formula Bar's declarations, taken and checked. */

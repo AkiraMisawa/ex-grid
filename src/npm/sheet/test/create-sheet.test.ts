@@ -269,3 +269,151 @@ describe('Ctrl+arrow (ADR-0050, item 2)', () => {
         await vi.waitFor(() => { expect(nameBox(element).value).toBe('XFD3'); });
     });
 });
+
+const tabNames = (element: HTMLElement): string[] => [...element.querySelectorAll('.ex-sheet-tab')].map(tab => tab.textContent);
+const selectedTab = (element: HTMLElement): string | undefined => element.querySelector('.ex-sheet-tab[aria-selected="true"]')?.textContent ?? undefined; // oxlint-disable-line ex-grid/no-stand-in-default -- no tab selected reads as missing, which the expectation names
+const noticeOf = (element: HTMLElement): string | undefined => element.querySelector('.ex-sheet-notice')?.textContent ?? undefined; // oxlint-disable-line ex-grid/no-stand-in-default -- no notice reads as missing, which the expectation names
+
+function click(target: Element | null | undefined): void {
+    if (target === null || target === undefined) throw new Error('Nothing to press.');
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 });
+    target.dispatchEvent(down);
+    expect(down.defaultPrevented).toBe(true);
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+}
+
+function twoSheets(): ReturnType<Workbook['toDocument']> {
+    const workbook = new Workbook(Culture.of('en-US'), ['Sheet1', 'Second']);
+    workbook.do('Second', SheetEdit.enter(CellAddress.parse('A1'), 'there'));
+    return workbook.toDocument();
+}
+
+describe('the Sheet Tabs (ADR-0331)', () => {
+    it('ADR-0331 §4: a tab per Sheet under the grid, in the Formula Bar\'s height; a press shows its Sheet and leaves the keyboard in the grid', async () => {
+        const { element, sheet } = sheetOf({ document: twoSheets() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        expect(tabNames(element)).toEqual(['Sheet1', 'Second']);
+        expect(selectedTab(element)).toBe('Sheet1');
+        const list = element.querySelector('.ex-sheet-tabs');
+        expect([list?.getAttribute('role'), list?.getAttribute('aria-label')]).toEqual(['tablist', 'Sheets']);
+        expect([...element.querySelectorAll('.ex-sheet-tab')].map(tab => tab.getAttribute('tabindex'))).toEqual(['0', '-1']);
+        // The band comes off the Sheet's height, as tall as the Formula Bar.
+        const area = element.querySelector<HTMLElement>('.ex-sheet-tab-area');
+        const bar = element.querySelector<HTMLElement>('.ex-formula-bar');
+        expect(area?.style.height).toBe(bar?.style.height);
+        expect(element.firstElementChild?.nextElementSibling).toBe(area);
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        click(element.querySelectorAll('.ex-sheet-tab')[1]);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('there'); });
+        expect([sheet.workbook.shown.name, selectedTab(element), document.activeElement]).toEqual(['Second', 'Second', grid]);
+    });
+
+    it('ADR-0331 §3: + adds a Sheet after the one shown and shows it, saying so; one undo takes it out and shows the Sheet it was added from', async () => {
+        const documents: ReturnType<Workbook['toDocument']>[] = [];
+        const { element, sheet } = sheetOf({ document: twoSheets(), onWorkbookChanged: raised => { documents.push(raised); } });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        click(element.querySelector('.ex-sheet-tab-add'));
+        expect(tabNames(element)).toEqual(['Sheet1', 'Sheet2', 'Second']);
+        expect(selectedTab(element)).toBe('Sheet2');
+        expect(noticeOf(element)).toBe("Sheet 'Sheet2' was added.");
+        expect(documents.at(-1)?.shown).toBe('Sheet2');
+        expect(sheet.undo()).toBe(true);
+        expect(tabNames(element)).toEqual(['Sheet1', 'Second']);
+        expect(selectedTab(element)).toBe('Sheet1');
+        expect(sheet.redo()).toBe(true);
+        expect(selectedTab(element)).toBe('Sheet2');
+    });
+
+    it('ADR-0331 §4: Ctrl+PageDown and Ctrl+PageUp step through the Sheets, never past the last or the first, and Shift+F11 adds one before', async () => {
+        const { element, sheet } = sheetOf({ document: twoSheets() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('PageDown', { ctrlKey: true });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('there'); });
+        key('PageDown', { ctrlKey: true });
+        expect(sheet.workbook.shown.name).toBe('Second');
+        key('PageUp', { ctrlKey: true });
+        expect(sheet.workbook.shown.name).toBe('Sheet1');
+        key('PageUp', { ctrlKey: true });
+        expect(sheet.workbook.shown.name).toBe('Sheet1');
+        key('F11', { shiftKey: true });
+        expect(tabNames(element)).toEqual(['Sheet2', 'Sheet1', 'Second']);
+        expect(selectedTab(element)).toBe('Sheet2');
+    });
+
+    it('ADR-0331 §5: while a cell is edited no other Sheet is shown and none is added, and the notice says why', async () => {
+        const { element, sheet } = sheetOf({ document: twoSheets() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('F2');
+        key('PageDown', { ctrlKey: true });
+        expect(sheet.workbook.shown.name).toBe('Sheet1');
+        expect(noticeOf(element)).toMatch(/being edited/u);
+        click(element.querySelectorAll('.ex-sheet-tab')[1]);
+        expect(sheet.workbook.shown.name).toBe('Sheet1');
+        click(element.querySelector('.ex-sheet-tab-add'));
+        expect(tabNames(element)).toEqual(['Sheet1', 'Second']);
+        expect(noticeOf(element)).toMatch(/No Sheet was changed/u);
+        expect(element.querySelector('input.ex-editor')).not.toBeNull();
+    });
+
+    it('ADR-0331 §4: on the tab list, the arrows, Home and End select a tab and keep the keyboard on it; Escape gives it back to the grid', async () => {
+        const workbook = new Workbook(Culture.of('en-US'), ['One', 'Two', 'Three']);
+        const { element, sheet } = sheetOf({ document: workbook.toDocument() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const tabs = (): HTMLElement[] => [...element.querySelectorAll<HTMLElement>('.ex-sheet-tab')];
+        tabs()[0]?.focus();
+        key('ArrowRight');
+        expect([sheet.workbook.shown.name, document.activeElement]).toEqual(['Two', tabs()[1]]);
+        key('End');
+        expect([sheet.workbook.shown.name, document.activeElement]).toEqual(['Three', tabs()[2]]);
+        key('ArrowRight');
+        expect(sheet.workbook.shown.name).toBe('Three');
+        key('PageUp', { ctrlKey: true });
+        expect([sheet.workbook.shown.name, document.activeElement]).toEqual(['Two', tabs()[1]]);
+        key('Home');
+        expect([sheet.workbook.shown.name, document.activeElement]).toEqual(['One', tabs()[0]]);
+        // A press, and a Sheet added, move the keyboard with the selection, never leaving it on a tab not selected.
+        click(tabs()[2]);
+        expect([sheet.workbook.shown.name, document.activeElement]).toEqual(['Three', tabs()[2]]);
+        key('F11', { shiftKey: true });
+        expect([sheet.workbook.shown.name, document.activeElement]).toEqual(['Sheet1', tabs()[2]]);
+        click(element.querySelector('.ex-sheet-tab-add'));
+        expect([sheet.workbook.shown.name, document.activeElement]).toEqual(['Sheet2', tabs()[3]]);
+        key('Escape');
+        expect(document.activeElement).toBe(grid);
+    });
+
+    it('ADR-0331: a Sheet too short for its tabs\' band and a grid is refused by name, leaving the element, or the Sheet, as it was', () => {
+        const element = document.createElement('div');
+        element.textContent = 'mine';
+        expect(() => createSheet(element, { locale: 'en-US', viewportHeight: 20 })).toThrow(/cannot hold its Sheet Tabs/u);
+        expect([element.className, element.getAttribute('style'), element.textContent]).toEqual(['', null, 'mine']);
+        const { sheet } = sheetOf();
+        expect(() => { sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 20, japanese: true }); }).toThrow(/cannot hold/u);
+        expect(sheet.undo()).toBe(false);
+        expect(document.querySelector('.ex-sheet-notice')?.textContent).toBe('There is nothing to undo.');
+    });
+
+    it('ADR-0331: without the tabs the grid takes the whole height, and the Sheet lays out as if they were not there', async () => {
+        const element = document.createElement('div');
+        element.style.margin = '3px';
+        document.body.append(element);
+        element.style.display = 'grid';
+        const options: SheetOptions = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300 };
+        const sheet = createSheet(element, options);
+        mounted.push(sheet);
+        expect(element.style.display).toBe('block');
+        sheet.update({ ...options, showSheetTabs: false });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        expect(element.querySelector('.ex-sheet-tab-area')).toBeNull();
+        // The Consumer's own style on the element stays theirs, and what the tabs' frame set gives back what it covered.
+        expect(element.getAttribute('style')).toBe('margin: 3px; display: grid;');
+        const bar = element.querySelector<HTMLElement>('.ex-formula-bar');
+        if (bar === null) throw new Error('The Formula Bar is shown.');
+        expect(element.querySelector<HTMLElement>('.ex-scroller')?.style.height).toBe(`${String(300 - Number.parseFloat(bar.style.height))}px`);
+    });
+});
