@@ -1,0 +1,3186 @@
+{
+  "about": "A CSV read under a declared Schema into a Snapshot (ADR-0064, ADR-0370 section 3): the Snapshot each file makes, or the refusal of it worded as both packages word it, naming the row, the column and the line where the record begins. A file is a list of pieces: UTF-8 text, {\"hex\": …} bytes, or {\"repeat\": text, \"times\": n}. Transcribed from ExGrid.Data.Tests' CSV tests; the answers are ExGrid.Data's, written by its runner.",
+  "kind": "csvRead",
+  "cases": [
+    {
+      "name": "ADR-0064: each kind is read from its field, matched by header, a column the Schema does not declare skipped and an empty field a Blank in every kind",
+      "schema": {
+        "columns": [
+          {
+            "name": "Desk",
+            "kind": "text",
+            "caption": "Trading desk"
+          },
+          {
+            "name": "Notional",
+            "kind": "decimal"
+          },
+          {
+            "name": "Qty",
+            "kind": "integer"
+          },
+          {
+            "name": "When",
+            "kind": "date"
+          },
+          {
+            "name": "Price",
+            "kind": "double"
+          },
+          {
+            "name": "Live",
+            "kind": "boolean"
+          }
+        ]
+      },
+      "file": [
+        "Live,Qty,Extra,Desk,Notional,When,Price\nTRUE,12,skip,FX,1250000.50,2026-09-30,101.25\nfalse,-3,skip,Rates,0,2026-09-30T14:05:09,0.5\n,,,,,,\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Desk",
+            "caption": "Trading desk",
+            "kind": "text",
+            "values": [
+              "FX",
+              "Rates",
+              null
+            ],
+            "dictionary": [
+              "FX",
+              "Rates"
+            ]
+          },
+          {
+            "name": "Notional",
+            "caption": "Notional",
+            "kind": "decimal",
+            "values": [
+              "1250000.5",
+              "0",
+              null
+            ]
+          },
+          {
+            "name": "Qty",
+            "caption": "Qty",
+            "kind": "integer",
+            "values": [
+              12,
+              -3,
+              null
+            ]
+          },
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "2026-09-30",
+              "2026-09-30T14:05:09",
+              null
+            ]
+          },
+          {
+            "name": "Price",
+            "caption": "Price",
+            "kind": "double",
+            "values": [
+              101.25,
+              0.5,
+              null
+            ]
+          },
+          {
+            "name": "Live",
+            "caption": "Live",
+            "kind": "boolean",
+            "values": [
+              true,
+              false,
+              null
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: text is kept exactly as written: spaces, a quoted separator, a line break and a doubled quote, and the dictionary holds each text once in the order it first appears",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A\n  padded  \n\"a,b\"\n\"two\r\nlines\"\n\"say \"\"hi\"\"\"\n  padded  \n\"\"\n"
+      ],
+      "expect": {
+        "rows": 6,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "  padded  ",
+              "a,b",
+              "two\r\nlines",
+              "say \"hi\"",
+              "  padded  ",
+              null
+            ],
+            "dictionary": [
+              "  padded  ",
+              "a,b",
+              "two\r\nlines",
+              "say \"hi\""
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a number sets the spaces around it aside, a sign is read, and trailing zeros after the point are not places",
+      "schema": {
+        "columns": [
+          {
+            "name": "D",
+            "kind": "decimal"
+          },
+          {
+            "name": "I",
+            "kind": "integer"
+          },
+          {
+            "name": "F",
+            "kind": "double"
+          }
+        ]
+      },
+      "file": [
+        "D,I,F\n 1.50 , +7 , 2.50 \n-0,-0,-0\n.5,00012,.5\n5.,1,5.\n0.000,0,1E-5\n"
+      ],
+      "expect": {
+        "rows": 5,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "D",
+            "caption": "D",
+            "kind": "decimal",
+            "values": [
+              "1.5",
+              "0",
+              "0.5",
+              "5",
+              "0"
+            ]
+          },
+          {
+            "name": "I",
+            "caption": "I",
+            "kind": "integer",
+            "values": [
+              7,
+              0,
+              12,
+              1,
+              0
+            ]
+          },
+          {
+            "name": "F",
+            "caption": "F",
+            "kind": "double",
+            "values": [
+              2.5,
+              {
+                "bits": "8000000000000000"
+              },
+              0.5,
+              5,
+              1E-05
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a Decimal holds 96 bits of digits and 28 places exactly",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal"
+          }
+        ]
+      },
+      "file": [
+        "V\n79228162514264337593543950335\n-79228162514264337593543950335\n0.0000000000000000000000000001\n1234567890123456789.123456789\n"
+      ],
+      "expect": {
+        "rows": 4,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "decimal",
+            "values": [
+              "79228162514264337593543950335",
+              "-79228162514264337593543950335",
+              "0.0000000000000000000000000001",
+              "1234567890123456789.123456789"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a Decimal beyond 96 bits is refused rather than rounded",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal"
+          }
+        ]
+      },
+      "file": [
+        "V\n1\n79228162514264337593543950336\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'V': '79228162514264337593543950336' has more digits than a Decimal holds exactly (line 3).",
+          "row": 2,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a Decimal of 29 places is refused rather than rounded",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal"
+          }
+        ]
+      },
+      "file": [
+        "V\n0.00000000000000000000000000001\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '0.00000000000000000000000000001' has more digits than a Decimal holds exactly (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a number with more digits than 128 bits hold is refused as too long",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal"
+          }
+        ]
+      },
+      "file": [
+        "V\n123456789012345678901234567890123456789012345\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '123456789012345678901234567890123456789012345' has more digits than a Decimal holds exactly (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: an Integer holds 64 bits",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "V\n9223372036854775807\n-9223372036854775808\n9007199254740993\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "integer",
+            "values": [
+              "9223372036854775807",
+              "-9223372036854775808",
+              "9007199254740993"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: an Integer beyond 64 bits is refused rather than wrapped",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "V\n9223372036854775808\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '9223372036854775808' is outside the range of a 64-bit Integer (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: an Integer of more digits than 128 bits hold is refused as outside the range",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "V\n-99999999999999999999999999999999999999999\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '-99999999999999999999999999999999999999999' is outside the range of a 64-bit Integer (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a decimal point is no Integer, whatever follows it",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "V\n12.0\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '12.0' is not an integer (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a Double reads an exponent, NaN and the infinities, and keeps a negative zero",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "double"
+          }
+        ]
+      },
+      "file": [
+        "V\n1.7976931348623157e308\n-1e-5\nNaN\n-Infinity\ninfinity\n-0\n4.9E-324\n0.1\n-nan\n+NaN\n+Infinity\n"
+      ],
+      "expect": {
+        "rows": 11,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "double",
+            "values": [
+              1.7976931348623157E+308,
+              -1E-05,
+              {
+                "bits": "fff8000000000000"
+              },
+              "-Infinity",
+              "Infinity",
+              {
+                "bits": "8000000000000000"
+              },
+              5E-324,
+              0.1,
+              {
+                "bits": "fff8000000000000"
+              },
+              {
+                "bits": "fff8000000000000"
+              },
+              "Infinity"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a finite Double too large for a double is refused rather than read as infinity",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "double"
+          }
+        ]
+      },
+      "file": [
+        "V\n1e400\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '1e400' is outside the range of a Double (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a Double with a comma is no number in the invariant culture",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "double"
+          }
+        ]
+      },
+      "file": [
+        "V\n\"1,5\"\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '1,5' is not a number (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a tab beside a number is no space that is set aside",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal"
+          }
+        ]
+      },
+      "file": [
+        "V\n1\t\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '1\t' is not a number (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a culture's decimal point, thousands separator and group sizes are read: German",
+      "schema": {
+        "separator": "semicolon",
+        "columns": [
+          {
+            "name": "D",
+            "kind": "decimal",
+            "culture": "de-DE"
+          },
+          {
+            "name": "F",
+            "kind": "double",
+            "culture": "de-DE"
+          },
+          {
+            "name": "I",
+            "kind": "integer",
+            "culture": "de-DE"
+          }
+        ]
+      },
+      "file": [
+        "D;F;I\n1.234,5;1.234.567,89;1.234\n-0,25;NaN;-12\n12;3,5e2;7\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "D",
+            "caption": "D",
+            "kind": "decimal",
+            "values": [
+              "1234.5",
+              "-0.25",
+              "12"
+            ]
+          },
+          {
+            "name": "F",
+            "caption": "F",
+            "kind": "double",
+            "values": [
+              1234567.89,
+              {
+                "bits": "fff8000000000000"
+              },
+              350
+            ]
+          },
+          {
+            "name": "I",
+            "caption": "I",
+            "kind": "integer",
+            "values": [
+              1234,
+              -12,
+              7
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a thousands separator stands only between groups of the culture's sizes",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal",
+            "culture": "en-US"
+          }
+        ]
+      },
+      "file": [
+        "V\n\"1,234\"\n\"12,34\"\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'V': '12,34' is not a number (line 3).",
+          "row": 2,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: India's culture groups by three, then by two",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal",
+            "culture": "en-IN"
+          }
+        ]
+      },
+      "file": [
+        "V\n\"12,34,567.5\"\n\"1,234\"\n"
+      ],
+      "expect": {
+        "rows": 2,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "decimal",
+            "values": [
+              "1234567.5",
+              "1234"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: India's groups are refused where a culture groups by three",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal",
+            "culture": "en-US"
+          }
+        ]
+      },
+      "file": [
+        "V\n\"12,34,567.5\"\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '12,34,567.5' is not a number (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a declared decimal point and thousands separator win over the culture's",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal",
+            "culture": "de-DE",
+            "decimalPoint": ".",
+            "thousandsSeparator": "'"
+          }
+        ]
+      },
+      "file": [
+        "V\n1'234.5\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "decimal",
+            "values": [
+              "1234.5"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a culture's thousands separator that is not ASCII is read: French's narrow no-break space",
+      "schema": {
+        "separator": "semicolon",
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal",
+            "culture": "fr-FR"
+          }
+        ]
+      },
+      "file": [
+        "V\n1\u202F234,5\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "decimal",
+            "values": [
+              "1234.5"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a Date reads ISO 8601's date, its date and time with a T or a space, and up to seven places of a second, by default",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date"
+          }
+        ]
+      },
+      "file": [
+        "V\n2026-09-30\n2026-09-30T14:05:09\n2026-09-30 14:05:09\n2026-09-30T14:05:09.1234567\n2026-09-30 00:00:00.5\n 2026-01-02 \n"
+      ],
+      "expect": {
+        "rows": 6,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30",
+              "2026-09-30T14:05:09",
+              "2026-09-30T14:05:09",
+              "2026-09-30T14:05:09.1234567",
+              "2026-09-30T00:00:00.5",
+              "2026-01-02"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: an impossible date is refused, naming the format",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "yyyy-MM-dd"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n2026-02-30\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '2026-02-30' is not a date in the format 'yyyy-MM-dd' (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a date read under none of several formats is refused naming them all",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "dd.MM.yyyy",
+              "yyyy-MM-dd"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n30.09.2026\n2026-09-30\n31.09.2026\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 3, column 'V': '31.09.2026' is not a date in any of the formats 'dd.MM.yyyy', 'yyyy-MM-dd' (line 4).",
+          "row": 3,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a value with an offset is held as the clock it shows",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "yyyy-MM-ddTHH:mm:sszzz",
+              "yyyy-MM-ddTHH:mm:ssZ"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n2026-09-30T23:30:00+09:00\n2026-09-30T23:30:00-05:00\n2026-09-30T23:30:00Z\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30T23:30:00",
+              "2026-09-30T23:30:00",
+              "2026-09-30T23:30:00"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a culture's month names are read ignoring case: English",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "culture": "en-US",
+            "dateFormats": [
+              "MMM d, yyyy",
+              "MMMM d, yyyy h:mm tt"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n\"Sep 30, 2026\"\n\"september 1, 2026 2:05 PM\"\n\"Jan 2, 2026\"\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30",
+              "2026-09-01T14:05:00",
+              "2026-01-02"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a culture's month names are read: German",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "culture": "de-DE",
+            "dateFormats": [
+              "d. MMMM yyyy"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n30. September 2026\n1. März 2026\n"
+      ],
+      "expect": {
+        "rows": 2,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30",
+              "2026-03-01"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a culture's literal characters are read: Japanese",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "culture": "ja-JP",
+            "dateFormats": [
+              "yyyy年M月d日"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n2026年9月30日\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: the Thai Buddhist calendar counts its years 543 ahead",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "culture": "th-TH",
+            "dateFormats": [
+              "dd/MM/yyyy"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n30/09/2569\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: two digits of a year stand for a year up to 2049",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "dd/MM/yy"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n30/09/49\n01/01/50\n31/12/00\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2049-09-30",
+              "1950-01-01",
+              "2000-12-31"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a day's name must be the date's day",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "ddd, dd MMM yyyy"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n\"Wed, 30 Sep 2026\"\n\"Mon, 30 Sep 2026\"\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'V': 'Mon, 30 Sep 2026' is not a date in the format 'ddd, dd MMM yyyy' (line 3).",
+          "row": 2,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: fractions of a second written with f take exactly as many digits",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "yyyy-MM-dd HH:mm:ss.fff"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n2026-09-30 14:05:09.123\n2026-09-30 14:05:09.12\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'V': '2026-09-30 14:05:09.12' is not a date in the format 'yyyy-MM-dd HH:mm:ss.fff' (line 3).",
+          "row": 2,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a twelve-hour clock reads AM and PM, twelve AM midnight",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "yyyy-MM-dd h:mm tt"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n2026-09-30 12:00 AM\n2026-09-30 12:30 PM\n2026-09-30 1:05 pm\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30",
+              "2026-09-30T12:30:00",
+              "2026-09-30T13:05:00"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: numbers written side by side are read by their widths",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "yyyyMMdd",
+              "yyyyMMddHHmmss"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n20260930\n20260930140509\n"
+      ],
+      "expect": {
+        "rows": 2,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30",
+              "2026-09-30T14:05:09"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: K reads an offset, UTC's Z, or none, and the clock shown is kept",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "yyyy-MM-ddTHH:mm:ssK"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n2026-09-30T23:30:00+09:00\n2026-09-30T23:30:00Z\n2026-09-30T23:30:00\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30T23:30:00",
+              "2026-09-30T23:30:00",
+              "2026-09-30T23:30:00"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: an offset beyond fourteen hours is refused",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "yyyy-MM-ddTHH:mm:sszzz"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n2026-09-30T23:30:00+15:00\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': '2026-09-30T23:30:00+15:00' is not a date in the format 'yyyy-MM-ddTHH:mm:sszzz' (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a quoted literal and an escaped character are matched as written",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "'on' yyyy-MM-dd \\a\\t HH:mm"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\non 2026-09-30 at 14:05\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "date",
+            "values": [
+              "2026-09-30T14:05:00"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: the invariant culture's standard short date reads month, day and year",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "d"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n09/30/2026\n9/1/2026\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'V': '9/1/2026' is not a date in the format 'd' (line 3).",
+          "row": 2,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: the invariant culture's round-trip and RFC 1123 formats are read",
+      "schema": {
+        "columns": [
+          {
+            "name": "O",
+            "kind": "date",
+            "dateFormats": [
+              "o"
+            ]
+          },
+          {
+            "name": "R",
+            "kind": "date",
+            "dateFormats": [
+              "r"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "O,R\n2026-09-30T14:05:09.1234567+09:00,\"Wed, 30 Sep 2026 14:05:09 GMT\"\n2026-01-02T03:04:05.0000000,\"Fri, 02 Jan 2026 03:04:05 GMT\"\n"
+      ],
+      "expect": {
+        "rows": 2,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "O",
+            "caption": "O",
+            "kind": "date",
+            "values": [
+              "2026-09-30T14:05:09.1234567",
+              "2026-01-02T03:04:05"
+            ]
+          },
+          {
+            "name": "R",
+            "caption": "R",
+            "kind": "date",
+            "values": [
+              "2026-09-30T14:05:09",
+              "2026-01-02T03:04:05"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a format with a day's name but no year is refused before a byte is read, since a day's name does not say the year",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "ddd dd MMM"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\nFri 03 Feb\n"
+      ],
+      "expect": {
+        "refused": "argument"
+      }
+    },
+    {
+      "name": "ADR-0064: AM or PM read twice must read alike",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "yyyy-MM-dd hh tt (tt)"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n2026-09-30 03 PM (PM)\n2026-09-30 03 AM (PM)\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'V': '2026-09-30 03 AM (PM)' is not a date in the format 'yyyy-MM-dd hh tt (tt)' (line 3).",
+          "row": 2,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a Boolean reads Excel's TRUE and FALSE ignoring case, with the spaces around them set aside",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "boolean"
+          }
+        ]
+      },
+      "file": [
+        "V\nTRUE\nfalse\n True \nFaLsE\n"
+      ],
+      "expect": {
+        "rows": 4,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "V",
+            "caption": "V",
+            "kind": "boolean",
+            "values": [
+              true,
+              false,
+              true,
+              false
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a Boolean reads its declared spellings ignoring case, and refuses any other, naming them",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "boolean",
+            "trueText": [
+              "yes",
+              "はい"
+            ],
+            "falseText": [
+              "no",
+              "いいえ"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\nYES\nはい\nNo\nいいえ\nmaybe\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 5, column 'V': 'maybe' is not a spelling of true or false ('yes', 'はい', 'no', 'いいえ') (line 6).",
+          "row": 5,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a Boolean refuses a value that is not ASCII where every spelling is",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "boolean"
+          }
+        ]
+      },
+      "file": [
+        "V\nTRUE\nTRUÉ\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'V': 'TRUÉ' is not a spelling of true or false ('TRUE', 'FALSE') (line 3).",
+          "row": 2,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a spelling is matched ignoring case as .NET's OrdinalIgnoreCase is, so no letter outside ASCII folds into it",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "boolean",
+            "trueText": [
+              "YES"
+            ],
+            "falseText": [
+              "HAYIR"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\nyes\nhayir\nhayır\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 3, column 'V': 'hayır' is not a spelling of true or false ('YES', 'HAYIR') (line 4).",
+          "row": 3,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: the long s is no s to OrdinalIgnoreCase",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "boolean",
+            "trueText": [
+              "YES"
+            ],
+            "falseText": [
+              "NO"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\nyeſ\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': 'yeſ' is not a spelling of true or false ('YES', 'NO') (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: the Schema's blank texts are a Blank in every column that declares none, quoted or not, and a column's own list replaces them",
+      "schema": {
+        "blankText": [
+          "NULL",
+          "-"
+        ],
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "decimal"
+          },
+          {
+            "name": "C",
+            "kind": "text",
+            "blankText": []
+          }
+        ]
+      },
+      "file": [
+        "A,B,C\nNULL,-,NULL\n\"NULL\",\"-\",\"-\"\nnull,1,x\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              null,
+              null,
+              "null"
+            ],
+            "dictionary": [
+              "null"
+            ]
+          },
+          {
+            "name": "B",
+            "caption": "B",
+            "kind": "decimal",
+            "values": [
+              null,
+              null,
+              "1"
+            ]
+          },
+          {
+            "name": "C",
+            "caption": "C",
+            "kind": "text",
+            "values": [
+              "NULL",
+              "-",
+              "x"
+            ],
+            "dictionary": [
+              "NULL",
+              "-",
+              "x"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a Text Record Key is read, and a key carried twice is refused naming the row that carries it first",
+      "schema": {
+        "recordKey": "Id",
+        "columns": [
+          {
+            "name": "Id",
+            "kind": "text"
+          },
+          {
+            "name": "V",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "Id,V\na,1\nb,2\na,3\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 3, column 'Id': the Record Key 'a' is already carried by row 1.",
+          "row": 3,
+          "column": "Id"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: an Integer Record Key carried twice is refused",
+      "schema": {
+        "recordKey": "Id",
+        "columns": [
+          {
+            "name": "Id",
+            "kind": "integer"
+          },
+          {
+            "name": "V",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "Id,V\n7,x\n8,y\n 7 ,z\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 3, column 'Id': the Record Key 7 is already carried by row 1.",
+          "row": 3,
+          "column": "Id"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a Blank Record Key is refused where it is read, with its line",
+      "schema": {
+        "recordKey": "Id",
+        "columns": [
+          {
+            "name": "Id",
+            "kind": "text"
+          },
+          {
+            "name": "V",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "Id,V\na,1\n,2\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'Id': the Record Key is Blank (line 3).",
+          "row": 2,
+          "column": "Id"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a Record Key that is a blank text is refused as Blank",
+      "schema": {
+        "recordKey": "Id",
+        "blankText": [
+          "NULL"
+        ],
+        "columns": [
+          {
+            "name": "Id",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "Id\n1\nNULL\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'Id': the Record Key is Blank (line 3).",
+          "row": 2,
+          "column": "Id"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: within a record, the columns are read in the Schema's order, the Record Key among them",
+      "schema": {
+        "recordKey": "Id",
+        "columns": [
+          {
+            "name": "V",
+            "kind": "integer"
+          },
+          {
+            "name": "Id",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "Id,V\na,x\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'V': 'x' is not an integer (line 2).",
+          "row": 1,
+          "column": "V"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a declared column missing from the header is refused by name",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,C\n1,2\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Column 'B': it is missing from the header.",
+          "row": null,
+          "column": "B"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: every declared column missing from the header is named, and a header that differs only in case or spaces is pointed out",
+      "schema": {
+        "columns": [
+          {
+            "name": "Name",
+            "kind": "text"
+          },
+          {
+            "name": "Desk",
+            "kind": "text"
+          },
+          {
+            "name": "Book",
+            "kind": "text"
+          },
+          {
+            "name": "Qty",
+            "kind": "integer",
+            "header": "Quantity"
+          }
+        ]
+      },
+      "file": [
+        "name ,Other\n1,2\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Column 'Name': it is missing from the header, and so are 'Desk', 'Book' and 'Qty'; the header has 'name '.",
+          "row": null,
+          "column": "Name"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a column's declared header is matched in place of its name",
+      "schema": {
+        "columns": [
+          {
+            "name": "Qty",
+            "kind": "integer",
+            "header": "Quantity",
+            "caption": "Qty"
+          },
+          {
+            "name": "Book",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "Book,Quantity\nX,5\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Qty",
+            "caption": "Qty",
+            "kind": "integer",
+            "values": [
+              5
+            ]
+          },
+          {
+            "name": "Book",
+            "caption": "Book",
+            "kind": "text",
+            "values": [
+              "X"
+            ],
+            "dictionary": [
+              "X"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a declared header missing from the header row is named as the header",
+      "schema": {
+        "columns": [
+          {
+            "name": "Qty",
+            "kind": "integer",
+            "header": "Quantity"
+          }
+        ]
+      },
+      "file": [
+        "Qty\n5\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Column 'Qty': its header, 'Quantity', is missing from the header row.",
+          "row": null,
+          "column": "Qty"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a header that names a column twice is refused, asking for its Position",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B,A,A\n1,2,3,4\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Column 'A': the header holds 'A' 3 times, so which field it is cannot be told; declare its Position.",
+          "row": null,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a header held twice is no refusal for a column declared at a position",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text",
+            "position": 2
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B,A\n1,2,3\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "3"
+            ],
+            "dictionary": [
+              "3"
+            ]
+          },
+          {
+            "name": "B",
+            "caption": "B",
+            "kind": "text",
+            "values": [
+              "2"
+            ],
+            "dictionary": [
+              "2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a position past the header's fields is refused",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text",
+            "position": 3
+          }
+        ]
+      },
+      "file": [
+        "A,B\n1,2\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Column 'A': it is declared at position 3, but the header has 2 fields.",
+          "row": null,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a position past a header of one field is said in the singular",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text",
+            "position": 1
+          }
+        ]
+      },
+      "file": [
+        "A\n1\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Column 'A': it is declared at position 1, but the header has 1 field.",
+          "row": null,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a header's quoted fields are matched by their content, a doubled quote single",
+      "schema": {
+        "columns": [
+          {
+            "name": "Say \"hi\"",
+            "kind": "text"
+          },
+          {
+            "name": "A,B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "\"Say \"\"hi\"\"\",\"A,B\"\n1,2\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Say \"hi\"",
+            "caption": "Say \"hi\"",
+            "kind": "text",
+            "values": [
+              "1"
+            ],
+            "dictionary": [
+              "1"
+            ]
+          },
+          {
+            "name": "A,B",
+            "caption": "A,B",
+            "kind": "text",
+            "values": [
+              "2"
+            ],
+            "dictionary": [
+              "2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a file without a header row places each column by its place in the Schema, or by its declared position",
+      "schema": {
+        "hasHeader": false,
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "integer",
+            "position": 3
+          },
+          {
+            "name": "C",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "x,y,z,4\nx2,y2,z2,5\n"
+      ],
+      "expect": {
+        "rows": 2,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "x",
+              "x2"
+            ],
+            "dictionary": [
+              "x",
+              "x2"
+            ]
+          },
+          {
+            "name": "B",
+            "caption": "B",
+            "kind": "integer",
+            "values": [
+              4,
+              5
+            ]
+          },
+          {
+            "name": "C",
+            "caption": "C",
+            "kind": "text",
+            "values": [
+              "z",
+              "z2"
+            ],
+            "dictionary": [
+              "z",
+              "z2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a position past the first record's fields is refused in a file without a header row",
+      "schema": {
+        "hasHeader": false,
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          },
+          {
+            "name": "C",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "x,y\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Column 'C': it is declared at position 2, but the first record has 2 fields.",
+          "row": null,
+          "column": "C"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a record with more fields than the header is refused",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\nx,y\nx,y,z\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2: the record has 3 fields where the header has 2 (line 3).",
+          "row": 2,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a record with fewer fields than the header is refused",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\nx\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1: the record has 1 field where the header has 2 (line 2).",
+          "row": 1,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: an empty line among wider records is refused as empty",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\nx,y\n\nx,y\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2: the line is empty, where the header has 2 fields (line 3).",
+          "row": 2,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a record with fewer fields than the first is refused in a file without a header row",
+      "schema": {
+        "hasHeader": false,
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "x,y\nx\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2: the record has 1 field where the first record has 2 (line 2).",
+          "row": 2,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: in a file of one column an empty line is a record whose one field is a Blank",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A\nx\n\ny\n"
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "x",
+              null,
+              "y"
+            ],
+            "dictionary": [
+              "x",
+              "y"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a quote left open at the end of the file is refused in its column",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\nx,y\nz,\"never\nclosed\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'B': a quoted field is not closed before the file ends (line 3).",
+          "row": 2,
+          "column": "B"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a quote inside a field that does not begin with one is refused",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\nx,y\"z\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'B': a quote stands inside a field that does not begin with one (line 2).",
+          "row": 1,
+          "column": "B"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a quoted field followed by something other than a separator or a line end is refused, showing it",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\n\"x\"y,z\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'A': a quoted field's closing quote is followed by 'y' rather than a separator or a line end (line 2).",
+          "row": 1,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a quoted field followed by a byte that is not text shows it as a replacement character",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\n\"x\"",
+        {
+          "hex": "c3"
+        },
+        ",z\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'A': a quoted field's closing quote is followed by '�' rather than a separator or a line end (line 2).",
+          "row": 1,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a malformed field the Schema does not declare is named by the header",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\nx,\"y\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'B': a quoted field is not closed before the file ends (line 2).",
+          "row": 1,
+          "column": "B"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a malformed field is named by its place where neither the Schema nor a header names it",
+      "schema": {
+        "hasHeader": false,
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "x,y\"\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1: in field 2 of the record, a quote stands inside a field that does not begin with one (line 1).",
+          "row": 1,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a malformed header is refused, naming its field",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,\"B\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "The header's field 2: a quoted field is not closed before the file ends (line 1).",
+          "row": null,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: the records before a malformed one are read first, so a value refused among them is the refusal",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "A\nx\n\"open\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'A': 'x' is not an integer (line 2).",
+          "row": 1,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a line counts the line breaks inside quotes, CR LF as one",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "A,B\n\"F\r\nX\",1\n\"F\nX\",2\n\"F\rX\",x\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 3, column 'B': 'x' is not an integer (line 6).",
+          "row": 3,
+          "column": "B"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a record ends at CR LF, LF or CR, and the last record needs no line end",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\r\n1,2\r3,4\n5,6\r\n7,8"
+      ],
+      "expect": {
+        "rows": 4,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "1",
+              "3",
+              "5",
+              "7"
+            ],
+            "dictionary": [
+              "1",
+              "3",
+              "5",
+              "7"
+            ]
+          },
+          {
+            "name": "B",
+            "caption": "B",
+            "kind": "text",
+            "values": [
+              "2",
+              "4",
+              "6",
+              "8"
+            ],
+            "dictionary": [
+              "2",
+              "4",
+              "6",
+              "8"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a file that ends at a CR reads its last record",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A\rx\r"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "x"
+            ],
+            "dictionary": [
+              "x"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a tab separates fields where the Schema says so, and a comma is then text",
+      "schema": {
+        "separator": "tab",
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A\tB\n1,5\tx\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "1,5"
+            ],
+            "dictionary": [
+              "1,5"
+            ]
+          },
+          {
+            "name": "B",
+            "caption": "B",
+            "kind": "text",
+            "values": [
+              "x"
+            ],
+            "dictionary": [
+              "x"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a semicolon separates fields where the Schema says so",
+      "schema": {
+        "separator": "semicolon",
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A;B\n1,5;x\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "1,5"
+            ],
+            "dictionary": [
+              "1,5"
+            ]
+          },
+          {
+            "name": "B",
+            "caption": "B",
+            "kind": "text",
+            "values": [
+              "x"
+            ],
+            "dictionary": [
+              "x"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: UTF-8's byte-order mark is set aside, and a mark inside a field is a character of it",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        {
+          "hex": "ef bb bf"
+        },
+        "A\n",
+        {
+          "hex": "ef bb bf"
+        },
+        "x\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [
+              "\uFEFFx"
+            ],
+            "dictionary": [
+              "\uFEFFx"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: UTF-8's byte-order mark wins over a Schema that declares Shift-JIS",
+      "schema": {
+        "encoding": "shift-jis",
+        "columns": [
+          {
+            "name": "名前",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        {
+          "hex": "ef bb bf"
+        },
+        "名前\n東京\n"
+      ],
+      "expect": {
+        "rows": 1,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "名前",
+            "caption": "名前",
+            "kind": "text",
+            "values": [
+              "東京"
+            ],
+            "dictionary": [
+              "東京"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: UTF-16's byte-order mark is refused",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        {
+          "hex": "ff fe"
+        },
+        "A\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "The file begins with UTF-16's byte-order mark; a CSV is read in UTF-8 or Shift-JIS, and the Schema declares UTF-8.",
+          "row": null,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: UTF-16's big-endian byte-order mark is refused, naming the declared encoding",
+      "schema": {
+        "encoding": "shift-jis",
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        {
+          "hex": "fe ff"
+        },
+        "A\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "The file begins with UTF-16's byte-order mark; a CSV is read in UTF-8 or Shift-JIS, and the Schema declares Shift-JIS.",
+          "row": null,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: Shift-JIS is read where the Schema declares it",
+      "schema": {
+        "encoding": "shift-jis",
+        "columns": [
+          {
+            "name": "名前",
+            "kind": "text"
+          },
+          {
+            "name": "数量",
+            "kind": "integer"
+          },
+          {
+            "name": "有効",
+            "kind": "boolean",
+            "trueText": [
+              "はい"
+            ],
+            "falseText": [
+              "いいえ"
+            ]
+          }
+        ]
+      },
+      "file": [
+        {
+          "hex": "96 bc 91 4f 2c 90 94 97 ca 2c 97 4c 8c f8 0a 93 8c 8b 9e 2c 31 2c 82 cd 82 a2 0a 22 91 e5 8d e3 2c 8b 9e 93 73 22 2c 32 2c 82 a2 82 a2 82 a6 0a b6 c0 b6 c5 2c 33 2c 82 cd 82 a2 0a"
+        }
+      ],
+      "expect": {
+        "rows": 3,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "名前",
+            "caption": "名前",
+            "kind": "text",
+            "values": [
+              "東京",
+              "大阪,京都",
+              "ｶﾀｶﾅ"
+            ],
+            "dictionary": [
+              "東京",
+              "大阪,京都",
+              "ｶﾀｶﾅ"
+            ]
+          },
+          {
+            "name": "数量",
+            "caption": "数量",
+            "kind": "integer",
+            "values": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "name": "有効",
+            "caption": "有効",
+            "kind": "boolean",
+            "values": [
+              true,
+              false,
+              true
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: text not valid in Shift-JIS is refused by row and column",
+      "schema": {
+        "encoding": "shift-jis",
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A\nx\n",
+        {
+          "hex": "81 20"
+        },
+        "\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2, column 'A': the text is not valid Shift-JIS (line 3).",
+          "row": 2,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: text not valid UTF-8 is refused by row and column",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A,B\nok,",
+        {
+          "hex": "e3 81"
+        },
+        "\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'B': the text is not valid UTF-8 (line 2).",
+          "row": 1,
+          "column": "B"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a number not valid UTF-8 is refused as no number, its bytes shown as replacement characters",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "decimal"
+          }
+        ]
+      },
+      "file": [
+        "A\n1",
+        {
+          "hex": "ff"
+        },
+        "\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'A': '1�' is not a number (line 2).",
+          "row": 1,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a number not valid Shift-JIS is refused as no number, its bytes shown as question marks",
+      "schema": {
+        "encoding": "shift-jis",
+        "columns": [
+          {
+            "name": "A",
+            "kind": "decimal"
+          }
+        ]
+      },
+      "file": [
+        "A\n1",
+        {
+          "hex": "81"
+        },
+        "\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'A': '1?' is not a number (line 2).",
+          "row": 1,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a header not valid UTF-8 is refused",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A",
+        {
+          "hex": "c3"
+        },
+        "\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "The header is not valid UTF-8 (line 1).",
+          "row": null,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a field a refusal shows is cut at sixty characters",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "A\nabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1, column 'A': 'abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghi…' is not an integer (line 2).",
+          "row": 1,
+          "column": "A"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: an empty file is refused where the Schema declares a header row",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [],
+      "expect": {
+        "refused": {
+          "message": "The file is empty.",
+          "row": null,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: an empty file without a header row is a Snapshot of no rows",
+      "schema": {
+        "hasHeader": false,
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [],
+      "expect": {
+        "rows": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [],
+            "dictionary": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: a file of only a header row is a Snapshot of no rows",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          },
+          {
+            "name": "B",
+            "kind": "date"
+          }
+        ]
+      },
+      "file": [
+        "A,B\n"
+      ],
+      "expect": {
+        "rows": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "A",
+            "caption": "A",
+            "kind": "text",
+            "values": [],
+            "dictionary": []
+          },
+          {
+            "name": "B",
+            "caption": "B",
+            "kind": "date",
+            "values": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0064: the row is numbered as a person reads it, across batches of records",
+      "schema": {
+        "columns": [
+          {
+            "name": "Qty",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "Qty\n",
+        {
+          "repeat": "1\n",
+          "times": 1500
+        },
+        "x\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1,501, column 'Qty': 'x' is not an integer (line 1,502).",
+          "row": 1501,
+          "column": "Qty"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a malformed record after a full batch is refused by its row",
+      "schema": {
+        "columns": [
+          {
+            "name": "Qty",
+            "kind": "integer"
+          }
+        ]
+      },
+      "file": [
+        "Qty\n",
+        {
+          "repeat": "1\n",
+          "times": 1024
+        },
+        "\"open\n"
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 1,025, column 'Qty': a quoted field is not closed before the file ends (line 1,026).",
+          "row": 1025,
+          "column": "Qty"
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a record that does not end within 64 MiB is refused as a quote left open",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "A\nok\n\"",
+        {
+          "repeat": "xxxxxxxxxxxxxxxx",
+          "times": 4194304
+        }
+      ],
+      "expect": {
+        "refused": {
+          "message": "Row 2: the record is longer than 64 MiB, which no spreadsheet writes; a quote may be left open (line 3).",
+          "row": 2,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a header that does not end within 64 MiB is refused",
+      "schema": {
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text"
+          }
+        ]
+      },
+      "file": [
+        "\"",
+        {
+          "repeat": "xxxxxxxxxxxxxxxx",
+          "times": 4194304
+        }
+      ],
+      "expect": {
+        "refused": {
+          "message": "The header is longer than 64 MiB, which no spreadsheet writes; a quote may be left open (line 1).",
+          "row": null,
+          "column": null
+        }
+      }
+    },
+    {
+      "name": "ADR-0064: a Schema with no columns is refused before a byte is read",
+      "schema": {
+        "columns": []
+      },
+      "file": [
+        "A\n1\n"
+      ],
+      "expect": {
+        "refused": "argument"
+      }
+    },
+    {
+      "name": "ADR-0064: a Record Key on a Decimal column is refused before a byte is read",
+      "schema": {
+        "recordKey": "V",
+        "columns": [
+          {
+            "name": "V",
+            "kind": "decimal"
+          }
+        ]
+      },
+      "file": [
+        "V\n1\n"
+      ],
+      "expect": {
+        "refused": "argument"
+      }
+    },
+    {
+      "name": "ADR-0064: a date format that takes the year from the day it is read is refused before a byte is read",
+      "schema": {
+        "columns": [
+          {
+            "name": "V",
+            "kind": "date",
+            "dateFormats": [
+              "MM-dd"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\n09-30\n"
+      ],
+      "expect": {
+        "refused": "argument"
+      }
+    },
+    {
+      "name": "ADR-0064: two columns declared at one position are refused before a byte is read",
+      "schema": {
+        "hasHeader": false,
+        "columns": [
+          {
+            "name": "A",
+            "kind": "text",
+            "position": 1
+          },
+          {
+            "name": "B",
+            "kind": "text",
+            "position": 1
+          }
+        ]
+      },
+      "file": [
+        "x,y\n"
+      ],
+      "expect": {
+        "refused": "argument"
+      }
+    },
+    {
+      "name": "ADR-0064: a Boolean whose spelling is also a blank text is refused before a byte is read",
+      "schema": {
+        "blankText": [
+          "no"
+        ],
+        "columns": [
+          {
+            "name": "V",
+            "kind": "boolean",
+            "trueText": [
+              "yes"
+            ],
+            "falseText": [
+              "no"
+            ]
+          }
+        ]
+      },
+      "file": [
+        "V\nyes\n"
+      ],
+      "expect": {
+        "refused": "argument"
+      }
+    }
+  ]
+}

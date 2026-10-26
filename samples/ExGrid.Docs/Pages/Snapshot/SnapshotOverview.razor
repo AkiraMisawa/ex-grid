@@ -74,6 +74,30 @@
             Edit the file and read it again: type a letter into a balance, write a date the other way round, or remove the
             Balance header.
         </DocsExample>
+        <p>
+            In TypeScript, <code>@@ex-grid/data</code> (published with 0.3.0) reads a CSV under the same Schema, written as an
+            object, from a <code>Uint8Array</code>, an <code>ArrayBuffer</code> or a <code>Blob</code> such as a file input's
+            <code>File</code>:
+        </p>
+        <pre class="docs-code"><code>import { readCsvSnapshot } from '@@ex-grid/data';
+
+const file = input.files[0];   // an &lt;input type="file"&gt;'s File
+const snapshot = await readCsvSnapshot({
+    columns: [
+        { name: 'Account', kind: 'text' },
+        { name: 'Balance', kind: 'decimal', culture: 'de-DE' },
+        { name: 'Opened', kind: 'date', dateFormats: ['dd.MM.yyyy'] },
+    ],
+    separator: 'semicolon',
+    recordKey: 'Account',
+}, file, { onProgress: ({ rows }) => { status.textContent = `${rows} rows`; } });</code></pre>
+        <p>
+            A refusal is a <code>SnapshotError</code> worded as <code>SnapshotException</code> words it, row, column and line
+            included: both packages run the same cases, under <code>tests/cases/data/</code>. A culture is a language tag, read
+            through the browser's <code>Intl</code>; a date in a calendar other than the Gregorian or the Thai Buddhist, a standard
+            date format in a culture, the standard format <code>U</code>, and the era (<code>g</code>) are refused when the Schema is read rather than read some other
+            way. Suggesting a Schema is not in TypeScript yet.
+        </p>
     </DocsSection>
 
     <DocsSection Title="From columns, in slices">

@@ -46,8 +46,9 @@ export function ticksOf(year: number, month: number, day: number, hour = 0, minu
         throw new RangeError(`${hour}:${minute}:${second} is not a time of day.`);
     }
     if (!Number.isInteger(fraction) || fraction < 0 || fraction > 9_999_999) throw new RangeError(`${fraction} is not a number of ticks within a second.`);
-    const seconds = BigInt(dayNumber(year, month, day)) * 86_400n + BigInt((hour * 60 + minute) * 60 + second);
-    return seconds * 10_000_000n + BigInt(fraction);
+    // A date's seconds, 3.2e11 at most, are a double's exact integers; its ticks are not.
+    const seconds = dayNumber(year, month, day) * 86_400 + (hour * 60 + minute) * 60 + second;
+    return BigInt(seconds) * 10_000_000n + BigInt(fraction);
 }
 
 /**
