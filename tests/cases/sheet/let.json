@@ -1,0 +1,638 @@
+{
+  "about": "LET (ADR-0181, docs/specs/exsheet-functions ticket 14, SH-67): names bound inside one Formula, sequentially and lexically, as Excel's keyboard accepts them. The October 3 observations, and the seventeenth Windows run's answers by keys (LET-101 to LET-112), are in ExcelCases/let.json; what they cannot state is here: the rule each observed name stands for, dependencies through bindings, Linked Tables, and a Formula's References rewritten around its names. A pair of cells computed side by side expects one Value of both. Every Excel function name a LET may bind is checked against the catalogue in LetTests. Transcribed from ExSheet.Engine.Tests' LetTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a name bound twice: =LET(x,1,x,2,x)",
+      "steps": [
+        {"enter": {"A1": "=LET(x,1,x,2,x)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: bound twice without regard to case: =LET(x,1,X,2,x)",
+      "steps": [
+        {"enter": {"A1": "=LET(x,1,X,2,x)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: no calculation: =LET(x,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(x,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: an even number of arguments: =LET(x,1,y,2,x+y,3)",
+      "steps": [
+        {"enter": {"A1": "=LET(x,1,y,2,x+y,3)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: an even number of arguments, after a value left empty: =LET(x,,y,x)",
+      "steps": [
+        {"enter": {"A1": "=LET(x,,y,x)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a calculation left empty: =LET(x,1,)",
+      "steps": [
+        {"enter": {"A1": "=LET(x,1,)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a calculation left empty after a value left empty: =LET(x,,)",
+      "steps": [
+        {"enter": {"A1": "=LET(x,,)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a name left empty: =LET(,1,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(,1,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a Reference, which the keyboard refuses (LET-KEYS-004): =LET(A1,2,A1)",
+      "steps": [
+        {"enter": {"A1": "=LET(A1,2,A1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: an absolute Reference: =LET($A$1,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET($A$1,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: the last cell: =LET(XFD1048576,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(XFD1048576,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: an A1 Reference, as the keyboard refuses it (LET-104): =LET(R2,2,R2+1)",
+      "steps": [
+        {"enter": {"A1": "=LET(R2,2,R2+1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: likewise (LET-105): =LET(C3,2,C3+1)",
+      "steps": [
+        {"enter": {"A1": "=LET(C3,2,C3+1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: column RC, row 1: =LET(RC1,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(RC1,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a function's name that is also an A1 Reference: =LET(LOG10,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(LOG10,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: as the keyboard refuses it (LET-102): =LET(TRUE,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(TRUE,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a boolean in lower case: =LET(false,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(false,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a dot (LET-024): =LET(a.b,2,a.b)",
+      "steps": [
+        {"enter": {"A1": "=LET(a.b,2,a.b)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a number (LET-027): =LET(1,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(1,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: text: =LET(\"x\",2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(\"x\",2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a backslash: =LET(\\x,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(\\x,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a space: =LET(x y,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(x y,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: parentheses: =LET((x),2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET((x),2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a malformed LET, or a name Excel's keyboard refuses, is refused on entry as an unreadable Formula is: a structured reference: =LET(Positions[PV],2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(Positions[PV],2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a name that reads as an A1 Reference, or a boolean, is refused where it stands, in its own words (LET-104, LET-105, LET-102): =LET(R2,2,R2+1)",
+      "steps": [
+        {"enter": {"A1": "=LET(R2,2,R2+1)"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'R2' reads as a Reference, and cannot be a LET name.", "saying": "The Formula '=LET(R2,2,R2+1)' cannot be read at position 5: 'R2' reads as a Reference, and cannot be a LET name."}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a name that reads as an A1 Reference, or a boolean, is refused where it stands, in its own words (LET-104, LET-105, LET-102): =LET(c3,2,c3+1)",
+      "steps": [
+        {"enter": {"A1": "=LET(c3,2,c3+1)"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'c3' reads as a Reference, and cannot be a LET name.", "saying": "The Formula '=LET(c3,2,c3+1)' cannot be read at position 5: 'c3' reads as a Reference, and cannot be a LET name."}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a name that reads as an A1 Reference, or a boolean, is refused where it stands, in its own words (LET-104, LET-105, LET-102): =LET(true,2,1)",
+      "steps": [
+        {"enter": {"A1": "=LET(true,2,1)"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "TRUE cannot be a LET name.", "saying": "The Formula '=LET(true,2,1)' cannot be read at position 5: TRUE cannot be a LET name."}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =LET(IRR,1,IRR) beside =LET(SUM,1,SUM)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(SUM,1,SUM)", "ZZ1001": "=LET(IRR,1,IRR)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =1+LET(x,2,IRR,3,x) beside =1+LET(x,2,SUM,3,x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=1+LET(x,2,SUM,3,x)", "ZZ1001": "=1+LET(x,2,IRR,3,x)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =LET(x,LET(IRR,1,IRR),x) beside =LET(x,LET(SUM,1,SUM),x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,LET(SUM,1,SUM),x)", "ZZ1001": "=LET(x,LET(IRR,1,IRR),x)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =LET(NPER,1,NPER) beside =LET(RAND,1,RAND)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(RAND,1,RAND)", "ZZ1001": "=LET(NPER,1,NPER)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =1+LET(x,2,NPER,3,x) beside =1+LET(x,2,RAND,3,x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=1+LET(x,2,RAND,3,x)", "ZZ1001": "=1+LET(x,2,NPER,3,x)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =LET(x,LET(NPER,1,NPER),x) beside =LET(x,LET(RAND,1,RAND),x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,LET(RAND,1,RAND),x)", "ZZ1001": "=LET(x,LET(NPER,1,NPER),x)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =LET(xirr,1,xirr) beside =LET(rows,1,rows)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(rows,1,rows)", "ZZ1001": "=LET(xirr,1,xirr)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =1+LET(x,2,xirr,3,x) beside =1+LET(x,2,rows,3,x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=1+LET(x,2,rows,3,x)", "ZZ1001": "=1+LET(x,2,xirr,3,x)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =LET(x,LET(xirr,1,xirr),x) beside =LET(x,LET(rows,1,rows),x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,LET(rows,1,rows),x)", "ZZ1001": "=LET(x,LET(xirr,1,xirr),x)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =LET(N,1,N) beside =LET(PI,1,PI)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(PI,1,PI)", "ZZ1001": "=LET(N,1,N)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =1+LET(x,2,N,3,x) beside =1+LET(x,2,PI,3,x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=1+LET(x,2,PI,3,x)", "ZZ1001": "=1+LET(x,2,N,3,x)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: the name of an Excel function the engine does not declare is bound exactly as a declared one's is (LET-111 beside LET-101): =LET(x,LET(N,1,N),x) beside =LET(x,LET(PI,1,PI),x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,LET(PI,1,PI),x)", "ZZ1001": "=LET(x,LET(N,1,N),x)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name followed by ( is still the function's call, whatever a LET binds; an undeclared one's call is still #NAME?: =LET(SUM,2,SUM(SUM,1))",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(SUM,2,SUM(SUM,1))"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name followed by ( is still the function's call, whatever a LET binds; an undeclared one's call is still #NAME?: =LET(PI,2,ROUND(PI(),0)+PI)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(PI,2,ROUND(PI(),0)+PI)"}, "expect": {"values": {"ZZ1000": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name followed by ( is still the function's call, whatever a LET binds; an undeclared one's call is still #NAME?: =LET(LET,2,LET(x,LET*3,x))",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(LET,2,LET(x,LET*3,x))"}, "expect": {"values": {"ZZ1000": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name followed by ( is still the function's call, whatever a LET binds; an undeclared one's call is still #NAME?: =LET(IRR,1,IRR(IRR))",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(IRR,1,IRR(IRR))"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name is written as a call where it is one, and as typed where it is a name: =let(SUM,2,sum(SUM,1))",
+      "steps": [
+        {"enter": {"A1": "=let(SUM,2,sum(SUM,1))"}, "expect": {"formulas": {"A1": "=LET(SUM,2,SUM(SUM,1))"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name is written as a call where it is one, and as typed where it is a name: =let(sum,2,sum(sum,1))",
+      "steps": [
+        {"enter": {"A1": "=let(sum,2,sum(sum,1))"}, "expect": {"formulas": {"A1": "=LET(sum,2,SUM(sum,1))"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name is bound in the scope ADR-0181 gives every name, and outside every LET it is #NAME? as before: =LET(x,1,1)+SUM",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,1,1)+SUM"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name is bound in the scope ADR-0181 gives every name, and outside every LET it is #NAME? as before: =LET(SUM,1,1)+SUM",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(SUM,1,1)+SUM"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name is bound in the scope ADR-0181 gives every name, and outside every LET it is #NAME? as before: =LET(x,N,N,1,x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,N,N,1,x)"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a function's name is bound in the scope ADR-0181 gives every name, and outside every LET it is #NAME? as before: =LET(N,2,LET(N,N+3,N))",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(N,2,LET(N,N+3,N))"}, "expect": {"values": {"ZZ1000": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: an R1C1 shape that does not read as an A1 Reference is a name, as the keyboard took R1C1 and RC (LET-103, LET-106): =LET(R1C1,2,R1C1+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(R1C1,2,R1C1+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: an R1C1 shape that does not read as an A1 Reference is a name, as the keyboard took R1C1 and RC (LET-103, LET-106): =LET(RC,2,RC+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(RC,2,RC+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: an R1C1 shape that does not read as an A1 Reference is a name, as the keyboard took R1C1 and RC (LET-103, LET-106): =LET(rc,2,RC+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(rc,2,RC+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: an R1C1 shape that does not read as an A1 Reference is a name, as the keyboard took R1C1 and RC (LET-103, LET-106): =LET(r1c1,2,R1C1+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(r1c1,2,R1C1+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: an R1C1 shape that does not read as an A1 Reference is a name, as the keyboard took R1C1 and RC (LET-103, LET-106): =LET(R1C,2,R1C+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(R1C,2,R1C+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: an R1C1 shape that does not read as an A1 Reference is a name, as the keyboard took R1C1 and RC (LET-103, LET-106): =LET(R10C20,2,r10c20+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(R10C20,2,r10c20+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17), SH-67: a value left empty is bound, and the name alone shows 0, as the keyboard showed for LET(x,,x) (LET-107) and as IF(TRUE,) shows",
+      "steps": [
+        {"enter": {"A1": "=LET(x,,x)", "A2": "=IF(TRUE,)", "A3": "=LET(x,,y,x,1)", "A4": "=LET(x,,y,x,y)", "A5": "=LET(x,,y,,x)"}, "expect": {"values": {"A1": 0, "A2": 0, "A3": 1, "A4": 0, "A5": 0}, "formulas": {"A1": "=LET(x,,x)"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,IF(FALSE,1,x))&\"a\"",
+      "steps": [
+        {"enter": {"ZZ1000": "=IF(FALSE,1,)&\"a\"", "ZZ1001": "=LET(x,,IF(FALSE,1,x))&\"a\""}, "expect": {"values": {"ZZ1000": "0a", "ZZ1001": "0a"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,y,x,IF(FALSE,1,y))&\"a\"",
+      "steps": [
+        {"enter": {"ZZ1000": "=IF(FALSE,1,)&\"a\"", "ZZ1001": "=LET(x,,y,x,IF(FALSE,1,y))&\"a\""}, "expect": {"values": {"ZZ1000": "0a", "ZZ1001": "0a"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,LOG(100,x))",
+      "steps": [
+        {"enter": {"ZZ1000": "=LOG(100,)", "ZZ1001": "=LET(x,,LOG(100,x))"}, "expect": {"values": {"ZZ1000": 2, "ZZ1001": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,ROUND(2.5,x))",
+      "steps": [
+        {"enter": {"ZZ1000": "=ROUND(2.5,)", "ZZ1001": "=LET(x,,ROUND(2.5,x))"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,SUM(x,1))",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUM(,1)", "ZZ1001": "=LET(x,,SUM(x,1))"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,COUNTA(x,1))",
+      "steps": [
+        {"enter": {"ZZ1000": "=COUNTA(,1)", "ZZ1001": "=LET(x,,COUNTA(x,1))"}, "expect": {"values": {"ZZ1000": 2, "ZZ1001": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,CONCAT(\"a\",x,\"b\"))",
+      "steps": [
+        {"enter": {"ZZ1000": "=CONCAT(\"a\",,\"b\")", "ZZ1001": "=LET(x,,CONCAT(\"a\",x,\"b\"))"}, "expect": {"values": {"ZZ1000": "ab", "ZZ1001": "ab"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,x+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=1+0", "ZZ1001": "=LET(x,,x+1)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 (run 17): elsewhere a name bound to a value left empty reads as that empty argument would read in its place: =LET(x,,x&\"a\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=\"a\"", "ZZ1001": "=LET(x,,x&\"a\")"}, "expect": {"values": {"ZZ1000": "a", "ZZ1001": "a"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a name of 250 characters, and a 127th pair, are refused; 249 characters and 126 pairs are not",
+      "steps": [
+        {"enter": {"A1": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"}, "expect": {"values": {"A1": 3}}},
+        {"enter": {"A2": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}},
+        {"enter": {"A3": "=LET(name_0,0,name_1,1,name_2,2,name_3,3,name_4,4,name_5,5,name_6,6,name_7,7,name_8,8,name_9,9,name_10,10,name_11,11,name_12,12,name_13,13,name_14,14,name_15,15,name_16,16,name_17,17,name_18,18,name_19,19,name_20,20,name_21,21,name_22,22,name_23,23,name_24,24,name_25,25,name_26,26,name_27,27,name_28,28,name_29,29,name_30,30,name_31,31,name_32,32,name_33,33,name_34,34,name_35,35,name_36,36,name_37,37,name_38,38,name_39,39,name_40,40,name_41,41,name_42,42,name_43,43,name_44,44,name_45,45,name_46,46,name_47,47,name_48,48,name_49,49,name_50,50,name_51,51,name_52,52,name_53,53,name_54,54,name_55,55,name_56,56,name_57,57,name_58,58,name_59,59,name_60,60,name_61,61,name_62,62,name_63,63,name_64,64,name_65,65,name_66,66,name_67,67,name_68,68,name_69,69,name_70,70,name_71,71,name_72,72,name_73,73,name_74,74,name_75,75,name_76,76,name_77,77,name_78,78,name_79,79,name_80,80,name_81,81,name_82,82,name_83,83,name_84,84,name_85,85,name_86,86,name_87,87,name_88,88,name_89,89,name_90,90,name_91,91,name_92,92,name_93,93,name_94,94,name_95,95,name_96,96,name_97,97,name_98,98,name_99,99,name_100,100,name_101,101,name_102,102,name_103,103,name_104,104,name_105,105,name_106,106,name_107,107,name_108,108,name_109,109,name_110,110,name_111,111,name_112,112,name_113,113,name_114,114,name_115,115,name_116,116,name_117,117,name_118,118,name_119,119,name_120,120,name_121,121,name_122,122,name_123,123,name_124,124,name_125,125,1)"}, "expect": {"values": {"A3": 1}}},
+        {"enter": {"A4": "=LET(name_0,0,name_1,1,name_2,2,name_3,3,name_4,4,name_5,5,name_6,6,name_7,7,name_8,8,name_9,9,name_10,10,name_11,11,name_12,12,name_13,13,name_14,14,name_15,15,name_16,16,name_17,17,name_18,18,name_19,19,name_20,20,name_21,21,name_22,22,name_23,23,name_24,24,name_25,25,name_26,26,name_27,27,name_28,28,name_29,29,name_30,30,name_31,31,name_32,32,name_33,33,name_34,34,name_35,35,name_36,36,name_37,37,name_38,38,name_39,39,name_40,40,name_41,41,name_42,42,name_43,43,name_44,44,name_45,45,name_46,46,name_47,47,name_48,48,name_49,49,name_50,50,name_51,51,name_52,52,name_53,53,name_54,54,name_55,55,name_56,56,name_57,57,name_58,58,name_59,59,name_60,60,name_61,61,name_62,62,name_63,63,name_64,64,name_65,65,name_66,66,name_67,67,name_68,68,name_69,69,name_70,70,name_71,71,name_72,72,name_73,73,name_74,74,name_75,75,name_76,76,name_77,77,name_78,78,name_79,79,name_80,80,name_81,81,name_82,82,name_83,83,name_84,84,name_85,85,name_86,86,name_87,87,name_88,88,name_89,89,name_90,90,name_91,91,name_92,92,name_93,93,name_94,94,name_95,95,name_96,96,name_97,97,name_98,98,name_99,99,name_100,100,name_101,101,name_102,102,name_103,103,name_104,104,name_105,105,name_106,106,name_107,107,name_108,108,name_109,109,name_110,110,name_111,111,name_112,112,name_113,113,name_114,114,name_115,115,name_116,116,name_117,117,name_118,118,name_119,119,name_120,120,name_121,121,name_122,122,name_123,123,name_124,124,name_125,125,name_126,126,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: names start with a letter of any script or _, and go on with letters, digits and _; c and r alone are names: =LET(c,2,c+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(c,2,c+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: names start with a letter of any script or _, and go on with letters, digits and _; c and r alone are names: =LET(r,2,r+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(r,2,r+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: names start with a letter of any script or _, and go on with letters, digits and _; c and r alone are names: =LET(_x,2,_x+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(_x,2,_x+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: names start with a letter of any script or _, and go on with letters, digits and _; c and r alone are names: =LET(_,2,_+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(_,2,_+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: names start with a letter of any script or _, and go on with letters, digits and _; c and r alone are names: =LET(名前,2,名前+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(名前,2,名前+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: names start with a letter of any script or _, and go on with letters, digits and _; c and r alone are names: =LET(é,2,É+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(é,2,É+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: names start with a letter of any script or _, and go on with letters, digits and _; c and r alone are names: =LET(Total_2026,2,total_2026+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(Total_2026,2,total_2026+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: names start with a letter of any script or _, and go on with letters, digits and _; c and r alone are names: =LET(abc1234567,2,abc1234567+1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(abc1234567,2,abc1234567+1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0181: a name is seen by the values bound after it and its own calculation; an inner LET's value sees the outer name until it binds its own: =LET(x,1,LET(x,x+1,x))",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,1,LET(x,x+1,x))"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0181: a name is seen by the values bound after it and its own calculation; an inner LET's value sees the outer name until it binds its own: =LET(x,2,y,LET(x,x*3,x+1),x+y-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,2,y,LET(x,x*3,x+1),x+y-1)"}, "expect": {"values": {"ZZ1000": 8}}}
+      ]
+    },
+    {
+      "name": "ADR-0181: a name is seen by the values bound after it and its own calculation; an inner LET's value sees the outer name until it binds its own: =LET(x,1,y,x+z,y)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,1,y,x+z,y)"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0181: a name is seen by the values bound after it and its own calculation; an inner LET's value sees the outer name until it binds its own: =LET(x,LET(y,1,y),y)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,LET(y,1,y),y)"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0181: a name read before its binding in the same LET is #NAME?, whichever script it is written in: =LET(x,名前,名前,2,x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,名前,名前,2,x)"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0181: a name read before its binding in the same LET is #NAME?, whichever script it is written in: =LET(x,LET(y,é,y),é,2,x)",
+      "steps": [
+        {"enter": {"ZZ1000": "=LET(x,LET(y,é,y),é,2,x)"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: a name of another script is a LET name or nothing; outside a LET that binds it, it is refused on entry, as before: =名前",
+      "steps": [
+        {"enter": {"A1": "=名前"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: a name of another script is a LET name or nothing; outside a LET that binds it, it is refused on entry, as before: =LET(x,1,名前)",
+      "steps": [
+        {"enter": {"A1": "=LET(x,1,名前)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: a name of another script is a LET name or nothing; outside a LET that binds it, it is refused on entry, as before: =LET(x,1,x)+é",
+      "steps": [
+        {"enter": {"A1": "=LET(x,1,x)+é"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted: =A1é",
+      "steps": [
+        {"enter": {"A1": "=A1é"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'é' is not part of the formula syntax ExSheet reads.", "saying": "The Formula '=A1é' cannot be read at position 3: 'é' is not part of the formula syntax ExSheet reads."}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted: =1é",
+      "steps": [
+        {"enter": {"A1": "=1é"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'é' is not part of the formula syntax ExSheet reads.", "saying": "The Formula '=1é' cannot be read at position 2: 'é' is not part of the formula syntax ExSheet reads."}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted: =é!A1",
+      "steps": [
+        {"enter": {"A1": "=é!A1"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'é' is not part of the formula syntax ExSheet reads.", "saying": "The Formula '=é!A1' cannot be read at position 1: 'é' is not part of the formula syntax ExSheet reads."}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted: =1+é)",
+      "steps": [
+        {"enter": {"A1": "=1+é)"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'é' is not part of the formula syntax ExSheet reads.", "saying": "The Formula '=1+é)' cannot be read at position 3: 'é' is not part of the formula syntax ExSheet reads."}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted: =SUM(A1,é",
+      "steps": [
+        {"enter": {"A1": "=SUM(A1,é"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'é' is not part of the formula syntax ExSheet reads.", "saying": "The Formula '=SUM(A1,é' cannot be read at position 8: 'é' is not part of the formula syntax ExSheet reads."}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted: =é+\"x",
+      "steps": [
+        {"enter": {"A1": "=é+\"x"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'é' is not part of the formula syntax ExSheet reads.", "saying": "The Formula '=é+\"x' cannot be read at position 1: 'é' is not part of the formula syntax ExSheet reads."}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted: =Aé",
+      "steps": [
+        {"enter": {"A1": "=Aé"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'é' is not part of the formula syntax ExSheet reads.", "saying": "The Formula '=Aé' cannot be read at position 2: 'é' is not part of the formula syntax ExSheet reads."}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0181: outside a LET, a name of another script is refused at its first such character and with the same words as before LET was admitted: =1+名前+",
+      "steps": [
+        {"enter": {"A1": "=1+名前+"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "'名' is not part of the formula syntax ExSheet reads.", "saying": "The Formula '=1+名前+' cannot be read at position 3: '名' is not part of the formula syntax ExSheet reads."}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: text typed with a leading minus that does not read as a Formula is still text",
+      "steps": [
+        {"enter": {"A1": "-été"}, "expect": {"values": {"A1": "-été"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181: two bound ranges with a space between them would be Excel's intersection, which the engine does not implement: refused by name",
+      "steps": [
+        {"enter": {"A1": "=LET(x,B1:C2,y,C1:D2,x y)"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the intersection operator (a space between two References) is not implemented."}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a LET depends on every cell its text names, a binding's included, read or not",
+      "steps": [
+        {"enter": {"A1": "3", "A2": "4", "B1": "=LET(x,A1,unused,A2,x*2)"}, "expect": {"values": {"B1": 6}}},
+        {"enter": {"A1": "4"}, "expect": {"values": {"B1": 8}}},
+        {"do": {"enter": {"A2": "5"}}, "expect": {"change": {"recalculated": ["B1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, SH-67: a bound range follows a change inside it (LET-FOLLOWUP-012)",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2", "A3": "3", "B1": "=LET(x,A1:A3,SUM(x))"}, "expect": {"values": {"B1": 6}}},
+        {"enter": {"A2": "5"}, "expect": {"values": {"B1": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, ADR-0047, SH-67: a cycle through a binding the calculation never reads is still #CIRC!",
+      "steps": [
+        {"enter": {"A1": "=LET(x,B1,1)", "B1": "=A1+1"}, "expect": {"values": {"A1": {"error": "#CIRC!"}, "B1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, ADR-0049, SH-67: an unused binding over a waiting Linked Table waits, and IFERROR does not catch it",
+      "steps": [
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
+        {"enter": {"A1": "=LET(x,Rates[Mid],1)", "A2": "=IFERROR(LET(x,Rates[Mid],1),0)"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"values": {"A1": 1, "A2": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, ADR-0049, SH-67: Table[Column] inside a LET reads the Linked Table, whatever the LET binds",
+      "steps": [
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Spot"]}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.5], ["USDJPY", 2.5]]}},
+        {"enter": {"A1": "=LET(Rates,100,SUM(Rates[Spot]))", "A2": "=LET(Spot,100,SUM(Rates[Spot]))", "A3": "=LET(Rates,100,Rates+SUM(Rates[Spot]))"}, "expect": {"values": {"A1": 4, "A2": 4, "A3": 104}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, ADR-0125: a bound array, and a calculation whose result is an array, spill",
+      "steps": [
+        {"enter": {"A1": "=LET(x,SEQUENCE(3),x+10)"}, "expect": {"values": {"A1": 11, "A2": 12, "A3": 13}, "spilledFrom": {"A3": "A1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, ADR-0046, ADR-0047: an insertion rewrites the References inside a LET and leaves its names as typed",
+      "steps": [
+        {"enter": {"A5": "7", "B1": "=LET(x,A5,Total,x*2,Total)"}},
+        {"do": {"insertRows": [2]}, "expect": {"formulas": {"B1": "=LET(x,A6,Total,x*2,Total)"}, "values": {"B1": 14}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, ADR-0048: a copy shifts the References inside a LET and leaves its names as typed",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2", "B1": "=LET(x,A1,x*10)"}},
+        {"do": {"fill": {"source": "B1", "target": "B1:B2", "direction": "down"}}, "expect": {"formulas": {"B2": "=LET(x,A2,x*10)"}, "values": {"B2": 20}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, ADR-0047: the stored Formula writes LET in upper case and its names as typed",
+      "steps": [
+        {"enter": {"A1": "=let(Share,0.05,Amount,100,share*amount)"}, "expect": {"formulas": {"A1": "=LET(Share,0.05,Amount,100,share*amount)"}, "values": {"A1": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0181, ADR-0048: a Sheet Document holding a LET opens to the same Values",
+      "steps": [
+        {"enter": {"A1": "2", "B1": "=LET(名前,A1*3,名前+1)"}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"values": {"B1": 7}}}
+      ]
+    }
+  ]
+}
