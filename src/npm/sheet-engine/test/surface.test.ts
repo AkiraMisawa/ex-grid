@@ -6,6 +6,7 @@ import * as engine from '../src/index';
 import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
 import { Entry } from '../src/entry';
+import { numberFormatColourRgb } from '../src/number-format';
 import { Sheet } from '../src/sheet';
 import { Workbook } from '../src/workbook';
 
@@ -68,5 +69,19 @@ describe('the engine surface', () => {
         expect(() => {
             workbook.shown = other;
         }).toThrow(RangeError);
+    });
+
+    // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette.
+    it.each([
+        ['black', 0x000000],
+        ['blue', 0x0000ff],
+        ['cyan', 0x00ffff],
+        ['green', 0x00ff00],
+        ['magenta', 0xff00ff],
+        ['red', 0xff0000],
+        ['white', 0xffffff],
+        ['yellow', 0xffff00],
+    ] as const)('paints %s in Excel\'s legacy palette', (colour, rgb) => {
+        expect(numberFormatColourRgb(colour)).toBe(rgb);
     });
 });

@@ -96,4 +96,18 @@ public class EngineSurfaceTests
 
         Assert.Throws<ArgumentException>(() => workbook.Shown = NewSheet());
     }
+
+    [Theory] // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette
+    [InlineData(NumberFormatColour.Black, 0x000000)]
+    [InlineData(NumberFormatColour.Blue, 0x0000FF)]
+    [InlineData(NumberFormatColour.Cyan, 0x00FFFF)]
+    [InlineData(NumberFormatColour.Green, 0x00FF00)]
+    [InlineData(NumberFormatColour.Magenta, 0xFF00FF)]
+    [InlineData(NumberFormatColour.Red, 0xFF0000)]
+    [InlineData(NumberFormatColour.White, 0xFFFFFF)]
+    [InlineData(NumberFormatColour.Yellow, 0xFFFF00)]
+    public void Each_name_is_painted_in_Excels_legacy_palette(NumberFormatColour colour, int rgb)
+    {
+        Assert.Equal(rgb, colour.Rgb());
+    }
 }
