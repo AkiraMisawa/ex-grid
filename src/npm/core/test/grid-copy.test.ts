@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { Temporal } from 'temporal-polyfill';
 import { defined } from '../src/must';
+import type { GridCopyAnswer } from '../src/clipboard/clipboard-data';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridRefusal } from '../src/dom/grid-refusal';
 import type { GridPage } from '../src/source/fetching-source';
@@ -560,5 +561,37 @@ describe('a copy the Consumer answers (ADR-0050, item 9)', () => {
         told.clipboardChanged();
         await painted();
         expect(dashes(root)).toHaveLength(1);
+    });
+    it('ADR-0152: an answer given later is written by the asynchronous route, inside the Window too; a later refusal is said; a newer copy aborts one still answering, which writes nothing', async () => {
+        const listener = heard();
+        const pending: { readonly withHeaders: boolean; readonly signal: AbortSignal; readonly answer: (answer: GridCopyAnswer) => void }[] = [];
+        const { root, told } = mount({
+            columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal, ...listener,
+            copyAnswerAsync: (request, signal) => new Promise(resolve => { pending.push({ withHeaders: request.withHeaders, signal, answer: resolve }); }),
+        });
+        await painted();
+        press(root, 10, rowY(0));
+        await painted();
+        const { event, data } = copy(root);
+        // Taken from the browser and written later: nothing on the event itself.
+        expect([event.defaultPrevented, data.size, pending.length]).toEqual([true, 0, 1]);
+        defined(pending[0], 'the first copy').answer({ kind: 'write', text: 'later', html: '<table><tr><td>later</td></tr></table>' });
+        await settle();
+        await painted();
+        expect(told.clipboard.map(flavours => flavours.text)).toEqual(['later']);
+        expect(dashes(root)).toHaveLength(1);
+
+        // Two copies at machine speed: the first, superseded, is aborted and writes nothing, whatever it answers.
+        copy(root);
+        copy(root);
+        const [, superseded, newest] = pending;
+        expect(defined(superseded, 'the superseded copy').signal.aborted).toBe(true);
+        defined(newest, 'the newest copy').answer({ kind: 'refuse', sentence: 'Nothing was copied: the source says no.' });
+        defined(superseded, 'the superseded copy').answer({ kind: 'write', text: 'stale', html: '<table><tr><td>stale</td></tr></table>' });
+        await settle();
+        await painted();
+        expect(told.clipboard.map(flavours => flavours.text)).toEqual(['later']);
+        expect(listener.refusals).toEqual([{ kind: 'copy', reason: 'refusedByConsumer' }]);
+        expect(q(root, '[role="status"], [aria-live]').textContent).toBe('Nothing was copied: the source says no.');
     });
 });

@@ -18,7 +18,8 @@ already hold Excel's answers. It does not, which section 2 records. The user the
 the Docs Site did not. Section 3's server pivot was settled with the user last, the same day.
 Section 11, and section 10's words, were added with the user after this ADR merged, and section 2's
 note on the platform's math library on 2026-10-26. Section 3's live server data was settled with the user
-on 2026-10-26 too: the Consumer's transport tells the source by a notice or a Change Batch.)*
+on 2026-10-26 too: the Consumer's transport tells the source by a notice or a Change Batch. Section 9's
+layout was settled with the user on 2026-10-26.)*
 
 ## Context
 
@@ -570,23 +571,76 @@ be, as every page outside ExGrid says today.
 
 ### 9. The repository is laid out by platform once the move is done
 
+*(Settled with the user, 2026-10-26, over two other layouts below. The first version of this section
+named only `packages/`, `dotnet/` and `tests/cases/`, as a recommendation; the user asked for the layout
+to be thought through, and then that the .NET-specific files, `ExGrid.slnx` among them, live under
+`dotnet/` as well.)*
+
 The user asked whether `src/npm` is a good name. It names the registry, not what it holds: a fair name
 while TypeScript was a corner of the repository, and a misleading one once TypeScript is where the
-family is implemented. After step 3, the repository is laid out by platform:
+family is implemented. After step 3, the repository is laid out by where a thing ships, and what judges
+both platforms sits between them:
 
 ```
-packages/<name>   the npm workspace: core, react, mui, data, sheet, sheet-engine, …
-dotnet/           the NuGet projects: the Blazor adapters, the MudBlazor Wrappers, and section 3's
-                  server packages, with their tests
-tests/cases/      the shared cases, read by both
+package.json, package-lock.json, tsconfig.base.json   the npm workspace's root
+packages/<name>   what npm publishes, and nothing else: core, react, mui, data, sheet, sheet-engine, …,
+                  each with its own Vitest layers 1 and 2
+dotnet/           everything .NET, and the place every dotnet command runs from:
+  ExGrid.slnx, global.json, dotnet-tools.json, Directory.Build.props
+  src/            what NuGet publishes: the Blazor adapters, the MudBlazor Wrappers, section 3's
+                  server packages
+  tests/          their xUnit and bUnit projects, and the package smoke check
+  samples/        the Blazor DemoHosts, the DemoApi, the Docs Site and the ExChart Showcases
+  tools/          the release tool
+tests/            what judges both platforms: cases/ (the shared cases), browser/ (layer 3, today's
+                  ExGrid.Browser), the glyph width records
+samples/          the React DemoHost
+tools/            the workspace's lint and build scripts, the asset minifier, the README media
 ```
 
-`packages/` is the name JavaScript monorepos give their workspace (React's, MUI's and TanStack's
-among them). `dotnet/` is named for the platform rather than for Blazor, because it also holds
-section 3's server packages, which are not Blazor. The move is one pull request of renames after every
-step 3, not before (the user, 2026-10-25), so that the threads working in parallel do not rebase over
-it and the history is tidied once; the names are the recommendation and may be changed when it is
-made.
+- **The repository's root is the npm workspace.** Today six folders each carry a lockfile of their own
+  (`src/npm`, the React DemoHost, layer 3, two tools and a spike), and the React DemoHost reaches the
+  packages through an alias per package written by hand. One workspace at the root takes the hosts, layer
+  3 and the tools as members and resolves the packages by name; a spike stays outside it. Packages that
+  are not published, the lint and the build scripts, leave `packages/` for `tools/`, as MUI keeps
+  `packages-internal/` apart, so that `packages/` holds exactly what npm publishes.
+- **`dotnet/` holds every C# project and the files that configure them.** Half a move breaks quietly:
+  MSBuild looks for `Directory.Build.props` upward from each project, so a C# project left outside
+  `dotnet/` would lose `IsPackable=false` and `TreatWarningsAsErrors`, and the SDK and the tool
+  manifest look for `global.json` and `dotnet-tools.json` upward from the directory a command runs in,
+  so a command run from the root would take whichever SDK is installed. Every dotnet command therefore
+  runs in `dotnet/`: CI's working directory, the path `.github/actions/dotnet` reads `global.json` from,
+  the directory layer 3 starts the Blazor hosts in, and the commands in `CLAUDE.md`. Today's
+  `src/Directory.Build.props`, which turns packing back on, moves to `dotnet/src/`, so only `dotnet/src`
+  packs (ADR-0042), as only `packages/` publishes.
+- **`tests/` holds only what judges both platforms.** The shared cases, layer 3, which runs the same
+  catalogue on every host, and the glyph width records that both cores are held to. A test of one
+  platform's code lives beside it: Vitest in its package, xUnit and bUnit in `dotnet/tests`. Layer 3's
+  folder is named for what it judges, `browser/`, not after a .NET project.
+- **The hosts split by platform.** The Blazor hosts and the Docs Site, a Blazor WebAssembly app
+  (ADR-0350 section 12), are C# and live in `dotnet/samples`; the React DemoHost stays in `samples/`.
+  Layer 3 already names each host by its path, so the split costs only that the hosts are not listed in
+  one folder.
+- **The names.** `packages/` is the name JavaScript monorepos give their workspace (AG Grid's, MUI's,
+  React's and TanStack's among them), and keeping in it only what is published keeps the name true.
+  NuGet's packages are also packages, so `release.yml`'s directory of `.nupkg` files, named `packages`
+  today, is renamed `nupkg` in the same move. `dotnet/` is named for the platform rather than for
+  Blazor, because it also holds section 3's server packages, which are not Blazor; Semantic Kernel lays
+  its .NET side out the same way, with its solution and `global.json` inside `dotnet/`.
+
+Two other layouts were put to the user. **`src/ts/` and `src/dotnet/`** was the smallest change and kept
+"only `src/` ships" as it reads, but left the six lockfiles, `src` twice in every package's path, and
+`tests/` mixing one platform's tests with the shared ones. **A folder per product** (`grid/`, `sheet/`,
+`pivot/`, …, each with its TypeScript packages and its Blazor adapter), the way ASP.NET Core keeps
+SignalR's TypeScript client beside its C#, puts two toolchains in every folder for a Blazor part that is
+a thin shell, and draws boundaries the dependencies do not follow, since every product depends on
+ExGrid's core and on `data`. Two sub-repositories side by side, each with its own samples and tests,
+fits languages that implement the same thing independently; here NuGet carries npm's build and layer 3
+runs every host, so it was not put forward.
+
+The move is one pull request of renames after every step 3, not before (the user, 2026-10-25), so that
+the threads working in parallel do not rebase over it and the history is tidied once. Until then a new
+file is written where today's layout puts it.
 
 ### 10. A Script Core is told its locale, and Excel's text is kept where `Intl`'s differs
 

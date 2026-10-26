@@ -29,7 +29,7 @@ import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
 import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { reorderColumns } from '../columns/header-reorder';
 import { decideOverflow } from '../columns/overflow-rules';
-import { rawText, textFor } from '../cells/display-text';
+import { entryFor, rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import { matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type GridFindResult } from '../finding/find';
@@ -39,7 +39,7 @@ import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '
 import { defined, itemAt } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
 import { canonicalKey, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
-import { cellClasses, type MatchMark } from '../paint/cell-classes';
+import { cellClasses, type CellTone, type MatchMark } from '../paint/cell-classes';
 import { columnMark, rowMark } from '../paint/heading-mark-styles';
 import { rowClasses, type RowKind } from '../paint/row-classes';
 import { rowMarkHeaderPress, rowMarkHeaderState, type MarkRefusalReason, type RowMarkIntent, type RowMarks } from '../rows/row-marks';
@@ -165,6 +165,15 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * holds Entries, answers from it however far the copy runs past the rows in hand.
      */
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
+    /**
+     * Answers each approved copy later (ADR-0152), as `copyAnswer` does now, for a Consumer that asks elsewhere for
+     * what it copies: ExPivot asks its report source. A copy event then takes the asynchronous write, even when the
+     * Window holds every cell. The Consumer captures what the copy reads, such as the report on screen, before it
+     * awaits, and the grid never puts the rows in hand in place of an answer. The signal aborts when a newer copy
+     * supersedes this one or the grid is destroyed; the answer is then written nowhere. `copyAnswer` takes
+     * precedence where both are given.
+     */
+    readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     /** Hears every gesture the grid refused, by kind and reason (ADR-0005): nothing it would have done was
      * done, and the grid has said why through its live region. */
     readonly onRefused?: (refusal: GridRefusal<Row>) => void;
@@ -603,6 +612,7 @@ interface Taken<Row> {
     readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     readonly copyCellCap: number;
     readonly copyAnswer: ((request: GridCopyRequest) => GridCopyAnswer) | undefined;
+    readonly copyAnswerAsync: ((request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>) | undefined;
     readonly onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
     readonly onAction: ((event: GridActionEvent<Row>) => void) | undefined;
     /** Who holds the marks of the Mark Column, while one is declared. */
@@ -848,11 +858,22 @@ interface BarReading<Row> {
 /** The refusals the grid words itself (ADR-0203); a commit's is the Consumer's to word (A11Y-16). */
 type WordedRefusal = Extract<GridRefusal, { readonly kind: 'copy' | 'paste' }>;
 
+/** A column's tone rule's answer about a value, refused by the column's name where it is no tone (ADR-0006). */
+function toneOf<Row>(column: GridColumn<Row>, value: unknown): CellTone {
+    const tone: unknown = defined(column.tone, 'a tone rule')(value);
+    if (tone !== 'none' && tone !== 'positive' && tone !== 'negative') {
+        throw new RangeError(`Column '${column.name}': its tone rule answered ${JSON.stringify(tone)} for ${JSON.stringify(value)}; a tone is none, positive or negative (ADR-0006).`);
+    }
+    return tone;
+}
+
 /** A page follow (ADR-0204): armed by a move for the Focus it moved to and the cell its reveal brought into
- * the Viewport, and asked once that cell is painted. */
+ * the Viewport, and asked once that cell is painted. `rowsKept` says the reveal left the rows where the user had
+ * them, as it does for a range of whole columns (ADR-0052). */
 interface Follow {
     readonly focus: CellPosition;
     readonly target: CellPosition;
+    readonly rowsKept?: boolean;
 }
 
 /** Whether two lists hold the same ranges, in order. */
@@ -989,6 +1010,7 @@ export class GridView<Row> {
     #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     #copyCellCap = defaultCellCap;
     #copyAnswer: ((request: GridCopyRequest) => GridCopyAnswer) | undefined;
+    #copyAnswerAsync: ((request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>) | undefined;
     #onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
     #onAction: ((event: GridActionEvent<Row>) => void) | undefined;
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the action chosen in it.
@@ -1781,6 +1803,8 @@ export class GridView<Row> {
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         const { copyAnswer }: { readonly copyAnswer?: unknown } = options;
         if (copyAnswer !== undefined && typeof copyAnswer !== 'function') throw new TypeError('copyAnswer is a function of the copy asked (ADR-0050, item 9).');
+        const { copyAnswerAsync }: { readonly copyAnswerAsync?: unknown } = options;
+        if (copyAnswerAsync !== undefined && typeof copyAnswerAsync !== 'function') throw new TypeError('copyAnswerAsync is a function of the copy asked (ADR-0152).');
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
                 + 'not used to switch copying off (ADR-0005).');
@@ -1808,7 +1832,7 @@ export class GridView<Row> {
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
-            onSelectionChanged: options.onSelectionChanged, copyCellCap, copyAnswer: options.copyAnswer, onRefused: options.onRefused, onAction: options.onAction,
+            onSelectionChanged: options.onSelectionChanged, copyCellCap, copyAnswer: options.copyAnswer, copyAnswerAsync: options.copyAnswerAsync, onRefused: options.onRefused, onAction: options.onAction,
             marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
@@ -1985,6 +2009,7 @@ export class GridView<Row> {
         this.#onSelectionChanged = taken.onSelectionChanged;
         this.#copyCellCap = taken.copyCellCap;
         this.#copyAnswer = taken.copyAnswer;
+        this.#copyAnswerAsync = taken.copyAnswerAsync;
         this.#onRefused = taken.onRefused;
         this.#onAction = taken.onAction;
         this.#rowMarks.bind(taken.marks, taken.rowKind);
@@ -2171,10 +2196,12 @@ export class GridView<Row> {
     }
 
     // Settled while nothing is owed: no pass, no fling's settle, no announcement, no reveal's repaint and
-    // no page follow, and the browser has told the box and the ceiling (ADR-0220).
+    // no page follow, and the browser has told the box and the ceiling (ADR-0220). A follow armed while the box
+    // holds no row waits on the browser to grow the box, which nothing the grid does brings, so it is not owed.
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
-            && this.#repaint === undefined && this.#followArmed === undefined && this.#cancelFollow === undefined
+            && this.#repaint === undefined && (this.#followArmed === undefined || this.#visible === undefined)
+            && this.#cancelFollow === undefined
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
             && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
             && this.#findStepping === undefined && this.#replacing === 0);
@@ -2717,12 +2744,13 @@ export class GridView<Row> {
     #moveByKey(action: GridKeyAction, key: string): void {
         this.#reconcileSelection();
         const geometry = this.#geometry;
-        const visible = this.#visible;
-        // Nothing painted is nothing the keys can be aimed at.
-        if (geometry === undefined || visible === undefined) return;
-        const start = defined(this.#firstVisibleCell(), 'the first cell of painted rows');
-        // PageUp and PageDown move by the rows fully visible, at least one (ADR-0012).
-        const viewportRows = Math.max(1, Math.floor(geometry.viewportHeightPx / this.#metrics.rowHeightPx));
+        // A key with nothing selected starts at the first cell on screen, and with nothing painted it has nothing to
+        // start at; a key with a Focus moves from it whatever the box shows meanwhile, a box too small for a row
+        // included. A key typed as the box grows back moves, whether or not the browser has reported the new size
+        // yet (ADR-0040; spine rule 6), as the C# core's does.
+        const start = this.#firstVisibleCell();
+        // PageUp and PageDown move by the rows fully visible, at least one (ADR-0012): one in a box that holds none.
+        const viewportRows = geometry === undefined ? 1 : Math.max(1, Math.floor(geometry.viewportHeightPx / this.#metrics.rowHeightPx));
         // The Consumer's edge is asked on the arrows only: Home and End resolve to the same moves and keep ADR-0012's
         // meaning (ADR-0050, item 2).
         const edge = this.#dataEdge !== undefined && key.startsWith('Arrow') ? this.#dataEdge : undefined;
@@ -3187,7 +3215,16 @@ export class GridView<Row> {
         const declared = this.#cellPaint.editorText;
         const held = declared === undefined ? undefined : this.#rowAt(at.row);
         const text = declared === undefined || held === undefined ? undefined : declared(held.row, itemAt(this.#columns, at.column).column);
-        return text ?? this.#paintedTextAt(at);
+        return text ?? this.#entryAt(at);
+    }
+
+    // The entry a cell holds where the Consumer declares none: the painted text, or an unformatted number whole
+    // (ADR-0006, note of 2026-10-26).
+    #entryAt(at: CellPosition): string {
+        const held = this.#rowAt(at.row);
+        if (held === undefined) return '';
+        const { column } = itemAt(this.#columns, at.column);
+        return entryFor(column, column.value(held.row));
     }
 
     // The text a cell paints: what an edit opens on in Caret, and what a commit is told it saw and replaced.
@@ -3735,6 +3772,51 @@ export class GridView<Row> {
         }
         const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
         if (surface.isConnected) surface.focus({ preventScroll: true });
+    }
+
+    /**
+     * The keyboard back to the grid from something of the Consumer's that held it over the grid and goes away, a
+     * dialog, a panel, a tab (DC-61, ADR-0070), or from a Chrome's frame outside it (ADR-0071): to the field an
+     * open edit is typed in, else to the Keyboard Field, else the root (ADR-0080). Granted only while the keyboard
+     * is still this grid's, DOM focus inside its root or on nothing, and not on the Formula Bar or the Name Box,
+     * where the user is typing (ADR-0021): a control or a grid the user has moved to keeps it (ADR-0018). `from`,
+     * the frame that holds the keyboard as it goes, widens the condition to DOM focus on it or inside it, so the
+     * frame gives the keyboard back before it is removed (ADR-0050 item 16, note of 2026-10-12). It moves neither
+     * the Focus nor the Selection and scrolls nothing. Once the grid is gone, it does nothing.
+     */
+    returnKeyboard(from?: Element): void {
+        if (from !== undefined && !(from instanceof Element)) throw new TypeError('returnKeyboard is handed the frame that holds the keyboard.');
+        if (this.#destroyed) return;
+        const active = this.#root.ownerDocument.activeElement;
+        const fromFrame = from !== undefined && active !== null && from.contains(active);
+        if (!fromFrame && (!this.#keyboardHere() || this.#onOwnField())) return;
+        this.focus();
+    }
+
+    /**
+     * Hands the keyboard the grid holds on to a control of the Consumer's own (DC-61, ADR-0070): the first control
+     * of a frame or a tab opened from the grid, a dialog's Close, in place of the control's own `focus()`. A
+     * container names its first enabled text field, its text selected, or else its first enabled control, and one
+     * holding neither is refused with a RangeError. Granted under `returnKeyboard`'s condition, so a press the user
+     * made meanwhile keeps the keyboard where it put it. It moves neither the Focus nor the Selection and paints
+     * nothing; the control scrolls into view unless `preventScroll` says not to. Once the grid is gone, the control
+     * takes the keyboard by its own focus.
+     */
+    handKeyboardTo(control: HTMLElement, options?: { readonly preventScroll?: boolean }): void {
+        if (!(control instanceof HTMLElement)) throw new TypeError('handKeyboardTo is handed the element that takes the keyboard.');
+        // A control taken away since has nothing to hand the keyboard to.
+        if (!control.isConnected) return;
+        const { target, field } = keyboardTargetIn(control, 'handKeyboardTo');
+        if (!this.#destroyed && (!this.#keyboardHere() || this.#onOwnField())) return;
+        target.focus({ preventScroll: options?.preventScroll === true });
+        field?.select();
+    }
+
+    // DOM focus on the Formula Bar's text or the Name Box, the fields of the grid's own beside the rows that hold
+    // the keyboard while the user types in them: a hand-back leaves it there (ADR-0021, widened 2026-09-28).
+    #onOwnField(): boolean {
+        const active = this.#root.ownerDocument.activeElement;
+        return active !== null && (active === this.#bar.text || active === this.#bar.nameBox);
     }
 
     // A press or a key into the bar's text opens an edit on the Focus there, in Caret, its caret where the press
@@ -4962,6 +5044,12 @@ export class GridView<Row> {
         // has said.
         const answered = this.#copyAnswer === undefined ? undefined : this.#answeredCopy(plan, false);
         if (this.#copyAnswer !== undefined && answered === undefined) return;
+        // A Consumer that answers later answers on the asynchronous write, whatever the Window holds (ADR-0152).
+        if (this.#copyAnswer === undefined && this.#copyAnswerAsync !== undefined) {
+            this.#writeAnsweredLater(plan, false);
+            event.preventDefault();
+            return;
+        }
         const covered = windowCovers(plan, state);
         if (data !== null && (answered !== undefined || covered)) {
             // Both flavours in one operation: what was on screen in text/plain, and the raw value in
@@ -5003,13 +5091,22 @@ export class GridView<Row> {
             if (answer !== undefined) this.#writeAnswered(decision.plan, answer);
             return;
         }
+        if (this.#copyAnswerAsync !== undefined) {
+            this.#writeAnsweredLater(decision.plan, withHeaders);
+            return;
+        }
         this.#writeCopy(decision.plan, withHeaders);
     }
 
     // The Consumer's answer to an approved copy (ADR-0050, item 9), or nothing where it refused, which is said in its
     // own sentence.
     #answeredCopy(plan: CopyPlan, withHeaders: boolean): { readonly text: string; readonly html: string } | undefined {
-        const answer = checkedCopyAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#handedVersion() }));
+        return this.#takenAnswer(defined(this.#copyAnswer, 'the copy answer')({ plan, withHeaders, rowSequenceVersion: this.#handedVersion() }));
+    }
+
+    // A Consumer's answer, checked: its flavours, or nothing where it refused, which is said in its own sentence.
+    #takenAnswer(given: unknown): CopyFlavours | undefined {
+        const answer = checkedCopyAnswer(given);
         if (answer.kind === 'write') return answer;
         this.#sayRefusal(answer.sentence);
         this.#onRefused?.({ kind: 'copy', reason: 'refusedByConsumer' });
@@ -5028,6 +5125,36 @@ export class GridView<Row> {
         this.#writeGathered(signal => Promise.resolve().then(() => (signal.aborted ? undefined : {
             flavours: answered, outline: () => (outlined ? CopiedRange.of(plan, version, columns, windowRowAt(state)) : undefined),
         })));
+    }
+
+    // The Consumer's later answer to an approved copy (ADR-0152), written as it comes, held as a gathered copy is: one a
+    // newer copy superseded, or one answered after the grid was destroyed, writes nothing and says nothing. Its outline is
+    // taken as the copy is asked, as the rows in hand stand then, and lands with its write (ADR-0170).
+    #writeAnsweredLater(plan: CopyPlan, withHeaders: boolean): void {
+        const answerAsync = defined(this.#copyAnswerAsync, 'the asynchronous copy answer');
+        const request: GridCopyRequest = { plan, withHeaders, rowSequenceVersion: this.#handedVersion() };
+        const state = this.#state;
+        const columns = this.#columns;
+        const version = this.#sequence();
+        const outlined = windowCovers(plan, state);
+        this.#writeGathered(async signal => {
+            let given: unknown;
+            try {
+                given = await answerAsync(request, signal);
+            // oxlint-disable-next-line ex-grid/no-catch -- a superseded copy's own abort writes nothing; any other failure is said and rethrown
+            } catch (error) {
+                if (signal.aborted || this.#destroyed) return undefined;
+                // Said, and the failure itself left to surface, as a gather's is: the refusal is the user's, the error
+                // the Consumer's.
+                this.#refuse({ kind: 'copy', reason: 'rowsUnavailable' });
+                throw error;
+            }
+            if (signal.aborted || this.#destroyed) return undefined;
+            const flavours = this.#takenAnswer(given);
+            return flavours === undefined ? undefined : {
+                flavours, outline: () => (outlined ? CopiedRange.of(plan, version, columns, windowRowAt(state)) : undefined),
+            };
+        });
     }
 
     // The asynchronous write of a copy (ADR-0005): the rows gathered while the browser waits.
@@ -6063,21 +6190,24 @@ export class GridView<Row> {
     // Moves the model to where a key's reveal is going, and resolves the slice there, so the pass paints
     // the rows at the offset it then writes (ADR-0012, 2026-09-29). Whether there is an offset to write.
     #stageReveal(): boolean {
+        const geometry = this.#geometry;
+        // A box too small for a row has no offset to reveal at: the reveal stays owed for the pass that has one,
+        // so a key that moved the Focus meanwhile brings it into view once the box grows back (ADR-0040).
+        if (geometry === undefined) return false;
         const reveal = this.#revealOwed;
         this.#revealOwed = undefined;
         const across = this.#revealHeaderOwed;
         this.#revealHeaderOwed = undefined;
-        const geometry = this.#geometry;
         const columns = this.#styles.geometry;
         // A header Find found is scrolled into view across only (ADR-0333 §1): its last column, then its first,
         // so a header wider than the Viewport shows its start. A pinned header is in view already.
-        if (reveal === undefined && across !== undefined && geometry !== undefined) {
+        if (reveal === undefined && across !== undefined) {
             let left = this.#scrollLeftPx;
             if (across.last < columns.count) left = columns.scrollLeftToReveal(across.last, left);
             if (across.first < columns.count) left = columns.scrollLeftToReveal(across.first, left);
             return this.#revealAt(this.#scrollTopPx, left);
         }
-        if (reveal === undefined || geometry === undefined) return false;
+        if (reveal === undefined) return false;
         const { target } = reveal;
         if (target.row >= this.#totalRows || target.column >= columns.count) return false;
         // PageUp and PageDown scroll by the rows the Focus moved, through the mapping, so a compressed grid
@@ -6092,7 +6222,11 @@ export class GridView<Row> {
         const range = reveal.extending;
         if (range !== undefined) {
             const extent = this.#extent;
-            if (spansEveryRow(range, extent)) top = this.#scrollTopPx;
+            if (spansEveryRow(range, extent)) {
+                top = this.#scrollTopPx;
+                const follow = this.#followArmed;
+                if (follow !== undefined) this.#followArmed = { ...follow, rowsKept: true };
+            }
             if (spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
         }
         return this.#revealAt(top, left);
@@ -6180,9 +6314,11 @@ export class GridView<Row> {
             // A target whose row is painted and whose column is not is one no later pass will paint on its own: the
             // reveal moved the axis the Selection grew on and left the other where the user had it, so the Extent of
             // whole rows is the last column, off to the right for ever (ADR-0052). Rows still on their way are the
-            // other case, and that follow stays armed for the pass that paints them. Dropped rather than kept, or the
-            // Settled Mark would never come back (ADR-0220).
-            if (this.#rowIsPainted(follow.target.row)) this.#followArmed = undefined;
+            // other case, and that follow stays armed for the pass that paints them. Whole columns are the same on the
+            // other axis: the reveal left the rows where the user had them, so the Extent, the last row, is one no
+            // later pass reaches either. Dropped rather than kept, or the Settled Mark would never come back
+            // (ADR-0220).
+            if (follow.rowsKept === true || this.#rowIsPainted(follow.target.row)) this.#followArmed = undefined;
             return;
         }
         this.#followArmed = undefined;
@@ -7048,11 +7184,7 @@ export class GridView<Row> {
         if (!this.#viewport.contains(control)) {
             throw new RangeError('takeKeyboard is handed a control inside its own cell: this grid hands the keyboard only within its rows.');
         }
-        const field = control.matches(focusableControls) ? undefined : control.querySelector<HTMLInputElement | HTMLTextAreaElement>(textFields);
-        const target = control.matches(focusableControls) ? control : field ?? control.querySelector<HTMLElement>(focusableControls);
-        if (target === null) {
-            throw new RangeError('takeKeyboard is handed an element that takes no keyboard and holds no enabled control that does.');
-        }
+        const { target, field } = keyboardTargetIn(control, 'takeKeyboard');
         // Only while the keyboard is still the grid's (ADR-0204).
         if (!this.#keyboardHere()) return;
         target.focus({ preventScroll: true });
@@ -7292,7 +7424,8 @@ export class GridView<Row> {
         }
         const cellPaint = this.#cellPaint;
         const { appearance } = paint;
-        const text = textFor(column, column.value(row));
+        const value = column.value(row);
+        const text = textFor(column, value);
         const mark = this.#markOf(row, c, marks, current, text);
         // A cell's own kind and alignment, where the Consumer declares them, over its column's (ADR-0050, items 6
         // and 7); a bold cell is judged by the bold widths (ADR-0016).
@@ -7307,7 +7440,9 @@ export class GridView<Row> {
         const cell = this.#root.ownerDocument.createElement('div');
         const align = cellPaint.cellAlign === undefined ? column.align ?? 'auto' : cellPaint.cellAlign(row, column); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
         const state = cellPaint.cellState === undefined ? 'normal' : cellPaint.cellState(row, column);
-        const base = cellClasses({ numeric, pinned, state, align, mark });
+        // A null value means nothing, and its rule is not asked (ADR-0006).
+        const tone = column.tone === undefined || value === null || value === undefined ? 'none' : toneOf(column, value);
+        const base = cellClasses({ numeric, pinned, state, align, tone, mark });
         const own = appearance?.classOf(c);
         cell.className = own === undefined ? base : `${base} ${own}`;
         cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
@@ -7417,10 +7552,26 @@ function isUnmount(value: unknown): value is () => void {
 }
 
 /** What takes the keyboard of itself, and the text fields a container hands it to first (ADR-0037). */
-const focusableControls = 'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), '
-    + 'button:not([disabled]), a[href], [tabindex]';
-const textFields = 'input:not([disabled]):is(:not([type]), [type="text"], [type="search"], [type="email"], [type="tel"], [type="url"], '
-    + '[type="password"], [type="number"]), textarea:not([disabled])';
+// What takes the keyboard for an element a Consumer names, as the C# core's script finds it (boxTarget): the
+// element itself when it is a control; else its first enabled text field, one with a caret, not read-only and
+// not a design system's combobox; else its first enabled control, a read-only input such as that combobox among
+// them, and no other input that is not a text field, nor an element taken out of the tab order.
+const ownControl = 'input, textarea, select, button, a[href], [tabindex]';
+const textFields = 'input:not([disabled]):not([readonly]):not([role="combobox"]):is(:not([type]), [type="text"], [type="search"], '
+    + '[type="url"], [type="tel"], [type="password"]), textarea:not([disabled]):not([readonly]):not([role="combobox"])';
+const otherControls = 'input[readonly]:not([disabled]):not([type="hidden"]), button:not([disabled]), select:not([disabled]), a[href], '
+    + '[tabindex]:not([tabindex="-1"])';
+
+/** The element inside `control` that takes the keyboard for it, by the rule above: a text field found inside it
+ * has its text selected. One that holds none is refused, naming `asker`. */
+function keyboardTargetIn(control: HTMLElement, asker: string): { readonly target: HTMLElement; readonly field: HTMLInputElement | HTMLTextAreaElement | undefined } {
+    if (control.matches(ownControl)) return { target: control, field: undefined };
+    const field = control.querySelector<HTMLInputElement | HTMLTextAreaElement>(textFields);
+    if (field !== null) return { target: field, field };
+    const target = control.querySelector<HTMLElement>(otherControls);
+    if (target === null) throw new RangeError(`${asker} is handed an element that takes no keyboard and holds no enabled control that does.`);
+    return { target, field: undefined };
+}
 
 /** A painted cell's Match Mark as a row's record of its marks writes it: nothing for none. */
 function markKey(column: number, mark: MatchMark): string {

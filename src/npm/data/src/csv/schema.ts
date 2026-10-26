@@ -153,7 +153,8 @@ function isList(value: unknown): boolean {
     return Array.isArray(value);
 }
 
-function separatorCode(separator: CsvSeparator | undefined): number {
+/** The byte a separator is, a comma when none is declared. */
+export function separatorCode(separator: CsvSeparator | undefined): number {
     switch (separator) {
         case undefined:
         case 'comma': return 0x2C;

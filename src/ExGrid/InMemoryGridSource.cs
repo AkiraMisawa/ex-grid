@@ -457,8 +457,9 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// same write your <c>OnEdit</c> makes of an Edit Intent. It must only plan; this source applies.</param>
     /// <param name="entryOf">The entry a cell's editor opens with, where you pass the grid an
     /// <c>EditorTextOf</c>: the row and the column's name, answered with the entry, or null for the
-    /// displayed text. Null: every entry is the column's displayed text
-    /// (<see cref="ColumnInfo{TRow}.TextOf(TRow)"/>), which is what the editor opens with by default.</param>
+    /// default. Null: every entry is what the editor opens with by default, the column's displayed
+    /// text (<see cref="ColumnInfo{TRow}.TextOf(TRow)"/>) but a <see cref="double"/> in a column with
+    /// no Format whole, so a Replace never writes the 15 digits it shows back over the value.</param>
     public Finding.GridReplaceAnswer<TRow> Replace(
         Finding.GridReplaceRequest request,
         Func<TRow, string, string, Finding.GridReplaceWrite<TRow>> write,
@@ -483,7 +484,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
                     continue;
                 if (!column.IsQueryable)
                     return null;
-                return entryOf is null ? column.TextOf : row => entryOf(row, name) ?? column.TextOf(row);
+                return entryOf is null ? column.EntryOf : row => entryOf(row, name) ?? column.EntryOf(row);
             }
             return null;
         }, write);

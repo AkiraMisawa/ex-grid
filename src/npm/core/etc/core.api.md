@@ -106,6 +106,9 @@ export interface CellTextMeasure {
 export function cellTextMeasure(density: GridDensity): CellTextMeasure;
 
 // @public
+export type CellTone = 'none' | 'positive' | 'negative';
+
+// @public
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
 
 // @public
@@ -423,6 +426,7 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly headerAlign?: CellAlign;
     readonly mark?: boolean;
     readonly template?: GridTemplate<Row>;
+    readonly tone?: (value: unknown) => CellTone;
     readonly validate?: (row: Row, text: string) => EditVerdict;
     readonly width?: GridColumnWidth;
 }
@@ -548,11 +552,15 @@ export interface GridHandle<Row> {
     closePopover(): void;
     destroy(): void;
     focus(): void;
+    handKeyboardTo(control: HTMLElement, options?: {
+        readonly preventScroll?: boolean;
+    }): void;
     keyName(event: KeyboardEvent): string;
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     readView(): GridViewRead;
     refreshSummary(): void;
+    returnKeyboard(from?: Element): void;
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
     update(options: GridOptions<Row>): void;
 }
@@ -587,6 +595,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
+    readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     readonly copyCellCap?: number;
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly density?: GridDensity;

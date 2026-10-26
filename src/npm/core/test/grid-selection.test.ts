@@ -95,6 +95,27 @@ describe('the Selection in the grid', () => {
         expect(root.hasAttribute('data-ex-settled')).toBe(true);
     });
 
+    it('ADR-0220, ADR-0204: Shift+\u2192 on whole columns settles, and the view stays at the top', async () => {
+        const listener = heard();
+        const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...listener });
+        await painted();
+        // Ctrl+Space selects whole columns: the Extent is then the last row, which the view at the top never paints,
+        // so the follow is dropped, as it is for whole rows.
+        press(root, 20, rowY(0));
+        await painted();
+        key(root, ' ', { ctrlKey: true });
+        await painted();
+        key(root, 'ArrowRight', { shiftKey: true });
+        await painted();
+        told.clock.advance(150);
+        told.frame();
+        told.clock.advance(0);
+        // The Selection Summary of two thousand cells is answered in a later task.
+        await new Promise(resolve => { setTimeout(resolve, 0); });
+        expect(listener.selections.at(-1)?.ranges).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 1000, columnCount: 2 }]);
+        expect([root.hasAttribute('data-ex-settled'), q(root, '.ex-scroller').scrollTop]).toEqual([true, 0]);
+    });
+
     it('ADR-0052, ADR-0033: Shift+arrows extend the range, heard once a pass, and announced once it stands still', async () => {
         const listener = heard();
         const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...listener });
@@ -510,6 +531,60 @@ describe('the Selection in the grid', () => {
         told.frame();
         told.clock.advance(0);
         expect(root.hasAttribute('data-ex-settled')).toBe(true);
+    });
+});
+
+describe('keys while the box holds no row', () => {
+    it('ADR-0040, spine rule 6: an arrow moves the Focus while a stretched box holds no row, as before the browser reports it grown', async () => {
+        const listener = heard();
+        const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 'stretch', ...listener });
+        await painted();
+        press(root, 130, rowY(1));
+        await painted();
+        // The box shrinks under its header band: nothing is painted until it grows back.
+        told.viewport({ contentHeightPx: 20 });
+        await painted();
+
+        key(root, 'ArrowDown');
+        await painted();
+        key(root, 'PageDown');
+        await painted();
+
+        expect(listener.selections.map(selection => selection.focus)).toEqual([{ row: 1, column: 1 }, { row: 2, column: 1 }, { row: 3, column: 1 }]);
+        // What the moves still owe waits on the browser to grow the box: the grid has settled meanwhile (ADR-0220).
+        expect(root.hasAttribute('data-ex-settled')).toBe(true);
+    });
+
+    it('ADR-0040, ADR-0012: a Focus moved while the box holds no row is brought into view once the box grows back', async () => {
+        const listener = heard();
+        const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 'stretch', ...listener });
+        await painted();
+        press(root, 130, rowY(1));
+        await painted();
+        told.viewport({ contentHeightPx: 20 });
+        await painted();
+
+        // Ctrl+End moves the Focus to the last row, which the view at the top does not show.
+        key(root, 'End', { ctrlKey: true });
+        await painted();
+        told.viewport();
+        await painted();
+
+        expect(listener.selections.at(-1)?.focus).toEqual({ row: 999, column: 1 });
+        expect(q(root, '.ex-scroller').scrollTop).toBeGreaterThan(0);
+    });
+
+    it('ADR-0012: with nothing selected and nothing painted, a key has no cell to start at and selects nothing', async () => {
+        const listener = heard();
+        const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 'stretch', ...listener });
+        await painted();
+        told.viewport({ contentHeightPx: 20 });
+        await painted();
+
+        key(root, 'ArrowDown');
+        await painted();
+
+        expect(listener.selections).toEqual([]);
     });
 });
 

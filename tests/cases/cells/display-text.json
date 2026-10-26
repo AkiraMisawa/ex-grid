@@ -1,5 +1,5 @@
 {
-  "about": "The text a value cell displays (ADR-0006, note of 2026-10-01; ADR-0350 section 16): empty for a Blank, the column's format where it has one, and otherwise the value's own text, a date in one ISO form by its type. From DisplayText and ColumnInfo.TextFor; the Script Core's cells/display-text.ts. A number without a format is left out on purpose: C#'s decimal keeps its trailing zeros and JavaScript's number cannot, so the two cores write it each in its own way.",
+  "about": "The text a value cell displays (ADR-0006, note of 2026-10-01; ADR-0350 section 16): empty for a Blank, the column's format where it has one, and otherwise the value's own text, a date in one ISO form by its type. From DisplayText and ColumnInfo.TextFor; the Script Core's cells/display-text.ts. A fractional number without a format is a double on both cores here, which reads as Excel's General does, in at most 15 significant digits (decided with the user, 2026-10-26). C#'s decimal keeps its trailing zeros and JavaScript's number cannot, so a decimal is left out; and so is a number of 1e17 or more, or below 0.0001, which C# writes with an exponent where JavaScript does not. The cases are read under the invariant culture.",
   "kind": "displayText",
   "cases": [
     {
@@ -31,6 +31,23 @@
         {"value": 42, "is": "42"},
         {"value": -7, "is": "-7"},
         {"value": {"bigint": "9007199254740993"}, "is": "9007199254740993"}
+      ]
+    },
+    {
+      "name": "ADR-0350: a double reads as Excel's General, in at most 15 significant digits, so a binary fraction's last digits do not show",
+      "texts": [
+        {"value": 0.30000000000000004, "is": "0.3"},
+        {"value": 0.1, "is": "0.1"},
+        {"value": 1.5, "is": "1.5"},
+        {"value": 0.3333333333333333, "is": "0.333333333333333"},
+        {"value": 0.6666666666666666, "is": "0.666666666666667"},
+        {"value": 123456789.12345679, "is": "123456789.123457"},
+        {"value": -2.675, "is": "-2.675"},
+        {"value": 99999.99999999999, "is": "100000"},
+        {"value": 0.000123456789012345678, "is": "0.000123456789012346"},
+        {"value": 9007199254740994, "is": "9007199254740990"},
+        {"value": 999999999999999.9, "is": "1000000000000000"},
+        {"value": -0.0, "is": "0"}
       ]
     },
     {

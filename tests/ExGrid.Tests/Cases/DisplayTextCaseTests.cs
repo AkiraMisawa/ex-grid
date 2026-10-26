@@ -19,11 +19,22 @@ public class DisplayTextCaseTests
     public void DisplayText(string file, string name)
     {
         var (_, entry) = SharedCases.Find(Area, file, name);
-        foreach (var text in entry.GetProperty("texts").EnumerateArray())
+        // A number's own text is written in the reader's culture, and the cases are JavaScript's, which
+        // writes none: read under the invariant one, so a machine's culture never decides the answer.
+        var culture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        try
         {
-            var column = new ColumnInfo<object?>("Value", ColumnType.Text, row => row,
-                Format: text.TryGetProperty("format", out var format) ? FormatOf(format.GetString()!) : null);
-            Assert.Equal(text.GetProperty("is").GetString(), column.TextFor(QueryCaseTests.Value(text.GetProperty("value"))));
+            foreach (var text in entry.GetProperty("texts").EnumerateArray())
+            {
+                var column = new ColumnInfo<object?>("Value", ColumnType.Text, row => row,
+                    Format: text.TryGetProperty("format", out var format) ? FormatOf(format.GetString()!) : null);
+                Assert.Equal(text.GetProperty("is").GetString(), column.TextFor(QueryCaseTests.Value(text.GetProperty("value"))));
+            }
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = culture;
         }
     }
 
