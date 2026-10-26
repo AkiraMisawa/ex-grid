@@ -3,9 +3,9 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.2% | 88.5% |
-| ExSheet | 95.2% | 87.7% |
+| ExSheet | 95.2% | 87.6% |
 | ExPivot | 94.4% | 86.3% |
-| ExChart | 90.7% | 83.4% |
+| ExChart | 90.8% | 83.8% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 94% | 88.8% |
 
@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 03:30:15 |
+| Generated on: | 10/26/2026 - 05:34:40 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1197 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (82979 of 87804) |
-| Covered lines: | 82979 |
-| Uncovered lines: | 4825 |
+| **Line coverage:** | 94.5% (82984 of 87804) |
+| Covered lines: | 82984 |
+| Uncovered lines: | 4820 |
 | Coverable lines: | 87804 |
 | Total lines: | 140163 |
-| **Branch coverage:** | 87.2% (50084 of 57418) |
-| Covered branches: | 50084 |
+| **Branch coverage:** | 87.2% (50104 of 57418) |
+| Covered branches: | 50104 |
 | Total branches: | 57418 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -123,11 +123,11 @@
 |ExChart.SnapshotChartData|100%|100%|
 
 </details>
-<details><summary>ExChart.Engine - 95.9%</summary>
+<details><summary>ExChart.Engine - 96%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**95.9%**|**87.5%**|
+|**ExChart.Engine**|**96%**|**88%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -172,11 +172,11 @@
 |ExChart.Engine.Edges|91.4%|90%|
 |ExChart.Engine.EquatableList|100%||
 |ExChart.Engine.EquatableList<T>|61.5%|50%|
-|ExChart.Engine.Fitting.Fit|98.3%|86.5%|
-|ExChart.Engine.Fitting.FittedCurve|96%|84.6%|
+|ExChart.Engine.Fitting.Fit|100%|96.3%|
+|ExChart.Engine.Fitting.FittedCurve|100%|96.1%|
 |ExChart.Engine.Interpolation.Interpolant1D|100%|100%|
 |ExChart.Engine.Interpolation.Interpolant2D|100%|100%|
-|ExChart.Engine.Interpolation.Interpolate|97.9%|87.1%|
+|ExChart.Engine.Interpolation.Interpolate|100%|100%|
 |ExChart.Engine.IntervalBound|100%||
 |ExChart.Engine.KeyTick|100%||
 |ExChart.Engine.LegendEntry|100%||
@@ -206,7 +206,7 @@
 |ExChart.Engine.SurfaceDefinition|98.2%|91.7%|
 |ExChart.Engine.SurfaceDefinition<TX, TY>|98.2%|91.7%|
 |ExChart.Engine.SurfaceFace|100%||
-|ExChart.Engine.SurfaceMesh|99.4%|86.3%|
+|ExChart.Engine.SurfaceMesh|99.4%|87.5%|
 |ExChart.Engine.SurfaceMesh.Frame|98.4%|93.4%|
 |ExChart.Engine.SurfaceMeshNode|100%||
 |ExChart.Engine.SurfaceMeshPoint|100%||
@@ -1046,12 +1046,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
