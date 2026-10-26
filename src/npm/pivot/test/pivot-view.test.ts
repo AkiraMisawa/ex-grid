@@ -91,6 +91,8 @@ class GridStandIn {
             showViewWith: () => { throw new Error('The pivot shows no view.'); },
             focus: () => { throw new Error('The pivot focuses no grid.'); },
             keyName: () => { throw new Error('The pivot names no key.'); },
+            openPopover: () => { throw new Error('The pivot opens no popover.'); },
+            closePopover: () => { throw new Error('The pivot closes no popover.'); },
             destroy: () => { this.destroyed = true; },
         };
     };
