@@ -99,10 +99,12 @@
         </ul>
         <p>
             Answer each by pushing back a new <code>Columns</code> list. Drag a column edge, drag a header, or hide
-            a column from its ▾ menu.
+            a column from its ▾ menu. In ExGrid for React the three are <code>onColumnWidthChanged</code>,
+            <code>onColumnOrderChanged</code> and <code>onColumnHidden</code>, answered by handing back a new
+            <code>columns</code> array.
         </p>
         <DocsExample Title="Pinned columns, two tiers of groups, and layout events" Builtin="typeof(ColumnLayout)" Mud="typeof(ColumnLayoutMud)"
-                     Files="@(["Examples/Grid/Position.cs"])" />
+                     Files="@(["Examples/Grid/Position.cs", "Examples/Grid/ColumnOrder.cs"])" />
     </DocsSection>
 
     <DocsSection Title="Keeping a view">
