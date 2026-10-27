@@ -1,4 +1,5 @@
 import type { CopyRefusalReason, PasteRefusalReason } from '../clipboard/clipboard-rules';
+import { defined } from '../must';
 
 /**
  * The built-in Chrome's words for a refused copy, as the C# core's built-in labels say them (ADR-0005,
@@ -16,7 +17,8 @@ export const copyRefusalWords: Readonly<Record<CopyRefusalReason, string>> = Obj
     refusedByConsumer: 'Nothing was copied.',
 });
 
-/** Where the words for `targetNotEditable` name the column that refused: its header is written in its place. */
+/** Where the words for `targetNotEditable` name the column that refused: its header is written in its place, or
+ * its name where the header is blank, as a Mark or an Action Column's is. */
 export const columnPlaceholder = '{column}';
 
 /**
@@ -47,6 +49,60 @@ export const pasteRefusalWords: Readonly<Record<PasteRefusalReason, string>> = O
  * (ADR-0050 item 3, ADR-0203). */
 export const shapeMismatchMaySpillWords = 'Nothing was pasted: the selection is not a whole multiple of the copied block. '
     + 'Select a range of the copied block\'s shape, one it repeats over exactly, or a single cell.';
+
+/**
+ * The ids a refused copy's words are asked for by, through the grid's `commandLabel`, as the C# core's
+ * RefusalLabelIds names them (ADR-0203): words answered there are said in place of the built-in English, the
+ * empty string silences the reason, and `undefined` keeps the built-in words.
+ */
+export const copyRefusalLabelIds: Readonly<Record<CopyRefusalReason, string>> = Object.freeze({
+    emptySelection: 'refused-copy-empty-selection',
+    misalignedShape: 'refused-copy-misaligned-shape',
+    tooLarge: 'refused-copy-too-large',
+    rowsUnavailable: 'refused-copy-rows-unavailable',
+    clipboardUnavailable: 'refused-copy-clipboard-unavailable',
+    refusedByConsumer: 'refused-copy-by-consumer',
+});
+
+/**
+ * The ids a refused paste, fill or Delete's words are asked for by, through the grid's `commandLabel`, as the C#
+ * core's RefusalLabelIds names them (ADR-0203). Words for `targetNotEditable` may hold `columnPlaceholder`, where
+ * the column that refused is written in.
+ */
+export const pasteRefusalLabelIds: Readonly<Record<PasteRefusalReason, string>> = Object.freeze({
+    emptySelection: 'refused-paste-empty-selection',
+    singleCellTarget: 'refused-paste-single-cell-target',
+    shapeMismatch: 'refused-paste-shape-mismatch',
+    disjointTarget: 'refused-paste-disjoint-target',
+    targetNotEditable: 'refused-paste-target-not-editable',
+    tooLarge: 'refused-paste-too-large',
+    spillPastExtent: 'refused-paste-spill-past-extent',
+    nothingToFillFrom: 'refused-paste-nothing-to-fill-from',
+    multipleRanges: 'refused-paste-multiple-ranges',
+    sourceUnavailable: 'refused-paste-source-unavailable',
+    orderMoved: 'refused-paste-order-moved',
+    sourceChanged: 'refused-paste-source-changed',
+    unreadable: 'refused-paste-unreadable',
+    cancelled: 'refused-paste-cancelled',
+});
+
+/** The id a shape mismatch's words are asked for by where a paste may spill (`pasteMaySpill`): one cell is a
+ * target there, and the words say so (ADR-0050 item 3, ADR-0203). */
+export const shapeMismatchMaySpillLabelId = 'refused-paste-shape-mismatch-may-spill';
+
+/** The built-in English for every refusal id above, as the C# core's built-in labels say them: resolved through the
+ * grid's `commandLabel` by the reason's id, as the menus' words are (ADR-0203). */
+export const refusalWords: readonly (readonly [string, string])[] = Object.freeze([
+    ...byId(copyRefusalLabelIds, copyRefusalWords),
+    ...byId(pasteRefusalLabelIds, pasteRefusalWords),
+    Object.freeze([shapeMismatchMaySpillLabelId, shapeMismatchMaySpillWords] as const),
+]);
+
+// A reason's words keyed by its id, from the two tables keyed by the reason.
+function byId(ids: Readonly<Record<string, string>>, words: Readonly<Record<string, string>>): readonly (readonly [string, string])[] {
+    const english = new Map(Object.entries(words));
+    return Object.entries(ids).map(([reason, id]) => Object.freeze([id, defined(english.get(reason), `the words for ${reason}`)] as const));
+}
 
 /** The id of what an action says when the row it was pressed on is gone (ADR-0142, A11Y-16), as the C# core's
  * KeyRefusalLabelIds names it: resolved through the grid's `commandLabel`, as the menus' words are. */

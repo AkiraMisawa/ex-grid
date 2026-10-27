@@ -2,7 +2,7 @@ import { gridCommandIds, gridLabelIds } from './command-ids';
 import { filterPanelWords } from './filter-panel-words';
 import { findPanelWords } from './find-panel-labels';
 import { markWords } from './mark-words';
-import { errorStepWords, pendingCommitWords, rowCommandRefusalWords } from './refusal-words';
+import { errorStepWords, pendingCommitWords, refusalWords, rowCommandRefusalWords } from './refusal-words';
 import { selectionWords } from './selection-words';
 import { summaryWords } from './summary-words';
 
@@ -28,6 +28,7 @@ const words: ReadonlyMap<string, string> = new Map([
     [gridLabelIds.headerGroupCollapse, 'Collapse {label}'],
     ...findPanelWords,
     ...filterPanelWords,
+    ...refusalWords,
     ...rowCommandRefusalWords,
     ...pendingCommitWords,
     ...errorStepWords,
