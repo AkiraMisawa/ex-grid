@@ -38,7 +38,7 @@ import { PivotMenuFrame, SlottedMenuFrame, type PivotMenu, type PivotMenuCommand
 import { clearStyle, element, writeStyle } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
-import { PartElements, type PartRefs } from './parts';
+import { checkedName, PartElements, swap, type PartRefs } from './parts';
 import { cellItems, ReportColumns, reportMatch, reportRows, type PivotCellItems } from './report-grid';
 import type { ReportFindGivenUp } from './report-find';
 import { captionOfRemove, removeNamedFieldId, reportMenuCommands, valueFieldAt } from './report-menu';
@@ -628,6 +628,8 @@ export class PivotView {
                 if (this.#grid === undefined) this.#parts.focus('field-list');
                 else this.#gridRoot.focus();
             },
+            parts: this.#parts,
+            chrome: () => this.#chrome,
         });
         // A drag that moves on from an Area, anywhere in the pivot, leaves it unmarked; and one that leaves the
         // pivot for an element the browser names. WebKit names none on leaving one element for another, so a
@@ -745,9 +747,13 @@ export class PivotView {
             || options.viewportWidth !== before.viewportWidth || gridChromeMoved) {
             this.#drawGrid();
         }
-        if (settingsMoved || options.rowHeight !== before.rowHeight || gridChromeMoved) this.#details.draw();
+        const detailsChromeMoved = options.chrome?.detailsTabs !== before.chrome?.detailsTabs || options.chrome?.detailsDialog !== before.chrome?.detailsDialog;
         this.#consumerDraws = true;
         try {
+            if (settingsMoved || options.rowHeight !== before.rowHeight || gridChromeMoved || detailsChromeMoved) {
+                this.#details.draw();
+                this.#slotErrors.push(...this.#details.takeRefused());
+            }
             this.#draw();
         } finally {
             this.#consumerDraws = false;
@@ -760,7 +766,14 @@ export class PivotView {
     openDetails(event: PivotShowDetailsEvent): void {
         if (!this.#detailsRaised.has(event)) throw new Error('These records are another pivot\'s: a pivot opens only the Show Details it raised.');
         if (this.#destroyed) return;
-        this.#details.open(event, this.#options.detailsView ?? 'tab', this.#locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
+        this.#consumerDraws = true;
+        try {
+            this.#details.open(event, this.#options.detailsView ?? 'tab', this.#locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
+            this.#slotErrors.push(...this.#details.takeRefused());
+            this.#throwRefused();
+        } finally {
+            this.#consumerDraws = false;
+        }
     }
 
     /** Stops the pivot: it asks and hears nothing more, and empties its element. The source stays the
@@ -1614,6 +1627,8 @@ export class PivotView {
             return;
         }
         this.#details.open(details, this.#options.detailsView ?? 'tab', question.locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
+        this.#slotErrors.push(...this.#details.takeRefused());
+        this.#throwRefused();
     }
 
     // The report's commands in the grid's Context Menu (ADR-0036, ADR-0059), for a row of the report on screen.
@@ -2365,11 +2380,17 @@ export class PivotView {
         const left = this.#keyboardAfterDraw;
         this.#keyboardAfterDraw = undefined;
         if (left !== undefined) this.#returnKeyboard(left, this.#entryNow(left));
+        this.#throwRefused();
+    }
+
+    // Throws the first of the slots' contents that could not be drawn: to the Consumer, where it makes or updates the
+    // pivot or opens records; otherwise on its own, as a listener's error is, so the source, the user's input or the
+    // timer that drew goes on.
+    #throwRefused(): void {
         const [refused] = this.#slotErrors;
         this.#slotErrors = [];
         if (refused === undefined) return;
         if (this.#consumerDraws) throw refused;
-        // Drawn for the source, the user or a timer: thrown on its own, as a listener's error is, so what drew goes on.
         queueMicrotask(() => { throw refused; });
     }
 }
@@ -2441,15 +2462,4 @@ function checkedField(field: string): string {
     const given: unknown = field;
     if (typeof given !== 'string') throw new TypeError('An ExPivot\'s report filter band hands in a filter\'s button and anchor by the field\'s name (ADR-0390).');
     return given;
-}
-
-// `name`, checked as a script may hand it to a part's `control` or `anchor`: one of `names`.
-function checkedName<Name extends string>(name: Name, names: readonly Name[], slot: string): Name {
-    if (!names.includes(name)) throw new RangeError(`An ExPivot's ${slot} hands in ${names.join(', ')}, not '${name}' (ADR-0390).`);
-    return name;
-}
-
-// `standing` in the place of `leaving`, where that stands.
-function swap(leaving: HTMLElement, standing: HTMLElement): void {
-    if (leaving.parentNode !== null) leaving.replaceWith(standing);
 }

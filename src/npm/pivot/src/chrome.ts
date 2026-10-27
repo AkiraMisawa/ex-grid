@@ -462,6 +462,60 @@ export interface PivotFieldListSlotContext extends PivotStandingSlotContext<Pivo
     readonly area: (area: PivotArea) => PivotPartRef;
 }
 
+/** A sheet's tab at the report's foot (ADR-0059): the report's own, first, or a Show Details sheet's. */
+export interface PivotDetailsTabView {
+    /** The name the tab's control is handed in by, and `select` and `close` are handed. */
+    readonly key: string;
+    /** What the tab reads: the report's own words, or the cell the records are behind. */
+    readonly title: string;
+    /** Whether it is the selected sheet: a details sheet's records then cover the report. */
+    readonly selected: boolean;
+    /** The id of the panel its records stand in, for the control's `aria-controls`; absent on the report's tab. */
+    readonly panelId?: string;
+    /** Its close button's words, said as "Close …"; absent on the report's tab, which does not close. */
+    readonly closeLabel?: string;
+}
+
+/** What the sheet tabs show now (ADR-0059). */
+export interface PivotDetailsTabsView {
+    /** The tab list's name. */
+    readonly name: string;
+    /** The report's tab, then each Show Details sheet's, in the order they opened. */
+    readonly tabs: readonly PivotDetailsTabView[];
+}
+
+/** What the sheet tabs' contents are handed (ADR-0059), at the report's foot while a Show Details sheet stands. The
+ * selected sheet's records are the pivot's, in a panel of its own over the report; the tab that opens takes the
+ * keyboard, and so does the one selected once a tab holding it closes. */
+export interface PivotDetailsTabsSlotContext extends PivotStandingSlotContext<PivotDetailsTabsView> {
+    /** A tab pressed, by its `key`: its sheet is selected. */
+    readonly select: (key: string) => void;
+    /** A details tab's close pressed, by its `key`: Excel's next sheet is selected, or the report. */
+    readonly close: (key: string) => void;
+    /** Hands in the control of the tab of `key`. */
+    readonly control: (key: string) => PivotPartRef;
+}
+
+/** What the Show Details dialog shows now (ADR-0059). */
+export interface PivotDetailsDialogView {
+    /** The cell the records are behind, which names the dialog. */
+    readonly title: string;
+    /** Close's words. */
+    readonly closeLabel: string;
+}
+
+/** What the Show Details dialog's contents are handed (ADR-0059): its title, the anchor its records stand in and
+ * Close, inside the pivot's modal frame, which keeps the backdrop and Escape. Close takes the keyboard as the dialog
+ * opens, and the report's grid takes it back however it closes. */
+export interface PivotDetailsDialogSlotContext extends PivotStandingSlotContext<PivotDetailsDialogView> {
+    /** Close pressed. */
+    readonly close: () => void;
+    /** Hands in Close. */
+    readonly control: (name: 'close') => PivotPartRef;
+    /** Hands in the element the records stand in: their box takes the room the dialog gives it. */
+    readonly anchor: (name: 'records') => PivotPartRef;
+}
+
 /**
  * The Chrome slots a pivot takes (ADR-0061, ADR-0390): the parts a Wrapper draws, each in place of the built-in
  * markup's. A slot not given is the built-in markup's. A slot is read when its part opens: a part standing keeps the
@@ -485,11 +539,17 @@ export interface PivotChrome {
     readonly reportFilters?: PivotChromeSlot<PivotReportFiltersSlotContext>;
     /** The Stale Report's notice, under the Pivot Toolbar. */
     readonly staleReport?: PivotChromeSlot<PivotStaleReportSlotContext>;
-    /** The Field List: Excel's PivotTable Fields pane. */
+    /** The Field List: Excel's PivotTable Fields pane. Its slot draws no box of its own, so the contents fill the
+     * Field List's height (`height: 100%`). */
     readonly fieldList?: PivotChromeSlot<PivotFieldListSlotContext>;
+    /** The sheet tabs at the report's foot, while Show Details' records stand in a tab. */
+    readonly detailsTabs?: PivotChromeSlot<PivotDetailsTabsSlotContext>;
+    /** What the Show Details dialog draws inside its frame, a flex column; the slot draws no box of its own. */
+    readonly detailsDialog?: PivotChromeSlot<PivotDetailsDialogSlotContext>;
 }
 
-const slotNames: readonly (keyof PivotChrome)[] = ['grid', 'menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings', 'toolbar', 'reportFilters', 'staleReport', 'fieldList'];
+const slotNames: readonly (keyof PivotChrome)[] = ['grid', 'menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings', 'toolbar', 'reportFilters', 'staleReport', 'fieldList', 'detailsTabs',
+    'detailsDialog'];
 
 /** A pivot's `chrome`, checked as a script may hand it: an object whose slots are each a mount function, and whose
  * `grid` is an object the report grid checks. */

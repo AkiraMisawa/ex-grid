@@ -20,6 +20,8 @@ export class PartElements {
     readonly #anchors = new Map<string, HTMLElement>();
     // What each anchor is to hold: a popup's frame, or the report filter band, placed once the anchor is handed in.
     readonly #placed = new Map<string, HTMLElement>();
+    // What hears an element placed land in its anchor, the first time it does.
+    readonly #landing = new Map<HTMLElement, () => void>();
     // The control the keyboard is owed to, given once it is handed in; any focus moving, press or key meanwhile ends
     // it, since a press on nothing focusable moves the keyboard to the page without a focus event.
     #owed: string | undefined;
@@ -70,6 +72,12 @@ export class PartElements {
         if (this.#anchors.get(name) === element) this.#anchors.delete(name);
     }
 
+    /** The anchor named `name` went with what held it: nothing is placed in it any longer, though its framework lets
+     * go of it only later. */
+    dropAnchor(name: string): void {
+        this.#anchors.delete(name);
+    }
+
     /** Whether an anchor named `name` stands: a popup opens only in one that does. */
     anchored(name: string): boolean {
         return this.#anchors.get(name)?.isConnected === true;
@@ -95,13 +103,17 @@ export class PartElements {
     }
 
     /** Places `element` in the anchor named `name`, now or once it is handed in; `undefined` places nothing there any
-     * longer, as the pivot takes what it placed away itself. */
-    place(name: string, element: HTMLElement | undefined): void {
+     * longer, as the pivot takes what it placed away itself. `landed` hears the first time `element` stands in an
+     * anchor. */
+    place(name: string, element: HTMLElement | undefined, landed?: () => void): void {
         if (element === undefined) {
+            const placed = this.#placed.get(name);
+            if (placed !== undefined) this.#landing.delete(placed);
             this.#placed.delete(name);
             return;
         }
         this.#placed.set(name, element);
+        if (landed !== undefined) this.#landing.set(element, landed);
         const anchor = this.#anchors.get(name);
         if (anchor !== undefined) this.#fill(name, anchor);
     }
@@ -111,11 +123,16 @@ export class PartElements {
         for (const [name, placed] of this.#placed) {
             if (placed === element) this.#placed.delete(name);
         }
+        this.#landing.delete(element);
     }
 
     #fill(name: string, anchor: HTMLElement): void {
         const placed = this.#placed.get(name);
-        if (placed !== undefined && placed.parentNode !== anchor) anchor.append(placed);
+        if (placed === undefined || placed.parentNode === anchor) return;
+        anchor.append(placed);
+        const landed = this.#landing.get(placed);
+        this.#landing.delete(placed);
+        landed?.();
     }
 
     // The keyboard owed to `name`, given to `element` once it is in the page: a framework hands an element in once it
@@ -168,4 +185,15 @@ export function elementRef<Key>(elements: Map<Key, HTMLElement>, key: Key, what:
         elements.set(key, element);
         handedIn?.(element);
     };
+}
+
+/** `name`, checked as a script may hand it to a part's `control` or `anchor`: one of `names`, which `slot` hands in. */
+export function checkedName<Name extends string>(name: Name, names: readonly Name[], slot: string): Name {
+    if (!names.includes(name)) throw new RangeError(`An ExPivot's ${slot} hands in ${names.join(', ')}, not '${name}' (ADR-0390).`);
+    return name;
+}
+
+/** `standing` in the place of `leaving`, where that stands. */
+export function swap(leaving: HTMLElement, standing: HTMLElement): void {
+    if (leaving.parentNode !== null) leaving.replaceWith(standing);
 }

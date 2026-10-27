@@ -6,7 +6,7 @@ import { act, cleanup, render, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RecordPivotSource, createPivotLayout, pivotRecordField } from '@ex-grid/pivot-engine';
 import type {
-    PivotFieldListSlotContext, PivotFieldSettingsSlotContext, PivotItemFilterSlotContext, PivotMenuSlotContext, PivotReportFiltersSlotContext, PivotStaleReportSlotContext,
+    PivotDetailsDialogSlotContext, PivotDetailsTabsSlotContext, PivotFieldListSlotContext, PivotFieldSettingsSlotContext, PivotItemFilterSlotContext, PivotMenuSlotContext, PivotReportFiltersSlotContext, PivotStaleReportSlotContext,
     PivotToolbarSlotContext, PivotValueFieldSettingsSlotContext,
 } from '@ex-grid/pivot';
 import type { GridMenuSlotContext } from '@ex-grid/core';
@@ -171,6 +171,22 @@ function PlainFieldList({ context }: { readonly context: PivotFieldListSlotConte
         createElement('button', { type: 'button', disabled: !view.update.enabled, onClick: context.update }, view.update.label));
 }
 
+function PlainDetailsTabs({ context }: { readonly context: PivotDetailsTabsSlotContext }): ReactElement {
+    const view = usePivotPart(context);
+    return createElement('div', { role: 'tablist', 'aria-label': view.name }, ...view.tabs.map(tab => createElement('span', { key: tab.key },
+        createElement('button', {
+            ref: context.control(tab.key), type: 'button', role: 'tab', 'aria-selected': tab.selected, 'aria-controls': tab.panelId,
+            onClick: () => { context.select(tab.key); },
+        }, tab.title),
+        tab.closeLabel === undefined ? null : createElement('button', { type: 'button', 'aria-label': tab.closeLabel, onClick: () => { context.close(tab.key); } }, '×'))));
+}
+
+function PlainDetailsDialog({ context }: { readonly context: PivotDetailsDialogSlotContext }): ReactElement {
+    const view = usePivotPart(context);
+    return createElement('div', null, createElement('h2', null, view.title), createElement('div', { ref: context.anchor('records') }),
+        createElement('button', { ref: context.control('close'), type: 'button', onClick: context.close }, view.closeLabel));
+}
+
 function PlainGridMenu({ context }: { readonly context: GridMenuSlotContext }): ReactElement {
     const item = useMenuItems(context);
     return createElement('div', { role: 'none' }, ...context.commands.map((command, index) => createElement('button', {
@@ -188,6 +204,8 @@ const plainChrome: ExPivotChrome = {
     reportFilters: (context: PivotReportFiltersSlotContext) => createElement(PlainReportFilters, { context }),
     staleReport: (context: PivotStaleReportSlotContext) => createElement(PlainStaleReport, { context }),
     fieldList: (context: PivotFieldListSlotContext) => createElement(PlainFieldList, { context }),
+    detailsTabs: (context: PivotDetailsTabsSlotContext) => createElement(PlainDetailsTabs, { context }),
+    detailsDialog: (context: PivotDetailsDialogSlotContext) => createElement(PlainDetailsDialog, { context }),
 };
 
 pivotSlotContract('a Chrome of plain controls', plainChrome);
