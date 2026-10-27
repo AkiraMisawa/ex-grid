@@ -11,7 +11,8 @@
 // component's state across the two. Once the part goes, nothing the contents call back reaches the pivot.
 
 import type { GridChrome } from '@ex-grid/core';
-import type { PivotAggregation, PivotItemKey, PivotShowValuesAs } from '@ex-grid/pivot-engine';
+import type { PivotAggregation, PivotArea, PivotEntry, PivotItemKey, PivotShowValuesAs } from '@ex-grid/pivot-engine';
+import { keyboardIsThePivots } from './parts';
 
 /**
  * A Chrome slot's mount function (ADR-0350 section 9): it draws the part into `slot`, the element the pivot made for
@@ -217,6 +218,250 @@ export interface PivotItemFilterSlotContext extends PivotPanelSlotContext {
     readonly setAll: (ticked: boolean) => void;
 }
 
+/** Takes one of a standing part's elements, or `null` once it is gone, as a callback ref does: hand it the element
+ * itself (a React `ref`, or a call with the element once it is drawn). */
+export type PivotPartRef = (element: HTMLElement | null) => void;
+
+/** What the slots of the pivot's standing parts share (ADR-0390): the Pivot Toolbar, the report filter band and the
+ * Stale Report's notice. Their contents are mounted once while the part stands, and draw its view again at each change.
+ * They hand in their controls by name, through `control`, so the pivot gives the keyboard to the one it means, as it
+ * does with the built-in markup's: after a menu closes, to the button that opened it. They hand in the anchors the
+ * pivot places a popup's frame in, through `anchor`: an element around the button that opens it, positioned, so the
+ * frame needs no position the pivot would have to measure (ADR-0061). */
+export interface PivotStandingSlotContext<View> {
+    /** What the part shows now: a new object at each change, and the same one otherwise. */
+    readonly view: () => View;
+    /** Hears each change to the view; answers the function that stops it. */
+    readonly subscribe: (listener: () => void) => () => void;
+    /** One of the pivot's words by its id: the Consumer's `label`, else the built-in English. */
+    readonly label: (id: string) => string;
+}
+
+/** What the Pivot Toolbar shows now (ADR-0061). */
+export interface PivotToolbarView {
+    /** Layout ▾: its words, and whether its menu is open. */
+    readonly layoutMenu: { readonly label: string; readonly open: boolean };
+    /** Refresh, while the source can be refreshed (ADR-0066); absent otherwise, and then there is no button. */
+    readonly refresh?: { readonly label: string };
+    /** The Field List's toggle: its words, and whether the list is shown. */
+    readonly fieldList: { readonly label: string; readonly shown: boolean };
+    /** Whether the report filter band stands, on the toolbar's left: the contents then hand in its anchor,
+     * `anchor('report-filters')`, in which the pivot places the band. */
+    readonly reportFilters: boolean;
+    /** What the report could not do with the last change, in words — a layout refused by name, or the source's
+     * failure — said where the user sees it, as an alert (`role="alert"`); absent otherwise. Data that could not be
+     * shown is the Stale Report's notice's to say, not this. */
+    readonly refusal?: string;
+}
+
+/**
+ * What the Pivot Toolbar's contents are handed (ADR-0061): the report filter band on its left, and on its right, in
+ * this order, Layout ▾, Refresh where the source can be refreshed, and the Field List's toggle. The Layout menu opens
+ * in the anchor around Layout ▾, over the report, with a backdrop that closes it.
+ */
+export interface PivotToolbarSlotContext extends PivotStandingSlotContext<PivotToolbarView> {
+    /** Layout ▾ pressed: opens the Layout menu, or closes it when it is open. */
+    readonly toggleLayoutMenu: () => void;
+    /** Refresh pressed: asks the source again. */
+    readonly refresh: () => void;
+    /** The Field List's toggle pressed: shows the list, or hides it. */
+    readonly toggleFieldList: () => void;
+    /** Hands in a button: `layout`, `refresh` or `field-list`. */
+    readonly control: (name: 'layout' | 'refresh' | 'field-list') => PivotPartRef;
+    /** Hands in an anchor: `layout`, around Layout ▾, and `report-filters`, where the band stands. */
+    readonly anchor: (name: 'layout' | 'report-filters') => PivotPartRef;
+}
+
+/** One report filter (ADR-0061). */
+export interface PivotReportFilterView {
+    /** The field's name. */
+    readonly field: string;
+    /** Its caption. */
+    readonly caption: string;
+    /** What it shows: (All), the one Item shown, or (Multiple Items). */
+    readonly summary: string;
+    /** Whether it hides Items. */
+    readonly filtered: boolean;
+    /** Whether its Filter… is open. */
+    readonly open: boolean;
+    /** The button's accessible name: "Filter Region". */
+    readonly buttonLabel: string;
+}
+
+/** What the report filter band shows now (ADR-0061). */
+export interface PivotReportFiltersView {
+    /** The band's accessible name, which a `role="group"` around it carries. */
+    readonly name: string;
+    /** One per field in Filters, in their order. */
+    readonly filters: readonly PivotReportFilterView[];
+}
+
+/** What the report filter band's contents are handed (ADR-0061): one entry per field in Filters, its caption and a
+ * button that says what it shows and opens Filter… in the anchor around it, over the report. */
+export interface PivotReportFiltersSlotContext extends PivotStandingSlotContext<PivotReportFiltersView> {
+    /** A filter's button pressed: opens its Filter…, or closes it when it is open. */
+    readonly toggle: (field: string) => void;
+    /** Hands in the button of the filter of `field`. */
+    readonly control: (field: string) => PivotPartRef;
+    /** Hands in the anchor around the button of the filter of `field`. */
+    readonly anchor: (field: string) => PivotPartRef;
+}
+
+/** What the Stale Report's notice shows now (ADR-0067). */
+export interface PivotStaleReportView {
+    /** The whole sentence: "Showing the data as of 14:32:05: the newest data needs more than 200,000 cells." */
+    readonly message: string;
+    /** When the data on screen arrived, as the sentence writes it. */
+    readonly asOfText: string;
+    /** What happened, as the sentence ends it. */
+    readonly reason: string;
+    /** Retry: its words, and whether it can be pressed — not while what it would ask is already out. */
+    readonly retry: { readonly label: string; readonly enabled: boolean };
+}
+
+/** What the Stale Report's notice's contents are handed (ADR-0067), inside the pivot's polite live region under the
+ * Pivot Toolbar, while the report is stale; the contents add no live region of their own. */
+export interface PivotStaleReportSlotContext extends PivotStandingSlotContext<PivotStaleReportView> {
+    /** Retry pressed: asks again what failed. */
+    readonly retry: () => void;
+    /** Hands in Retry. */
+    readonly control: (name: 'retry') => PivotPartRef;
+}
+
+/** A declared field in the Field List (ADR-0061). */
+export interface PivotFieldListFieldView {
+    /** The field's name. */
+    readonly name: string;
+    /** What it is called. */
+    readonly caption: string;
+    /** The name its tick box is handed in by, through `control`. */
+    readonly key: string;
+    /** Whether it stands in any Area: its tick box. */
+    readonly placed: boolean;
+    /** Whether it hides Items now. */
+    readonly filtered: boolean;
+    /** Its count of Items, written in the pivot's locale, where the source counted them; absent otherwise. */
+    readonly count?: string;
+    /** The count as said: "12 Items"; absent with the count. */
+    readonly countLabel?: string;
+    /** Whether it is the one being dragged. */
+    readonly dragging: boolean;
+}
+
+/** A placed entry of an Area (ADR-0061). */
+export interface PivotFieldListEntryView {
+    /** Which entry it is: its Area and index there, −1 for Σ Values. */
+    readonly entry: PivotEntry;
+    /** The name its button and the anchor around it are handed in by, through `control` and `anchor`. */
+    readonly key: string;
+    /** What it is called: the field's caption, a Value Field's caption, Σ Values. */
+    readonly caption: string;
+    /** The button's accessible name: "Options for Region". */
+    readonly menuLabel: string;
+    /** Whether its field hides Items now. */
+    readonly filtered: boolean;
+    /** Whether it is Σ Values. */
+    readonly values: boolean;
+    /** Whether its menu, or a panel the menu opened, stands under it: the entry is then not draggable, so a press that
+     * moves a little on the menu is the menu's. */
+    readonly menuOpen: boolean;
+    /** Whether it is the one being dragged. */
+    readonly dragging: boolean;
+    /** Whether a drop now would land before it. */
+    readonly dropBefore: boolean;
+    /** The index a `dragenter` on it hands `dragEnter`, and a `drop` on it hands `drop`: its own, or for Σ Values,
+     * which always stands last, its Area's `end`. */
+    readonly dropIndex: number;
+}
+
+/** One Area of the Field List (ADR-0061). */
+export interface PivotFieldListAreaView {
+    /** Which Area. */
+    readonly area: PivotArea;
+    /** Its name: Filters, Columns, Rows, Values. */
+    readonly title: string;
+    /** What stands in it, Σ Values last where it stands. */
+    readonly entries: readonly PivotFieldListEntryView[];
+    /** The index a `dragenter` or a `drop` on the Area's box itself hands on: past its last entry. */
+    readonly end: number;
+    /** Whether what is dragged is over it, and may be dropped there. */
+    readonly dropTarget: boolean;
+    /** While a drop there would pass the leaf cap, by the counts, the words that say so, in a `role="status"`: a hint,
+     * never a refusal (ADR-0370 section 3). Absent otherwise. */
+    readonly overCap?: string;
+}
+
+/** What the Field List shows now (ADR-0061). */
+export interface PivotFieldListView {
+    /** The pane's name: "PivotTable Fields". */
+    readonly title: string;
+    /** The heading's close button's accessible name: "Hide Field List". */
+    readonly hideLabel: string;
+    /** The caption above the fields: "Choose fields to add to report:". */
+    readonly chooseCaption: string;
+    /** The search's accessible name and placeholder. */
+    readonly searchLabel: string;
+    /** The search as typed. */
+    readonly search: string;
+    /** The declared fields the search leaves, in declaration order. */
+    readonly fields: readonly PivotFieldListFieldView[];
+    /** The caption above the Areas: "Drag fields between areas below:". */
+    readonly dragCaption: string;
+    /** The four Areas, in Excel's order: Filters, Columns, Rows, Values. */
+    readonly areas: readonly PivotFieldListAreaView[];
+    /** Whether a drop on the list of fields, or on the report, removes what is dragged: a placed field's entry. */
+    readonly dropRemoves: boolean;
+    /** Defer Layout Update, at the pane's foot: its words, and whether it is ticked. */
+    readonly defer: { readonly label: string; readonly ticked: boolean };
+    /** Update: its words, and whether it would apply anything. */
+    readonly update: { readonly label: string; readonly enabled: boolean };
+}
+
+/** What is dragged in the Field List: a declared field from the list of fields, or a placed entry of an Area. */
+export type PivotDragSubject = { readonly field: string } | { readonly entry: PivotEntry };
+
+/**
+ * What the Field List's contents are handed (ADR-0061): the fields with their tick boxes and search, and the four
+ * Areas with their entries, each entry's open menu or panel placed by the pivot in the anchor around its button.
+ * Drag and drop is the browser's own: a draggable element calls `startDrag` on `dragstart` and `endDrag` on `dragend`;
+ * a drop target calls `dragOver` on `dragover` always — whether it may be dropped on is decided at the drop, never by a
+ * render that may still be on its way — `dragEnter` on `dragenter` for the marks, and `drop` (or `dropOnList`) on
+ * `drop`. Each Area's box is handed in by `area`, so a drag that leaves every Area is seen to.
+ */
+export interface PivotFieldListSlotContext extends PivotStandingSlotContext<PivotFieldListView> {
+    /** The search as it is typed. */
+    readonly setSearch: (text: string) => void;
+    /** A field's tick box pressed: ticks it into the layout, or takes it out. */
+    readonly toggle: (field: string) => void;
+    /** An entry's button pressed: opens its menu, or closes the one standing under it. */
+    readonly openMenu: (entry: PivotEntry) => void;
+    /** The heading's close button pressed: hides the Field List, keeping the layout and any pending one. */
+    readonly close: () => void;
+    /** A `dragstart` on a field or an entry: the drag starts, against the layout the pane shows. */
+    readonly startDrag: (event: DragEvent, subject: PivotDragSubject) => void;
+    /** A `dragover` on any drop target: takes the drop while a drag of the pane's is on. */
+    readonly dragOver: (event: DragEvent) => void;
+    /** A `dragenter` on an Area (`index` its entries' count) or an entry (`index` its own): where a drop would land. */
+    readonly dragEnter: (area: PivotArea, index: number) => void;
+    /** A `drop` on an Area or an entry, at the index `dragEnter` takes. */
+    readonly drop: (event: DragEvent, area: PivotArea, index: number) => void;
+    /** A `drop` on the list of fields: an entry dragged back is taken out of the layout. */
+    readonly dropOnList: (event: DragEvent) => void;
+    /** A `dragend`, whether or not anything was dropped. */
+    readonly endDrag: () => void;
+    /** Defer Layout Update ticked or unticked; unticking applies the pending layout, as Excel does. */
+    readonly setDeferred: (deferred: boolean) => void;
+    /** Update pressed: applies the pending layout in one change. */
+    readonly update: () => void;
+    /** Hands in a control: `search`, a field's tick box by its `key`, or an entry's button by its `key`. */
+    readonly control: (key: string) => PivotPartRef;
+    /** Hands in the anchor around an entry's button, by the entry's `key`: an element of no position of its own, so
+     * the frame the pivot places in it takes the pane's width (ADR-0061). */
+    readonly anchor: (key: string) => PivotPartRef;
+    /** Hands in an Area's box. */
+    readonly area: (area: PivotArea) => PivotPartRef;
+}
+
 /**
  * The Chrome slots a pivot takes (ADR-0061, ADR-0390): the parts a Wrapper draws, each in place of the built-in
  * markup's. A slot not given is the built-in markup's. A slot is read when its part opens: a part standing keeps the
@@ -234,9 +479,17 @@ export interface PivotChrome {
     readonly fieldSettings?: PivotChromeSlot<PivotFieldSettingsSlotContext>;
     /** Value Field Settings…. */
     readonly valueFieldSettings?: PivotChromeSlot<PivotValueFieldSettingsSlotContext>;
+    /** The Pivot Toolbar above the report. */
+    readonly toolbar?: PivotChromeSlot<PivotToolbarSlotContext>;
+    /** The report filter band, on the Pivot Toolbar's left. */
+    readonly reportFilters?: PivotChromeSlot<PivotReportFiltersSlotContext>;
+    /** The Stale Report's notice, under the Pivot Toolbar. */
+    readonly staleReport?: PivotChromeSlot<PivotStaleReportSlotContext>;
+    /** The Field List: Excel's PivotTable Fields pane. */
+    readonly fieldList?: PivotChromeSlot<PivotFieldListSlotContext>;
 }
 
-const slotNames: readonly (keyof PivotChrome)[] = ['grid', 'menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings'];
+const slotNames: readonly (keyof PivotChrome)[] = ['grid', 'menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings', 'toolbar', 'reportFilters', 'staleReport', 'fieldList'];
 
 /** A pivot's `chrome`, checked as a script may hand it: an object whose slots are each a mount function, and whose
  * `grid` is an object the report grid checks. */
@@ -368,16 +621,9 @@ export class SlotMount<Context> {
         if (!this.#live || !control.isConnected) return;
         const owed = this.#owed;
         this.#owed = false;
-        if (owed || this.#keyboardHere()) control.focus();
-    };
-
-    // DOM focus inside the pivot the part stands in, or on nothing.
-    #keyboardHere(): boolean {
-        const doc = this.element.ownerDocument;
-        const active = doc.activeElement;
         const pivot = this.element.closest('.ex-pivot');
-        return active === null || active === doc.body || active === doc.documentElement || (pivot !== null && pivot.contains(active));
-    }
+        if (owed || (pivot !== null && keyboardIsThePivots(pivot))) control.focus();
+    };
 
     // Contents that cannot be drawn close the part, rather than leave it standing empty.
     #draw(): void {
@@ -394,6 +640,105 @@ export class SlotMount<Context> {
         const cleanup = this.#cleanup;
         this.#cleanup = undefined;
         this.innerPopupOpen = false;
+        cleanup?.();
+    }
+}
+
+/**
+ * A standing part's slot (ADR-0390): its contents are mounted once, with a context of their own, while the part
+ * stands and the same mount function is given, and told each change to its view. Another mount function, the
+ * Consumer having handed another `chrome`, mounts again; once the part goes, nothing the contents call back reaches
+ * the pivot. The slot is an element of its own, which the pivot stands in the part's place. Contents that cannot be
+ * drawn are refused by name once, and the part is the built-in markup's while that mount function is given.
+ */
+export class StandingSlot<View, Context> {
+    readonly #name: string;
+    /** The slot. */
+    readonly element: HTMLElement;
+    // Each mount's own, so contents a framework keeps across a mount subscribe again to the next one's.
+    #listeners = new ViewListeners();
+    #view: View;
+    // What the view held says, so a draw that shows the same thing makes nothing new and tells nobody; worked out only
+    // while contents stand to be told.
+    #said: string | undefined;
+    #mount: PivotChromeSlot<Context> | undefined;
+    #cleanup: (() => void) | undefined;
+    #failed: PivotChromeSlot<Context> | undefined;
+    // Counts the mounts, so a callback handed to one reaches nothing once another stands.
+    #mounts = 0;
+
+    constructor(name: string, document: Document, view: View) {
+        this.#name = name;
+        this.element = document.createElement('div');
+        this.element.setAttribute('data-ex-pivot-slot', name);
+        this.#view = view;
+    }
+
+    /** The view the part shows: `next`, or the one held where it shows the same, so it stays the same object while
+     * nothing it shows changed. */
+    viewOf(next: View): View {
+        if (this.#cleanup === undefined) {
+            this.#view = next;
+            this.#said = undefined;
+            return next;
+        }
+        const said = JSON.stringify(next);
+        const held = this.#said === undefined ? JSON.stringify(this.#view) : this.#said;
+        this.#said = said;
+        if (said === held) return this.#view;
+        this.#view = next;
+        this.#listeners.tell();
+        return next;
+    }
+
+    /** Whether the contents `mount` draws stand. */
+    stands(mount: PivotChromeSlot<Context>): boolean {
+        return this.#cleanup !== undefined && this.#mount === mount;
+    }
+
+    /** Whether `mount` could not be drawn: it is not tried again. */
+    refuses(mount: PivotChromeSlot<Context>): boolean {
+        return this.#failed === mount;
+    }
+
+    /** Shows the view held by `mount`: the contents are mounted with the context `context` makes, unless `mount`
+     * already stands. `context` is handed the shared parts and an `input` that keeps a callback from reaching the
+     * pivot once these contents are gone. Answers whether the contents stand; a mount function that throws, or answers
+     * no cleanup, is not tried again, and its error is answered for the pivot to throw once it has drawn. */
+    show(mount: PivotChromeSlot<Context>,
+        context: (shared: PivotStandingSlotContext<View>, input: <Args extends unknown[]>(change: (...args: Args) => void) => (...args: Args) => void) => Context,
+        label: (id: string) => string): { readonly shown: boolean; readonly error?: Error } {
+        if (this.refuses(mount)) return { shown: false };
+        if (this.stands(mount)) return { shown: true };
+        this.hide();
+        this.#mounts += 1;
+        const made = this.#mounts;
+        const input = <Args extends unknown[]>(change: (...args: Args) => void): ((...args: Args) => void) => (...args: Args): void => {
+            if (this.#cleanup !== undefined && this.#mounts === made) change(...args);
+        };
+        this.#listeners = new ViewListeners();
+        const shared: PivotStandingSlotContext<View> = { view: () => this.#view, subscribe: this.#listeners.subscribe, label };
+        try {
+            this.#cleanup = mounted(this.#name, mount, this.element, Object.freeze(context(shared, input)));
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- answered, and thrown by the pivot once it has drawn the built-in markup in its place
+            this.#failed = mount;
+            return { shown: false, error: error instanceof Error ? error : new Error(`An ExPivot's chrome.${this.#name} could not be drawn (ADR-0390).`, { cause: error }) };
+        }
+        this.#mount = mount;
+        return { shown: true };
+    }
+
+    /** What the part shows now. */
+    get view(): View {
+        return this.#view;
+    }
+
+    /** The part shows none of the contents: they are taken away. */
+    hide(): void {
+        const cleanup = this.#cleanup;
+        this.#cleanup = undefined;
+        this.#mount = undefined;
+        this.#listeners.clear();
         cleanup?.();
     }
 }

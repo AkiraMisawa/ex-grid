@@ -5,11 +5,16 @@
 ```ts
 
 import { ExGridChrome } from '@ex-grid/react';
+import type { PivotFieldListSlotContext } from '@ex-grid/pivot';
 import type { PivotFieldSettingsSlotContext } from '@ex-grid/pivot';
 import type { PivotItemFilterSlotContext } from '@ex-grid/pivot';
 import type { PivotMenuSlotContext } from '@ex-grid/pivot';
 import type { PivotMenuView } from '@ex-grid/pivot';
 import type { PivotPanelSlotContext } from '@ex-grid/pivot';
+import type { PivotReportFiltersSlotContext } from '@ex-grid/pivot';
+import type { PivotStaleReportSlotContext } from '@ex-grid/pivot';
+import type { PivotStandingSlotContext } from '@ex-grid/pivot';
+import type { PivotToolbarSlotContext } from '@ex-grid/pivot';
 import type { PivotValueFieldSettingsSlotContext } from '@ex-grid/pivot';
 import { PivotViewOptions } from '@ex-grid/pivot';
 import { ReactElement } from 'react';
@@ -20,10 +25,14 @@ export function ExPivot(props: ExPivotProps): ReactElement;
 
 // @public
 export interface ExPivotChrome {
+    readonly fieldList?: (context: PivotFieldListSlotContext) => ReactNode;
     readonly fieldSettings?: (context: PivotFieldSettingsSlotContext) => ReactNode;
     readonly grid?: ExGridChrome<unknown>;
     readonly itemFilter?: (context: PivotItemFilterSlotContext) => ReactNode;
     readonly menu?: (context: PivotMenuSlotContext) => ReactNode;
+    readonly reportFilters?: (context: PivotReportFiltersSlotContext) => ReactNode;
+    readonly staleReport?: (context: PivotStaleReportSlotContext) => ReactNode;
+    readonly toolbar?: (context: PivotToolbarSlotContext) => ReactNode;
     readonly valueFieldSettings?: (context: PivotValueFieldSettingsSlotContext) => ReactNode;
 }
 
@@ -61,5 +70,8 @@ export function usePivotMenu(context: PivotMenuSlotContext): PivotMenuHandles;
 export function usePivotPanel<View>(context: PivotPanelSlotContext & {
     readonly view: () => View;
 }): PivotPanelHandles<View>;
+
+// @public
+export function usePivotPart<View>(context: PivotStandingSlotContext<View>): View;
 
 ```

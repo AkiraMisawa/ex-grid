@@ -120,6 +120,43 @@ function buttonOf(within_: HTMLElement, words: string): HTMLButtonElement {
     return button;
 }
 
+/** The Field List's pane. */
+function fieldListOf(root: HTMLElement): HTMLElement {
+    const pane = root.querySelector<HTMLElement>('.ex-pivot-field-list');
+    if (pane === null) throw new Error('The pivot draws no Field List.');
+    return pane;
+}
+
+/** The draggable element of a placed field's entry, around its button. */
+function entryOf(pane: HTMLElement, caption: string): HTMLElement {
+    const entry = within(pane).getByRole('button', { name: `Options for ${caption}` }).closest<HTMLElement>('[draggable=true]');
+    if (entry === null) throw new Error(`The entry of ${caption} is not draggable.`);
+    return entry;
+}
+
+/** Drags `from` onto `to` as a browser does: dragstart, dragenter and dragover on the target, drop, dragend. */
+async function drag(from: HTMLElement, to: HTMLElement): Promise<void> {
+    await act(async () => {
+        from.dispatchEvent(dragEvent('dragstart'));
+        await Promise.resolve();
+    });
+    await act(async () => {
+        to.dispatchEvent(dragEvent('dragenter'));
+        to.dispatchEvent(dragEvent('dragover'));
+        to.dispatchEvent(dragEvent('drop'));
+        from.dispatchEvent(dragEvent('dragend'));
+        await Promise.resolve();
+    });
+    await settled();
+}
+
+/** A drag's event of `type` as the browser makes one, carrying its data: this document's events take none in their init. */
+export function dragEvent(type: string): DragEvent {
+    const event = new DragEvent(type, { bubbles: true, cancelable: type !== 'dragend' });
+    Object.defineProperty(event, 'dataTransfer', { value: new DataTransfer() });
+    return event;
+}
+
 /** Opens a placed field's menu from its entry in the Field List. */
 async function fieldMenu(root: HTMLElement, caption: string): Promise<HTMLElement> {
     await press(within(root).getByRole('button', { name: `Options for ${caption}` }));
@@ -162,18 +199,19 @@ export function pivotSlotContract(name: string, chrome: ExPivotChrome, host: Piv
             expect([root.querySelector('.ex-pivot-popup'), layouts.at(-1)?.form, document.activeElement]).toEqual([null, 'tabular', opener]);
         });
 
-        it('ADR-0061: a field\'s menu draws the pivot\'s moves under its entry, each enabled only where it changes something, and Escape in the frame closes it', async () => {
+        it('ADR-0061: a field\'s menu draws the pivot\'s moves under its entry, each enabled only where it changes something, and Escape in the frame closes it, the keyboard back on the entry', async () => {
             const { root } = await mounted(chrome, host);
             const menu = await fieldMenu(root, 'Region');
             const drawn = commandsOf(menu).map(command => [command.textContent.trim(), isDisabled(command)]);
             expect(drawn.slice(0, 4)).toEqual([['Move Up', true], ['Move Down', true], ['Move to Beginning', true], ['Move to End', true]]);
             expect(drawn.map(([words]) => words)).toContain('Field Settings…');
-            expect(menu.closest('.ex-pivot-entry')).not.toBeNull();
+            // In the element around the entry's button, which the pivot places it in.
+            expect(menu.parentElement?.contains(within(root).getByRole('button', { name: 'Options for Region' }))).toBe(true);
             await act(async () => {
                 commandsOf(menu)[4]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
                 await Promise.resolve();
             });
-            expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+            expect([root.querySelector('.ex-pivot-popup'), document.activeElement]).toEqual([null, within(root).getByRole('button', { name: 'Options for Region' })]);
         });
 
         it('ADR-0061: Field Settings… draws the pivot\'s draft, its first control holding the keyboard, and OK applies the subtotals chosen', async () => {
@@ -243,6 +281,25 @@ export function pivotSlotContract(name: string, chrome: ExPivotChrome, host: Piv
             expect(hide.textContent.trim()).toBe('Hide Field List');
             await press(hide);
             expect(root.querySelector<HTMLElement>('.ex-pivot-field-list')?.hidden).toBe(true);
+        });
+
+        it('ADR-0061: a field\'s tick box takes it out of the layout, and the search narrows the fields to those it matches', async () => {
+            const { root, layouts } = await mounted(chrome, host);
+            const pane = fieldListOf(root);
+            await press(within(pane).getByRole('checkbox', { name: 'Desk' }));
+            expect(layouts.at(-1)?.filters).toEqual([]);
+            await typeText(within(pane).getByRole<HTMLInputElement>('searchbox', { name: 'Search' }), 're');
+            expect(within(pane).queryByRole('checkbox', { name: 'Desk' })).toBeNull();
+            expect(within(pane).getByRole('checkbox', { name: 'Region' })).toBeDefined();
+        });
+
+        it('ADR-0061: a placed field dragged onto another Area moves there, and one dragged back onto the list of fields is taken out', async () => {
+            const { root, layouts } = await mounted(chrome, host);
+            const pane = fieldListOf(root);
+            await drag(entryOf(pane, 'Region'), within(pane).getByRole('list', { name: 'Columns' }));
+            expect([layouts.at(-1)?.rows, layouts.at(-1)?.columns.map(placement => placement.field)]).toEqual([[], ['Region']]);
+            await drag(entryOf(pane, 'Region'), within(pane).getByRole('list', { name: 'PivotTable Fields' }));
+            expect(layouts.at(-1)?.columns).toEqual([]);
         });
 
         it('ADR-0061: Filter… opens under a report filter\'s button too, over the report', async () => {
