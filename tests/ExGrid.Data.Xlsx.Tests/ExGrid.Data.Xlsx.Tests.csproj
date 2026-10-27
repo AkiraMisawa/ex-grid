@@ -21,6 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The shared .xlsx cases (ADR-0370 section 3): written once as data, run here against ExGrid.Data.Xlsx and by
+         Vitest against @ex-grid/data-xlsx. tests/cases/README.md says what a file holds. -->
+    <None Include="..\cases\xlsx\**\*" Link="cases\xlsx\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\ExGrid.Data.Xlsx\ExGrid.Data.Xlsx.csproj" />
   </ItemGroup>
 

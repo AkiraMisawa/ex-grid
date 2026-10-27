@@ -21,6 +21,9 @@
     <InternalsVisibleTo Include="ExSheet.Components.Tests" />
     <!-- So does the Wrapper's layer 2, building the Sheets its tests open. -->
     <InternalsVisibleTo Include="ExSheet.MudBlazor.Tests" />
+    <!-- ExSheet.Xlsx's shared cases build their Workbooks with the engine's case steps (tests/cases/sheet-xlsx),
+         whose runner reads the same entry points (ADR-0370 section 3). -->
+    <InternalsVisibleTo Include="ExSheet.Xlsx.Tests" />
   </ItemGroup>
 
 </Project>

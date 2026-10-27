@@ -1,0 +1,1018 @@
+{
+  "about": "Every refusal of the .xlsx reader by name (ADR-0330 sections 4 and 9): a file that is not a plain .xlsx, a part that declares a DTD or is not well-formed, a cell or style out of place, and a file past a limit, refused with their reason and the part, the Sheet and the cell they met. Transcribed from ExGrid.Data.Xlsx's RefusalTests and RowAndColumnFormatTests.",
+  "kind": "xlsxRead",
+  "cases": [
+    {
+      "name": "ADR-0330 §4: bytes that are not a zip are refused",
+      "file": {
+        "bytes": [
+          "Desk,Notional\nEMEA,1\n"
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "notAZip",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The file is not a zip package, so it is not an .xlsx."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: an empty file is refused, saying it is empty",
+      "file": {
+        "bytes": []
+      },
+      "expect": {
+        "refused": {
+          "reason": "notAZip",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The file is empty."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a zip's signature on bytes that are not a zip is refused",
+      "file": {
+        "bytes": [
+          "PK",
+          {
+            "hex": "030400000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "notAZip",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The file is not a zip package that can be read: End of Central Directory record could not be found."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a zip that is another Office document is refused as not a workbook",
+      "file": {
+        "zip": [
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n  <Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/>\n  <Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>\n  \n</Types>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/>\n</Relationships>"
+          ],
+          [
+            "word/document.xml",
+            "<document/>"
+          ]
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "notAWorkbook",
+          "part": "word/document.xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'word/document.xml': The package's document is 'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml', not a workbook: the file is not an .xlsx."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a zip that is no Office document is refused as not a workbook",
+      "file": {
+        "zip": [
+          [
+            "readme.txt",
+            "hello"
+          ]
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "notAWorkbook",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The zip package has no [Content_Types].xml, so it is not an Office document."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a workbook with macros (.xlsm) is refused by its content type",
+      "file": {
+        "zip": [
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n  <Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.ms-excel.sheet.macroEnabled.main+xml\"/>\n  <Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>\n  <Default Extension=\"bin\" ContentType=\"application/vnd.ms-office.vbaProject\"/>\n</Types>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/>\n</Relationships>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<workbook xmlns=\"{Main}\" xmlns:r=\"{Rel}\"><sheets><sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n  <Relationship Id=\"rId1\" Type=\"{Rel}/worksheet\" Target=\"worksheets/sheet1.xml\"/>\n  \n</Relationships>"
+          ],
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"{Main}\" xmlns:r=\"{Rel}\"><sheetData><row r=\"1\"><c r=\"A1\"><v>1</v></c></row></sheetData></worksheet>"
+          ],
+          [
+            "xl/vbaProject.bin",
+            "VBA"
+          ]
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "macroEnabled",
+          "part": "xl/workbook.xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/workbook.xml': The file is a workbook with macros (.xlsm), which is not read. Save it from Excel as an Excel Workbook (.xlsx), which leaves the macros out."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a binary workbook (.xlsb) is refused, though its content type also says macro-enabled",
+      "file": {
+        "zip": [
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n  <Override PartName=\"/xl/workbook.bin\" ContentType=\"application/vnd.ms-excel.sheet.binary.macroEnabled.main\"/>\n  <Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>\n  \n</Types>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.bin\"/>\n</Relationships>"
+          ],
+          [
+            "xl/workbook.bin",
+            "binary"
+          ]
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "binary",
+          "part": "xl/workbook.bin",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/workbook.bin': The file is an Excel Binary Workbook (.xlsb), not an .xlsx. Save it from Excel as an Excel Workbook (.xlsx)."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: an Excel 97-2003 workbook (.xls), an OLE compound file, is refused as legacy",
+      "file": {
+        "ole": [
+          "Root Entry",
+          "Workbook",
+          {
+            "utf16": "\\u0005SummaryInformation"
+          }
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "legacy",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The file is an Excel 97–2003 workbook (.xls), or another Office binary file, not an .xlsx. Save it from Excel as an Excel Workbook (.xlsx)."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: an encrypted workbook, an OLE compound file holding an EncryptedPackage, is refused as encrypted",
+      "file": {
+        "ole": [
+          "Root Entry",
+          "EncryptionInfo",
+          "EncryptedPackage",
+          {
+            "utf16": "\\u0006DataSpaces"
+          }
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "encrypted",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The file is an encrypted workbook. Remove its password in Excel (File, Info, Protect Workbook, Encrypt with Password) and save it again."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: an encrypted workbook is told from a legacy one when its directory spans more than one sector",
+      "file": {
+        "ole": [
+          "Root Entry",
+          {
+            "utf16": "\\u0006DataSpaces"
+          },
+          "Version",
+          "DataSpaceMap",
+          "DataSpaceInfo",
+          "EncryptedPackage"
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "encrypted",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The file is an encrypted workbook. Remove its password in Excel (File, Info, Protect Workbook, Encrypt with Password) and save it again."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: Strict Open XML, whose names differ from the transitional ones, is refused rather than read as empty",
+      "file": {
+        "zip": [
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n  <Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>\n  <Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>\n  \n</Types>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n  <Relationship Id=\"rId1\" Type=\"http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument\" Target=\"xl/workbook.xml\"/>\n</Relationships>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<workbook xmlns=\"{Main}\" xmlns:r=\"{Rel}\"><sheets><sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>"
+          ]
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "strictOpenXml",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The workbook is saved as Strict Open XML, which is not read. Save it from Excel as an Excel Workbook (.xlsx)."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a worksheet that declares a DTD is refused, naming the Sheet and the part; no entity is expanded",
+      "file": {
+        "book": {
+          "sheet": "<?xml version=\"1.0\"?>\n<!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">]><worksheet xmlns=\"{Main}\"><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>&lol2;</t></is></c></row></sheetData></worksheet>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "dtd",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': The part declares a document type (<!DOCTYPE), which a workbook never needs; it is not read."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a DTD in the shared strings is refused at opening",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>",
+          "sharedStrings": "<?xml version=\"1.0\"?>\n<!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">]><sst xmlns=\"{Main}\"><si><t>&lol2;</t></si></sst>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "dtd",
+          "part": "xl/sharedStrings.xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/sharedStrings.xml': The part declares a document type (<!DOCTYPE), which a workbook never needs; it is not read."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a DTD in the package's own parts is refused at opening",
+      "file": {
+        "zip": [
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\"?>\n<!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">]><Types/>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/>\n</Relationships>"
+          ]
+        ]
+      },
+      "expect": {
+        "refused": {
+          "reason": "dtd",
+          "part": "[Content_Types].xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part '[Content_Types].xml': The part declares a document type (<!DOCTYPE), which a workbook never needs; it is not read."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a worksheet that is not well-formed is refused, naming the Sheet",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></row>"
+        }
+      },
+      "saying": "Sheet 'Sheet1': The part is not well-formed XML: ",
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': The part is not well-formed XML: "
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell naming a shared string the workbook does not hold is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\" t=\"s\"><v>3</v></c></row>",
+          "sharedStrings": "<sst xmlns=\"{Main}\"><si><t>only</t></si></sst>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "A1",
+          "message": "Sheet 'Sheet1', cell A1: The cell names the shared string '3', which the workbook does not hold."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell naming a type that is not a cell type is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"2\"><c r=\"B2\" t=\"x\"><v>3</v></c></row>",
+          "sharedStrings": "<sst xmlns=\"{Main}\"><si><t>only</t></si></sst>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "B2",
+          "message": "Sheet 'Sheet1', cell B2: 'x' is not a cell type."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell naming a reference outside the sheet is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"XFE1\"><v>3</v></c></row>",
+          "sharedStrings": "<sst xmlns=\"{Main}\"><si><t>only</t></si></sst>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': 'XFE1' is not a cell of the sheet."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell naming a row outside the sheet is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1048577\"><c><v>3</v></c></row>",
+          "sharedStrings": "<sst xmlns=\"{Main}\"><si><t>only</t></si></sst>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': Row 1048577 lies outside the sheet's rows."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell naming a shared formula naming no group is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"C1\"><f t=\"shared\">A1</f><v>3</v></c></row>",
+          "sharedStrings": "<sst xmlns=\"{Main}\"><si><t>only</t></si></sst>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "C1",
+          "message": "Sheet 'Sheet1', cell C1: A shared formula names no group (si)."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a file whose parts hold more than the size limit is refused at opening, before any is read",
+      "file": {
+        "book": {
+          "sheetData": [
+            {
+              "each": "<row r=\"{i}\"><c r=\"A{i}\"><v>{i}</v></c></row>",
+              "from": 1,
+              "to": 2000
+            }
+          ]
+        }
+      },
+      "options": {
+        "maxUncompressedBytes": 50000
+      },
+      "expect": {
+        "refused": {
+          "reason": "tooLarge",
+          "part": null,
+          "sheet": null,
+          "cell": null,
+          "message": "The file holds more than the 50,000 uncompressed bytes a read is allowed (XlsxReadOptions.MaxUncompressedBytes)."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a part whose zip entry declares fewer bytes than it inflates to is read no further than it declares, and refused",
+      "file": {
+        "book": {
+          "sheetData": [
+            {
+              "each": "<row r=\"{i}\"><c r=\"A{i}\"><v>{i}</v></c></row>",
+              "from": 1,
+              "to": 2000
+            }
+          ]
+        },
+        "lie": {
+          "part": "xl/worksheets/sheet1.xml",
+          "declared": 1000
+        }
+      },
+      "saying": "Sheet 'Sheet1': The part is not well-formed XML: ",
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': The part is not well-formed XML: "
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a stored part that holds more than its zip declares is refused past that size, naming the part and the Sheet",
+      "file": {
+        "book": {
+          "sheetData": [
+            {
+              "each": "<row r=\"{i}\"><c r=\"A{i}\"><v>{i}</v></c></row>",
+              "from": 1,
+              "to": 2000
+            }
+          ]
+        },
+        "stored": true,
+        "lie": {
+          "part": "xl/worksheets/sheet1.xml",
+          "declared": 1000
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "tooLarge",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': The part inflates to more than the 1,000 bytes the zip declares for it."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: past the cell limit the file is refused, naming the Sheet and the first cell past it",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c><c r=\"B1\"><v>2</v></c></row><row r=\"2\"><c r=\"A2\"><v>3</v></c><c r=\"B2\"><v>4</v></c></row>"
+        }
+      },
+      "options": {
+        "maxCells": 3
+      },
+      "expect": {
+        "refused": {
+          "reason": "tooManyCells",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "B2",
+          "message": "Sheet 'Sheet1', cell B2: The workbook holds more than the 3 cells a read is allowed (XlsxReadOptions.MaxCells)."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a file of as many cells as the limit is read whole",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c><c r=\"B1\"><v>2</v></c></row><row r=\"2\"><c r=\"A2\"><v>3</v></c><c r=\"B2\"><v>4</v></c></row>"
+        }
+      },
+      "options": {
+        "maxCells": 4
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "number",
+                "value": "1"
+              },
+              {
+                "at": "B1",
+                "type": "number",
+                "value": "2"
+              },
+              {
+                "at": "A2",
+                "type": "number",
+                "value": "3"
+              },
+              {
+                "at": "B2",
+                "type": "number",
+                "value": "4"
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a worksheet whose compressed bytes cannot be inflated is refused by name, as malformed",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>"
+        },
+        "damage": "xl/worksheets/sheet1.xml"
+      },
+      "saying": "Sheet 'Sheet1': The part's compressed bytes cannot be inflated: ",
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': The part's compressed bytes cannot be inflated: "
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: shared strings whose compressed bytes cannot be inflated are refused by name, as malformed",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>",
+          "sharedStrings": "<sst xmlns=\"{Main}\"><si><t>only</t></si></sst>"
+        },
+        "damage": "xl/sharedStrings.xml"
+      },
+      "saying": "Part 'xl/sharedStrings.xml': The part's compressed bytes cannot be inflated: ",
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/sharedStrings.xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/sharedStrings.xml': The part's compressed bytes cannot be inflated: "
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: content types whose compressed bytes cannot be inflated are refused by name, as malformed",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>"
+        },
+        "damage": "[Content_Types].xml"
+      },
+      "saying": "Part '[Content_Types].xml': The part's compressed bytes cannot be inflated: ",
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "[Content_Types].xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part '[Content_Types].xml': The part's compressed bytes cannot be inflated: "
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: relationships whose compressed bytes cannot be inflated are refused by name, as malformed",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>"
+        },
+        "damage": "xl/_rels/workbook.xml.rels"
+      },
+      "saying": "Part 'xl/_rels/workbook.xml.rels': The part's compressed bytes cannot be inflated: ",
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/_rels/workbook.xml.rels",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/_rels/workbook.xml.rels': The part's compressed bytes cannot be inflated: "
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a cell written twice is refused by name, never read into a place it does not hold",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c><c r=\"A1\"><v>2</v></c></row>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "A1",
+          "message": "Sheet 'Sheet1', cell A1: The cell comes after A1: a row's cells are in order, each once."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a cell before the one written ahead of it is refused by name, never read into a place it does not hold",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"B1\"><v>1</v></c><c r=\"A1\"><v>2</v></c></row>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "A1",
+          "message": "Sheet 'Sheet1', cell A1: The cell comes after B1: a row's cells are in order, each once."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a cell naming the place an unnamed one took is refused by name, never read into a place it does not hold",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c><v>1</v></c><c r=\"A1\"><v>2</v></c></row>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "A1",
+          "message": "Sheet 'Sheet1', cell A1: The cell comes after A1: a row's cells are in order, each once."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a cell written inside another row is refused by name, never read into a place it does not hold",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A2\"><v>1</v></c></row>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "A2",
+          "message": "Sheet 'Sheet1', cell A2: The cell is written inside row 1, not its own."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a row before the one written ahead of it is refused by name, never read into a place it does not hold",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"2\"><c r=\"A2\"><v>1</v></c></row><row r=\"1\"><c r=\"A1\"><v>2</v></c></row>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': Row 1 comes after row 2: a worksheet's rows are in order, each once."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a row written twice is refused by name, never read into a place it does not hold",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row><row r=\"1\"><c r=\"B1\"><v>2</v></c></row>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': Row 1 comes after row 1: a worksheet's rows are in order, each once."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell naming a cell format past the styles' is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\" s=\"2\"><v>1</v></c></row>",
+          "styles": "<styleSheet xmlns=\"{Main}\"><fonts count=\"1\"><font/></fonts><fills count=\"2\"><fill/><fill/></fills>\n<borders count=\"1\"><border/></borders><cellXfs count=\"2\"><xf/><xf/></cellXfs></styleSheet>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "A1",
+          "message": "Sheet 'Sheet1', cell A1: The cell names the cell format 2, which the styles do not hold."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell naming a negative cell format is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"B1\" s=\"-1\"><v>1</v></c></row>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": "B1",
+          "message": "Sheet 'Sheet1', cell B1: The cell names the cell format -1, which the styles do not hold."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: columns naming a cell format the styles do not hold are refused by name",
+      "file": {
+        "book": {
+          "sheetData": "",
+          "head": "<cols><col min=\"1\" max=\"2\" style=\"3\"/></cols>",
+          "styles": "<styleSheet xmlns=\"{Main}\"><fonts count=\"1\"><font/></fonts><fills count=\"2\"><fill/><fill/></fills>\n<borders count=\"1\"><border/></borders><cellXfs count=\"2\"><xf/><xf/></cellXfs></styleSheet>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': The columns 1 to 2 name the cell format 3, which the styles do not hold."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell format naming a font the styles do not hold is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>",
+          "styles": "<styleSheet xmlns=\"{Main}\"><fonts count=\"1\"><font/></fonts><fills count=\"2\"><fill/><fill/></fills>\n<borders count=\"1\"><border/></borders><cellXfs count=\"2\"><xf/><xf fontId=\"1\"/></cellXfs></styleSheet>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/styles.xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/styles.xml': The cell format 1 names the font 1, which the styles do not hold."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell format naming a negative fill is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>",
+          "styles": "<styleSheet xmlns=\"{Main}\"><fonts count=\"1\"><font/></fonts><fills count=\"2\"><fill/><fill/></fills>\n<borders count=\"1\"><border/></borders><cellXfs count=\"2\"><xf/><xf fillId=\"-1\"/></cellXfs></styleSheet>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/styles.xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/styles.xml': The cell format 1 names the fill -1, which the styles do not hold."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell format naming a border the styles do not hold is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>",
+          "styles": "<styleSheet xmlns=\"{Main}\"><fonts count=\"1\"><font/></fonts><fills count=\"2\"><fill/><fill/></fills>\n<borders count=\"1\"><border/></borders><cellXfs count=\"2\"><xf/><xf borderId=\"1\"/></cellXfs></styleSheet>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/styles.xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/styles.xml': The cell format 1 names the border 1, which the styles do not hold."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell format naming a custom Number Format the styles do not hold is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>",
+          "styles": "<styleSheet xmlns=\"{Main}\"><fonts count=\"1\"><font/></fonts><fills count=\"2\"><fill/><fill/></fills>\n<borders count=\"1\"><border/></borders><cellXfs count=\"2\"><xf/><xf numFmtId=\"200\"/></cellXfs></styleSheet>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/styles.xml",
+          "sheet": null,
+          "cell": null,
+          "message": "Part 'xl/styles.xml': The cell format 1 names the Number Format 200, which the styles do not hold."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell format naming a built-in Number Format is read",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\" s=\"1\"><v>1</v></c></row>",
+          "styles": "<styleSheet xmlns=\"{Main}\"><fonts count=\"1\"><font/></fonts><fills count=\"2\"><fill/><fill/></fills>\n<borders count=\"1\"><border/></borders><cellXfs count=\"2\"><xf/><xf numFmtId=\"14\"/></cellXfs></styleSheet>"
+        }
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "number",
+                "value": "1",
+                "style": 1
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a cell format naming a custom Number Format the styles hold is read",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\" s=\"1\"><v>1</v></c></row>",
+          "styles": "<styleSheet xmlns=\"{Main}\"><numFmts count=\"1\"><numFmt numFmtId=\"200\" formatCode=\"0.000\"/></numFmts><fonts count=\"1\"><font/></fonts><fills count=\"2\"><fill/><fill/></fills>\n<borders count=\"1\"><border/></borders><cellXfs count=\"2\"><xf/><xf numFmtId=\"200\"/></cellXfs></styleSheet>"
+        }
+      },
+      "holds": [
+        "styles",
+        "sheets"
+      ],
+      "expect": {
+        "styles": {
+          "numberFormats": {
+            "200": "0.000"
+          },
+          "fonts": [
+            {}
+          ],
+          "fills": [
+            {
+              "pattern": "none"
+            },
+            {
+              "pattern": "none"
+            }
+          ],
+          "borders": [
+            {
+              "left": {
+                "style": "none"
+              },
+              "right": {
+                "style": "none"
+              },
+              "top": {
+                "style": "none"
+              },
+              "bottom": {
+                "style": "none"
+              },
+              "diagonal": {
+                "style": "none"
+              }
+            }
+          ],
+          "cellFormats": [
+            {
+              "numberFormat": 0,
+              "font": 0,
+              "fill": 0,
+              "border": 0
+            },
+            {
+              "numberFormat": 200,
+              "font": 0,
+              "fill": 0,
+              "border": 0
+            }
+          ],
+          "indexedColors": null
+        },
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "number",
+                "value": "1",
+                "style": 1
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a row naming a cell format the styles do not hold is refused by name",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"7\" s=\"9\" customFormat=\"1\"/>",
+          "styles": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\n  <fonts count=\"1\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts>\n  <fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills>\n  <borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>\n  <cellXfs count=\"2\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/><xf numFmtId=\"10\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellXfs>\n</styleSheet>"
+        }
+      },
+      "expect": {
+        "refused": {
+          "reason": "malformed",
+          "part": "xl/worksheets/sheet1.xml",
+          "sheet": "Sheet1",
+          "cell": null,
+          "message": "Sheet 'Sheet1': Row 7 names the cell format 9, which the styles do not hold."
+        }
+      }
+    }
+  ]
+}

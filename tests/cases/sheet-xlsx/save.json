@@ -1,0 +1,5139 @@
+{
+  "kind": "sheetXlsx",
+  "note": "A Workbook written to a file (ADR-0330 §4, §6, §9): the parts Excel requires, what reads back, what a write refuses by name with nothing reaching the stream, and what the cells where formatted rows cross formatted columns cost.",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0330 §3, §4, §6: a Workbook is written as the package Excel requires: its parts with their content types and relationships, each part in its schema's order, the Sheet shown shown, text in the shared strings, every Formula with its Value and Excel's stored prefixes as a dynamic array over its spill, and the workbook marked for full calculation on load",
+      "sheets": [
+        "Trades",
+        "Desks"
+      ],
+      "note": "A Workbook that holds a little of everything a file carries: two Sheets, constants of every kind, Formulas that read across them, a spill, and formats.",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A1": "Desk"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "B1": "Notional"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "A2": "EMEA"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "B2": "1000000.25"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "A3": "APAC"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "B3": "250000"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "C2": "=B2*2"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "C3": "=XLOOKUP(\"APAC\",A2:A3,B2:B3)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "D2": "=SEQUENCE(3)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "E2": "=SUM(D2#)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "F2": "TRUE"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "F3": "#N/A"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "G2": "=A2&\" desk\""
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "G3": "=1/0"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "H2": "=LET(x,B2,y,B3,x+y)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "H3": "=Desks!A1*2"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "I2": "=SORT(B2:B3)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "J2": "=IFS(B2>0,\"long\",TRUE,\"short\")"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": "21"
+            }
+          },
+          "on": "Desks"
+        },
+        {
+          "do": {
+            "enter": {
+              "B1": "EMEA"
+            }
+          },
+          "on": "Desks"
+        },
+        {
+          "do": {
+            "enter": {
+              "C1": "=COUNTIF(Trades!A2:A3,B1)"
+            }
+          },
+          "on": "Desks"
+        },
+        {
+          "do": {
+            "setNumberFormat": {
+              "at": "B2:C3",
+              "format": "#,##0.00"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "setCellFormat": {
+              "ranges": [
+                "A1:J1"
+              ],
+              "change": {
+                "bold": true
+              }
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "show": "Desks"
+        },
+        {
+          "save": {},
+          "parts": true,
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/worksheets/sheet2.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/metadata.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "parts": [
+              [
+                "xl/worksheets/sheet1.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\" s=\"1\" t=\"s\"><v>0</v></c><c r=\"B1\" s=\"1\" t=\"s\"><v>1</v></c><c r=\"C1\" s=\"1\" /><c r=\"D1\" s=\"1\" /><c r=\"E1\" s=\"1\" /><c r=\"F1\" s=\"1\" /><c r=\"G1\" s=\"1\" /><c r=\"H1\" s=\"1\" /><c r=\"I1\" s=\"1\" /><c r=\"J1\" s=\"1\" /></row><row r=\"2\"><c r=\"A2\" t=\"s\"><v>2</v></c><c r=\"B2\" s=\"2\"><v>1000000.25</v></c><c r=\"C2\" s=\"2\" cm=\"1\"><f t=\"array\" ref=\"C2\">B2*2</f><v>2000000.5</v></c><c r=\"D2\" cm=\"1\"><f t=\"array\" ref=\"D2:D4\">_xlfn.SEQUENCE(3)</f><v>1</v></c><c r=\"E2\" cm=\"1\"><f t=\"array\" ref=\"E2\">SUM(_xlfn.ANCHORARRAY(D2))</f><v>6</v></c><c r=\"F2\" t=\"b\"><v>1</v></c><c r=\"G2\" t=\"str\" cm=\"1\"><f t=\"array\" ref=\"G2\">A2&amp;\" desk\"</f><v>EMEA desk</v></c><c r=\"H2\" cm=\"1\"><f t=\"array\" ref=\"H2\">_xlfn.LET(_xlpm.x,B2,_xlpm.y,B3,_xlpm.x+_xlpm.y)</f><v>1250000.25</v></c><c r=\"I2\" cm=\"1\"><f t=\"array\" ref=\"I2:I3\">_xlfn._xlws.SORT(B2:B3)</f><v>250000</v></c><c r=\"J2\" t=\"str\" cm=\"1\"><f t=\"array\" ref=\"J2\">_xlfn.IFS(B2&gt;0,\"long\",TRUE,\"short\")</f><v>long</v></c></row><row r=\"3\"><c r=\"A3\" t=\"s\"><v>3</v></c><c r=\"B3\" s=\"2\"><v>250000</v></c><c r=\"C3\" s=\"2\" cm=\"1\"><f t=\"array\" ref=\"C3\">_xlfn.XLOOKUP(\"APAC\",A2:A3,B2:B3)</f><v>250000</v></c><c r=\"D3\"><v>2</v></c><c r=\"F3\" t=\"e\"><v>#N/A</v></c><c r=\"G3\" t=\"e\" cm=\"1\"><f t=\"array\" ref=\"G3\">1/0</f><v>#DIV/0!</v></c><c r=\"H3\" cm=\"1\"><f t=\"array\" ref=\"H3\">Desks!A1*2</f><v>42</v></c><c r=\"I3\"><v>1000000.25</v></c></row><row r=\"4\"><c r=\"D4\"><v>3</v></c></row></sheetData></worksheet>"
+              ],
+              [
+                "xl/worksheets/sheet2.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\"><v>21</v></c><c r=\"B1\" t=\"s\"><v>2</v></c><c r=\"C1\" cm=\"1\"><f t=\"array\" ref=\"C1\">COUNTIF(Trades!A2:A3,B1)</f><v>1</v></c></row></sheetData></worksheet>"
+              ],
+              [
+                "xl/sharedStrings.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><sst count=\"5\" uniqueCount=\"4\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>Desk</t></si><si><t>Notional</t></si><si><t>EMEA</t></si><si><t>APAC</t></si></sst>"
+              ],
+              [
+                "xl/styles.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"2\"><font><sz val=\"11\" /><name val=\"Calibri\" /></font><font><b /><sz val=\"11\" /><name val=\"Calibri\" /></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /><xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\" /><xf numFmtId=\"4\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+              ],
+              [
+                "xl/metadata.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><metadata xmlns:xda=\"http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><metadataTypes count=\"1\"><metadataType name=\"XLDAPR\" minSupportedVersion=\"120000\" copy=\"1\" pasteAll=\"1\" pasteValues=\"1\" merge=\"1\" splitFirst=\"1\" rowColShift=\"1\" clearFormats=\"1\" clearComments=\"1\" assign=\"1\" coerce=\"1\" cellMeta=\"1\" /></metadataTypes><futureMetadata name=\"XLDAPR\" count=\"1\"><bk><extLst><ext uri=\"{bdbb8cdc-fa1e-496e-a857-3c3f30c029c3}\"><xda:dynamicArrayProperties fDynamic=\"1\" fCollapsed=\"0\" /></ext></extLst></bk></futureMetadata><cellMetadata count=\"1\"><bk><rc t=\"1\" v=\"0\" /></bk></cellMetadata></metadata>"
+              ],
+              [
+                "xl/workbook.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView activeTab=\"1\" /></bookViews><sheets><sheet name=\"Trades\" sheetId=\"1\" r:id=\"rId1\" /><sheet name=\"Desks\" sheetId=\"2\" r:id=\"rId2\" /></sheets><calcPr calcId=\"191029\" fullCalcOnLoad=\"1\" /></workbook>"
+              ],
+              [
+                "xl/_rels/workbook.xml.rels",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet2.xml\" /><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /><Relationship Id=\"rId4\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" Target=\"sharedStrings.xml\" /><Relationship Id=\"rId5\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sheetMetadata\" Target=\"metadata.xml\" /></Relationships>"
+              ],
+              [
+                "_rels/.rels",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+              ],
+              [
+                "[Content_Types].xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/worksheets/sheet2.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /><Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\" /><Override PartName=\"/xl/metadata.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml\" /></Types>"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: the file reads back as the Workbook it was written from, every Value computed again",
+      "sheets": [
+        "Trades",
+        "Desks"
+      ],
+      "note": "A Workbook that holds a little of everything a file carries: two Sheets, constants of every kind, Formulas that read across them, a spill, and formats.",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A1": "Desk"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "B1": "Notional"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "A2": "EMEA"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "B2": "1000000.25"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "A3": "APAC"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "B3": "250000"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "C2": "=B2*2"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "C3": "=XLOOKUP(\"APAC\",A2:A3,B2:B3)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "D2": "=SEQUENCE(3)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "E2": "=SUM(D2#)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "F2": "TRUE"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "F3": "#N/A"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "G2": "=A2&\" desk\""
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "G3": "=1/0"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "H2": "=LET(x,B2,y,B3,x+y)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "H3": "=Desks!A1*2"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "I2": "=SORT(B2:B3)"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "J2": "=IFS(B2>0,\"long\",TRUE,\"short\")"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": "21"
+            }
+          },
+          "on": "Desks"
+        },
+        {
+          "do": {
+            "enter": {
+              "B1": "EMEA"
+            }
+          },
+          "on": "Desks"
+        },
+        {
+          "do": {
+            "enter": {
+              "C1": "=COUNTIF(Trades!A2:A3,B1)"
+            }
+          },
+          "on": "Desks"
+        },
+        {
+          "do": {
+            "setNumberFormat": {
+              "at": "B2:C3",
+              "format": "#,##0.00"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "do": {
+            "setCellFormat": {
+              "ranges": [
+                "A1:J1"
+              ],
+              "change": {
+                "bold": true
+              }
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "show": "Desks"
+        },
+        {
+          "remember": "before"
+        },
+        {
+          "save": {},
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/worksheets/sheet2.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/metadata.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ]
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Desks",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "Desk",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "B1",
+                      "text": "Notional",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "C1",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "D1",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "E1",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "F1",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "G1",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "H1",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "I1",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "J1",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "A2",
+                      "text": "EMEA"
+                    },
+                    {
+                      "at": "B2",
+                      "number": 1000000.25,
+                      "format": "#,##0.00"
+                    },
+                    {
+                      "at": "C2",
+                      "formula": "=B2*2",
+                      "format": "#,##0.00"
+                    },
+                    {
+                      "at": "D2",
+                      "formula": "=SEQUENCE(3)"
+                    },
+                    {
+                      "at": "E2",
+                      "formula": "=SUM(D2#)"
+                    },
+                    {
+                      "at": "F2",
+                      "boolean": true
+                    },
+                    {
+                      "at": "G2",
+                      "formula": "=A2&\" desk\""
+                    },
+                    {
+                      "at": "H2",
+                      "formula": "=LET(x,B2,y,B3,x+y)"
+                    },
+                    {
+                      "at": "I2",
+                      "formula": "=SORT(B2:B3)"
+                    },
+                    {
+                      "at": "J2",
+                      "formula": "=IFS(B2>0,\"long\",TRUE,\"short\")"
+                    },
+                    {
+                      "at": "A3",
+                      "text": "APAC"
+                    },
+                    {
+                      "at": "B3",
+                      "number": 250000,
+                      "format": "#,##0.00"
+                    },
+                    {
+                      "at": "C3",
+                      "formula": "=XLOOKUP(\"APAC\",A2:A3,B2:B3)",
+                      "format": "#,##0.00"
+                    },
+                    {
+                      "at": "F3",
+                      "error": "#N/A"
+                    },
+                    {
+                      "at": "G3",
+                      "formula": "=1/0"
+                    },
+                    {
+                      "at": "H3",
+                      "formula": "=Desks!A1*2"
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 21
+                    },
+                    {
+                      "at": "B1",
+                      "text": "EMEA"
+                    },
+                    {
+                      "at": "C1",
+                      "formula": "=COUNTIF(Trades!A2:A3,B1)"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "picture": "before"
+          },
+          "note": "The document and every Value are the ones written."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6, ADR-0180: the Values written are the ones on screen, RAND()'s included",
+      "steps": [
+        {
+          "setSeed": 20261021
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": "=RAND()",
+              "A2": "=RANDBETWEEN(1,1000000)",
+              "A3": "=A1*2"
+            }
+          }
+        },
+        {
+          "save": {},
+          "parts": [
+            "xl/worksheets/sheet1.xml"
+          ],
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/styles.xml",
+              "xl/metadata.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "parts": [
+              [
+                "xl/worksheets/sheet1.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\" cm=\"1\"><f t=\"array\" ref=\"A1\">RAND()</f><v>0.9580565728449054</v></c></row><row r=\"2\"><c r=\"A2\" cm=\"1\"><f t=\"array\" ref=\"A2\">RANDBETWEEN(1,1000000)</f><v>900025</v></c></row><row r=\"3\"><c r=\"A3\" cm=\"1\"><f t=\"array\" ref=\"A3\">A1*2</f><v>1.9161131456898108</v></c></row></sheetData></worksheet>"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §6: a file as Excel writes it — prefixes, a shared formula, a dynamic array, the 1904 date system, theme colours, formats and widths — opened, saved and opened again keeps everything carried",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "sharedString",
+                    "text": "Desk",
+                    "style": 1
+                  },
+                  {
+                    "at": "B1",
+                    "type": "inlineString",
+                    "text": "Notional ",
+                    "style": 1
+                  },
+                  {
+                    "at": "A2",
+                    "type": "sharedString",
+                    "text": "EMEA"
+                  },
+                  {
+                    "at": "B2",
+                    "type": "number",
+                    "value": "1234.5",
+                    "style": 2
+                  },
+                  {
+                    "at": "C2",
+                    "type": "number",
+                    "value": "43539",
+                    "style": 3
+                  },
+                  {
+                    "at": "A3",
+                    "type": "sharedString",
+                    "text": "APAC"
+                  },
+                  {
+                    "at": "B3",
+                    "type": "number",
+                    "value": "99",
+                    "style": 2
+                  },
+                  {
+                    "at": "C3",
+                    "type": "number",
+                    "value": "43540",
+                    "style": 4
+                  },
+                  {
+                    "at": "D2",
+                    "type": "number",
+                    "value": "B2*2",
+                    "formula": {
+                      "text": "B2*2",
+                      "kind": "shared",
+                      "ref": "D2:D3",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "D3",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "",
+                      "kind": "shared",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "E2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.XLOOKUP(\"APAC\",A2:A3,B2:B3)"
+                    }
+                  },
+                  {
+                    "at": "F2",
+                    "type": "number",
+                    "value": "1",
+                    "formula": {
+                      "text": "_xlfn.SEQUENCE(2)",
+                      "kind": "array",
+                      "ref": "F2:F3",
+                      "dynamic": true
+                    }
+                  },
+                  {
+                    "at": "F3",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "G2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.LET(_xlpm.x,B2,_xlpm.x*2)"
+                    }
+                  },
+                  {
+                    "at": "H2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM(_xlfn.ANCHORARRAY(F2))"
+                    }
+                  },
+                  {
+                    "at": "I2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn._xlws.FILTER(A2:A3,B2:B3>100)"
+                    }
+                  },
+                  {
+                    "at": "J2",
+                    "type": "boolean",
+                    "value": "1"
+                  },
+                  {
+                    "at": "J3",
+                    "type": "error",
+                    "value": "#N/A"
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 0,
+                    "last": 0,
+                    "width": 14.7109375,
+                    "bestFit": true
+                  },
+                  {
+                    "first": 1,
+                    "last": 1,
+                    "width": 16.7109375,
+                    "style": 2
+                  }
+                ],
+                "rows": [
+                  [
+                    0,
+                    1
+                  ]
+                ]
+              },
+              {
+                "name": "Desks",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "B1",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "Trades!B2*A1"
+                    }
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "numberFormats": {
+                  "164": "#,##0.00\\ \"EUR\"",
+                  "165": "dd/mm/yyyy"
+                },
+                "fonts": [
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "color": {
+                      "kind": "theme",
+                      "value": 1
+                    }
+                  },
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "bold": true,
+                    "color": {
+                      "kind": "theme",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "italic": true,
+                    "underline": "single",
+                    "strike": true,
+                    "color": {
+                      "kind": "rgb",
+                      "value": "FFC00000"
+                    }
+                  }
+                ],
+                "fills": [
+                  {
+                    "pattern": "none"
+                  },
+                  {
+                    "pattern": "gray125"
+                  },
+                  {
+                    "pattern": "solid",
+                    "foreground": {
+                      "kind": "theme",
+                      "value": 4,
+                      "tint": -0.249977111117893
+                    }
+                  }
+                ],
+                "borders": [
+                  {
+                    "left": {
+                      "style": "none"
+                    },
+                    "right": {
+                      "style": "none"
+                    },
+                    "top": {
+                      "style": "none"
+                    },
+                    "bottom": {
+                      "style": "none"
+                    },
+                    "diagonal": {
+                      "style": "none"
+                    }
+                  },
+                  {
+                    "left": {
+                      "style": "none"
+                    },
+                    "right": {
+                      "style": "none"
+                    },
+                    "top": {
+                      "style": "thin",
+                      "color": {
+                        "kind": "rgb",
+                        "value": "FF00B050"
+                      }
+                    },
+                    "bottom": {
+                      "style": "double"
+                    },
+                    "diagonal": {
+                      "style": "none"
+                    }
+                  }
+                ],
+                "cellFormats": [
+                  {},
+                  {
+                    "font": 1,
+                    "fill": 2,
+                    "alignment": {
+                      "horizontal": "center"
+                    }
+                  },
+                  {
+                    "numberFormat": 164,
+                    "font": 2,
+                    "border": 1,
+                    "alignment": {
+                      "horizontal": "right"
+                    }
+                  },
+                  {
+                    "numberFormat": 165
+                  },
+                  {
+                    "numberFormat": 14
+                  }
+                ]
+              },
+              "date1904": true,
+              "activeSheet": 1
+            }
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Desks",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columns": [
+                    {
+                      "at": "B:B",
+                      "format": "#,##0.00\\ \"EUR\"",
+                      "align": "right",
+                      "font": {
+                        "color": "#C00000",
+                        "italic": true,
+                        "underline": true,
+                        "strikethrough": true
+                      },
+                      "borders": {
+                        "top": {
+                          "style": "thin",
+                          "color": "#00B050"
+                        },
+                        "bottom": {
+                          "style": "double"
+                        }
+                      }
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "1:1",
+                      "format": "General",
+                      "align": "center",
+                      "font": {
+                        "color": "#FFFFFF",
+                        "bold": true
+                      },
+                      "fill": "#2F5597",
+                      "borders": {}
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 14,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "B:B",
+                      "width": 16,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "Desk"
+                    },
+                    {
+                      "at": "B1",
+                      "text": "Notional "
+                    },
+                    {
+                      "at": "A2",
+                      "text": "EMEA"
+                    },
+                    {
+                      "at": "B2",
+                      "number": 1234.5
+                    },
+                    {
+                      "at": "C2",
+                      "number": 45001,
+                      "format": "dd/mm/yyyy"
+                    },
+                    {
+                      "at": "D2",
+                      "formula": "=B2*2"
+                    },
+                    {
+                      "at": "E2",
+                      "formula": "=XLOOKUP(\"APAC\",A2:A3,B2:B3)"
+                    },
+                    {
+                      "at": "F2",
+                      "formula": "=SEQUENCE(2)"
+                    },
+                    {
+                      "at": "G2",
+                      "formula": "=LET(x,B2,x*2)"
+                    },
+                    {
+                      "at": "H2",
+                      "formula": "=SUM(F2#)"
+                    },
+                    {
+                      "at": "I2",
+                      "formula": "=FILTER(A2:A3,B2:B3>100)"
+                    },
+                    {
+                      "at": "J2",
+                      "boolean": true
+                    },
+                    {
+                      "at": "A3",
+                      "text": "APAC"
+                    },
+                    {
+                      "at": "B3",
+                      "number": 99
+                    },
+                    {
+                      "at": "C3",
+                      "number": 45002,
+                      "format": "m/d/yyyy"
+                    },
+                    {
+                      "at": "D3",
+                      "formula": "=B3*2"
+                    },
+                    {
+                      "at": "J3",
+                      "error": "#N/A"
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 2
+                    },
+                    {
+                      "at": "B1",
+                      "formula": "=Trades!B2*A1"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "themeColours",
+                  "sheet": null,
+                  "detail": null,
+                  "description": "Colours of the workbook name its theme: each is carried as the RGB value the file's theme gives it, and the link to the theme is not, so another theme will not recolour them."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "remember": "first"
+        },
+        {
+          "save": {},
+          "parts": [
+            "xl/workbook.xml",
+            "xl/worksheets/sheet1.xml"
+          ],
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/worksheets/sheet2.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/metadata.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "parts": [
+              [
+                "xl/workbook.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView activeTab=\"1\" /></bookViews><sheets><sheet name=\"Trades\" sheetId=\"1\" r:id=\"rId1\" /><sheet name=\"Desks\" sheetId=\"2\" r:id=\"rId2\" /></sheets><calcPr calcId=\"191029\" fullCalcOnLoad=\"1\" /></workbook>"
+              ],
+              [
+                "xl/worksheets/sheet1.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><cols><col min=\"1\" max=\"1\" width=\"14.7109375\" customWidth=\"1\" bestFit=\"1\" /><col min=\"2\" max=\"2\" width=\"16.7109375\" customWidth=\"1\" style=\"2\" /></cols><sheetData><row r=\"1\" s=\"1\" customFormat=\"1\"><c r=\"A1\" s=\"1\" t=\"s\"><v>0</v></c><c r=\"B1\" s=\"1\" t=\"s\"><v>1</v></c></row><row r=\"2\"><c r=\"A2\" t=\"s\"><v>2</v></c><c r=\"B2\" s=\"2\"><v>1234.5</v></c><c r=\"C2\" s=\"3\"><v>45001</v></c><c r=\"D2\" cm=\"1\"><f t=\"array\" ref=\"D2\">B2*2</f><v>2469</v></c><c r=\"E2\" cm=\"1\"><f t=\"array\" ref=\"E2\">_xlfn.XLOOKUP(\"APAC\",A2:A3,B2:B3)</f><v>99</v></c><c r=\"F2\" cm=\"1\"><f t=\"array\" ref=\"F2:F3\">_xlfn.SEQUENCE(2)</f><v>1</v></c><c r=\"G2\" cm=\"1\"><f t=\"array\" ref=\"G2\">_xlfn.LET(_xlpm.x,B2,_xlpm.x*2)</f><v>2469</v></c><c r=\"H2\" cm=\"1\"><f t=\"array\" ref=\"H2\">SUM(_xlfn.ANCHORARRAY(F2))</f><v>3</v></c><c r=\"I2\" t=\"str\" cm=\"1\"><f t=\"array\" ref=\"I2\">_xlfn._xlws.FILTER(A2:A3,B2:B3&gt;100)</f><v>EMEA</v></c><c r=\"J2\" t=\"b\"><v>1</v></c></row><row r=\"3\"><c r=\"A3\" t=\"s\"><v>3</v></c><c r=\"B3\" s=\"2\"><v>99</v></c><c r=\"C3\" s=\"4\"><v>45002</v></c><c r=\"D3\" cm=\"1\"><f t=\"array\" ref=\"D3\">B3*2</f><v>198</v></c><c r=\"F3\"><v>2</v></c><c r=\"J3\" t=\"e\"><v>#N/A</v></c></row></sheetData></worksheet>"
+              ]
+            ]
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Desks",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columns": [
+                    {
+                      "at": "B:B",
+                      "format": "#,##0.00\\ \"EUR\"",
+                      "align": "right",
+                      "font": {
+                        "color": "#C00000",
+                        "italic": true,
+                        "underline": true,
+                        "strikethrough": true
+                      },
+                      "borders": {
+                        "top": {
+                          "style": "thin",
+                          "color": "#00B050"
+                        },
+                        "bottom": {
+                          "style": "double"
+                        }
+                      }
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "1:1",
+                      "format": "General",
+                      "align": "center",
+                      "font": {
+                        "color": "#FFFFFF",
+                        "bold": true
+                      },
+                      "fill": "#2F5597",
+                      "borders": {}
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 14,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "B:B",
+                      "width": 16,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "Desk"
+                    },
+                    {
+                      "at": "B1",
+                      "text": "Notional "
+                    },
+                    {
+                      "at": "A2",
+                      "text": "EMEA"
+                    },
+                    {
+                      "at": "B2",
+                      "number": 1234.5
+                    },
+                    {
+                      "at": "C2",
+                      "number": 45001,
+                      "format": "dd/mm/yyyy"
+                    },
+                    {
+                      "at": "D2",
+                      "formula": "=B2*2"
+                    },
+                    {
+                      "at": "E2",
+                      "formula": "=XLOOKUP(\"APAC\",A2:A3,B2:B3)"
+                    },
+                    {
+                      "at": "F2",
+                      "formula": "=SEQUENCE(2)"
+                    },
+                    {
+                      "at": "G2",
+                      "formula": "=LET(x,B2,x*2)"
+                    },
+                    {
+                      "at": "H2",
+                      "formula": "=SUM(F2#)"
+                    },
+                    {
+                      "at": "I2",
+                      "formula": "=FILTER(A2:A3,B2:B3>100)"
+                    },
+                    {
+                      "at": "J2",
+                      "boolean": true
+                    },
+                    {
+                      "at": "A3",
+                      "text": "APAC"
+                    },
+                    {
+                      "at": "B3",
+                      "number": 99
+                    },
+                    {
+                      "at": "C3",
+                      "number": 45002,
+                      "format": "m/d/yyyy"
+                    },
+                    {
+                      "at": "D3",
+                      "formula": "=B3*2"
+                    },
+                    {
+                      "at": "J3",
+                      "error": "#N/A"
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 2
+                    },
+                    {
+                      "at": "B1",
+                      "formula": "=Trades!B2*A1"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "on": "Trades",
+          "expect": {
+            "picture": "first",
+            "texts": {
+              "C2": "16/03/2023",
+              "C3": "3/17/2023",
+              "D2": "2469",
+              "D3": "198",
+              "I2": "EMEA",
+              "H2": "3"
+            }
+          },
+          "note": "The 1904 serials were moved once, on the first opening, and the dates stand."
+        },
+        {
+          "read": true,
+          "on": "Desks",
+          "expect": {
+            "texts": {
+              "B1": "2469"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Workbook Document's formats and widths, written and read back, show as they did, cell by cell",
+      "culture": "en-GB",
+      "note": "A Sheet that records every part at every level, over and under one another.",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-GB",
+            "shown": "Desks",
+            "sheets": [
+              {
+                "name": "Trades",
+                "columns": [
+                  {
+                    "at": "C:D",
+                    "format": "0.00%",
+                    "font": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "at": "F:F",
+                    "align": "right",
+                    "fill": "#FFFF00"
+                  }
+                ],
+                "rows": [
+                  {
+                    "at": "3:3",
+                    "fill": "#4472C4"
+                  },
+                  {
+                    "at": "5:6",
+                    "format": "yyyy-mm-dd",
+                    "font": {
+                      "color": "#C00000"
+                    },
+                    "borders": {
+                      "top": {
+                        "style": "thin"
+                      }
+                    }
+                  }
+                ],
+                "columnWidths": [
+                  {
+                    "at": "A:A",
+                    "width": 18.57,
+                    "kind": "setByUser"
+                  },
+                  {
+                    "at": "B:C",
+                    "width": 12,
+                    "kind": "widenedByEntry"
+                  },
+                  {
+                    "at": "F:F",
+                    "width": 3.5,
+                    "kind": "setByUser"
+                  }
+                ],
+                "cells": [
+                  {
+                    "at": "A1",
+                    "text": "Desk",
+                    "align": "center",
+                    "font": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "at": "B1",
+                    "text": "Notional",
+                    "align": "right",
+                    "font": {
+                      "color": "#C00000",
+                      "italic": true,
+                      "underline": true,
+                      "strikethrough": true
+                    },
+                    "fill": "#4472C4",
+                    "borders": {
+                      "top": {
+                        "style": "thick",
+                        "color": "#C00000"
+                      },
+                      "bottom": {
+                        "style": "double"
+                      },
+                      "left": {
+                        "style": "slantDashDot",
+                        "color": "#00B050"
+                      },
+                      "right": {
+                        "style": "hair"
+                      }
+                    }
+                  },
+                  {
+                    "at": "B2",
+                    "number": 1000000.25,
+                    "format": "#,##0.00;[Red]-#,##0.00"
+                  },
+                  {
+                    "at": "C2",
+                    "number": 45000,
+                    "format": "m/d/yyyy",
+                    "fill": "none"
+                  },
+                  {
+                    "at": "C3",
+                    "number": 0.125,
+                    "format": "General",
+                    "align": "general",
+                    "font": {},
+                    "borders": {}
+                  },
+                  {
+                    "at": "D4",
+                    "format": "d\\-mmm\\-yy",
+                    "align": "left",
+                    "fill": "#FFFF00"
+                  },
+                  {
+                    "at": "E5",
+                    "boolean": true,
+                    "borders": {
+                      "bottom": {
+                        "style": "mediumDashDotDot",
+                        "color": "#C00000"
+                      }
+                    }
+                  },
+                  {
+                    "at": "F6",
+                    "formula": "=B2*2",
+                    "format": "$#,##0.00_);[Red]($#,##0.00)"
+                  }
+                ]
+              },
+              {
+                "name": "Desks",
+                "columns": [
+                  {
+                    "at": "A:XFD",
+                    "fill": "#F2F2F2"
+                  }
+                ],
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1,
+                    "format": "0.0"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "keep": "before"
+        },
+        {
+          "save": {},
+          "file": [
+            "sheets",
+            "styles"
+          ],
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/worksheets/sheet2.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/metadata.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "file": {
+              "styles": {
+                "numberFormats": {
+                  "164": "yyyy-mm-dd",
+                  "165": "#,##0.00;[Red]-#,##0.00",
+                  "166": "d\\-mmm\\-yy",
+                  "167": "£#,##0.00;[Red]-£#,##0.00",
+                  "168": "0.0"
+                },
+                "fonts": [
+                  {
+                    "name": "Calibri",
+                    "size": 11
+                  },
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "bold": true
+                  },
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "color": {
+                      "kind": "rgb",
+                      "value": "FFC00000",
+                      "resolved": "FFC00000"
+                    }
+                  },
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "italic": true,
+                    "underline": "single",
+                    "strike": true,
+                    "color": {
+                      "kind": "rgb",
+                      "value": "FFC00000",
+                      "resolved": "FFC00000"
+                    }
+                  }
+                ],
+                "fills": [
+                  {
+                    "pattern": "none"
+                  },
+                  {
+                    "pattern": "gray125"
+                  },
+                  {
+                    "pattern": "solid",
+                    "foreground": {
+                      "kind": "rgb",
+                      "value": "FF4472C4",
+                      "resolved": "FF4472C4"
+                    }
+                  },
+                  {
+                    "pattern": "solid",
+                    "foreground": {
+                      "kind": "rgb",
+                      "value": "FFFFFF00",
+                      "resolved": "FFFFFF00"
+                    }
+                  },
+                  {
+                    "pattern": "solid",
+                    "foreground": {
+                      "kind": "rgb",
+                      "value": "FFF2F2F2",
+                      "resolved": "FFF2F2F2"
+                    }
+                  }
+                ],
+                "borders": [
+                  {
+                    "left": {
+                      "style": "none"
+                    },
+                    "right": {
+                      "style": "none"
+                    },
+                    "top": {
+                      "style": "none"
+                    },
+                    "bottom": {
+                      "style": "none"
+                    },
+                    "diagonal": {
+                      "style": "none"
+                    }
+                  },
+                  {
+                    "left": {
+                      "style": "none"
+                    },
+                    "right": {
+                      "style": "none"
+                    },
+                    "top": {
+                      "style": "thin"
+                    },
+                    "bottom": {
+                      "style": "none"
+                    },
+                    "diagonal": {
+                      "style": "none"
+                    }
+                  },
+                  {
+                    "left": {
+                      "style": "slantDashDot",
+                      "color": {
+                        "kind": "rgb",
+                        "value": "FF00B050",
+                        "resolved": "FF00B050"
+                      }
+                    },
+                    "right": {
+                      "style": "hair"
+                    },
+                    "top": {
+                      "style": "thick",
+                      "color": {
+                        "kind": "rgb",
+                        "value": "FFC00000",
+                        "resolved": "FFC00000"
+                      }
+                    },
+                    "bottom": {
+                      "style": "double"
+                    },
+                    "diagonal": {
+                      "style": "none"
+                    }
+                  },
+                  {
+                    "left": {
+                      "style": "none"
+                    },
+                    "right": {
+                      "style": "none"
+                    },
+                    "top": {
+                      "style": "none"
+                    },
+                    "bottom": {
+                      "style": "mediumDashDotDot",
+                      "color": {
+                        "kind": "rgb",
+                        "value": "FFC00000",
+                        "resolved": "FFC00000"
+                      }
+                    },
+                    "diagonal": {
+                      "style": "none"
+                    }
+                  }
+                ],
+                "cellFormats": [
+                  {
+                    "numberFormat": 0,
+                    "font": 0,
+                    "fill": 0,
+                    "border": 0
+                  },
+                  {
+                    "numberFormat": 10,
+                    "font": 1,
+                    "fill": 2,
+                    "border": 0
+                  },
+                  {
+                    "numberFormat": 0,
+                    "font": 0,
+                    "fill": 2,
+                    "border": 0,
+                    "alignment": {
+                      "horizontal": "right"
+                    }
+                  },
+                  {
+                    "numberFormat": 0,
+                    "font": 0,
+                    "fill": 2,
+                    "border": 0
+                  },
+                  {
+                    "numberFormat": 164,
+                    "font": 2,
+                    "fill": 3,
+                    "border": 1,
+                    "alignment": {
+                      "horizontal": "right"
+                    }
+                  },
+                  {
+                    "numberFormat": 164,
+                    "font": 2,
+                    "fill": 0,
+                    "border": 1
+                  },
+                  {
+                    "numberFormat": 10,
+                    "font": 1,
+                    "fill": 0,
+                    "border": 0
+                  },
+                  {
+                    "numberFormat": 0,
+                    "font": 0,
+                    "fill": 3,
+                    "border": 0,
+                    "alignment": {
+                      "horizontal": "right"
+                    }
+                  },
+                  {
+                    "numberFormat": 0,
+                    "font": 1,
+                    "fill": 0,
+                    "border": 0,
+                    "alignment": {
+                      "horizontal": "center"
+                    }
+                  },
+                  {
+                    "numberFormat": 0,
+                    "font": 3,
+                    "fill": 2,
+                    "border": 2,
+                    "alignment": {
+                      "horizontal": "right"
+                    }
+                  },
+                  {
+                    "numberFormat": 165,
+                    "font": 0,
+                    "fill": 0,
+                    "border": 0
+                  },
+                  {
+                    "numberFormat": 14,
+                    "font": 1,
+                    "fill": 0,
+                    "border": 0
+                  },
+                  {
+                    "numberFormat": 166,
+                    "font": 1,
+                    "fill": 3,
+                    "border": 0,
+                    "alignment": {
+                      "horizontal": "left"
+                    }
+                  },
+                  {
+                    "numberFormat": 164,
+                    "font": 2,
+                    "fill": 0,
+                    "border": 3
+                  },
+                  {
+                    "numberFormat": 167,
+                    "font": 2,
+                    "fill": 3,
+                    "border": 1,
+                    "alignment": {
+                      "horizontal": "right"
+                    }
+                  },
+                  {
+                    "numberFormat": 0,
+                    "font": 0,
+                    "fill": 4,
+                    "border": 0
+                  },
+                  {
+                    "numberFormat": 168,
+                    "font": 0,
+                    "fill": 4,
+                    "border": 0
+                  }
+                ],
+                "indexedColors": null
+              },
+              "sheets": [
+                {
+                  "columns": [
+                    {
+                      "first": 0,
+                      "last": 0,
+                      "width": 19.28125,
+                      "hidden": false,
+                      "style": 0,
+                      "bestFit": false,
+                      "customWidth": true
+                    },
+                    {
+                      "first": 1,
+                      "last": 1,
+                      "width": 12.7109375,
+                      "hidden": false,
+                      "style": 0,
+                      "bestFit": true,
+                      "customWidth": true
+                    },
+                    {
+                      "first": 2,
+                      "last": 2,
+                      "width": 12.7109375,
+                      "hidden": false,
+                      "style": 6,
+                      "bestFit": true,
+                      "customWidth": true
+                    },
+                    {
+                      "first": 3,
+                      "last": 3,
+                      "width": 9.140625,
+                      "hidden": false,
+                      "style": 6,
+                      "bestFit": false,
+                      "customWidth": false
+                    },
+                    {
+                      "first": 5,
+                      "last": 5,
+                      "width": 4.2109375,
+                      "hidden": false,
+                      "style": 7,
+                      "bestFit": false,
+                      "customWidth": true
+                    }
+                  ],
+                  "rows": [
+                    [
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5
+                    ],
+                    [
+                      5,
+                      5
+                    ]
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "type": "sharedString",
+                      "value": "0",
+                      "text": "Desk",
+                      "style": 8
+                    },
+                    {
+                      "at": "B1",
+                      "type": "sharedString",
+                      "value": "1",
+                      "text": "Notional",
+                      "style": 9
+                    },
+                    {
+                      "at": "B2",
+                      "type": "number",
+                      "value": "1000000.25",
+                      "style": 10
+                    },
+                    {
+                      "at": "C2",
+                      "type": "number",
+                      "value": "45000",
+                      "style": 11
+                    },
+                    {
+                      "at": "C3",
+                      "type": "number",
+                      "value": "0.125",
+                      "style": 3
+                    },
+                    {
+                      "at": "D3",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "F3",
+                      "type": "number",
+                      "value": null,
+                      "style": 2
+                    },
+                    {
+                      "at": "D4",
+                      "type": "number",
+                      "value": null,
+                      "style": 12
+                    },
+                    {
+                      "at": "E5",
+                      "type": "boolean",
+                      "value": "1",
+                      "style": 13
+                    },
+                    {
+                      "at": "F5",
+                      "type": "number",
+                      "value": null,
+                      "style": 4
+                    },
+                    {
+                      "at": "F6",
+                      "type": "number",
+                      "value": "2000000.5",
+                      "formula": {
+                        "text": "B2*2",
+                        "kind": "array",
+                        "ref": "F6",
+                        "dynamic": true
+                      },
+                      "style": 14
+                    }
+                  ],
+                  "otherElements": [
+                    {
+                      "name": "sheetViews",
+                      "children": [
+                        {
+                          "name": "sheetView",
+                          "attributes": {
+                            "workbookViewId": "0"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "sheetFormatPr",
+                      "attributes": {
+                        "defaultRowHeight": "15"
+                      }
+                    }
+                  ],
+                  "customRowHeights": false,
+                  "hiddenRows": false,
+                  "frozenPanes": false
+                },
+                {
+                  "columns": [
+                    {
+                      "first": 0,
+                      "last": 16383,
+                      "width": 9.140625,
+                      "hidden": false,
+                      "style": 15,
+                      "bestFit": false,
+                      "customWidth": false
+                    }
+                  ],
+                  "rows": [],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "type": "number",
+                      "value": "1",
+                      "style": 16
+                    }
+                  ],
+                  "otherElements": [
+                    {
+                      "name": "sheetViews",
+                      "children": [
+                        {
+                          "name": "sheetView",
+                          "attributes": {
+                            "tabSelected": "1",
+                            "workbookViewId": "0"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "sheetFormatPr",
+                      "attributes": {
+                        "defaultRowHeight": "15"
+                      }
+                    }
+                  ],
+                  "customRowHeights": false,
+                  "hiddenRows": false,
+                  "frozenPanes": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-GB",
+              "shown": "Desks",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columns": [
+                    {
+                      "at": "C:D",
+                      "format": "0.00%",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "F:F",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "3:3",
+                      "format": "General",
+                      "align": "general",
+                      "font": {},
+                      "fill": "#4472C4"
+                    },
+                    {
+                      "at": "5:6",
+                      "format": "yyyy-mm-dd",
+                      "align": "general",
+                      "font": {
+                        "color": "#C00000"
+                      },
+                      "fill": "none",
+                      "borders": {
+                        "top": {
+                          "style": "thin"
+                        }
+                      }
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 18.57,
+                      "kind": "setByUser"
+                    },
+                    {
+                      "at": "B:C",
+                      "width": 12,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "F:F",
+                      "width": 3.5,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "Desk",
+                      "align": "center",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "B1",
+                      "text": "Notional",
+                      "align": "right",
+                      "font": {
+                        "color": "#C00000",
+                        "italic": true,
+                        "underline": true,
+                        "strikethrough": true
+                      },
+                      "fill": "#4472C4",
+                      "borders": {
+                        "top": {
+                          "style": "thick",
+                          "color": "#C00000"
+                        },
+                        "bottom": {
+                          "style": "double"
+                        },
+                        "left": {
+                          "style": "slantDashDot",
+                          "color": "#00B050"
+                        },
+                        "right": {
+                          "style": "hair"
+                        }
+                      }
+                    },
+                    {
+                      "at": "B2",
+                      "number": 1000000.25,
+                      "format": "#,##0.00;[Red]-#,##0.00"
+                    },
+                    {
+                      "at": "C2",
+                      "number": 45000,
+                      "format": "m/d/yyyy"
+                    },
+                    {
+                      "at": "C3",
+                      "number": 0.125
+                    },
+                    {
+                      "at": "D3",
+                      "format": "0.00%",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "F3",
+                      "align": "right"
+                    },
+                    {
+                      "at": "D4",
+                      "format": "d\\-mmm\\-yy",
+                      "align": "left",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "E5",
+                      "boolean": true,
+                      "borders": {
+                        "bottom": {
+                          "style": "mediumDashDotDot",
+                          "color": "#C00000"
+                        }
+                      }
+                    },
+                    {
+                      "at": "F5",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "F6",
+                      "formula": "=B2*2",
+                      "format": "£#,##0.00;[Red]-£#,##0.00",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "columns": [
+                    {
+                      "at": "A:XFD",
+                      "fill": "#F2F2F2"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1,
+                      "format": "0.0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "sameAs": {
+            "kept": "before",
+            "range": "A1:I9",
+            "currencyWritten": true
+          },
+          "note": "The built-in currency is written spelled in the Workbook's currency, a format of the file's own, and shows as it did; every other format reads back as itself."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a document read from a file, written and read again, is the same document",
+      "culture": "en-GB",
+      "note": "A Sheet that records every part at every level, over and under one another.",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-GB",
+            "shown": "Desks",
+            "sheets": [
+              {
+                "name": "Trades",
+                "columns": [
+                  {
+                    "at": "C:D",
+                    "format": "0.00%",
+                    "font": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "at": "F:F",
+                    "align": "right",
+                    "fill": "#FFFF00"
+                  }
+                ],
+                "rows": [
+                  {
+                    "at": "3:3",
+                    "fill": "#4472C4"
+                  },
+                  {
+                    "at": "5:6",
+                    "format": "yyyy-mm-dd",
+                    "font": {
+                      "color": "#C00000"
+                    },
+                    "borders": {
+                      "top": {
+                        "style": "thin"
+                      }
+                    }
+                  }
+                ],
+                "columnWidths": [
+                  {
+                    "at": "A:A",
+                    "width": 18.57,
+                    "kind": "setByUser"
+                  },
+                  {
+                    "at": "B:C",
+                    "width": 12,
+                    "kind": "widenedByEntry"
+                  },
+                  {
+                    "at": "F:F",
+                    "width": 3.5,
+                    "kind": "setByUser"
+                  }
+                ],
+                "cells": [
+                  {
+                    "at": "A1",
+                    "text": "Desk",
+                    "align": "center",
+                    "font": {
+                      "bold": true
+                    }
+                  },
+                  {
+                    "at": "B1",
+                    "text": "Notional",
+                    "align": "right",
+                    "font": {
+                      "color": "#C00000",
+                      "italic": true,
+                      "underline": true,
+                      "strikethrough": true
+                    },
+                    "fill": "#4472C4",
+                    "borders": {
+                      "top": {
+                        "style": "thick",
+                        "color": "#C00000"
+                      },
+                      "bottom": {
+                        "style": "double"
+                      },
+                      "left": {
+                        "style": "slantDashDot",
+                        "color": "#00B050"
+                      },
+                      "right": {
+                        "style": "hair"
+                      }
+                    }
+                  },
+                  {
+                    "at": "B2",
+                    "number": 1000000.25,
+                    "format": "#,##0.00;[Red]-#,##0.00"
+                  },
+                  {
+                    "at": "C2",
+                    "number": 45000,
+                    "format": "m/d/yyyy",
+                    "fill": "none"
+                  },
+                  {
+                    "at": "C3",
+                    "number": 0.125,
+                    "format": "General",
+                    "align": "general",
+                    "font": {},
+                    "borders": {}
+                  },
+                  {
+                    "at": "D4",
+                    "format": "d\\-mmm\\-yy",
+                    "align": "left",
+                    "fill": "#FFFF00"
+                  },
+                  {
+                    "at": "E5",
+                    "boolean": true,
+                    "borders": {
+                      "bottom": {
+                        "style": "mediumDashDotDot",
+                        "color": "#C00000"
+                      }
+                    }
+                  },
+                  {
+                    "at": "F6",
+                    "formula": "=B2*2",
+                    "format": "$#,##0.00_);[Red]($#,##0.00)"
+                  }
+                ]
+              },
+              {
+                "name": "Desks",
+                "columns": [
+                  {
+                    "at": "A:XFD",
+                    "fill": "#F2F2F2"
+                  }
+                ],
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1,
+                    "format": "0.0"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/worksheets/sheet2.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/metadata.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ]
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-GB",
+              "shown": "Desks",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columns": [
+                    {
+                      "at": "C:D",
+                      "format": "0.00%",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "F:F",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "3:3",
+                      "format": "General",
+                      "align": "general",
+                      "font": {},
+                      "fill": "#4472C4"
+                    },
+                    {
+                      "at": "5:6",
+                      "format": "yyyy-mm-dd",
+                      "align": "general",
+                      "font": {
+                        "color": "#C00000"
+                      },
+                      "fill": "none",
+                      "borders": {
+                        "top": {
+                          "style": "thin"
+                        }
+                      }
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 18.57,
+                      "kind": "setByUser"
+                    },
+                    {
+                      "at": "B:C",
+                      "width": 12,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "F:F",
+                      "width": 3.5,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "Desk",
+                      "align": "center",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "B1",
+                      "text": "Notional",
+                      "align": "right",
+                      "font": {
+                        "color": "#C00000",
+                        "italic": true,
+                        "underline": true,
+                        "strikethrough": true
+                      },
+                      "fill": "#4472C4",
+                      "borders": {
+                        "top": {
+                          "style": "thick",
+                          "color": "#C00000"
+                        },
+                        "bottom": {
+                          "style": "double"
+                        },
+                        "left": {
+                          "style": "slantDashDot",
+                          "color": "#00B050"
+                        },
+                        "right": {
+                          "style": "hair"
+                        }
+                      }
+                    },
+                    {
+                      "at": "B2",
+                      "number": 1000000.25,
+                      "format": "#,##0.00;[Red]-#,##0.00"
+                    },
+                    {
+                      "at": "C2",
+                      "number": 45000,
+                      "format": "m/d/yyyy"
+                    },
+                    {
+                      "at": "C3",
+                      "number": 0.125
+                    },
+                    {
+                      "at": "D3",
+                      "format": "0.00%",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "F3",
+                      "align": "right"
+                    },
+                    {
+                      "at": "D4",
+                      "format": "d\\-mmm\\-yy",
+                      "align": "left",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "E5",
+                      "boolean": true,
+                      "borders": {
+                        "bottom": {
+                          "style": "mediumDashDotDot",
+                          "color": "#C00000"
+                        }
+                      }
+                    },
+                    {
+                      "at": "F5",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "F6",
+                      "formula": "=B2*2",
+                      "format": "£#,##0.00;[Red]-£#,##0.00",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "columns": [
+                    {
+                      "at": "A:XFD",
+                      "fill": "#F2F2F2"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1,
+                      "format": "0.0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "remember": "first"
+        },
+        {
+          "save": {},
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/worksheets/sheet2.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/metadata.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ]
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-GB",
+              "shown": "Desks",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columns": [
+                    {
+                      "at": "C:D",
+                      "format": "0.00%",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "F:F",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "3:3",
+                      "format": "General",
+                      "align": "general",
+                      "font": {},
+                      "fill": "#4472C4"
+                    },
+                    {
+                      "at": "5:6",
+                      "format": "yyyy-mm-dd",
+                      "align": "general",
+                      "font": {
+                        "color": "#C00000"
+                      },
+                      "fill": "none",
+                      "borders": {
+                        "top": {
+                          "style": "thin"
+                        }
+                      }
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 18.57,
+                      "kind": "setByUser"
+                    },
+                    {
+                      "at": "B:C",
+                      "width": 12,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "F:F",
+                      "width": 3.5,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "Desk",
+                      "align": "center",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "B1",
+                      "text": "Notional",
+                      "align": "right",
+                      "font": {
+                        "color": "#C00000",
+                        "italic": true,
+                        "underline": true,
+                        "strikethrough": true
+                      },
+                      "fill": "#4472C4",
+                      "borders": {
+                        "top": {
+                          "style": "thick",
+                          "color": "#C00000"
+                        },
+                        "bottom": {
+                          "style": "double"
+                        },
+                        "left": {
+                          "style": "slantDashDot",
+                          "color": "#00B050"
+                        },
+                        "right": {
+                          "style": "hair"
+                        }
+                      }
+                    },
+                    {
+                      "at": "B2",
+                      "number": 1000000.25,
+                      "format": "#,##0.00;[Red]-#,##0.00"
+                    },
+                    {
+                      "at": "C2",
+                      "number": 45000,
+                      "format": "m/d/yyyy"
+                    },
+                    {
+                      "at": "C3",
+                      "number": 0.125
+                    },
+                    {
+                      "at": "D3",
+                      "format": "0.00%",
+                      "font": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "at": "F3",
+                      "align": "right"
+                    },
+                    {
+                      "at": "D4",
+                      "format": "d\\-mmm\\-yy",
+                      "align": "left",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "E5",
+                      "boolean": true,
+                      "borders": {
+                        "bottom": {
+                          "style": "mediumDashDotDot",
+                          "color": "#C00000"
+                        }
+                      }
+                    },
+                    {
+                      "at": "F5",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "F6",
+                      "formula": "=B2*2",
+                      "format": "£#,##0.00;[Red]-£#,##0.00",
+                      "align": "right",
+                      "fill": "#FFFF00"
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "columns": [
+                    {
+                      "at": "A:XFD",
+                      "fill": "#F2F2F2"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1,
+                      "format": "0.0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "picture": "first"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a formatted row whose cells run past the reader's batch of 4,096 keeps its format on every cell, each read against it",
+      "culture": "en-GB",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "run": "A3:GJG3",
+                    "type": "number",
+                    "value": "1",
+                    "style": 1
+                  },
+                  {
+                    "at": "GJH3",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "rows": [
+                  [
+                    2,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "fonts": [
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "color": {
+                      "kind": "theme",
+                      "value": 1
+                    }
+                  },
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "bold": true,
+                    "color": {
+                      "kind": "theme",
+                      "value": 1
+                    }
+                  }
+                ],
+                "cellFormats": [
+                  {},
+                  {
+                    "font": 1
+                  }
+                ]
+              }
+            }
+          },
+          "document": false,
+          "expect": {
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "fonts": {
+              "A3": {
+                "bold": true
+              },
+              "FQC3": {
+                "bold": true
+              },
+              "GJG3": {
+                "bold": true
+              },
+              "GJH3": {
+                "bold": false
+              },
+              "HVU3": {
+                "bold": true
+              },
+              "A4": {
+                "bold": false
+              }
+            }
+          },
+          "note": "Only the cell that stands apart from its row records a format of its own."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §8: a file as Excel styles it — theme colours, Text 1, a column, a row and cells — reads, writes and reads again the same",
+      "culture": "en-GB",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "sharedString",
+                    "text": "Desk",
+                    "style": 1
+                  },
+                  {
+                    "at": "B1",
+                    "type": "sharedString",
+                    "text": "PV",
+                    "style": 1
+                  },
+                  {
+                    "at": "B2",
+                    "type": "number",
+                    "value": "1234.5",
+                    "style": 2
+                  },
+                  {
+                    "at": "C2",
+                    "type": "number",
+                    "value": "45000",
+                    "style": 3
+                  },
+                  {
+                    "at": "D9",
+                    "type": "number",
+                    "value": "45001",
+                    "style": 4
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 0,
+                    "last": 0,
+                    "width": 14.7109375,
+                    "bestFit": true
+                  },
+                  {
+                    "first": 1,
+                    "last": 1,
+                    "width": 16.7109375,
+                    "style": 2
+                  },
+                  {
+                    "first": 3,
+                    "last": 3,
+                    "width": 9.140625,
+                    "style": 4
+                  }
+                ],
+                "rows": [
+                  [
+                    0,
+                    1
+                  ]
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "numberFormats": {
+                  "164": "#,##0.00\\ \"EUR\"",
+                  "165": "dd/mm/yyyy"
+                },
+                "fonts": [
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "color": {
+                      "kind": "theme",
+                      "value": 1
+                    }
+                  },
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "bold": true,
+                    "color": {
+                      "kind": "theme",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "Calibri",
+                    "size": 11,
+                    "underline": "single",
+                    "color": {
+                      "kind": "rgb",
+                      "value": "FFFF0000"
+                    }
+                  }
+                ],
+                "fills": [
+                  {
+                    "pattern": "none"
+                  },
+                  {
+                    "pattern": "gray125"
+                  },
+                  {
+                    "pattern": "solid",
+                    "foreground": {
+                      "kind": "theme",
+                      "value": 4,
+                      "tint": -0.249977111117893
+                    },
+                    "background": {
+                      "kind": "indexed",
+                      "value": 64
+                    }
+                  },
+                  {
+                    "pattern": "solid",
+                    "foreground": {
+                      "kind": "theme",
+                      "value": 9,
+                      "tint": 0.799981688894314
+                    }
+                  }
+                ],
+                "borders": [
+                  {
+                    "left": {
+                      "style": "none"
+                    },
+                    "right": {
+                      "style": "none"
+                    },
+                    "top": {
+                      "style": "none"
+                    },
+                    "bottom": {
+                      "style": "none"
+                    },
+                    "diagonal": {
+                      "style": "none"
+                    }
+                  },
+                  {
+                    "left": {
+                      "style": "none"
+                    },
+                    "right": {
+                      "style": "none"
+                    },
+                    "top": {
+                      "style": "none"
+                    },
+                    "bottom": {
+                      "style": "double",
+                      "color": {
+                        "kind": "indexed",
+                        "value": 64
+                      }
+                    },
+                    "diagonal": {
+                      "style": "none"
+                    }
+                  }
+                ],
+                "cellFormats": [
+                  {},
+                  {
+                    "font": 1,
+                    "fill": 2,
+                    "alignment": {
+                      "horizontal": "center"
+                    }
+                  },
+                  {
+                    "numberFormat": 164,
+                    "border": 1
+                  },
+                  {
+                    "numberFormat": 165,
+                    "font": 2,
+                    "fill": 3
+                  },
+                  {
+                    "numberFormat": 14
+                  }
+                ]
+              }
+            }
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-GB",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columns": [
+                    {
+                      "at": "B:B",
+                      "format": "#,##0.00\\ \"EUR\"",
+                      "borders": {
+                        "bottom": {
+                          "style": "double"
+                        }
+                      }
+                    },
+                    {
+                      "at": "D:D",
+                      "format": "m/d/yyyy"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "1:1",
+                      "format": "General",
+                      "align": "center",
+                      "font": {
+                        "color": "#FFFFFF",
+                        "bold": true
+                      },
+                      "fill": "#2F5597",
+                      "borders": {}
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 14,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "B:B",
+                      "width": 16,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "Desk"
+                    },
+                    {
+                      "at": "B1",
+                      "text": "PV"
+                    },
+                    {
+                      "at": "B2",
+                      "number": 1234.5
+                    },
+                    {
+                      "at": "C2",
+                      "number": 45000,
+                      "format": "dd/mm/yyyy",
+                      "font": {
+                        "color": "#FF0000",
+                        "underline": true
+                      },
+                      "fill": "#E2F0D9"
+                    },
+                    {
+                      "at": "D9",
+                      "number": 45001
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "themeColours",
+                  "sheet": null,
+                  "detail": null,
+                  "description": "Colours of the workbook name its theme: each is carried as the RGB value the file's theme gives it, and the link to the theme is not, so another theme will not recolour them."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "remember": "first"
+        },
+        {
+          "read": true,
+          "expect": {
+            "fonts": {
+              "A1": {
+                "colour": "#FFFFFF",
+                "bold": true
+              },
+              "B2": {
+                "colour": "Automatic",
+                "bold": false,
+                "underline": false
+              }
+            },
+            "borders": {
+              "B9": {
+                "bottom": {
+                  "style": "double",
+                  "colour": "Automatic"
+                }
+              }
+            },
+            "texts": {
+              "B2": "1,234.50 EUR",
+              "C2": "15/03/2023",
+              "D9": "16/03/2023"
+            },
+            "columnWidths": {
+              "A": {
+                "width": 14,
+                "kind": "widenedByEntry"
+              },
+              "B": {
+                "width": 16,
+                "kind": "setByUser"
+              },
+              "D": null
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ]
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-GB",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columns": [
+                    {
+                      "at": "B:B",
+                      "format": "#,##0.00\\ \"EUR\"",
+                      "borders": {
+                        "bottom": {
+                          "style": "double"
+                        }
+                      }
+                    },
+                    {
+                      "at": "D:D",
+                      "format": "m/d/yyyy"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "1:1",
+                      "format": "General",
+                      "align": "center",
+                      "font": {
+                        "color": "#FFFFFF",
+                        "bold": true
+                      },
+                      "fill": "#2F5597",
+                      "borders": {}
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 14,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "B:B",
+                      "width": 16,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "Desk"
+                    },
+                    {
+                      "at": "B1",
+                      "text": "PV"
+                    },
+                    {
+                      "at": "B2",
+                      "number": 1234.5
+                    },
+                    {
+                      "at": "C2",
+                      "number": 45000,
+                      "format": "dd/mm/yyyy",
+                      "font": {
+                        "color": "#FF0000",
+                        "underline": true
+                      },
+                      "fill": "#E2F0D9"
+                    },
+                    {
+                      "at": "D9",
+                      "number": 45001
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "picture": "first"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Workbook whose Linked Table has not answered is refused: its rows are written as they stand, and it has none",
+      "steps": [
+        {
+          "declareTable": {
+            "name": "Positions",
+            "columns": [
+              "Desk",
+              "PV"
+            ]
+          }
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": "=SUM(Positions[PV])"
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "linkedTable",
+              "sheet": "Positions",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Positions': The Linked Table 'Positions' has not answered: it holds no rows yet, or its last snapshot was refused, and every Formula that reads it shows #GETTING_DATA. Its rows are written as they stand, and it has none to write."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6, ADR-0047: a cell that shows #CIRC! is refused by name: a file holds no such Error Value, and Excel would show 0",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A1": "1",
+              "B2": "=C2+1",
+              "C2": "=B2+A1"
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "circularReference",
+              "sheet": "Sheet1",
+              "cell": "B2",
+              "held": "=C2+1",
+              "message": "Sheet 'Sheet1', cell B2 (=C2+1): The cell shows #CIRC!: it is part of a circular reference, or depends on one. A file holds no such Error Value, and Excel shows 0 there; no Value it can hold is the one shown."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Formula longer than Excel's 8,192 characters is refused by name",
+      "note": "Two hundred and forty arguments, each a Reference qualified with a 31-character Sheet name: 8,881 characters.",
+      "steps": [
+        {
+          "do": {
+            "setEntries": {
+              "C3": {
+                "formula": "=SUM('A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1,'A Sheet name of 31 characters.'!A1)"
+              }
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "formula",
+              "sheet": "Sheet1",
+              "cell": "C3",
+              "held": null,
+              "message": "Sheet 'Sheet1', cell C3: The Formula is 8,644 characters long, and Excel holds at most 8,192."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Formula that reads a Sheet the Workbook does not have is refused by name: Excel would read it as another workbook's",
+      "sheets": [
+        "Trades",
+        "Desks"
+      ],
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A1": "=desks!B2*2",
+              "A2": "='Old desks'!B2*2"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "formula",
+              "sheet": "Trades",
+              "cell": "A2",
+              "held": "='Old desks'!B2*2",
+              "message": "Sheet 'Trades', cell A2 (='Old desks'!B2*2): The Formula reads a Sheet the Workbook does not have, which Excel would read as another workbook's."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: text longer than a cell of Excel holds is refused by name",
+      "steps": [
+        {
+          "entries": {
+            "A1": [
+              {
+                "each": "x",
+                "from": 0,
+                "to": 32767
+              }
+            ]
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "text",
+              "sheet": "Sheet1",
+              "cell": "A1",
+              "held": null,
+              "message": "Sheet 'Sheet1', cell A1: The cell's text is 32,768 characters long, and a cell of Excel holds at most 32,767."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: text holding half of a surrogate pair is refused by name",
+      "steps": [
+        {
+          "entries": {
+            "B2": {
+              "utf16": "a\\uD800b"
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "text",
+              "sheet": "Sheet1",
+              "cell": "B2",
+              "held": null,
+              "message": "Sheet 'Sheet1', cell B2: The cell's text holds half of a surrogate pair, which a file cannot carry."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: text of exactly the most a cell of Excel holds is written, and a pair of surrogates is one character",
+      "steps": [
+        {
+          "entries": {
+            "A1": [
+              {
+                "each": "x",
+                "from": 1,
+                "to": 32767
+              }
+            ],
+            "A2": "\uD83D\uDCB9 desk"
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ]
+          }
+        },
+        {
+          "open": "saved",
+          "document": false,
+          "expect": {
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entryTexts": {
+              "A1": {
+                "parts": [
+                  [
+                    "x",
+                    32767
+                  ]
+                ]
+              },
+              "A2": "\uD83D\uDCB9 desk"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6, §9: a workbook that would write more cells than a file is read with is refused before anything is written",
+      "steps": [
+        {
+          "do": {
+            "setEntries": {
+              "A1": {
+                "constant": 1
+              },
+              "A2": {
+                "formula": "=SEQUENCE(3)"
+              }
+            }
+          }
+        },
+        {
+          "save": {
+            "maxCells": 3
+          },
+          "note": "Four cells hold a Value or an Entry: A1, the anchor and the two cells it spills into.",
+          "expect": {
+            "refused": {
+              "reason": "tooManyCells",
+              "sheet": "Sheet1",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Sheet1': The workbook would write more than the 3 elements it may (XlsxSaveOptions.MaxCells, which counts the cells written and each row a row format writes; by default the cells a file is read with): this Sheet writes 4 cells of its own, 0 where its formatted rows cross its formatted columns, and 0 rows its row formats write."
+            }
+          }
+        },
+        {
+          "save": {
+            "maxCells": 4
+          },
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/styles.xml",
+              "xl/metadata.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: where a formatted row crosses a formatted column that records a part the row leaves to it, a cell of no value shows the two together",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "columns": [
+                  {
+                    "at": "B:D",
+                    "fill": "#FFFF00"
+                  }
+                ],
+                "rows": [
+                  {
+                    "at": "2:3",
+                    "font": {
+                      "bold": true
+                    }
+                  }
+                ],
+                "cells": [
+                  {
+                    "at": "C2",
+                    "number": 7
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "save": {},
+          "file": [
+            "sheets"
+          ],
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "file": {
+              "sheets": [
+                {
+                  "columns": [
+                    {
+                      "first": 1,
+                      "last": 3,
+                      "width": 9.140625,
+                      "hidden": false,
+                      "style": 3,
+                      "bestFit": false,
+                      "customWidth": false
+                    }
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      2,
+                      2
+                    ]
+                  ],
+                  "cells": [
+                    {
+                      "at": "B2",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "C2",
+                      "type": "number",
+                      "value": "7",
+                      "style": 1
+                    },
+                    {
+                      "at": "D2",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "B3",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "C3",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "D3",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    }
+                  ],
+                  "otherElements": [
+                    {
+                      "name": "sheetViews",
+                      "children": [
+                        {
+                          "name": "sheetView",
+                          "attributes": {
+                            "tabSelected": "1",
+                            "workbookViewId": "0"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "sheetFormatPr",
+                      "attributes": {
+                        "defaultRowHeight": "15"
+                      }
+                    }
+                  ],
+                  "customRowHeights": false,
+                  "hiddenRows": false,
+                  "frozenPanes": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "columns": [
+                    {
+                      "at": "B:D",
+                      "fill": "#FFFF00"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "2:3",
+                      "font": {
+                        "bold": true
+                      },
+                      "fill": "none"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "B2",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "C2",
+                      "number": 7,
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "D2",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "B3",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "C3",
+                      "fill": "#FFFF00"
+                    },
+                    {
+                      "at": "D3",
+                      "fill": "#FFFF00"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "fonts": {
+              "B2": {
+                "bold": true
+              },
+              "C2": {
+                "bold": true
+              },
+              "D3": {
+                "bold": true
+              },
+              "A2": {
+                "bold": true
+              },
+              "C9": {
+                "bold": false
+              }
+            },
+            "fills": {
+              "B2": "#FFFF00",
+              "C2": "#FFFF00",
+              "D3": "#FFFF00",
+              "E3": "none",
+              "C9": "#FFFF00"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a row that records every part its columns record stands in place of them, and crosses nothing",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "columns": [
+                  {
+                    "at": "A:XFD",
+                    "fill": "#FFFF00"
+                  }
+                ],
+                "rows": [
+                  {
+                    "at": "5:5",
+                    "fill": "#FF0000"
+                  },
+                  {
+                    "at": "7:7",
+                    "fill": "none"
+                  }
+                ],
+                "cells": []
+              }
+            ]
+          }
+        },
+        {
+          "save": {},
+          "file": [
+            "sheets"
+          ],
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "file": {
+              "sheets": [
+                {
+                  "columns": [
+                    {
+                      "first": 0,
+                      "last": 16383,
+                      "width": 9.140625,
+                      "hidden": false,
+                      "style": 2,
+                      "bestFit": false,
+                      "customWidth": false
+                    }
+                  ],
+                  "rows": [
+                    [
+                      4,
+                      1
+                    ],
+                    [
+                      6,
+                      0
+                    ]
+                  ],
+                  "cells": [],
+                  "otherElements": [
+                    {
+                      "name": "sheetViews",
+                      "children": [
+                        {
+                          "name": "sheetView",
+                          "attributes": {
+                            "tabSelected": "1",
+                            "workbookViewId": "0"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "sheetFormatPr",
+                      "attributes": {
+                        "defaultRowHeight": "15"
+                      }
+                    }
+                  ],
+                  "customRowHeights": false,
+                  "hiddenRows": false,
+                  "frozenPanes": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "columns": [
+                    {
+                      "at": "A:XFD",
+                      "fill": "#FFFF00"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "at": "5:5",
+                      "fill": "#FF0000"
+                    },
+                    {
+                      "at": "7:7",
+                      "fill": "none"
+                    }
+                  ],
+                  "cells": []
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "fills": {
+              "XFD5": "#FF0000",
+              "B7": "none",
+              "B8": "#FFFF00"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: crossings are counted from the runs, so a Sheet formatted on every row and every column is refused at once, by name, not written cell by cell",
+      "note": "A Workbook Document's JSON names a run of rows by its rows, and every row at once reads as every column, so the run here stops one row short of the last.",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "columns": [
+                  {
+                    "at": "A:XFD",
+                    "fill": "#FFFF00"
+                  }
+                ],
+                "rows": [
+                  {
+                    "at": "1:1048575",
+                    "font": {
+                      "bold": true
+                    }
+                  }
+                ],
+                "cells": []
+              }
+            ]
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "tooManyCells",
+              "sheet": "Sheet1",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Sheet1': The workbook would write more than the 10,000,000 elements it may (XlsxSaveOptions.MaxCells, which counts the cells written and each row a row format writes; by default the cells a file is read with): this Sheet writes 0 cells of its own, 17,179,852,800 where its formatted rows cross its formatted columns, and 1,048,575 rows its row formats write."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: the crossings count toward the limit with the Sheet's own cells, a recorded cell at a crossing once",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "columns": [
+                  {
+                    "at": "B:D",
+                    "fill": "#FFFF00"
+                  }
+                ],
+                "rows": [
+                  {
+                    "at": "2:3",
+                    "font": {
+                      "bold": true
+                    }
+                  }
+                ],
+                "cells": [
+                  {
+                    "at": "C2",
+                    "number": 7
+                  },
+                  {
+                    "at": "H9",
+                    "number": 8
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "save": {
+            "maxCells": 8
+          },
+          "note": "Seven cells and the two rows the row format writes.",
+          "expect": {
+            "refused": {
+              "reason": "tooManyCells",
+              "sheet": "Sheet1",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Sheet1': The workbook would write more than the 8 elements it may (XlsxSaveOptions.MaxCells, which counts the cells written and each row a row format writes; by default the cells a file is read with): this Sheet writes 2 cells of its own, 5 where its formatted rows cross its formatted columns, and 2 rows its row formats write."
+            }
+          }
+        },
+        {
+          "save": {
+            "maxCells": 9
+          },
+          "file": [
+            "sheets"
+          ],
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "file": {
+              "sheets": [
+                {
+                  "columns": [
+                    {
+                      "first": 1,
+                      "last": 3,
+                      "width": 9.140625,
+                      "hidden": false,
+                      "style": 3,
+                      "bestFit": false,
+                      "customWidth": false
+                    }
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      2,
+                      2
+                    ]
+                  ],
+                  "cells": [
+                    {
+                      "at": "B2",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "C2",
+                      "type": "number",
+                      "value": "7",
+                      "style": 1
+                    },
+                    {
+                      "at": "D2",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "B3",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "C3",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "D3",
+                      "type": "number",
+                      "value": null,
+                      "style": 1
+                    },
+                    {
+                      "at": "H9",
+                      "type": "number",
+                      "value": "8"
+                    }
+                  ],
+                  "otherElements": [
+                    {
+                      "name": "sheetViews",
+                      "children": [
+                        {
+                          "name": "sheetView",
+                          "attributes": {
+                            "tabSelected": "1",
+                            "workbookViewId": "0"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "sheetFormatPr",
+                      "attributes": {
+                        "defaultRowHeight": "15"
+                      }
+                    }
+                  ],
+                  "customRowHeights": false,
+                  "hiddenRows": false,
+                  "frozenPanes": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §9: each row a row format writes counts toward the limit, holding a cell or not, so a row format over every row is bounded",
+      "note": "A Workbook Document's JSON names a run of rows by its rows, and every row at once reads as every column, so the run here stops one row short of the last.",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "rows": [
+                  {
+                    "at": "1:1048575",
+                    "font": {
+                      "bold": true
+                    }
+                  }
+                ],
+                "cells": []
+              }
+            ]
+          }
+        },
+        {
+          "save": {
+            "maxCells": 1048574
+          },
+          "expect": {
+            "refused": {
+              "reason": "tooManyCells",
+              "sheet": "Sheet1",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Sheet1': The workbook would write more than the 1,048,574 elements it may (XlsxSaveOptions.MaxCells, which counts the cells written and each row a row format writes; by default the cells a file is read with): this Sheet writes 0 cells of its own, 0 where its formatted rows cross its formatted columns, and 1,048,575 rows its row formats write."
+            }
+          }
+        },
+        {
+          "save": {
+            "maxCells": 1048575
+          },
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Formula Excel would not take is refused by name, with its Sheet, cell and text: a text constant over 255 characters",
+      "steps": [
+        {
+          "do": {
+            "setEntries": {
+              "D4": {
+                "formula": "=LEN(\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\")"
+              }
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "formula",
+              "sheet": "Sheet1",
+              "cell": "D4",
+              "held": "=LEN(\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\")",
+              "message": "Sheet 'Sheet1', cell D4 (=LEN(\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\")): The Formula holds a text constant longer than the 255 characters Excel takes in one."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Formula Excel would not take is refused by name, with its Sheet, cell and text: a call of more than 255 arguments",
+      "steps": [
+        {
+          "do": {
+            "setEntries": {
+              "D4": {
+                "formula": "=HSTACK(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)"
+              }
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "formula",
+              "sheet": "Sheet1",
+              "cell": "D4",
+              "held": "=HSTACK(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)",
+              "message": "Sheet 'Sheet1', cell D4 (=HSTACK(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)): The Formula makes a call with more than the 255 arguments Excel takes."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Formula Excel would not take is refused by name, with its Sheet, cell and text: a bound name called",
+      "steps": [
+        {
+          "do": {
+            "setEntries": {
+              "D4": {
+                "formula": "=LET(f,LAMBDA(x,x+1),f(2))"
+              }
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "formula",
+              "sheet": "Sheet1",
+              "cell": "D4",
+              "held": "=LET(f,LAMBDA(x,x+1),f(2))",
+              "message": "Sheet 'Sheet1', cell D4 (=LET(f,LAMBDA(x,x+1),f(2))): The Formula calls a name a LET binds or a LAMBDA takes, which ExSheet reads as an unknown function and Excel would call."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Formula holding half of a surrogate pair is refused by name, not left to the file layer's unnamed refusal",
+      "steps": [
+        {
+          "entries": {
+            "A1": {
+              "formula": {
+                "utf16": "=LEN(\"a\\uD800\")"
+              }
+            }
+          }
+        },
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "formula",
+              "sheet": "Sheet1",
+              "cell": "A1",
+              "held": {
+                "utf16": "=LEN(\"a\\uD800\")"
+              },
+              "message": {
+                "utf16": "Sheet 'Sheet1', cell A1 (=LEN(\"a\\uD800\")): The Formula holds half of a surrogate pair, which a file cannot carry."
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Sheet's name a worksheet's name cannot carry in a file is refused by name, naming the Sheet and no cell: U+0001",
+      "sheets": [
+        "Trades",
+        {
+          "utf16": "Desk\\u0001"
+        }
+      ],
+      "steps": [
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "text",
+              "sheet": "Desk\u0001",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Desk\u0001': The Sheet's name holds a character a file cannot carry in a worksheet's name: a control character below U+0020, U+FFFE or U+FFFF, or half of a surrogate pair."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Sheet's name a worksheet's name cannot carry in a file is refused by name, naming the Sheet and no cell: U+D800",
+      "sheets": [
+        "Trades",
+        {
+          "utf16": "Desk\\uD800"
+        }
+      ],
+      "steps": [
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "text",
+              "sheet": {
+                "utf16": "Desk\\uD800"
+              },
+              "cell": null,
+              "held": null,
+              "message": {
+                "utf16": "Sheet 'Desk\\uD800': The Sheet's name holds a character a file cannot carry in a worksheet's name: a control character below U+0020, U+FFFE or U+FFFF, or half of a surrogate pair."
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Sheet's name a worksheet's name cannot carry in a file is refused by name, naming the Sheet and no cell: U+DC00",
+      "sheets": [
+        "Trades",
+        {
+          "utf16": "Desk\\uDC00"
+        }
+      ],
+      "steps": [
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "text",
+              "sheet": {
+                "utf16": "Desk\\uDC00"
+              },
+              "cell": null,
+              "held": null,
+              "message": {
+                "utf16": "Sheet 'Desk\\uDC00': The Sheet's name holds a character a file cannot carry in a worksheet's name: a control character below U+0020, U+FFFE or U+FFFF, or half of a surrogate pair."
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Sheet's name a worksheet's name cannot carry in a file is refused by name, naming the Sheet and no cell: U+FFFE",
+      "sheets": [
+        "Trades",
+        {
+          "utf16": "Desk\\uFFFE"
+        }
+      ],
+      "steps": [
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "text",
+              "sheet": "Desk\uFFFE",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Desk\uFFFE': The Sheet's name holds a character a file cannot carry in a worksheet's name: a control character below U+0020, U+FFFE or U+FFFF, or half of a surrogate pair."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: a Sheet's name a worksheet's name cannot carry in a file is refused by name, naming the Sheet and no cell: U+FFFF",
+      "sheets": [
+        "Trades",
+        {
+          "utf16": "Desk\\uFFFF"
+        }
+      ],
+      "steps": [
+        {
+          "save": {},
+          "expect": {
+            "refused": {
+              "reason": "text",
+              "sheet": "Desk\uFFFF",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Desk\uFFFF': The Sheet's name holds a character a file cannot carry in a worksheet's name: a control character below U+0020, U+FFFE or U+FFFF, or half of a surrogate pair."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6: the C1 controls (U+007F to U+009F) are characters XML carries, and a Sheet named with one is written and read back",
+      "sheets": [
+        "Desk\u0085",
+        "Book\u007F"
+      ],
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A1": "1"
+            }
+          },
+          "on": "Desk\u0085"
+        },
+        {
+          "save": {},
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/worksheets/sheet2.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ]
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Desk\u0085",
+              "sheets": [
+                {
+                  "name": "Desk\u0085",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Book\u007F",
+                  "cells": []
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6, §9: a workbook whose parts would hold more uncompressed bytes than a file is read with is refused by name, naming the Sheet whose worksheet went past it",
+      "sheets": [
+        "Trades"
+      ],
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A2": "1",
+              "A3": "2",
+              "A4": "3",
+              "A5": "4",
+              "A6": "5",
+              "A7": "6",
+              "A8": "7",
+              "A9": "8",
+              "A10": "9",
+              "A11": "10",
+              "A12": "11",
+              "A13": "12",
+              "A14": "13",
+              "A15": "14",
+              "A16": "15",
+              "A17": "16",
+              "A18": "17",
+              "A19": "18",
+              "A20": "19",
+              "A21": "20",
+              "A22": "21",
+              "A23": "22",
+              "A24": "23",
+              "A25": "24",
+              "A26": "25",
+              "A27": "26",
+              "A28": "27",
+              "A29": "28",
+              "A30": "29",
+              "A31": "30",
+              "A32": "31",
+              "A33": "32",
+              "A34": "33",
+              "A35": "34",
+              "A36": "35",
+              "A37": "36",
+              "A38": "37",
+              "A39": "38",
+              "A40": "39",
+              "A41": "40",
+              "A42": "41",
+              "A43": "42",
+              "A44": "43",
+              "A45": "44",
+              "A46": "45",
+              "A47": "46",
+              "A48": "47",
+              "A49": "48",
+              "A50": "49",
+              "A51": "50",
+              "A52": "51",
+              "A53": "52",
+              "A54": "53",
+              "A55": "54",
+              "A56": "55",
+              "A57": "56",
+              "A58": "57",
+              "A59": "58",
+              "A60": "59",
+              "A61": "60",
+              "A62": "61",
+              "A63": "62",
+              "A64": "63",
+              "A65": "64",
+              "A66": "65",
+              "A67": "66",
+              "A68": "67",
+              "A69": "68",
+              "A70": "69",
+              "A71": "70",
+              "A72": "71",
+              "A73": "72",
+              "A74": "73",
+              "A75": "74",
+              "A76": "75",
+              "A77": "76",
+              "A78": "77",
+              "A79": "78",
+              "A80": "79",
+              "A81": "80",
+              "A82": "81",
+              "A83": "82",
+              "A84": "83",
+              "A85": "84",
+              "A86": "85",
+              "A87": "86",
+              "A88": "87",
+              "A89": "88",
+              "A90": "89",
+              "A91": "90",
+              "A92": "91",
+              "A93": "92",
+              "A94": "93",
+              "A95": "94",
+              "A96": "95",
+              "A97": "96",
+              "A98": "97",
+              "A99": "98",
+              "A100": "99",
+              "A101": "100",
+              "A102": "101",
+              "A103": "102",
+              "A104": "103",
+              "A105": "104",
+              "A106": "105",
+              "A107": "106",
+              "A108": "107",
+              "A109": "108",
+              "A110": "109",
+              "A111": "110",
+              "A112": "111",
+              "A113": "112",
+              "A114": "113",
+              "A115": "114",
+              "A116": "115",
+              "A117": "116",
+              "A118": "117",
+              "A119": "118",
+              "A120": "119",
+              "A121": "120",
+              "A122": "121",
+              "A123": "122",
+              "A124": "123",
+              "A125": "124",
+              "A126": "125",
+              "A127": "126",
+              "A128": "127",
+              "A129": "128",
+              "A130": "129",
+              "A131": "130",
+              "A132": "131",
+              "A133": "132",
+              "A134": "133",
+              "A135": "134",
+              "A136": "135",
+              "A137": "136",
+              "A138": "137",
+              "A139": "138",
+              "A140": "139",
+              "A141": "140",
+              "A142": "141",
+              "A143": "142",
+              "A144": "143",
+              "A145": "144",
+              "A146": "145",
+              "A147": "146",
+              "A148": "147",
+              "A149": "148",
+              "A150": "149",
+              "A151": "150",
+              "A152": "151",
+              "A153": "152",
+              "A154": "153",
+              "A155": "154",
+              "A156": "155",
+              "A157": "156",
+              "A158": "157",
+              "A159": "158",
+              "A160": "159",
+              "A161": "160",
+              "A162": "161",
+              "A163": "162",
+              "A164": "163",
+              "A165": "164",
+              "A166": "165",
+              "A167": "166",
+              "A168": "167",
+              "A169": "168",
+              "A170": "169",
+              "A171": "170",
+              "A172": "171",
+              "A173": "172",
+              "A174": "173",
+              "A175": "174",
+              "A176": "175",
+              "A177": "176",
+              "A178": "177",
+              "A179": "178",
+              "A180": "179",
+              "A181": "180",
+              "A182": "181",
+              "A183": "182",
+              "A184": "183",
+              "A185": "184",
+              "A186": "185",
+              "A187": "186",
+              "A188": "187",
+              "A189": "188",
+              "A190": "189",
+              "A191": "190",
+              "A192": "191",
+              "A193": "192",
+              "A194": "193",
+              "A195": "194",
+              "A196": "195",
+              "A197": "196",
+              "A198": "197",
+              "A199": "198",
+              "A200": "199",
+              "A201": "200",
+              "A202": "201",
+              "A203": "202",
+              "A204": "203",
+              "A205": "204",
+              "A206": "205",
+              "A207": "206",
+              "A208": "207",
+              "A209": "208",
+              "A210": "209",
+              "A211": "210",
+              "A212": "211",
+              "A213": "212",
+              "A214": "213",
+              "A215": "214",
+              "A216": "215",
+              "A217": "216",
+              "A218": "217",
+              "A219": "218",
+              "A220": "219",
+              "A221": "220",
+              "A222": "221",
+              "A223": "222",
+              "A224": "223",
+              "A225": "224",
+              "A226": "225",
+              "A227": "226",
+              "A228": "227",
+              "A229": "228",
+              "A230": "229",
+              "A231": "230",
+              "A232": "231",
+              "A233": "232",
+              "A234": "233",
+              "A235": "234",
+              "A236": "235",
+              "A237": "236",
+              "A238": "237",
+              "A239": "238",
+              "A240": "239",
+              "A241": "240",
+              "A242": "241",
+              "A243": "242",
+              "A244": "243",
+              "A245": "244",
+              "A246": "245",
+              "A247": "246",
+              "A248": "247",
+              "A249": "248",
+              "A250": "249",
+              "A251": "250",
+              "A252": "251",
+              "A253": "252",
+              "A254": "253",
+              "A255": "254",
+              "A256": "255",
+              "A257": "256",
+              "A258": "257",
+              "A259": "258",
+              "A260": "259",
+              "A261": "260",
+              "A262": "261",
+              "A263": "262",
+              "A264": "263",
+              "A265": "264",
+              "A266": "265",
+              "A267": "266",
+              "A268": "267",
+              "A269": "268",
+              "A270": "269",
+              "A271": "270",
+              "A272": "271",
+              "A273": "272",
+              "A274": "273",
+              "A275": "274",
+              "A276": "275",
+              "A277": "276",
+              "A278": "277",
+              "A279": "278",
+              "A280": "279",
+              "A281": "280",
+              "A282": "281",
+              "A283": "282",
+              "A284": "283",
+              "A285": "284",
+              "A286": "285",
+              "A287": "286",
+              "A288": "287",
+              "A289": "288",
+              "A290": "289",
+              "A291": "290",
+              "A292": "291",
+              "A293": "292",
+              "A294": "293",
+              "A295": "294",
+              "A296": "295",
+              "A297": "296",
+              "A298": "297",
+              "A299": "298",
+              "A300": "299",
+              "A301": "300",
+              "A302": "301",
+              "A303": "302",
+              "A304": "303",
+              "A305": "304",
+              "A306": "305",
+              "A307": "306",
+              "A308": "307",
+              "A309": "308",
+              "A310": "309",
+              "A311": "310",
+              "A312": "311",
+              "A313": "312",
+              "A314": "313",
+              "A315": "314",
+              "A316": "315",
+              "A317": "316",
+              "A318": "317",
+              "A319": "318",
+              "A320": "319",
+              "A321": "320",
+              "A322": "321",
+              "A323": "322",
+              "A324": "323",
+              "A325": "324",
+              "A326": "325",
+              "A327": "326",
+              "A328": "327",
+              "A329": "328",
+              "A330": "329",
+              "A331": "330",
+              "A332": "331",
+              "A333": "332",
+              "A334": "333",
+              "A335": "334",
+              "A336": "335",
+              "A337": "336",
+              "A338": "337",
+              "A339": "338",
+              "A340": "339",
+              "A341": "340",
+              "A342": "341",
+              "A343": "342",
+              "A344": "343",
+              "A345": "344",
+              "A346": "345",
+              "A347": "346",
+              "A348": "347",
+              "A349": "348",
+              "A350": "349",
+              "A351": "350",
+              "A352": "351",
+              "A353": "352",
+              "A354": "353",
+              "A355": "354",
+              "A356": "355",
+              "A357": "356",
+              "A358": "357",
+              "A359": "358",
+              "A360": "359",
+              "A361": "360",
+              "A362": "361",
+              "A363": "362",
+              "A364": "363",
+              "A365": "364",
+              "A366": "365",
+              "A367": "366",
+              "A368": "367",
+              "A369": "368",
+              "A370": "369",
+              "A371": "370",
+              "A372": "371",
+              "A373": "372",
+              "A374": "373",
+              "A375": "374",
+              "A376": "375",
+              "A377": "376",
+              "A378": "377",
+              "A379": "378",
+              "A380": "379",
+              "A381": "380",
+              "A382": "381",
+              "A383": "382",
+              "A384": "383",
+              "A385": "384",
+              "A386": "385",
+              "A387": "386",
+              "A388": "387",
+              "A389": "388",
+              "A390": "389",
+              "A391": "390",
+              "A392": "391",
+              "A393": "392",
+              "A394": "393",
+              "A395": "394",
+              "A396": "395",
+              "A397": "396",
+              "A398": "397",
+              "A399": "398",
+              "A400": "399",
+              "A401": "400",
+              "A402": "401",
+              "A403": "402",
+              "A404": "403",
+              "A405": "404",
+              "A406": "405",
+              "A407": "406",
+              "A408": "407",
+              "A409": "408",
+              "A410": "409",
+              "A411": "410",
+              "A412": "411",
+              "A413": "412",
+              "A414": "413",
+              "A415": "414",
+              "A416": "415",
+              "A417": "416",
+              "A418": "417",
+              "A419": "418",
+              "A420": "419",
+              "A421": "420",
+              "A422": "421",
+              "A423": "422",
+              "A424": "423",
+              "A425": "424",
+              "A426": "425",
+              "A427": "426",
+              "A428": "427",
+              "A429": "428",
+              "A430": "429",
+              "A431": "430",
+              "A432": "431",
+              "A433": "432",
+              "A434": "433",
+              "A435": "434",
+              "A436": "435",
+              "A437": "436",
+              "A438": "437",
+              "A439": "438",
+              "A440": "439",
+              "A441": "440",
+              "A442": "441",
+              "A443": "442",
+              "A444": "443",
+              "A445": "444",
+              "A446": "445",
+              "A447": "446",
+              "A448": "447",
+              "A449": "448",
+              "A450": "449",
+              "A451": "450",
+              "A452": "451",
+              "A453": "452",
+              "A454": "453",
+              "A455": "454",
+              "A456": "455",
+              "A457": "456",
+              "A458": "457",
+              "A459": "458",
+              "A460": "459",
+              "A461": "460",
+              "A462": "461",
+              "A463": "462",
+              "A464": "463",
+              "A465": "464",
+              "A466": "465",
+              "A467": "466",
+              "A468": "467",
+              "A469": "468",
+              "A470": "469",
+              "A471": "470",
+              "A472": "471",
+              "A473": "472",
+              "A474": "473",
+              "A475": "474",
+              "A476": "475",
+              "A477": "476",
+              "A478": "477",
+              "A479": "478",
+              "A480": "479",
+              "A481": "480",
+              "A482": "481",
+              "A483": "482",
+              "A484": "483",
+              "A485": "484",
+              "A486": "485",
+              "A487": "486",
+              "A488": "487",
+              "A489": "488",
+              "A490": "489",
+              "A491": "490",
+              "A492": "491",
+              "A493": "492",
+              "A494": "493",
+              "A495": "494",
+              "A496": "495",
+              "A497": "496",
+              "A498": "497",
+              "A499": "498",
+              "A500": "499",
+              "A501": "500"
+            }
+          },
+          "on": "Trades"
+        },
+        {
+          "save": {
+            "maxUncompressedBytes": 4000
+          },
+          "expect": {
+            "refused": {
+              "reason": "tooLarge",
+              "sheet": "Trades",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'Trades': The workbook would hold more than the 4,000 uncompressed bytes a file is written with, and read with by default; the part 'xl/worksheets/sheet1.xml' went past it."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §6, §9: the parts written last count too: text that fills the shared strings past the limit is refused, and no Sheet is named",
+      "steps": [
+        {
+          "entries": {
+            "A1": [
+              {
+                "each": "x",
+                "from": 1,
+                "to": 30000
+              }
+            ]
+          }
+        },
+        {
+          "save": {
+            "maxUncompressedBytes": 20000
+          },
+          "expect": {
+            "refused": {
+              "reason": "tooLarge",
+              "sheet": null,
+              "cell": null,
+              "held": null,
+              "message": "The workbook would hold more than the 20,000 uncompressed bytes a file is written with, and read with by default; the part 'xl/sharedStrings.xml' went past it."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §9: the limit is 1 byte to the most a file is read with by default, since the file waits in memory until it is handed over: 0",
+      "steps": [
+        {
+          "save": {
+            "maxUncompressedBytes": 0
+          },
+          "expect": {
+            "outOfRange": "MaxUncompressedBytes is 1 to 1,073,741,824."
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §9: the limit is 1 byte to the most a file is read with by default, since the file waits in memory until it is handed over: 4,294,967,297",
+      "steps": [
+        {
+          "save": {
+            "maxUncompressedBytes": 4294967297
+          },
+          "expect": {
+            "outOfRange": "MaxUncompressedBytes is 1 to 1,073,741,824."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,171 @@
+{
+  "about": "A cell's place as Excel names it, A1 to XFD1048576, written from a row and column and read back, and text that is not a cell inside the grid (ADR-0330 section 4). Transcribed from ExGrid.Data.Xlsx's CellReferenceTests.",
+  "kind": "xlsxReference",
+  "cases": [
+    {
+      "name": "ADR-0330 §4: row 0, column 0 is written as A1",
+      "place": [
+        0,
+        0
+      ],
+      "expect": "A1"
+    },
+    {
+      "name": "ADR-0330 §4: A1 is read as row 0, column 0",
+      "text": "A1",
+      "expect": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: row 6, column 1 is written as B7",
+      "place": [
+        6,
+        1
+      ],
+      "expect": "B7"
+    },
+    {
+      "name": "ADR-0330 §4: B7 is read as row 6, column 1",
+      "text": "B7",
+      "expect": [
+        6,
+        1
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: row 0, column 25 is written as Z1",
+      "place": [
+        0,
+        25
+      ],
+      "expect": "Z1"
+    },
+    {
+      "name": "ADR-0330 §4: Z1 is read as row 0, column 25",
+      "text": "Z1",
+      "expect": [
+        0,
+        25
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: row 0, column 26 is written as AA1",
+      "place": [
+        0,
+        26
+      ],
+      "expect": "AA1"
+    },
+    {
+      "name": "ADR-0330 §4: AA1 is read as row 0, column 26",
+      "text": "AA1",
+      "expect": [
+        0,
+        26
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: row 0, column 701 is written as ZZ1",
+      "place": [
+        0,
+        701
+      ],
+      "expect": "ZZ1"
+    },
+    {
+      "name": "ADR-0330 §4: ZZ1 is read as row 0, column 701",
+      "text": "ZZ1",
+      "expect": [
+        0,
+        701
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: row 0, column 702 is written as AAA1",
+      "place": [
+        0,
+        702
+      ],
+      "expect": "AAA1"
+    },
+    {
+      "name": "ADR-0330 §4: AAA1 is read as row 0, column 702",
+      "text": "AAA1",
+      "expect": [
+        0,
+        702
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: row 1048575, column 16383 is written as XFD1048576",
+      "place": [
+        1048575,
+        16383
+      ],
+      "expect": "XFD1048576"
+    },
+    {
+      "name": "ADR-0330 §4: XFD1048576 is read as row 1048575, column 16383",
+      "text": "XFD1048576",
+      "expect": [
+        1048575,
+        16383
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: '' is not a cell inside the grid",
+      "text": "",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: 'A' is not a cell inside the grid",
+      "text": "A",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: '1' is not a cell inside the grid",
+      "text": "1",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: 'A0' is not a cell inside the grid",
+      "text": "A0",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: 'XFE1' is not a cell inside the grid",
+      "text": "XFE1",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: 'A1048577' is not a cell inside the grid",
+      "text": "A1048577",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: 'AAAA1' is not a cell inside the grid",
+      "text": "AAAA1",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: 'A1B' is not a cell inside the grid",
+      "text": "A1B",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: 'A 1' is not a cell inside the grid",
+      "text": "A 1",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: absolute marks are read through",
+      "text": "$C$3",
+      "expect": [
+        2,
+        2
+      ]
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
 using Xunit;
@@ -134,6 +135,113 @@ internal static class Fixtures
             await writer.CompleteAsync(Token);
         }
         return memory.ToArray();
+    }
+
+    /// <summary>An OLE compound file (MS-CFB, version 3) whose directory lists <paramref name="names"/>, four to a sector.</summary>
+    public static byte[] Ole(params string[] names)
+    {
+        const int size = 512;
+        var dirSectors = (names.Length + 3) / 4;
+        var file = new byte[size * (2 + dirSectors)];
+        var header = file.AsSpan();
+        ReadOnlySpan<byte> signature = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+        signature.CopyTo(header);
+        BinaryPrimitives.WriteUInt16LittleEndian(header[24..], 0x3E);
+        BinaryPrimitives.WriteUInt16LittleEndian(header[26..], 3);
+        BinaryPrimitives.WriteUInt16LittleEndian(header[28..], 0xFFFE);
+        BinaryPrimitives.WriteUInt16LittleEndian(header[30..], 9);
+        BinaryPrimitives.WriteUInt16LittleEndian(header[32..], 6);
+        BinaryPrimitives.WriteUInt32LittleEndian(header[44..], 1);
+        BinaryPrimitives.WriteUInt32LittleEndian(header[48..], 1);
+        BinaryPrimitives.WriteUInt32LittleEndian(header[56..], 4096);
+        BinaryPrimitives.WriteUInt32LittleEndian(header[60..], 0xFFFFFFFE);
+        BinaryPrimitives.WriteUInt32LittleEndian(header[68..], 0xFFFFFFFE);
+        for (var i = 0; i < 109; i++)
+            BinaryPrimitives.WriteUInt32LittleEndian(header[(76 + i * 4)..], i == 0 ? 0u : 0xFFFFFFFF);
+        // The FAT, in sector 0: itself, then the directory's chain, sector 1 onward.
+        var fat = file.AsSpan(size, size);
+        fat.Fill(0xFF);
+        BinaryPrimitives.WriteUInt32LittleEndian(fat, 0xFFFFFFFD);
+        for (var s = 1; s <= dirSectors; s++)
+            BinaryPrimitives.WriteUInt32LittleEndian(fat[(s * 4)..], s == dirSectors ? 0xFFFFFFFE : (uint)(s + 1));
+        for (var i = 0; i < names.Length; i++)
+        {
+            var entry = file.AsSpan(size * 2 + i * 128, 128);
+            var name = Encoding.Unicode.GetBytes(names[i] + "\0");
+            name.CopyTo(entry);
+            BinaryPrimitives.WriteUInt16LittleEndian(entry[64..], (ushort)name.Length);
+            entry[66] = (byte)(i == 0 ? 5 : 2);
+        }
+        return file;
+    }
+
+    /// <summary>The same zip, every part stored rather than deflated.</summary>
+    public static byte[] Stored(byte[] zip)
+    {
+        using var source = new ZipArchive(new MemoryStream(zip), ZipArchiveMode.Read);
+        using var memory = new MemoryStream();
+        using (var target = new ZipArchive(memory, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var entry in source.Entries)
+            {
+                using var from = entry.Open();
+                using var to = target.CreateEntry(entry.FullName, CompressionLevel.NoCompression).Open();
+                from.CopyTo(to);
+            }
+        }
+        return memory.ToArray();
+    }
+
+    /// <summary>Makes <paramref name="part"/>'s deflate stream one that cannot be inflated: its first block's type is the
+    /// reserved one.</summary>
+    public static byte[] Damage(byte[] zip, string part)
+    {
+        var name = Encoding.UTF8.GetBytes(part);
+        for (var at = 0; at + 30 < zip.Length; at++)
+        {
+            if (BinaryPrimitives.ReadUInt32LittleEndian(zip.AsSpan(at)) != 0x04034b50)
+                continue;
+            var nameLength = BinaryPrimitives.ReadUInt16LittleEndian(zip.AsSpan(at + 26));
+            var extraLength = BinaryPrimitives.ReadUInt16LittleEndian(zip.AsSpan(at + 28));
+            if (nameLength == name.Length && zip.AsSpan(at + 30, nameLength).SequenceEqual(name))
+            {
+                Assert.Equal(8, BinaryPrimitives.ReadUInt16LittleEndian(zip.AsSpan(at + 8)));
+                zip[at + 30 + nameLength + extraLength] = 0b111;
+                return zip;
+            }
+        }
+        throw new InvalidOperationException($"The zip has no part '{part}'.");
+    }
+
+    /// <summary>Rewrites the uncompressed size the zip declares for <paramref name="part"/>, in its local header and its central
+    /// directory entry, from <paramref name="actual"/> to <paramref name="declared"/>.</summary>
+    public static void Lie(byte[] zip, string part, int actual, int declared)
+    {
+        var name = Encoding.UTF8.GetBytes(part);
+        for (var at = 0; at + 46 < zip.Length; at++)
+        {
+            var signature = BinaryPrimitives.ReadUInt32LittleEndian(zip.AsSpan(at));
+            int nameAt, sizeAt;
+            if (signature == 0x04034b50)
+            {
+                nameAt = at + 30;
+                sizeAt = at + 22;
+            }
+            else if (signature == 0x02014b50)
+            {
+                nameAt = at + 46;
+                sizeAt = at + 24;
+            }
+            else
+            {
+                continue;
+            }
+            if (nameAt + name.Length <= zip.Length && zip.AsSpan(nameAt, name.Length).SequenceEqual(name)
+                && BinaryPrimitives.ReadInt32LittleEndian(zip.AsSpan(sizeAt)) == actual)
+            {
+                BinaryPrimitives.WriteInt32LittleEndian(zip.AsSpan(sizeAt), declared);
+            }
+        }
     }
 
     /// <summary>A stream that cannot seek, as a browser's file and a request body are.</summary>

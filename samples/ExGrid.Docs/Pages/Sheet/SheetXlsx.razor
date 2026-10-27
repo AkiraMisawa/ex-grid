@@ -14,6 +14,23 @@
             written one are your application's</b>, as persisting a Sheet Document is. Both are published with the
             rest of the family, at its one version, from <code>0.2.0</code> and its release candidates.
         </p>
+        <p>
+            In TypeScript, <code>@@ex-grid/data-xlsx</code> (published with 0.3.0) is <code>ExGrid.Data.Xlsx</code>'s
+            counterpart: <code>openXlsx</code> reads a <code>Blob</code> or its bytes a batch of cells at a time, and
+            <code>createXlsxWriter</code> writes a workbook to a <code>Blob</code>, with the zip inflated and deflated by the
+            browser's own <code>DecompressionStream</code> and <code>CompressionStream</code>. It refuses the same files, in the
+            same words, and writes the same parts; both run the same cases.
+        </p>
+        <p>
+            Over it, <code>@@ex-grid/sheet-xlsx</code> (published with 0.3.0) is <code>ExSheet.Xlsx</code>'s counterpart:
+            <code>openXlsxWorkbook(file, culture)</code> answers the Workbook Document and its Open Report, or refuses the
+            file with an <code>XlsxOpenError</code>, and <code>saveXlsxWorkbook(workbook)</code> answers the file as a
+            <code>Blob</code>, or refuses the Workbook with an <code>XlsxSaveError</code>. The culture is a
+            <code>Culture</code> or its locale, and the options pace, report and cancel through an <code>AbortSignal</code>
+            as a read does. It carries, refuses and lists exactly what this package does, in the same words, because both
+            run the same cases (<code>tests/cases/sheet-xlsx</code>). ExSheet's TypeScript screen does not open or save a
+            file through it yet.
+        </p>
         <ul>
             <li>
                 <b>Reading:</b> <code>XlsxWorkbookReader.ReadAsync(stream, culture)</code> answers the
