@@ -1768,6 +1768,9 @@ describe('the Sheet\'s Chrome slots (ADR-0390)', () => {
         const frame = element.querySelector('.ex-popover-consumer');
         expect([frame?.getAttribute('aria-label'), frame?.querySelector('.ex-format-cells-slot')?.textContent, document.activeElement?.textContent]).toEqual(['Format Cells', 'Number', 'Number']);
         if (given === undefined) throw new Error('Format Cells was not handed its context.');
+        // Ctrl+1 inside the contents opens nothing more.
+        key('1', { ctrlKey: true });
+        expect([heard, element.querySelectorAll('.ex-popover-consumer').length]).toEqual([['mounted'], 1]);
         given.tabShown('font');
         given.draft.setFontStyle('bold');
         expect(given.ok()).toBe(true);

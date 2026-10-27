@@ -2121,9 +2121,16 @@ export class GridView<Row> {
         // A Chrome slot's contents are taken away with the grid, as a Template cell's are.
         const popover = this.#popover;
         this.#popover = undefined;
+        // What the opener's closed throws is thrown once the rest of the grid has gone.
+        let failed: { readonly error: unknown } | undefined;
         if (popover?.kind === 'find') popover.panel.dispose();
-        else if (popover?.kind === 'consumer') popover.closed?.();
-        else if (popover !== undefined) popover.items.dispose();
+        else if (popover?.kind === 'consumer') {
+            try {
+                popover.closed?.();
+            } catch (error: unknown) { // oxlint-disable-line ex-grid/no-catch -- rethrown below, once destroy has run the rest
+                failed = { error };
+            }
+        } else if (popover !== undefined) popover.items.dispose();
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#rowMarks.destroy();
@@ -2144,6 +2151,7 @@ export class GridView<Row> {
             'data-ex-focus-visible', 'data-ex-pending-commit']) {
             this.#root.removeAttribute(name);
         }
+        if (failed !== undefined) throw failed.error;
     }
 
     // The options checked and resolved, with nothing of the grid's changed. `rows` handed again as the same

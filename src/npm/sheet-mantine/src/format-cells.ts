@@ -8,6 +8,7 @@
 // choice never writes over typing (ADR-0240 section 1); one the draft did not take stays as typed, and OK refuses it.
 
 import { createElement, useContext, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { Button, Checkbox, Fieldset, NativeSelect, Radio, Tabs, Text, TextInput, type MantineSize } from '@mantine/core';
 import { MantineSizeContext } from '@ex-grid/mantine';
 import {
@@ -212,9 +213,8 @@ function sampleLine(y: number, width: string, dashes: string | undefined): React
 
 /** A line style's sample: a stroke and its dashes. */
 function lineSample(style: BorderLineStyle): ReactElement {
-    const line = sampleLine;
     const { width, dashes } = formatCellsLineStroke(style);
-    const lines = style === 'none' ? [] : style === 'double' ? [line(2.5, width, undefined), line(5.5, width, undefined)] : [line(4, width, dashes)];
+    const lines = style === 'none' ? [] : style === 'double' ? [sampleLine(2.5, width, undefined), sampleLine(5.5, width, undefined)] : [sampleLine(4, width, dashes)];
     return createElement('svg', { className: 'mantine-ex-sheet-format-cells-line', width: 56, height: 8, 'aria-hidden': true }, ...lines);
 }
 
@@ -296,19 +296,23 @@ export function MantineFormatCells({ context }: { readonly context: SheetFormatC
     const size = useContext(MantineSizeContext);
     const [id] = useState(() => { openings += 1; return `mantine-ex-sheet-format-cells-${String(openings)}`; });
     const { draft, words } = context;
-    // OK checks its fields first: one the browser holds invalid, a number of places out of range, is reported where it
-    // stands, and nothing is set.
+    // OK checks its fields first, on every tab, since each tab stays drawn while another is shown: one the browser
+    // holds invalid, a number of places out of range, is shown on its tab and reported there, and nothing is set.
     const submitted = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
-        if (!event.currentTarget.checkValidity()) {
-            event.currentTarget.reportValidity();
+        const invalid = [...event.currentTarget.querySelectorAll('input')].find(field => !field.checkValidity());
+        if (invalid !== undefined) {
+            const holding = formatCellsOffer.tabs.find(each => each === invalid.closest<HTMLElement>('[data-ex-tab]')?.dataset['exTab']);
+            if (holding === undefined) throw new Error('Internal: an invalid field of Format Cells stands on no tab.');
+            flushSync(() => { showTab(holding); });
+            invalid.reportValidity();
             return;
         }
         ok();
     };
     return createElement('form', { className: 'mantine-ex-sheet-format-cells', onSubmit: submitted, noValidate: true },
         createElement(Tabs, {
-            value: tab, keepMounted: false,
+            value: tab, keepMounted: true,
             onChange: (value: string | null) => {
                 const shown = formatCellsOffer.tabs.find(each => each === value);
                 if (shown === undefined) throw new RangeError(`'${String(value)}' is not a tab of Format Cells (ADR-0071).`);
@@ -321,7 +325,11 @@ export function MantineFormatCells({ context }: { readonly context: SheetFormatC
                 key: each, value: each, ...(each === tab ? { ref: tabControl } : {}),
             }, words.tabName(each))),
         }),
-        createElement(Tabs.Panel, { value: tab, className: 'mantine-ex-sheet-format-cells-panel', children: tabContents(tab, { draft, words, size, set, id }) })),
+        // Every tab stays drawn, its fields as typed: a field left invalid is still refused by OK from another tab.
+        ...formatCellsOffer.tabs.map(each => createElement(Tabs.Panel, {
+            key: each, value: each, className: 'mantine-ex-sheet-format-cells-panel',
+            children: createElement('div', { 'data-ex-tab': each }, tabContents(each, { draft, words, size, set, id })),
+        }))),
         refusal === undefined ? null : createElement(Text<'p'>, { role: 'alert', c: 'red', size, className: 'mantine-ex-sheet-format-cells-refusal' }, refusal),
         createElement('div', { className: 'mantine-ex-sheet-format-cells-actions' },
             createElement(Button<'button'>, { type: 'submit', size }, words.formatCellsLabel('ok')),

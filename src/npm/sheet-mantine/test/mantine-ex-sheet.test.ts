@@ -2,9 +2,12 @@
 // MantineExSheet (ADR-0390, ADR-0030): the Sheet inside Mantine's Paper, its own Chrome and its grid's drawn in
 // Mantine's components at the size its Density picks (compact's xs: a Sheet's million rows fit no taller), and a Consumer's slot beating the Wrapper's.
 import { createElement, type ReactNode } from 'react';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MantineProvider } from '@mantine/core';
+import { CellAddress } from '@ex-grid/sheet-engine';
+import type { ExSheetApi } from '@ex-grid/sheet-react';
+import { pressA1 } from '../../sheet-react/test/sheet-slot-contract';
 import { MantineExSheet, type MantineExSheetProps } from '../src/index';
 
 afterEach(() => { cleanup(); });
@@ -43,6 +46,34 @@ describe('MantineExSheet', () => {
     it('ADR-0390 section 3: a slot the Consumer hands beats the Wrapper\'s, and the others stay Mantine\'s', async () => {
         const { sheet } = await mounted({ chrome: { sheetTab: context => createElement('i', { className: 'own-tab' }, context.name) } });
         expect([sheet.querySelector('.ex-sheet-tab .own-tab')?.textContent, sheet.querySelector('.mantine-ex-sheet-tab-face'), boldSize(sheet)]).toEqual(['Sheet1', null, 'xs']);
+    });
+
+
+    it('ADR-0071: a number of places left out of range is refused by OK from another tab, which shows it again', async () => {
+        const ref: { current: ExSheetApi | null } = { current: null };
+        const { sheet } = await mounted({ showToolbar: false, ref });
+        const api = ref.current;
+        if (api === null) throw new Error('No Sheet was mounted.');
+        await pressA1(sheet);
+        act(() => { api.openFormatCells(); });
+        await settled();
+        const frame = (): HTMLElement => {
+            const found = sheet.querySelector<HTMLElement>('.ex-popover-consumer');
+            if (found === null) throw new Error('Format Cells is not open.');
+            return found;
+        };
+        fireEvent.click(within(frame()).getByRole('radio', { name: 'Number' }));
+        await settled();
+        const places = within(frame()).getByRole('spinbutton', { name: 'Decimal places' });
+        fireEvent.focus(places);
+        fireEvent.change(places, { target: { value: '3' } });
+        fireEvent.change(places, { target: { value: '31' } });
+        fireEvent.click(within(frame()).getByRole('tab', { name: 'Font' }));
+        await settled();
+        fireEvent.click(within(frame()).getByRole('button', { name: 'OK' }));
+        await settled();
+        expect([frame().querySelector('[role=tab][aria-selected=true]')?.textContent, api.cellFormatAt(CellAddress.parse('A1')).numberFormat.code, api.canUndo])
+            .toEqual(['Number', 'General', false]);
     });
 
 });

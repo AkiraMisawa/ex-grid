@@ -107,7 +107,7 @@ export class SheetTabs {
         if (children.length !== tabs.length || tabs.some((tab, i) => children[i] !== tab)) this.#list.replaceChildren(...tabs);
     }
 
-    /** Takes away every face a Chrome drew, as the Sheet goes. */
+    /** Takes away every face a Chrome drew, as the band or the Sheet goes. */
     dispose(): void {
         for (const button of this.#faces.keys()) this.#takeFace(button);
     }
@@ -116,9 +116,12 @@ export class SheetTabs {
     #drawTabFace(tab: HTMLButtonElement, mount: SheetTabSlot | undefined, name: string, selected: boolean): void {
         if (mount === undefined) {
             this.#takeFace(tab);
+            tab.removeAttribute('aria-label');
             if (tab.textContent !== name) tab.textContent = name;
             return;
         }
+        // The face is the Chrome's; the tab's name for a screen reader stays the Sheet's, whatever the face shows.
+        setAttr(tab, 'aria-label', name);
         const shown = JSON.stringify([name, selected]);
         this.#drawFace(tab, mount, shown, slot => mount(slot, Object.freeze({ name, selected })), 'sheetTab');
     }

@@ -1379,7 +1379,11 @@ class SheetView {
     #paintFrame(): void {
         const tabs = this.#options.showSheetTabs !== false;
         const toolbar = this.#options.showToolbar === true;
-        if (!tabs && this.#tabs.area.isConnected) this.#tabs.area.remove();
+        if (!tabs && this.#tabs.area.isConnected) {
+            // The faces a Chrome drew go with the band, and are drawn again when it is shown.
+            this.#tabs.dispose();
+            this.#tabs.area.remove();
+        }
         if (!toolbar && this.#toolbar.band.isConnected) {
             // A band taken away takes its KeyTips and an item's list with it, and while it holds the keyboard hands it
             // back first, so the next key is not the page's.
@@ -1818,7 +1822,7 @@ class SheetView {
         if (format === undefined && structure === undefined) return;
         const target = event.target;
         // Ctrl+1 inside Format Cells opens nothing more, and is not the browser's, whose Ctrl+1 leaves the page.
-        if (format === 'formatCells' && target instanceof Element && target.closest('.ex-format-cells') !== null) {
+        if (format === 'formatCells' && target instanceof Element && target.closest('.ex-format-cells, .ex-format-cells-slot') !== null) {
             event.preventDefault();
             return;
         }
@@ -2434,8 +2438,9 @@ class SlottedFormatCells {
     constructor(doc: Document, mount: SheetFormatCellsSlot) {
         this.#mount = mount;
         this.element = doc.createElement('div');
-        // The built-in Format Cells' class, by which Ctrl+1 inside it opens nothing more.
-        this.element.className = 'ex-format-cells ex-format-cells-slot';
+        // A class of its own, by which Ctrl+1 inside it opens nothing more: not the built-in Format Cells', whose layout
+        // is the built-in contents'.
+        this.element.className = 'ex-format-cells-slot';
     }
 
     get live(): boolean {

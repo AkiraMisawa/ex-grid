@@ -55,7 +55,7 @@ async function mounted(chrome: ExSheetChrome, host: ContractHost, props: Partial
 }
 
 /** A press on A1, where the keyboard then is: the Row Headings stand at the Viewport's left edge. */
-async function pressA1(element: HTMLElement): Promise<void> {
+export async function pressA1(element: HTMLElement): Promise<void> {
     const viewport = element.querySelector<HTMLElement>('.ex-viewport');
     if (viewport === null) throw new Error('The grid has no viewport.');
     const heading = /width: ([\d.]+)px/u.exec(element.querySelector('.ex-row-heading')?.getAttribute('style') ?? ''); // oxlint-disable-line ex-grid/no-stand-in-default -- no heading band reads as width 0, which the press then starts from

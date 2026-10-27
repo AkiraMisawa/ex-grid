@@ -106,7 +106,6 @@ export const sheetToolbarPictures: Readonly<Record<SheetToolbarIcon, string>> = 
     fill: '<path stroke-width="1.25" d="M2.5 7.5 7 3l4.5 4.5L7 12zM5 1.5 7 3M13 9.5s1.5 1.8 1.5 2.8a1.5 1.5 0 0 1-3 0c0-1 1.5-2.8 1.5-2.8"/>',
     borders: '<path stroke-width="1.25" stroke-dasharray="1.5 1.5" d="M2 8h12M8 2v12"/><path stroke-width="1.5" d="M2 2h12v12H2z"/>',
 });
-const pictures = sheetToolbarPictures;
 
 // The arrow a menu or a split control's list opens from.
 const caret = `${svgOpen}<path stroke-width="1.5" d="M4.5 6.5 8 10l3.5-3.5"/></svg>`;
@@ -397,7 +396,7 @@ export class SheetToolbar {
             }
             return;
         }
-        if (item.icon !== undefined) face.insertAdjacentHTML('beforeend', `${svgOpen}${pictures[item.icon]}</svg>`);
+        if (item.icon !== undefined) face.insertAdjacentHTML('beforeend', `${svgOpen}${sheetToolbarPictures[item.icon]}</svg>`);
         if (item.text !== undefined) {
             const text = this.#doc.createElement('span');
             text.className = 'ex-sheet-toolbar-text';

@@ -100,6 +100,13 @@ describe('a Consumer\'s popover (ADR-0050, item 16)', () => {
         expect(heard).toEqual(['one:true', 'two:true', 'three:true', 'four:true']);
     });
 
+    it('ADR-0390: a closed that throws as the grid goes is thrown once the grid has gone', async () => {
+        const { root, view } = await grid();
+        view.openPopover(contents({ current: undefined }), 'One', () => { throw new Error('Cleanup failed.'); });
+        expect(() => { view.destroy(); }).toThrow('Cleanup failed.');
+        expect([root.childElementCount, root.getAttribute('role')]).toEqual([0, null]);
+    });
+
     it('ADR-0390: a closed that is not a function is refused by name', async () => {
         const { view } = await grid();
         expect(() => view.openPopover(contents({ current: undefined }), 'One', 'no' as never)).toThrow(/hears it close/u);
