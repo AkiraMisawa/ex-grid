@@ -3103,6 +3103,7 @@
     {
         UseTakenLists();
         ValidatePointDeclaration();
+        RefuseLaterVerdicts();
         ValidateChangeHighlight();
         ResolveDeclaredKeys();
         BindPointedAt();
@@ -3120,6 +3121,25 @@
         {
             _applying = false;
         }
+    }
+
+    /// <summary>The columns last checked for a verdict answered later, so an unchanged array costs a comparison.</summary>
+    private IReadOnlyList<GridColumn<TRow>>? _verdictsChecked;
+
+    /// <summary>Refuses a column whose verdict answers later, naming it: this grid judges a commit as it is made,
+    /// and a commit that went ahead unjudged would be a verdict quietly not asked (ADR-0380 section 1).</summary>
+    private void RefuseLaterVerdicts()
+    {
+        if (ReferenceEquals(_verdictsChecked, Columns))
+            return;
+        foreach (var column in Columns)
+        {
+            if (column.ValidateAsync is not null)
+                throw new NotSupportedException(
+                    $"Column '{column.Name}' declares ValidateAsync, which the C# core does not ask: it judges a commit as it is made. "
+                    + "ExGrid.Script.ExGrid asks it (ADR-0380 section 5); here, declare Validate.");
+        }
+        _verdictsChecked = Columns;
     }
 
     /// <summary>

@@ -273,6 +273,27 @@ public sealed record GridColumn<TRow>
     /// carries the other values.</summary>
     public Func<TRow, string, EditVerdict>? Validate { get; }
 
+    /// <summary>
+    /// The Consumer's judgement on a commit into this column, answered later (ADR-0380 section 1): a rule that asks
+    /// its domain, a store or a server before it says. While the answer is out the commit is pending: the editor
+    /// stands with the text, and every input made meanwhile waits for it. The token is cancelled when the user
+    /// cancels the commit with Escape, and the answer is then not read. Set in place of <see cref="Validate"/>,
+    /// never beside it. Only ExGrid over the Script Core (<see cref="Script.ExGrid{TRow}"/>) asks it; the C# core
+    /// (<see cref="Components.ExGrid{TRow}"/>) judges a commit as it is made, and refuses a column that declares it.
+    /// </summary>
+    /// <exception cref="ArgumentException">Set on a column that declares <see cref="Validate"/>: two verdicts on one
+    /// commit would leave the grid to pick one, and it does not pick.</exception>
+    public Func<TRow, string, CancellationToken, ValueTask<EditVerdict>>? ValidateAsync
+    {
+        get;
+        init
+        {
+            if (value is not null && Validate is not null)
+                throw new ArgumentException($"Column '{Name}' declares Validate already; a column takes one verdict, answered now or later (ADR-0380).", nameof(ValidateAsync));
+            field = value;
+        }
+    }
+
     /// <summary>Never <c>default(ColumnWidthSpec)</c>: an unspecified width means Auto
     /// within the default bounds, and the constructor refuses a default spec, or a Fixed
     /// width below its MinWidth, naming the column (ADR-0016, FN-12).</summary>

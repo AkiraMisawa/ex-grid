@@ -91,6 +91,12 @@ public sealed class GridPasteIntent
     /// <summary>The order these positions are written in (ADR-0011).</summary>
     public int RowSequenceVersion { get; }
 
+    /// <summary>Cancelled when the user cancels the paste with Escape while the Consumer is answering it (ADR-0380
+    /// section 3): nothing is pasted, and a handler that writes after the token is cancelled writes a paste the user
+    /// took back. Only ExGrid over the Script Core waits for an answer this way; the C# core's is never
+    /// cancelled.</summary>
+    public CancellationToken CancellationToken { get; internal init; }
+
     /// <summary>Whether the Consumer refused the paste through <see cref="Refuse"/>.</summary>
     public bool IsRefused { get; private set; }
 

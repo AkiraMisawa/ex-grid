@@ -5,7 +5,10 @@
 // side too, once the browser has collected it, so .NET never keeps a row the grid can still hand back
 // without, nor holds every row it ever sent.
 
-import { actionColumn, type CellAlign, type ColumnType, type DateType, type FilterUi, type GridAction, type GridColumn, type GridColumnWidth, type RowKey } from '@ex-grid/core';
+import {
+    actionColumn, type CellAlign, type CellState, type ColumnType, type DateType, type EditVerdict, type FilterUi, type GridAction, type GridColumn,
+    type GridColumnWidth, type RowKey,
+} from '@ex-grid/core';
 import { rowKeyOf, valueKey, valueOf } from './wire-values';
 
 /** A row of .NET's as the grid holds it: the values its columns read, and the id .NET knows it by. */
@@ -16,15 +19,20 @@ export interface BlazorRow {
     readonly key: RowKey | undefined;
     /** The value of each column, in the columns' order. */
     readonly cells: readonly unknown[];
+    /** The Cell State of each column, in the columns' order, where .NET answers one other than Normal for any of
+     * them (ADR-0006): a row whose states change is another object, so the core paints it again (ADR-0003). */
+    readonly states: readonly CellState[] | undefined;
 }
 
-/** A row as .NET sends it: its id, its Row Key where the source has one, its cells, and for each column .NET
- * formats, the text of the cell's value, `null` where it does not. */
+/** A row as .NET sends it: its id, its Row Key where the source has one, its cells, for each column .NET
+ * formats, the text of the cell's value, `null` where it does not, and the Cell State of each cell, where the
+ * Consumer answers one and it is not Normal for every cell of the row. */
 export interface WireRow {
     readonly i: number;
     readonly k?: unknown;
     readonly c: readonly unknown[];
     readonly t?: readonly (string | null)[];
+    readonly s?: readonly CellState[];
 }
 
 /** A column as .NET declares it. `format`, where .NET formats the column's values and sends each cell's text with
@@ -41,8 +49,15 @@ export interface WireColumn {
     readonly dateType: DateType;
     readonly queryable: boolean;
     readonly format: string | null;
+    /** Whether .NET judges a commit into the column (ADR-0034): the core asks, and the commit is pending until .NET
+     * has answered (ADR-0380 section 5). */
+    readonly validates?: true;
     readonly actions?: readonly GridAction[];
 }
+
+/** .NET's verdict on a commit into `column` of `row`, asked across the wire: `signal` aborts as the user cancels the
+ * commit (ADR-0380 section 3). */
+export type VerdictOf = (row: BlazorRow, column: string, text: string, signal: AbortSignal) => Promise<EditVerdict>;
 
 /** One column's texts, by the value they are the text of. C#'s format is a function of the value alone, so a
  * value is shown one way wherever it stands. A text is kept while a row the grid can still read holds its value,
@@ -128,9 +143,16 @@ interface HeldColumn {
 /** The columns as the core takes them, the same objects while .NET declares them the same. */
 export class ColumnSet {
     #held: readonly HeldColumn[] = [];
+    #indexes = new Map<GridColumn<BlazorRow>, number>();
     #version = 0;
+    readonly #verdict: VerdictOf | undefined;
     readonly #valueLists = new Map<string, TextHolding>();
     readonly #awaited: { readonly version: number; readonly reached: () => void }[] = [];
+
+    /** `verdict` asks .NET to judge a commit, for the columns it says it validates. */
+    constructor(verdict?: VerdictOf) {
+        this.#verdict = verdict;
+    }
 
     /** Takes .NET's declarations, numbered `version` by .NET each time they change: a column declared as before is
      * the object it was, so the core keeps its Auto width and repaints nothing (ADR-0003, ADR-0016). */
@@ -148,8 +170,16 @@ export class ColumnSet {
             const signature = JSON.stringify(wire);
             const kept = before.get(signature);
             if (kept !== undefined && this.#held.indexOf(kept) === index) return kept;
-            return columnOf(wire, index, signature);
+            return columnOf(wire, index, signature, this.#verdict);
         }));
+        this.#indexes = new Map(this.#held.map((held, index) => [held.column, index]));
+    }
+
+    /** Where `column` stands among the columns taken last, as the core hands one back. */
+    indexOf(column: GridColumn<BlazorRow>): number {
+        const index = this.#indexes.get(column);
+        if (index === undefined) throw new Error(`Internal: the grid named column '${column.name}', which is not among the columns .NET declared.`);
+        return index;
     }
 
     /** Settles once the declarations numbered `version` or later have been taken, or `signal` gives up: the
@@ -223,11 +253,13 @@ export class ColumnSet {
     }
 }
 
-function columnOf(wire: WireColumn, index: number, signature: string): HeldColumn {
+function columnOf(wire: WireColumn, index: number, signature: string, verdict: VerdictOf | undefined): HeldColumn {
     if (wire.actions !== undefined) {
         return { signature, column: actionColumn(wire.name, wire.actions, { header: wire.header, width: wire.width }), texts: undefined };
     }
     const texts = wire.format === null ? undefined : new FormatTexts(wire.name);
+    if (wire.validates === true && verdict === undefined) throw new TypeError(`.NET declared column '${wire.name}' validates, and nothing here asks it.`);
+    const { name } = wire;
     const column: GridColumn<BlazorRow> = Object.freeze({
         name: wire.name,
         type: wire.type,
@@ -241,6 +273,9 @@ function columnOf(wire: WireColumn, index: number, signature: string): HeldColum
         ...(wire.type === 'date' ? { dateType: wire.dateType } : {}),
         value: (row: BlazorRow) => cellOf(row, index),
         ...(texts === undefined ? {} : { format: (value: unknown) => texts.textOf(value) }),
+        ...(wire.validates === true && verdict !== undefined
+            ? { validate: (row: BlazorRow, text: string, signal: AbortSignal) => verdict(row, name, text, signal) }
+            : {}),
     });
     return { signature, column, texts };
 }
@@ -328,8 +363,9 @@ export class RowSet {
     #rowOf(wire: WireRow, columns: ColumnSet): BlazorRow {
         if (!Number.isSafeInteger(wire.i)) throw new TypeError(`.NET sent a row whose id is ${String(wire.i)}.`);
         if (wire.c.length !== columns.count) throw new TypeError(`.NET sent a row of ${wire.c.length} cells for ${columns.count} columns.`);
+        if (wire.s !== undefined && wire.s.length !== columns.count) throw new TypeError(`.NET sent ${wire.s.length} Cell States for ${columns.count} columns.`);
         const cells = Object.freeze(wire.c.map(valueOf));
-        const signature = JSON.stringify([wire.k, wire.c]);
+        const signature = JSON.stringify([wire.k, wire.c, wire.s]);
         const held = this.#held.get(wire.i);
         const kept = held?.signature === signature ? held.row.deref() : undefined;
         if (kept !== undefined) {
@@ -341,7 +377,9 @@ export class RowSet {
         }
         const holding = new TextHolding();
         columns.holdTexts(cells, wire.t, holding);
-        const row: BlazorRow = Object.freeze({ id: wire.i, key: wire.k === undefined ? undefined : rowKeyOf(wire.k), cells });
+        const row: BlazorRow = Object.freeze({
+            id: wire.i, key: wire.k === undefined ? undefined : rowKeyOf(wire.k), cells, states: wire.s === undefined ? undefined : Object.freeze([...wire.s]),
+        });
         this.#held.set(wire.i, { row: new WeakRef(row), signature });
         this.#live.set(wire.i, (this.#live.get(wire.i) ?? 0) + 1); // oxlint-disable-line ex-grid/no-stand-in-default -- an id not yet live has no objects
         this.#made += 1;

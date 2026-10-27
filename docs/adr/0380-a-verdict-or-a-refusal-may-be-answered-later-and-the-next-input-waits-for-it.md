@@ -125,7 +125,10 @@ where some objects cannot exist.
   for that round trip, as it waited on the C# core. What crosses per commit is recorded with section 7's
   measurement.
 - **The display channels for a Flag**, `CellStateOf` and `CellMessageOf`, are carried too: a Flag
-  without its paint would be a commit quietly marked as nothing (spine rule 1).
+  without its paint would be a commit quietly marked as nothing (spine rule 1). *(2026-10-26: a cell's
+  message is asked on demand (ED-17), so on Blazor it is a round trip too: the Script Core's `cellMessage`
+  may answer with a promise, the message opens once answered if its cell is still the one settled on, and
+  the grid is not settled meanwhile. A state crosses with its row.)*
 - **React's adapter** passes the function through. A synchronous rule stays synchronous, and nothing
   crosses a wire.
 

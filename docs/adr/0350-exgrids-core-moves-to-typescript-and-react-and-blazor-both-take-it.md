@@ -207,6 +207,28 @@ for a pending answer.)*
 section 5: Blazor's adapter carries `Validate`, `OnEdit`'s `Refuse`, `CellStateOf` and `CellMessageOf`.
 The first two cross as pending answers, which the Script Core waits for. It does not refuse them.)*
 
+*(2026-10-26, implemented: the browser numbers each verdict, edit and paste it hands .NET, and .NET answers each
+in its turn among the grid's events, a refusal as the Consumer's sentence. Escape's cancel crosses by that
+number and cancels the `CancellationToken` handed to `GridColumn.ValidateAsync`, the overload section 1 of
+ADR-0380 adds, and to the intent; one cancelled before its turn is not handed to the Consumer. A row crosses
+with its cells' states, so a row whose states change is another object (ADR-0003). A cell's message is asked of
+.NET as the popover opens, never per row: the Script Core's `cellMessage` may answer with a promise, and the
+message opens once answered if its cell is still the one settled on. The C# core, which judges a commit as it
+is made, refuses a column that declares `ValidateAsync`, naming it. One limit is stated rather than hidden: the
+Escape that cancels is decided in the browser, by the pending stamp, so an Escape typed after .NET's handler wrote
+but before its answer crossed back cancels a commit that has landed in .NET. The cell then paints the row the
+source holds, under the editor kept open, and the next commit from that editor raises an Overwrite Notice. A
+handler that checks its token before it writes writes nothing the user took back.)*
+
+*(2026-10-27, implemented: [ADR-0381](./0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)
+section 3's error step crosses as `OnFindError`, answered in .NET in its turn among the events and numbered as a
+verdict is, so stepping again calls off the step still out. A step asked of a source the Consumer has since
+replaced, or under a row sequence version its source has left, is not handed to the Consumer, which would read
+positions in an order they were not taken in: .NET sends what its source owes and answers it as moved, and the
+bridge waits until what a write of the user's holds is taken in, so the core holds the newer order and says the
+rows moved rather than "no error". `OnFindError` takes a `Source` and is refused beside `Rows`, whose order the
+grid keeps out of the Consumer's sight.)*
+
 ### 8. The engines stay in C#
 
 ExGrid.Data, ExPivot.Engine and ExSheet.Engine are not ported. A React application reaches them on a
