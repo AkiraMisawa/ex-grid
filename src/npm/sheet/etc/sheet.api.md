@@ -20,7 +20,7 @@ import type { FormulaSyntaxError } from '@ex-grid/sheet-engine';
 import { GridDensity } from '@ex-grid/core';
 import type { GridDirection } from '@ex-grid/core';
 import type { GridExtent } from '@ex-grid/core';
-import type { GridSelection } from '@ex-grid/core';
+import { GridSelection } from '@ex-grid/core';
 import type { GridSummaryRequest } from '@ex-grid/core';
 import type { GridSummaryResult } from '@ex-grid/core';
 import { HorizontalAlignment } from '@ex-grid/sheet-engine';
@@ -352,10 +352,19 @@ export function sheetFormatKeysDeclared(): readonly string[];
 
 // @public
 export interface SheetHandle {
+    readonly canRedo: boolean;
+    readonly canUndo: boolean;
+    cellFormatAt(address: CellAddress): CellFormat;
+    cellFormatAt(sheet: string, address: CellAddress): CellFormat;
     declareLinkedTable(name: string, columns: readonly string[], key?: string | readonly string[]): void;
     destroy(): void;
+    do(edit: SheetEdit): void;
+    do(sheet: string, edit: SheetEdit): void;
+    readonly isEditing: boolean;
+    openFormatCells(): boolean;
     pushLinkedTable(name: string, rows: Iterable<readonly (Value | undefined)[]>): void;
     redo(): boolean;
+    setCellFormat(change: CellFormatChange): boolean;
     undo(): boolean;
     update(options: SheetOptions): void;
     readonly workbook: Workbook;
@@ -367,13 +376,17 @@ export type SheetLabel = (id: SheetWordId, english: string) => string | undefine
 // @public
 export interface SheetOptions {
     readonly density?: GridDensity;
-    readonly document?: SheetDocument | WorkbookDocument;
+    readonly document?: SheetDocument | WorkbookDocument | undefined;
     readonly japanese?: boolean;
     readonly label?: SheetLabel;
     readonly locale?: string;
+    readonly onEditingChanged?: (open: boolean) => void;
+    readonly onSelectionChanged?: (selection: GridSelection) => void;
+    readonly onSheetsChanged?: (change: SheetsChange) => void;
     readonly onWorkbookChanged?: (document: WorkbookDocument) => void;
     readonly pinnedColumnCount?: number;
     readonly rowHeight?: number;
+    readonly seed?: bigint;
     readonly showColumnHeadings?: boolean;
     readonly showFormulaBar?: boolean;
     readonly showRowHeadings?: boolean;
@@ -381,6 +394,13 @@ export interface SheetOptions {
     readonly showToolbar?: boolean;
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
+}
+
+// @public
+export interface SheetsChange {
+    readonly after: readonly string[];
+    readonly before: readonly string[];
+    readonly shown: string;
 }
 
 // @public

@@ -18,7 +18,7 @@ import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
     Sheet, SheetRefusal, type CellColour, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
-import { unreachable } from './must';
+import { elementAt, unreachable } from './must';
 import { exactNumberFor, isTooNarrowToShow, refusedIn, typedFor } from './sheet-clipboard';
 import { rangeOf, sheetCopyAnswer, type SheetOwnCopy } from './sheet-copy';
 import { appearanceLookup, charactersOfColumn, SheetColumns, sheetCellPaint } from './sheet-columns';
@@ -47,9 +47,10 @@ import { FormatCellsPanel } from './format-cells-panel';
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
     /** The Workbook or Sheet to open; a new Workbook of one empty Sheet unless given. A new document object opens
-     * it in place of what is shown, with nothing to undo; one `onWorkbookChanged` handed out, handed back as a
-     * controlled component's state is, is the Sheet's own and changes nothing. */
-    readonly document?: SheetDocument | WorkbookDocument;
+     * it in place of what is shown, with nothing to undo, and `undefined` given in place of one opens an empty Sheet
+     * in `locale`; one `onWorkbookChanged` handed out, handed back as a controlled component's state is, is the
+     * Sheet's own and changes nothing. */
+    readonly document?: SheetDocument | WorkbookDocument | undefined;
     /** The culture of a Sheet started empty: how typed constants are read and Values shown (ADR-0048). A document
      * carries its own. The browser's language unless given; one the engine holds no data for is refused by name. */
     readonly locale?: string;
@@ -84,6 +85,41 @@ export interface SheetOptions {
     readonly viewportHeight?: ViewportSize;
     /** Hears the Workbook as it stands after each operation: an edit, an undo, a redo, a width. */
     readonly onWorkbookChanged?: (document: WorkbookDocument) => void;
+    /**
+     * Hears a Sheet added, deleted, renamed, moved or copied — by a command, by the user, or by an undo or redo of
+     * one — after `onWorkbookChanged`, with the Sheets' names before and after (ADR-0331 §6). Showing another Sheet
+     * changes no Sheet, and is not heard; neither is a new document opened.
+     */
+    readonly onSheetsChanged?: (change: SheetsChange) => void;
+    /**
+     * Hears whether an edit is open, each time that changes: `true` when a cell or the Formula Bar is typed in, or
+     * opened with F2 or a double click, `false` when the edit is committed, cancelled or discarded (ADR-0048). While
+     * one is open the commands that change the Sheet are refused, so this is where an application greys out its own
+     * buttons for them, as Excel greys out its ribbon.
+     */
+    readonly onEditingChanged?: (open: boolean) => void;
+    /** Hears the grid's Selection each time it changes, as ExGrid reports it (ADR-0011/0014): what a status line
+     * counts. The formatting commands do not wait for it: they act on the Selection the grid holds when they run. */
+    readonly onSelectionChanged?: (selection: GridSelection) => void;
+    /**
+     * A fixed Sheet Seed (ADR-0180): what `RAND()` and `RANDBETWEEN` draw from, with the Sheet, the cell, the call's
+     * place in its Formula and the count of changes since the document was opened — for a sheet that must show the
+     * same draws whenever it is opened, such as a simulation someone else reviews. The draws still change at each
+     * change of the Workbook, and never on the clock. Unless given, the Sheet chooses a seed whenever it opens a
+     * document, so a reopened sheet draws again, as Excel's reopened workbook does. An unsigned 64-bit integer; the
+     * seed is not recorded in the document.
+     */
+    readonly seed?: bigint;
+}
+
+/** The Sheets' names before and after a change to the Sheets (ADR-0331 §6), in the Workbook's order. */
+export interface SheetsChange {
+    /** The names as they were. */
+    readonly before: readonly string[];
+    /** The names as they are now. */
+    readonly after: readonly string[];
+    /** The name of the Sheet shown after the change. */
+    readonly shown: string;
 }
 
 /** A Sheet drawn into an element, handed back by {@link createSheet}. */
@@ -92,6 +128,71 @@ export interface SheetHandle {
     readonly workbook: Workbook;
     /** Takes the options again, whole. */
     update(options: SheetOptions): void;
+    /** Whether there is a step to undo. */
+    readonly canUndo: boolean;
+    /** Whether there is an undone step to redo. */
+    readonly canRedo: boolean;
+    /**
+     * Whether an edit is open in the grid, from the moment a cell or the Formula Bar is typed in until the edit is
+     * committed, cancelled or discarded (ADR-0048). While it is, `do`, `undo`, `redo`, `setCellFormat` and
+     * `openFormatCells` are refused with a `SheetRefusedError`; `cellFormatAt` is a read, and answers.
+     */
+    readonly isEditing: boolean;
+    /**
+     * A Consumer command: does `edit` as one operation on the user's undo stack (ADR-0048), and raises
+     * `onWorkbookChanged`. It names no Sheet, so it is taken only while the Workbook holds one; with several it is
+     * refused, and the Sheet is named with the other form (ADR-0331 §6). It does the edit exactly as it is written, and
+     * widens no column.
+     *
+     * @throws SheetRefusedError The Sheet refuses the edit, an edit is open, or the Workbook holds several Sheets;
+     * nothing changed.
+     * @throws FormulaSyntaxError A typed Formula cannot be read; nothing changed.
+     */
+    do(edit: SheetEdit): void;
+    /**
+     * A Consumer command: does `edit` on the Sheet named `sheet`, shown or not, as one operation on the user's undo
+     * stack (ADR-0048, ADR-0331 §6). A Sheet operation — `insertSheet`, `rename`, `moveSheet`, `copySheet`,
+     * `deleteSheet` — acts on that Sheet and raises `onSheetsChanged`; the Sheet shown stays shown unless it is the one
+     * deleted, and then the Sheet that takes its place is.
+     *
+     * @throws RangeError No Sheet of the Workbook is named `sheet`; nothing changed.
+     * @throws SheetRefusedError The Sheet refuses the edit, or an edit is open; nothing changed.
+     * @throws FormulaSyntaxError A typed Formula cannot be read; nothing changed.
+     */
+    do(sheet: string, edit: SheetEdit): void;
+    /**
+     * Sets the parts of a Cell Format that `change` names on the Selection the grid holds now, as one operation on the
+     * undo stack (ADR-0071, ADR-0048): every part it does not name stays as each cell has it. A Selection of whole
+     * columns or rows sets it on the columns or rows, and the change's Borders are relative to each range. It widens
+     * as the formatting keys do: a Number Format, underline or strikethrough widens each column whose numbers it no
+     * longer fits and the user has not sized, in the same operation. Answers false when nothing is selected.
+     *
+     * @throws RangeError The change sets no part of a Cell Format.
+     * @throws SheetRefusedError An edit is open; nothing changed.
+     */
+    setCellFormat(change: CellFormatChange): boolean;
+    /**
+     * Opens Format Cells over the Selection the grid holds now, from the Consumer's own button (ADR-0071): on the Focus
+     * cell's Cell Format, and on the tab shown last. OK sets the parts the user touched as one undo step; Cancel or
+     * Escape sets nothing. Opening it again while it stands opens it afresh. Answers false when nothing is selected.
+     *
+     * @throws SheetRefusedError An edit is open; nothing opened.
+     */
+    openFormatCells(): boolean;
+    /**
+     * The Cell Format of the cell at `address` as it shows (ADR-0071): each part the cell's own, else its row's, else
+     * its column's, else the default. It names no Sheet, so it is read only while the Workbook holds one; with several,
+     * name the Sheet with the other form (ADR-0331 §6).
+     *
+     * @throws SheetRefusedError The Workbook holds several Sheets.
+     */
+    cellFormatAt(address: CellAddress): CellFormat;
+    /**
+     * The Cell Format of the cell at `address` on the Sheet named `sheet`, shown or not, as it shows.
+     *
+     * @throws RangeError No Sheet of the Workbook is named `sheet`.
+     */
+    cellFormatAt(sheet: string, address: CellAddress): CellFormat;
     /** Undoes the latest operation; false when there is none, which the notice says. */
     undo(): boolean;
     /** Redoes the latest operation undone; false when there is none, which the notice says. */
@@ -116,12 +217,27 @@ export interface SheetHandle {
     destroy(): void;
 }
 
+// The largest seed: a seed is an unsigned 64-bit integer, as the engine and C#'s ulong hold it (ADR-0180).
+const maxSeed = (1n << 64n) - 1n;
+
+// A seed drawn from the browser's generator, as the C# Sheet draws one from Random.Shared (ADR-0180).
+function chooseSeed(): bigint {
+    return elementAt(crypto.getRandomValues(new BigUint64Array(1)), 0);
+}
+
 /** Draws a Sheet into `element`, which it owns from now on. */
 export function createSheet(element: HTMLElement, options: SheetOptions = {}): SheetHandle {
     const view = new SheetView(element, options);
     return Object.freeze({
         get workbook() { return view.workbook; },
+        get canUndo() { return view.canUndo; },
+        get canRedo() { return view.canRedo; },
+        get isEditing() { return view.isEditing; },
         update: (next: SheetOptions) => { view.update(next); },
+        do: (sheetOrEdit: string | SheetEdit, edit?: SheetEdit) => { view.do(sheetOrEdit, edit); },
+        setCellFormat: (change: CellFormatChange) => view.setCellFormat(change),
+        openFormatCells: () => view.openFormatCells(),
+        cellFormatAt: (sheetOrAddress: string | CellAddress, address?: CellAddress) => view.cellFormatAt(sheetOrAddress, address),
         undo: () => view.undo(),
         redo: () => view.redo(),
         declareLinkedTable: (name: string, columns: readonly string[], key?: string | readonly string[]) => { view.declareLinkedTable(name, columns, key); },
@@ -192,12 +308,18 @@ class SheetView {
     // The documents this Sheet handed out: one handed back as `document`, as a controlled component's state comes
     // back, is the Sheet's own state, and is not opened again over its undo stack.
     readonly #raised = new WeakSet<object>();
+    // The seed chosen when the document was opened, which draws while no `seed` is given (ADR-0180).
+    #chosenSeed: bigint;
+    // The Sheets' names as the Consumer last heard them, so a change says what it was taken from (ADR-0331 §6): at
+    // open, the document's own.
+    #sheetNames: readonly string[] = [];
 
     constructor(element: HTMLElement, options: SheetOptions) {
         this.#element = element;
         this.#options = SheetView.#checked(options);
         this.#words = new SheetWords({ japanese: this.#options.japanese, label: this.#options.label });
         this.#document = this.#options.document;
+        this.#chosenSeed = chooseSeed();
         this.#workbook = this.#open(this.#options);
         this.#source = new SheetSource(this.#workbook.shown);
         this.#columns = new SheetColumns(this.#options.density ?? 'compact', error => this.#words.formulaUnreadable(error)); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
@@ -229,6 +351,12 @@ class SheetView {
 
     get workbook(): Workbook { return this.#workbook; }
 
+    get canUndo(): boolean { return this.#history.canUndo; }
+
+    get canRedo(): boolean { return this.#history.canRedo; }
+
+    get isEditing(): boolean { return this.#editing; }
+
     update(options: SheetOptions): void {
         this.#alive();
         const next = SheetView.#checked(options);
@@ -244,18 +372,79 @@ class SheetView {
             this.#columns.read(this.#source.sheet);
         }
         if (next.label !== this.#options.label || next.japanese !== this.#options.japanese) this.#words = new SheetWords({ japanese: next.japanese, label: next.label });
+        const seedBefore = this.#options.seed;
         this.#options = next;
         // A document this Sheet raised, handed back, is its own state: nothing is opened again.
         if (next.document !== undefined && this.#raised.has(next.document)) this.#document = next.document;
         if (next.document !== this.#document) {
             this.#document = next.document;
+            this.#chosenSeed = chooseSeed();
             this.#workbook = this.#open(next);
             this.#history.clear();
             this.#showSheet(this.#workbook.shown);
             return;
         }
+        // A new seed, or none, which goes back to the one chosen at opening, draws again at the same count of changes:
+        // no change of the Sheet's, so neither the document nor the notice hears it.
+        if (next.seed !== seedBefore) this.#changed([this.#workbook.setSeed(next.seed ?? this.#chosenSeed)], false, false);
         this.#grid?.update(this.#gridOptions());
         this.#paintFrame();
+    }
+
+    do(sheetOrEdit: string | SheetEdit, edit?: SheetEdit): void {
+        this.#alive();
+        if (typeof sheetOrEdit !== 'string') {
+            this.#refuseUnnamedSheet();
+            this.#refuseWhileEditing();
+            this.#perform(sheetOrEdit);
+            return;
+        }
+        if (edit === undefined) throw new TypeError('A command that names its Sheet names its edit too.');
+        const target = this.#named(sheetOrEdit);
+        this.#refuseWhileEditing();
+        this.#perform(edit, undefined, undefined, target);
+    }
+
+    setCellFormat(change: CellFormatChange): boolean {
+        this.#alive();
+        if (change.isEmpty) throw new RangeError('The change sets no part of a Cell Format.');
+        this.#refuseWhileEditing();
+        // The Selection as the grid holds it now, which a Selection notice still on its way may not have said yet.
+        const selection = this.#grid?.readView().selection;
+        if (selection === undefined || selection.isEmpty) return false;
+        const cells = selection.ranges.map(rangeOf);
+        this.#perform(SheetEdit.setCellFormat(cells, change), undefined, widensAsAKeyDoes(change) ? cells : undefined);
+        return true;
+    }
+
+    openFormatCells(): boolean {
+        this.#alive();
+        this.#refuseWhileEditing();
+        this.#openFormatCells();
+        return this.#formatCells !== undefined;
+    }
+
+    cellFormatAt(sheetOrAddress: string | CellAddress, address?: CellAddress): CellFormat {
+        this.#alive();
+        if (typeof sheetOrAddress !== 'string') {
+            this.#refuseUnnamedSheet();
+            return this.#source.sheet.getCellFormat(sheetOrAddress);
+        }
+        if (address === undefined) throw new TypeError('A read that names its Sheet names its cell too.');
+        return this.#named(sheetOrAddress).getCellFormat(address);
+    }
+
+    #named(sheet: string): Sheet {
+        const found = this.#workbook.find(sheet);
+        if (found === undefined) throw new RangeError(`No Sheet of the Workbook is named '${sheet}'.`);
+        return found;
+    }
+
+    // A command or an address that names no Sheet, refused while the Workbook holds several: taken against the Sheet
+    // shown, its outcome would depend on whether a press on a tab came before it (ADR-0331 §6).
+    #refuseUnnamedSheet(): void {
+        const count = this.#workbook.sheets.length;
+        if (count > 1) throw new SheetRefusedError(new SheetRefusal('sheetNotNamed', this.#words.sheetNotNamed(count)));
     }
 
     undo(): boolean {
@@ -617,6 +806,12 @@ class SheetView {
     }
 
     readonly #onSelectionChanged = (selection: GridSelection): void => {
+        this.#followSelection(selection);
+        // Heard last, so a Consumer that reads or formats from here finds the Sheet already following the move.
+        this.#options.onSelectionChanged?.(selection);
+    };
+
+    #followSelection(selection: GridSelection): void {
         const before = this.#selection?.focus;
         this.#selection = selection;
         // The Toolbar shows the Focus cell's state: a Selection grown or shrunk around the same Focus changes none of it.
@@ -635,7 +830,7 @@ class SheetView {
             return;
         }
         this.#clearNotice();
-    };
+    }
 
     readonly #onRefused = (refusal: GridRefusal): void => {
         switch (refusal.kind) {
@@ -660,9 +855,11 @@ class SheetView {
         }
     };
 
+    // The grid tells only a change, so each call is one the Consumer hears.
     readonly #onEditingChanged = (open: boolean): void => {
         this.#editing = open;
         this.#paintToolbar();
+        this.#options.onEditingChanged?.(open);
     };
 
     readonly #onEditDiscarded = (reason: EditDiscardReason): void => {
@@ -1251,12 +1448,11 @@ class SheetView {
 
     // ---- Operations ------------------------------------------------------------------------------------------
 
-    /** `edit` on the Sheet shown, as one operation on the undo stack; its undo selects `selects` where given. The
-     * columns a number entered over `widenOver` no longer fits are widened in the same operation, so one undo puts
-     * back both (ADR-0048; ADR-0071, case 17). */
-    #perform(edit: SheetEdit, selects?: readonly CellRange[], widenOver?: readonly CellRange[]): void {
+    /** `edit` on `sheet`, the Sheet shown unless named, as one operation on the undo stack; its undo selects `selects`
+     * where given. The columns a number entered over `widenOver` no longer fits are widened in the same operation, so
+     * one undo puts back both (ADR-0048; ADR-0071, case 17). */
+    #perform(edit: SheetEdit, selects?: readonly CellRange[], widenOver?: readonly CellRange[], sheet: Sheet = this.#source.sheet): void {
         this.#resizing = undefined;
-        const sheet = this.#source.sheet;
         const steps: WorkbookStep[] = [this.#workbook.do(sheet.name, edit)];
         if (widenOver !== undefined) {
             for (const [column, characters] of this.#columns.widenedBy(sheet, widenOver)) {
@@ -1381,17 +1577,30 @@ class SheetView {
         if (view === undefined) this.#select(new CellRange(new CellAddress(0, 0)));
     }
 
+    // The document, then a change to the Sheets where the names moved. The names are taken as heard before either
+    // handler runs, so one that throws or acts on the Sheet again leaves the next change said against these.
     #raiseDocument(): void {
+        const before = this.#sheetNames;
+        const after = this.#workbook.sheets.map(sheet => sheet.name);
+        const sheetsChanged = after.length !== before.length || after.some((name, at) => name !== before[at]);
+        this.#sheetNames = after;
+        const change: SheetsChange = { before, after, shown: this.#workbook.shown.name };
         const { onWorkbookChanged } = this.#options;
-        if (onWorkbookChanged === undefined) return;
-        const raised = this.#workbook.toDocument();
-        this.#raised.add(raised);
-        onWorkbookChanged(raised);
+        if (onWorkbookChanged !== undefined) {
+            const raised = this.#workbook.toDocument();
+            this.#raised.add(raised);
+            onWorkbookChanged(raised);
+        }
+        if (sheetsChanged) this.#options.onSheetsChanged?.(change);
     }
 
+    // A document opened, with its seed: the Consumer's, or the one just chosen, at a count of 0 changes (ADR-0180). Its
+    // Sheets' names are the ones the Consumer has heard.
     #open(options: SheetOptions): Workbook {
-        if (options.document !== undefined) return Workbook.open(options.document);
-        return new Workbook(Culture.of(options.locale ?? navigator.language));
+        const workbook = options.document === undefined ? new Workbook(Culture.of(options.locale ?? navigator.language)) : Workbook.open(options.document);
+        workbook.setSeed(options.seed ?? this.#chosenSeed, 0);
+        this.#sheetNames = workbook.sheets.map(sheet => sheet.name);
+        return workbook;
     }
 
     // ---- The notice ------------------------------------------------------------------------------------------
@@ -1423,9 +1632,19 @@ class SheetView {
         // Checked as an untyped caller may hand them, where they arrive (CONVENTIONS.md).
         const given: unknown = options;
         if (typeof given !== 'object' || given === null) throw new TypeError("A Sheet's options are an object.");
-        const { locale, onWorkbookChanged }: { readonly locale?: unknown; readonly onWorkbookChanged?: unknown } = options;
+        const { locale, seed }: { readonly locale?: unknown; readonly seed?: unknown } = options;
         if (locale !== undefined && typeof locale !== 'string') throw new TypeError("A Sheet's locale is a language tag, such as 'en-US'.");
-        if (onWorkbookChanged !== undefined && typeof onWorkbookChanged !== 'function') throw new TypeError('onWorkbookChanged is a function.');
+        // Refused here, before anything changes, where the engine would refuse it only once the Sheet had taken it.
+        if (seed !== undefined && (typeof seed !== 'bigint' || seed < 0n || seed > maxSeed)) {
+            throw new RangeError(`${typeof seed === 'bigint' ? seed.toString() : typeof seed} is not a seed: a seed is a bigint from 0 to 2^64 - 1.`);
+        }
+        const handlers: readonly (readonly [string, unknown])[] = [
+            ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
+            ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
+        ];
+        for (const [name, handler] of handlers) {
+            if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
+        }
         return options;
     }
 }

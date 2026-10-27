@@ -4,6 +4,7 @@
 
 import { createElement, useImperativeHandle, useLayoutEffect, useRef, type ReactElement, type Ref } from 'react';
 import { createSheet, type SheetHandle, type SheetOptions } from '@ex-grid/sheet';
+import type { CellAddress, SheetEdit } from '@ex-grid/sheet-engine';
 
 /**
  * An ExSheet's props: the Sheet's options, whole. `locale` is the browser's language where not given, read once
@@ -11,7 +12,8 @@ import { createSheet, type SheetHandle, type SheetOptions } from '@ex-grid/sheet
  * changed on a live Sheet.
  */
 export type ExSheetProps = SheetOptions & {
-    /** A ref to what the Consumer may ask of the Sheet it rendered: its Workbook, undo and redo, and its Linked Tables. */
+    /** A ref to what the Consumer may ask of the Sheet it rendered: its Workbook, its commands and reads, undo and
+     * redo, and its Linked Tables. */
     readonly ref?: Ref<ExSheetApi>;
 };
 
@@ -46,6 +48,26 @@ export function ExSheet(props: ExSheetProps): ReactElement {
         get workbook() {
             return mounted(sheet.current).workbook;
         },
+        get canUndo() {
+            return mounted(sheet.current).canUndo;
+        },
+        get canRedo() {
+            return mounted(sheet.current).canRedo;
+        },
+        get isEditing() {
+            return mounted(sheet.current).isEditing;
+        },
+        do: (sheetOrEdit: string | SheetEdit, edit?: SheetEdit) => {
+            const handle = mounted(sheet.current);
+            if (typeof sheetOrEdit === 'string') handle.do(sheetOrEdit, defined(edit));
+            else handle.do(sheetOrEdit);
+        },
+        setCellFormat: change => mounted(sheet.current).setCellFormat(change),
+        openFormatCells: () => mounted(sheet.current).openFormatCells(),
+        cellFormatAt: (sheetOrAddress: string | CellAddress, address?: CellAddress) => {
+            const handle = mounted(sheet.current);
+            return typeof sheetOrAddress === 'string' ? handle.cellFormatAt(sheetOrAddress, defined(address)) : handle.cellFormatAt(sheetOrAddress);
+        },
         undo: () => mounted(sheet.current).undo(),
         redo: () => mounted(sheet.current).redo(),
         declareLinkedTable: (name, columns, key) => { mounted(sheet.current).declareLinkedTable(name, columns, key); },
@@ -62,4 +84,10 @@ export function ExSheet(props: ExSheetProps): ReactElement {
 function mounted(sheet: SheetHandle | undefined): SheetHandle {
     if (sheet === undefined) throw new Error('This ExSheet is not mounted: a Sheet not drawn is asked nothing.');
     return sheet;
+}
+
+// The second argument a form of an overload naming its Sheet carries, which the handle's own overload refuses to miss.
+function defined<T>(value: T | undefined): T {
+    if (value === undefined) throw new TypeError('A command or a read that names its Sheet names what it acts on too.');
+    return value;
 }
