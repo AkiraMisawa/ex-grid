@@ -80,10 +80,10 @@ interface Mounted {
 
 const start = createPivotLayout({ rows: ['Region'], values: ['Amount'], filters: ['Desk'] });
 
-async function mounted(chrome: ExPivotChrome, host: PivotContractHost): Promise<Mounted> {
+async function mounted(chrome: ExPivotChrome, host: PivotContractHost, detailsView: 'tab' | 'dialog' = 'tab'): Promise<Mounted> {
     const layouts: PivotLayout[] = [];
     const { container } = render(createElement(ExPivot, {
-        source: new RecordPivotSource(trades, fields), layout: start, slicing, locale: 'en-US', chrome, viewportWidth: 600, viewportHeight: 320,
+        source: new RecordPivotSource(trades, fields), layout: start, slicing, locale: 'en-US', chrome, viewportWidth: 600, viewportHeight: 320, detailsView,
         onLayoutChanged: event => { layouts.push(event.layout); },
     }), host);
     const root = container.querySelector('.ex-pivot');
@@ -155,6 +155,33 @@ export function dragEvent(type: string): DragEvent {
     const event = new DragEvent(type, { bubbles: true, cancelable: type !== 'dragend' });
     Object.defineProperty(event, 'dataTransfer', { value: new DataTransfer() });
     return event;
+}
+
+/** The report's grid. */
+function reportGrid(root: HTMLElement): HTMLElement {
+    const grid = root.querySelector<HTMLElement>('.ex-pivot-sheet [role=grid]');
+    if (grid === null) throw new Error('No report grid stands.');
+    return grid;
+}
+
+/** Double-clicks the report's first value cell, EU's Sum of Amount, past the labels' column, as the browser does. */
+async function showDetails(root: HTMLElement): Promise<void> {
+    const grid = reportGrid(root);
+    const viewport = grid.querySelector('.ex-viewport');
+    const labels = grid.querySelector<HTMLElement>('.ex-header-cell');
+    if (viewport === null || labels === null) throw new Error('The report grid draws no cells.');
+    const x = Number.parseFloat(labels.style.width) + 10;
+    await act(async () => {
+        grid.focus();
+        for (const type of ['mousedown', 'mouseup', 'click', 'dblclick']) {
+            const event = new MouseEvent(type, { bubbles: true, cancelable: true, detail: type === 'dblclick' ? 2 : 1 });
+            Object.defineProperty(event, 'offsetX', { value: x });
+            Object.defineProperty(event, 'offsetY', { value: 10 });
+            viewport.dispatchEvent(event);
+        }
+        await Promise.resolve();
+    });
+    await settled();
 }
 
 /** Opens a placed field's menu from its entry in the Field List. */
@@ -300,6 +327,30 @@ export function pivotSlotContract(name: string, chrome: ExPivotChrome, host: Piv
             expect([layouts.at(-1)?.rows, layouts.at(-1)?.columns.map(placement => placement.field)]).toEqual([[], ['Region']]);
             await drag(entryOf(pane, 'Region'), within(pane).getByRole('list', { name: 'PivotTable Fields' }));
             expect(layouts.at(-1)?.columns).toEqual([]);
+        });
+
+        it('ADR-0059: Show Details opens a tab that is selected and holds the keyboard; the report\'s tab uncovers the report, and closing the last tab gives the keyboard back to its grid', async () => {
+            const { root } = await mounted(chrome, host);
+            await showDetails(root);
+            const tabs = within(root).getByRole('tablist', { name: 'Sheets' });
+            const opened = within(tabs).getByRole('tab', { name: 'Details: EU', selected: true });
+            const records = root.querySelector<HTMLElement>('.ex-pivot-details-panel[role=tabpanel]');
+            expect([document.activeElement, records?.getAttribute('aria-label'), records?.querySelector('[role=grid]') !== null]).toEqual([opened, 'Details: EU', true]);
+            await press(within(tabs).getByRole('tab', { name: 'PivotTable' }));
+            expect(root.querySelector('.ex-pivot-details-panel')).toBeNull();
+            await press(within(tabs).getByRole('tab', { name: 'Details: EU' }));
+            await press(within(tabs).getByRole('button', { name: 'Close Details: EU' }));
+            expect([root.querySelector('[role=tablist]'), document.activeElement]).toEqual([null, reportGrid(root)]);
+        });
+
+        it('ADR-0059: in the dialog the records stand where the contents say, Close holds the keyboard, and closing gives it back to the report\'s grid', async () => {
+            const { root } = await mounted(chrome, host, 'dialog');
+            await showDetails(root);
+            const dialog = within(root).getByRole('dialog', { name: 'Details: EU' });
+            const close = within(dialog).getByRole('button', { name: 'Close' });
+            expect([document.activeElement, dialog.querySelector('.ex-pivot-dialog-records [role=grid]') !== null]).toEqual([close, true]);
+            await press(close);
+            expect([root.querySelector('[role=dialog]'), document.activeElement]).toEqual([null, reportGrid(root)]);
         });
 
         it('ADR-0061: Filter… opens under a report filter\'s button too, over the report', async () => {

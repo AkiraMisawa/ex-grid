@@ -15,7 +15,7 @@ import { findInReport } from '../src/report-find';
 import { browserPivotLocale } from '../src/browser-locale';
 import { defined, elementAt } from '../src/must';
 import type {
-    PivotMenuSlotContext, PivotReportFiltersSlotContext, PivotStaleReportSlotContext, PivotStaleReportView, PivotToolbarSlotContext, PivotValueFieldSettingsSlotContext,
+    PivotDetailsDialogSlotContext, PivotMenuSlotContext, PivotReportFiltersSlotContext, PivotStaleReportSlotContext, PivotStaleReportView, PivotToolbarSlotContext, PivotValueFieldSettingsSlotContext,
 } from '../src/chrome';
 import type { PivotShowDetailsEvent } from '../src/details';
 import { PartElements } from '../src/parts';
@@ -2329,6 +2329,22 @@ describe('ExPivot\'s Find over the report (ADR-0332, ADR-0333)', () => {
     });
 });
 
+// The errors thrown on their own, in a microtask, as a page would see them reported, until `stop`.
+function reportedErrors(): { readonly thrown: unknown[]; readonly stop: () => void } {
+    const thrown: unknown[] = [];
+    const queue = globalThis.queueMicrotask;
+    const reported = vi.spyOn(globalThis, 'queueMicrotask').mockImplementation(task => {
+        queue(() => {
+            try {
+                task();
+            } catch (error) { // oxlint-disable-line ex-grid/no-catch -- what a page would see reported, kept for the test to read
+                thrown.push(error);
+            }
+        });
+    });
+    return { thrown, stop: () => { reported.mockRestore(); } };
+}
+
 // A button of a Chrome's standing part, handed in by its ref.
 function chromeButton(label: string, ref: (element: HTMLElement | null) => void, pressed: () => void): HTMLButtonElement {
     const made = document.createElement('button');
@@ -2382,6 +2398,16 @@ function lettingGoLate(slot: HTMLElement, context: PivotToolbarSlotContext): () 
             context.anchor('layout')(null);
         });
     };
+}
+
+// A Chrome's Show Details dialog: a section its records stand in, and Close.
+function chromeDialog(slot: HTMLElement, context: PivotDetailsDialogSlotContext): () => void {
+    const records = document.createElement('section');
+    context.anchor('records')(records);
+    const close = chromeButton(context.view().closeLabel, context.control('close'), context.close);
+    close.className = 'chrome-close';
+    slot.replaceChildren(records, close);
+    return () => undefined;
 }
 
 // A Chrome's toolbar that hands in Layout ▾ and no anchor around it.
@@ -2480,17 +2506,7 @@ describe('ExPivot\'s Chrome slots (ADR-0390)', () => {
     });
 
     it('ADR-0390: a Stale Report notice that cannot be drawn as the report goes stale is thrown on its own, not into the source, and the built-in notice stands', async () => {
-        const thrown: unknown[] = [];
-        const queue = globalThis.queueMicrotask;
-        const reported = vi.spyOn(globalThis, 'queueMicrotask').mockImplementation(task => {
-            queue(() => {
-                try {
-                    task();
-                } catch (error) { // oxlint-disable-line ex-grid/no-catch -- what a page would see reported, kept for the test to read
-                    thrown.push(error);
-                }
-            });
-        });
+        const { thrown, stop } = reportedErrors();
         try {
             const live = liveServer();
             const answersNothing: unknown = { staleReport: Object };
@@ -2501,8 +2517,54 @@ describe('ExPivot\'s Chrome slots (ADR-0390)', () => {
             await settled();
             expect([thrown.map(String), root.querySelector('.ex-pivot-stale-notice')?.isConnected]).toEqual([[expect.stringMatching(/chrome\.staleReport answered object/)], true]);
         } finally {
-            reported.mockRestore();
+            stop();
         }
+    });
+
+    it('ADR-0390, ADR-0059: Show Details\' tabs and dialog a Chrome cannot draw are thrown on their own, and the built-in ones stand, holding the keyboard', async () => {
+        const { thrown, stop } = reportedErrors();
+        try {
+            const answersNothing: unknown = { detailsTabs: Object, detailsDialog: Object };
+            const options: PivotViewOptions = { source: local(), layout: byRegionAndDesk, chrome: answersNothing as NonNullable<PivotViewOptions['chrome']> };
+            const { root, grid, view } = mount(options);
+            await settled();
+            await doubleClick(grid, 0, 3);
+            expect([tabTitles(root), document.activeElement?.getAttribute('aria-selected')]).toEqual([['PivotTable', 'Details: EU / Rates*'], 'true']);
+            view.update({ ...options, detailsView: 'dialog' });
+            await doubleClick(grid, 0, 3);
+            expect([document.activeElement?.className, thrown.map(String)]).toEqual([
+                'ex-pivot-close', [expect.stringMatching(/chrome\.detailsTabs answered object/), expect.stringMatching(/chrome\.detailsDialog answered object/)],
+            ]);
+        } finally {
+            stop();
+        }
+    });
+
+    it('ADR-0390, ADR-0059: a dialog the Consumer opens with contents that cannot be drawn stands built in, Close holding the keyboard, before they are refused', async () => {
+        const handedBack: PivotShowDetailsEvent[] = [];
+        const answersNothing: unknown = { detailsDialog: Object };
+        const { view, root, grid } = mount({
+            source: local(), layout: byRegionAndDesk, detailsView: 'dialog', chrome: answersNothing as NonNullable<PivotViewOptions['chrome']>, onShowDetails: event => handedBack.push(event),
+        });
+        await settled();
+        await doubleClick(grid, 0, 3);
+        expect(() => { view.openDetails(defined(handedBack[0], 'the records heard')); }).toThrow(/chrome\.detailsDialog answered object/);
+        expect([root.querySelector('.ex-pivot-dialog .ex-pivot-dialog-records') !== null, document.activeElement?.className]).toEqual([true, 'ex-pivot-close']);
+    });
+
+    it('ADR-0390, ADR-0059: a dialog whose contents a Chrome takes over, and gives back, keeps the keyboard on Close and its records where Close stands', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegionAndDesk, detailsView: 'dialog' };
+        const { view, root, grid } = mount(options);
+        await settled();
+        await doubleClick(grid, 0, 3);
+        view.update({ ...options, chrome: { detailsDialog: chromeDialog } });
+        await settled();
+        expect([document.activeElement?.className, root.querySelector('.ex-pivot-dialog section .ex-pivot-dialog-records') !== null, grid.detailsShown.length]).toEqual(['chrome-close', true, 1]);
+        view.update(options);
+        await settled();
+        expect([document.activeElement?.className, root.querySelector('.ex-pivot-dialog-content .ex-pivot-dialog-records') !== null, grid.detailsShown.length]).toEqual(['ex-pivot-close', true, 1]);
+        shownIn(root, '.ex-pivot-close').click();
+        expect([root.querySelector('.ex-pivot-dialog'), grid.detailsShown]).toEqual([null, []]);
     });
 
     it('ADR-0204: a control owed the keyboard does not take it once a press elsewhere has moved the keyboard on', () => {

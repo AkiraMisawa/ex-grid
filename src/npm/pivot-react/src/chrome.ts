@@ -6,6 +6,7 @@
 
 import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type {
+    PivotDetailsDialogSlotContext, PivotDetailsTabsSlotContext,
     PivotChrome, PivotFieldListSlotContext, PivotFieldSettingsSlotContext, PivotItemFilterSlotContext, PivotMenuSlotContext, PivotMenuView, PivotPanelSlotContext, PivotReportFiltersSlotContext,
     PivotStaleReportSlotContext, PivotStandingSlotContext, PivotToolbarSlotContext, PivotValueFieldSettingsSlotContext,
 } from '@ex-grid/pivot';
@@ -37,6 +38,10 @@ export interface ExPivotChrome {
     readonly staleReport?: (context: PivotStaleReportSlotContext) => ReactNode;
     /** The Field List, drawn with {@link usePivotPart}. */
     readonly fieldList?: (context: PivotFieldListSlotContext) => ReactNode;
+    /** The sheet tabs at the report's foot, while Show Details' records stand in a tab, drawn with {@link usePivotPart}. */
+    readonly detailsTabs?: (context: PivotDetailsTabsSlotContext) => ReactNode;
+    /** What the Show Details dialog draws inside the pivot's frame, drawn with {@link usePivotPart}. */
+    readonly detailsDialog?: (context: PivotDetailsDialogSlotContext) => ReactNode;
 }
 
 /** The mount functions made for an ExPivot's render functions: the pivot's slots', and the grid's. */
@@ -46,7 +51,8 @@ export interface PivotMountsMade {
     gridChrome?: { readonly given: unknown; readonly mounts: PivotChrome['grid'] };
 }
 
-const pivotSlots: readonly string[] = ['menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings', 'toolbar', 'reportFilters', 'staleReport', 'fieldList'];
+const pivotSlots: readonly string[] = ['menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings', 'toolbar', 'reportFilters', 'staleReport', 'fieldList', 'detailsTabs',
+    'detailsDialog'];
 
 /** The ExPivot's Chrome as the pivot takes it: each slot's render function as a mount function rendering it through
  * the ExPivot's portals, and `grid`'s as ExGrid for React makes its own. A render function handed again keeps its

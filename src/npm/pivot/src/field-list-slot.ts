@@ -46,6 +46,8 @@ export class SlottedFieldList {
 
     constructor(document: Document, handlers: FieldListHandlers, parts: PartElements) {
         this.#slot = new StandingSlot('fieldList', document, emptyView);
+        // The slot draws nothing (`display: contents`): the contents' pane takes the Field List's height as its own.
+        this.#slot.element.setAttribute('style', 'display: contents');
         this.#handlers = handlers;
         this.#parts = parts;
     }

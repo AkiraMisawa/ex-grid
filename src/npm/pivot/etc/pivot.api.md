@@ -44,6 +44,8 @@ export interface PivotChoice<T> {
 
 // @public
 export interface PivotChrome {
+    readonly detailsDialog?: PivotChromeSlot<PivotDetailsDialogSlotContext>;
+    readonly detailsTabs?: PivotChromeSlot<PivotDetailsTabsSlotContext>;
     readonly fieldList?: PivotChromeSlot<PivotFieldListSlotContext>;
     readonly fieldSettings?: PivotChromeSlot<PivotFieldSettingsSlotContext>;
     readonly grid?: GridChrome<unknown>;
@@ -62,6 +64,41 @@ export type PivotChromeSlot<Context> = (slot: HTMLElement, context: Context) => 
 export interface PivotDetailItem {
     readonly field: string;
     readonly item: string;
+}
+
+// @public
+export interface PivotDetailsDialogSlotContext extends PivotStandingSlotContext<PivotDetailsDialogView> {
+    readonly anchor: (name: 'records') => PivotPartRef;
+    readonly close: () => void;
+    readonly control: (name: 'close') => PivotPartRef;
+}
+
+// @public
+export interface PivotDetailsDialogView {
+    readonly closeLabel: string;
+    readonly title: string;
+}
+
+// @public
+export interface PivotDetailsTabsSlotContext extends PivotStandingSlotContext<PivotDetailsTabsView> {
+    readonly close: (key: string) => void;
+    readonly control: (key: string) => PivotPartRef;
+    readonly select: (key: string) => void;
+}
+
+// @public
+export interface PivotDetailsTabsView {
+    readonly name: string;
+    readonly tabs: readonly PivotDetailsTabView[];
+}
+
+// @public
+export interface PivotDetailsTabView {
+    readonly closeLabel?: string;
+    readonly key: string;
+    readonly panelId?: string;
+    readonly selected: boolean;
+    readonly title: string;
 }
 
 // @public

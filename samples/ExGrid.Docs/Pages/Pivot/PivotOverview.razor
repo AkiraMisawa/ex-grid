@@ -155,7 +155,12 @@
             keyboard back to the button that opened them, as it does with its own markup. The Field List's drag and drop
             is the browser's own: a field or an entry calls <code>context.startDrag</code> on <code>dragstart</code>, each
             Area and entry calls <code>dragOver</code>, <code>dragEnter</code> and <code>drop</code> with the index its
-            view gives, and what a drop makes is the pivot's, as the built-in pane's is.
+            view gives, and what a drop makes is the pivot's, as the built-in pane's is. Show Details' sheet tabs
+            (<code>detailsTabs</code>) and what its dialog draws inside the pivot's modal frame
+            (<code>detailsDialog</code>) are slots the same way: a tab's control is handed in by its view's
+            <code>key</code> and pressed with <code>select</code> or <code>close</code>, and the dialog hands in
+            Close and the element its records stand in (<code>context.anchor('records')</code>). The records' grid,
+            the backdrop and Escape stay the pivot's.
         </p>
         <p>
             On Blazor Server, input made in the report while the connection is lost never reaches it. Once the

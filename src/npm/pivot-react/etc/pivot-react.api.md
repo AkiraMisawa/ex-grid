@@ -5,6 +5,8 @@
 ```ts
 
 import { ExGridChrome } from '@ex-grid/react';
+import type { PivotDetailsDialogSlotContext } from '@ex-grid/pivot';
+import type { PivotDetailsTabsSlotContext } from '@ex-grid/pivot';
 import type { PivotFieldListSlotContext } from '@ex-grid/pivot';
 import type { PivotFieldSettingsSlotContext } from '@ex-grid/pivot';
 import type { PivotItemFilterSlotContext } from '@ex-grid/pivot';
@@ -25,6 +27,8 @@ export function ExPivot(props: ExPivotProps): ReactElement;
 
 // @public
 export interface ExPivotChrome {
+    readonly detailsDialog?: (context: PivotDetailsDialogSlotContext) => ReactNode;
+    readonly detailsTabs?: (context: PivotDetailsTabsSlotContext) => ReactNode;
     readonly fieldList?: (context: PivotFieldListSlotContext) => ReactNode;
     readonly fieldSettings?: (context: PivotFieldSettingsSlotContext) => ReactNode;
     readonly grid?: ExGridChrome<unknown>;
