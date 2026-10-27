@@ -1310,6 +1310,10 @@ interface HeaderMarkPress extends MarkPress {
 
 export class GridView<Row> {
     readonly #root: HTMLElement;
+    // The Input Root (ADR-0240 ticket 04): the product's box around the grid that marks itself `data-ex-input-root`,
+    // whose surfaces outside the grid — the Sheet's toolbar and tabs — wait behind what the grid holds for; the grid's
+    // own root where none stands around it.
+    readonly #inputRoot: HTMLElement;
     readonly #reports: BrowserReports;
     readonly #ids: string;
     readonly #scroller: HTMLElement;
@@ -1766,6 +1770,7 @@ export class GridView<Row> {
 
     constructor(root: HTMLElement, options: GridOptions<Row>, reports: BrowserReports) {
         this.#root = root;
+        this.#inputRoot = root.closest<HTMLElement>('[data-ex-input-root]') ?? root;
         this.#reports = reports;
         instances += 1;
         this.#ids = `ex${instances}-`;
@@ -1903,9 +1908,10 @@ export class GridView<Row> {
                 this.#onScroll();
             };
             this.#scroller.addEventListener('scroll', onScroll, { passive: true });
-            // Every input, heard on the root ahead of the grid's own listeners, so a Pending Commit holds it first
-            // (ADR-0380 section 3).
-            for (const type of heldEventTypes) root.addEventListener(type, this.#onInput, true);
+            // Every input, heard on the Input Root ahead of the grid's own listeners, so a Pending Commit holds it first
+            // (ADR-0380 section 3), and holds what is made on the product's surfaces around the grid too (ADR-0240).
+            const inputRoot = this.#inputRoot;
+            for (const type of heldEventTypes) inputRoot.addEventListener(type, this.#onInput, true);
             // The keys, heard on the root in the capture phase, ahead of anything inside it (ADR-0018).
             root.addEventListener('keydown', this.#onKeyDown, true);
             this.#viewport.addEventListener('mousedown', this.#onPress);
@@ -1933,7 +1939,7 @@ export class GridView<Row> {
             root.addEventListener('paste', this.#onPaste);
             this.#stops.push(
                 () => { this.#scroller.removeEventListener('scroll', onScroll); },
-                () => { for (const type of heldEventTypes) root.removeEventListener(type, this.#onInput, true); },
+                () => { for (const type of heldEventTypes) inputRoot.removeEventListener(type, this.#onInput, true); },
                 () => { root.removeEventListener('keydown', this.#onKeyDown, true); },
                 () => { this.#viewport.removeEventListener('mousedown', this.#onPress); },
                 () => { this.#viewport.removeEventListener('mouseup', this.#onRelease); },
@@ -4622,7 +4628,7 @@ export class GridView<Row> {
         if (!(target instanceof Element) || !target.isConnected) {
             const doc = this.#root.ownerDocument;
             const under = event instanceof MouseEvent && typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(event.clientX, event.clientY) : null;
-            target = under !== null && this.#root.contains(under) ? under : null;
+            target = under !== null && this.#inputRoot.contains(under) ? under : null;
         }
         if (!(target instanceof Element)) return false;
         target.dispatchEvent(again);
@@ -4633,11 +4639,11 @@ export class GridView<Row> {
         return true;
     }
 
-    // What holds the keyboard in the grid now: what has DOM focus inside the root, or, where the keyboard has left
-    // it, what the grid would hand it to (ADR-0080).
+    // What holds the keyboard in the grid now: what has DOM focus inside the Input Root, the grid or a surface of the
+    // product's around it, or, where the keyboard has left it, what the grid would hand it to (ADR-0080).
     #keyboardHolder(): HTMLElement {
         const active = this.#root.ownerDocument.activeElement;
-        if (active instanceof HTMLElement && this.#root.contains(active)) return active;
+        if (active instanceof HTMLElement && this.#inputRoot.contains(active)) return active;
         const edit = this.#edit;
         if (edit !== undefined && edit.element.isConnected) return this.#editorField(edit) ?? edit.element;
         return this.#keyField.isConnected ? this.#keyField : this.#root;
@@ -4662,13 +4668,15 @@ export class GridView<Row> {
         if (cut) typeText(field, '', 'deleteByCut');
     }
 
-    // Every input on the root, heard ahead of everything in it. With no commit pending it is noted as the input under
-    // way; while one is, it is held in its turn, nothing inside hearing it and the browser's own meaning prevented,
+    // Every input on the Input Root, heard ahead of everything in it. With no commit pending an input in the grid is
+    // noted as the input under way, and one on a surface around it is that surface's; while one is, it is held in its
+    // turn wherever in the Input Root it was made, nothing inside hearing it and the browser's own meaning prevented,
     // and an Escape cancels the commit instead. A move with no button down is the hover's, and passes. A clipboard
     // key keeps its default, which is the copy, cut or paste event held in its turn after it.
     readonly #onInput = (event: Event): void => {
         const pending = this.#pending;
         if (pending === undefined) {
+            if (!(event.target instanceof Node) || !this.#root.contains(event.target)) return;
             this.#input = event;
             // The repeats of an Escape that cancelled are that Escape's, and close nothing (ADR-0012).
             if (event instanceof KeyboardEvent && event.type === 'keydown') {

@@ -298,4 +298,41 @@ describe('work of the Consumer\'s in the Input Order', () => {
         }, () => undefined);
         expect(asked).toBe(true);
     });
+
+    it('ADR-0240 ticket 04: inside an Input Root, input on a surface around the grid waits behind the work and is taken there after it, and an Escape there cancels the work', async () => {
+        const box = document.createElement('div');
+        box.setAttribute('data-ex-input-root', '');
+        document.body.append(box);
+        const button = document.createElement('button');
+        box.append(button);
+        let presses = 0;
+        button.addEventListener('click', () => { presses += 1; });
+        const { view } = mount<Trade>({
+            columns: [{ name: 'Book', type: 'text', value: trade => trade.book, width: 120 }],
+            rows: trades(5), rowHeight: 24, viewportHeight: 240,
+        }, {}, box);
+        try {
+            // With nothing pending, a press on the surface is its own at once.
+            button.click();
+            expect(presses).toBe(1);
+            const works: Held[] = [];
+            const placed = view.cancellableInOrder(heldWork(works), () => undefined);
+            button.click();
+            expect(presses).toBe(1);
+            defined(works[0], 'the work').land();
+            expect(await placed).toBe(true);
+            expect(presses).toBe(2);
+            // An Escape typed on the surface cancels the work, as one typed in the grid does.
+            const cancelled = view.cancellableInOrder(heldWork(works), () => undefined);
+            button.focus();
+            const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+            button.dispatchEvent(escape);
+            const second = defined(works[1], 'the second work');
+            expect([second.signal.aborted, escape.defaultPrevented]).toEqual([true, true]);
+            second.fail(second.signal.reason);
+            expect(await cancelled).toBe(false);
+        } finally {
+            box.remove();
+        }
+    });
 });

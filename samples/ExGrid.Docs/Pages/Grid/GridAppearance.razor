@@ -340,7 +340,9 @@
             Under React the two are <code>inOrder(handling)</code> and
             <code>cancellableInOrder(handling, cancelledTooLate)</code> on the ref, each answering a promise. With nothing
             pending the work runs at once; while the promise <code>handling</code> answers is out, every input made in the
-            grid waits in its order and is taken once it settles. <code>handling</code> takes an <code>AbortSignal</code>
+            grid waits in its order and is taken once it settles. So does every input made in the element marked
+            <code>data-ex-input-root</code> around the grid, where a product draws its own surfaces — ExSheet's toolbar
+            and Sheet Tabs — and an Escape typed there cancels as one typed in the grid does. <code>handling</code> takes an <code>AbortSignal</code>
             in place of the token, and work that sees it aborted rejects with the signal's reason, which the promise
             answers as <code>false</code>. Cancellable work placed while another's <code>handling</code> is being called
             is refused by name; placed from a later turn, it waits behind the work under way.
