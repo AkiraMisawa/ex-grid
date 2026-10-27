@@ -21,7 +21,7 @@ chartDockContract('the Mantine Chart Dock', MantineChartDock, host);
 describe('MantineChartDock', () => {
     afterEach(() => { cleanup(); });
 
-    it('ADR-0258: Delete on a tab closes it and hands the keyboard to the tab shown in its place', async () => {
+    it('ADR-0258: Delete on a tab closes it and hands the keyboard to the tab shown in its place, and on the last tab back to the grid', async () => {
         const rows = [{ day: 0, y1: 3 }, { day: 1, y1: 3.1 }];
         const chart: GridChart = {
             orientation: 'seriesInColumns', axisColumn: 'day',
@@ -38,7 +38,7 @@ describe('MantineChartDock', () => {
                 }),
             }));
             useState(() => { dock.open(chart); dock.open(chart); return true; });
-            return createElement(MantineChartDock<(typeof rows)[number]>, { dock, bridge });
+            return createElement(MantineChartDock<(typeof rows)[number]>, { dock, bridge }, createElement('button', { type: 'button', className: 'the-grid' }, 'The grid'));
         }
         const { container } = render(createElement(Page), host);
         await act(async () => { await Promise.resolve(); });
@@ -51,5 +51,8 @@ describe('MantineChartDock', () => {
         await act(async () => { fireEvent.keyDown(tab('Chart 2'), { key: 'Delete' }); await Promise.resolve(); });
         expect([...container.querySelectorAll('[role=tab]')].map(t => t.textContent.trim())).toEqual(['Chart 1']);
         expect(document.activeElement).toBe(tab('Chart 1'));
+        await act(async () => { fireEvent.keyDown(tab('Chart 1'), { key: 'Delete' }); await Promise.resolve(); });
+        expect(container.querySelector('[role=tab]')).toBeNull();
+        expect(document.activeElement).toBe(container.querySelector('.the-grid'));
     });
 });

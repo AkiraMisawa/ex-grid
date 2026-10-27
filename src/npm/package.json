@@ -18,6 +18,7 @@
     "mantine",
     "chart-mantine",
     "mui",
+    "chart-mui",
     "blazor",
     "pivot-react",
     "pivot-blazor",

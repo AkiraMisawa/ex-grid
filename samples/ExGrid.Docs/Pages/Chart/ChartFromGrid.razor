@@ -36,6 +36,15 @@
             components, and the theme's primary leads their series in light and dark. A tab not shown keeps its
             chart, with its range and its open Chart Filters.
         </p>
+        <p>
+            <code>@@ex-grid/chart-mui</code>'s <code>MuiChartDock</code> is the same dock in MUI's tabs, its charts
+            under <code>muiChartChrome</code>: the toolbar's commands as MUI's buttons with the downloads in a button
+            group, Chart Filters in MUI's fields (MUI has no date picker of its own, so a date is typed as the hint
+            shows), and the context menu's items as MUI's list item buttons inside the chart's own frame. Its theme is
+            made with <code>cssVariables: true</code>, or the dock refuses to draw, naming the option; the primary and
+            secondary colours lead the series, as MudBlazor's do under <code>MudChartDock</code>, and error, warning,
+            success and info are never a series' colour.
+        </p>
         <DocsExample Builtin="typeof(FromGrid)" Mud="typeof(FromGridMud)" Files="@(["Examples/Chart/CurveHistory.cs"])" CodeOpen="true" />
     </DocsSection>
 

@@ -4,7 +4,7 @@
 // as a new tab, one with a series added replaces its tab, a refusal is said above the tabs, and every open chart is
 // a target of "Add to chart".
 
-import { createElement, Fragment, useMemo, useState, useSyncExternalStore, type ReactElement, type ReactNode } from 'react';
+import { createElement, Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { ChartRefusedError, type ChartDefinition, type ChartPointClick, type ChartTarget, type GridChart, type GridChartBridge, type GridChartBridgeOptions } from '@ex-grid/chart';
 import { ExChart, type ExChartChrome } from './ex-chart';
 
@@ -147,6 +147,43 @@ class ChartDockStore {
 export function useChartDock(): ChartDockState {
     const [store] = useState(() => new ChartDockStore());
     return useSyncExternalStore(store.subscribe, store.current, store.current);
+}
+
+/** What {@link useChartDockKeyboard} hands a design system's dock. */
+export interface ChartDockKeyboard {
+    /** For the panel that holds the tabs. */
+    readonly panel: RefObject<HTMLDivElement | null>;
+    /** For the element that holds the grid. */
+    readonly content: RefObject<HTMLDivElement | null>;
+    /** Closes the tab named `name` from the keyboard, Delete on the tab, and hands the keyboard on. */
+    readonly closeByKey: (name: string) => void;
+}
+
+// What takes the keyboard in the grid's place: the first stop the browser's Tab would reach.
+const tabStop = '[tabindex]:not([tabindex="-1"]), button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]';
+
+/**
+ * Where the keyboard goes when a Chart Dock's tab is closed from it: to the tab shown in its place once that tab is
+ * drawn, or, the last tab closed and the panel gone with it, back to the grid, so the next key reaches what is on
+ * screen rather than the page's body.
+ */
+export function useChartDockKeyboard(dock: ChartDockState): ChartDockKeyboard {
+    const panel = useRef<HTMLDivElement>(null);
+    const content = useRef<HTMLDivElement>(null);
+    const pending = useRef(false);
+    useEffect(() => {
+        if (!pending.current) return;
+        pending.current = false;
+        const shown = panel.current?.querySelector<HTMLElement>('[role=tab][aria-selected=true]');
+        if (shown !== null && shown !== undefined) shown.focus();
+        else content.current?.querySelector<HTMLElement>(tabStop)?.focus();
+    });
+    const { close } = dock;
+    const closeByKey = useMemo(() => (name: string): void => {
+        pending.current = true;
+        close(name);
+    }, [close]);
+    return { panel, content, closeByKey };
 }
 
 /** What a {@link DockedChart} is drawn from. */
