@@ -340,6 +340,8 @@ class SheetView {
     // The day read again at midnight in the zone, and NOW moved on as the minute turns (ADR-0121, ADR-0124).
     #dayTimer: ReturnType<typeof setTimeout> | undefined;
     #minuteTimer: ReturnType<typeof setTimeout> | undefined;
+    // The browser's zone, read once, as the C# Sheet is told it once at attach (ADR-0122).
+    readonly #browserZone = browserTimeZone();
 
     constructor(element: HTMLElement, options: SheetOptions) {
         this.#element = element;
@@ -412,6 +414,8 @@ class SheetView {
             this.#workbook = this.#open(next);
             this.#history.clear();
             this.#showSheet(this.#workbook.shown);
+            this.#armTheDay();
+            this.#armTheMinute();
             return;
         }
         // A new seed, or none, which goes back to the one chosen at opening, draws again at the same count of changes:
@@ -1650,7 +1654,7 @@ class SheetView {
     // ---- The Sheet Day and NOW (ADR-0121, ADR-0124) ---------------------------------------------------------
 
     #zoneOf(options: SheetOptions): string {
-        return options.timeZone ?? browserTimeZone();
+        return options.timeZone ?? this.#browserZone;
     }
 
     // The fixed day, else the day in the zone now.
@@ -1670,7 +1674,7 @@ class SheetView {
             if (this.#destroyed) return;
             const change = this.#workbook.setToday(this.#resolveDay(this.#options));
             this.#armTheDay();
-            this.#changed([change], false, false);
+            this.#changedByTheClock(change);
         }, due);
     }
 
@@ -1681,8 +1685,15 @@ class SheetView {
             this.#minuteTimer = undefined;
             if (this.#destroyed) return;
             this.#armTheMinute();
-            if (this.#workbook.hasVolatileFormulas) this.#changed([this.#workbook.recalculateVolatile()], false, false);
+            if (this.#workbook.hasVolatileFormulas) this.#changedByTheClock(this.#workbook.recalculateVolatile());
         }, untilTheMinuteTurnsMs(Date.now()));
+    }
+
+    // What the clock moved, painted only where it reached a row of the Sheet shown: a RAND or an OFFSET recalculated by
+    // the minute changes nothing there, and the Sheet is left as it stands.
+    #changedByTheClock(change: WorkbookChange): void {
+        const shown = change.for(this.#source.sheet);
+        if (shown.rows.length > 0 || shown.recalculated.length > 0) this.#changed([change], false, false);
     }
 
     // ---- The notice ------------------------------------------------------------------------------------------
@@ -1726,6 +1737,8 @@ class SheetView {
             checkTimeZone(timeZone);
         }
         if (today !== undefined && !isSheetDay(today)) throw new RangeError("A Sheet Day is a calendar day from 1900 to 9999: { year, month, day }.");
+        // The day is taken as it is now: one the Consumer changes in place afterwards is a new day only when handed over again.
+        const taken = today === undefined ? options : { ...options, today: { year: today.year, month: today.month, day: today.day } };
         const handlers: readonly (readonly [string, unknown])[] = [
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
@@ -1733,7 +1746,7 @@ class SheetView {
         for (const [name, handler] of handlers) {
             if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
         }
-        return options;
+        return taken;
     }
 }
 

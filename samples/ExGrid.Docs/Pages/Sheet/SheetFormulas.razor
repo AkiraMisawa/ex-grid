@@ -330,6 +330,12 @@
             interactive, as <code>TODAY()</code> waits for the browser's time zone, so no draw changes with nothing done.
             Neither the seed nor a draw is saved in the Sheet Document.
         </DocsExample>
+        <DocsExample Title="The day and the time" Builtin="typeof(SheetDay)" Mud="typeof(SheetDayMud)" Files="@(["Examples/Sheet/DayAndTime.cs"])">
+            Choose a zone where it is already tomorrow, or still yesterday, and <code>TODAY()</code> and the quarter's end
+            follow it at once; <code>NOW()</code> moves on as the minute turns. Fix the day and <code>TODAY()</code> holds
+            it whatever the clock says, while <code>NOW()</code> still reads the clock. Neither is saved in the Sheet
+            Document.
+        </DocsExample>
     </DocsSection>
 
     <DocsSection Title="Completion, hints and pointing">

@@ -1,0 +1,31 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+    <MudSelect T="string" @bind-Value="_zone" Label="Time zone" Dense="true" Variant="Variant.Outlined" Style="max-width: 240px">
+        <MudSelectItem Value="@("")">The browser's</MudSelectItem>
+        @foreach (var zone in Zones)
+        {
+            <MudSelectItem Value="@zone">@zone</MudSelectItem>
+        }
+    </MudSelect>
+    <MudCheckBox T="bool" @bind-Value="_fixed" Label="Fix the day at 31 March 2026" />
+</MudStack>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @bind-Document="_document" TimeZone="Zone" Today="@(_fixed ? ReportDay : null)" Chrome="MudSheetChrome.Default"
+             ViewportHeight="200" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private static readonly string[] Zones = ["Asia/Tokyo", "Europe/London", "America/New_York", "Pacific/Kiritimati"];
+    private static readonly DateOnly ReportDay = new(2026, 3, 31);
+
+    private SheetDocument _document = DayAndTime.Document();
+    private string _zone = "";
+    private bool _fixed;
+
+    // The day is the user's, in the browser's zone, unless you name another; the server's is never used.
+    private TimeZoneInfo? Zone => _zone == "" ? null : TimeZoneInfo.FindSystemTimeZoneById(_zone);
+}
