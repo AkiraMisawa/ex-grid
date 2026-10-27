@@ -9,7 +9,7 @@ using static ExGrid.Data.Xlsx.Tests.Fixtures;
 namespace ExGrid.Data.Xlsx.Tests.Cases;
 
 /// <summary>
-/// The shared .xlsx cases (<c>tests/cases/xlsx</c>; ADR-0330, ADR-0370 section 3), run against ExGrid.Data.Xlsx: a file read
+/// The shared .xlsx cases (<c>tests/cases/xlsx</c>; ADR-0330, ADR-0370 section 2), run against ExGrid.Data.Xlsx: a file read
 /// and what the reader gives or how it refused it, a workbook written step by step and what each step answered and the parts
 /// it made, and the cell references, escapes and colours both read and write. A reader and a writer of .xlsx have no
 /// differential run, so these cases are what holds <c>@ex-grid/data-xlsx</c> to this package; its runner is
@@ -40,7 +40,7 @@ public partial class XlsxCaseTests
         return rows;
     }
 
-    [Theory, MemberData(nameof(Cases))] // ADR-0330, ADR-0370 section 3: an .xlsx case holds on ExGrid.Data.Xlsx
+    [Theory, MemberData(nameof(Cases))] // ADR-0330, ADR-0370 section 2: an .xlsx case holds on ExGrid.Data.Xlsx
     public async Task Xlsx(string file, string name)
     {
         var document = Read(Path.Combine(Root, file));

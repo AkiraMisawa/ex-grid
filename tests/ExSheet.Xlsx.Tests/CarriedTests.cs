@@ -8,7 +8,7 @@ namespace ExSheet.Xlsx.Tests;
 
 /// <summary>
 /// What a workbook's read takes from the application beside the file (ADR-0330 §7, §9): the culture and the read options.
-/// What a workbook carries is held by the shared cases (<c>tests/cases/sheet-xlsx</c>, ADR-0370 section 3).
+/// What a workbook carries is held by the shared cases (<c>tests/cases/sheet-xlsx</c>, ADR-0370 section 2).
 /// </summary>
 public class CarriedTests
 {

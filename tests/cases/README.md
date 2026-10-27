@@ -681,7 +681,7 @@ answered by its ARGB or `null`; or an `argb` and a `tint`, answered by the tint 
 
 ## `sheetXlsx` and `sheetXlsxCall`
 
-Opening and saving a Workbook as an `.xlsx` (ADR-0330, ADR-0370 section 3), under `sheet-xlsx/`: xUnit runs them against
+Opening and saving a Workbook as an `.xlsx` (ADR-0330, ADR-0370 section 2), under `sheet-xlsx/`: xUnit runs them against
 ExSheet.Xlsx (`tests/ExSheet.Xlsx.Tests/Cases/SheetXlsxCaseTests.cs`) and Vitest against `@ex-grid/sheet-xlsx`
 (`src/npm/sheet-xlsx/test/sheet-xlsx-cases.test.ts`). As with the file layer's cases, nothing else holds the two packages together,
 and the C# runner writes the answers of `open`, `save`, `sameAs` and every call, with `EXGRID_WRITE_SHEET_XLSX_CASES=1`; what a

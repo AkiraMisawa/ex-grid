@@ -13,7 +13,7 @@ using static ExGrid.Data.Xlsx.Tests.Cases.XlsxCaseTests;
 namespace ExSheet.Xlsx.Tests.Cases;
 
 /// <summary>
-/// The shared cases of opening and saving a Workbook (<c>tests/cases/sheet-xlsx</c>; ADR-0330, ADR-0370 section 3), run against
+/// The shared cases of opening and saving a Workbook (<c>tests/cases/sheet-xlsx</c>; ADR-0330, ADR-0370 section 2), run against
 /// ExSheet.Xlsx: a file written as the .xlsx cases write one, edited part by part, opened, and what the Workbook Document and
 /// its Open Report say or how the file was refused; a Workbook built as the Sheet cases build one, saved, and the parts it made
 /// or how the save was refused; and the internal pieces both cores share, called one by one. A reader and a writer of .xlsx
@@ -51,7 +51,7 @@ public class SheetXlsxCaseTests
         return rows;
     }
 
-    [Theory, MemberData(nameof(Cases))] // ADR-0330, ADR-0370 section 3: a case of opening and saving a Workbook holds on ExSheet.Xlsx
+    [Theory, MemberData(nameof(Cases))] // ADR-0330, ADR-0370 section 2: a case of opening and saving a Workbook holds on ExSheet.Xlsx
     public async Task SheetXlsx(string file, string name)
     {
         var document = Read(Path.Combine(Root, file));
@@ -481,6 +481,13 @@ public class SheetXlsxCaseTests
                     tables is null ? null : t => tables.FirstOrDefault(p => string.Equals(p.Key, t, StringComparison.OrdinalIgnoreCase)).Value is JsonArray columns
                         ? [.. columns.Select(c => Text(c!))]
                         : null);
+                if (problem == WrittenFormulaProblem.None)
+                {
+                    // What is written never reads back as another Formula, whatever the case's answer says it is written as:
+                    // it reads back as itself, or is refused by name (an Excel Table's reference, ADR-0330 §6, or a 3D Reference's Spill Range).
+                    var readBack = StoredFormula.Read(text, out var refused);
+                    if (refused == StoredFormulaProblem.None) Assert.Equal(parsed.Formula, readBack);
+                }
                 return new JsonObject { ["stored"] = problem == WrittenFormulaProblem.None ? text : null, ["problem"] = SheetCases.Camel(problem) };
             }
             case "isoDate":

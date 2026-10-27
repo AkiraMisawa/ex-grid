@@ -20,6 +20,7 @@
     "pivot-blazor",
     "board-react",
     "sheet-engine",
+    "sheet-xlsx",
     "sheet",
     "sheet-react"
   ],

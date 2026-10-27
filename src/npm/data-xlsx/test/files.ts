@@ -197,6 +197,11 @@ function book(given: Json): (readonly [string, string])[] {
     return result;
 }
 
+/** A zip of the parts, each written as UTF-8 and deflated, as another program would write one. */
+export function zipOf(parts: readonly (readonly [string, string])[]): Promise<Uint8Array> {
+    return zip(parts, { stored: false, damage: undefined, lie: undefined });
+}
+
 /** The file a read case reads. */
 export async function fileOf(value: Json): Promise<Uint8Array> {
     const file = object(value);
