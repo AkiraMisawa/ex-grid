@@ -1889,6 +1889,8 @@ export class GridView<Row> {
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
         this.#edit = undefined;
         this.#tellEditing();
+        // The keys go with the edit: a Consumer outlining a table's column for them hears that none is read (ADR-0057).
+        this.#referenceOutlines.tellKeys(this.#colouring(), this.#referenceOptions.onReferenceKeyColoursChanged);
         // A Chrome slot's contents are taken away with the grid, as a Template cell's are.
         const popover = this.#popover;
         this.#popover = undefined;
@@ -3912,6 +3914,8 @@ export class GridView<Row> {
         this.#focusEditor();
         this.#tellEditing();
         this.#invalidate();
+        // Its References are asked of the opening text now, where an answer refused is refused (ADR-0057).
+        this.#colouring();
     }
 
     // Raises the key when it is declared (ADR-0050, item 14), and answers whether it was: the key then means nothing
@@ -4801,15 +4805,14 @@ export class GridView<Row> {
             return;
         }
         edit.element.value = text;
-        // The References are asked again of the text as it now stands (ADR-0057).
-        if (this.#referenceOptions.referencesIn !== undefined) this.#invalidate();
+        this.#askReferences();
     };
 
     // Typed in the cell: shown in the bar as well (ADR-0051).
     readonly #onEditorTyped = (): void => {
         const edit = this.#edit;
         if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.text.value = edit.element.value;
-        if (edit !== undefined && this.#referenceOptions.referencesIn !== undefined) this.#invalidate();
+        if (edit !== undefined) this.#askReferences();
     };
 
     // A press back into the cell's editor: the edit is typed there again.
@@ -6687,7 +6690,11 @@ export class GridView<Row> {
         if (edit !== undefined) {
             const { element } = edit;
             const start = element.selectionStart ?? element.value.length;
-            if (text !== '') element.setRangeText(text, start, element.selectionEnd ?? start, 'end');
+            if (text !== '') {
+                element.setRangeText(text, start, element.selectionEnd ?? start, 'end');
+                // Typed as the field types, so the bar shows it and its References are asked again (ADR-0051, ADR-0057).
+                this.#onEditorTyped();
+            }
         } else if (!this.#destroyed && this.#canEdit) {
             this.#answered += 1;
             // Aimed at what was painted as it began: a Selection dropped since, or dropped before it and not
@@ -7692,6 +7699,20 @@ export class GridView<Row> {
     // the function changed since it was last asked; none while no edit is open.
     #colouring(): ReferenceColouring {
         return this.#referenceOutlines.colouring(this.#edit?.element.value, this.#referenceOptions.referencesIn);
+    }
+
+    // The References asked again of the editor's text as it now stands, where it changed (ADR-0057): an answer refused
+    // is refused here, in the input that changed it, and never in a pass. A pass is owed only when what the layers
+    // paint or the keys told changed, so typing text that is no Formula paints nothing.
+    #askReferences(): void {
+        if (this.#referenceOptions.referencesIn === undefined) return;
+        const was = this.#referenceOutlines.asked;
+        try {
+            this.#colouring();
+        } finally {
+            // A refused answer is held as none: the outlines of the text before it go too.
+            if (!ReferenceOutlines.same(was, this.#referenceOutlines.asked)) this.#invalidate();
+        }
     }
 
     // The selection layers' rectangles over the painted rows, written only when they changed. The layers

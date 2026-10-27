@@ -20,6 +20,7 @@ import type { FormulaSyntaxError } from '@ex-grid/sheet-engine';
 import { GridDensity } from '@ex-grid/core';
 import type { GridDirection } from '@ex-grid/core';
 import type { GridExtent } from '@ex-grid/core';
+import type { GridOutlinedColumn } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
 import type { GridSummaryRequest } from '@ex-grid/core';
 import type { GridSummaryResult } from '@ex-grid/core';
@@ -250,10 +251,7 @@ export interface NumberFormatCategoryOffer {
 export const numberNegativeStyles = 4;
 
 // @public
-export interface OutlinedColumn {
-    readonly colour: ReferenceColour;
-    readonly column: string;
-}
+export type OutlinedColumn = GridOutlinedColumn;
 
 // @public
 export interface PaletteSwatch {

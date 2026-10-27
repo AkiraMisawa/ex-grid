@@ -75,9 +75,11 @@ function retype(field: HTMLInputElement, text: string): void {
     field.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function grid(options: Partial<GridOptions<Trade>>): HTMLElement {
-    return mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, onEdit: () => undefined, ...options }).root;
+function mounted(options: Partial<GridOptions<Trade>>): ReturnType<typeof mount<Trade>> {
+    return mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, onEdit: () => undefined, ...options });
 }
+
+const grid = (options: Partial<GridOptions<Trade>>): HTMLElement => mounted(options).root;
 
 afterEach(unmountAll);
 
@@ -131,5 +133,37 @@ describe('Reference Outlines (ADR-0057)', () => {
     it('ADR-0057: a column asked for in a colour outside the palette, or with no name, is refused by name', () => {
         expect(() => grid({ outlinedColumns: [{ column: 'Book', colour: 9 as never }] })).toThrow(/palette/u);
         expect(() => grid({ outlinedColumns: [{ column: '', colour: 1 }] })).toThrow(/outlinedColumns\[0\]/u);
+    });
+
+    it('DC-49: a grid destroyed with an edit open tells that no key is read any more', async () => {
+        const told: (readonly ReferenceKeyColour[])[] = [];
+        const { root, view } = mounted({ referencesIn, onReferenceKeyColoursChanged: keys => { told.push(keys); } });
+        await edit(root, '=[Price]');
+        view.destroy();
+        expect(told).toEqual([[{ key: 'Price', colour: 1 }], []]);
+    });
+
+    it('ADR-0057: an answer refused is refused in the input that asked it, and the passes after it paint', async () => {
+        const root = grid({ referencesIn: text => (text === '=bad' ? [{ start: 0, length: 9, key: 'X' }] : referencesIn(text)) });
+        const field = await edit(root, '=A1');
+        expect(outlines(root)).toEqual(['ex-reference-outline ex-reference-1']);
+        field.value = '=bad';
+        expect(() => { field.dispatchEvent(new Event('input')); }).toThrow(/does not lie inside/u);
+        await painted();
+        expect(outlines(root)).toEqual([]);
+        retype(field, '=B2');
+        await painted();
+        expect(outlines(root)).toEqual(['ex-reference-outline ex-reference-1']);
+    });
+
+    it('DC-49: a handler handed over in place of another is told the keys standing', async () => {
+        const first: (readonly ReferenceKeyColour[])[] = [];
+        const second: (readonly ReferenceKeyColour[])[] = [];
+        const options = { columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, onEdit: () => undefined, referencesIn };
+        const { root, view } = mount<Trade>({ ...options, onReferenceKeyColoursChanged: keys => { first.push(keys); } });
+        await edit(root, '=[Price]');
+        view.update({ ...options, onReferenceKeyColoursChanged: keys => { second.push(keys); } });
+        await painted();
+        expect([first, second]).toEqual([[[{ key: 'Price', colour: 1 }]], [[{ key: 'Price', colour: 1 }]]]);
     });
 });

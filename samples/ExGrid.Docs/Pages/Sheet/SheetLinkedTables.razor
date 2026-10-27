@@ -96,9 +96,10 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
                 While a Formula is edited, the table columns it reads are outlined in the registered grids, in the colours
                 their References wear on the Sheet. For a grid in no Scope, <code>OnLinkedColumnColoursChanged</code>
                 gives you the columns and colours to pass to the grid's <code>OutlinedColumns</code> yourself. Under
-                React, the Sheet's <code>onLinkedColumnColoursChanged</code> tells the same list, and an ExGrid takes it
-                as <code>outlinedColumns</code>, each entry's <code>column</code> the grid column's name; the Pointing
-                Scope itself is not there yet.
+                React, the Sheet's <code>onLinkedColumnColoursChanged</code> tells the same list, and you hand each entry to
+                the ExGrid that shows the table as one of its <code>outlinedColumns</code>: the name of the grid column
+                that shows the table column, with the same <code>colour</code>. The Pointing Scope itself is not there
+                yet.
             </li>
         </ul>
     </DocsSection>

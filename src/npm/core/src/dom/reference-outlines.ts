@@ -8,7 +8,7 @@ import {
     ReferenceColouring, referenceColour, type GridEditorReference, type ReferenceColour, type ReferenceKeyColour,
 } from '../cells/reference-colouring';
 import type { GridExtent } from '../selection/cell';
-import { selectionRange, type SelectionRange } from '../selection/range';
+import { sameRange, selectionRange, type SelectionRange } from '../selection/range';
 
 /** A column a Consumer asks the grid to outline, and the colour to outline it in (ADR-0057): the colour is one
  * the core handed out, which `onReferenceKeyColoursChanged` told, never one the Consumer picks. */
@@ -81,6 +81,12 @@ export class ReferenceOutlines {
     #resolvedOver: readonly string[] | undefined;
     #resolvedRows = -1;
     #told: readonly ReferenceKeyColour[] = [];
+    #toldTo: ReferenceOutlineOptions['onReferenceKeyColoursChanged'];
+
+    /** The colouring last asked for, without asking again. */
+    get asked(): ReferenceColouring {
+        return this.#colouring;
+    }
 
     /**
      * The colours of the References in `text`, the open edit's, or none while no edit is open or no function is
@@ -95,9 +101,12 @@ export class ReferenceOutlines {
             return this.#colouring;
         }
         if (referencesIn !== this.#colouredBy || text !== this.#colouredText) {
-            this.#colouring = ReferenceColouring.of(text, referencesIn(text));
+            // Held before it is asked: an answer refused is refused once, where it was asked, and the text outlines
+            // nothing until it changes, rather than every later pass throwing again.
             this.#colouredText = text;
             this.#colouredBy = referencesIn;
+            this.#colouring = ReferenceColouring.none;
+            this.#colouring = ReferenceColouring.of(text, referencesIn(text));
         }
         return this.#colouring;
     }
@@ -123,11 +132,25 @@ export class ReferenceOutlines {
     /** Tells the Consumer the colour each key was given, when that changed since it was last told (ADR-0057,
      * DC-49): each key once, in order of first appearance, and none once the edit has ended. */
     tellKeys(colouring: ReferenceColouring, told: ReferenceOutlineOptions['onReferenceKeyColoursChanged']): void {
+        // A handler handed over in place of another has been told nothing.
+        if (told !== this.#toldTo) {
+            this.#toldTo = told;
+            this.#told = [];
+        }
         if (told === undefined) return;
         const keys = colouring.keys;
         if (sameKeyColours(keys, this.#told)) return;
         this.#told = keys;
         told(keys);
+    }
+
+    /** Whether two colourings paint and tell the same: the same outlines and the same keys, in the same colours. */
+    static same(a: ReferenceColouring, b: ReferenceColouring): boolean {
+        return a.outlines.length === b.outlines.length && sameKeyColours(a.keys, b.keys)
+            && a.outlines.every(([range, colour], i) => {
+                const other = b.outlines[i];
+                return other !== undefined && other[1] === colour && sameRange(other[0], range);
+            });
     }
 }
 

@@ -7,7 +7,7 @@
 // @ex-grid/core does not have yet. It is declared below, in the same shape, so the Scope's decisions run
 // without it; when core gains it, these move there and the Scope imports them.
 
-import type { GridDirection, ReferenceColour } from '@ex-grid/core';
+import type { GridDirection, GridOutlinedColumn, ReferenceColour } from '@ex-grid/core';
 import { lookupFinds, lookupText, structuredReferenceText } from '@ex-grid/sheet-engine';
 import type { LinkedTable, LinkedTableColumn, Value } from '@ex-grid/sheet-engine';
 import { defined, elementAt } from './must';
@@ -90,13 +90,9 @@ export interface GridPointDashes<TRow> {
     readonly column: string;
 }
 
-/** A grid column outlined in a Reference colour while a Formula reads it (ADR-0057). */
-export interface OutlinedColumn {
-    /** The grid column's name. */
-    readonly column: string;
-    /** Its outline's colour. */
-    readonly colour: ReferenceColour;
-}
+/** A grid column outlined in a Reference colour while a Formula reads it (ADR-0057): the grid's own
+ * `outlinedColumns` entry. */
+export type OutlinedColumn = GridOutlinedColumn;
 
 /** A Linked Table column a Formula edited in a Sheet reads, and the colour its References wear (ADR-0057). */
 export interface LinkedColumnColour {

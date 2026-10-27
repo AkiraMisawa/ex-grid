@@ -153,8 +153,9 @@ export interface SheetOptions {
      * column's names as the Consumer declared them. Told once whenever that list changes and never when it does
      * not, and with an empty list when the edit ends. A table or column not declared names nothing and is not
      * told. The Sheet does not know where, or whether, the table is on screen, and outlines none of it itself: the
-     * Consumer passes the list to the grid that shows the table (`outlinedColumns`), and only it can vouch that
-     * that grid shows the rows the Formula reads.
+     * Consumer hands each entry to the grid that shows the table as one of its `outlinedColumns`, the grid column
+     * that shows `column` with the same `colour`, and only it can vouch that that grid shows the rows the Formula
+     * reads.
      */
     readonly onLinkedColumnColoursChanged?: (columns: readonly LinkedColumnColour[]) => void;
     /** Hears the grid's Selection each time it changes, as ExGrid reports it (ADR-0011/0014): what a status line
@@ -579,7 +580,12 @@ class SheetView {
         // recorded in the document, so only it raises one.
         const before = this.#workbook.changes;
         const change = this.#workbook.declareLinkedTable(name, columns, key);
-        this.#changed([change], before !== this.#workbook.changes, false);
+        const declared = before !== this.#workbook.changes;
+        this.#changed([change], declared, false);
+        if (declared) {
+            this.#referencesIn = text => sheetReferences(this.#source.sheet, text);
+            this.#grid?.update(this.#gridOptions());
+        }
     }
 
     pushLinkedTable(name: string, rows: Iterable<readonly (Value | undefined)[]>): void {
@@ -975,7 +981,9 @@ class SheetView {
         this.#options.onEditingChanged?.(open);
     };
 
-    readonly #referencesIn = (text: string): readonly GridEditorReference[] => sheetReferences(this.#source.sheet, text);
+    // Made again when the declared tables change: a Reference to a column is coloured only once its table is
+    // declared, and the grid asks again of a new function (ADR-0057).
+    #referencesIn = (text: string): readonly GridEditorReference[] => sheetReferences(this.#source.sheet, text);
 
     // The colours the grid gave the keys of the Formula being edited, as the Linked Table columns they name
     // (ADR-0057): told to the Consumer when they differ from what it was last told.

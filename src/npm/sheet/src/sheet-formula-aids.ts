@@ -18,9 +18,9 @@ export function sheetReferences(sheet: Sheet, text: string): readonly GridEditor
 }
 
 /** The key a Linked Table's column is coloured under (ADR-0057): one per column, however the Formula cased its
- * names, since the Sheet finds tables and columns ignoring case. */
+ * names, folded as the engine finds tables and columns, ignoring case. */
 export function linkedColumnKey(column: LinkedTableColumn): string {
-    return `${column.table}[${column.column}]`.toUpperCase();
+    return column.key;
 }
 
 /**

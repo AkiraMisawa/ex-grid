@@ -217,6 +217,20 @@ describe('Reference Outlines (ADR-0057)', () => {
         await vi.waitFor(() => { expect(element.querySelector('.ex-reference-outline')).toBeNull(); });
         expect(told).toEqual([[{ table: 'Positions', column: 'PV', colour: 3 }], []]);
     });
+
+    it('DC-49: a table declared while its column\'s Formula is edited is told at once', async () => {
+        const told: (readonly string[])[] = [];
+        const { element, sheet } = sheetOf({ onLinkedColumnColoursChanged: columns => { told.push(columns.map(({ column }) => `${column.table}[${column.column}]`)); } });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('F2');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        if (editor === null) throw new Error('The editor opened.');
+        editor.value = '=SUM(Costs[Amount])';
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        sheet.declareLinkedTable('Costs', ['Id', 'Amount'], 'Id');
+        await vi.waitFor(() => { expect(told).toEqual([['Costs[Amount]']]); });
+    });
 });
 
 describe('Widening (ADR-0047, second round)', () => {
