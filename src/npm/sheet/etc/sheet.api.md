@@ -31,6 +31,7 @@ import type { PasteRefusalReason } from '@ex-grid/core';
 import type { PlacementRefusalReason } from '@ex-grid/core';
 import { Sheet } from '@ex-grid/sheet-engine';
 import { SheetChange } from '@ex-grid/sheet-engine';
+import { SheetDay } from '@ex-grid/sheet-engine';
 import { SheetDocument } from '@ex-grid/sheet-engine';
 import { SheetEdit } from '@ex-grid/sheet-engine';
 import type { SheetRefusal } from '@ex-grid/sheet-engine';
@@ -392,6 +393,8 @@ export interface SheetOptions {
     readonly showRowHeadings?: boolean;
     readonly showSheetTabs?: boolean;
     readonly showToolbar?: boolean;
+    readonly timeZone?: string | undefined;
+    readonly today?: SheetDay | undefined;
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
 }
