@@ -174,7 +174,8 @@ rules.evaluate(trades, columns);   // after each apply, over the whole collectio
                      Files="@(["Examples/Grid/CurveTrade.cs"])">
             Change <code>T-0001</code>'s curve to <code>USD-FF</code>: every trade of CSA ABC is marked, including those
             you must scroll to, and Save is refused. Select ABC's curves and type <code>USD-FF</code> with
-            <kbd>Ctrl</kbd>+<kbd>Enter</kbd>, or change them one by one: the last edit clears every mark.
+            <kbd>Ctrl</kbd>+<kbd>Enter</kbd>, or change them one by one: the last edit clears every mark. Under
+            React the Example also takes <code>findError</code>, so <kbd>F8</kbd> steps through the marked trades.
         </DocsExample>
     </DocsSection>
 

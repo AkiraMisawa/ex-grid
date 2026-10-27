@@ -192,7 +192,8 @@ describe('a paste into the grid', () => {
         paste(root, 'z');
         await painted();
         expect(q(root, '.ex-announce').textContent).toBe('Nothing was changed: the selection covers Trading desk ($&), which cannot be edited. Select cells only in columns that can be edited.');
-        view.update({ ...options, commandLabel: () => 42 as unknown as string });
+        // Only the refusal's id answers a number: the header's words are asked as it paints, and would throw there first.
+        view.update({ ...options, commandLabel: (id: string) => (id === pasteRefusalLabelIds.targetNotEditable ? 42 as unknown as string : undefined) });
         await painted();
         expect(() => paste(root, 'w')).toThrow(/commandLabel answered number for 'refused-paste-target-not-editable'/);
     });

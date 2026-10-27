@@ -59,7 +59,9 @@
             Select the cells, open the Context Menu and choose <em>Copy with headers</em>. A text editor receives
             the header <code>1.23457E+11</code> as shown; Excel receives <code>123456789012.345</code> from the HTML
             table. This Consumer answers through <code>CopyAnswer</code>, using <code>headerRawAt</code> for the
-            numeric header and returning <code>null</code> for Sample, whose header is the same in both formats.
+            numeric header and returning <code>null</code> for Sample, whose header is the same in both formats. In
+            React the same answer is <code>copyAnswer</code>, built with <code>assembleCopy</code> from
+            <code>@@ex-grid/core</code>, and <code>undefined</code> stands for <code>null</code>.
         </DocsExample>
     </DocsSection>
 
