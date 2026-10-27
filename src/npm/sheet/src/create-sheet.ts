@@ -16,9 +16,10 @@ import {
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
-    Sheet, SheetRefusal, type CellColour, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
+    Sheet, SheetRefusal, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { elementAt, unreachable } from './must';
+import { browserTimeZone, checkTimeZone, dayOf, momentIn, sameDay, untilTheDayIsReadAgainMs, untilTheMinuteTurnsMs } from './sheet-moment';
 import { exactNumberFor, isTooNarrowToShow, refusedIn, typedFor } from './sheet-clipboard';
 import { rangeOf, sheetCopyAnswer, type SheetOwnCopy } from './sheet-copy';
 import { appearanceLookup, charactersOfColumn, SheetColumns, sheetCellPaint } from './sheet-columns';
@@ -110,6 +111,19 @@ export interface SheetOptions {
      * seed is not recorded in the document.
      */
     readonly seed?: bigint;
+    /**
+     * A fixed Sheet Day: what `TODAY()` answers whatever the clock says (ADR-0121), for a report that must show the same
+     * day whenever it is opened. It goes before `timeZone`. Unless given, the day is the clock's in the zone, read again
+     * at midnight there, and at least once an hour.
+     */
+    readonly today?: SheetDay | undefined;
+    /**
+     * The IANA time zone whose day `TODAY()` and whose time of day `NOW()` answer (ADR-0121, ADR-0124), such as head
+     * office's for a site that keeps one business day for every user. The browser's zone unless given, as Excel takes the
+     * day on the user's own device; one the browser does not know is refused by name. A fixed `today` goes before it for
+     * `TODAY()`, not for `NOW()`, which moves on as each minute turns.
+     */
+    readonly timeZone?: string | undefined;
 }
 
 /** The Sheets' names before and after a change to the Sheets (ADR-0331 §6), in the Workbook's order. */
@@ -217,6 +231,16 @@ export interface SheetHandle {
     destroy(): void;
 }
 
+// Whether `day` is a calendar day the engine takes as a Sheet Day (ADR-0121).
+function isSheetDay(day: unknown): day is SheetDay {
+    if (typeof day !== 'object' || day === null) return false;
+    const { year, month, day: date }: { readonly year?: unknown; readonly month?: unknown; readonly day?: unknown } = day;
+    if (typeof year !== 'number' || typeof month !== 'number' || typeof date !== 'number') return false;
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(date) || year < 1900 || year > 9999) return false;
+    const read = new Date(Date.UTC(year, month - 1, date));
+    return read.getUTCFullYear() === year && read.getUTCMonth() === month - 1 && read.getUTCDate() === date;
+}
+
 // The largest seed: a seed is an unsigned 64-bit integer, as the engine and C#'s ulong hold it (ADR-0180).
 const maxSeed = (1n << 64n) - 1n;
 
@@ -313,6 +337,11 @@ class SheetView {
     // The Sheets' names as the Consumer last heard them, so a change says what it was taken from (ADR-0331 §6): at
     // open, the document's own.
     #sheetNames: readonly string[] = [];
+    // The day read again at midnight in the zone, and NOW moved on as the minute turns (ADR-0121, ADR-0124).
+    #dayTimer: ReturnType<typeof setTimeout> | undefined;
+    #minuteTimer: ReturnType<typeof setTimeout> | undefined;
+    // The browser's zone, read once, as the C# Sheet is told it once at attach (ADR-0122).
+    readonly #browserZone = browserTimeZone();
 
     constructor(element: HTMLElement, options: SheetOptions) {
         this.#element = element;
@@ -347,6 +376,8 @@ class SheetView {
         element.addEventListener('wheel', this.#forgetAlt, { capture: true, passive: true });
         this.#grid = createGrid(this.#gridElement, gridOptions);
         this.#paintFrame();
+        this.#armTheDay();
+        this.#armTheMinute();
     }
 
     get workbook(): Workbook { return this.#workbook; }
@@ -373,6 +404,7 @@ class SheetView {
         }
         if (next.label !== this.#options.label || next.japanese !== this.#options.japanese) this.#words = new SheetWords({ japanese: next.japanese, label: next.label });
         const seedBefore = this.#options.seed;
+        const previous = this.#options;
         this.#options = next;
         // A document this Sheet raised, handed back, is its own state: nothing is opened again.
         if (next.document !== undefined && this.#raised.has(next.document)) this.#document = next.document;
@@ -382,11 +414,19 @@ class SheetView {
             this.#workbook = this.#open(next);
             this.#history.clear();
             this.#showSheet(this.#workbook.shown);
+            this.#armTheDay();
+            this.#armTheMinute();
             return;
         }
         // A new seed, or none, which goes back to the one chosen at opening, draws again at the same count of changes:
         // no change of the Sheet's, so neither the document nor the notice hears it.
         if (next.seed !== seedBefore) this.#changed([this.#workbook.setSeed(next.seed ?? this.#chosenSeed)], false, false);
+        // A new fixed day or zone sets the day at once, and NOW reads the new zone.
+        if (!sameDay(next.today, previous.today) || next.timeZone !== previous.timeZone) {
+            this.#changed([this.#workbook.setToday(this.#resolveDay(next)), this.#workbook.recalculateVolatile()], false, false);
+            this.#armTheDay();
+            this.#armTheMinute();
+        }
         this.#grid?.update(this.#gridOptions());
         this.#paintFrame();
     }
@@ -508,6 +548,8 @@ class SheetView {
     destroy(): void {
         if (this.#destroyed) return;
         this.#destroyed = true;
+        clearTimeout(this.#dayTimer);
+        clearTimeout(this.#minuteTimer);
         this.#grid?.destroy();
         this.#grid = undefined;
         this.#element.removeEventListener('keydown', this.#onSheetKey, { capture: true });
@@ -1599,8 +1641,59 @@ class SheetView {
     #open(options: SheetOptions): Workbook {
         const workbook = options.document === undefined ? new Workbook(Culture.of(options.locale ?? navigator.language)) : Workbook.open(options.document);
         workbook.setSeed(options.seed ?? this.#chosenSeed, 0);
+        // The day and the clock, before any row is read: every Sheet reads them, one added later too. NOW reads the zone
+        // the options name when the engine asks, once per recalculation.
+        workbook.nowSource = () => momentIn(this.#zoneOf(this.#options), new Date());
+        workbook.setToday(this.#resolveDay(options));
+        // The document's NOW was computed before the clock was given, and waits until it is read again.
+        workbook.recalculateVolatile();
         this.#sheetNames = workbook.sheets.map(sheet => sheet.name);
         return workbook;
+    }
+
+    // ---- The Sheet Day and NOW (ADR-0121, ADR-0124) ---------------------------------------------------------
+
+    #zoneOf(options: SheetOptions): string {
+        return options.timeZone ?? this.#browserZone;
+    }
+
+    // The fixed day, else the day in the zone now.
+    #resolveDay(options: SheetOptions): SheetDay {
+        return options.today ?? dayOf(momentIn(this.#zoneOf(options), new Date()));
+    }
+
+    // Reads the day again when it can have changed: at the next midnight in the zone, and at most an hour after this
+    // reading. With a fixed day, nothing is armed.
+    #armTheDay(): void {
+        clearTimeout(this.#dayTimer);
+        this.#dayTimer = undefined;
+        if (this.#options.today !== undefined) return;
+        const due = untilTheDayIsReadAgainMs(momentIn(this.#zoneOf(this.#options), new Date()));
+        this.#dayTimer = setTimeout(() => {
+            this.#dayTimer = undefined;
+            if (this.#destroyed) return;
+            const change = this.#workbook.setToday(this.#resolveDay(this.#options));
+            this.#armTheDay();
+            this.#changedByTheClock(change);
+        }, due);
+    }
+
+    // Moves NOW on as the minute turns: the volatile Formulas are recalculated, and nothing at all where there are none.
+    #armTheMinute(): void {
+        clearTimeout(this.#minuteTimer);
+        this.#minuteTimer = setTimeout(() => {
+            this.#minuteTimer = undefined;
+            if (this.#destroyed) return;
+            this.#armTheMinute();
+            if (this.#workbook.hasVolatileFormulas) this.#changedByTheClock(this.#workbook.recalculateVolatile());
+        }, untilTheMinuteTurnsMs(Date.now()));
+    }
+
+    // What the clock moved, painted only where it reached a row of the Sheet shown: a RAND or an OFFSET recalculated by
+    // the minute changes nothing there, and the Sheet is left as it stands.
+    #changedByTheClock(change: WorkbookChange): void {
+        const shown = change.for(this.#source.sheet);
+        if (shown.rows.length > 0 || shown.recalculated.length > 0) this.#changed([change], false, false);
     }
 
     // ---- The notice ------------------------------------------------------------------------------------------
@@ -1638,6 +1731,14 @@ class SheetView {
         if (seed !== undefined && (typeof seed !== 'bigint' || seed < 0n || seed > maxSeed)) {
             throw new RangeError(`${typeof seed === 'bigint' ? seed.toString() : typeof seed} is not a seed: a seed is a bigint from 0 to 2^64 - 1.`);
         }
+        const { timeZone, today }: { readonly timeZone?: unknown; readonly today?: unknown } = options;
+        if (timeZone !== undefined) {
+            if (typeof timeZone !== 'string') throw new TypeError("A Sheet's time zone is an IANA name, such as 'Asia/Tokyo'.");
+            checkTimeZone(timeZone);
+        }
+        if (today !== undefined && !isSheetDay(today)) throw new RangeError("A Sheet Day is a calendar day from 1900 to 9999: { year, month, day }.");
+        // The day is taken as it is now: one the Consumer changes in place afterwards is a new day only when handed over again.
+        const taken = today === undefined ? options : { ...options, today: { year: today.year, month: today.month, day: today.day } };
         const handlers: readonly (readonly [string, unknown])[] = [
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
@@ -1645,7 +1746,7 @@ class SheetView {
         for (const [name, handler] of handlers) {
             if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
         }
-        return options;
+        return taken;
     }
 }
 

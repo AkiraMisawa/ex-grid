@@ -1122,3 +1122,45 @@ describe('the Sheet Seed (ADR-0180)', () => {
         expect(textAt(element, 0, 0)).not.toBe('#GETTING_DATA');
     });
 });
+
+describe('the Sheet Day and NOW (ADR-0121, ADR-0124)', () => {
+    afterEach(() => { vi.useRealTimers(); });
+
+    it('ADR-0121: TODAY is the day in the browser\'s zone at once, and a fixed day goes before the clock', async () => {
+        vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'], now: new Date('2026-10-27T12:00:00Z') });
+        const document = documentOf({ A1: '=DAY(TODAY())', B1: '=MONTH(TODAY())' });
+        const clock = sheetOf({ document, timeZone: 'UTC' });
+        const fixed = sheetOf({ document, timeZone: 'UTC', today: { year: 2024, month: 2, day: 29 } });
+        const browser = sheetOf({ document });
+        await vi.waitFor(() => { expect([textAt(clock.element, 0, 0), textAt(clock.element, 0, 1)]).toEqual(['27', '10']); });
+        await vi.waitFor(() => { expect([textAt(fixed.element, 0, 0), textAt(fixed.element, 0, 1)]).toEqual(['29', '2']); });
+        await vi.waitFor(() => { expect(Number(textAt(browser.element, 0, 0))).toBeGreaterThan(0); });
+    });
+
+    it('ADR-0121: the day is the zone\'s, read again as midnight passes there, and a new zone reads at once', async () => {
+        vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'], now: new Date('2026-10-27T14:59:30Z') });
+        const document = documentOf({ A1: '=DAY(TODAY())' });
+        const options = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300, document } as const;
+        const { element, sheet } = sheetOf({ ...options, timeZone: 'Asia/Tokyo' });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('27'); });
+        vi.advanceTimersByTime(31_000);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('28'); });
+        sheet.update({ ...options, timeZone: 'UTC' });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('27'); });
+        expect(sheet.canUndo).toBe(false);
+    });
+
+    it('ADR-0124: NOW moves on as the minute turns, with no step to undo', async () => {
+        vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'], now: new Date('2026-10-27T10:15:30Z') });
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '=MINUTE(NOW())' }), timeZone: 'UTC' });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('15'); });
+        vi.advanceTimersByTime(30_000);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('16'); });
+        expect(sheet.canUndo).toBe(false);
+    });
+
+    it('ADR-0121: a zone the browser does not know, and a day that is not one, are refused by name', () => {
+        expect(() => sheetOf({ timeZone: 'Mars/Olympus_Mons' })).toThrow(RangeError);
+        expect(() => sheetOf({ today: { year: 2026, month: 2, day: 30 } })).toThrow(RangeError);
+    });
+});
