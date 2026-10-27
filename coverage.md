@@ -14,7 +14,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 23:56:53 |
+| Generated on: | 10/27/2026 - 00:10:32 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1221 |
@@ -24,8 +24,8 @@
 | Uncovered lines: | 5088 |
 | Coverable lines: | 89505 |
 | Total lines: | 142954 |
-| **Branch coverage:** | 87.5% (51015 of 58296) |
-| Covered branches: | 51015 |
+| **Branch coverage:** | 87.5% (51016 of 58296) |
+| Covered branches: | 51016 |
 | Total branches: | 58296 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -395,7 +395,7 @@
 |ExGrid.Components.RowClasses|96.5%|92.8%|
 |ExGrid.Components.RowSetStamp|100%||
 |ExGrid.Components.ScrollOffset|100%||
-|ExGrid.Components.SelectionStyles|100%|96.6%|
+|ExGrid.Components.SelectionStyles|100%|97.5%|
 |ExGrid.Components.SelectionStyles.OutlineCover|100%||
 |ExGrid.Components.SelectionStyles.ReadableEdge|100%||
 |ExGrid.Components.SettledStamp|100%|100%|
