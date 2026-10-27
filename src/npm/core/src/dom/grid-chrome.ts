@@ -121,6 +121,9 @@ export interface GridFilterPanelSlotContext {
     readonly mode: FilterUi;
     /** The column's spec in force when the panel opened. */
     readonly current: FilterSpec | undefined;
+    /** The panel's words, by the ids `filterPanelLabelIds` names and an operator's by `operatorLabelId`: the Consumer's
+     * `commandLabel`, else the built-in English. The view's texts, the Blank's and a refusal, are worded already. */
+    readonly label: (id: string) => string;
     /** What the panel shows now: a new object at each change, and the same one otherwise, so a framework may
      * compare it by reference. */
     readonly view: () => FilterPanelView;
@@ -746,7 +749,7 @@ export class SlottedFilterPanel implements FilterPlace {
         });
         const column = model.column;
         this.#context = {
-            column: column.name, columnType: column.type, dateType: column.dateType, mode: column.filterUi, current: model.current,
+            column: column.name, columnType: column.type, dateType: column.dateType, mode: column.filterUi, current: model.current, label: model.label,
             view: () => model.view,
             subscribe: listener => {
                 if (typeof listener !== 'function') throw new TypeError('subscribe is handed the function that hears each change to the view.');

@@ -6,9 +6,9 @@ import { createElement, StrictMode, useState, type ReactElement } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
-import type {
-    GridCellEditorSlotContext, GridColumn, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridFormulaBarTextSlotContext, GridMenuSlotContext,
-    GridNameBoxSlotContext,
+import {
+    filterPanelLabelIds, type GridCellEditorSlotContext, type GridColumn, type GridFilterPanelSlotContext, type GridFindPanelSlotContext,
+    type GridFormulaBarTextSlotContext, type GridMenuSlotContext, type GridNameBoxSlotContext,
 } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
 import { useCellEditor, useFilterPanel, useFindPanel, useFormulaBarText, useMenuItems, useNameBox, type ExGridChrome } from '../src/chrome';
@@ -38,7 +38,7 @@ function PlainFilterPanel({ context }: { readonly context: GridFilterPanelSlotCo
             createElement('input', { key: 'search', type: 'search', ref: (control: HTMLInputElement | null) => { first(control); search(control); },
                 value: view.search, onChange: event => { context.setSearch(event.target.value); } }),
             createElement('div', { key: 'list', onKeyDown: onValueListKeyDown },
-                createElement('button', { type: 'button', onClick: () => { context.toggleAll(); } }, 'Select all'),
+                createElement('button', { type: 'button', onClick: () => { context.toggleAll(); } }, context.label(filterPanelLabelIds.selectAll)),
                 ...view.entries.map(each => createElement('label', { key: each.text },
                     createElement('input', { type: 'checkbox', checked: each.checked, onChange: event => { context.setChecked(each.value, event.target.checked); } }),
                     each.text))),
@@ -49,8 +49,8 @@ function PlainFilterPanel({ context }: { readonly context: GridFilterPanelSlotCo
             view.first.refusal === undefined ? null : createElement('p', { key: 'refusal', role: 'alert' }, view.first.refusal),
         ];
     return createElement('div', null, ...body,
-        createElement('button', { type: 'button', disabled: !view.canApply, onClick: () => { context.apply(); } }, 'OK'),
-        createElement('button', { type: 'button', ref: last, onClick: () => { context.cancel(); } }, 'Cancel'));
+        createElement('button', { type: 'button', disabled: !view.canApply, onClick: () => { context.apply(); } }, context.label(filterPanelLabelIds.ok)),
+        createElement('button', { type: 'button', ref: last, onClick: () => { context.cancel(); } }, context.label(filterPanelLabelIds.cancel)));
 }
 
 const plainButton = (words: string, press: () => void, disabled = false): ReactElement =>

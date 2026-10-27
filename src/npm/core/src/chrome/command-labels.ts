@@ -1,4 +1,5 @@
 import { gridCommandIds, gridLabelIds } from './command-ids';
+import { filterPanelWords } from './filter-panel-words';
 import { findPanelWords } from './find-panel-labels';
 import { markWords } from './mark-words';
 import { errorStepWords, pendingCommitWords, rowCommandRefusalWords } from './refusal-words';
@@ -8,8 +9,8 @@ import { summaryWords } from './summary-words';
 // The built-in Chrome's English for the core's commands, as the C# core's BuiltInCommandLabels says them
 // (ADR-0036). A command is an id, whether it may run, and what running it does: what it is called is
 // rendering, so it belongs to the Chrome and is resolved from the id. A Consumer who keeps the built-in menu
-// and wants it in another language answers `commandLabel` first. The find panel's words are resolved the same
-// way, by their ids (ADR-0055).
+// and wants it in another language answers `commandLabel` first. The find panel's and the filter panel's words are
+// resolved the same way, by their ids (ADR-0055, ADR-0009).
 const words: ReadonlyMap<string, string> = new Map([
     [gridCommandIds.sortAscending, 'Sort ascending'],
     [gridCommandIds.sortDescending, 'Sort descending'],
@@ -22,7 +23,9 @@ const words: ReadonlyMap<string, string> = new Map([
     [gridCommandIds.copyWithHeaders, 'Copy with headers'],
     [gridLabelIds.nameBox, 'Name Box'],
     [gridLabelIds.formulaBar, 'Formula Bar'],
+    [gridLabelIds.columnMenu, 'Column menu'],
     ...findPanelWords,
+    ...filterPanelWords,
     ...rowCommandRefusalWords,
     ...pendingCommitWords,
     ...errorStepWords,

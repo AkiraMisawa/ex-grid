@@ -166,6 +166,16 @@ describe('the filter panel\'s slot', () => {
         expect(active().getAttribute('role')).toBe('menuitem');
     });
 
+    it('ADR-0390 section 6: the contents are handed the grid\'s words, the Consumer\'s where commandLabel gives one and the English where it does not', async () => {
+        const { root, drawn } = setUp({ commandLabel: id => (id === 'filter-blanks' ? '(空白セル)' : undefined) });
+        await settle();
+        await open(root, 0);
+        const context = last(drawn);
+        const view = context.view();
+        expect([context.label('filter-blanks'), context.label('filter-ok'), view.kind === 'valueList' && view.entries[2]?.text])
+            .toEqual(['(空白セル)', 'OK', '(空白セル)']);
+    });
+
     it('ADR-0009 / ADR-0220: each choice is one input answered and a new view; OK applies the core\'s answer, closes and gives the keyboard back', async () => {
         const { root, source, drawn } = setUp();
         await settle();

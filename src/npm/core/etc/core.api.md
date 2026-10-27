@@ -390,6 +390,27 @@ export interface FilterPanelEntry {
 }
 
 // @public
+export const filterPanelLabelIds: Readonly<{
+    readonly ok: 'filter-ok';
+    readonly cancel: 'filter-cancel';
+    readonly search: 'filter-search';
+    readonly addToCurrent: 'filter-add-to-current';
+    readonly selectAll: 'filter-select-all';
+    readonly selectAllSearchResults: 'filter-select-all-search-results';
+    readonly blanks: 'filter-blanks';
+    readonly and: 'filter-and';
+    readonly or: 'filter-or';
+    readonly none: 'filter-none';
+    readonly readsTwoDates: 'filter-reads-two-dates';
+    readonly readsTwoNumbers: 'filter-reads-two-numbers';
+    readonly notReadable: 'filter-not-readable';
+    readonly dayHasTime: 'filter-day-has-time';
+    readonly dayHasOffset: 'filter-day-has-offset';
+    readonly dateTimeHasOffset: 'filter-date-time-has-offset';
+    readonly instantHasNoOffset: 'filter-instant-has-no-offset';
+}>;
+
+// @public
 export interface FilterPanelValueList {
     readonly addOffered: boolean;
     readonly addToCurrent: boolean;
@@ -738,6 +759,7 @@ export interface GridFilterPanelSlotContext {
     readonly focusRequest: number;
     readonly focusTarget: 'first' | 'last' | 'search' | undefined;
     readonly innerPopupChanged: (open: boolean) => void;
+    readonly label: (id: string) => string;
     readonly mode: FilterUi;
     readonly setAddToCurrent: (on: boolean) => void;
     readonly setChecked: (value: unknown, checked: boolean) => void;
@@ -847,6 +869,7 @@ export function gridHeaderRequiredPx(label: string, options: {
 export const gridLabelIds: Readonly<{
     readonly nameBox: 'name-box';
     readonly formulaBar: 'formula-bar';
+    readonly columnMenu: 'column-menu';
 }>;
 
 // @public
@@ -1309,6 +1332,9 @@ export function instantOf(ticks: bigint, offsetMinutes: number): object;
 export const invariantMarker = "data-ex-grid=\"invariant\"";
 
 // @public
+export const japaneseGridWords: (id: string) => string | undefined;
+
+// @public
 export const markAttribute = "data-ex-mark";
 
 // @public
@@ -1348,6 +1374,9 @@ export interface MenuKey {
 
 // @public
 export type MenuKeyKind = 'none' | 'move' | 'run' | 'close' | 'filterFirst' | 'filterLast' | 'filterSearch';
+
+// @public
+export function operatorLabelId(operator: FilterOperator): string;
 
 // @public
 export function parseClipboard(html: string | undefined, text: string | undefined): readonly (readonly string[])[] | undefined;

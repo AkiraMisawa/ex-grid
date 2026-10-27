@@ -12,6 +12,7 @@ import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
 import type { FilterSpec, GridFilter } from '../src/query/filter';
 import { GridSource } from '../src/source/grid-source';
+import { japaneseGridWords } from '../src/chrome/japanese-grid-words';
 import { mount, painted } from './grid-harness';
 
 interface Trade {
@@ -347,6 +348,26 @@ describe('the keys', () => {
         expect([root.querySelector('.ex-popover')?.getAttribute('role'), root.querySelector('.ex-popover-filter')]).toEqual(['none', null]);
         key(active(), 'Tab');
         expect([root.querySelector('.ex-popover'), active()]).toEqual([null, root]);
+    });
+});
+
+describe('the words', () => {
+    it('ADR-0390 section 6: the panel says what commandLabel answers, the Blank is searched by those words, and an id it leaves keeps the English', async () => {
+        const { root } = setUp({ commandLabel: id => (id === 'filter-cancel' ? 'Close' : japaneseGridWords(id)) });
+        await painted();
+        await open(root, 0);
+        expect(entries(root)).toEqual(['Novak', 'Osei', '(空白セル)', 'Ishikawa']);
+        expect([field(root, '.ex-select-all').textContent, field(root, 'input[type=search]').placeholder]).toEqual(['(すべて選択)', '検索']);
+        expect([button(root, 'OK').disabled, button(root, 'Close').disabled]).toEqual([false, false]);
+        typeInto(field(root, 'input[type=search]'), '空白');
+        expect(entries(root)).toEqual(['(空白セル)']);
+        click(button(root, 'Close'));
+        await settle();
+        await open(root, 2);
+        expect([...operators(root).options].map(option => option.textContent).slice(0, 2)).toEqual(['と等しい', 'と等しくない']);
+        typeInto(field(root, 'input:not([type])'), '12x');
+        expect(panel(root).querySelector('.ex-popover-refusal')?.textContent)
+            .toBe('「12x」は、Invariant Language (Invariant Country) の書き方ではこの列の値として読めません。');
     });
 });
 
