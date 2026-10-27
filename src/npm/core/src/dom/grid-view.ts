@@ -1770,7 +1770,9 @@ export class GridView<Row> {
 
     constructor(root: HTMLElement, options: GridOptions<Row>, reports: BrowserReports) {
         this.#root = root;
-        this.#inputRoot = root.closest<HTMLElement>('[data-ex-input-root]') ?? root;
+        // Never one beyond a grid this root is nested in, as the C# script finds it.
+        const around = root.parentElement?.closest<HTMLElement>('[data-ex-input-root], .ex-grid');
+        this.#inputRoot = around?.hasAttribute('data-ex-input-root') === true ? around : root;
         this.#reports = reports;
         instances += 1;
         this.#ids = `ex${instances}-`;
@@ -4643,7 +4645,7 @@ export class GridView<Row> {
     // product's around it, or, where the keyboard has left it, what the grid would hand it to (ADR-0080).
     #keyboardHolder(): HTMLElement {
         const active = this.#root.ownerDocument.activeElement;
-        if (active instanceof HTMLElement && this.#inputRoot.contains(active)) return active;
+        if (active instanceof HTMLElement && (this.#root.contains(active) || this.#inProductSurface(active))) return active;
         const edit = this.#edit;
         if (edit !== undefined && edit.element.isConnected) return this.#editorField(edit) ?? edit.element;
         return this.#keyField.isConnected ? this.#keyField : this.#root;
@@ -4668,16 +4670,16 @@ export class GridView<Row> {
         if (cut) typeText(field, '', 'deleteByCut');
     }
 
-    // Every input on the Input Root, heard ahead of everything in it. With no commit pending an input in the grid is
-    // noted as the input under way, and one on a surface around it is that surface's; while one is, it is held in its
-    // turn wherever in the Input Root it was made, nothing inside hearing it and the browser's own meaning prevented,
-    // and an Escape cancels the commit instead. A move with no button down is the hover's, and passes. A clipboard
+    // Every input on the Input Root, heard ahead of everything in it; one not in this grid's order passes. With no
+    // commit pending an input in the grid is noted as the input under way, and one on a surface around it is that
+    // surface's; while one is, it is held in its turn, nothing inside hearing it and the browser's own meaning
+    // prevented, and an Escape cancels the commit instead. A move with no button down is the hover's, and passes. A clipboard
     // key keeps its default, which is the copy, cut or paste event held in its turn after it.
     readonly #onInput = (event: Event): void => {
         const pending = this.#pending;
+        if (!this.#holds(event)) return;
         if (pending === undefined) {
-            if (!(event.target instanceof Node) || !this.#root.contains(event.target)) return;
-            this.#input = event;
+            if (event.target instanceof Node && this.#root.contains(event.target)) this.#input = event;
             // The repeats of an Escape that cancelled are that Escape's, and close nothing (ADR-0012).
             if (event instanceof KeyboardEvent && event.type === 'keydown') {
                 if (event.repeat && event.key === 'Escape' && this.#escapeCancelled) {
@@ -4703,6 +4705,29 @@ export class GridView<Row> {
         if (event.cancelable && !isClipboardKey(event)) event.preventDefault();
         pending.held.push(heldInputOf(event));
     };
+
+    // Whether an input is in this grid's order (ADR-0240 ticket 04): any made in the grid; on the product's surfaces
+    // around it, in its Input Root and not inside another grid's or another Input Root, a key, typed text or a
+    // clipboard command, and a press only on a control that claims it (`data-ex-claims`), as the C# script holds
+    // them. A press on any other control there keeps its own default, which a press taken again could not bring about.
+    #holds(event: Event): boolean {
+        const { target } = event;
+        if (!(target instanceof Node)) return false;
+        if (this.#root.contains(target)) return true;
+        if (!this.#inProductSurface(target)) return false;
+        if (!(event instanceof MouseEvent)) return true;
+        const element = target instanceof Element ? target : target.parentElement;
+        const claimant = element?.closest('[data-ex-claims]');
+        return claimant !== null && claimant !== undefined && this.#inputRoot.contains(claimant);
+    }
+
+    // Whether a node stands on a surface of the product's own around the grid: in its Input Root, and in no other
+    // grid or Input Root inside it.
+    #inProductSurface(node: Node): boolean {
+        if (this.#inputRoot === this.#root || !this.#inputRoot.contains(node)) return false;
+        const element = node instanceof Element ? node : node.parentElement;
+        return element?.closest('[data-ex-input-root], .ex-grid') === this.#inputRoot;
+    }
 
     // Escape on a Pending Commit (ADR-0380 section 3). Its keydown saw the stamp, so the answer has not been taken:
     // the signal is aborted, nothing is written, and the cancel is said. The editor stays with the text, the inputs

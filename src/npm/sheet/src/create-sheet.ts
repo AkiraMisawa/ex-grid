@@ -548,10 +548,6 @@ class SheetView {
             opening: () => { this.#chromeListsOver = this.#grid?.readView().selection; },
         });
         element.replaceChildren(this.#gridElement, this.#notice);
-        // Excel's keys for the Sheet Tabs, heard on the Sheet before its grid hears them, wherever in it the keyboard
-        // is, so the browser does not move among its own tabs (ADR-0331 §4).
-        element.addEventListener('keydown', this.#onSheetKey, { capture: true });
-        element.addEventListener('keyup', this.#onSheetKeyUp, { capture: true });
         element.addEventListener('focusout', this.#onSheetFocusOut);
         element.addEventListener('pointerdown', this.#forgetAlt, { capture: true });
         element.addEventListener('wheel', this.#forgetAlt, { capture: true, passive: true });
@@ -559,6 +555,11 @@ class SheetView {
         element.addEventListener('focusout', this.#onKeyboardOut);
         this.#holdsKeyboard = element.contains(element.ownerDocument.activeElement);
         this.#grid = createGrid(this.#gridElement, gridOptions);
+        // Excel's keys for the Sheet Tabs, heard on the Sheet before its grid hears them, wherever in it the keyboard
+        // is, so the browser does not move among its own tabs (ADR-0331 §4). Listened to once the grid is, so a key the
+        // grid holds behind a commit or an opening is heard here in its turn, not before it (ADR-0240).
+        element.addEventListener('keydown', this.#onSheetKey, { capture: true });
+        element.addEventListener('keyup', this.#onSheetKeyUp, { capture: true });
         this.#bindPointingScope();
         this.#paintFrame();
         this.#armTheDay();

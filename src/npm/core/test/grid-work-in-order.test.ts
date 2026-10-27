@@ -299,11 +299,12 @@ describe('work of the Consumer\'s in the Input Order', () => {
         expect(asked).toBe(true);
     });
 
-    it('ADR-0240 ticket 04: inside an Input Root, input on a surface around the grid waits behind the work and is taken there after it, and an Escape there cancels the work', async () => {
+    it('ADR-0240 ticket 04: inside an Input Root, a key or a claimed press on a surface around the grid waits behind the work and is taken there after it, an Escape there cancels the work, and an unclaimed press is the surface\'s', async () => {
         const box = document.createElement('div');
         box.setAttribute('data-ex-input-root', '');
         document.body.append(box);
         const button = document.createElement('button');
+        button.setAttribute('data-ex-claims', 'click');
         box.append(button);
         let presses = 0;
         button.addEventListener('click', () => { presses += 1; });
@@ -331,6 +332,24 @@ describe('work of the Consumer\'s in the Input Order', () => {
             expect([second.signal.aborted, escape.defaultPrevented]).toEqual([true, true]);
             second.fail(second.signal.reason);
             expect(await cancelled).toBe(false);
+            // Its repeats are that Escape's, and reach nothing on the surface (ADR-0012).
+            let escapes = 0;
+            button.addEventListener('keydown', () => { escapes += 1; });
+            const repeat = new KeyboardEvent('keydown', { key: 'Escape', repeat: true, bubbles: true, cancelable: true });
+            button.dispatchEvent(repeat);
+            expect([escapes, repeat.defaultPrevented]).toEqual([0, true]);
+            // A press on a control of the surface that claims nothing is its own, behind the work too.
+            const plain = document.createElement('span');
+            box.append(plain);
+            let plainPresses = 0;
+            plain.addEventListener('click', () => { plainPresses += 1; });
+            const third = view.cancellableInOrder(heldWork(works), () => undefined);
+            button.click();
+            plain.click();
+            expect([presses, plainPresses]).toEqual([2, 1]);
+            defined(works[2], 'the third work').land();
+            expect(await third).toBe(true);
+            expect(presses).toBe(3);
         } finally {
             box.remove();
         }

@@ -75,7 +75,9 @@ export interface SheetToolbarItemView {
 /**
  * What a Toolbar Item's contents are handed (ADR-0100, ADR-0390), once per mount: what the item is, and how it shows
  * now through `view` and `subscribe`, as the Cell Editor's slot is. The contents draw a control in the slot that keeps
- * the keyboard where it is on a pointer press (its `mousedown` default prevented), as the built-in items do.
+ * the keyboard where it is on a pointer press (its `mousedown` default prevented), as the built-in items do. A control
+ * marked `data-ex-claims="click"`, as the built-in items are, has its press wait behind a commit or an opening and taken
+ * in its turn (ADR-0240); the keys typed on the toolbar wait whatever the contents are.
  */
 export interface SheetToolbarItemSlotContext {
     /** Stable for the item's place in the toolbar. */
