@@ -358,6 +358,47 @@ export type FilteredColumn = Pick<QueryColumn<never>, 'type' | 'dateType'>;
 export type FilterOperator = 'equals' | 'notEquals' | 'greaterThan' | 'greaterThanOrEqual' | 'lessThan' | 'lessThanOrEqual' | 'contains' | 'doesNotContain' | 'startsWith' | 'endsWith' | 'in' | 'isBlank' | 'isNotBlank';
 
 // @public
+export interface FilterPanelCondition {
+    readonly operand: string;
+    readonly operator: FilterOperator;
+    readonly refusal: string | undefined;
+    readonly takesOperand: boolean;
+}
+
+// @public
+export interface FilterPanelConditions {
+    readonly allowed: readonly FilterOperator[];
+    readonly combinator: FilterCombinator;
+    readonly first: FilterPanelCondition;
+    readonly kind: 'conditions';
+    readonly second: FilterPanelCondition | undefined;
+}
+
+// @public
+export interface FilterPanelEntry {
+    readonly blank: boolean;
+    readonly checked: boolean;
+    readonly text: string;
+    readonly value: unknown;
+}
+
+// @public
+export interface FilterPanelValueList {
+    readonly addOffered: boolean;
+    readonly addToCurrent: boolean;
+    readonly entries: readonly FilterPanelEntry[];
+    readonly kind: 'valueList';
+    readonly search: string;
+    readonly selectAll: SelectAllState;
+}
+
+// @public
+export type FilterPanelView = (FilterPanelValueList | FilterPanelConditions) & {
+    readonly canApply: boolean;
+    readonly fetching: boolean;
+};
+
+// @public
 export interface FilterSpec {
     readonly clauses: readonly FilterClause[];
     readonly combinator?: FilterCombinator;
@@ -436,6 +477,7 @@ export interface GridChangeBatch<Row> {
 export interface GridChrome<Row> {
     readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
+    readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
 }
 
 // @public
@@ -607,6 +649,35 @@ export class GridFillIntent {
 export interface GridFilter {
     readonly columns: Readonly<Record<string, FilterSpec>>;
     readonly opaque?: unknown;
+}
+
+// @public
+export interface GridFilterPanelSlotContext {
+    readonly apply: () => void;
+    readonly cancel: () => void;
+    readonly column: string;
+    readonly columnType: ColumnType;
+    readonly current: FilterSpec | undefined;
+    readonly dateType: DateType;
+    readonly focusRequest: number;
+    readonly focusTarget: 'first' | 'last' | 'search' | undefined;
+    readonly innerPopupChanged: (open: boolean) => void;
+    readonly mode: FilterUi;
+    readonly setAddToCurrent: (on: boolean) => void;
+    readonly setChecked: (value: unknown, checked: boolean) => void;
+    readonly setCombinator: (combinator: FilterCombinator) => void;
+    readonly setOperand: (text: string) => void;
+    readonly setOperator: (operator: FilterOperator) => void;
+    readonly setSearch: (text: string) => void;
+    readonly setSecond: (operator: FilterOperator | undefined) => void;
+    readonly setSecondOperand: (text: string) => void;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly takeFocus: (control: HTMLElement, options?: {
+        readonly preventScroll?: boolean;
+    }) => void;
+    readonly toggleAll: () => void;
+    readonly valueListKey: (key: string, controlAltOrMeta: boolean) => boolean;
+    readonly view: () => FilterPanelView;
 }
 
 // @public
@@ -1317,6 +1388,9 @@ export function sameGridFilter(a: GridFilter | undefined, b: GridFilter | undefi
 
 // @public
 export function sameGridQuery(a: GridQuery, b: GridQuery): boolean;
+
+// @public
+export type SelectAllState = 'checked' | 'unchecked' | 'mixed';
 
 // @public
 export const selectionLabelIds: Readonly<{
