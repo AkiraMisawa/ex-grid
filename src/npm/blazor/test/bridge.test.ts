@@ -405,38 +405,6 @@ describe('the grid', () => {
     });
 });
 
-// A press on the viewport where the grid reads it: offsets in the viewport's own pixels.
-function pointer(root: HTMLElement, type: string, x: number, y: number): void {
-    const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, buttons: type === 'mouseup' ? 0 : 1 });
-    Object.defineProperty(event, 'offsetX', { value: x });
-    Object.defineProperty(event, 'offsetY', { value: y });
-    const viewport = root.querySelector('.ex-viewport');
-    if (viewport === null) throw new Error('The grid drew no viewport.');
-    viewport.dispatchEvent(event);
-}
-
-describe('intents', () => {
-    it('ADR-0050 item 5: a fill dragged from the handle reaches .NET as its source, target, direction and order', async () => {
-        const dotnet = new FakeDotNet();
-        const { root } = mount({
-            options: options({ rowHeight: 24, showFillHandle: true, hears: ['fill'] }), state: state(1, [rates, credit], { rowSequenceVersion: 4 }),
-        }, dotnet);
-        await Promise.resolve();
-        // Book's first cell, then its handle (7 px at its bottom-right, Book being 120 px wide) dragged one row down.
-        pointer(root, 'mousedown', 10, 5);
-        pointer(root, 'mouseup', 10, 5);
-        await Promise.resolve();
-        pointer(root, 'mousedown', 120, 24);
-        pointer(root, 'mousemove', 10, 29);
-        pointer(root, 'mouseup', 10, 29);
-        await Promise.resolve();
-        expect(dotnet.heard('fill')).toEqual([{
-            source: { topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }, target: { topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 1 },
-            direction: 'down', rowSequenceVersion: 4,
-        }]);
-    });
-});
-
 describe('keyboard', () => {
     it('DC-61 / ADR-0070: a control the grid holds the keyboard for is handed it, and the keyboard comes back from it', () => {
         const { root, grid } = mount();
@@ -458,5 +426,217 @@ describe('keyboard', () => {
         grid.handKeyboardTo(null, false);
         expect(document.activeElement).toBe(holder);
         expect(root.contains(holder)).toBe(true);
+    });
+});
+
+// A press on the rows and a key where the keyboard is, as the browser lands them (the core's harness does the same).
+function press(root: HTMLElement, x: number, y: number): void {
+    const viewport = root.querySelector('.ex-viewport');
+    if (viewport === null) throw new Error('The grid draws no viewport.');
+    for (const name of ['mousedown', 'mouseup']) {
+        const event = new MouseEvent(name, { bubbles: true, cancelable: true, button: 0, buttons: name === 'mouseup' ? 0 : 1 });
+        Object.defineProperty(event, 'offsetX', { value: x });
+        Object.defineProperty(event, 'offsetY', { value: y });
+        viewport.dispatchEvent(event);
+        if (name === 'mousedown' && !event.defaultPrevented) root.querySelector<HTMLElement>('.ex-scroller')?.focus();
+    }
+}
+
+function type(text: string): void {
+    for (const character of text) {
+        const target = document.activeElement;
+        if (target === null) throw new Error('Nothing holds the keyboard.');
+        const event = new KeyboardEvent('keydown', { key: character, bubbles: true, cancelable: true });
+        target.dispatchEvent(event);
+        if (!event.defaultPrevented && target instanceof HTMLInputElement && !target.readOnly) {
+            target.setRangeText(character, target.selectionStart ?? 0, target.selectionEnd ?? 0, 'end'); // oxlint-disable-line ex-grid/no-stand-in-default -- a text input that takes text has a selection
+            target.dispatchEvent(new InputEvent('input', { bubbles: true, data: character, inputType: 'insertText' }));
+        }
+    }
+}
+
+function key(name: string): void {
+    const target = document.activeElement;
+    if (target === null) throw new Error('Nothing holds the keyboard.');
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+}
+
+const turns = async (): Promise<void> => {
+    for (let i = 0; i < 6; i++) await new Promise(resolve => { setTimeout(resolve, 0); });
+};
+
+const editorOf = (root: HTMLElement): HTMLInputElement | null => root.querySelector<HTMLInputElement>('input.ex-editor');
+
+// A pointer event on the viewport where the grid reads it: offsets in the viewport's own pixels.
+function pointer(root: HTMLElement, name: string, x: number, y: number): void {
+    const event = new MouseEvent(name, { bubbles: true, cancelable: true, button: 0, buttons: name === 'mouseup' ? 0 : 1 });
+    Object.defineProperty(event, 'offsetX', { value: x });
+    Object.defineProperty(event, 'offsetY', { value: y });
+    const viewport = root.querySelector('.ex-viewport');
+    if (viewport === null) throw new Error('The grid drew no viewport.');
+    viewport.dispatchEvent(event);
+}
+
+// Book's first cell, then its handle (7 px at its bottom-right, Book being 120 px wide) dragged one row down.
+async function fillDown(root: HTMLElement): Promise<void> {
+    pointer(root, 'mousedown', 10, 5);
+    pointer(root, 'mouseup', 10, 5);
+    await turns();
+    pointer(root, 'mousedown', 120, 24);
+    pointer(root, 'mousemove', 10, 29);
+    pointer(root, 'mouseup', 10, 29);
+    await turns();
+}
+
+const lastRanges = (dotnet: FakeDotNet): unknown => Reflect.get(dotnet.heard('selectionChanged').at(-1) as object, 'ranges');
+
+describe('fills (ADR-0050 item 5)', () => {
+    it('ADR-0050 item 5 / ADR-0380: a fill reaches .NET as its source, target, direction and order, and once taken the Selection holds both', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({
+            options: options({ rowHeight: 24, showFillHandle: true, hears: ['fill', 'selectionChanged'] }), state: state(1, [rates, credit], { rowSequenceVersion: 4 }),
+        }, dotnet);
+        await turns();
+        await fillDown(root);
+        expect(dotnet.heard('fill')).toEqual([{
+            answer: 1, source: { topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }, target: { topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 1 },
+            direction: 'down', rowSequenceVersion: 4,
+        }]);
+        expect(lastRanges(dotnet)).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 2, columnCount: 1 }]);
+    });
+
+    it('DC-27 / ADR-0380 section 5: a fill .NET refuses leaves the Selection on the source', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = (method, args) => (method === 'Heard' && args[0] === 'fill' ? '' : null);
+        const { root } = mount({ options: options({ rowHeight: 24, showFillHandle: true, hears: ['fill', 'selectionChanged'] }) }, dotnet);
+        await turns();
+        await fillDown(root);
+        expect(dotnet.heard('fill')).toHaveLength(1);
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(false);
+        expect(lastRanges(dotnet)).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }]);
+    });
+});
+
+describe('answers .NET gives later (ADR-0380 section 5)', () => {
+    const validated: WireColumn = { ...book, validates: true };
+
+    it('ED-35: a column .NET validates asks .NET by number, and its Reject holds the editor with the text', async () => {
+        const dotnet = new FakeDotNet();
+        const verdicts: ((json: string) => void)[] = [];
+        dotnet.answer = method => (method === 'Validate' ? new Promise(resolve => { verdicts.push(resolve); }) : null);
+        const { root } = mount({ options: options({ columns: [validated, notional], rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('Delta');
+        key('Enter');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Validate').map(call => call.args)).toEqual([[1, 1, 1, 'Book', 'Delta']]);
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(true);
+
+        verdicts[0]?.('{"kind":"reject","message":"Not a book we trade."}');
+        await turns();
+        expect(dotnet.heard('edit')).toEqual([]);
+        expect([editorOf(root)?.value, editorOf(root)?.getAttribute('aria-invalid')]).toEqual(['Delta', 'true']);
+    });
+
+    it('ED-34: Escape while .NET judges calls that answer off there, and the editor stays with the text', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'Validate' ? new Promise(() => { /* .NET never answers: the user cancels */ }) : null);
+        const { root } = mount({ options: options({ columns: [validated, notional], rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('Delta');
+        key('Enter');
+        key('Escape');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'CancelAnswer').map(call => call.args)).toEqual([[1]]);
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(false);
+        expect(editorOf(root)?.value).toBe('Delta');
+    });
+
+    it('ED-35: an edit .NET refuses holds the editor with the Consumer\'s sentence, and one it takes ends the edit', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = (method, args) => (method === 'Heard' && args[0] === 'edit'
+            ? (Reflect.get(args[1] as object, 'value') === 'Delta' ? 'Trade is locked.' : null)
+            : null);
+        const { root } = mount({ options: options({ rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('Delta');
+        key('Enter');
+        await turns();
+        expect(dotnet.heard('edit')).toHaveLength(1);
+        expect(Reflect.get(dotnet.heard('edit')[0] as object, 'answer')).toBe(1);
+        expect([editorOf(root)?.value, root.querySelector('.ex-announce')?.textContent]).toEqual(['Delta', 'Trade is locked.']);
+
+        type('s');
+        key('Enter');
+        await turns();
+        expect(dotnet.heard('edit')).toHaveLength(2);
+        expect(editorOf(root)).toBeNull();
+    });
+
+    it('ED-35: a cell\'s Error comes with its row, and its message is asked of .NET as it opens', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = (method, args) => (method === 'Message' ? `${String(args[1])} is not a book we trade.` : null);
+        const { root } = mount({
+            options: options({ rowHeight: 24, cellStates: true, cellMessages: 1 }),
+            state: state(1, [rates, { ...credit, s: ['error', 'normal'] }]),
+        }, dotnet);
+        await turns();
+        const cells = root.querySelectorAll('.ex-row')[1]?.querySelectorAll('.ex-cell');
+        expect(cells?.[0]?.classList.contains('ex-state-error')).toBe(true);
+        expect(dotnet.calls.filter(call => call.method === 'Message')).toEqual([]);
+
+        press(root, 10, 29);
+        await new Promise(resolve => { setTimeout(resolve, 350); });
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Message').map(call => call.args)).toEqual([[2, 'Book']]);
+        expect(root.querySelector('.ex-message')?.textContent).toBe('Book is not a book we trade.');
+    });
+});
+
+const focusHeard = (dotnet: FakeDotNet): unknown => Reflect.get(dotnet.heard('selectionChanged').at(-1) as object, 'focus');
+
+describe('the error step .NET answers (ADR-0381 section 3)', () => {
+    it('ED-38: F8 asks .NET by number, of the source the grid holds, and its answer brings the Focus there', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'FindError' ? '{"found":true,"row":1,"column":"Notional"}' : null);
+        const { root } = mount({ options: options({ rowHeight: 24, findsErrors: true, hears: ['selectionChanged'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        key('F8');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'FindError').map(call => call.args)).toEqual([
+            [1, 1, { backward: false, from: { row: 0, column: 0 }, columns: ['Book', 'Notional'], rowSequenceVersion: 0 }],
+        ]);
+        expect(focusHeard(dotnet)).toEqual({ row: 1, column: 1 });
+    });
+
+    it('ADR-0142: a step .NET answers as moved waits for the state a write holds, and the grid says the rows moved', async () => {
+        const dotnet = new FakeDotNet();
+        let cleared: ((answer: null) => void) | undefined;
+        const { root, grid } = mount({ options: options({ rowHeight: 24, findsErrors: true, hears: ['clear', 'selectionChanged'] }) }, dotnet);
+        dotnet.answer = (method, args) => {
+            if (method === 'Heard' && args[0] === 'clear') return new Promise(resolve => { cleared = resolve; });
+            if (method !== 'FindError') return null;
+            // .NET's source moved before the step's turn: its state crosses first, and the clear in flight holds it.
+            grid.state(JSON.stringify(state(2, [credit, rates], { rowSequenceVersion: 1 })));
+            return '{"moved":true}';
+        };
+        await turns();
+        press(root, 10, 5);
+        key('Delete');
+        key('F8');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'FindError')).toHaveLength(1);
+        // Not "none found" in an order the grid no longer shows: nothing is said until the held state is in.
+        expect(root.querySelector('.ex-announce')?.textContent).toBe('');
+
+        if (cleared === undefined) throw new Error('The clear crossed to .NET.');
+        cleared(null);
+        await turns();
+        expect(root.querySelector('.ex-announce')?.textContent)
+            .toBe('The rows moved while the next error was looked for, so the step was set aside. Press F8 again.');
     });
 });

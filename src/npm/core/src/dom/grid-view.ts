@@ -245,9 +245,12 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * direction. The grid writes nothing; what a fill means is the Consumer's. A Consumer that does not fill the
      * pattern calls `intent.refuse()` before this returns, and the Selection stays on the source; otherwise it
      * becomes the source and the target together. A target over a column not declared `editable` is refused
-     * whole before anything is raised (`onRefused`, kind `paste`, reason `targetNotEditable`; ADR-0035).
+     * whole before anything is raised (`onRefused`, kind `paste`, reason `targetNotEditable`; ADR-0035). It may
+     * answer later with a promise, as `onPaste` may: until it settles the fill is pending, every input made
+     * meanwhile waits for it, `refuse` may still be called, and Escape cancels it, aborting `intent.signal`
+     * (ADR-0380).
      */
-    readonly onFill?: (intent: GridFillIntent) => void;
+    readonly onFill?: (intent: GridFillIntent) => void | PromiseLike<void>;
     /** The most a paste reads, in UTF-8 bytes across both flavours (ADR-0005): past it the paste is refused
      * whole, never pasted from the plain-text flavour alone, which is already rounded. 16 MB unless given. */
     readonly pasteByteCap?: number;
@@ -264,9 +267,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * stood on it for 300 ms, or the pointer has come to rest over it as long, never while painting. The answer
      * is shown below the cell until the Focus moves or the pointer leaves the grid; `undefined` or an empty
      * sentence shows nothing. While an edit is open its own message outranks it. While this is not given the
-     * grid does not hear the pointer move for it.
+     * grid does not hear the pointer move for it. It may answer later, as Blazor's ExGrid does across the circuit
+     * (ADR-0380 section 5): the message opens once answered, if its cell is still the one settled on, and the grid
+     * is not settled meanwhile.
      */
-    readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined;
+    readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>;
     /**
      * Keys the Consumer names, which the grid takes from the browser and raises through `onDeclaredKey`, whether or
      * not an edit is open (ADR-0050, item 14): ExSheet's formatting keys, or a key of the page's own. Each is in
@@ -714,10 +719,10 @@ interface Taken<Row> {
     readonly onPaste: ((intent: GridPasteIntent) => void | PromiseLike<void>) | undefined;
     readonly pasteMaySpill: boolean;
     readonly showFillHandle: boolean;
-    readonly onFill: ((intent: GridFillIntent) => void) | undefined;
+    readonly onFill: ((intent: GridFillIntent) => void | PromiseLike<void>) | undefined;
     readonly highlightFocusRow: boolean;
     readonly highlightHoverRow: boolean;
-    readonly cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined) | undefined;
+    readonly cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>) | undefined;
     readonly declaredKeys: ReadonlySet<string>;
     readonly onDeclaredKey: ((press: GridDeclaredKeyPress) => void) | undefined;
     readonly stripeRows: boolean;
@@ -1206,7 +1211,7 @@ export class GridView<Row> {
     #pasteHeard: ((intent: GridPasteIntent) => void | PromiseLike<void>) | undefined;
     #pasteMaySpill = false;
     #showFillHandle = false;
-    #fillHeard: ((intent: GridFillIntent) => void) | undefined;
+    #fillHeard: ((intent: GridFillIntent) => void | PromiseLike<void>) | undefined;
     // A fill-handle drag (ADR-0050, item 5): the range it started from, and the order and the source it was taken
     // under; the cell the pointer last reached; and the outline that paints, the source and what the drag has
     // reached as one rectangle, kept so the layers see the same object until the drag reaches elsewhere.
@@ -1241,7 +1246,9 @@ export class GridView<Row> {
     #hoverRow: number | undefined;
     // A flagged cell's message (ADR-0034): the Consumer's question, the cell the Focus waits on and the timer that
     // opens it, the pointer's rest timer, and the message shown, which is for one cell at a time.
-    #cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined) | undefined;
+    #cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>) | undefined;
+    // The cell a message is asked about while its answer is out, until it comes or the question goes with the Focus.
+    #messageAsked: { readonly cell: CellPosition } | undefined;
     #declaredKeys: ReadonlySet<string> = declareKeys();
     #onDeclaredKey: ((press: GridDeclaredKeyPress) => void) | undefined;
     #cancelMessage: (() => void) | undefined;
@@ -2533,7 +2540,8 @@ export class GridView<Row> {
             && this.#cancelFollow === undefined
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
             && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
-            && this.#findStepping === undefined && this.#errorStepping === undefined && this.#replacing === 0 && this.#pending === undefined);
+            && this.#findStepping === undefined && this.#errorStepping === undefined && this.#replacing === 0 && this.#pending === undefined
+            && this.#messageAsked === undefined);
     }
 
     #showSettled(settled: boolean): void {
@@ -3647,7 +3655,8 @@ export class GridView<Row> {
         // Over a Row Heading there is no cell (ADR-0050, item 1).
         if (this.#rowHeadingStyle !== undefined && this.#styles.geometry.isInLead(x, this.#scrollLeftPx)) return;
         const cell = this.#cellAt(x, y);
-        const shown = this.#shownMessage;
+        const shown = this.#shownMessage ?? this.#messageAsked;
+        // Shown, or asked about and not yet answered: a rest on the same cell asks nothing more.
         if (cell === undefined || (shown !== undefined && sameCell(shown.cell, cell))) return;
         // What was open belonged to the cell the pointer left, whether or not this one has anything to say.
         if (this.#closeMessage()) this.#invalidate();
@@ -3668,19 +3677,48 @@ export class GridView<Row> {
         const held = this.#rowAt(target.row);
         if (held === undefined) return;
         const { column } = itemAt(this.#columns, target.column);
-        // From an untyped caller anything; a message that is not text would be painted as something it is not.
         const said: unknown = ask(held.row, column);
+        if (!isThenable(said)) {
+            this.#openMessage(target, held.row, column, said);
+            return;
+        }
+        // Answered later: opened once answered, where nothing has taken the question away meanwhile (the Focus moved,
+        // the pointer left, an edit opened) and the cell still holds the row it was asked about. Until then whether a
+        // message opens is not known, and the grid is not settled.
+        const asked = { cell: target };
+        this.#messageAsked = asked;
+        // oxlint-disable-next-line ex-grid/no-catch -- a failed answer leaves no question out, and the failure is rethrown
+        void Promise.resolve(said).then(answer => {
+            if (this.#messageAsked !== asked || this.#destroyed) return;
+            this.#messageAsked = undefined;
+            this.#invalidate();
+            if (this.#edit === undefined && !this.#dragging && this.#rowAt(target.row)?.row === held.row && this.#columns[target.column]?.column === column) {
+                this.#openMessage(target, held.row, column, answer);
+            }
+        }, (error: unknown) => {
+            if (this.#messageAsked === asked && !this.#destroyed) {
+                this.#messageAsked = undefined;
+                this.#invalidate();
+            }
+            throw error;
+        });
+    }
+
+    #openMessage(target: CellPosition, row: Row, column: GridColumn<Row>, said: unknown): void {
+        // From an untyped caller anything; a message that is not text would be painted as something it is not.
         if (said === undefined || said === '') return;
         if (typeof said !== 'string') {
             throw new TypeError(`Column '${column.name}': cellMessage answers a sentence or undefined, not ${typeof said} (ADR-0034).`);
         }
-        this.#shownMessage = { cell: target, text: said, row: held.row, column: column.name };
+        this.#shownMessage = { cell: target, text: said, row, column: column.name };
         this.#invalidate();
     }
 
-    // Whether a message was open, which it no longer is.
+    // Whether a message was open, or asked about, which it no longer is.
     #closeMessage(): boolean {
-        if (this.#shownMessage === undefined) return false;
+        const asked = this.#messageAsked !== undefined;
+        this.#messageAsked = undefined;
+        if (this.#shownMessage === undefined) return asked;
         this.#shownMessage = undefined;
         return true;
     }
@@ -4523,9 +4561,11 @@ export class GridView<Row> {
         else this.#pastePending(answer, intent, controller, written, landed);
     }
 
-    // A paste intent's answer out (ADR-0380 section 2): the paste is pending with no editor, and an Escape cancels
-    // it aloud. `landed` runs once the Consumer has answered, refused or not.
-    #pastePending(answer: PromiseLike<unknown>, intent: GridPasteIntent, controller: AbortController, written: UserWrite, landed: () => void): void {
+    // A paste's or a fill's intent answered later (ADR-0380 section 2): it is pending with no editor, and an Escape
+    // cancels it aloud. `landed` runs once the Consumer has answered, refused or not.
+    #pastePending(
+        answer: PromiseLike<unknown>, intent: GridPasteIntent | GridFillIntent, controller: AbortController, written: UserWrite, landed: () => void,
+    ): void {
         this.#pend(answer, {
             controller, edit: undefined, phase: 'intent',
             cancelled: () => {
@@ -6709,20 +6749,18 @@ export class GridView<Row> {
         const listener = this.#fillHeard;
         if (listener === undefined) return;
         this.#supersedeFill();
-        const intent = new GridFillIntent(drag.source, decision.extension.target, decision.extension.direction, this.#handedVersion());
-        // The user's own write (ADR-0142 D1), taken back if refused.
-        const noted = this.#noteUserWrite([intent.target]);
-        let returned = false;
-        try {
-            listener(intent);
-            returned = true;
-        } finally {
-            intent.seal();
-            // What the source gathered while the Consumer filled is put out as its handler returns (D5).
-            this.#source.publishGathered?.();
-            this.#userWriteAnswered(noted, !returned || intent.refused);
-        }
-        if (!intent.refused) this.#selectFilled(drag.source, intent.target, drag.sequence, drag.binding);
+        const controller = new AbortController();
+        const intent = new GridFillIntent(drag.source, decision.extension.target, decision.extension.direction, this.#handedVersion(), controller.signal);
+        // The user's own write (ADR-0142 D1), taken back if refused; what the source gathered while the Consumer
+        // filled is put out as it answers (D5).
+        const written = this.#noteUserWrite([intent.target]);
+        const landed = (): void => {
+            if (!intent.refused) this.#selectFilled(drag.source, intent.target, drag.sequence, drag.binding);
+        };
+        const answer = this.#heardNow(() => listener(intent), failed => { this.#intentAnswered(intent, written, failed); });
+        // Answered later, the fill is pending as a paste is, and the Selection is placed once it lands (ADR-0380).
+        if (answer === undefined) landed();
+        else this.#pastePending(answer, intent, controller, written, landed);
     }
 
     // After a fill the Consumer accepted, the Selection is the source and the target together, as in Excel

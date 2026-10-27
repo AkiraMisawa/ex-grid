@@ -135,6 +135,60 @@ describe('the fill handle (ADR-0050, item 5)', () => {
         expect(view.readView().selection.ranges).toEqual([{ topRow: 2, leftColumn: 0, rowCount: 2, columnCount: 2 }]);
     });
 
+    it('DC-27 / ADR-0380 section 2: a fill answered later is pending; refused, the Selection stays on the source, and accepted, it takes the target', async () => {
+        const answers: { readonly intent: GridFillIntent; readonly give: () => void }[] = [];
+        const { root, view } = mount({
+            columns: editable, rows: trades(100), rowHeight: 24, viewportHeight: 480, showFillHandle: true,
+            onFill: intent => new Promise<void>(resolve => { answers.push({ intent, give: resolve }); }),
+        });
+        await painted();
+        await selectBlock(root);
+        const source = [{ topRow: 2, leftColumn: 0, rowCount: 2, columnCount: 2 }];
+        pointer(root, 'mousedown', 220, 96);
+        pointer(root, 'mousemove', columnX(1), rowY(6));
+        pointer(root, 'mouseup', columnX(1), rowY(6));
+        await painted();
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(true);
+        expect(view.readView().selection.ranges).toEqual(source);
+        const refused = defined(answers[0], 'the first fill heard');
+        refused.intent.refuse();
+        refused.give();
+        await painted();
+        await painted();
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(false);
+        expect(view.readView().selection.ranges).toEqual(source);
+
+        pointer(root, 'mousedown', 220, 96);
+        pointer(root, 'mousemove', columnX(1), rowY(6));
+        pointer(root, 'mouseup', columnX(1), rowY(6));
+        await painted();
+        defined(answers[1], 'the second fill heard').give();
+        await painted();
+        await painted();
+        expect(view.readView().selection.ranges).toEqual([{ topRow: 2, leftColumn: 0, rowCount: 5, columnCount: 2 }]);
+    });
+
+    it('ED-34 / ADR-0380: Escape cancels a fill whose answer is out, aloud, aborts its signal and leaves the Selection on the source', async () => {
+        const heard = listen();
+        const answers: GridFillIntent[] = [];
+        const { root, view } = mount({
+            columns: editable, rows: trades(100), rowHeight: 24, viewportHeight: 480, showFillHandle: true, onRefused: heard.onRefused,
+            onFill: intent => new Promise<void>(() => { answers.push(intent); }),
+        });
+        await painted();
+        await selectBlock(root);
+        pointer(root, 'mousedown', 220, 96);
+        pointer(root, 'mousemove', columnX(1), rowY(6));
+        pointer(root, 'mouseup', columnX(1), rowY(6));
+        await painted();
+        typed('Escape');
+        await painted();
+        expect(defined(answers[0], 'the fill heard').signal.aborted).toBe(true);
+        expect(heard.refusals).toEqual([{ kind: 'paste', reason: 'cancelled' }]);
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(false);
+        expect(view.readView().selection.ranges).toEqual([{ topRow: 2, leftColumn: 0, rowCount: 2, columnCount: 2 }]);
+    });
+
     it('ADR-0050: an edit opened, or the handle taken away, while the button is held ends the drag: nothing is raised and the Selection does not follow the pointer', async () => {
         const heard = listen();
         const edits: unknown[] = [];

@@ -48,7 +48,8 @@ export class DotNetSource implements GridSource<BlazorRow> {
     readonly #rows: RowSet;
     readonly #columns: ColumnSet;
     readonly #listeners = new Set<() => void>();
-    readonly #generation: number;
+    /** Which of the component's sources this is, as .NET counts them. */
+    readonly generation: number;
     #state: GridSourceState<BlazorRow>;
     readonly rowKey?: RowKeyOf<BlazorRow>;
     readonly vouchesDistinctRows: boolean;
@@ -57,7 +58,7 @@ export class DotNetSource implements GridSource<BlazorRow> {
         this.#dotnet = dotnet;
         this.#rows = rows;
         this.#columns = columns;
-        this.#generation = traits.generation;
+        this.generation = traits.generation;
         this.vouchesDistinctRows = traits.vouchesDistinctRows;
         if (traits.rowKey) this.rowKey = keyOf;
         this.#state = Object.freeze({
@@ -103,15 +104,15 @@ export class DotNetSource implements GridSource<BlazorRow> {
     }
 
     setSorts(sorts: readonly SortSpec[]): void {
-        void this.#dotnet.invokeMethodAsync('SetSorts', this.#generation, sortsText(sorts));
+        void this.#dotnet.invokeMethodAsync('SetSorts', this.generation, sortsText(sorts));
     }
 
     setFilter(filter: GridFilter | undefined): void {
-        void this.#dotnet.invokeMethodAsync('SetFilter', this.#generation, filterText(filter));
+        void this.#dotnet.invokeMethodAsync('SetFilter', this.generation, filterText(filter));
     }
 
     async needRange(range: RowRange): Promise<void> {
-        await this.#dotnet.invokeMethodAsync('NeedRange', this.#generation, range.start, range.count);
+        await this.#dotnet.invokeMethodAsync('NeedRange', this.generation, range.start, range.count);
     }
 
     // Rows .NET read by columns it has since replaced are not the grid's rows: they are taken in and given up, and
@@ -119,7 +120,7 @@ export class DotNetSource implements GridSource<BlazorRow> {
     // So what the grid shows never depends on which of the two messages crossed first (the spine's sixth rule).
     async rows(range: RowRange, signal: AbortSignal): Promise<readonly BlazorRow[]> {
         for (;;) {
-            const answer = await this.#asked(signal, id => this.#dotnet.invokeMethodAsync('Rows', this.#generation, id, range.start, range.count));
+            const answer = await this.#asked(signal, id => this.#dotnet.invokeMethodAsync('Rows', this.generation, id, range.start, range.count));
             const { seq, cv, rows } = answer as { readonly seq: number; readonly cv: number; readonly rows: readonly WireRow[] }; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shape ScriptRows writes; RowSet checks each member it reads
             await this.#columns.reached(cv, signal);
             if (signal.aborted || cv !== this.#columns.version) {
@@ -133,7 +134,7 @@ export class DotNetSource implements GridSource<BlazorRow> {
 
     async distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues> {
         for (;;) {
-            const answer = await this.#asked(signal, id => this.#dotnet.invokeMethodAsync('DistinctValues', this.#generation, id, column));
+            const answer = await this.#asked(signal, id => this.#dotnet.invokeMethodAsync('DistinctValues', this.generation, id, column));
             const cv: unknown = Reflect.get(answer, 'cv');
             if (typeof cv !== 'number') throw new TypeError('.NET answered distinct values without the columns it read them by.');
             await this.#columns.reached(cv, signal);

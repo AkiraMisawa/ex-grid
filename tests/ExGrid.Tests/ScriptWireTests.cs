@@ -26,6 +26,9 @@ public class ScriptWireTests
     ];
 
     private static JsonElement Written(ScriptRows<Trade> rows, Func<Trade, object>? key, params Trade[] written)
+        => Written(rows, key, null, written);
+
+    private static JsonElement Written(ScriptRows<Trade> rows, Func<Trade, object>? key, CellStateOf<Trade>? cellState, params Trade[] written)
     {
         var text = rows.Sending(sequence =>
         {
@@ -36,7 +39,7 @@ public class ScriptWireTests
                 json.WriteNumber("seq", sequence);
                 json.WriteStartArray("rows");
                 foreach (var row in written)
-                    rows.Write(json, row, Columns, key);
+                    rows.Write(json, row, Columns, key, cellState);
                 json.WriteEndArray();
                 json.WriteEndObject();
             }
@@ -60,6 +63,18 @@ public class ScriptWireTests
         Assert.Equal(first.GetProperty("i").GetInt64(), again.GetProperty("i").GetInt64());
         Assert.NotEqual(first.GetProperty("i").GetInt64(), other.GetProperty("i").GetInt64());
         Assert.Equal("""{"i":1,"c":["Rates",1500],"t":[null,"1,500.00"]}""", first.GetRawText());
+    }
+
+    [Fact] // ED-35 / ADR-0006: a row crosses with its cells' states where any is not Normal, and with none where all are
+    public void ADR0380_a_row_carries_its_cell_states_only_where_one_is_not_normal()
+    {
+        var rows = new ScriptRows<Trade>();
+        CellStateOf<Trade> flagged = (trade, column) => trade.Book == "FX" && column.Name == "Notional" ? CellState.Error : CellState.Normal;
+
+        var written = Written(rows, null, flagged, new Trade("Rates", 1m), new Trade("FX", 2m)).GetProperty("rows");
+
+        Assert.False(written[0].TryGetProperty("s", out _));
+        Assert.Equal("""["normal","error"]""", written[1].GetProperty("s").GetRawText());
     }
 
     [Fact] // ADR-0350 s7: a row the browser may still hand back is kept; one it let go, and not sent since, is not

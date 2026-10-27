@@ -77,6 +77,33 @@ public class ValidationTests : GridTestContext
         await PressAsync(cut, commitKey, ctrl: ctrl);
     }
 
+    [Fact] // ADR-0380 s1: a verdict answered later is refused by name here, where a commit is judged as it is made
+    public void ADR0380_a_column_whose_verdict_answers_later_is_refused_by_the_csharp_core()
+    {
+        GridColumn<TestRow>[] columns =
+        [
+            new("Book", ColumnType.Text, r => r.Book, editable: true)
+            {
+                ValidateAsync = (_, _, _) => ValueTask.FromResult(EditVerdict.Accept),
+            },
+        ];
+
+        var refused = Assert.Throws<NotSupportedException>(() => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, _rows)
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, columns)));
+        Assert.Contains("'Book'", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0380 s1: a column takes one verdict, answered now or later, never both
+    public void ADR0380_a_column_with_validate_refuses_a_later_verdict_beside_it()
+    {
+        Assert.Throws<ArgumentException>(() => new GridColumn<TestRow>("Book", ColumnType.Text, r => r.Book, validate: (_, _) => EditVerdict.Accept)
+        {
+            ValidateAsync = (_, _, _) => ValueTask.FromResult(EditVerdict.Accept),
+        });
+    }
+
     [Fact] // ADR-0034 / ED-14: no function means Accept, and Accept raises the intent unchanged
     public async Task A_column_without_a_verdict_commits_exactly_as_before()
     {

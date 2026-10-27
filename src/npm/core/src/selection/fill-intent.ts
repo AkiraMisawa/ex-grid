@@ -15,7 +15,7 @@ import type { SelectionRange } from './range';
  *
  * After a fill the Consumer accepts, the Selection is the source and the target together, as in Excel; a
  * Consumer that does not implement the pattern calls {@link GridFillIntent.refuse} before its `onFill` returns,
- * and the Selection stays on the source.
+ * or before the promise it returned settles, and the Selection stays on the source (ADR-0380 section 2).
  * @public
  */
 export class GridFillIntent {
@@ -28,15 +28,19 @@ export class GridFillIntent {
     readonly direction: GridDirection;
     /** The order these positions are written in (ADR-0011): the source's own Row Sequence Version. */
     readonly rowSequenceVersion: number;
+    /** Aborted when the user cancels the fill with Escape while the Consumer's answer is out (ADR-0380 section 3):
+     * nothing is filled, and a handler that writes after it is aborted writes a fill the user took back. */
+    readonly signal: AbortSignal;
     #refused = false;
     #sealed = false;
 
     /** @internal */
-    constructor(source: SelectionRange, target: SelectionRange, direction: GridDirection, rowSequenceVersion: number) {
+    constructor(source: SelectionRange, target: SelectionRange, direction: GridDirection, rowSequenceVersion: number, signal: AbortSignal) {
         this.source = source;
         this.target = target;
         this.direction = direction;
         this.rowSequenceVersion = rowSequenceVersion;
+        this.signal = signal;
     }
 
     /** Whether the Consumer refused the fill. */
@@ -45,12 +49,12 @@ export class GridFillIntent {
     }
 
     /** The Consumer's answer that it does not fill this: a pattern it has not implemented is refused, never filled
-     * with copies (ADR-0050, item 5). Called before `onFill` returns, it leaves the Selection on the source;
-     * telling the user why is the Consumer's. Called after, it throws: the grid has already taken the fill as
-     * made, and placed the Selection over it. */
+     * with copies (ADR-0050, item 5). Called before `onFill` returns, or before the promise it returned settles, it
+     * leaves the Selection on the source; telling the user why is the Consumer's. Called after, it throws: the grid
+     * has already taken the fill as made, and placed the Selection over it. */
     refuse(): void {
         if (this.#sealed) {
-            throw new Error('This fill was answered when onFill returned: refuse it before then (ADR-0050, item 5).');
+            throw new Error('This fill was answered when onFill returned or its promise settled: refuse it before then (ADR-0050, item 5).');
         }
         this.#refused = true;
     }
