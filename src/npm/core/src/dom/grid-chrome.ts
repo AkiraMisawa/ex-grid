@@ -11,11 +11,13 @@
 // as `@ex-grid/react`'s portals do, keeps its component and that component's state across the two.
 
 import type { FilterPanelModel, FilterPanelView, FilterUi } from '../chrome/filter-panel-model';
+import { findPanelLabelIds } from '../chrome/find-panel-labels';
 import { letterOf, menuKeyNothing, type MenuKey } from '../chrome/menu-keys';
 import type { ColumnType, DateType } from '../query/columns';
 import type { FilterCombinator, FilterOperator, FilterSpec } from '../query/filter';
 import type { SelectionRange } from '../selection/range';
 import { filterSentinel, type FilterPanelAnswers, type FilterPlace } from './filter-panel';
+import { findElement, findForm, findSentinel, type FindHeld, type FindPanelAnswers, type FindPlace } from './find-panel';
 import type { GridCommand } from './grid-command';
 import { MenuState, type MenuAnswers, type MenuKeyTable, type MenuPlace } from './menu-popover';
 
@@ -173,6 +175,77 @@ export interface GridFilterPanelSlotContext {
     readonly takeFocus: (control: HTMLElement, options?: { readonly preventScroll?: boolean }) => void;
 }
 
+/** What the find panel shows now (ADR-0055, ADR-0332): a new object at each change, and the same one otherwise. */
+export interface FindPanelView {
+    /** What to look for. */
+    readonly text: string;
+    /** Match case. */
+    readonly matchCase: boolean;
+    /** Match entire cell contents. */
+    readonly wholeCell: boolean;
+    /** Whether the panel offers Replace: opened by Ctrl+H, and a Replace can land (ADR-0332 §2). While it does, the
+     * contents draw the Replace field and the two writes, Replace and Replace All. */
+    readonly replaceShown: boolean;
+    /** What Replace writes in place of a match. */
+    readonly replaceText: string;
+    /** Whether a Replace All is out with the Consumer: Replace and Replace All wait for its answer, and the contents
+     * show them unavailable meanwhile (ADR-0332 §3). */
+    readonly replaceWaiting: boolean;
+    /** What the last step or Replace came to, in the grid's words, for a live region; empty when it says nothing
+     * (ADR-0033). */
+    readonly outcome: string;
+}
+
+/**
+ * What the find panel's contents are handed (ADR-0055, ADR-0332): what the panel shows and the changes and steps the
+ * user makes in it. The core owns the search, the request, the answer and the Focus it moves; the contents draw a
+ * field, the two options, the steps and, while Replace is shown, its field and its two writes. The slot stands in
+ * the core's popover, inside a form the core made: Enter in a field submits it as the browser does, which runs a
+ * step, backward with Shift, so the contents draw no form of their own; a submit by a button of theirs steps
+ * nothing, so each button calls the step it means. Tab off either end of the panel is the
+ * core's, which hands the keyboard back to the field. What the panel holds outlives it: the core keeps the text, the
+ * options and the replacement across a close and a reopen, as Excel's dialog does.
+ */
+export interface GridFindPanelSlotContext {
+    /** What the panel shows now. */
+    readonly view: () => FindPanelView;
+    /** Hears each change to the view; answers the function that stops it. */
+    readonly subscribe: (listener: () => void) => () => void;
+    /** The panel's words, by the ids `findPanelLabelIds` names: the Consumer's `commandLabel`, else the built-in
+     * English. */
+    readonly label: (id: string) => string;
+    /** The text typed into the find field. */
+    readonly setText: (text: string) => void;
+    /** Match case ticked or not: a step after it searches with it as it now stands (ADR-0240). */
+    readonly setMatchCase: (on: boolean) => void;
+    /** Match entire cell contents ticked or not. */
+    readonly setWholeCell: (on: boolean) => void;
+    /** The text typed into the Replace field. */
+    readonly setReplaceText: (text: string) => void;
+    /** Find next. */
+    readonly next: () => void;
+    /** Find previous. */
+    readonly previous: () => void;
+    /** Replace: the current match written, then the next found. Nothing while Replace is not shown or a Replace All
+     * is out. */
+    readonly replace: () => void;
+    /** Replace All, asked of the Consumer. Nothing while Replace is not shown or a Replace All is out. */
+    readonly replaceAll: () => void;
+    /** Closes the panel as a Cancel, for a dismissal of the contents' own; the keyboard returns to the grid. */
+    readonly close: () => void;
+    /** The count of the core's requests for the find field to take the keyboard: the opening, Ctrl+F or Ctrl+H again,
+     * and Tab off either end of the panel. Each request mounts the contents again; whenever the count differs from the
+     * one they last answered, they focus the find field through {@link GridFindPanelSlotContext.takeFocus}, which
+     * selects its text so what is typed next replaces it (FD-1). */
+    readonly focusRequest: number;
+    /** The contents report a popup of their own opening (`true`) and closing (`false`): while one is open, Escape is
+     * the popup's, and the next closes the panel (ADR-0039). */
+    readonly innerPopupChanged: (open: boolean) => void;
+    /** Gives `control` DOM focus while the keyboard is still this grid's: DOM focus inside its root, or on nothing
+     * (ADR-0204). An element that cannot take focus hands it to the first control inside it. */
+    readonly takeFocus: (control: HTMLElement, options?: { readonly preventScroll?: boolean }) => void;
+}
+
 /**
  * The Chrome slots a grid takes (ADR-0390 section 4): the parts a Wrapper draws, each in place of the built-in
  * Chrome's. A slot not given is the built-in Chrome's.
@@ -184,10 +257,12 @@ export interface GridChrome<Row> {
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
     /** A column's filter panel, under the column menu's commands (ADR-0009, ADR-0044). */
     readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
+    /** The find panel, and its Replace (ADR-0055, ADR-0332). */
+    readonly findPanel?: GridChromeSlot<GridFindPanelSlotContext>;
 }
 
 /** The slots a grid's `chrome` names. */
-const slotNames: readonly (keyof GridChrome<unknown>)[] = ['columnMenu', 'contextMenu', 'filterPanel'];
+const slotNames: readonly (keyof GridChrome<unknown>)[] = ['columnMenu', 'contextMenu', 'filterPanel', 'findPanel'];
 
 /** A grid's `chrome`, checked: an object whose slots are each a mount function, or not given. */
 export function checkedChrome<Row>(chrome: unknown): GridChrome<Row> | undefined {
@@ -253,28 +328,33 @@ class SlotMount<Context> {
         return this.#live;
     }
 
-    /** Mounts the contents, once. */
+    /** Mounts the contents, once. Contents that cannot be drawn close the part, rather than leave it standing empty. */
     mount(context: Context): void {
-        if (this.#live && this.#cleanup === undefined) this.#cleanup = mounted(this.#name, this.#mount, this.#slot, context);
+        if (this.#live && this.#cleanup === undefined) this.#draw(context);
     }
 
-    /** A focus request: the contents are mounted again with `context`, which names it. Contents that cannot be drawn
-     * again close the part, rather than leave it standing empty. */
+    /** A focus request: the contents are mounted again with `context`, which names it. */
     request(context: Context): void {
         if (!this.#live) return;
         this.#owed = true;
         this.#unmount();
-        try {
-            this.#cleanup = mounted(this.#name, this.#mount, this.#slot, context);
-        } catch (error) {
-            this.#cancel();
-            throw error;
-        }
+        this.#draw(context);
     }
 
     /** An input the user made in the part: it moves the keyboard on from here, and no focus is owed any longer. */
     heard(): void {
         this.#owed = false;
+    }
+
+    /** `change` as an input the user made in the part: heard, answered once by `answered` (ADR-0220), and made;
+     * nothing once the part is gone. */
+    input<Args extends unknown[]>(answered: () => void, change: (...args: Args) => void): (...args: Args) => void {
+        return (...args: Args): void => {
+            if (!this.#live) return;
+            this.heard();
+            answered();
+            change(...args);
+        };
     }
 
     /** The part is going: its contents are taken away. */
@@ -297,9 +377,20 @@ class SlotMount<Context> {
         this.#focus(control, options?.preventScroll === true, owed);
     };
 
+    #draw(context: Context): void {
+        try {
+            this.#cleanup = mounted(this.#name, this.#mount, this.#slot, context);
+        } catch (error) {
+            this.#cancel();
+            throw error;
+        }
+    }
+
+    // The contents go, and a popup of theirs with them: they are not asked to say so.
     #unmount(): void {
         const cleanup = this.#cleanup;
         this.#cleanup = undefined;
+        this.innerPopupOpen = false;
         cleanup?.();
     }
 }
@@ -446,12 +537,7 @@ export class SlottedFilterPanel implements FilterPlace {
             if (form.contains(doc.activeElement)) this.focusFirst();
         });
         // Each choice is an input the user made in the panel, answered once (ADR-0220).
-        const set = <Args extends unknown[]>(change: (...args: Args) => void) => (...args: Args): void => {
-            if (!slot.live) return;
-            slot.heard();
-            answers.answered();
-            change(...args);
-        };
+        const set = <Args extends unknown[]>(change: (...args: Args) => void): ((...args: Args) => void) => slot.input(answers.answered, change);
         const apply = set(() => {
             const answer = model.answer();
             if (answer.reads) answers.apply(answer.spec);
@@ -536,5 +622,149 @@ export class SlottedFilterPanel implements FilterPlace {
 
     #made(): GridFilterPanelSlotContext {
         return Object.freeze({ ...this.#context, focusRequest: this.#focusRequest, focusTarget: this.#focusTarget });
+    }
+}
+
+/**
+ * The find panel, drawn by a Chrome slot (ADR-0390): what it holds is the grid's `FindHeld`, which the built-in panel
+ * writes too, and a step, a Replace and a Replace All are the grid's. The slot stands inside the core's form, between
+ * the core's sentinels; each request for the field mounts the contents again with the next count.
+ */
+export class SlottedFindPanel implements FindPlace {
+    readonly element: HTMLElement;
+    readonly #slot: SlotMount<GridFindPanelSlotContext>;
+    readonly #held: FindHeld;
+    readonly #title: () => string;
+    readonly #listeners = new Set<() => void>();
+    readonly #context: Omit<GridFindPanelSlotContext, 'focusRequest'>;
+    #focusRequest = 0;
+    // Whether the request standing selects the field's text: Ctrl+F's does, a Tab off either end does not (FD-1).
+    #selecting = false;
+    #replaceShown = false;
+    #waiting = false;
+    #outcome = '';
+    #view: FindPanelView | undefined;
+
+    constructor(doc: Document, mount: GridChromeSlot<GridFindPanelSlotContext>, held: FindHeld, label: (id: string) => string,
+        answers: FindPanelAnswers & { readonly close: () => void }, takeFocus: ChromeFocus) {
+        this.#held = held;
+        this.#title = () => label(this.#replaceShown ? findPanelLabelIds.replaceTitle : findPanelLabelIds.title);
+        this.element = findElement(doc, this.#title());
+        const body = doc.createElement('div');
+        body.className = 'ex-popover-find-body ex-popover-body';
+        // Enter in a field is an input the user made in the panel, as each change is: no focus is owed after it.
+        const form = findForm(doc, { ...answers, answered: () => { this.#slot.heard(); answers.answered(); } });
+        const slot = doc.createElement('div');
+        slot.className = 'ex-find-slot';
+        form.append(slot);
+        body.append(form);
+        // Tab off either end comes back to the field as it was, as under the built-in panel.
+        const toField = (): void => { this.#request(false); };
+        this.element.append(findSentinel(doc, answers.answered, toField), body, findSentinel(doc, answers.answered, toField));
+        // Ctrl+F or Ctrl+H puts the keyboard on the field with its text selected, so what is typed next replaces the
+        // text (FD-1).
+        const focusing: ChromeFocus = (control, preventScroll, owed) => {
+            takeFocus(control, preventScroll, owed);
+            const active = doc.activeElement;
+            if (owed && this.#selecting && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) && slot.contains(active)) {
+                active.select();
+            }
+        };
+        const contents = new SlotMount('findPanel', mount, slot, focusing, answers.close, false);
+        this.#slot = contents;
+        // Each change and step is an input the user made in the panel, answered once (ADR-0220).
+        const act = <Args extends unknown[]>(change: (...args: Args) => void): ((...args: Args) => void) => contents.input(answers.answered, change);
+        const holding = (change: () => void): void => {
+            change();
+            answers.heldChanged();
+            this.#changed();
+        };
+        const text = (name: string, set: (text: string) => void) => act((value: string) => {
+            if (typeof value !== 'string') throw new TypeError(`${name} is handed the text typed.`);
+            holding(() => { set(value); });
+        });
+        const option = (name: string, set: (on: boolean) => void) => act((on: boolean) => {
+            if (typeof on !== 'boolean') throw new TypeError(`${name} is handed whether the option is ticked.`);
+            holding(() => { set(on); });
+        });
+        this.#context = {
+            view: () => this.#made(),
+            subscribe: listener => {
+                if (typeof listener !== 'function') throw new TypeError('subscribe is handed the function that hears each change to the view.');
+                this.#listeners.add(listener);
+                return () => { this.#listeners.delete(listener); };
+            },
+            label,
+            setText: text('setText', value => { held.text = value; }),
+            setMatchCase: option('setMatchCase', on => { held.matchCase = on; }),
+            setWholeCell: option('setWholeCell', on => { held.wholeCell = on; }),
+            setReplaceText: text('setReplaceText', value => { held.replaceText = value; }),
+            next: act(() => { answers.step(false); }),
+            previous: act(() => { answers.step(true); }),
+            replace: act(() => { answers.replaceOne(); }),
+            replaceAll: act(() => { answers.replaceAll(); }),
+            close: act(() => { answers.close(); }),
+            innerPopupChanged: contents.innerPopupChanged,
+            takeFocus: contents.takeFocus,
+        };
+    }
+
+    get replaceShown(): boolean {
+        return this.#replaceShown;
+    }
+
+    get innerPopupOpen(): boolean {
+        return this.#slot.innerPopupOpen;
+    }
+
+    showReplace(shown: boolean): void {
+        if (shown === this.#replaceShown) return;
+        this.#replaceShown = shown;
+        this.element.setAttribute('aria-label', this.#title());
+        if (shown) this.element.setAttribute('data-ex-replace', '');
+        else this.element.removeAttribute('data-ex-replace');
+        this.#changed();
+    }
+
+    waitForReplace(waiting: boolean): void {
+        if (waiting === this.#waiting) return;
+        this.#waiting = waiting;
+        this.#changed();
+    }
+
+    say(text: string): void {
+        if (text === this.#outcome) return;
+        this.#outcome = text;
+        this.#changed();
+    }
+
+    /** Mounts the contents with the next request for the field, whose text is selected. */
+    focusField(): void {
+        this.#request(true);
+    }
+
+    dispose(): void {
+        this.#slot.dispose();
+        this.#listeners.clear();
+    }
+
+    #request(selecting: boolean): void {
+        if (!this.#slot.live) return;
+        this.#focusRequest += 1;
+        this.#selecting = selecting;
+        this.#slot.request(Object.freeze({ ...this.#context, focusRequest: this.#focusRequest }));
+    }
+
+    #made(): FindPanelView {
+        this.#view ??= Object.freeze({
+            text: this.#held.text, matchCase: this.#held.matchCase, wholeCell: this.#held.wholeCell, replaceShown: this.#replaceShown,
+            replaceText: this.#held.replaceText, replaceWaiting: this.#waiting, outcome: this.#outcome,
+        });
+        return this.#view;
+    }
+
+    #changed(): void {
+        this.#view = undefined;
+        for (const listener of this.#listeners) listener();
     }
 }

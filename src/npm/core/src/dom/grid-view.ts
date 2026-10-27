@@ -82,9 +82,9 @@ import {
 import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
 import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, popoverMinWidthPx, type MenuKeyTable, type MenuPlace } from './menu-popover';
-import { checkedChrome, columnMenuExtra, SlottedFilterPanel, SlottedMenu, type GridChrome, type GridChromeSlot, type GridMenuSlotContext } from './grid-chrome';
+import { checkedChrome, columnMenuExtra, SlottedFilterPanel, SlottedFindPanel, SlottedMenu, type GridChrome, type GridChromeSlot, type GridMenuSlotContext } from './grid-chrome';
 import { FilterPanel, type FilterPlace, type FilterUi } from './filter-panel';
-import { FindPanel, type FindHeld } from './find-panel';
+import { FindPanel, type FindHeld, type FindPlace } from './find-panel';
 import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
@@ -779,7 +779,7 @@ interface Taken<Row> {
 // A column's menu stands under its column's header, followed by the column's name (ADR-0010).
 // The find panel stands in the grid's top right under the header, and holds no commands (ADR-0055).
 // A Consumer's popover stands under the header band, centred across the grid (ADR-0050, item 16).
-type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPanel }
+type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPlace }
     | {
         readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object;
         // The grid's own contents in the frame, the figures menu, which the Consumer's closePopover leaves alone.
@@ -1851,7 +1851,8 @@ export class GridView<Row> {
         // A Chrome slot's contents are taken away with the grid, as a Template cell's are.
         const popover = this.#popover;
         this.#popover = undefined;
-        if (popover !== undefined && popover.kind !== 'find' && popover.kind !== 'consumer') popover.items.dispose();
+        if (popover?.kind === 'find') popover.panel.dispose();
+        else if (popover !== undefined && popover.kind !== 'consumer') popover.items.dispose();
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#rowMarks.destroy();
@@ -5208,6 +5209,7 @@ export class GridView<Row> {
         } finally {
             try {
                 if (popover.kind === 'column' || popover.kind === 'context') popover.items.dispose();
+                else if (popover.kind === 'find') popover.panel.dispose();
             } finally {
                 this.#popoverGone(popover, held, giveBack);
             }
@@ -5544,13 +5546,9 @@ export class GridView<Row> {
         let popover = this.#popover;
         if (popover?.kind !== 'find') {
             this.#closePopover(false);
-            const panel = new FindPanel(this.#root.ownerDocument, this.#findHeld, id => this.#labelOf(id), {
-                step: backward => { this.#findStep(backward); },
-                replaceOne: () => { this.#replaceOne(); },
-                replaceAll: () => { this.#replaceAll(); },
-                heldChanged: () => { this.#invalidate(); },
-                answered: this.#answer,
-            });
+            const panel = this.#findPanel();
+            // A Replace All still out with the Consumer holds a panel opened again too (ADR-0332 §3).
+            panel.waitForReplace(this.#replacing > 0);
             popover = { kind: 'find', element: panel.element, panel };
             this.#popover = popover;
             this.#placePopover();
@@ -5559,6 +5557,24 @@ export class GridView<Row> {
         popover.panel.showReplace(replace);
         this.#setFindOutcome({ kind: 'none' });
         popover.panel.focusField();
+    }
+
+    // The find panel for one opening: the built-in one, or the Chrome's findPanel slot (ADR-0390).
+    #findPanel(): FindPlace {
+        const doc = this.#root.ownerDocument;
+        const label = (id: string): string => this.#labelOf(id);
+        const answers = {
+            step: (backward: boolean) => { this.#findStep(backward); },
+            replaceOne: () => { this.#replaceOne(); },
+            replaceAll: () => { this.#replaceAll(); },
+            heldChanged: () => { this.#invalidate(); },
+            answered: this.#answer,
+        };
+        const slot = this.#chrome?.findPanel;
+        if (slot === undefined) return new FindPanel(doc, this.#findHeld, label, answers);
+        return new SlottedFindPanel(doc, slot, this.#findHeld, label,
+            { ...answers, answered: this.#answerInput, close: () => { this.#closePopover(true); } },
+            (control, preventScroll, owed) => { this.#takeChromeFocus(control, preventScroll, owed); });
     }
 
     // What the panel holds, as a step and a mark judge by it.
@@ -9140,7 +9156,7 @@ function keyboardTargetIn(control: HTMLElement, asker: string): { readonly targe
 /** Whether a popup the popover's contents opened of their own is open: Escape is then the popup's (ADR-0039). */
 function innerPopupOpen(popover: OpenPopover): boolean {
     if (popover.kind === 'consumer') return popover.frame.innerPopupOpen;
-    if (popover.kind === 'find') return false;
+    if (popover.kind === 'find') return popover.panel.innerPopupOpen;
     return popover.items.innerPopupOpen || (popover.kind === 'column' && popover.panel?.innerPopupOpen === true);
 }
 

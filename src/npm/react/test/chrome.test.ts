@@ -6,10 +6,11 @@ import { createElement, StrictMode, useState, type ReactElement } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridColumn, GridFilterPanelSlotContext, GridMenuSlotContext } from '@ex-grid/core';
+import type { GridColumn, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridMenuSlotContext } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
-import { useFilterPanel, useMenuItems, type ExGridChrome } from '../src/chrome';
+import { useFilterPanel, useFindPanel, useMenuItems, type ExGridChrome } from '../src/chrome';
 import { filterPanelSlotContract } from './filter-slot-contract';
+import { findPanelSlotContract } from './find-slot-contract';
 import { menuSlotContract } from './menu-slot-contract';
 
 /** A menu of plain buttons, as a Wrapper draws its design system's: it counts its mounts, to show it keeps state. */
@@ -46,12 +47,35 @@ function PlainFilterPanel({ context }: { readonly context: GridFilterPanelSlotCo
         createElement('button', { type: 'button', ref: last, onClick: () => { context.cancel(); } }, 'Cancel'));
 }
 
+const plainButton = (words: string, press: () => void, disabled = false): ReactElement =>
+    createElement('button', { key: words, type: 'button', disabled, onClick: press }, words);
+
+/** A find panel of plain controls: each change and step handed to the core, Enter left to the core's form. */
+function PlainFindPanel({ context }: { readonly context: GridFindPanelSlotContext }): ReactElement {
+    const { view, field } = useFindPanel(context);
+    return createElement('div', null,
+        createElement('input', { ref: field, value: view.text, onChange: event => { context.setText(event.target.value); } }),
+        createElement('label', null, createElement('input', {
+            type: 'checkbox', checked: view.matchCase, onChange: event => { context.setMatchCase(event.target.checked); },
+        }), context.label('find-match-case')),
+        plainButton(context.label('find-previous'), context.previous),
+        plainButton(context.label('find-next'), context.next),
+        ...(view.replaceShown ? [
+            createElement('input', { key: 'replace', value: view.replaceText, onChange: event => { context.setReplaceText(event.target.value); } }),
+            plainButton(context.label('find-replace'), context.replace, view.replaceWaiting),
+            plainButton(context.label('find-replace-all'), context.replaceAll, view.replaceWaiting),
+        ] : []),
+        createElement('div', { role: 'status' }, view.outcome));
+}
+
 const plainMenu = (context: GridMenuSlotContext): ReactElement => createElement(PlainMenu, { context });
 const plainFilterPanel = (context: GridFilterPanelSlotContext): ReactElement => createElement(PlainFilterPanel, { context });
-const plainChrome: ExGridChrome<unknown> = { columnMenu: plainMenu, contextMenu: plainMenu, filterPanel: plainFilterPanel };
+const plainFindPanel = (context: GridFindPanelSlotContext): ReactElement => createElement(PlainFindPanel, { context });
+const plainChrome: ExGridChrome<unknown> = { columnMenu: plainMenu, contextMenu: plainMenu, filterPanel: plainFilterPanel, findPanel: plainFindPanel };
 
 menuSlotContract('a Chrome of plain buttons', plainChrome);
 filterPanelSlotContract('a Chrome of plain controls', plainChrome);
+findPanelSlotContract('a Chrome of plain controls', plainChrome);
 
 interface Trade {
     readonly book: string;
