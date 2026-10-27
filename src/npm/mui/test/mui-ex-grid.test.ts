@@ -85,6 +85,14 @@ describe('MuiExGrid', () => {
         expect(['mui-ex-grid-square', 'mui-ex-grid-column-borders', 'mine', 'MuiPaper-rounded'].map(name => paper.classList.contains(name))).toEqual([true, true, true, false]);
     });
 
+    it('ADR-0045: a Stretch grid\'s Paper follows its container, and a grid of declared width keeps a Paper of its own width', async () => {
+        const stretched = await mounted({ viewportWidth: 'stretch' });
+        const declared = stretched.paper.classList.contains('mui-ex-grid-stretch');
+        cleanup();
+        const { paper } = await mounted();
+        expect([declared, paper.classList.contains('mui-ex-grid-stretch')]).toEqual([true, false]);
+    });
+
     it('ADR-0390 section 3: a slot the Consumer hands beats the Wrapper\'s, and the others stay MUI\'s', async () => {
         const { root } = await mounted({ source: pending(), chrome: { loadingIndicator: mine } });
         expect([root.querySelector('.ex-loading-indicator .mine') !== null, root.querySelector('.ex-loading-indicator .MuiCircularProgress-root')]).toEqual([true, null]);

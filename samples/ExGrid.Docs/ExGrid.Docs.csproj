@@ -112,6 +112,7 @@
     <ReactExampleSource Include="$(ReactExamplesProject)src/**/*;$(ReactExamplesProject)index.html;$(ReactExamplesProject)vite.config.ts;$(ReactExamplesProject)tsconfig.json;$(ReactExamplesProject)package.json;$(ReactExamplesProject)package-lock.json;$(ReactExamplesPackages)tsconfig.base.json" />
     <ReactExampleSource Include="$(ReactExamplesPackages)core/src/**/*.ts;$(ReactExamplesPackages)react/src/**/*.ts;$(ReactExamplesPackages)data/src/**/*.ts" />
     <ReactExampleSource Include="$(ReactExamplesPackages)sheet-engine/src/**/*.ts;$(ReactExamplesPackages)sheet/src/**/*.ts;$(ReactExamplesPackages)sheet-react/src/**/*.ts" />
+    <ReactExampleSource Include="$(ReactExamplesPackages)mantine/src/**/*.ts;$(ReactExamplesPackages)mantine/styles.css;$(ReactExamplesPackages)mui/src/**/*.ts;$(ReactExamplesPackages)mui/styles.css" />
     <ReactExampleSource Include="..\..\src\ExGrid\wwwroot\ex-grid.min.css;..\..\src\ExSheet\wwwroot\ex-sheet.min.css" />
     <Content Remove="wwwroot/react/**" />
   </ItemGroup>

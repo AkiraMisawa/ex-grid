@@ -68,6 +68,14 @@ describe('MantineExGrid', () => {
         expect(['mantine-ex-grid-square', 'mantine-ex-grid-column-borders', 'mine'].map(name => paper.classList.contains(name))).toEqual([true, true, true]);
     });
 
+    it('ADR-0045: a Stretch grid\'s Paper follows its container, and a grid of declared width keeps a Paper of its own width', async () => {
+        const stretched = await mounted({ viewportWidth: 'stretch' });
+        const declared = stretched.paper.classList.contains('mantine-ex-grid-stretch');
+        cleanup();
+        const { paper } = await mounted();
+        expect([declared, paper.classList.contains('mantine-ex-grid-stretch')]).toEqual([true, false]);
+    });
+
     it('ADR-0390 section 3: a slot the Consumer hands beats the Wrapper\'s, and the others stay Mantine\'s', async () => {
         const { root } = await mounted({ source: pending(), chrome: { loadingIndicator: mine } });
         expect([root.querySelector('.ex-loading-indicator .mine') !== null, root.querySelector('.ex-loading-indicator .mantine-Loader-root')]).toEqual([true, null]);

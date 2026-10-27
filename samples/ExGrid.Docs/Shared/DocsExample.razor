@@ -6,7 +6,8 @@
    runs, and the code follows. Read for React (ADR-0350 §12), an Example with a React counterpart, the
    .tsx file beside its .razor, runs it in a frame of its own, built ahead of time into the site's
    static files, and shows its code; one without says so where it would run, and neither the Blazor
-   component nor its code is shown. *@
+   component nor its code is shown. A React Example written for the Wrappers too, Mantine's and MUI's
+   beside it (ADR-0390 section 8), runs the one the site's Chrome choice names. *@
 <div class="docs-example">
     @if (Title is not null)
     {
@@ -17,13 +18,20 @@
         <div class="docs-example-text">@ChildContent</div>
     }
     <MudPaper Outlined="true" Class="docs-example-frame">
-        @if (State.Framework == DocsFramework.React && _react is { } react)
+        @if (State.Framework == DocsFramework.React && CurrentReact is { } react)
         {
             @* The frame sets its own height to the Example's, from inside (the frame's page, main.tsx): the site
                renders no height of its own, so a render never takes it back. *@
             <iframe class="docs-example-react" src="@FrameAddress(react)" title="@($"{Title ?? react.Name}, running under React")"></iframe>
             <MudToolBar Dense="true" Class="docs-example-toolbar">
-                <MudText Typo="Typo.caption" Class="docs-muted">Built-in Chrome only</MudText>
+                @if (_reactWrappers)
+                {
+                    <ChromeSwitch />
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Class="docs-muted">Built-in Chrome only</MudText>
+                }
                 <MudSpacer />
                 <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Code"
                            OnClick="@(() => _showCode = !_showCode)" aria-expanded="@(_showCode ? "true" : "false")">
@@ -92,8 +100,14 @@
     private bool _mud;
     private string _product = "";
     private ReactExample? _react;
+    private bool _reactWrappers;
 
     private Type Current => _mud ? Mud! : Builtin;
+
+    // The Chrome the site's choice names, or the built-in one where the Example has no Wrapper's, and its file.
+    private ReactChrome ReactRunsUnder => _reactWrappers ? State.ReactChrome : ReactChrome.Builtin;
+
+    private ReactExample? CurrentReact => ExampleSources.ReactFor(Builtin, ReactRunsUnder);
 
     private IReadOnlyList<ExampleSource> Sources =>
         [ExampleSources.For(Current), .. Files.Select(ExampleSources.Get)];
@@ -117,12 +131,19 @@
     {
         _product = DocsProducts.OfExample(Builtin);
         _react = ExampleSources.ReactFor(Builtin);
+        // Written for the built-in Chrome and both Wrappers, or for the built-in Chrome alone: an Example that ran the
+        // built-in Chrome under a Wrapper's name would show the reader a Chrome they did not choose.
+        ReactChrome[] wrappers = [ReactChrome.Mantine, ReactChrome.Mui];
+        var written = wrappers.Where(chrome => ExampleSources.ReactFor(Builtin, chrome) is not null).ToArray();
+        if (written.Length > 0 && (_react is null || written.Length < wrappers.Length))
+            throw new InvalidOperationException($"{Builtin.Name}'s React Example is written for {(_react is null ? "" : "the built-in Chrome and ")}{string.Join(" and ", written)} alone: write {string.Join(", ", ((ReactChrome[])[ReactChrome.Builtin, .. wrappers]).Select(chrome => $"{Builtin.Name}{chrome.FileSuffix()}.tsx"))} together.");
+        _reactWrappers = written.Length > 0;
     }
 
-    // The frame's page, relative to the site's base, with the Example and the site's scheme in its address. A
-    // change of scheme is a new address, so the frame runs the Example again in the other one.
+    // The frame's page, relative to the site's base, with the Example, the site's scheme and the Chrome in its
+    // address. A change of scheme or Chrome is a new address, so the frame runs the Example again.
     private string FrameAddress(ReactExample react) =>
-        $"react/index.html?example={Uri.EscapeDataString(react.Name)}&scheme={(State.Dark ? "dark" : "light")}";
+        $"react/index.html?example={Uri.EscapeDataString(react.Name)}&scheme={(State.Dark ? "dark" : "light")}&chrome={ReactRunsUnder.AddressName()}";
 
     public void Dispose() => State.Changed -= OnChanged;
 }

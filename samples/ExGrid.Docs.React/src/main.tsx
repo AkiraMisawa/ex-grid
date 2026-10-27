@@ -1,12 +1,13 @@
 // The frame a React Example runs in (ADR-0350 section 12, ADR-0110): the Docs Site opens this page with the
-// Example's path and the site's scheme in its address, ?example=Sheet/FirstSheet&scheme=dark, and it runs that one
-// Example. An Example is a .tsx file beside the Blazor one under ExGrid.Docs/Examples, whose default export is the
+// Example's path, the site's scheme and its Chrome in its address, ?example=Grid/FirstGridMui&scheme=dark&chrome=mui,
+// and it runs that one Example inside what that Chrome needs above it (chrome-frame.tsx). An Example is a .tsx file beside the Blazor one under ExGrid.Docs/Examples, whose default export is the
 // component; the site shows the same file as the Example's code.
 import { StrictMode, type ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
 import '../../../src/ExSheet/wwwroot/ex-sheet.min.css';
 import './frame.css';
+import { chromeFrame, chromeOf } from './chrome-frame';
 
 const examples = import.meta.glob<{ readonly default: ComponentType }>('../../ExGrid.Docs/Examples/**/*.tsx');
 const prefix = '../../ExGrid.Docs/Examples/';
@@ -14,6 +15,7 @@ const prefix = '../../ExGrid.Docs/Examples/';
 const query = new URLSearchParams(location.search);
 const name = query.get('example');
 const scheme = query.get('scheme');
+const chrome = chromeOf(query.get('chrome'));
 
 // The site's scheme, declared for the whole document as the site declares it, so the grid's Visual Tokens follow.
 if (scheme !== 'light' && scheme !== 'dark') {
@@ -33,8 +35,9 @@ if (name === null) throw new Error('No Example is named: open this page with ?ex
 const load = examples[`${prefix}${name}.tsx`];
 if (load === undefined) throw new Error(`There is no React Example ${name}: it is a .tsx file under ExGrid.Docs/Examples.`);
 const { default: Example } = await load();
+const within = await chromeFrame(chrome, scheme);
 document.title = `${name} — ExGrid Example for React`;
-createRoot(app).render(<StrictMode><Example /></StrictMode>);
+createRoot(app).render(<StrictMode>{within(<Example />)}</StrictMode>);
 
 // The site's frame takes the Example's height, set from here: the frame's page is the site's own origin, so it
 // reaches the element it runs in, and the site renders no height that a render of its own would take back. The

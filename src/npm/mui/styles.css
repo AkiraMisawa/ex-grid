@@ -71,6 +71,12 @@
        cannot clip its content, which would clip the grid's popovers (UX-11). */
     padding: var(--mui-shape-borderRadius);
 }
+/* A Stretch grid's Paper (ADR-0045): as wide as the container, so the grid inside it takes the container's width, not
+   its columns'. */
+.mui-ex-grid.mui-ex-grid-stretch {
+    display: flex;
+    width: 100%;
+}
 .mui-ex-grid.mui-ex-grid-square {
     padding: 0;
 }

@@ -4,7 +4,9 @@
     --docs-frame-ink: light-dark(rgba(0, 0, 0, 0.87), rgba(255, 255, 255, 0.87));
 }
 
-html, body {
+/* A design system's global stylesheet sets the body's ground and text (Mantine's does), and loads after this one:
+   the frame stays the site's Example surface, in the site's text, whichever Chrome the Example runs under. */
+html > body {
     margin: 0;
     background: transparent;
     color: var(--docs-frame-ink);
