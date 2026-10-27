@@ -9,6 +9,7 @@ import type { GridColumn } from '../src/dom/grid-column';
 import { exceedsUtf8, utf8Length } from '../src/dom/grid-paste';
 import type { GridRefusal } from '../src/dom/grid-refusal';
 import type { GridSelection } from '../src/selection/selection';
+import { pasteRefusalLabelIds, columnPlaceholder as refusalColumnPlaceholder } from '../src/chrome/refusal-words';
 import { GridSource } from '../src/source/grid-source';
 import { FakeClock } from './fake-clock';
 import { mount, painted, q, trades, type Trade } from './grid-harness';
@@ -19,6 +20,10 @@ const columns: readonly GridColumn<Trade>[] = [
     { name: 'Notional', type: 'number', value: trade => trade.notional, width: 100, editable: true },
     { name: 'Desk', type: 'text', value: trade => trade.book, width: 100, header: 'Trading desk ($&)' },
 ];
+
+// Words for a paste over the Desk that name the column twice.
+const twiceNamed = (id: string): string | undefined => (id === pasteRefusalLabelIds.targetNotEditable
+    ? `${refusalColumnPlaceholder} is read-only: leave ${refusalColumnPlaceholder} out.` : undefined);
 
 // Rows of 24 px under a header of 24; the columns' left edges.
 const rowY = (row: number): number => (row * 24) + 5;
@@ -152,6 +157,54 @@ describe('a paste into the grid', () => {
         paste(root, 'x');
         expect(refusals).toEqual([{ kind: 'paste', reason: 'targetNotEditable' }]);
         expect(q(root, '.ex-announce').textContent).toBe('Nothing was changed: the selection covers Book, which cannot be edited. Select cells only in columns that can be edited.');
+    });
+
+    it('ADR-0203: a refusal is said in the words commandLabel answers for its id, the column written in, and silenced by an empty answer', async () => {
+        const refusals: GridRefusal[] = [];
+        const said = new Map<string, string | undefined>([
+            [pasteRefusalLabelIds.targetNotEditable, `Only Book and Notional take a paste, and the selection covers ${refusalColumnPlaceholder}.`],
+        ]);
+        const asked: string[] = [];
+        const commandLabel = (id: string): string | undefined => { asked.push(id); return said.get(id); };
+        const options = { columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, commandLabel, onPaste: () => undefined,
+            onRefused: (refusal: GridRefusal) => { refusals.push(refusal); } } as const;
+        const { root, view } = mount(options);
+        await painted();
+        press(root, 230, rowY(0));
+        paste(root, 'x');
+        await painted();
+        expect(refusals).toEqual([{ kind: 'paste', reason: 'targetNotEditable' }]);
+        expect(q(root, '.ex-announce').textContent).toBe('Only Book and Notional take a paste, and the selection covers Trading desk ($&).');
+        expect(asked).toContain('refused-paste-target-not-editable');
+
+        // An empty answer silences the reason; the refusal is still raised by name.
+        said.set(pasteRefusalLabelIds.targetNotEditable, '');
+        view.update({ ...options, commandLabel: (id: string) => said.get(id) });
+        await painted();
+        paste(root, 'y');
+        await painted();
+        // Said nothing: the last words stand, neither emptied nor said again.
+        expect([q(root, '.ex-announce').textContent, refusals.length])
+            .toEqual(['Only Book and Notional take a paste, and the selection covers Trading desk ($&).', 2]);
+
+        // No answer keeps the built-in English, and an answer that is not text is refused by name.
+        said.delete(pasteRefusalLabelIds.targetNotEditable);
+        paste(root, 'z');
+        await painted();
+        expect(q(root, '.ex-announce').textContent).toBe('Nothing was changed: the selection covers Trading desk ($&), which cannot be edited. Select cells only in columns that can be edited.');
+        view.update({ ...options, commandLabel: () => 42 as unknown as string });
+        await painted();
+        expect(() => paste(root, 'w')).toThrow(/commandLabel answered number for 'refused-paste-target-not-editable'/);
+    });
+
+    it('ADR-0203: a column with a blank header is written in by its name, wherever the words hold the placeholder', async () => {
+        const unheaded = columns.map(column => (column.name === 'Desk' ? { ...column, header: ' ' } : column));
+        const { root } = mount({ columns: unheaded, rows: trades(20), rowHeight: 24, viewportHeight: 480, commandLabel: twiceNamed, onPaste: () => undefined });
+        await painted();
+        press(root, 230, rowY(0));
+        paste(root, 'x');
+        await painted();
+        expect(q(root, '.ex-announce').textContent).toBe('Desk is read-only: leave Desk out.');
     });
 
     it('ADR-0035 CP-16: a paste over a column that is not Editable is refused whole, and the words name it by its header', async () => {

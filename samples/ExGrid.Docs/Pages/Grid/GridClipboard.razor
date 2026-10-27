@@ -171,6 +171,13 @@
             not a live region, or it is announced twice. A sentence your <code>CopyAnswer</code> refuses with is
             announced in place of the words for <code>RefusedByConsumer</code>.
         </p>
+        <p>
+            In React the grid's <code>commandLabel</code> is asked with the same ids, which <code>@@ex-grid/core</code>
+            exports as <code>copyRefusalLabelIds</code>, <code>pasteRefusalLabelIds</code> and
+            <code>shapeMismatchMaySpillLabelId</code>, with <code>refusalColumnPlaceholder</code> for the column;
+            <code>undefined</code> keeps the English, the empty string silences one, and <code>onRefused</code>
+            still receives the reason. <code>japaneseGridWords</code> answers every one of them.
+        </p>
     </DocsSection>
 
     <DocsSection Title="API">

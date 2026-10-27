@@ -43,6 +43,7 @@ export { markLabelIds } from './chrome/mark-words';
 export { selectionLabelIds } from './chrome/selection-words';
 export { filterPanelLabelIds, operatorLabelId } from './chrome/filter-panel-words';
 export { findPanelLabelIds } from './chrome/find-panel-labels';
+export { columnPlaceholder as refusalColumnPlaceholder, copyRefusalLabelIds, pasteRefusalLabelIds, shapeMismatchMaySpillLabelId } from './chrome/refusal-words';
 export { japaneseGridWords } from './chrome/japanese-grid-words';
 export type { CopyOrientation, CopyPlan, CopyRefusalReason, PastePlan, PasteRefusalReason, PasteShape, SourceCell } from './clipboard/clipboard-rules';
 export { assembleCopy, invariantMarker, markAttribute, type CopyFlavours, type CopyValues, type GridCopyAnswer, type GridCopyRequest } from './clipboard/clipboard-data';

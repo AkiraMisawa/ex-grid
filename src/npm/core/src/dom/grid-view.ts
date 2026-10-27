@@ -13,8 +13,8 @@ import { assembleCopy, checkedCopyAnswer, fieldCopyFlavours, type CopyFlavours, 
 import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
 import { GridClearIntent } from '../clipboard/clear-intent';
 import {
-    columnPlaceholder, commitCancelledId, copyRefusalWords, errorStepMovedId, errorStepNoneId, heldInputLostId, pasteRefusalWords, replaceCellChangedId, rowCommandRefusalId,
-    shapeMismatchMaySpillWords,
+    columnPlaceholder, commitCancelledId, copyRefusalLabelIds, errorStepMovedId, errorStepNoneId, heldInputLostId, pasteRefusalLabelIds, replaceCellChangedId, rowCommandRefusalId,
+    shapeMismatchMaySpillLabelId,
 } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
 import { summaryLabelIds } from '../chrome/summary-words';
@@ -409,7 +409,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      */
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     /** What the built-in menu calls a command, by its id (ADR-0036): the Consumer's words, in any language, or
-     * `undefined` for the built-in English. A command the table does not know either is shown as its id. */
+     * `undefined` for the built-in English. A command the table does not know either is shown as its id. A refused
+     * copy, paste, fill or Delete is said in the words it answers for the reason's id (ADR-0203:
+     * `copyRefusalLabelIds`, `pasteRefusalLabelIds`, `shapeMismatchMaySpillLabelId`), where
+     * `refusalColumnPlaceholder` stands for the column's header; `undefined` keeps the built-in English and `''`
+     * says nothing, the refusal still reaching `onRefused`. */
     readonly commandLabel?: (id: string) => string | undefined;
     /** Leaves Copy with headers off the Context Menu (ADR-0050, item 13). Shown unless given. */
     readonly hideCopyWithHeaders?: boolean;
@@ -7963,11 +7967,14 @@ export class GridView<Row> {
         this.#onRefused?.(refusal);
     }
 
-    // A sentence a refusal or a held edit says in the live region (A11Y-15, A11Y-16).
+    // A sentence a refusal or a held edit says in the live region (A11Y-15, A11Y-16). The Consumer's empty words
+    // silence it (ADR-0203): the Consumer owns saying it, so what the grid still owed saying stands down too, and the
+    // refusal is still raised by name.
     #sayRefusal(words: string): void {
         this.#announcedRanges = this.#held.selection.ranges;
         this.#cancelAnnounce?.();
         this.#cancelAnnounce = undefined;
+        if (words === '') return;
         if (this.#announce.textContent === words) {
             this.#say('');
             this.#showSettled(false);
@@ -7982,14 +7989,17 @@ export class GridView<Row> {
         }
     }
 
-    // The built-in words for a refusal (ADR-0203): a shape mismatch where a paste may spill offers a single
-    // cell too, and a column that is not Editable is named by its header.
+    // The words a refusal is said in (ADR-0203): the Consumer's through `commandLabel` by the reason's id, else the
+    // built-in English. A shape mismatch where a paste may spill offers a single cell too, and a column that is not
+    // Editable is named by its header, or by its name where the header is blank.
     #wordsFor(refusal: WordedRefusal, column: number | undefined): string {
-        if (refusal.kind === 'copy') return copyRefusalWords[refusal.reason];
-        if (refusal.reason === 'shapeMismatch' && this.#pasteMaySpill) return shapeMismatchMaySpillWords;
-        const words = pasteRefusalWords[refusal.reason];
+        const spills = refusal.kind === 'paste' && refusal.reason === 'shapeMismatch' && this.#pasteMaySpill;
+        const id = refusal.kind === 'copy' ? copyRefusalLabelIds[refusal.reason] : spills ? shapeMismatchMaySpillLabelId : pasteRefusalLabelIds[refusal.reason];
+        const words = this.#labelOf(id);
+        if (column === undefined || !words.includes(columnPlaceholder)) return words;
+        const refused = headerOf(itemAt(this.#columns, column));
         // As text, never as a replacement pattern: a header may hold `$&`.
-        return column === undefined ? words : words.replace(columnPlaceholder, () => itemAt(this.#columns, column).header);
+        return words.replaceAll(columnPlaceholder, () => refused);
     }
 
     // A paste the browser's command fired on the root (ADR-0014). The flavours are readable only inside the

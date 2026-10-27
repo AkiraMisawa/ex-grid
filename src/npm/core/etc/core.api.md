@@ -254,6 +254,9 @@ export interface CopyPlan {
 }
 
 // @public
+export const copyRefusalLabelIds: Readonly<Record<CopyRefusalReason, string>>;
+
+// @public
 export type CopyRefusalReason = 'emptySelection' | 'misalignedShape' | 'tooLarge' | 'rowsUnavailable' | 'clipboardUnavailable' | 'refusedByConsumer';
 
 // @public
@@ -1648,6 +1651,9 @@ export class PastePlan {
 }
 
 // @public
+export const pasteRefusalLabelIds: Readonly<Record<PasteRefusalReason, string>>;
+
+// @public
 export type PasteRefusalReason = 'emptySelection' | 'singleCellTarget' | 'shapeMismatch' | 'disjointTarget' | 'targetNotEditable' | 'tooLarge' | 'spillPastExtent' | 'nothingToFillFrom' | 'multipleRanges' | 'sourceUnavailable' | 'orderMoved' | 'sourceChanged' | 'unreadable' | 'cancelled';
 
 // @public
@@ -1706,6 +1712,9 @@ export interface ReferenceKeyColour {
 
 // @public
 export const referencePaletteLength = 7;
+
+// @public
+export const refusalColumnPlaceholder = "{column}";
 
 // @public
 export function refusedCells(cells: readonly GridReplaceRefusedCell[], rowSequenceVersion: number): GridReplaceResult;
@@ -1845,6 +1854,9 @@ export interface SelectionSummary {
 
 // @public
 export type SelectionSummaryStatus = 'none' | 'pending' | 'answered' | 'declined';
+
+// @public
+export const shapeMismatchMaySpillLabelId = "refused-paste-shape-mismatch-may-spill";
 
 // @public
 export function significantDigits(value: SnapshotDecimal): number;

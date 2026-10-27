@@ -4,6 +4,7 @@
 // route, and a refused one writes nothing and is said by name.
 import { afterEach, describe, expect, it } from 'vitest';
 import { Temporal } from 'temporal-polyfill';
+import { copyRefusalLabelIds } from '../src/chrome/refusal-words';
 import { defined } from '../src/must';
 import type { GridCopyAnswer } from '../src/clipboard/clipboard-data';
 import type { GridColumn } from '../src/dom/grid-column';
@@ -60,6 +61,9 @@ function heard(): { readonly refusals: GridRefusal[]; readonly onRefused: (refus
     const refusals: GridRefusal[] = [];
     return { refusals, onRefused: refusal => { refusals.push(refusal); } };
 }
+
+// The Consumer's words for a copy past the cap, and the built-in words for every other refusal (ADR-0203).
+const tooLargeWords = (id: string): string | undefined => (id === copyRefusalLabelIds.tooLarge ? 'Not copied: export instead.' : undefined);
 
 const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
 
@@ -120,6 +124,18 @@ describe('a copy from the grid', () => {
         expect(q(root, '.ex-announce').textContent).toBe('Nothing was copied: the selection holds more cells than one copy carries. Export the data instead.');
         // A cap below one cell would switch copying off, which the cap is not for.
         expect(() => { view.update({ ...options, copyCellCap: 0 }); }).toThrow(/copyCellCap is a whole number of at least one cell/);
+    });
+
+    it('ADR-0203: a refused copy is said in the words commandLabel answers for its id', async () => {
+        const listener = heard();
+        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal, copyCellCap: 1, commandLabel: tooLargeWords, ...listener });
+        await painted();
+        press(root, 10, rowY(0));
+        key(root, 'ArrowDown', { shiftKey: true });
+        await painted();
+        expect(copy(root).data.size).toBe(0);
+        expect(listener.refusals).toEqual([{ kind: 'copy', reason: 'tooLarge' }]);
+        expect(q(root, '.ex-announce').textContent).toBe('Not copied: export instead.');
     });
 
     it('ADR-0005 CP-7: a Selection past the Window is gathered from the source and written whole by the asynchronous route', async () => {
