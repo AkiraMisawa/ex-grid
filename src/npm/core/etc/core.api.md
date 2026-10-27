@@ -561,6 +561,20 @@ export interface GridExtent {
 }
 
 // @public
+export class GridFillIntent {
+    // @internal
+    constructor(source: SelectionRange, target: SelectionRange, direction: GridDirection, rowSequenceVersion: number);
+    readonly direction: GridDirection;
+    refuse(): void;
+    get refused(): boolean;
+    readonly rowSequenceVersion: number;
+    // @internal
+    seal(): void;
+    readonly source: SelectionRange;
+    readonly target: SelectionRange;
+}
+
+// @public
 export interface GridFilter {
     readonly columns: Readonly<Record<string, FilterSpec>>;
     readonly opaque?: unknown;
@@ -669,6 +683,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onEdit?: (intent: GridEditIntent<Row>) => void | PromiseLike<void>;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
+    readonly onFill?: (intent: GridFillIntent) => void;
     readonly onLeave?: () => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
@@ -690,6 +705,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly rowHeight?: number;
     readonly rowKind?: (row: Row) => RowKind;
     readonly rows?: readonly Row[];
+    readonly showFillHandle?: boolean;
     readonly showSelectionSummary?: boolean;
     readonly source?: GridSource<Row>;
     readonly stripeRows?: boolean;

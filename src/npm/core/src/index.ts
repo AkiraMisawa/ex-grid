@@ -25,6 +25,7 @@ export { assembleCopy, invariantMarker, markAttribute, type CopyFlavours, type C
 export { parseClipboard } from './clipboard/clipboard-parse';
 export type { PasteFieldOrigin } from './clipboard/clipboard-parse';
 export type { GridPasteIntent } from './clipboard/paste-intent';
+export type { GridFillIntent } from './selection/fill-intent';
 export type { GridClearIntent } from './clipboard/clear-intent';
 export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent, GridOverwriteNotice } from './cells/edit-intent';
 export { GridRuleset, type Breach, type BreachCell, type GridErrorStepRequest, type RuleViolation } from './cells/grid-ruleset';

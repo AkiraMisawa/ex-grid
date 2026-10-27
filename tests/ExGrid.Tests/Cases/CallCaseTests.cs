@@ -34,6 +34,7 @@ public class CallCaseTests
         ["ColumnWidthSpec"] = typeof(ColumnWidthSpec),
         ["GlyphWidthTable"] = typeof(GlyphWidthTable),
         ["FilterOperators"] = typeof(FilterOperators),
+        ["FillRules"] = typeof(ExGrid.Selection.FillRules),
         ["GridEditingKeys"] = typeof(ExGrid.Keys.GridEditingKeys),
         ["GridFind"] = typeof(ExGrid.Finding.GridFind),
         ["HeaderReorder"] = typeof(HeaderReorder),

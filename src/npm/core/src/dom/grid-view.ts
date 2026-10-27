@@ -57,7 +57,9 @@ import { cell as cellPosition, sameCell, type CellPosition, type GridDirection, 
 import { markedColumns, markedRows, wholeColumnRuns, wholeRowRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
-import { bottomRow, fromCorners, rangeCellCount, rangeContains, rightColumn, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
+import { bottomRow, boundingRange, fromCorners, rangeCellCount, rangeContains, rightColumn, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
+import { GridFillIntent } from '../selection/fill-intent';
+import { fillExtensionFor, fillHandleCorner, fillHandleRange, planHandleFill, type FillHandleCorner } from '../selection/fill-rules';
 import { Selection, type EdgeAnswer, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
@@ -89,7 +91,8 @@ import {
     resolveColumns, type GridAction, type GridActionEvent, type GridColumn, type GridTemplate, type GridTemplateCell, type ResolvedColumn,
 } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
-import { selectionLayers, type LayerPiece } from './selection-layers';
+import { selectionLayers, type FillPaint, type LayerPiece } from './selection-layers';
+import { handle as paintedHandle, handleCell, handleCentrePx, type ReadableEdge } from '../paint/selection-styles';
 import { SummaryMenu, toggledFigures } from './summary-menu';
 import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
@@ -234,6 +237,17 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * top-left, and once accepted the block becomes the Selection. Off unless given, and a block onto one
      * cell is then refused (ADR-0014). Declared by a Consumer that holds every cell, such as a Sheet. */
     readonly pasteMaySpill?: boolean;
+    /** The fill handle (ADR-0050, item 5): painted at the corner of the Selection's one range while no edit is
+     * open, and dragged along one axis to raise one Fill Intent through `onFill`. Off unless given. */
+    readonly showFillHandle?: boolean;
+    /**
+     * Hears the one intent a fill-handle drag raises (ADR-0050, item 5): the source, the target beside it and the
+     * direction. The grid writes nothing; what a fill means is the Consumer's. A Consumer that does not fill the
+     * pattern calls `intent.refuse()` before this returns, and the Selection stays on the source; otherwise it
+     * becomes the source and the target together. A target over a column not declared `editable` is refused
+     * whole before anything is raised (`onRefused`, kind `paste`, reason `targetNotEditable`; ADR-0035).
+     */
+    readonly onFill?: (intent: GridFillIntent) => void;
     /** The most a paste reads, in UTF-8 bytes across both flavours (ADR-0005): past it the paste is refused
      * whole, never pasted from the plain-text flavour alone, which is already rounded. 16 MB unless given. */
     readonly pasteByteCap?: number;
@@ -699,6 +713,8 @@ interface Taken<Row> {
     readonly marks: RowMarks<Row> | undefined;
     readonly onPaste: ((intent: GridPasteIntent) => void | PromiseLike<void>) | undefined;
     readonly pasteMaySpill: boolean;
+    readonly showFillHandle: boolean;
+    readonly onFill: ((intent: GridFillIntent) => void) | undefined;
     readonly highlightFocusRow: boolean;
     readonly highlightHoverRow: boolean;
     readonly cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined) | undefined;
@@ -1189,6 +1205,14 @@ export class GridView<Row> {
     #summaryRowsStamp = 0;
     #pasteHeard: ((intent: GridPasteIntent) => void | PromiseLike<void>) | undefined;
     #pasteMaySpill = false;
+    #showFillHandle = false;
+    #fillHeard: ((intent: GridFillIntent) => void) | undefined;
+    // A fill-handle drag (ADR-0050, item 5): the range it started from, and the order and the source it was taken
+    // under; the cell the pointer last reached; and the outline that paints, the source and what the drag has
+    // reached as one rectangle, kept so the layers see the same object until the drag reaches elsewhere.
+    #handleDrag: { readonly source: SelectionRange; readonly sequence: number; readonly binding: GridSource<Row> } | undefined;
+    #handlePointer: CellPosition | undefined;
+    #handleOutline: SelectionRange | undefined;
     #highlightFocusRow = false;
     #highlightHoverRow = false;
     #stripeRows = false;
@@ -1916,6 +1940,9 @@ export class GridView<Row> {
         if (pasteMaySpill !== undefined && typeof pasteMaySpill !== 'boolean') {
             throw new TypeError('pasteMaySpill is true or false.');
         }
+        const { showFillHandle, onFill }: { readonly showFillHandle?: unknown; readonly onFill?: unknown } = options;
+        if (showFillHandle !== undefined && typeof showFillHandle !== 'boolean') throw new TypeError('showFillHandle is true or false.');
+        if (onFill !== undefined && typeof onFill !== 'function') throw new TypeError('onFill is a function of the fill\'s intent.');
         const { highlightFocusRow, highlightHoverRow }: { readonly highlightFocusRow?: unknown; readonly highlightHoverRow?: unknown } = options;
         if (highlightFocusRow !== undefined && typeof highlightFocusRow !== 'boolean') {
             throw new TypeError('highlightFocusRow is true or false.');
@@ -2079,6 +2106,7 @@ export class GridView<Row> {
             onSelectionChanged: options.onSelectionChanged, copyCellCap, copyAnswer: options.copyAnswer, copyAnswerAsync: options.copyAnswerAsync, onRefused: options.onRefused, onAction: options.onAction,
             marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
+            showFillHandle: options.showFillHandle === true, onFill: options.onFill,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             cellMessage: options.cellMessage, declaredKeys, onDeclaredKey: options.onDeclaredKey,
             stripeRows: options.stripeRows === true, pageSize: options.pageSize, rowKind: options.rowKind,
@@ -2281,6 +2309,11 @@ export class GridView<Row> {
         this.#rowKind = taken.rowKind;
         this.#pasteHeard = taken.onPaste;
         this.#pasteMaySpill = taken.pasteMaySpill;
+        this.#showFillHandle = taken.showFillHandle;
+        this.#fillHeard = taken.onFill;
+        // A handle taken away takes its drag with it: nothing it reached is raised, and the rest of the gesture is
+        // no selection drag either.
+        if (!taken.showFillHandle && this.#handleDrag !== undefined) this.#setDragging(false);
         this.#highlightFocusRow = taken.highlightFocusRow;
         if (taken.highlightHoverRow !== this.#highlightHoverRow) {
             this.#highlightHoverRow = taken.highlightHoverRow;
@@ -3444,6 +3477,9 @@ export class GridView<Row> {
         // Only a press on the rows' own box, whose cells take no pointer events: its offsets are the
         // Viewport's, which the arithmetic reads (ADR-0012).
         if (event.button !== 0 || event.target !== this.#viewport) return;
+        // Read before anything below changes what is painted: the handle is grabbed where the user saw it
+        // (ADR-0050, item 5).
+        const grabbed = event.shiftKey || event.ctrlKey || event.metaKey ? undefined : this.#fillHandleUnder(event);
         this.#reconcileSelection();
         const at = this.#cellUnder(event);
         if (at === undefined) return;
@@ -3463,6 +3499,7 @@ export class GridView<Row> {
         this.#forgetHeadingDrag();
         // A press on the grid ends a release of Tab: the user has come back to it (ADR-0012).
         this.#tabReleased = false;
+        if (grabbed !== undefined && this.#startHandleDrag(grabbed)) return;
         const extent = this.#extent;
         const current = this.#held.selection;
         const toggling = this.#toggles(event);
@@ -3489,7 +3526,7 @@ export class GridView<Row> {
         if (event.target !== this.#viewport) return;
         const at = this.#cellUnder(event);
         if (at === undefined) return;
-        if (this.#apply(this.#held.selection.extendTo(at, this.#extent))) this.#invalidate();
+        if (this.#handleDrag !== undefined ? this.#moveHandlePointer(at) : this.#apply(this.#held.selection.extendTo(at, this.#extent))) this.#invalidate();
         const y = this.#viewportYOf(event);
         if (y !== undefined) this.#updateEdgeBand(event.offsetX - this.#scrollLeftPx, y);
     };
@@ -3511,6 +3548,11 @@ export class GridView<Row> {
         // Where a Heading drag is released counts as a move: a fast release reaches another column without
         // a move between (ADR-0050, item 1; ADR-0012).
         if (this.#headingDrag && this.#headingHears(event)) this.#moveHeadingDrag(event);
+        // A fill-handle drag is raised where it is released, and over no cell where it was last reached.
+        if (this.#handleDrag !== undefined) {
+            this.#finishHandleDrag(event.target === this.#viewport ? this.#cellUnder(event) : undefined);
+            return;
+        }
         this.#setDragging(false);
     };
 
@@ -6509,7 +6551,10 @@ export class GridView<Row> {
     // The move listeners stand only while a drag runs, so a pointer passing over costs nothing. Whatever
     // ends a drag ends a Heading drag, a press on the header and the edge band with it.
     #setDragging(dragging: boolean): void {
-        if (!dragging) this.#forgetHeadingDrag();
+        if (!dragging) {
+            this.#forgetHeadingDrag();
+            this.#endHandleDrag();
+        }
         if (dragging === this.#dragging) return;
         this.#dragging = dragging;
         if (dragging) {
@@ -6537,6 +6582,166 @@ export class GridView<Row> {
     // Whether a press adds or takes out (ADR-0012): Ctrl, or Meta where Meta is Command; Shift outranks it.
     #toggles(event: MouseEvent): boolean {
         return !event.shiftKey && (event.ctrlKey || (event.metaKey && this.#metaIsPrimary));
+    }
+
+    // ---- The fill handle (ADR-0050, item 5) --------------------------------------------------------------
+
+    // The handle where it is painted: declared, with no edit open, on a Selection of one range that is not every
+    // cell, at the corner that range's shape names.
+    #fillHandle(): { readonly range: SelectionRange; readonly corner: FillHandleCorner } | undefined {
+        if (!this.#showFillHandle || this.#edit !== undefined) return undefined;
+        const range = fillHandleRange(this.#held.selection);
+        const corner = range === undefined ? undefined : fillHandleCorner(range, this.#extent);
+        return range === undefined || corner === undefined ? undefined : { range, corner };
+    }
+
+    // What the layers paint of the fill: the handle where it stands, and a running drag's outline.
+    #fillPaint(handle: { readonly range: SelectionRange; readonly corner: FillHandleCorner } | undefined, readable: ReadableEdge | undefined): FillPaint {
+        return {
+            outline: this.#handleOutline,
+            handle: handle === undefined || readable === undefined ? undefined : { ...handle, sizePx: this.#metrics.fillHandleSizePx, readable },
+        };
+    }
+
+    // Where the readable area begins over the painted rows, for a handle held at its edge: its top below the first
+    // painted row's top, and its left in the content's coordinates.
+    #readableEdge(visible: RowRange, geometry: ViewportGeometry): ReadableEdge {
+        const columns = this.#styles.geometry;
+        return {
+            topPx: Math.max(0, -geometry.viewportTopPxOf(visible.start, this.#scrollTopPx)),
+            leftPx: Math.min(Math.max(this.#scrollLeftPx, 0), columns.maxScrollLeftPx) + columns.pinnedWidthPx,
+        };
+    }
+
+    // The range whose fill handle a press lands on, or `undefined`: arithmetic, as every other press on the rows is
+    // (ADR-0008), at the place the handle is painted, with a grab box twice its side about its centre. A handle
+    // not painted, or scrolled under the Pinned Columns or the Row Headings, cannot be grabbed, as it cannot be
+    // seen; and a press on a Row Heading is the Heading's, though a whole row's handle stands beside it.
+    #fillHandleUnder(event: MouseEvent): SelectionRange | undefined {
+        const handle = this.#fillHandle();
+        const visible = this.#visible;
+        const geometry = this.#geometry;
+        if (handle === undefined || visible === undefined || geometry === undefined) return undefined;
+        const columns = this.#styles.geometry;
+        if (columns.isInLead(event.offsetX, this.#scrollLeftPx)) return undefined;
+        const size = this.#metrics.fillHandleSizePx;
+        const rowHeight = this.#metrics.rowHeightPx;
+        const readable = this.#readableEdge(visible, geometry);
+        const pinnedCorner = handleCell(handle.range, handle.corner).column < columns.pinnedCount;
+        // Grabbed only where it is painted: the same judgement the layer makes.
+        if (paintedHandle(handle.range, handle.corner, columns, rowHeight, visible, size, pinnedCorner, readable) === undefined) return undefined;
+        const [x, y] = handleCentrePx(handle.range, handle.corner, columns, rowHeight, visible.start, size, readable);
+        const scrollLeft = readable.leftPx - columns.pinnedWidthPx;
+        // The pinned layer stays put as the content pans, and the press is read in the content's coordinates.
+        if (!pinnedCorner && x - scrollLeft < columns.pinnedWidthPx) return undefined;
+        const centreX = pinnedCorner ? x + scrollLeft : x;
+        return Math.abs(event.offsetX - centreX) <= size && Math.abs(event.offsetY - y) <= size ? handle.range : undefined;
+    }
+
+    // A press on the handle of `grabbed` starts a fill drag, not a selection: the Selection stays as it is, and the
+    // moves reach out from it along one axis. Whether one started: a Selection the press's reconcile changed is
+    // not the one whose handle the user grabbed.
+    #startHandleDrag(grabbed: SelectionRange): boolean {
+        const source = fillHandleRange(this.#held.selection);
+        if (source === undefined || !sameSelectionRange(source, grabbed)) return false;
+        this.#handleDrag = { source, sequence: this.#sequence(), binding: this.#source };
+        this.#handlePointer = undefined;
+        this.#handleOutline = undefined;
+        this.#setDragging(true);
+        this.#invalidate();
+        return true;
+    }
+
+    // The drag's pointer moved onto `cell`. Whether what is painted changes: the outline moves only when what the
+    // drag reaches does.
+    #moveHandlePointer(cell: CellPosition): boolean {
+        const drag = this.#handleDrag;
+        if (drag === undefined || (this.#handlePointer !== undefined && sameCell(cell, this.#handlePointer))) return false;
+        this.#handlePointer = cell;
+        const reached = fillExtensionFor(drag.source, cell);
+        const outline = reached === undefined ? undefined : boundingRange(drag.source, reached.target);
+        const was = this.#handleOutline;
+        if (outline === undefined ? was === undefined : was !== undefined && sameSelectionRange(outline, was)) return false;
+        this.#handleOutline = outline;
+        return true;
+    }
+
+    // A fill drag over, raised or not: its outline goes.
+    #endHandleDrag(): void {
+        if (this.#handleDrag === undefined) return;
+        this.#handleDrag = undefined;
+        this.#handlePointer = undefined;
+        this.#handleOutline = undefined;
+        this.#invalidate();
+    }
+
+    // The drag's release (ADR-0050, item 5): exactly one Fill Intent, or one refusal, or nothing when the pointer
+    // came back inside the source. Editable is judged on the target before anything is raised (ADR-0035). Judged
+    // on the newest rows the source holds (ADR-0142 D5): positions taken under an order that has moved since, or
+    // on what a source since replaced painted, name other rows, so such a drag is refused, as a paste aimed under
+    // another order is (ADR-0011).
+    #finishHandleDrag(releasedOn: CellPosition | undefined): void {
+        const drag = this.#handleDrag;
+        const pointer = releasedOn ?? this.#handlePointer;
+        this.#setDragging(false);
+        // An edit opened while the button was held takes the handle away, and with it the drag: nothing is raised
+        // under an open editor (ADR-0034).
+        if (this.#destroyed || drag === undefined || pointer === undefined || this.#edit !== undefined) return;
+        const columns = this.#columns;
+        const decision = planHandleFill(drag.source, pointer, column => column >= 0 && column < columns.length && itemAt(columns, column).editable);
+        // A release back inside the source raises nothing, under any order.
+        if (decision === undefined) return;
+        this.#source.publishGathered?.();
+        this.#reconcileSelection();
+        if (drag.binding !== this.#source) {
+            this.#refuse({ kind: 'paste', reason: 'sourceChanged' });
+            return;
+        }
+        if (drag.sequence !== this.#sequence()) {
+            this.#refuse({ kind: 'paste', reason: 'orderMoved' });
+            return;
+        }
+        if (decision.refused) {
+            this.#refuse({ kind: 'paste', reason: decision.reason }, decision.column);
+            return;
+        }
+        // Nobody taking the intent is nobody accepting it: the Selection stays on the source.
+        const listener = this.#fillHeard;
+        if (listener === undefined) return;
+        this.#supersedeFill();
+        const intent = new GridFillIntent(drag.source, decision.extension.target, decision.extension.direction, this.#handedVersion());
+        // The user's own write (ADR-0142 D1), taken back if refused.
+        const noted = this.#noteUserWrite([intent.target]);
+        let returned = false;
+        try {
+            listener(intent);
+            returned = true;
+        } finally {
+            intent.seal();
+            // What the source gathered while the Consumer filled is put out as its handler returns (D5).
+            this.#source.publishGathered?.();
+            this.#userWriteAnswered(noted, !returned || intent.refused);
+        }
+        if (!intent.refused) this.#selectFilled(drag.source, intent.target, drag.sequence, drag.binding);
+    }
+
+    // After a fill the Consumer accepted, the Selection is the source and the target together, as in Excel
+    // (ADR-0050, item 5 refined), the Focus on the cell it was on, inside the source, so nothing scrolls. Positions
+    // mean something only under the order they were written in, and the Selection is the user's: if the order or
+    // the source moved while the Consumer filled, or the Selection is no longer the source, nothing is placed
+    // (ADR-0011).
+    #selectFilled(source: SelectionRange, target: SelectionRange, sequence: number, binding: GridSource<Row>): void {
+        this.#reconcileSelection();
+        if (this.#destroyed || sequence !== this.#sequence() || binding !== this.#source) return;
+        const current = this.#held.selection;
+        const focus = current.focus;
+        if (current.ranges.length !== 1 || !sameSelectionRange(itemAt(current.ranges, 0), source) || focus === undefined || !rangeContains(source, focus)) {
+            return;
+        }
+        const extent = this.#extent;
+        const filled = boundingRange(source, target);
+        if (bottomRow(filled) >= extent.rowCount || rightColumn(filled) >= extent.columnCount) return;
+        if (this.#apply(current.place(filled, focus, extent))) this.#invalidate();
     }
 
     // ---- The header: its press, its click and the Heading drag (ADR-0012, ADR-0050 item 1) -------------
@@ -7059,9 +7264,10 @@ export class GridView<Row> {
         if (row !== undefined && column !== undefined) {
             const extent = this.#extent;
             const current = this.#held.selection;
-            changed = this.#apply(!this.#headingDrag ? current.extendTo(cellPosition(row, column), extent)
-                : this.#headingAxis === 'rows' ? current.extendToRow(row, extent, this.#firstVisibleColumn)
-                    : current.extendToColumn(column, extent, this.#firstVisibleRow));
+            changed = this.#handleDrag !== undefined ? this.#moveHandlePointer(cellPosition(row, column))
+                : this.#apply(!this.#headingDrag ? current.extendTo(cellPosition(row, column), extent)
+                    : this.#headingAxis === 'rows' ? current.extendToRow(row, extent, this.#firstVisibleColumn)
+                        : current.extendToColumn(column, extent, this.#firstVisibleRow));
         }
         if (moved || changed) this.#invalidate();
     };
@@ -7301,9 +7507,14 @@ export class GridView<Row> {
         // the readable area's top, and the offset that takes a column under the pinned block.
         const firstOpenRow = visible === undefined || geometry === undefined ? -1
             : geometry.viewportTopPxOf(visible.start, this.#scrollTopPx) > 0.01 ? visible.start : visible.start + 1;
+        // The fill handle, and where the readable area it is held at the edge of begins (ADR-0050, item 5).
+        const handle = this.#fillHandle();
+        const readable = handle === undefined || visible === undefined || geometry === undefined ? undefined : this.#readableEdge(visible, geometry);
         const inputs = {
             selection: this.#held.selection, copied: this.#copied, start: visible?.start, count: visible?.count, styles: this.#styles,
             rowHeightPx: this.#metrics.rowHeightPx, scrollLeftPx: this.#scrollLeftPx, firstOpenRow,
+            handleRange: handle?.range, handleCorner: handle?.corner, handleSizePx: this.#metrics.fillHandleSizePx,
+            readableTopPx: readable?.topPx, readableLeftPx: readable?.leftPx, fillOutline: this.#handleOutline,
             // A row the source has since taken away has no band; the next movement finds the row there now.
             hoverRow: this.#hoverRow !== undefined && this.#hoverRow < this.#totalRows ? this.#hoverRow : undefined,
             focusRow: this.#highlightFocusRow,
@@ -7315,7 +7526,8 @@ export class GridView<Row> {
             const pieces = visible === undefined || geometry === undefined
                 ? { shade: undefined, pinned: [], scrollable: [] }
                 : selectionLayers(inputs.selection, inputs.copied === undefined ? [] : inputs.copied.rectangles, this.#styles.geometry, inputs.rowHeightPx, visible,
-                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true }, { hoverRow: inputs.hoverRow, focusRow: inputs.focusRow });
+                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true }, { hoverRow: inputs.hoverRow, focusRow: inputs.focusRow },
+                    this.#fillPaint(handle, readable));
             const signature = JSON.stringify(pieces);
             if (signature !== this.#paintedLayers) {
                 this.#paintedLayers = signature;
