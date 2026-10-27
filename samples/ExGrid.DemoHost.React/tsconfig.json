@@ -30,6 +30,7 @@
       "@ex-grid/pivot": ["../../src/npm/pivot/src/index.ts"],
       "@ex-grid/pivot-react": ["../../src/npm/pivot-react/src/index.ts"],
       "@ex-grid/pivot-mantine": ["../../src/npm/pivot-mantine/src/index.ts"],
+      "@ex-grid/pivot-mui": ["../../src/npm/pivot-mui/src/index.ts"],
       "@ex-grid/sheet-engine": ["../../src/npm/sheet-engine/src/index.ts"],
       "@ex-grid/sheet": ["../../src/npm/sheet/src/index.ts"],
       "@ex-grid/sheet-react": ["../../src/npm/sheet-react/src/index.ts"],

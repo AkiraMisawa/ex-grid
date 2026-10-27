@@ -31,6 +31,8 @@ export async function chromeFrame(chrome: FrameChrome, scheme: 'light' | 'dark')
         case 'mui': {
             await import('../../../src/npm/mui/styles.css');
             await import('../../../src/npm/chart-mui/styles.css');
+            // The Pivot's, scoped under its own Paper: a grid's Example is untouched by it.
+            await import('../../../src/npm/pivot-mui/styles.css');
             const { ThemeProvider, createTheme } = await import('@mui/material/styles');
             // MuiExGrid reads the theme's colours as CSS variables, so the theme is made with them, in both schemes.
             const theme = createTheme({ cssVariables: { colorSchemeSelector: 'class' }, colorSchemes: { light: true, dark: true } });

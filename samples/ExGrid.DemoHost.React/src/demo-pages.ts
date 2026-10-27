@@ -135,6 +135,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: '@ex-grid/pivot-mantine: the trades pivoted in Mantine\'s Paper, the Field List, the Pivot Toolbar, its menus and panels and Show Details\' tabs and dialog in Mantine\'s components, and the theme\'s colours in both schemes (ADR-0390).',
     },
     {
+        route: 'pivot-mui', title: 'Pivot under MUI', group: 'ExPivot',
+        description: '@ex-grid/pivot-mui: the trades pivoted in MUI\'s Paper, the Field List, the Pivot Toolbar, its menus and panels and Show Details\' tabs and dialog in MUI\'s components, and the theme\'s colours in both schemes (ADR-0390).',
+    },
+    {
         route: 'sheet', title: 'Sheet', group: 'ExSheet',
         description: 'ExSheet drawn by ExGrid: Formulas, editing, paste, Delete, the fill keys and undo, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0370).',
     },

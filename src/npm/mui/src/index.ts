@@ -4,3 +4,4 @@ export { MuiSizeContext, muiChrome } from './chrome';
 export {
     muiDefaultFont, muiPresentationDefaults, muiSizeOf, type MuiExGridFont, type MuiExGridFontWidths, type MuiExGridSize,
 } from './presentation';
+export { refuseThemeWithoutVariables } from './theme';

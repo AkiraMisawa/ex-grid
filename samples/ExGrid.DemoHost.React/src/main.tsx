@@ -32,6 +32,7 @@ import { PivotCsv } from './pages/pivot-csv';
 import { PivotDb } from './pages/pivot-db';
 import { PivotLive } from './pages/pivot-live';
 import { PivotMantineDemo } from './pages/pivot-mantine';
+import { PivotMuiDemo } from './pages/pivot-mui';
 import { PivotRisk } from './pages/pivot-risk';
 import { SheetDemo } from './pages/sheet';
 import { Sizing } from './pages/sizing';
@@ -68,6 +69,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     'pivot-csv': PivotCsv,
     'pivot-live': PivotLive,
     'pivot-mantine': PivotMantineDemo,
+    'pivot-mui': PivotMuiDemo,
     sheet: SheetDemo,
     marks: Marks,
     stripes: Stripes,

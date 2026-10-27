@@ -44,6 +44,25 @@ export interface ExPivotChrome {
     readonly detailsDialog?: (context: PivotDetailsDialogSlotContext) => ReactNode;
 }
 
+/** The slots of `over` given a render function laid over `under`: a slot given as `undefined` leaves the Wrapper's,
+ * as one not named does. */
+function laid<T extends object>(under: T, over: Partial<T>): T {
+    return { ...under, ...Object.fromEntries(Object.entries(over).filter(([, slot]) => slot !== undefined)) };
+}
+
+/**
+ * A design-system Wrapper's Chrome with the Consumer's `chrome` over it (ADR-0390): `pivot`, the Wrapper's pivot
+ * slots, and `grid`, its ExGrid Chrome for the report's grid, each slot the Consumer names in its place. A slot given
+ * as `undefined` leaves the Wrapper's, as one not named does. The grid's Chrome is the Wrapper's own object while the
+ * Consumer names none of its slots, so a Chrome handed again with only pivot slots does not dress the report's grid
+ * again. Every Wrapper of ExPivot lays its Chrome so, once per `given`.
+ */
+export function layPivotChrome(pivot: Omit<ExPivotChrome, 'grid'>, grid: ExGridChrome<unknown>, given: ExPivotChrome | undefined): ExPivotChrome {
+    if (given === undefined) return { ...pivot, grid };
+    const { grid: givenGrid, ...givenPivot } = given;
+    return { ...laid(pivot, givenPivot), grid: givenGrid === undefined ? grid : laid(grid, givenGrid) };
+}
+
 /** The mount functions made for an ExPivot's render functions: the pivot's slots', and the grid's. */
 export interface PivotMountsMade {
     readonly pivot: Map<string, { readonly render: unknown; readonly mount: (slot: HTMLElement, context: unknown) => () => void }>;
