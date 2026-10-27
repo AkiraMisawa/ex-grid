@@ -34,7 +34,8 @@ internal static class DocsProducts
     {
         (_, ReactChrome.Builtin) => true,
         ("ExGrid", ReactChrome.Mantine or ReactChrome.Mui) => true,
-        ("ExSheet" or "ExPivot", ReactChrome.Mantine) => true,
+        ("ExSheet", ReactChrome.Mantine or ReactChrome.Mui) => true,
+        ("ExPivot", ReactChrome.Mantine) => true,
         ("ExChart", ReactChrome.Mantine or ReactChrome.Mui) => true,
         _ => false,
     };

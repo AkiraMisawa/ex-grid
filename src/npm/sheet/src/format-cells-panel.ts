@@ -11,8 +11,7 @@
 // text outranks the draft's (ADR-0240 section 1). It wears the C# panel's classes, so one stylesheet lays out both.
 
 import type { BorderLine, BorderLineStyle, CellColour } from '@ex-grid/sheet-engine';
-import { CellFill } from '@ex-grid/sheet-engine';
-import { automaticColour, paintOf } from './cell-colour';
+import { paintOf } from './cell-colour';
 import type { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type BorderEdge, type ColourTarget, type FormatCellsTab, type PaletteSwatch } from './format-cells-offer';
 import { unreachable } from './must';
@@ -356,7 +355,7 @@ export class FormatCellsPanel {
             this.#labelled(words.formatCellsLabel('underline'), underline),
             this.#choice(strikethrough, words.formatCellsLabel('strikethrough')),
             this.#choice(normal, words.formatCellsLabel('normalFont')));
-        const colour = this.#fieldset('ex-format-cells-colour', words.formatCellsLabel('colour'), this.#palette('font', () => draft.fontColour));
+        const colour = this.#fieldset('ex-format-cells-colour', words.formatCellsLabel('colour'), this.#palette('font', () => draft.colourOf('font')));
         return this.#el('div', '', this.#el('div', 'ex-format-cells-columns', styles, options), colour);
     }
 
@@ -405,7 +404,7 @@ export class FormatCellsPanel {
         for (const [name, value] of [['width', '120'], ['height', '72'], ['viewBox', '0 0 120 72'], ['role', 'img']] as const) preview.setAttribute(name, value);
         preview.setAttribute('aria-label', words.formatCellsLabel('preview'));
         this.#syncs.push(() => { this.#drawPreview(preview); });
-        const colour = this.#fieldset('ex-format-cells-colour', words.formatCellsLabel('colour'), this.#palette('border', () => draft.lineColour));
+        const colour = this.#fieldset('ex-format-cells-colour', words.formatCellsLabel('colour'), this.#palette('border', () => draft.colourOf('border')));
         return this.#el('div', '', this.#el('div', 'ex-format-cells-columns', styles, this.#el('div', 'ex-format-cells-options', presets, edges, preview)), colour);
     }
 
@@ -470,7 +469,7 @@ export class FormatCellsPanel {
 
     #fillTab(): HTMLElement {
         const draft = this.#draft;
-        return this.#fieldset('ex-format-cells-colour', this.#words.formatCellsLabel('backgroundColour'), this.#palette('fill', () => draft.fill.colour));
+        return this.#fieldset('ex-format-cells-colour', this.#words.formatCellsLabel('backgroundColour'), this.#palette('fill', () => draft.colourOf('fill')));
     }
 
     // ---- The palette ----
@@ -512,13 +511,7 @@ export class FormatCellsPanel {
 
     // A colour chosen for a target: `undefined` is Automatic for the Font and the Border, and No Colour for the Fill.
     #choose(target: ColourTarget, colour: CellColour | undefined): void {
-        const draft = this.#draft;
-        switch (target) {
-            case 'font': draft.setFontColour(colour === undefined ? automaticColour() : colour); break;
-            case 'fill': draft.setFill(colour === undefined ? CellFill.none : CellFill.solid(colour)); break;
-            case 'border': draft.setLineColour(colour === undefined ? automaticColour() : colour); break;
-            default: unreachable(target);
-        }
+        this.#draft.setColour(target, colour);
     }
 
     // ---- Controls ----

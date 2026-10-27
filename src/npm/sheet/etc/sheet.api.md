@@ -96,6 +96,7 @@ export class FormatCellsDraft {
     canSet(edge: BorderEdge): boolean;
     get category(): NumberFormatCategory;
     get change(): CellFormatChange;
+    colourOf(target: ColourTarget): CellColour | undefined;
     colourText(target: ColourTarget): string;
     get currencySymbol(): string;
     get decimalPlaces(): number;
@@ -118,6 +119,7 @@ export class FormatCellsDraft {
     get refusal(): FormatCellsRefusal | undefined;
     selectCategory(category: NumberFormatCategory): void;
     setAlignment(alignment: HorizontalAlignment): void;
+    setColour(target: ColourTarget, colour: CellColour | undefined): void;
     setColourText(target: ColourTarget, text: string): void;
     setDecimalPlaces(places: number): void;
     setFill(fill: CellFill): void;

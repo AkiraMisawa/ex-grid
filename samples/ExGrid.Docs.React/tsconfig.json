@@ -23,6 +23,7 @@
       "@ex-grid/sheet-xlsx": ["../../src/npm/sheet-xlsx/src/index.ts"],
       "@ex-grid/mantine": ["../../src/npm/mantine/src/index.ts"],
       "@ex-grid/sheet-mantine": ["../../src/npm/sheet-mantine/src/index.ts"],
+      "@ex-grid/sheet-mui": ["../../src/npm/sheet-mui/src/index.ts"],
       "@ex-grid/pivot-engine": ["../../src/npm/pivot-engine/src/index.ts"],
       "@ex-grid/pivot": ["../../src/npm/pivot/src/index.ts"],
       "@ex-grid/pivot-react": ["../../src/npm/pivot-react/src/index.ts"],

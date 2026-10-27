@@ -10,9 +10,9 @@ import { curveBridge, curveColumns, curveSource, type CurveRow } from './CurveHi
 // useChartDock holds the charts made from the selection; the bridge's events go to it, and its commands join the
 // grid's context menu in one line. A click on a point moves the grid's Focus to the cell it was drawn from.
 //
-// Under a MantineProvider, with @mantine/core/styles.css, @ex-grid/mantine/styles.css and
-// @ex-grid/chart-mui/styles.css loaded: each chart opens as a tab below the grid, never over it, its toolbar and
-// menu Mantine's components, the theme's primary leading its series.
+// Under a ThemeProvider whose theme is made with createTheme({ cssVariables: true }), with @ex-grid/mui/styles.css and
+// @ex-grid/chart-mui/styles.css loaded: each chart opens as a tab below the grid, never over it, its toolbar and menu
+// MUI's components, the theme's primary leading its series.
 export default function FromGridMui(): ReactElement {
     const dock = useChartDock();
     const grid = useRef<ExGridApi<CurveRow>>(null);

@@ -555,6 +555,30 @@ export class FormatCellsDraft {
         this.#edgesTouched.add(edge);
     }
 
+    // ---- A palette's colour ----
+
+    /** The colour a palette shows chosen for a target: the Font's or the Border's, Automatic among them, or the Fill's,
+     * `undefined` for No Colour. */
+    colourOf(target: ColourTarget): CellColour | undefined {
+        switch (target) {
+            case 'font': return this.fontColour;
+            case 'fill': return this.#fill.colour;
+            case 'border': return this.lineColour;
+            default: return unreachable(target);
+        }
+    }
+
+    /** Chooses a palette's colour for a target: `undefined` is a palette's first choice, Automatic for the Font and the
+     * Border, and No Colour for the Fill. */
+    setColour(target: ColourTarget, colour: CellColour | undefined): void {
+        switch (target) {
+            case 'font': this.setFontColour(colour === undefined ? automaticColour() : colour); break;
+            case 'fill': this.setFill(colour === undefined ? CellFill.none : CellFill.solid(colour)); break;
+            case 'border': this.setLineColour(colour === undefined ? automaticColour() : colour); break;
+            default: unreachable(target);
+        }
+    }
+
     // ---- More Colours ----
 
     /** The text typed under More Colours for a colour, or empty. */

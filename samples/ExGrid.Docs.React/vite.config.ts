@@ -22,6 +22,7 @@ export default defineConfig({
             '@ex-grid/sheet-xlsx': at('../../src/npm/sheet-xlsx/src/index.ts'),
             '@ex-grid/mantine': at('../../src/npm/mantine/src/index.ts'),
             '@ex-grid/sheet-mantine': at('../../src/npm/sheet-mantine/src/index.ts'),
+            '@ex-grid/sheet-mui': at('../../src/npm/sheet-mui/src/index.ts'),
             '@ex-grid/pivot-engine': at('../../src/npm/pivot-engine/src/index.ts'),
             '@ex-grid/pivot': at('../../src/npm/pivot/src/index.ts'),
             '@ex-grid/pivot-react': at('../../src/npm/pivot-react/src/index.ts'),

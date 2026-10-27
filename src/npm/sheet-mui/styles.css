@@ -1,0 +1,224 @@
+/* @ex-grid/sheet-mui — the Sheet Wrapper's stylesheet (ADR-0390 section 5, ADR-0030), loaded beside @ex-grid/mui's.
+   The grid's tokens are @ex-grid/mui's, under the Paper's .mui-ex-grid; these rules dress the Sheet's own Chrome, the
+   Sheet Toolbar, the Sheet Tabs and Format Cells, in the variables a MUI theme made with cssVariables writes, and lay
+   out the Wrapper's own elements. They set no geometry the Sheet or the grid computes with: the toolbar's rows and the
+   tabs' band keep the heights the Sheet writes inline (ADR-0028). The Paper and the Ink, what the cells lie on, stay
+   the Sheet's in every scheme, never MUI's background (ADR-0071). Every rule is scoped under .mui-ex-sheet, so it
+   outranks ex-sheet.css's bare-class defaults whatever order the two load in, and every variable it reads is one MUI
+   writes again per colour scheme, so it names no scheme selector of its own. */
+
+/* The Sheet's Chrome is set in MUI's font: only the cells keep the Sheet's own, whose widths its columns are counted
+   in (ADR-0027). */
+.mui-ex-sheet .ex-sheet-toolbar,
+.mui-ex-sheet .ex-sheet-tab-area {
+    font: var(--mui-font-body2);
+}
+
+/* The Sheet Toolbar (ADR-0100): MUI's controls inside the Sheet's band, whose rows stay the Sheet's. The item the
+   band's keyboard stands on is outlined in the theme's primary, as MUI marks a control the keyboard is on. */
+.mui-ex-sheet .mui-ex-sheet-toolbar-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    border-radius: var(--mui-shape-borderRadius);
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-active {
+    outline: 2px solid var(--mui-palette-primary-main);
+    outline-offset: -1px;
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-icon,
+.mui-ex-sheet .mui-ex-sheet-toolbar-caret {
+    width: 16px;
+    height: 16px;
+}
+/* MUI takes pointer events from a disabled control, which would hide its title, the reason it cannot be pressed; the
+   browser still sends a disabled button no click. */
+.mui-ex-sheet .mui-ex-sheet-toolbar-item .Mui-disabled {
+    pointer-events: auto;
+    cursor: default;
+}
+/* A toggle stands in a toolbar, not a group: no border of its own, MUI's selected shade showing it pressed. */
+.mui-ex-sheet .mui-ex-sheet-toolbar-toggle {
+    border: 0;
+    padding: 4px;
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-item .MuiIconButton-sizeSmall {
+    padding: 4px;
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-menu,
+.mui-ex-sheet .mui-ex-sheet-toolbar-button {
+    min-width: 0;
+    padding-block: 2px;
+    font-weight: 400;
+    text-transform: none;
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-menu .MuiButton-endIcon {
+    margin-left: 2px;
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-split {
+    display: inline-flex;
+    align-items: center;
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-split .mui-ex-sheet-toolbar-arrow {
+    padding: 4px 0;
+    border-radius: var(--mui-shape-borderRadius);
+}
+/* A colour control's face shows the colour it sets beneath its picture, as Excel's does: the colour is the user's,
+   written inline. */
+.mui-ex-sheet .mui-ex-sheet-toolbar-face {
+    border-radius: var(--mui-shape-borderRadius);
+    box-shadow: inset 0 -3px 0 var(--mui-ex-sheet-swatch, transparent);
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-content {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* A Toolbar Item's list, MUI's Popper on a Paper: above the page as MUI's menus are, the choices one to a row and the
+   swatches ten across, as Excel's palette lays them out. */
+.mui-ex-sheet .mui-ex-sheet-toolbar-popper {
+    z-index: var(--mui-zIndex-modal);
+}
+.mui-ex-sheet .mui-ex-sheet-toolbar-list {
+    padding: 4px 0;
+}
+.mui-ex-sheet .mui-ex-sheet-choices {
+    display: flex;
+    flex-direction: column;
+    min-width: 10em;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+/* Only the width and the text: ButtonBase already takes the button's own border and ground away, and a background set
+   here would tie with MUI's hover, selected and keyboard-focus shades. */
+.mui-ex-sheet .mui-ex-sheet-choice {
+    width: 100%;
+    font: var(--mui-font-body2);
+}
+.mui-ex-sheet .mui-ex-sheet-choice[aria-disabled="true"] {
+    color: var(--mui-palette-text-disabled);
+    cursor: default;
+}
+.mui-ex-sheet .mui-ex-sheet-swatches {
+    display: grid;
+    grid-template-columns: repeat(10, 18px);
+    gap: 4px;
+    padding: 4px 8px;
+}
+.mui-ex-sheet .mui-ex-sheet-swatch {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--mui-palette-divider);
+    border-radius: 2px;
+    cursor: pointer;
+}
+.mui-ex-sheet .mui-ex-sheet-swatch[aria-checked="true"],
+.mui-ex-sheet .mui-ex-sheet-swatch:checked {
+    outline: 2px solid var(--mui-palette-primary-main);
+    outline-offset: 1px;
+}
+.mui-ex-sheet .mui-ex-sheet-swatch:focus-visible {
+    outline: 2px solid var(--mui-palette-primary-main);
+    outline-offset: 3px;
+}
+
+/* The Sheet Tabs (ADR-0331 §4): the selected tab's rule in the theme's primary, as MUI's Tabs draw their indicator,
+   its face in MUI's text. The tabs themselves, their band and their keyboard, are the Sheet's. */
+.mui-ex-sheet .ex-sheet-tab[aria-selected="true"] {
+    border-bottom-color: var(--mui-palette-primary-main);
+}
+.mui-ex-sheet .ex-sheet-tab-face {
+    display: inline-flex;
+    align-items: center;
+}
+.mui-ex-sheet .mui-ex-sheet-tab-add-face {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+}
+
+/* Format Cells (ADR-0071) inside the grid's popover frame, whose place and bound stay the grid's (ADR-0040). */
+.mui-ex-sheet .mui-ex-sheet-format-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    min-width: 28em;
+    color: var(--mui-palette-text-primary);
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-tabs {
+    border-bottom: 1px solid var(--mui-palette-divider);
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-tab {
+    text-transform: none;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-panel {
+    min-height: 18em;
+    padding-top: 8px;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-columns {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.mui-ex-sheet .mui-ex-sheet-legend {
+    margin-bottom: 4px;
+    font: var(--mui-font-body2);
+    font-weight: 500;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-list,
+.mui-ex-sheet .mui-ex-sheet-format-cells-line-column {
+    display: flex;
+    flex-direction: column;
+}
+.mui-ex-sheet .mui-ex-sheet-label {
+    margin-inline: 0;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-reason {
+    margin: 0 0 4px 2.5em;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-types {
+    max-height: 12em;
+    overflow-y: auto;
+    flex-wrap: nowrap;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-dropdown,
+.mui-ex-sheet .mui-ex-sheet-more-colours {
+    max-width: 16em;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-buttons .MuiButton-root {
+    text-transform: none;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-preview {
+    border: 1px solid var(--mui-palette-divider);
+    color: var(--mui-palette-text-primary);
+}
+.mui-ex-sheet .mui-ex-sheet-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.mui-ex-sheet .mui-ex-sheet-palette .mui-ex-sheet-swatches {
+    padding: 0;
+}
+.mui-ex-sheet .mui-ex-sheet-format-cells-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
