@@ -7,25 +7,25 @@
 | ExPivot | 93.5% | 85.6% |
 | ExChart | 91.8% | 86.2% |
 | ExBoard | 93.8% | 86.9% |
-| Data | 94.6% | 90.1% |
+| Data | 94.5% | 90% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/27/2026 - 06:36:03 |
+| Generated on: | 10/27/2026 - 07:03:53 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1224 |
 | Files: | 618 |
-| **Line coverage:** | 94.2% (85042 of 90231) |
-| Covered lines: | 85042 |
-| Uncovered lines: | 5189 |
+| **Line coverage:** | 94.2% (85039 of 90231) |
+| Covered lines: | 85039 |
+| Uncovered lines: | 5192 |
 | Coverable lines: | 90231 |
 | Total lines: | 144109 |
-| **Branch coverage:** | 87.4% (51245 of 58616) |
-| Covered branches: | 51245 |
+| **Branch coverage:** | 87.4% (51244 of 58616) |
+| Covered branches: | 51244 |
 | Total branches: | 58616 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -550,7 +550,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**95.9%**|**92.7%**|
+|**ExGrid.Data**|**95.9%**|**92.8%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -643,7 +643,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -722,11 +722,11 @@
 |ExGrid.Data.Arrow.Utf8ViewReader|94.1%|87.5%|
 
 </details>
-<details><summary>ExGrid.Data.Xlsx - 92.1%</summary>
+<details><summary>ExGrid.Data.Xlsx - 91.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data.Xlsx**|**92.1%**|**85%**|
+|**ExGrid.Data.Xlsx**|**91.9%**|**84.7%**|
 |ExGrid.Data.Xlsx.CountedPart|65%|100%|
 |ExGrid.Data.Xlsx.ForwardBuffer|72%|50%|
 |ExGrid.Data.Xlsx.OleFile|84.2%|71.4%|
@@ -744,7 +744,7 @@
 |ExGrid.Data.Xlsx.XlsxCell|100%||
 |ExGrid.Data.Xlsx.XlsxCellFormat|100%|100%|
 |ExGrid.Data.Xlsx.XlsxCellReference|98%|97%|
-|ExGrid.Data.Xlsx.XlsxColor|100%||
+|ExGrid.Data.Xlsx.XlsxColor|80%||
 |ExGrid.Data.Xlsx.XlsxColumn|100%||
 |ExGrid.Data.Xlsx.XlsxDefinedName|100%||
 |ExGrid.Data.Xlsx.XlsxElement|93.3%||
@@ -757,16 +757,16 @@
 |ExGrid.Data.Xlsx.XlsxReader.Relationship|100%||
 |ExGrid.Data.Xlsx.XlsxReadOptions|100%||
 |ExGrid.Data.Xlsx.XlsxRow|100%||
-|ExGrid.Data.Xlsx.XlsxSharedStrings|90.9%||
+|ExGrid.Data.Xlsx.XlsxSharedStrings|81.8%||
 |ExGrid.Data.Xlsx.XlsxSheetInfo|100%||
 |ExGrid.Data.Xlsx.XlsxSheetReader|92.9%|79.5%|
 |ExGrid.Data.Xlsx.XlsxSheetWriter|96%|89.7%|
 |ExGrid.Data.Xlsx.XlsxStyles|100%||
 |ExGrid.Data.Xlsx.XlsxTable|100%|100%|
 |ExGrid.Data.Xlsx.XlsxTheme|96.8%|90.5%|
-|ExGrid.Data.Xlsx.XlsxWorksheet|88.8%||
+|ExGrid.Data.Xlsx.XlsxWorksheet|22.2%||
 |ExGrid.Data.Xlsx.XlsxWriteOptions|100%||
-|ExGrid.Data.Xlsx.XlsxWriter|98.1%|92.2%|
+|ExGrid.Data.Xlsx.XlsxWriter|98.3%|90.1%|
 |ExGrid.Data.Xlsx.XString|100%|97%|
 
 </details>
@@ -1276,7 +1276,7 @@
 |ExSheet.Engine.SheetChange|100%|95.8%|
 |ExSheet.Engine.SheetColumnWidth|100%||
 |ExSheet.Engine.SheetCopy|91.6%||
-|ExSheet.Engine.SheetDocument|99.6%|93.4%|
+|ExSheet.Engine.SheetDocument|99.8%|93.4%|
 |ExSheet.Engine.SheetDocumentAxisFormat|100%||
 |ExSheet.Engine.SheetDocumentCell|100%||
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
@@ -1305,7 +1305,7 @@
 |ExSheet.Engine.Workbook|97.6%|92.8%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
-|ExSheet.Engine.WorkbookDocument|96.6%|86.5%|
+|ExSheet.Engine.WorkbookDocument|95.7%|86.5%|
 |ExSheet.Engine.WorkbookStep|100%|100%|
 
 </details>
@@ -1326,11 +1326,11 @@
 |ExSheet.MudBlazor.MudToolbarItem.ListFrame|100%|75%|
 
 </details>
-<details><summary>ExSheet.Xlsx - 96.2%</summary>
+<details><summary>ExSheet.Xlsx - 96.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Xlsx**|**96.2%**|**87.7%**|
+|**ExSheet.Xlsx**|**96.3%**|**87.8%**|
 |ExSheet.Xlsx.ColumnWidthUnit|100%|100%|
 |ExSheet.Xlsx.DateFormats|92.4%|90.9%|
 |ExSheet.Xlsx.FormatParts|100%|100%|
@@ -1343,7 +1343,7 @@
 |ExSheet.Xlsx.SheetFormatPlan|99.1%|97.5%|
 |ExSheet.Xlsx.SheetFormatPlan.Crossing|100%||
 |ExSheet.Xlsx.SheetFormatPlan.RowRun|100%||
-|ExSheet.Xlsx.StoredFormula|96%|89.8%|
+|ExSheet.Xlsx.StoredFormula|99%|90.7%|
 |ExSheet.Xlsx.StyleReading|99%|97%|
 |ExSheet.Xlsx.StyleTable|100%|100%|
 |ExSheet.Xlsx.UnsupportedFunctionCell|100%||
@@ -1351,7 +1351,7 @@
 |ExSheet.Xlsx.WrittenFormula.Frame|100%||
 |ExSheet.Xlsx.WrittenFormula.Token|100%||
 |ExSheet.Xlsx.XlsxNumberFormats|98.6%|90%|
-|ExSheet.Xlsx.XlsxOpenException|100%|80%|
+|ExSheet.Xlsx.XlsxOpenException|100%|100%|
 |ExSheet.Xlsx.XlsxOpenResult|100%||
 |ExSheet.Xlsx.XlsxSaveException|100%|100%|
 |ExSheet.Xlsx.XlsxSaveOptions|100%||
