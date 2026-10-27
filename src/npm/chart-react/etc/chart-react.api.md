@@ -5,13 +5,58 @@
 ```ts
 
 import { ChartFileFormat } from '@ex-grid/chart';
+import type { ChartFiltersSlotContext } from '@ex-grid/chart';
 import { ChartMenuSlotContext } from '@ex-grid/chart';
 import { ChartOptions } from '@ex-grid/chart';
+import { ChartTarget } from '@ex-grid/chart';
 import { ChartToolbarSlotContext } from '@ex-grid/chart';
+import { GridChart } from '@ex-grid/chart';
+import { GridChartBridge } from '@ex-grid/chart';
+import { GridChartBridgeOptions } from '@ex-grid/chart';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { Ref } from 'react';
 import { SurfaceOptions } from '@ex-grid/chart';
+
+// @public
+export type ChartDockBridgeOptions = Required<Pick<GridChartBridgeOptions<unknown>, 'targets' | 'onChart' | 'onAdded' | 'onRefused'>>;
+
+// @public
+export type ChartDockPlacement = 'right' | 'bottom';
+
+// @public
+export interface ChartDockState {
+    readonly active: string | undefined;
+    readonly bridgeOptions: ChartDockBridgeOptions;
+    readonly charts: readonly ChartTarget[];
+    readonly close: (name: string) => void;
+    readonly dismiss: () => void;
+    readonly open: (chart: GridChart) => void;
+    readonly refusal: string | undefined;
+    readonly select: (name: string) => void;
+}
+
+// @public
+export interface ChartFilterText {
+    readonly apply: () => void;
+    readonly from: string;
+    readonly setFrom: (text: string) => void;
+    readonly setTo: (text: string) => void;
+    readonly to: string;
+}
+
+// @public
+export function DockedChart<Row>(props: DockedChartProps<Row>): ReactElement;
+
+// @public
+export interface DockedChartProps<Row> {
+    readonly bridge: GridChartBridge<Row>;
+    readonly chrome?: ExChartChrome;
+    readonly height: number;
+    readonly refused: (why: string) => ReactNode;
+    readonly target: ChartTarget;
+    readonly width: number;
+}
 
 // @public
 export function ExChart(props: ExChartProps): ReactElement;
@@ -46,5 +91,11 @@ export interface ExSurfaceApi {
 export type ExSurfaceProps = SurfaceOptions & {
     readonly ref?: Ref<ExSurfaceApi>;
 };
+
+// @public
+export function useChartDock(): ChartDockState;
+
+// @public
+export function useChartFilterText(filters: ChartFiltersSlotContext): ChartFilterText;
 
 ```

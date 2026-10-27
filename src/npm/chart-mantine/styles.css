@@ -1,0 +1,38 @@
+/* @ex-grid/chart-mantine — the Wrapper's stylesheet (ADR-0390 section 5, ADR-0281). It does two things and nothing
+   else. It maps ExChart's Visual Tokens onto the variables MantineProvider writes on the page, under the grid
+   Wrapper's paper, .mantine-ex-grid, and under the Chart Dock, .mantine-ex-chart, so a chart in either follows the
+   theme and a change of scheme recolours it with no render anywhere (ADR-0027). And it lays out this package's own
+   elements, each rule scoped to its own mantine-ex-chart- class. It writes no geometry ExChart computes, no rule
+   against a class of ExChart's own, and no font: the chart lays its labels out by the widths of its own (ADR-0027).
+
+   The colour slots: the theme's primary leads (slot 1, --ex-chart-colour-0), and slots 2 to 10 keep ExChart's own
+   palette. Mantine's red and green are never a series' colour: on a screen of profit and risk a red series reads as
+   an error or a loss, and a green one as good news (ADR-0281). They stay for what they mean. */
+.mantine-ex-grid,
+.mantine-ex-chart {
+    --ex-chart-colour-0: var(--mantine-primary-color-filled);
+    --ex-chart-text: var(--mantine-color-text);
+    --ex-chart-background: var(--mantine-color-body);
+    --ex-chart-error: var(--mantine-color-error);
+}
+
+/* The toolbar and Chart Filters, above the plot. */
+.mantine-ex-chart-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-bottom: 4px; }
+.mantine-ex-chart-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding-bottom: 8px; }
+.mantine-ex-chart-filters > .mantine-ex-chart-end { flex: 0 1 12em; min-width: 9em; }
+/* The axis switch takes effect at once, so it stands apart from the range Apply commits. */
+.mantine-ex-chart-filters > .mantine-ex-chart-scale { margin-left: 16px; }
+.mantine-ex-chart-filters > .mantine-ex-chart-filter-error { flex-basis: 100%; }
+
+/* The context menu's items, inside the chart's frame (.ex-chart-menu), which stays the chart's. */
+.mantine-ex-chart-menu { display: flex; flex-direction: column; padding: 4px; }
+.mantine-ex-chart-menu .mantine-ex-chart-menu-item { font-weight: 400; }
+.mantine-ex-chart-menu .mantine-ex-chart-menu-item .mantine-Button-inner { justify-content: flex-start; }
+
+/* The Chart Dock (ADR-0258): the grid and a panel of charts beside it or below it, never over it. */
+.mantine-ex-chart-dock { display: flex; gap: 12px; align-items: flex-start; }
+.mantine-ex-chart-dock-bottom { flex-direction: column; align-items: stretch; }
+.mantine-ex-chart-dock-content { flex: 1 1 auto; min-width: 0; overflow-x: auto; }
+.mantine-ex-chart-dock-panel { flex: 1 1 auto; min-width: 0; padding: 4px 8px 8px; }
+.mantine-ex-chart-dock-tab { padding-top: 8px; }
+.mantine-ex-chart-dock-refusal { margin-bottom: 8px; }
