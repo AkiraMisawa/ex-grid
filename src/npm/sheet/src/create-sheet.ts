@@ -16,7 +16,7 @@ import {
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
-    Sheet, SheetRefusal, type LinkedTable, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
+    Sheet, SheetRefusal, WorkbookDocument, type LinkedTable, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { elementAt, unreachable } from './must';
 import { browserTimeZone, checkTimeZone, dayOf, momentIn, sameDay, untilTheDayIsReadAgainMs, untilTheMinuteTurnsMs } from './sheet-moment';
@@ -325,6 +325,51 @@ export interface SheetHandle {
      * `RepeatedKeyError`, after the table's readers show `#GETTING_DATA` again.
      */
     pushLinkedTable(name: string, rows: Iterable<readonly (Value | undefined)[]>): void;
+    /**
+     * Replaces the Workbook with the Workbook Document `read` answers, taken at this call's place in the Input Order
+     * (ADR-0330 §10), as `ExSheet.OpenAsync` does: the inputs made before it are taken against the Workbook they were
+     * made on, and those made after it wait until the document arrives and are then taken against the new one, or
+     * refused aloud when what they were taken against no longer holds (ADR-0142). Call it from the handler that hears
+     * the user's choice of a file, with the read still to do, such as
+     * `signal => openXlsxWorkbook(file, 'en-US', { signal }).then(read => read.document)` from `@ex-grid/sheet-xlsx`.
+     *
+     * In its turn, an edit still open refuses it by name, as a save is refused, and nothing is read: what is being typed
+     * would be thrown away. From this call until the opening ends the Sheet's grid names it in its Settled Stamp, and a
+     * plain Escape typed in the grid while it is placed aborts `read`'s signal: the Workbook stays as it was, and the
+     * notice says so; an opening cancelled before its turn ends cancelled. While the read is under way the notice says
+     * so, and the grid is busy and painted as a paste under way is. A read that fails leaves the Workbook as it was too,
+     * says so with the failure's message, and the failure is this method's. When the document arrives it replaces the
+     * whole Workbook, as a new `document` does (ADR-0048): the undo stack is cleared, the Linked Tables declared are gone
+     * with the Workbook that held them, and `onWorkbookChanged` is raised with the Workbook opened. An Escape that comes
+     * once it has landed changes nothing, and the Sheet says it came too late; one that finds the opening over otherwise
+     * says there was nothing to cancel.
+     *
+     * Only the grid's inputs wait behind it. A method the Consumer calls meanwhile is not an input and is not held:
+     * what it changes is replaced when the file lands. Once the Sheet is destroyed the signal is aborted, and nothing
+     * lands.
+     *
+     * @param read - Reads the document, looking at the signal as it goes; a read that sees it aborted rejects with the
+     *   signal's reason.
+     * @returns True once the document opened; false when Escape cancelled the read, or the Sheet was destroyed first.
+     * @throws SheetRefusedError An edit is open in the opening's turn; nothing was read.
+     * @throws Error Whatever `read` failed with, such as `XlsxOpenError`, or the engine's refusal of the document;
+     *   nothing opened. Or whatever `onWorkbookChanged` or `onSheetsChanged` failed with, once the file opened.
+     */
+    open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean>;
+    /**
+     * Saves the Workbook at this call's place in the Input Order (ADR-0330 §10), as `ExSheet.SaveAsync` does: `write` is
+     * handed the Workbook as the inputs made before the call left it — every Sheet with its Values, its Cell Formats and
+     * widths, and the rows each Linked Table holds — such as `workbook => saveXlsxWorkbook(workbook)` from
+     * `@ex-grid/sheet-xlsx`. The Workbook is lent for that call only: read it before the call's first `await`, as
+     * `saveXlsxWorkbook` does, and never change it. The inputs made after the save are taken once `write` has returned,
+     * not once its promise settles, so a slow write holds nobody up.
+     *
+     * @returns A promise that settles once `write`'s has.
+     * @throws SheetRefusedError An edit is open: the file would quietly lack what is being typed. The Sheet says so, and
+     *   nothing was written.
+     * @throws Error Whatever `write` failed with, such as `XlsxSaveError`.
+     */
+    save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void>;
     /** Stops the Sheet and empties its element. */
     destroy(): void;
 }
@@ -344,6 +389,16 @@ const toolbarToggleKey = 'Control+F1';
 
 // The largest seed: a seed is an unsigned 64-bit integer, as the engine and C#'s ulong hold it (ADR-0180).
 const maxSeed = (1n << 64n) - 1n;
+
+// Whether `error` is the reason an aborted signal rejects with: the work ended cancelled (ADR-0240 section 12).
+function cancelledBy(signal: AbortSignal, error: unknown): boolean {
+    return signal.aborted && error === signal.reason;
+}
+
+// What a failure says, in the notice that says nothing opened.
+function messageOf(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
 
 // A seed drawn from the browser's generator, as the C# Sheet draws one from Random.Shared (ADR-0180).
 function chooseSeed(): bigint {
@@ -367,6 +422,8 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
         redo: () => view.redo(),
         declareLinkedTable: (name: string, columns: readonly string[], key?: string | readonly string[]) => { view.declareLinkedTable(name, columns, key); },
         pushLinkedTable: (name: string, rows: Iterable<readonly (Value | undefined)[]>) => { view.pushLinkedTable(name, rows); },
+        open: (read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>) => view.open(read),
+        save: (write: (workbook: Workbook) => void | PromiseLike<void>) => view.save(write),
         destroy: () => { view.destroy(); },
     });
 }
@@ -444,6 +501,8 @@ class SheetView {
     readonly #raised = new WeakSet<object>();
     // The seed chosen when the document was opened, which draws while no `seed` is given (ADR-0180).
     #chosenSeed: bigint;
+    // Whether the Workbook shown was opened from a file since the Consumer last handed a document (ADR-0330 §10).
+    #fileOpened = false;
     // The Sheets' names as the Consumer last heard them, so a change says what it was taken from (ADR-0331 §6): at
     // open, the document's own.
     #sheetNames: readonly string[] = [];
@@ -518,7 +577,9 @@ class SheetView {
         this.#gridHeight(next);
         // Judged by the culture the Sheet holds, so a locale naming that culture again changes nothing; with a document,
         // the document's culture is the one, as the option says.
-        if (next.document === undefined && this.#document === undefined && Culture.of(next.locale ?? navigator.language) !== this.#source.sheet.culture) {
+        // A file opened since is a document of its own, whose culture the file's opening declared (ADR-0330 §10).
+        if (next.document === undefined && this.#document === undefined && !this.#fileOpened
+            && Culture.of(next.locale ?? navigator.language) !== this.#source.sheet.culture) {
             throw new Error("A Sheet's culture is recorded in its document, so it is not changed on a live Sheet: Entries typed would not be read again (ADR-0048).");
         }
         if ((next.density ?? 'compact') !== (this.#options.density ?? 'compact')) { // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
@@ -534,11 +595,7 @@ class SheetView {
         if (next.document !== this.#document) {
             this.#document = next.document;
             this.#chosenSeed = chooseSeed();
-            this.#workbook = this.#open(next);
-            this.#history.clear();
-            this.#showSheet(this.#workbook.shown);
-            this.#armTheDay();
-            this.#armTheMinute();
+            this.#replaceWorkbook(this.#open(next), false);
             return;
         }
         // A new seed, or none, which goes back to the one chosen at opening, draws again at the same count of changes:
@@ -672,6 +729,116 @@ class SheetView {
     // Sheet's is (ADR-0048).
     #refuseWhileEditing(): void {
         if (this.#editing) throw new SheetRefusedError(new SheetRefusal('editIsOpen', this.#words.editIsOpen));
+    }
+
+    // ---- Opening and saving a file in the Input Order (ADR-0330 §10) -----------------------------------------
+    //
+    // The Consumer chooses the file and delivers the written one (ADR-0330 §2): the Sheet references no file format, and
+    // takes a Workbook Document still being read, or lends the Workbook to a writer, each at its own place in the order.
+
+    async open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean> {
+        this.#alive();
+        if (typeof read !== 'function') throw new TypeError('open takes the read as a function of an AbortSignal (ADR-0330 §10).');
+        // What a handler of the Consumer's throws once the file has landed is that handler's, held until the opening has
+        // ended as landed: it never reads as a cancel, nor as a failure of the opening.
+        let afterLanding: { readonly error: unknown } | undefined;
+        const opening = async (signal: AbortSignal): Promise<void> => {
+            await this.#opening(read, signal);
+            try {
+                this.#raiseDocument();
+            // oxlint-disable-next-line ex-grid/no-catch -- held, and rethrown once the opening has ended as landed
+            } catch (error) {
+                afterLanding = { error };
+            }
+        };
+        const grid = this.#grid;
+        if (grid === undefined) throw new Error('This Sheet was destroyed.');
+        const landed = await grid.cancellableInOrder(opening, this.#openingCameTooLate);
+        if (afterLanding !== undefined) throw afterLanding.error;
+        return landed;
+    }
+
+    // An Escape that came too late, said in its own turn.
+    readonly #openingCameTooLate = (landed: boolean): void => {
+        if (this.#destroyed) return;
+        this.#tell(landed ? this.#words.openingAlreadyLanded : this.#words.openingNothingToCancel, { outlivesMove: true });
+    };
+
+    // The opening, in its turn: refused while an edit is open; else said, read, and landed, or left as it was and thrown.
+    async #opening(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>, signal: AbortSignal): Promise<void> {
+        // The grid runs it, so the Sheet still stands here. An Escape that came while the opening waited for its turn has cancelled it already: it ends cancelled, whatever
+        // its turn finds.
+        if (signal.aborted) {
+            this.#tell(this.#words.openingCancelled, { outlivesMove: true });
+            throw signal.reason;
+        }
+        this.#refuseFileWhileEditing(this.#words.openWhileEditing);
+        this.#tell(this.#words.opening, { outlivesMove: true });
+        let document: unknown;
+        try {
+            document = await read(signal);
+            if (!(document instanceof WorkbookDocument)) throw new TypeError('The read answered no Workbook Document (ADR-0330 §10).');
+            // The point past which an Escape finds the file opened.
+            signal.throwIfAborted();
+        } catch (error) {
+            if (!this.#destroyed) {
+                this.#tell(cancelledBy(signal, error) ? this.#words.openingCancelled : this.#words.openingRefused(messageOf(error)), { outlivesMove: true });
+            }
+            throw error;
+        }
+        // The Sheet still stands here: destroying it destroys the grid, which aborts the signal looked at above.
+        let opened: Workbook;
+        // A seed of its own, as a new document gets one, and the names the Consumer has heard, which a change to the
+        // Sheets is said against once it lands (ADR-0180, ADR-0331 §6).
+        const seed = chooseSeed();
+        const heard = this.#sheetNames;
+        try {
+            // Read before anything is replaced: a document the engine refuses leaves the Workbook as it was.
+            opened = this.#open(this.#options, document, seed);
+        } catch (error) {
+            this.#sheetNames = heard;
+            this.#tell(this.#words.openingRefused(messageOf(error)), { outlivesMove: true });
+            throw error;
+        }
+        this.#sheetNames = heard;
+        this.#chosenSeed = seed;
+        // The inputs held behind the opening are taken after it, on the Workbook opened.
+        this.#replaceWorkbook(opened, true);
+        this.#tell(this.#words.opened, { outlivesMove: true });
+    }
+
+    // A Workbook opened replaces the one shown, from a new document or a file (ADR-0048, ADR-0330 §10): its undo stack
+    // and its views go with it, under a new Row Sequence Version, which drops the Selection and refuses what was aimed
+    // at the old cells (ADR-0011, ADR-0142).
+    #replaceWorkbook(opened: Workbook, fromFile: boolean): void {
+        this.#fileOpened = fromFile;
+        this.#workbook = opened;
+        this.#history.clear();
+        this.#showSheet(opened.shown);
+        this.#armTheDay();
+        this.#armTheMinute();
+    }
+
+    async save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void> {
+        this.#alive();
+        if (typeof write !== 'function') throw new TypeError('save takes the write as a function of the Workbook (ADR-0330 §10).');
+        const grid = this.#grid;
+        if (grid === undefined) throw new Error('This Sheet was destroyed.');
+        const written: { writing?: PromiseLike<void> } = {};
+        await grid.inOrder(() => {
+            this.#refuseFileWhileEditing(this.#words.saveWhileEditing);
+            written.writing = Promise.resolve(write(this.#workbook));
+        });
+        // A save whose turn never came — the Sheet destroyed while inputs before it were held — wrote nothing, and says so.
+        if (written.writing === undefined) throw new Error('This Sheet was destroyed before the save\'s turn: nothing was written.');
+        await written.writing;
+    }
+
+    // A file opened or saved while an edit is open is refused by name, and said (ADR-0330 §10, ADR-0048).
+    #refuseFileWhileEditing(sentence: string): void {
+        if (!this.#editing) return;
+        this.#tell(sentence);
+        throw new SheetRefusedError(new SheetRefusal('editIsOpen', sentence));
     }
 
     destroy(): void {
@@ -1913,9 +2080,9 @@ class SheetView {
 
     // A document opened, with its seed: the Consumer's, or the one just chosen, at a count of 0 changes (ADR-0180). Its
     // Sheets' names are the ones the Consumer has heard.
-    #open(options: SheetOptions): Workbook {
-        const workbook = options.document === undefined ? new Workbook(Culture.of(options.locale ?? navigator.language)) : Workbook.open(options.document);
-        workbook.setSeed(options.seed ?? this.#chosenSeed, 0);
+    #open(options: SheetOptions, document = options.document, chosenSeed = this.#chosenSeed): Workbook {
+        const workbook = document === undefined ? new Workbook(Culture.of(options.locale ?? navigator.language)) : Workbook.open(document);
+        workbook.setSeed(options.seed ?? chosenSeed, 0);
         // The day and the clock, before any row is read: every Sheet reads them, one added later too. NOW reads the zone
         // the options name when the engine asks, once per recalculation.
         workbook.nowSource = () => momentIn(this.#zoneOf(this.#options), new Date());

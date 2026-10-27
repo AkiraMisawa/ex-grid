@@ -17,7 +17,10 @@ export type HeldInput =
     /** A paste: its flavours, read while the event could still be read, or none where it carried no data. */
     | { readonly kind: 'paste'; readonly flavours: { readonly text: string; readonly html: string } | undefined }
     /** A copy or a cut: done at its turn, where the keyboard is then. */
-    | { readonly kind: 'copy' | 'cut' };
+    | { readonly kind: 'copy' | 'cut' }
+    /** Work of the Consumer's placed in the order, or what an Escape that named such work answers, taken at its turn
+     * (ADR-0240 section 12). */
+    | { readonly kind: 'turn'; readonly take: () => void };
 
 /** What a held event becomes. A clipboard event keeps what only it could tell, and every other event is kept to be
  * dispatched again. */

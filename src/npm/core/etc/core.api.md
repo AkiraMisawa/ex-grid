@@ -956,6 +956,7 @@ export interface GridFormulaBarTextSlotContext {
 
 // @public
 export interface GridHandle<Row> {
+    cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean>;
     readonly canSummarize: boolean;
     closePopover(): void;
     destroy(): void;
@@ -963,6 +964,7 @@ export interface GridHandle<Row> {
     handKeyboardTo(control: HTMLElement, options?: {
         readonly preventScroll?: boolean;
     }): void;
+    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
     keyName(event: KeyboardEvent): string;
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;

@@ -1135,7 +1135,7 @@ interface PendingCommit<Row> {
     /** The verdict's answer, before any intent was raised, or the Consumer's to one. The rows or columns handed over
      * under the latter are the commit's own doing, as they are while a handler runs (ADR-0142), so they do not take
      * its editor away. */
-    readonly phase: 'verdict' | 'intent';
+    readonly phase: 'verdict' | 'intent' | 'work';
     /** The input whose handler made the commit, taken again once it lands: its gesture keeps its meaning. */
     readonly trigger: Event | undefined;
     /** The inputs made meanwhile, in the order they were made. */
@@ -1144,6 +1144,22 @@ interface PendingCommit<Row> {
     readonly cancelled: () => void;
     /** The text field that held the keyboard, read-only while the answer is out, where it is not the editor. */
     readonly stilled: HTMLInputElement | HTMLTextAreaElement | undefined;
+}
+
+// Work of the Consumer's in the Input Order (ADR-0240 sections 6 and 12, ADR-0330 section 10), from the place it took
+// until it ends.
+interface PlacedWork {
+    /** The number the stamp names cancellable work by (`data-ex-work-placed`, `data-ex-work`). */
+    readonly id: number;
+    /** Handed to the work as its signal, and aborted by the Escape that cancels it. */
+    readonly controller: AbortController;
+    /** Says that an Escape came after the work had landed (true) or found nothing to cancel (false); none for work
+     * an Escape does not cancel. */
+    readonly tooLate: ((landed: boolean) => void) | undefined;
+    /** Answers the caller with nothing run, for work still waiting as the grid goes. */
+    readonly neverRan: () => void;
+    started: boolean;
+    ended: 'landed' | 'cancelled' | 'failed' | undefined;
 }
 
 // What the Formula Bar last read of the Focus, and what it was read through (ADR-0051).
@@ -1658,6 +1674,12 @@ export class GridView<Row> {
     // waits with. `#retaking` carries that gesture from a verdict answered to the intent it raises.
     #pending: PendingCommit<Row> | undefined;
     #pendingStamps = 0;
+    // Work of the Consumer's placed and not ended, in the order it was placed; the cancellable one whose turn is under
+    // way; the count that numbers each; and whether cancellable work's handling is being called (ADR-0240 section 12).
+    #works: PlacedWork[] = [];
+    #workUnderWay: PlacedWork | undefined;
+    #worksPlaced = 0;
+    #workStarting = false;
     #input: Event | undefined;
     // The input a Chrome slot's callback last counted (ADR-0220).
     #inputAnswered: Event | undefined;
@@ -2073,6 +2095,14 @@ export class GridView<Row> {
         // A commit pending as the grid goes is cancelled: nothing is to be written, and its held inputs go with it.
         this.#pending?.controller.abort();
         this.#pending = undefined;
+        // Work of the Consumer's is cancelled, and work still waiting never runs (ADR-0240 section 12).
+        const works = this.#works;
+        this.#works = [];
+        this.#workUnderWay = undefined;
+        for (const work of works) {
+            work.controller.abort();
+            if (!work.started) work.neverRan();
+        }
         // An edit open as the grid goes ends with it: the Consumer hears the end of every open (ADR-0050
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
         this.#edit?.slot?.dispose();
@@ -4307,8 +4337,10 @@ export class GridView<Row> {
      * then, and the verdict is not asked again.
      */
     #commitEdit(retake = true, judged?: { readonly verdict: EditVerdict; readonly controller: AbortController }): boolean {
-        // One commit at a time (ADR-0142): nothing is committed, nor placed after it, while another is pending.
-        if (this.#pending !== undefined) return false;
+        // One commit at a time (ADR-0142): nothing is committed, nor placed after it, while another is pending. Work of
+        // the Consumer's out is no commit: with no edit open there is nothing to commit, and a command it calls as it
+        // lands is taken (ADR-0240 section 6).
+        if (this.#pending !== undefined && (this.#pending.phase !== 'work' || this.#edit !== undefined)) return false;
         const edit = this.#edit;
         if (edit === undefined) return true;
         // Made on the newest rows the source holds: one that gathers live changes puts them out now
@@ -4559,6 +4591,9 @@ export class GridView<Row> {
                 // The grid has no cut of its own (ADR-0005).
                 else if (grids && input.kind === 'copy') this.#menuCopy(false);
                 return true;
+            case 'turn':
+                input.take();
+                return true;
             case 'event':
                 break;
         }
@@ -4648,9 +4683,13 @@ export class GridView<Row> {
         }
         if (event instanceof MouseEvent && event.type === 'mousemove' && event.buttons === 0) return;
         event.stopImmediatePropagation();
-        if (cancelsPending(event)) {
+        // Cancellable work placed is what the stamp names, so an Escape cancels it first, behind a commit too (ADR-0240
+        // section 12); with none, a commit's Escape cancels the commit, and work no Escape cancels holds it as a key.
+        const workPlaced = this.#works.some(work => work.tooLate !== undefined);
+        if (cancelsPending(event) && (workPlaced || pending.phase !== 'work')) {
             event.preventDefault();
-            this.#cancelPending(pending);
+            if (workPlaced) this.#cancelWork(pending, event instanceof KeyboardEvent && event.repeat);
+            else this.#cancelPending(pending);
             return;
         }
         if (event.cancelable && !isClipboardKey(event)) event.preventDefault();
@@ -4668,6 +4707,170 @@ export class GridView<Row> {
         pending.controller.abort();
         pending.cancelled();
         this.#takeAgain(pending.held);
+    }
+
+    // ---- Work of the Consumer's in the Input Order (ADR-0240 sections 6 and 12, ADR-0330 section 10) ----------
+    //
+    // A command of the Consumer's that no input of the grid's made — a file opened from a button outside it, a save —
+    // takes one place in the order: after every input made so far, before any made after it, which are held while its
+    // promise is out as they are behind a Pending Commit and taken once it ends, against what it left. Cancellable
+    // work is named by the stamp from the moment it is placed until it ends, and an Escape whose keydown sees it
+    // cancels it: the input that acts ahead of its turn, decided by what the keydown sees and never by when the work
+    // ends. The work decides when it lands; an Escape that came too late is answered in its own turn.
+
+    /**
+     * Runs `handling`, work of the Consumer's that no input of the grid's made, in its place in the Input Order
+     * (ADR-0240 section 6): at once when nothing is pending, else after the inputs held so far. While the promise it
+     * answers is out, every input made in the grid is held, in its order, and taken once it settles; an Escape is held
+     * too, and does what it was typed to do. Once the grid is destroyed it runs nothing.
+     */
+    inOrder(handling: () => void | PromiseLike<void>): Promise<void> {
+        if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240).');
+        return this.#placeWork(() => handling(), undefined).then(() => undefined);
+    }
+
+    /**
+     * Runs `handling` in its place in the Input Order as `inOrder` does, and lets the user cancel it with Escape
+     * (ADR-0240 section 12, ADR-0330 section 10). From this call until it ends the stamp names it
+     * (`data-ex-work-placed`) and no longer says an Escape leaves the grid; from its turn until it ends the root is busy
+     * (`aria-busy`), names it (`data-ex-work`) and is painted as a paste under way is. A plain Escape whose keydown sees
+     * it placed aborts `handling`'s signal, the first such work's not aborted yet, and does nothing else; one that finds
+     * every placed work aborted already is answered as that work ends. The work decides when it lands: up to that point
+     * it looks at the signal and rejects with the signal's reason once aborted; past it, it lands whatever the signal
+     * says. An Escape that found the work landed is answered in its own turn by `cancelledTooLate(true)`, one that found
+     * nothing to cancel by `cancelledTooLate(false)`. Destroying the grid aborts the signal, and work still waiting
+     * never runs.
+     *
+     * @returns True once the work has landed; false when it rejected with its aborted signal's reason, or never ran.
+     *   Any other failure is the promise's.
+     * @throws Error Called while cancellable work's handling is being called: one Escape could not say which it cancels.
+     */
+    cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean> {
+        if (typeof handling !== 'function' || typeof cancelledTooLate !== 'function') {
+            throw new TypeError('cancellableInOrder takes the work and what says a cancel came too late, as functions (ADR-0240).');
+        }
+        if (this.#workStarting) {
+            throw new Error('Cancellable work cannot be placed while cancellable work starts: one Escape could not say which it cancels. Place it once the work under way has ended (ADR-0240).');
+        }
+        return this.#placeWork(handling, cancelledTooLate);
+    }
+
+    #placeWork(handling: (signal: AbortSignal) => void | PromiseLike<void>, tooLate: ((landed: boolean) => void) | undefined): Promise<boolean> {
+        if (this.#destroyed) return Promise.resolve(false);
+        return new Promise<boolean>((resolve, reject) => {
+            const work: PlacedWork = {
+                id: ++this.#worksPlaced, controller: new AbortController(), tooLate, neverRan: () => { resolve(false); }, started: false, ended: undefined,
+            };
+            this.#works.push(work);
+            // The stamp names it, and stops saying an Escape leaves, from here on.
+            if (tooLate !== undefined) this.#invalidate();
+            const start = (): void => { this.#startWork(work, handling, resolve, reject); };
+            const pending = this.#pending;
+            if (pending === undefined) start();
+            else pending.held.push({ kind: 'turn', take: start });
+        });
+    }
+
+    // The work's turn: called with its signal, and pending while what it answers is out.
+    #startWork(work: PlacedWork, handling: (signal: AbortSignal) => void | PromiseLike<void>, resolve: (ran: boolean) => void, reject: (error: unknown) => void): void {
+        if (this.#destroyed) {
+            resolve(false);
+            return;
+        }
+        work.started = true;
+        const cancellable = work.tooLate !== undefined;
+        if (cancellable) this.#workUnderWay = work;
+        const end = (error: unknown, failed: boolean): void => {
+            const { signal } = work.controller;
+            const ended = !failed ? 'landed' : signal.aborted && error === signal.reason ? 'cancelled' : 'failed';
+            this.#endWork(work, ended);
+            if (ended === 'failed') reject(error);
+            else resolve(ended === 'landed');
+        };
+        let answer: void | PromiseLike<void>;
+        const starting = this.#workStarting;
+        this.#workStarting = starting || cancellable;
+        try {
+            answer = handling(work.controller.signal);
+        // oxlint-disable-next-line ex-grid/no-catch -- the work's own failure is its caller's, answered through the promise
+        } catch (error) {
+            end(error, true);
+            return;
+        } finally {
+            this.#workStarting = starting;
+        }
+        if (!isThenable(answer)) {
+            end(undefined, false);
+            return;
+        }
+        // Pending from here, the keyboard's field taking no input of its own meanwhile, so no IME starts in it. What the
+        // handling itself left pending — work it placed, a commit it made — is taken first, and this work is pending
+        // after it, if it has not ended by then.
+        let out: PendingCommit<Row> | undefined;
+        const pend = (): void => {
+            if (work.ended !== undefined || this.#destroyed) return;
+            this.#pendingStamps += 1;
+            const pending: PendingCommit<Row> = {
+                stamp: this.#pendingStamps, controller: work.controller, edit: undefined, phase: 'work', trigger: undefined, held: [],
+                cancelled: () => undefined, stilled: typedField(this.#keyboardHolder()),
+            };
+            out = pending;
+            this.#pending = pending;
+            this.#markPending(pending, true);
+            this.#showSettled(false);
+            this.#invalidate();
+        };
+        const before = this.#pending;
+        if (before === undefined) pend();
+        else before.held.push({ kind: 'turn', take: pend });
+        const settled = (error: unknown, failed: boolean): void => {
+            const pending = out;
+            const unpended = pending !== undefined && this.#unpend(pending);
+            end(error, failed);
+            if (unpended) this.#afterAnswer(pending, false);
+        };
+        // oxlint-disable-next-line ex-grid/no-catch -- the work's failure is its caller's, rejected through the promise placeWork answers
+        answer.then(() => { settled(undefined, false); }, (error: unknown) => { settled(error, true); });
+    }
+
+    // The work has ended: it leaves the stamp, and the root is no longer busy.
+    #endWork(work: PlacedWork, ended: 'landed' | 'cancelled' | 'failed'): void {
+        work.ended = ended;
+        this.#works = this.#works.filter(placed => placed !== work);
+        if (this.#workUnderWay === work) this.#workUnderWay = undefined;
+        if (!this.#destroyed) this.#invalidate();
+    }
+
+    // A plain Escape whose keydown saw cancellable work placed (ADR-0240 section 12): the first such work not cancelled
+    // yet is cancelled; where every one is, the Escape is answered as the first ends. Either way it is answered in its
+    // own turn, after the work: too late where the work landed, nothing to cancel where it ended otherwise than by this
+    // cancel. It does nothing else, and its repeats nothing at all.
+    #cancelWork(pending: PendingCommit<Row>, repeat: boolean): void {
+        if (repeat) return;
+        this.#escapeAnswered = true;
+        this.#escapeCancelled = true;
+        this.#answered += 1;
+        const placed = this.#works.filter(work => work.tooLate !== undefined);
+        const target = placed.find(work => !work.controller.signal.aborted);
+        const named = target ?? itemAt(placed, 0);
+        target?.controller.abort();
+        const tooLate = named.tooLate;
+        if (tooLate === undefined) throw new Error('Internal: work an Escape names is cancellable.');
+        pending.held.push({
+            kind: 'turn',
+            take: () => {
+                const { ended } = named;
+                if (ended === undefined) throw new Error('Internal: an Escape is answered after the work it named.');
+                if (named === target && ended === 'cancelled') return;
+                try {
+                    tooLate(ended === 'landed');
+                // oxlint-disable-next-line ex-grid/no-catch -- rethrown outside the order: the inputs held behind the Escape are still taken in it
+                } catch (error) {
+                    queueMicrotask(() => { throw error; });
+                }
+            },
+        });
+        this.#invalidate();
     }
 
     // ---- D1: the user's own writes count as seen, for the Overwrite Notice (ADR-0142) ----------------------
@@ -9200,8 +9403,14 @@ export class GridView<Row> {
         this.#write(this.#stamp, 'stamp', 'data-ex-answered', String(this.#answered));
         // Whether an Escape on the root would leave the grid now: not while it would leave an Interactive cell
         // or peel the Copied Range (ADR-0230 section 1, ADR-0037, ADR-0170).
+        // Cancellable work placed is what an Escape cancels, named by the latest placed (ADR-0240 section 12); under
+        // way, the root is busy and painted as a paste under way is.
+        const placedWork = this.#works.findLast(work => work.tooLate !== undefined);
+        this.#write(this.#stamp, 'stamp', 'data-ex-work-placed', placedWork === undefined ? undefined : String(placedWork.id));
+        this.#write(root, 'root', 'data-ex-work', this.#workUnderWay === undefined ? undefined : String(this.#workUnderWay.id));
+        this.#write(root, 'root', 'aria-busy', this.#workUnderWay === undefined ? undefined : 'true');
         this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves',
-            choice === undefined && this.#copied === undefined && this.#edit === undefined && this.#popover === undefined ? '' : undefined);
+            choice === undefined && this.#copied === undefined && this.#edit === undefined && this.#popover === undefined && placedWork === undefined ? '' : undefined);
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
         this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);

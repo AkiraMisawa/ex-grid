@@ -80,6 +80,8 @@ class StandIns implements BoardMounts {
             refreshSummary: unused('refresh a grid\'s summary'),
             returnKeyboard: unused('return a grid\'s keyboard'),
             handKeyboardTo: unused('hand a grid\'s keyboard on'),
+            inOrder: unused('place work in a grid\'s order'),
+            cancellableInOrder: unused('place cancellable work in a grid\'s order'),
         };
     };
 

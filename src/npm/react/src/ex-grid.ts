@@ -85,6 +85,8 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
             return mounted(grid.current).canSummarize;
         },
         refreshSummary: () => { mounted(grid.current).refreshSummary(); },
+        inOrder: (handling) => mounted(grid.current).inOrder(handling),
+        cancellableInOrder: (handling, cancelledTooLate) => mounted(grid.current).cancellableInOrder(handling, cancelledTooLate),
     }), []);
     useLayoutEffect(() => () => {
         // The content goes with the grid, and nothing renders for it again.

@@ -309,6 +309,15 @@
             (<a href="exsheet/xlsx">Open and save .xlsx</a>).
         </p>
         <p>
+            Under React the two are <code>inOrder(handling)</code> and
+            <code>cancellableInOrder(handling, cancelledTooLate)</code> on the ref, each answering a promise. With nothing
+            pending the work runs at once; while the promise <code>handling</code> answers is out, every input made in the
+            grid waits in its order and is taken once it settles. <code>handling</code> takes an <code>AbortSignal</code>
+            in place of the token, and work that sees it aborted rejects with the signal's reason, which the promise
+            answers as <code>false</code>. Cancellable work placed while another's <code>handling</code> is being called
+            is refused by name; placed from a later turn, it waits behind the work under way.
+        </p>
+        <p>
             <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through
             <code>HandKeyboardToFrameAsync</code> and gives it back through <code>ReturnKeyboardAsync</code>, with the
             frame's element and the keys it heard on the way. Await that return before removing your frame or
