@@ -411,6 +411,41 @@ export type FilterUi = 'condition' | 'valueList' | 'both';
 export function findMatches(displayedText: string, pattern: GridFindPattern): boolean;
 
 // @public
+export const findPanelLabelIds: Readonly<{
+    readonly title: 'find';
+    readonly field: 'find-field';
+    readonly matchCase: 'find-match-case';
+    readonly wholeCell: 'find-whole-cell';
+    readonly next: 'find-next';
+    readonly previous: 'find-previous';
+    readonly notFound: 'find-not-found';
+    readonly foundInHeader: 'find-found-in-header';
+    readonly orderChanged: 'find-order-changed';
+    readonly sourceChanged: 'find-source-changed';
+    readonly replaceTitle: 'find-replace-title';
+    readonly replaceField: 'find-replace-field';
+    readonly replace: 'find-replace';
+    readonly replaceAll: 'find-replace-all';
+    readonly replaced: 'find-replaced';
+    readonly replacedOne: 'find-replaced-one';
+    readonly replaceRefused: 'find-replace-refused';
+    readonly replaceRefusedCell: 'find-replace-refused-cell';
+    readonly replaceRefusedMore: 'find-replace-refused-more';
+    readonly notEditable: 'find-not-editable';
+}>;
+
+// @public
+export interface FindPanelView {
+    readonly matchCase: boolean;
+    readonly outcome: string;
+    readonly replaceShown: boolean;
+    readonly replaceText: string;
+    readonly replaceWaiting: boolean;
+    readonly text: string;
+    readonly wholeCell: boolean;
+}
+
+// @public
 export type FindRefusalReason = 'unavailable' | 'notFound' | 'orderChanged' | 'sourceChanged' | 'replaceUnavailable' | 'replaceRefused';
 
 // @public
@@ -478,6 +513,7 @@ export interface GridChrome<Row> {
     readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
     readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
+    readonly findPanel?: GridChromeSlot<GridFindPanelSlotContext>;
 }
 
 // @public
@@ -678,6 +714,27 @@ export interface GridFilterPanelSlotContext {
     readonly toggleAll: () => void;
     readonly valueListKey: (key: string, controlAltOrMeta: boolean) => boolean;
     readonly view: () => FilterPanelView;
+}
+
+// @public
+export interface GridFindPanelSlotContext {
+    readonly close: () => void;
+    readonly focusRequest: number;
+    readonly innerPopupChanged: (open: boolean) => void;
+    readonly label: (id: string) => string;
+    readonly next: () => void;
+    readonly previous: () => void;
+    readonly replace: () => void;
+    readonly replaceAll: () => void;
+    readonly setMatchCase: (on: boolean) => void;
+    readonly setReplaceText: (text: string) => void;
+    readonly setText: (text: string) => void;
+    readonly setWholeCell: (on: boolean) => void;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly takeFocus: (control: HTMLElement, options?: {
+        readonly preventScroll?: boolean;
+    }) => void;
+    readonly view: () => FindPanelView;
 }
 
 // @public

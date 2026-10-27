@@ -5,11 +5,13 @@
 ```ts
 
 import type { FilterPanelView } from '@ex-grid/core';
+import type { FindPanelView } from '@ex-grid/core';
 import { FocusEvent as FocusEvent_2 } from 'react';
 import type { GridColumn } from '@ex-grid/core';
 import type { GridColumnMenuSlotContext } from '@ex-grid/core';
 import type { GridContextMenuSlotContext } from '@ex-grid/core';
 import type { GridFilterPanelSlotContext } from '@ex-grid/core';
+import type { GridFindPanelSlotContext } from '@ex-grid/core';
 import { GridHandle } from '@ex-grid/core';
 import type { GridMenuSlotContext } from '@ex-grid/core';
 import { GridOptions } from '@ex-grid/core';
@@ -31,6 +33,7 @@ export interface ExGridChrome<Row> {
     readonly columnMenu?: (context: GridColumnMenuSlotContext) => ReactNode;
     readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
     readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
+    readonly findPanel?: (context: GridFindPanelSlotContext) => ReactNode;
 }
 
 // @public
@@ -46,6 +49,12 @@ export interface FilterPanelHandles {
     readonly onValueListKeyDown: (event: KeyboardEvent_2) => void;
     readonly search: (control: HTMLElement | null) => void;
     readonly view: FilterPanelView;
+}
+
+// @public
+export interface FindPanelHandles {
+    readonly field: (control: HTMLElement | null) => void;
+    readonly view: FindPanelView;
 }
 
 // @public
@@ -69,6 +78,9 @@ export type TemplateColumnOptions<Row> = Omit<GridColumn<Row>, 'template' | 'act
 
 // @public
 export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanelHandles;
+
+// @public
+export function useFindPanel(context: GridFindPanelSlotContext): FindPanelHandles;
 
 // @public
 export function useMenuItems(context: GridMenuSlotContext): (index: number) => MenuItemProps;
