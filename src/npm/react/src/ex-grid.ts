@@ -3,9 +3,9 @@
 // instance root, and decides nothing. The rows are never React's: a component per row would repeat,
 // through `memo`, the fight with re-rendering that ADR-0003 measured.
 
-import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useMemo, useRef, type ReactElement, type Ref } from 'react';
+import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type Ref } from 'react';
 import { createGrid, type GridHandle, type GridOptions } from '@ex-grid/core';
-import { chromeMounts, type ExGridChrome } from './chrome';
+import { chromeMounts, type ChromeMountsMade, type ExGridChrome } from './chrome';
 import { holdPortals, useGridPortals } from './portals';
 
 /**
@@ -46,8 +46,10 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
     // The Template cells' content and the Chrome slots', rendered by this component into the slots the core keeps
     // (ADR-0020, ADR-0390).
     const portals = useGridPortals();
-    // Made again only when the Consumer hands another chrome: the ExGrid renders for every portal change.
-    const mounts = useMemo(() => chromeMounts(chrome, portals), [chrome, portals]);
+    // Made again only when the Consumer hands another chrome: the ExGrid renders for every portal change. A render
+    // function handed again keeps its mount function.
+    const [made] = useState<ChromeMountsMade>(() => new Map());
+    const mounts = useMemo(() => chromeMounts(chrome, portals, made), [chrome, portals, made]);
     // Drawn before the browser paints, so a mounted grid is never seen empty.
     useLayoutEffect(() => {
         const root = element.current;

@@ -9,8 +9,9 @@ import {
     type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
 import type {
-    CellEditorView, FilterPanelView, FindPanelView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext,
-    GridFilterPanelSlotContext, GridFindPanelSlotContext, GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridSelectionSummarySlotContext,
+    CellEditorView, FilterPanelView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome,
+    GridColumnMenuSlotContext, GridContextMenuSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridFormulaBarTextSlotContext,
+    GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridNameBoxSlotContext, GridSelectionSummarySlotContext,
 } from '@ex-grid/core';
 import type { GridPortals } from './portals';
 
@@ -37,12 +38,24 @@ export interface ExGridChrome<Row> {
     readonly loadingIndicator?: (context: GridLoadingIndicatorSlotContext) => ReactNode;
     /** The Selection Summary's figures (ADR-0130), drawn in the core's box in the status line. */
     readonly selectionSummary?: (context: GridSelectionSummarySlotContext) => ReactNode;
+    /** The Formula Bar's text field (ADR-0051), drawn with {@link useFormulaBarText}. Another render function draws
+     * the field again: hold the function in a constant or a memo, not inline. */
+    readonly formulaBarText?: (context: GridFormulaBarTextSlotContext) => ReactNode;
+    /** The Formula Bar's Name Box (ADR-0051), drawn with {@link useNameBox}. */
+    readonly nameBox?: (context: GridNameBoxSlotContext) => ReactNode;
 }
 
+/** The mount functions made for an ExGrid's render functions, by slot: one handed again is mounted by the same. */
+export type ChromeMountsMade = Map<string, {
+    readonly render: unknown; readonly portals: GridPortals; readonly mount: (slot: HTMLElement, context: unknown) => () => void;
+}>;
+
 /** The ExGrid's Chrome as the core takes it: each slot's render function as a mount function that renders it
- * through the ExGrid's portals (ADR-0350 section 9). Which slots there are is the core's to check, as it checks a
- * mount function handed it directly; a render function that is not a function is named here, in React's terms. */
-export function chromeMounts<Row>(given: ExGridChrome<Row> | undefined, portals: GridPortals): GridChrome<Row> | undefined {
+ * through the ExGrid's portals (ADR-0350 section 9). A render function handed again in another `chrome` keeps the
+ * mount function `made` holds for it, so a part the core keeps standing, the Formula Bar's fields, is not drawn again.
+ * Which slots there are is the core's to check, as it checks a mount function handed it directly; a render function
+ * that is not a function is named here, in React's terms. */
+export function chromeMounts<Row>(given: ExGridChrome<Row> | undefined, portals: GridPortals, made: ChromeMountsMade): GridChrome<Row> | undefined {
     // Checked as a script may hand it, whatever its type says.
     const chrome: unknown = given;
     if (chrome === undefined) return undefined;
@@ -52,11 +65,15 @@ export function chromeMounts<Row>(given: ExGridChrome<Row> | undefined, portals:
     return Object.fromEntries(Object.entries(chrome).map(([name, render]: [string, unknown]) => {
         if (render === undefined) return [name, undefined];
         if (typeof render !== 'function') throw new TypeError(`chrome.${name} is a render function of the slot's context (ADR-0390).`);
-        return [name, (slot: HTMLElement, context: unknown) => portals.mount(slot, () => {
+        const before = made.get(name);
+        if (before?.render === render && before.portals === portals) return [name, before.mount];
+        const mount = (slot: HTMLElement, context: unknown): (() => void) => portals.mount(slot, () => {
             // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the core hands each slot's mount that slot's context, the one its render function takes
             const node = Reflect.apply(render, undefined, [context]) as ReactNode;
             return node;
-        })];
+        });
+        made.set(name, { render, portals, mount });
+        return [name, mount];
     }));
 }
 
@@ -272,3 +289,58 @@ export function useCellEditor(context: GridCellEditorSlotContext): CellEditorHan
 /** The editors whose opening request has been answered: StrictMode runs an effect twice, and the keyboard is taken
  * once. */
 const answeredEditors = new WeakSet<GridCellEditorSlotContext>();
+
+/** Hands `takeField` the field `control` holds after every render where it is another than the one handed last: the
+ * Formula Bar's fields are the core's to read and write, and take the keyboard only by the user's press. The first
+ * render must draw it; a render that draws none for a while leaves the one handed last standing. */
+function useHandedField(takeField: (control: HTMLElement) => void, name: string): (element: EditorField | null) => void {
+    const control = useRef<EditorField | null>(null);
+    const handed = useRef<EditorField | null>(null);
+    useLayoutEffect(() => {
+        const field = control.current;
+        if (field === null && handed.current === null) throw new Error(`The ${name}'s field is not drawn: hand the hook's \`field\` ref to the text field.`);
+        if (field === null || field === handed.current) return;
+        handed.current = field;
+        takeField(field);
+    });
+    const [field] = useState(() => (element: EditorField | null): void => { control.current = element; });
+    return field;
+}
+
+/** A text field the core reads and writes. */
+type EditorField = HTMLInputElement | HTMLTextAreaElement;
+
+/** What {@link useFormulaBarText} hands the Formula Bar's text field. */
+export interface FormulaBarTextHandles {
+    /** What the field shows besides its text: whether it takes typing, and whether its text is borrowed. */
+    readonly view: FormulaBarTextView;
+    /** Takes the text field, which the core reads and writes. Draw it uncontrolled, with no value. */
+    readonly field: (control: HTMLInputElement | HTMLTextAreaElement | null) => void;
+}
+
+/**
+ * Draws the Formula Bar's text slot from its context (ADR-0390 section 3): one text field, uncontrolled, which the
+ * core fills with the Focus cell's text, names and makes read only, and whose typing is the Cell Editor's (ADR-0051).
+ * Enter, Tab, Escape and F2 are the core's, so the contents draw no key handler of their own.
+ */
+export function useFormulaBarText(context: GridFormulaBarTextSlotContext): FormulaBarTextHandles {
+    const view = useSyncExternalStore(context.subscribe, context.view);
+    const field = useHandedField(context.takeField, 'Formula Bar\'s text');
+    return { view, field };
+}
+
+/** What {@link useNameBox} hands the Name Box. */
+export interface NameBoxHandles {
+    /** Takes the text input, which the core reads and writes. Draw it uncontrolled, with no value: an input, since
+     * Enter in a textarea submits nothing. */
+    readonly field: (control: HTMLInputElement | null) => void;
+}
+
+/**
+ * Draws the Name Box's slot from its context (ADR-0390 section 3): one text field, uncontrolled, which the core
+ * fills with the Focus's name. Enter is the core's form's and Escape the core's, so the contents draw no form and no
+ * key handler of their own.
+ */
+export function useNameBox(context: GridNameBoxSlotContext): NameBoxHandles {
+    return { field: useHandedField(context.takeField, 'Name Box') };
+}

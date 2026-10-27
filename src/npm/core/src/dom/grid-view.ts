@@ -103,7 +103,7 @@ import { SummaryMenu, toggledFigures } from './summary-menu';
 import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { CellPaint, type CellPaintOptions } from './cell-paint';
-import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type FormulaBarOptions } from './formula-bar';
+import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type FormulaBarHooks, type FormulaBarOptions } from './formula-bar';
 import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
@@ -1641,10 +1641,7 @@ export class GridView<Row> {
         this.#summaryBox = new SummaryBox(doc);
         this.#summaryBox.element.addEventListener('contextmenu', this.#onSummaryContextMenu);
         this.#stops.push(() => { this.#summaryBox.element.removeEventListener('contextmenu', this.#onSummaryContextMenu); });
-        this.#bar = new FormulaBar(doc, {
-            textTyped: this.#onBarTyped, textFocused: this.#onBarFocused, nameBoxEntered: this.#onNameBoxEntered, nameBoxLeft: this.#onNameBoxLeft,
-            nameBoxFocused: this.#onNameBoxFocused,
-        });
+        this.#bar = new FormulaBar(doc, this.#barHooks, { text: undefined, nameBox: undefined });
         this.#spacer.append(this.#header, this.#viewport);
         this.#scroller.append(this.#spacer);
         const announce = element('div', { class: 'ex-announce', role: 'status' });
@@ -1875,6 +1872,7 @@ export class GridView<Row> {
         this.#summaryBox.hide();
         this.#messageSlot.hide();
         this.#loadingSlot.hide();
+        this.#bar.dispose();
         // Every Template cell's content is taken away with the grid (ADR-0020).
         for (const byColumn of this.#templates.values()) {
             for (const mounted of byColumn.values()) this.#unmount(mounted);
@@ -4723,7 +4721,7 @@ export class GridView<Row> {
             this.#takeKeyboard();
             return;
         }
-        const surface = edit.surface === 'bar' ? this.#bar.text : this.#editorField(edit) ?? edit.element;
+        const surface = this.#editSurface(edit);
         if (surface.isConnected) surface.focus({ preventScroll: true });
     }
 
@@ -4765,6 +4763,22 @@ export class GridView<Row> {
         field?.select();
     }
 
+    // What the bar hears, handed to each bar made.
+    readonly #barHooks: FormulaBarHooks = {
+        textTyped: text => { this.#onBarTyped(text); },
+        textFocused: () => { this.#onBarFocused(); },
+        nameBoxEntered: typed => { this.#onNameBoxEntered(typed); },
+        nameBoxLeft: () => { this.#onNameBoxLeft(); },
+        nameBoxFocused: () => { this.#onNameBoxFocused(); },
+    };
+
+    // The field an open edit is typed in: the bar's text where it was typed there and the field stands, else the
+    // cell's editor.
+    #editSurface(edit: OpenEdit<Row>): HTMLElement {
+        const bar = edit.surface === 'bar' ? this.#bar.text : undefined;
+        return bar?.isConnected === true ? bar : this.#editorField(edit) ?? edit.element;
+    }
+
     // DOM focus on the Formula Bar's text or the Name Box, the fields of the grid's own beside the rows that hold
     // the keyboard while the user types in them: a hand-back leaves it there (ADR-0021, widened 2026-09-28).
     #onOwnField(): boolean {
@@ -4791,7 +4805,7 @@ export class GridView<Row> {
         this.#reconcileSelection();
         if (this.#discardedAim()) return;
         const focus = this.#held.selection.focus;
-        if (focus === undefined || !this.#isEditableCell(focus) || this.#bar.text.readOnly) return;
+        if (focus === undefined || !this.#isEditableCell(focus) || !this.#bar.editable) return;
         this.#startEdit(focus, 'caret', this.#openingTextAt(focus), 'bar');
     };
 
@@ -4811,7 +4825,7 @@ export class GridView<Row> {
     // Typed in the cell: shown in the bar as well (ADR-0051).
     readonly #onEditorTyped = (): void => {
         const edit = this.#edit;
-        if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.text.value = this.#editorText(edit);
+        if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.showText(this.#editorText(edit));
     };
 
     // A press back into the cell's editor: the edit is typed there again.
@@ -4826,7 +4840,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         // A commit pending lands in place too, the keyboard left where the user put it (ADR-0380).
         if (edit === undefined || this.#commitEdit(false) || this.#pending?.edit === edit) return;
-        const surface = edit.surface === 'bar' ? this.#bar.text : this.#editorField(edit) ?? edit.element;
+        const surface = this.#editSurface(edit);
         if (surface.isConnected) surface.focus({ preventScroll: true });
     };
 
@@ -4865,8 +4879,15 @@ export class GridView<Row> {
                 }
             }
             bar.band.remove();
+            // A Chrome's fields go with the band, and are drawn again when it shows.
+            bar.hide();
             return;
         }
+        // A field the Consumer's Chrome now draws by another mount function is made again, though not while it is in
+        // use, holding the keyboard or an edit typed there: its contents stand until a pass where it is not (ADR-0390).
+        const doc = this.#root.ownerDocument;
+        bar.adopt({ text: this.#chrome?.formulaBarText, nameBox: this.#chrome?.nameBox },
+            box => box.contains(doc.activeElement) || (box.classList.contains('ex-formula-bar-text') && this.#edit?.surface === 'bar'));
         if (bar.band.parentNode !== this.#root) this.#scroller.after(bar.band);
         const edit = this.#edit;
         const read = this.#barReading();
@@ -6567,7 +6588,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit !== undefined && (target === this.#root || target === this.#scroller || target === this.#keyField)) {
             // Back into a grid whose edit stands, the keyboard is the edit's (ED-26), on the surface it was typed on.
-            const surface = edit.surface === 'bar' && this.#bar.text.isConnected ? this.#bar.text : this.#editorField(edit) ?? edit.element;
+            const surface = this.#editSurface(edit);
             if (surface.isConnected) surface.focus({ preventScroll: true });
             return;
         }
@@ -8926,8 +8947,9 @@ export class GridView<Row> {
         this.#editorFocusOwed = false;
         if (edit === undefined || !edit.element.isConnected || !this.#keyboardHere(toward)) return;
         // An edit typed in the Formula Bar keeps the keyboard there, its caret where the user put it (ADR-0051).
-        if (edit.surface === 'bar' && this.#bar.text.isConnected) {
-            if (this.#root.ownerDocument.activeElement !== this.#bar.text) this.#bar.text.focus({ preventScroll: true });
+        const bar = edit.surface === 'bar' ? this.#bar.text : undefined;
+        if (bar?.isConnected === true) {
+            if (this.#root.ownerDocument.activeElement !== bar) bar.focus({ preventScroll: true });
             return;
         }
         const element = this.#editorField(edit);

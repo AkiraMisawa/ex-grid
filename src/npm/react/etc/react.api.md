@@ -8,6 +8,7 @@ import type { CellEditorView } from '@ex-grid/core';
 import type { FilterPanelView } from '@ex-grid/core';
 import type { FindPanelView } from '@ex-grid/core';
 import { FocusEvent as FocusEvent_2 } from 'react';
+import type { FormulaBarTextView } from '@ex-grid/core';
 import type { GridCellEditorSlotContext } from '@ex-grid/core';
 import type { GridCellMessageSlotContext } from '@ex-grid/core';
 import type { GridColumn } from '@ex-grid/core';
@@ -15,9 +16,11 @@ import type { GridColumnMenuSlotContext } from '@ex-grid/core';
 import type { GridContextMenuSlotContext } from '@ex-grid/core';
 import type { GridFilterPanelSlotContext } from '@ex-grid/core';
 import type { GridFindPanelSlotContext } from '@ex-grid/core';
+import type { GridFormulaBarTextSlotContext } from '@ex-grid/core';
 import { GridHandle } from '@ex-grid/core';
 import type { GridLoadingIndicatorSlotContext } from '@ex-grid/core';
 import type { GridMenuSlotContext } from '@ex-grid/core';
+import type { GridNameBoxSlotContext } from '@ex-grid/core';
 import { GridOptions } from '@ex-grid/core';
 import type { GridSelectionSummarySlotContext } from '@ex-grid/core';
 import type { GridTemplateCell } from '@ex-grid/core';
@@ -48,7 +51,9 @@ export interface ExGridChrome<Row> {
     readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
     readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
     readonly findPanel?: (context: GridFindPanelSlotContext) => ReactNode;
+    readonly formulaBarText?: (context: GridFormulaBarTextSlotContext) => ReactNode;
     readonly loadingIndicator?: (context: GridLoadingIndicatorSlotContext) => ReactNode;
+    readonly nameBox?: (context: GridNameBoxSlotContext) => ReactNode;
     readonly selectionSummary?: (context: GridSelectionSummarySlotContext) => ReactNode;
 }
 
@@ -74,6 +79,12 @@ export interface FindPanelHandles {
 }
 
 // @public
+export interface FormulaBarTextHandles {
+    readonly field: (control: HTMLInputElement | HTMLTextAreaElement | null) => void;
+    readonly view: FormulaBarTextView;
+}
+
+// @public
 export interface MenuItemProps {
     readonly 'aria-disabled': boolean;
     readonly 'data-ex-claims': 'click keydown' | undefined;
@@ -84,6 +95,11 @@ export interface MenuItemProps {
     readonly ref: (control: HTMLElement | null) => void;
     readonly role: 'menuitem';
     readonly tabIndex: -1;
+}
+
+// @public
+export interface NameBoxHandles {
+    readonly field: (control: HTMLInputElement | null) => void;
 }
 
 // @public
@@ -102,6 +118,12 @@ export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanel
 export function useFindPanel(context: GridFindPanelSlotContext): FindPanelHandles;
 
 // @public
+export function useFormulaBarText(context: GridFormulaBarTextSlotContext): FormulaBarTextHandles;
+
+// @public
 export function useMenuItems(context: GridMenuSlotContext): (index: number) => MenuItemProps;
+
+// @public
+export function useNameBox(context: GridNameBoxSlotContext): NameBoxHandles;
 
 ```

@@ -227,6 +227,19 @@
             the field to fill it with none of its own.
         </p>
         <p>
+            The Formula Bar's two fields are slots too. <code>formulaBarText</code> draws one text field in the bar's
+            box, from <code>useFormulaBarText(context)</code>: hand it the hook's <code>field</code> ref, and no
+            <code>value</code>. The grid writes the Focus cell's text into it, names it and makes it read only where the
+            cell does not edit; a press into it opens the edit there, and what is typed is the Cell Editor's, committed
+            once at Enter. The hook's <code>view</code> says whether the field is read only and whether its text is
+            borrowed, an array's Formula over a cell it spills into, which you show dimmed. <code>nameBox</code> draws
+            the Name Box's field from <code>useNameBox(context)</code>: the grid writes the Focus's name into it,
+            selects it when a press takes the box, and hands what Enter entered to <code>onNameBoxEntered</code>, through
+            a form of its own, so draw no form and no key handler. Neither field takes the keyboard by itself. Hold
+            your <code>chrome</code> in a constant or a memo: another render function draws the bar's fields again,
+            once the keyboard has left them.
+        </p>
+        <p>
             Three slots only show what the grid decides. <code>cellMessage</code> draws a cell's message in the grid's
             tooltip below the cell: <code>context.message</code> is the Consumer's sentence or the Reject's, and
             <code>editorError</code> says which. <code>selectionSummary</code> draws <code>context.figures</code> in the

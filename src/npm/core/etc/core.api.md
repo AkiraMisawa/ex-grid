@@ -495,6 +495,12 @@ export interface FormulaBarOptions<Row> {
 }
 
 // @public
+export interface FormulaBarTextView {
+    readonly borrowed: boolean;
+    readonly readOnly: boolean;
+}
+
+// @public
 export interface GridAction {
     readonly className?: string;
     readonly label: string;
@@ -544,7 +550,9 @@ export interface GridChrome<Row> {
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
     readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
     readonly findPanel?: GridChromeSlot<GridFindPanelSlotContext>;
+    readonly formulaBarText?: GridChromeSlot<GridFormulaBarTextSlotContext>;
     readonly loadingIndicator?: GridChromeSlot<GridLoadingIndicatorSlotContext>;
+    readonly nameBox?: GridChromeSlot<GridNameBoxSlotContext>;
     readonly selectionSummary?: GridChromeSlot<GridSelectionSummarySlotContext>;
 }
 
@@ -795,6 +803,13 @@ export type GridFindResult = {
 };
 
 // @public
+export interface GridFormulaBarTextSlotContext {
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly takeField: (control: HTMLElement) => void;
+    readonly view: () => FormulaBarTextView;
+}
+
+// @public
 export interface GridHandle<Row> {
     readonly canSummarize: boolean;
     closePopover(): void;
@@ -852,6 +867,11 @@ export interface GridMenuSlotContext {
     readonly takeFocus: (control: HTMLElement, options?: {
         readonly preventScroll?: boolean;
     }) => void;
+}
+
+// @public
+export interface GridNameBoxSlotContext {
+    readonly takeField: (control: HTMLElement) => void;
 }
 
 // @public
