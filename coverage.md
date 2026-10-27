@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/27/2026 - 09:15:27 |
+| Generated on: | 10/27/2026 - 09:52:03 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1224 |
 | Files: | 618 |
-| **Line coverage:** | 94.2% (85038 of 90231) |
-| Covered lines: | 85038 |
+| **Line coverage:** | 94.2% (85063 of 90256) |
+| Covered lines: | 85063 |
 | Uncovered lines: | 5193 |
-| Coverable lines: | 90231 |
-| Total lines: | 144109 |
-| **Branch coverage:** | 87.4% (51242 of 58616) |
-| Covered branches: | 51242 |
-| Total branches: | 58616 |
+| Coverable lines: | 90256 |
+| Total lines: | 144154 |
+| **Branch coverage:** | 87.4% (51259 of 58634) |
+| Covered branches: | 51259 |
+| Total branches: | 58634 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -513,7 +513,7 @@
 |ExGrid.Selection.FillRules|100%|100%|
 |ExGrid.Selection.GridExtent|100%||
 |ExGrid.Selection.GridFillIntent|100%||
-|ExGrid.Selection.GridSelection|93.6%|86.4%|
+|ExGrid.Selection.GridSelection|93.7%|86.8%|
 |ExGrid.Selection.HeadingMarks|98%|95.5%|
 |ExGrid.Selection.HeadingMarks.CoverageEvent|100%||
 |ExGrid.Selection.HeadingMarks.CoverageMinimum|100%|100%|
@@ -854,7 +854,7 @@
 |ExPivot.PivotCommandIds|95%|93.3%|
 |ExPivot.PivotDetailItem|100%||
 |ExPivot.PivotDetails|100%||
-|ExPivot.Script.ExPivot|58.6%|42.7%|
+|ExPivot.Script.ExPivot|59.9%|44.2%|
 |ExPivot.Script.ScriptBridge|22.2%||
 
 </details>
@@ -1071,12 +1071,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
