@@ -11,6 +11,7 @@ import { FocusEvent as FocusEvent_2 } from 'react';
 import type { FormulaBarTextView } from '@ex-grid/core';
 import type { GridCellEditorSlotContext } from '@ex-grid/core';
 import type { GridCellMessageSlotContext } from '@ex-grid/core';
+import type { GridChrome } from '@ex-grid/core';
 import type { GridColumn } from '@ex-grid/core';
 import type { GridColumnMenuSlotContext } from '@ex-grid/core';
 import type { GridContextMenuSlotContext } from '@ex-grid/core';
@@ -37,6 +38,16 @@ export interface CellEditorHandles {
     readonly field: (control: HTMLInputElement | HTMLTextAreaElement | null) => void;
     readonly view: CellEditorView;
 }
+
+// @public
+export function chromeMounts<Row>(given: ExGridChrome<Row> | undefined, portals: GridPortals, made: ChromeMountsMade): GridChrome<Row> | undefined;
+
+// @public
+export type ChromeMountsMade = Map<string, {
+    readonly render: unknown;
+    readonly portals: GridPortals;
+    readonly mount: (slot: HTMLElement, context: unknown) => () => void;
+}>;
 
 // @public
 export interface CompletionOptionProps {

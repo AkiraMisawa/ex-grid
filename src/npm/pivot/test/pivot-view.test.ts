@@ -14,6 +14,7 @@ import {
 import { findInReport } from '../src/report-find';
 import { browserPivotLocale } from '../src/browser-locale';
 import { defined, elementAt } from '../src/must';
+import type { PivotMenuSlotContext, PivotValueFieldSettingsSlotContext } from '../src/chrome';
 import type { PivotShowDetailsEvent } from '../src/details';
 import { PivotView, type PivotFailedEvent, type PivotSelectionChangedEvent, type PivotViewOptions } from '../src/pivot-view';
 
@@ -2322,6 +2323,95 @@ describe('ExPivot\'s Find over the report (ADR-0332, ADR-0333)', () => {
         expect(await findInReport(source, metadata, { ...request, text: 'z', from: cellAt(60, 0), scope }, signal))
             .toEqual({ kind: 'answered', answer: { found: false } });
         expect(asked).toEqual([{ top: 61, left: 0, bottom: 79, right: 0 }, { top: 60, left: 0, bottom: 60, right: 0 }]);
+    });
+});
+
+describe('ExPivot\'s Chrome slots (ADR-0390)', () => {
+    it('ADR-0390: a chrome naming a slot the pivot does not have, or a slot that is not a mount function, is refused by name', () => {
+        // Handed as an untyped caller may hand them.
+        const unknownSlot: unknown = { ribbon: () => () => undefined };
+        const notMount: unknown = { menu: 'Mantine' };
+        expect(() => mount({ source: local(), chrome: unknownSlot as NonNullable<PivotViewOptions['chrome']> })).toThrow(/no slot 'ribbon'/);
+        expect(() => mount({ source: local(), chrome: notMount as NonNullable<PivotViewOptions['chrome']> })).toThrow(/chrome\.menu is a mount function/);
+    });
+
+    it('ADR-0390: the Chrome\'s grid slots dress the report\'s grid and Show Details\' grids', async () => {
+        const gridChrome = { cellMessage: () => () => undefined };
+        const { grid } = mount({ source: local(), layout: byRegionAndDesk, chrome: { grid: gridChrome } });
+        await settled();
+        expect(grid.current.chrome).toBe(gridChrome);
+        await doubleClick(grid, 0, 3);
+        expect(defined(grid.detailsShown[0], 'a details grid').options.chrome).toBe(gridChrome);
+    });
+
+    it('ADR-0390, spine rule 6: a menu\'s contents are mounted once and told each change; a request for the keyboard mounts them again; nothing they call reaches the pivot once it closed', async () => {
+        const contexts: PivotMenuSlotContext[] = [];
+        let cleanups = 0;
+        const drawMenu = (slot: HTMLElement, context: PivotMenuSlotContext): (() => void) => {
+            contexts.push(context);
+            slot.textContent = context.view().commands.map(each => each.label).join('|');
+            return () => { cleanups++; };
+        };
+        const changed: PivotLayout[] = [];
+        const { root } = mount({ source: local(), layout: byRegion, chrome: { menu: drawMenu }, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const layout = layoutButton(root);
+        layout.click();
+        // Mounted as it opened, and again for the keyboard the opening owes.
+        expect(contexts.map(context => context.focusRequest)).toEqual([0, 1]);
+        const frame = root.querySelector<HTMLElement>('.ex-pivot-popup[role=menu]');
+        if (frame === null) throw new Error('The Layout menu did not open.');
+        expect([frame.getAttribute('aria-label'), frame.querySelector('[data-ex-pivot-slot=menu]')?.textContent.split('|')[9]]).toEqual(['Layout', 'Show in Tabular Form']);
+        const held = defined(contexts.at(-1), 'the contents\' context');
+        const tabular = defined(held.view().commands.find(each => each.label === 'Show in Tabular Form'), 'Tabular Form');
+        tabular.invoke();
+        await settled();
+        expect([root.querySelector('.ex-pivot-popup'), changed.at(-1)?.form, cleanups, document.activeElement]).toEqual([null, 'tabular', 2, layout]);
+        // Called again once the menu has closed, the command and the close reach nothing.
+        const asked = changed.length;
+        tabular.invoke();
+        held.close();
+        await settled();
+        expect(changed.length).toBe(asked);
+    });
+
+    it('ADR-0390: a panel whose contents cannot be drawn closes, and the slot is named', async () => {
+        // Object answers the slot it is handed, where a mount function answers its cleanup.
+        const chrome: unknown = { valueFieldSettings: Object };
+        const { root } = mount({ source: local(), layout: byRegion, chrome: chrome as NonNullable<PivotViewOptions['chrome']> });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        expect(() => { command(root, 'Value Field Settings…').click(); }).toThrow(/chrome\.valueFieldSettings answered object/);
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+    });
+
+    it('ADR-0390, ADR-0039, ADR-0204: a popup of the contents\' own keeps its panel while the keyboard is in it, and a focus asked once the keyboard left the pivot is not taken', async () => {
+        const contexts: PivotValueFieldSettingsSlotContext[] = [];
+        const outside = document.createElement('input');
+        const drawPanel = (slot: HTMLElement, context: PivotValueFieldSettingsSlotContext): (() => void) => {
+            contexts.push(context);
+            const caption = document.createElement('input');
+            slot.append(caption);
+            if (context.focusRequest > 0) context.takeFocus(caption);
+            return () => { caption.remove(); };
+        };
+        document.body.append(outside);
+        const { root } = mount({ source: local(), layout: byRegion, chrome: { valueFieldSettings: drawPanel } });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        command(root, 'Value Field Settings…').click();
+        const held = defined(contexts.at(-1), 'the contents\' context');
+        const caption = panel(root).querySelector('input');
+        if (caption === null) throw new Error('The contents drew no caption.');
+        expect(document.activeElement).toBe(caption);
+        // A select's list, drawn on the page's body as a design system draws it, takes the keyboard while it is open.
+        held.innerPopupChanged(true);
+        outside.focus();
+        expect(root.querySelector('.ex-pivot-popup')).not.toBeNull();
+        held.innerPopupChanged(false);
+        // The request answered, a focus the contents ask for later leaves the keyboard where the user put it.
+        held.takeFocus(caption);
+        expect(document.activeElement).toBe(outside);
     });
 });
 

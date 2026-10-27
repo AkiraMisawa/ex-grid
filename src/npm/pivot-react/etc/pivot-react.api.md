@@ -4,13 +4,62 @@
 
 ```ts
 
+import { ExGridChrome } from '@ex-grid/react';
+import type { PivotFieldSettingsSlotContext } from '@ex-grid/pivot';
+import type { PivotItemFilterSlotContext } from '@ex-grid/pivot';
+import type { PivotMenuSlotContext } from '@ex-grid/pivot';
+import type { PivotMenuView } from '@ex-grid/pivot';
+import type { PivotPanelSlotContext } from '@ex-grid/pivot';
+import type { PivotValueFieldSettingsSlotContext } from '@ex-grid/pivot';
 import { PivotViewOptions } from '@ex-grid/pivot';
 import { ReactElement } from 'react';
+import { ReactNode } from 'react';
 
 // @public
 export function ExPivot(props: ExPivotProps): ReactElement;
 
 // @public
-export type ExPivotProps = PivotViewOptions;
+export interface ExPivotChrome {
+    readonly fieldSettings?: (context: PivotFieldSettingsSlotContext) => ReactNode;
+    readonly grid?: ExGridChrome<unknown>;
+    readonly itemFilter?: (context: PivotItemFilterSlotContext) => ReactNode;
+    readonly menu?: (context: PivotMenuSlotContext) => ReactNode;
+    readonly valueFieldSettings?: (context: PivotValueFieldSettingsSlotContext) => ReactNode;
+}
+
+// @public
+export type ExPivotProps = Omit<PivotViewOptions, 'chrome'> & {
+    readonly chrome?: ExPivotChrome;
+};
+
+// @public
+export interface PivotMenuHandles {
+    readonly item: (index: number) => PivotMenuItemProps;
+    readonly view: PivotMenuView;
+}
+
+// @public
+export interface PivotMenuItemProps {
+    readonly 'aria-checked'?: boolean;
+    readonly 'data-ex-claims': 'click';
+    readonly disabled: boolean;
+    readonly onClick: () => void;
+    readonly ref?: (control: HTMLElement | null) => void;
+    readonly role: 'menuitem' | 'menuitemradio';
+}
+
+// @public
+export interface PivotPanelHandles<View> {
+    readonly first: (control: HTMLElement | null) => void;
+    readonly view: View;
+}
+
+// @public
+export function usePivotMenu(context: PivotMenuSlotContext): PivotMenuHandles;
+
+// @public
+export function usePivotPanel<View>(context: PivotPanelSlotContext & {
+    readonly view: () => View;
+}): PivotPanelHandles<View>;
 
 ```

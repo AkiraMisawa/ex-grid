@@ -134,6 +134,18 @@
             switch above each Example shows both: the behaviour is the same, only the drawing changes.
         </p>
         <p>
+            <strong>In ExPivot for React</strong> (<code>@@ex-grid/pivot-react</code>, published with 0.3.0) the same
+            seams are the <code>chrome</code> prop, one render function per part: a placed field's menu and the Layout
+            menu (<code>menu</code>), Filter… (<code>itemFilter</code>), Field Settings… (<code>fieldSettings</code>) and
+            Value Field Settings… (<code>valueFieldSettings</code>), and <code>grid</code>, ExGrid for React's own
+            <code>chrome</code>, which dresses the report's grid and Show Details' grids. A menu spreads
+            <code>usePivotMenu(context).item(index)</code> onto each command's control; a panel draws
+            <code>usePivotPanel(context).view</code>, the draft the pivot holds, hands each choice to its setter on the
+            context, and puts <code>first</code> on its first control, which takes the keyboard whenever the pivot asks.
+            What a command does, what OK applies and why it is refused stay the pivot's, and a part not given is the
+            built-in markup's.
+        </p>
+        <p>
             On Blazor Server, input made in the report while the connection is lost never reaches it. Once the
             connection is back, the next input finds it missing: it is refused aloud and never replayed, and the new
             input is handled as usual, as on <MudLink Href="exgrid/selection">the grid</MudLink>.

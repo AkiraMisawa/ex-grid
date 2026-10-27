@@ -29,7 +29,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ex-grid/pivot": "0.0.0-dev"
+    "@ex-grid/pivot": "0.0.0-dev",
+    "@ex-grid/react": "0.0.0-dev"
   },
   "peerDependencies": {
     "react": "^19.0.0",
