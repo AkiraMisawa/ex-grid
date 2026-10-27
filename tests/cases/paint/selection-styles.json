@@ -1,5 +1,5 @@
 {
-  "about": "Where a selected rectangle is painted, as an inline style (ADR-0008, ADR-0053, ADR-0206, ADR-0170): the selection layers' contract, the same under every Framework Adapter (ADR-0350). The C# core's SelectionStyles is a static class; the Script Core's paint/selection-styles.ts has its functions, Focus under the name focusStyle. Every case runs on four columns 100, 80, 120 and 90 px wide, the first pinned, in a 400 px Viewport: column edges at 0, 100, 180, 300 and 390. Rows are 24 px, and the painted slice is rows 10 to 29. The fill handle's place comes with editing.",
+  "about": "Where a selected rectangle is painted, as an inline style (ADR-0008, ADR-0053, ADR-0206, ADR-0170): the selection layers' contract, the same under every Framework Adapter (ADR-0350). The C# core's SelectionStyles is a static class; the Script Core's paint/selection-styles.ts has its functions, Focus under the name focusStyle. Every case runs on four columns 100, 80, 120 and 90 px wide, the first pinned, in a 400 px Viewport: column edges at 0, 100, 180, 300 and 390. Rows are 24 px, and the painted slice is rows 10 to 29. The fill handle's cases give it 8 px a side, and name where the readable area begins.",
   "kind": "calls",
   "subject": "SelectionStyles",
   "cases": [
@@ -162,6 +162,84 @@
       "name": "ADR-0008: the Focus is a one-cell range",
       "expect": [
         {"static": "cellRange", "args": [{"row": 3, "column": 4}], "is": {"topRow": 3, "leftColumn": 4, "rowCount": 1, "columnCount": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0050: the fill handle is centred on the range's bottom-right corner, in the layer that corner's cell is in, and only there",
+      "expect": [
+        {"static": "handle", "args": [
+          {"topRow": 12, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, "bottomRight",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, false, {"topPx": 0, "leftPx": 100}],
+          "is": "left: 296px; top: 116px; width: 8px; height: 8px"},
+        {"static": "handle", "args": [
+          {"topRow": 12, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, "bottomRight",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, true, {"topPx": 0, "leftPx": 100}],
+          "is": null},
+        {"static": "handle", "args": [
+          {"topRow": 12, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, "bottomRight",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, true, {"topPx": 0, "leftPx": 100}],
+          "is": "left: 96px; top: 68px; width: 8px; height: 8px"},
+        {"static": "handle", "args": [
+          {"topRow": 12, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, "bottomRight",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, false, {"topPx": 0, "leftPx": 100}],
+          "is": null},
+        {"static": "handleCentrePx", "args": [{"topRow": 12, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, "bottomRight", {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}}, 24, 10, 8, {"topPx": 0, "leftPx": 100}], "is": [300, 120]}
+      ]
+    },
+    {
+      "name": "ADR-0050, ADR-0053: a handle whose corner's row is not among the painted rows is not painted",
+      "expect": [
+        {"static": "handle", "args": [
+          {"topRow": 0, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, "bottomRight",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, false, {"topPx": 0, "leftPx": 100}],
+          "is": null},
+        {"static": "handle", "args": [
+          {"topRow": 40, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, "bottomRight",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, false, {"topPx": 0, "leftPx": 100}],
+          "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0050: whole columns put the handle at the first row's top-right, held at the readable area's top while that row is scrolled away",
+      "expect": [
+        {"static": "handle", "args": [
+          {"topRow": 0, "leftColumn": 2, "rowCount": 1000, "columnCount": 1}, "topRight",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, false, {"topPx": 6, "leftPx": 100}],
+          "is": "left: 296px; top: 6px; width: 8px; height: 8px"},
+        {"static": "handle", "args": [
+          {"topRow": 10, "leftColumn": 2, "rowCount": 990, "columnCount": 1}, "topRight",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, false, {"topPx": 0, "leftPx": 100}],
+          "is": "left: 296px; top: 0px; width: 8px; height: 8px"},
+        {"static": "handleCell", "args": [{"topRow": 0, "leftColumn": 2, "rowCount": 1000, "columnCount": 1}, "topRight"], "is": {"row": 0, "column": 2}}
+      ]
+    },
+    {
+      "name": "ADR-0050: whole rows put the handle at the first column's bottom-left, held at the readable area's left while that column is scrolled under it",
+      "expect": [
+        {"static": "handle", "args": [
+          {"topRow": 15, "leftColumn": 0, "rowCount": 1, "columnCount": 4}, "bottomLeft",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, true, {"topPx": 0, "leftPx": 100}],
+          "is": "left: 0px; top: 140px; width: 8px; height: 8px"},
+        {"static": "handle", "args": [
+          {"topRow": 15, "leftColumn": 0, "rowCount": 1, "columnCount": 4}, "bottomLeft",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, false, {"topPx": 0, "leftPx": 100}],
+          "is": null},
+        {"static": "handle", "args": [
+          {"topRow": 15, "leftColumn": 0, "rowCount": 1, "columnCount": 4}, "bottomLeft",
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 0, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, 8, false, {"topPx": 0, "leftPx": 150}],
+          "is": "left: 150px; top: 140px; width: 8px; height: 8px"},
+        {"static": "handleCell", "args": [{"topRow": 15, "leftColumn": 0, "rowCount": 1, "columnCount": 4}, "bottomLeft"], "is": {"row": 15, "column": 0}}
       ]
     }
   ]

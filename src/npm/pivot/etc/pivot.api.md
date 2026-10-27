@@ -84,6 +84,7 @@ export interface PivotShowDetailsEvent {
 
 // @public
 export interface PivotViewOptions {
+    readonly changeHighlightDuration?: number;
     readonly density?: GridDensity;
     readonly detailsView?: PivotDetailsView;
     readonly fieldListWidth?: number;

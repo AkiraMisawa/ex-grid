@@ -1,0 +1,34 @@
+{
+  "about": "Where a fill-handle drag reaches (ADR-0050, item 5): the corner the handle stands at, and what a drag from it has reached. The C# core's FillRules is a static class; the Script Core's selection/fill-rules.ts has its functions, HandleCorner as fillHandleCorner and ExtensionFor as fillExtensionFor. Every drag here is from rows 2 to 3, columns 1 to 2.",
+  "kind": "calls",
+  "subject": "FillRules",
+  "cases": [
+    {
+      "name": "ADR-0050: the handle stands at the bottom-right, at the top-right of whole columns, at the bottom-left of whole rows, and nowhere on every cell",
+      "expect": [
+        {"static": "handleCorner", "args": [{"topRow": 0, "leftColumn": 0, "rowCount": 3, "columnCount": 2}, {"rowCount": 100, "columnCount": 10}], "is": "bottomRight"},
+        {"static": "handleCorner", "args": [{"topRow": 0, "leftColumn": 2, "rowCount": 100, "columnCount": 1}, {"rowCount": 100, "columnCount": 10}], "is": "topRight"},
+        {"static": "handleCorner", "args": [{"topRow": 5, "leftColumn": 0, "rowCount": 1, "columnCount": 10}, {"rowCount": 100, "columnCount": 10}], "is": "bottomLeft"},
+        {"static": "handleCorner", "args": [{"topRow": 0, "leftColumn": 0, "rowCount": 100, "columnCount": 10}, {"rowCount": 100, "columnCount": 10}], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0050: a drag reaches along one axis, beside the source and as wide as it, and back inside the source reaches nothing",
+      "expect": [
+        {"static": "extensionFor", "args": [{"topRow": 2, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, {"row": 3, "column": 2}], "is": null},
+        {"static": "extensionFor", "args": [{"topRow": 2, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, {"row": 6, "column": 2}], "is": {"target": {"topRow": 4, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, "direction": "down"}},
+        {"static": "extensionFor", "args": [{"topRow": 2, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, {"row": 0, "column": 1}], "is": {"target": {"topRow": 0, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, "direction": "up"}},
+        {"static": "extensionFor", "args": [{"topRow": 2, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, {"row": 3, "column": 5}], "is": {"target": {"topRow": 2, "leftColumn": 3, "rowCount": 2, "columnCount": 3}, "direction": "right"}},
+        {"static": "extensionFor", "args": [{"topRow": 2, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, {"row": 2, "column": 0}], "is": {"target": {"topRow": 2, "leftColumn": 0, "rowCount": 2, "columnCount": 1}, "direction": "left"}}
+      ]
+    },
+    {
+      "name": "ADR-0050: a diagonal drag takes the axis it went further along, and a tie goes down or up",
+      "expect": [
+        {"static": "extensionFor", "args": [{"topRow": 2, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, {"row": 5, "column": 4}], "is": {"target": {"topRow": 4, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, "direction": "down"}},
+        {"static": "extensionFor", "args": [{"topRow": 2, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, {"row": 4, "column": 5}], "is": {"target": {"topRow": 2, "leftColumn": 3, "rowCount": 2, "columnCount": 3}, "direction": "right"}},
+        {"static": "extensionFor", "args": [{"topRow": 2, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, {"row": 0, "column": 0}], "is": {"target": {"topRow": 0, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, "direction": "up"}}
+      ]
+    }
+  ]
+}

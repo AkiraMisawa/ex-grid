@@ -14,14 +14,14 @@ import {
     gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions, type GridSelection, type GridTextGeometry,
     type CellPosition, type GridCommand, type GridContextMenuContext,
     type FetchingGridSource, type GridRefusal, type ViewportSize, type GridColumn, type GridCopyAnswer, type GridCopyRequest,
-    assembleCopy,
+    assembleCopy, defaultChangeHighlightMs, systemClock,
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
     layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWord, pivotWordIdList, setCollapsed, setHiddenItems,
     itemKeysEqual, pivotItemKeyId, validateLayout, writePivotLayoutJson, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
     type PivotReportCopyCell, type PivotReportRefusal, type PivotReportSettings, type PivotSourceChanged, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
-    pivotReportDetailsQuery, PivotItemPage, itemsOfPage, type PivotFieldItem,
+    pivotReportDetailsQuery, PivotItemPage, itemsOfPage, PivotChangeTimes, type PivotFieldItem,
 } from '@ex-grid/pivot-engine';
 import { detailsEvent, detailsProblemText, type PivotDetailItem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
 import { DetailsSheets, type MountGrid } from './details-view';
@@ -136,6 +136,10 @@ export interface PivotViewOptions {
     readonly rowHeight?: number;
     /** The report's Density. */
     readonly density?: GridDensity;
+    /** How long the Change Highlight marks a value that changed with the data, in milliseconds: one second unless
+     * given (ADR-0068). The source's changes are marked when newer data is shown, and a Refresh marks what changed
+     * too; a move of the user's marks nothing. Zero marks nothing, and a negative or endless one is refused. */
+    readonly changeHighlightDuration?: number;
     /** How the report's work shares the thread: a slice of 30 ms between macrotasks unless given (PV-40). Read
      * once, when the pivot is made. */
     readonly slicing?: PivotSlicing;
@@ -309,6 +313,10 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
             throw new RangeError(`${name} is a whole number of at least 1, not ${JSON.stringify(cap)} (ADR-0066).`);
         }
     }
+    const highlight = given['changeHighlightDuration'];
+    if (highlight !== undefined && (typeof highlight !== 'number' || !Number.isFinite(highlight) || highlight < 0)) {
+        throw new RangeError(`changeHighlightDuration is a finite number of zero or more milliseconds, not ${typeof highlight === 'number' ? String(highlight) : typeof highlight} (ADR-0068).`);
+    }
     const slicing = given['slicing'];
     if (slicing !== undefined && (typeof slicing !== 'object' || slicing === null)) throw new TypeError('slicing is an object.');
     for (const name of ['onLayoutChanged', 'onRefused', 'onFailed', 'onShowFieldListChanged', 'onSelectionChanged', 'onShowDetails', 'label']) {
@@ -412,6 +420,16 @@ export class PivotView {
     // The Stale Report (ADR-0067): what happened while the newest data cannot be shown, and when the data the report
     // shows arrived, which the notice and a refused Copy say.
     #stale: string | undefined;
+    // The Change Highlight (ADR-0068): when this pivot first showed each change the report source marks, one for the
+    // pivot's life across sources; the grid's question about a cell, one function for the pivot's life, as the Razor
+    // component holds its delegate, so that its identity says nothing changed (ADR-0003): a newly marked value is a
+    // new row; and each value column's index by its name, which a row's marks are listed by.
+    readonly #changeTimes = new PivotChangeTimes();
+    readonly #cellChangedAt: NonNullable<GridOptions<PivotDisplayRow>['cellChangedAt']> = (row, column) => {
+        const index = this.#valueColumnIndexes.get(column);
+        return index === undefined ? undefined : this.#changeTimes.changedAt(row, index);
+    };
+    #valueColumnIndexes = new Map<string, number>();
     // Whether what left the report stale was a question that refreshed the Pivot Source, which Retry then asks again
     // rather than the report alone: asking a source that did not refresh would show its old data as the newest.
     #staleRetryRefreshes = false;
@@ -640,7 +658,10 @@ export class PivotView {
         }
         if (densityMoved) this.#geometry = gridTextGeometry(options.density === undefined ? {} : { density: options.density });
         if (options.label !== before.label || densityMoved) this.#columns = this.#columnsOf(options);
-        if (settingsMoved) this.#settings = this.#settingsOf(options);
+        // A highlight's length is the next question's to carry, which keeps what it compares that long; the report on
+        // screen is not asked again for it, and the grid paints by it at once.
+        const highlightMoved = highlightMsOf(options) !== highlightMsOf(before);
+        if (settingsMoved || highlightMoved) this.#settings = this.#settingsOf(options);
         if (options.showFieldList !== before.showFieldList) this.#fieldListShown = options.showFieldList !== false;
         if (sourceMoved) {
             // A new source is asked from nothing: no Refresh is owed to it.
@@ -663,7 +684,7 @@ export class PivotView {
         } else if (settingsMoved || capsOf(options) !== capsOf(before)) {
             this.#ask(this.#layoutAhead, 'consumer', []);
         }
-        if (options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
+        if (highlightMoved || options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
             || options.viewportWidth !== before.viewportWidth) {
             this.#drawGrid();
         }
@@ -733,6 +754,10 @@ export class PivotView {
         return this.#options.maxLeaves ?? defaultMaxLeaves;
     }
 
+    get #changeHighlightMs(): number {
+        return highlightMsOf(this.#options);
+    }
+
     get #maxRows(): number {
         return this.#options.maxRows ?? excelRows;
     }
@@ -749,7 +774,11 @@ export class PivotView {
     // the grid's Cell Metrics (ADR-0151).
     #settingsOf(options: PivotViewOptions): PivotReportSettings {
         const words = wordsRecord(options.label);
-        return Object.freeze({ locale: this.#localeOf(options), labelMetrics: this.#geometry, ...(words === undefined ? {} : { words }) });
+        // The report source keeps what a highlight compares for as long as it is marked (ADR-0153).
+        return Object.freeze({
+            locale: this.#localeOf(options), labelMetrics: this.#geometry, changeHighlightMs: highlightMsOf(options),
+            ...(words === undefined ? {} : { words }),
+        });
     }
 
     // A level's indent and a button's side: the em of the grid's font, rounded as .NET rounds it, which is what the
@@ -961,6 +990,10 @@ export class PivotView {
             this.#stale = undefined;
             this.#staleRetryRefreshes = false;
         }
+        // The changes this Window carries are shown from now, on the clock the grid paints by (createGrid's is the
+        // system clock, ADR-0068). A cell keeps its mark after the source stops listing its change, until the
+        // highlight stamped here ends.
+        this.#changeTimes.adopt(update, systemClock.now(), this.#changeHighlightMs);
         this.#showLayout(question.layout, { answer: update, question }, question.raise);
         this.#landed(question, update.metadata.sourceVersion, false);
     }
@@ -1265,6 +1298,7 @@ export class PivotView {
         const { locale } = question;
         const { columns, headerGroups, pinnedColumnCount } = this.#columns.of(answer.metadata, this.#userWidths);
         this.#gridColumns = columns;
+        this.#valueColumnIndexes = new Map(answer.metadata.valueColumns.map((column, index) => [column.name, index]));
         const { rowHeight, density } = this.#options;
         const options: GridOptions<PivotDisplayRow> = {
             columns,
@@ -1286,6 +1320,8 @@ export class PivotView {
             onRefused: this.#gridRefused,
             copyAnswerAsync: this.#copyReport,
             commandLabel: this.#commandLabel,
+            cellChangedAt: this.#cellChangedAt,
+            changeHighlightDuration: this.#changeHighlightMs,
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
         };
@@ -2107,6 +2143,11 @@ function heldMoves(question: Question): readonly FieldListMove[] {
 // The fields a refusal names: those of the moves its layout still holds, each once.
 function heldFields(held: readonly FieldListMove[]): readonly string[] {
     return [...new Set(held.map(move => move.field))];
+}
+
+// How long a Change Highlight lasts under a pivot's options (ADR-0068).
+function highlightMsOf(options: PivotViewOptions): number {
+    return options.changeHighlightDuration ?? defaultChangeHighlightMs;
 }
 
 // The caps a pivot's options set, each as it applies, so a cap given as its default asks nothing again.

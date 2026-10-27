@@ -26,6 +26,7 @@ import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
 import { PivotCsv } from './pages/pivot-csv';
 import { PivotDb } from './pages/pivot-db';
+import { PivotLive } from './pages/pivot-live';
 import { PivotRisk } from './pages/pivot-risk';
 import { SheetDemo } from './pages/sheet';
 import { Sizing } from './pages/sizing';
@@ -60,6 +61,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     'pivot-risk': PivotRisk,
     'pivot-db': PivotDb,
     'pivot-csv': PivotCsv,
+    'pivot-live': PivotLive,
     sheet: SheetDemo,
     marks: Marks,
     stripes: Stripes,
