@@ -78,7 +78,7 @@ export { gridHeaderRequiredPx, gridTextGeometry } from './text-geometry';
 export type { GridTextGeometry } from './text-geometry';
 export type { DistinctValues, GridSourceState } from './source/grid-source';
 export { findMatches, type GridFindRequest, type GridFindResult } from './finding/find';
-export { answeredSummary, declinedSummary, summaryOf, type GridSummaryRequest, type GridSummaryResult } from './summary/grid-summary';
+export { answeredSummary, declinedSummary, GridSummaryCells, summaryOf, type GridSummaryRequest, type GridSummaryResult } from './summary/grid-summary';
 export type { SelectionSummary, SelectionSummaryStatus, SummaryFigureShown } from './dom/selection-summary';
 export { summaryLabelIds } from './chrome/summary-words';
 export type { MarkRefusalReason, RowMarkHeaderState, RowMarks } from './rows/row-marks';

@@ -1451,6 +1451,15 @@ export interface GridSourceState<Row> {
 }
 
 // @public
+export class GridSummaryCells {
+    add(value: unknown): void;
+    addError(): void;
+    addNumber(value: number): void;
+    addOther(): void;
+    answer(figures: readonly SummaryFigure[], textOf?: (figure: number) => string | undefined): GridSummaryResult;
+}
+
+// @public
 export interface GridSummaryRequest {
     readonly columns: readonly string[];
     readonly figures: readonly SummaryFigure[];

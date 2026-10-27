@@ -120,7 +120,10 @@
                 A copy or a paste the grid refuses — a block that would run past XFD1048576, say — is announced once,
                 by the grid's live region, in the Sheet's own words, and the Sheet's notice under the grid shows the
                 same sentence. <code>CommandLabel</code> replaces those words as it replaces the menu's, by the ids in
-                ExGrid's <a href="exgrid/clipboard#what-a-refusal-sounds-like"><code>RefusalLabelIds</code></a>.
+                ExGrid's <a href="exgrid/clipboard#what-a-refusal-sounds-like"><code>RefusalLabelIds</code></a>;
+                under React, <code>commandLabel</code> words the grid's ids and <code>label</code> the Sheet's own.
+                The Context Menu offers Copy with headers only when <code>AllowCopyWithHeaders</code>
+                (<code>allowCopyWithHeaders</code>) is on: a Sheet's column letters are addresses, not headers.
                 A large paste on Blazor Server says it is under way while it is read, and <kbd>Escape</kbd> then
                 cancels it, as <a href="exgrid/clipboard#a-paste-under-way-and-escape">ExGrid's does</a>.
             </li>
@@ -223,7 +226,11 @@
             <code>SheetCommandIds.SummaryRefused</code> words it in another language, asked of a substituted
             Chrome and then of <code>CommandLabel</code>, its <code>{0}</code> the cell and <code>{1}</code> what it shows. Average, Min, Max and Sum wear the
             active cell's Number Format, whatever the other cells' formats. <code>ShowSelectionSummary="false"</code>
-            turns the line off.
+            turns the line off. <code>SummaryFigures</code> chooses the figures; the Sheet keeps the user's choice from
+            the menu until you hand it other figures, and <code>SummaryFiguresChanged</code> hears the choice.
+            Under React these are <code>showSelectionSummary</code>, <code>summaryFigures</code>,
+            <code>onSummaryFiguresChanged</code> and <code>onSelectionSummaryChanged</code>, and the reason is worded
+            through <code>label</code>'s <code>summaryRefused</code>.
         </p>
     </DocsSection>
 
