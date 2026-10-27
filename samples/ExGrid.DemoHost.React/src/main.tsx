@@ -24,6 +24,7 @@ import { Lifecycle } from './pages/lifecycle';
 import { MantineDemo } from './pages/mantine';
 import { MantineChartDemo } from './pages/mantine-chart';
 import { MuiDemo } from './pages/mui';
+import { MuiChartDemo } from './pages/mui-chart';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
@@ -78,6 +79,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     mantine: MantineDemo,
     'mantine-chart': MantineChartDemo,
     mui: MuiDemo,
+    'mui-chart': MuiChartDemo,
 };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */
