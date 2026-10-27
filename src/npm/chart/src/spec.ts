@@ -8,6 +8,7 @@ import {
     type JsonObject, type JsonValue, type SnapshotDecimal,
 } from '@ex-grid/data';
 import type { ChartData } from './chart-data';
+import type { ChartSource, ChartSourceAnswer } from './chart-source';
 import { dateOf, isoDate } from './day-numbers';
 import { ChartDefinition } from './definition';
 import { roundTrip } from './invariant-text';
@@ -142,6 +143,107 @@ export function readChartSpec(text: string, tables: (handle: string) => ChartDat
     return new Reader(tables).read(root);
 }
 
+/** A Chart Spec read through Chart Sources (ADR-0344): its reading, and the version each Data Handle was read at. */
+export interface ChartSourceReading {
+    /** The title and the definition. */
+    readonly reading: ChartSpecReading;
+    /** The version each Data Handle's answers named. */
+    readonly versions: ReadonlyMap<string, number>;
+}
+
+/**
+ * Reads `text`, a Chart Spec, through Chart Sources (ADR-0344): each series asks its Data Handle's source for its own
+ * column, from `from` to `to` at `pixels` columns, all at once, and is read from the points the source kept, carrying
+ * what each thinned pixel held. What a thinned point cannot stand for — a surface, a labels axis, a series that is not
+ * a line from `x` and `y` — is refused by path before any source is asked, and so is a reading whose answers for one
+ * Data Handle name different versions of its data: one chart is never drawn from two moments (spine rule 6). The
+ * counterpart of C#'s `ChartSpec.ReadAsync`.
+ */
+export async function readChartSpecThrough(text: string, sources: (handle: string) => ChartSource | undefined, pixels: number,
+    options: { readonly from?: number | null; readonly to?: number | null; readonly signal?: AbortSignal } = {}): Promise<ChartSourceReading> {
+    if (!Number.isInteger(pixels) || pixels < 1) throw new RangeError(`A chart is read through its sources at one pixel or more, not ${String(pixels)}.`);
+    const { from = null, to = null, signal = new AbortController().signal } = options;
+    let root: JsonValue;
+    try {
+        root = readJsonText(text);
+    } catch (error) {
+        if (error instanceof JsonTextError) {
+            throw new ChartSpecRefusedError('', `The Chart Spec is not JSON: ${error.message}`);
+        }
+        throw error;
+    }
+    const { values, series } = askedOf(root);
+    // Each asked as it is reached, as C#'s reader does: a Data Handle no source answers for stops the asking there.
+    const asks = series.map((asked, i) => {
+        const source = sources(asked.data);
+        if (source === undefined) {
+            throw new ChartSpecRefusedError(`series[${String(i)}].data`, `series[${String(i)}].data "${asked.data}" is not known: name a Data Handle a capability returned.`);
+        }
+        return source.thin({ ...asked, values, from, to, pixels }, signal);
+    });
+    const answers = await Promise.all(asks);
+    const versions = new Map<string, number>();
+    series.forEach((asked, i) => {
+        const answer = answers[i];
+        if (answer === undefined) throw new Error(`Internal: series ${String(i)} has no answer.`);
+        const seen = versions.get(asked.data);
+        if (seen !== undefined && seen !== answer.version) {
+            throw new ChartSpecRefusedError(`series[${String(i)}].data`, `series[${String(i)}].data "${asked.data}" answered version ${String(answer.version)}, `
+                + `and an earlier series of it version ${String(seen)}: one chart is never drawn from two moments of its data.`);
+        }
+        versions.set(asked.data, answer.version);
+    });
+    const reading = new Reader(() => undefined, series.length === 0 ? undefined : answers).read(root);
+    return Object.freeze({ reading, versions });
+}
+
+// The keys a series read from a Chart Source may carry: its line, read from x and y (ADR-0344).
+const sourcedSeriesKeys = ['id', 'name', 'kind', 'data', 'x', 'y', 'panel', 'axis', 'fromZero', 'step'];
+// The kinds a thinned line stands for.
+const sourcedKinds = ['level', 'rateOverInterval', 'amountPerPeriod'];
+
+// What a spec asks of its sources, checked before any is asked (ADR-0344): C#'s `ChartSource.Asked`. Anything else
+// wrong with the spec is the reader's to refuse, once the answers are in.
+function askedOf(root: JsonValue): { readonly values: AxisValues; readonly series: readonly { readonly data: string; readonly x: string; readonly y: string }[] } {
+    if (isJsonObject(root) && jsonMember(root, 'surface') !== undefined) {
+        throw refuse('surface', 'surface needs every point of its grid or its mesh, which a Chart Source does not thin; a chart read from one draws series.');
+    }
+    const axis = isJsonObject(root) ? jsonMember(root, 'axis') : undefined;
+    const series = isJsonObject(root) ? jsonMember(root, 'series') : undefined;
+    if (!isJsonObject(axis) || !isJsonArray(series)) return { values: 'numbers', series: [] };
+    const valuesMember = jsonMember(axis, 'values');
+    const values = typeof valuesMember === 'string' ? valuesMember : undefined;
+    if (values === 'labels') {
+        throw refuse('axis.values', 'axis.values "labels" needs every category, which only the whole column knows; a chart read from a Chart Source places dates or numbers.');
+    }
+    const asked = series.map((s, i) => {
+        const path = `series[${String(i)}]`;
+        if (!isJsonObject(s)) throw refuse(path, `${path} is not an object: each series names its id, name, kind, data, x and y.`);
+        for (const name of jsonMemberNames(s)) {
+            if (!sourcedSeriesKeys.includes(name) && seriesKeys.includes(name)) {
+                throw refuse(`${path}.${name}`, `${path}.${name} is one value a point, and a point read from a Chart Source stands for every row of its pixel; a series read from one draws its line from x and y.`);
+            }
+        }
+        const kindMember = jsonMember(s, 'kind');
+        const kind = typeof kindMember === 'string' ? kindMember : undefined;
+        // A kind no Chart Spec knows is the reader's to refuse; one it knows and a thinned line cannot stand for, here.
+        if (kind !== undefined && !sourcedKinds.includes(kind) && kinds.has(kind)) {
+            throw refuse(`${path}.kind`, kind === 'observation'
+                ? `${path}.kind "observation" draws each row as a point of its own, which a Chart Source does not thin; a series read from one is a level, a rateOverInterval or an amountPerPeriod.`
+                : `${path}.kind "${kind}" does not draw a line a Chart Source can thin; a series read from one is a level, a rateOverInterval or an amountPerPeriod.`);
+        }
+        const column = (key: string): string => {
+            const member = jsonMember(s, key);
+            if (typeof member !== 'string') {
+                throw refuse(`${path}.${key}`, `${path}.${key} names a column, and is needed: a series read from a Chart Source is asked for its "data", its "x" and its "y".`);
+            }
+            return member;
+        };
+        return Object.freeze({ data: column('data'), x: column('x'), y: column('y') });
+    });
+    return { values: values === 'dates' ? 'dates' : 'numbers', series: asked };
+}
+
 // What a grid axis places: numbers, dates as their day numbers, or labels.
 type PlacedKind = 'numbers' | 'dates' | 'labels';
 
@@ -155,12 +257,16 @@ interface GridValues {
 
 class Reader {
     readonly #tables: (handle: string) => ChartData | undefined;
+    // A reader through Chart Sources is handed each series' answer, in the series' order (readChartSpecThrough).
+    readonly #answers: readonly ChartSourceAnswer[] | undefined;
+    #answered = 0;
     // A label axis' categories, in the order the data first shows them (ADR-0251).
     readonly #labels: string[] = [];
     readonly #labelIndex = new Map<string, number>();
 
-    constructor(tables: (handle: string) => ChartData | undefined) {
+    constructor(tables: (handle: string) => ChartData | undefined, answers?: readonly ChartSourceAnswer[]) {
         this.#tables = tables;
+        this.#answers = answers;
     }
 
     read(root: JsonValue): ChartSpecReading {
@@ -395,7 +501,8 @@ class Reader {
             throw refuse(`${path}.kind`, `${path}.kind "${kindText}" is not a Series Kind: it is one of ${kindNames}.`);
         }
         const handle = requiredString(s, 'data', path, 'the Data Handle of the table its values are read from');
-        const table = this.#table(handle, `${path}.data`);
+        const answer = this.#answers?.[this.#answered++];
+        const table = answer === undefined ? this.#table(handle, `${path}.data`) : answer.points;
         const x = requiredColumn(s, 'x', path, handle, table);
         const rows = table.rowCount;
         const positions: number[] = [];
@@ -524,6 +631,7 @@ class Reader {
             axis,
             ...(fromZero === undefined ? {} : { fromZero }),
             step,
+            ...(answer === undefined ? {} : { thinned: answer.thinned }),
         };
     }
 

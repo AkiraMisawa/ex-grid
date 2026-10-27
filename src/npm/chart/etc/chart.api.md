@@ -336,6 +336,38 @@ export interface ChartSeriesOptions {
 }
 
 // @public
+export interface ChartSource {
+    thin(query: ChartSourceQuery, signal: AbortSignal): Promise<ChartSourceAnswer>;
+}
+
+// @public
+export interface ChartSourceAnswer {
+    readonly points: ChartData;
+    readonly thinned: readonly PixelSummary[];
+    readonly version: number;
+}
+
+// @public
+export function chartSourceOver(data: ChartData, version?: number): ChartSource;
+
+// @public
+export interface ChartSourceQuery {
+    readonly data: string;
+    readonly from: number | null;
+    readonly pixels: number;
+    readonly to: number | null;
+    readonly values: AxisValues;
+    readonly x: string;
+    readonly y: string;
+}
+
+// @public
+export interface ChartSourceReading {
+    readonly reading: ChartSpecReading;
+    readonly versions: ReadonlyMap<string, number>;
+}
+
+// @public
 export type ChartSpecAnswer = {
     readonly accepted: true;
     readonly text: string;
@@ -869,6 +901,13 @@ export interface PriceBar {
 export function readChartSpec(text: string, tables: (handle: string) => ChartData | undefined): ChartSpecReading;
 
 // @public
+export function readChartSpecThrough(text: string, sources: (handle: string) => ChartSource | undefined, pixels: number, options?: {
+    readonly from?: number | null;
+    readonly to?: number | null;
+    readonly signal?: AbortSignal;
+}): Promise<ChartSourceReading>;
+
+// @public
 export function readingAt(definition: ChartDefinition, scene: ChartScene, metrics: ChartMetrics, position: number, panel: number, pointerY: number): ChartReading;
 
 // @public
@@ -1256,6 +1295,9 @@ export function tenor(years: number): string;
 
 // @public
 export const theilSenLimit = 3000;
+
+// @public
+export function thinChartData(data: ChartData, query: ChartSourceQuery, version?: number): ChartSourceAnswer;
 
 // @public
 export type TickPlacement =
