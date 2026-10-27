@@ -14,6 +14,16 @@
             first three series.
         </p>
         <DocsExample Builtin="typeof(FirstChart)" Mud="typeof(FirstChartMud)" Files="@(["Examples/Chart/ChartData.cs"])" CodeOpen="true" />
+        <p>
+            <strong>In React.</strong> <code>@@ex-grid/chart-react</code>'s <code>ExChart</code> (published with 0.3.0)
+            takes a <code>chrome</code> of two render functions, as <code>IChartChrome</code> has two parts:
+            <code>toolbar</code>, handed the toolbar's commands and, while it is open, Chart Filters, and
+            <code>menu</code>, handed the context menu's commands. Each is drawn through a portal where the built-in
+            markup stands, and is handed a new context only when what it shows changed, so the text typed in Chart
+            Filters is kept until Apply. The commands, their order, what a typed range reads as and where the menu
+            opens stay the chart's: invoke a command, hand Chart Filters' <code>apply</code> the text, and the chart
+            says what it could not read.
+        </p>
     </DocsSection>
 
     <DocsSection Title="The parts of a chart">

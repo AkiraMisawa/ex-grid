@@ -84,6 +84,25 @@ export interface ChartAxisOptions {
 }
 
 // @public
+export interface ChartChrome {
+    readonly menu?: ChartChromeSlot<ChartMenuSlotContext>;
+    readonly toolbar?: ChartChromeSlot<ChartToolbarSlotContext>;
+}
+
+// @public
+export type ChartChromeSlot<Context> = (slot: HTMLElement, context: Context) => () => void;
+
+// @public
+export interface ChartCommand {
+    readonly enabled: boolean;
+    readonly expanded?: boolean;
+    readonly id: string;
+    readonly invoke: () => void;
+    readonly label: string;
+    readonly title?: string;
+}
+
+// @public
 export function chartCsvLong(definition: ChartDefinition, metrics: ChartMetrics, view?: ChartView): string;
 
 // @public
@@ -131,6 +150,19 @@ export interface ChartEdgeMark {
 export type ChartFileFormat = 'csv' | 'svg' | 'png';
 
 // @public
+export interface ChartFiltersSlotContext {
+    readonly apply: (from: string | null, to: string | null) => void;
+    readonly error: string | null;
+    readonly from: string | null;
+    readonly hint: string;
+    readonly labels: readonly string[];
+    readonly scale?: AxisScale;
+    readonly setScale: (scale: AxisScale) => void;
+    readonly to: string | null;
+    readonly values: AxisValues;
+}
+
+// @public
 export interface ChartHandle {
     destroy(): void;
     download(format: ChartFileFormat): Promise<boolean>;
@@ -151,6 +183,13 @@ export interface ChartMark {
 }
 
 // @public
+export interface ChartMenuSlotContext {
+    readonly close: () => void;
+    readonly commands: readonly ChartCommand[];
+    readonly name: string;
+}
+
+// @public
 export interface ChartMetrics {
     readonly colourSlots?: number;
     readonly devicePixelRatio?: number;
@@ -165,6 +204,7 @@ export interface ChartMetrics {
 // @public
 export interface ChartOptions {
     readonly axisStyle?: AxisStyle;
+    readonly chrome?: ChartChrome;
     readonly colourSlots?: number;
     readonly definition: ChartDefinition;
     readonly density?: GridDensity;
@@ -347,6 +387,14 @@ export function chartTable(definition: ChartDefinition, metrics: ChartMetrics, v
 // @public
 export interface ChartTarget {
     readonly chart: GridChart;
+    readonly name: string;
+}
+
+// @public
+export interface ChartToolbarSlotContext {
+    readonly commands: readonly ChartCommand[];
+    readonly filters?: ChartFiltersSlotContext;
+    readonly label: (id: string) => string;
     readonly name: string;
 }
 
