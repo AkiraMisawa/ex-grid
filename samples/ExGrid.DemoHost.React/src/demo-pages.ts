@@ -111,6 +111,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'The demo API server\'s SQLite trades two ways, side by side: read over Arrow into a Snapshot and pivoted here, and asked of the server\'s Pivot Source, which answers each question\'s Leaf Aggregates in SQL (ADR-0066, ADR-0069, ADR-0370).',
     },
     {
+        route: 'pivot-live', title: 'Live pivots', group: 'ExPivot',
+        description: 'Change Batches folded into the bundled source by the page\'s own timer, and a server whose data its live updates keep moving; changed values are marked in both, and a server cut off leaves a Stale Report (ADR-0067, ADR-0068).',
+    },
+    {
         route: 'sheet', title: 'Sheet', group: 'ExSheet',
         description: 'ExSheet drawn by ExGrid: Formulas, editing, paste, Delete, the fill keys and undo, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0370).',
     },

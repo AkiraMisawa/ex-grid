@@ -102,8 +102,10 @@ test('Shift+click on a header selects whole columns and does not sort (SR-2a, AD
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
-// The pointer at the middle of a header's label, clear of its menu button and its grip.
+// The pointer at the middle of a header's label, clear of its menu button and its grip. Read once the header is shown:
+// a box read before then is none, as CI's React host read one straight after the first row showed (PR #388).
 async function headerCentre(page, name) {
+    await expect(header(page, name)).toBeVisible();
     const box = await header(page, name).boundingBox();
     return { x: box.x + Math.min(20, box.width / 3), y: box.y + (box.height / 2) };
 }
