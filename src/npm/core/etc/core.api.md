@@ -156,6 +156,17 @@ export type CommitRefusalReason =
 | 'cancelled';
 
 // @public
+export type CompleteEditorText = (text: string, caret: number) => EditorCompletion | undefined | PromiseLike<EditorCompletion | undefined>;
+
+// @public
+export interface CompletionCandidate {
+    readonly insert: string;
+    readonly label: string;
+    readonly length: number;
+    readonly start: number;
+}
+
+// @public
 export interface CopyFlavours {
     readonly html: string;
     readonly text: string;
@@ -237,6 +248,31 @@ export type EditDiscardReason =
 /** The grid's source was replaced by another, so the row the editor was opened on, or the Selection typing
 * was aimed at, belongs to rows the grid no longer shows (ADR-0011, ADR-0142). */
 | 'sourceChanged';
+
+// @public
+export class EditorCompletion {
+    constructor(options: {
+        readonly candidates: readonly CompletionCandidate[];
+        readonly hint?: EditorHint;
+    });
+    readonly candidates: readonly CompletionCandidate[];
+    readonly hint: EditorHint | undefined;
+    get isEmpty(): boolean;
+    static readonly none: EditorCompletion;
+}
+
+// @public
+export class EditorHint {
+    constructor(options: {
+        readonly text: string;
+        readonly emphasisStart?: number;
+        readonly emphasisLength?: number;
+    });
+    readonly emphasisLength: number;
+    readonly emphasisStart: number;
+    parts(): readonly [before: string, emphasis: string, after: string];
+    readonly text: string;
+}
 
 // @public
 export type EditVerdict = {
@@ -859,6 +895,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly chrome?: GridChrome<Row>;
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
+    readonly completeEditorText?: CompleteEditorText;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
     readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;

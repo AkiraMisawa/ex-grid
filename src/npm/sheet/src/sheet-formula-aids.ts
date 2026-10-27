@@ -1,14 +1,53 @@
 // What the Sheet tells its grid about the Formula being edited (ADR-0057), as the C# Sheet's SheetFormulaAids: the
 // References in the editor's text, and the Linked Table columns behind the keys the grid coloured.
 
-import type { GridEditorReference, GridEditorRewrite, ReferenceKeyColour, SelectionRange } from '@ex-grid/core';
-import { CellAddress, CellRange, cycleReference, formulaPointAt, LinkedTableColumn, referenceText, type Sheet } from '@ex-grid/sheet-engine';
+import { EditorCompletion, EditorHint, type GridEditorReference, type GridEditorRewrite, type ReferenceKeyColour, type SelectionRange } from '@ex-grid/core';
+import {
+    CellAddress, CellRange, cycleReference, formulaHintAt, formulaPointAt, LinkedTableColumn, referenceText, type ArgumentHint, type Sheet,
+} from '@ex-grid/sheet-engine';
 import { defined } from './must';
 import type { LinkedColumnColour } from './pointing-scope';
 
 /** Whether a Reference can go at the caret (ADR-0051): after `=`, an operator, `(` or `,` in a Formula. */
 export function sheetPointAt(text: string, caret: number): boolean {
     return caret >= 0 && caret <= text.length && formulaPointAt(text, caret) !== undefined;
+}
+
+/**
+ * Completion and the argument hint (ADR-0051, ADR-0058), as the C# Sheet's `SheetFormulaAids.Complete`: the declared
+ * functions and `sheet`'s Linked Tables whose names begin with the name at the caret, a table's columns after `Table[`,
+ * an argument's values where it takes one of a fixed list, and the hint for the function whose argument list holds the
+ * caret. Nothing for text that is not a Formula.
+ */
+export function sheetCompletion(sheet: Sheet, text: string, caret: number): EditorCompletion | undefined {
+    if (!text.startsWith('=') || caret < 0 || caret > text.length) return undefined;
+    const completion = sheet.complete(text, caret);
+    const hint = hintOf(formulaHintAt(text, caret));
+    if (completion === undefined && hint === undefined) return undefined;
+    const candidates = completion === undefined ? [] : completion.candidates.map(candidate => ({
+        label: candidate.name, start: completion.start, length: completion.length, insert: candidate.insertText,
+    }));
+    return new EditorCompletion(hint === undefined ? { candidates } : { candidates, hint });
+}
+
+/**
+ * The hint line for an argument hint: the function's signature, `SUM(number1, [number2], ...)`, with the name of the
+ * argument the caret is in set off, none past the last argument the function takes.
+ */
+export function hintOf(hint: ArgumentHint | undefined): EditorHint | undefined {
+    if (hint === undefined) return undefined;
+    const { function: declared, currentArgument } = hint;
+    const text = declared.signature;
+    if (currentArgument === undefined) return new EditorHint({ text });
+    // The signature is the name, "(", the arguments joined by ", ", and ")": the argument's place in it is counted
+    // over the names before it, never searched for as text, so a name that is a prefix of another is set off where it
+    // stands.
+    let at = declared.name.length + 1;
+    for (const name of declared.arguments.split(', ')) {
+        if (name === currentArgument) return new EditorHint({ text, emphasisStart: at, emphasisLength: name.length });
+        at += name.length + 2;
+    }
+    return new EditorHint({ text });
 }
 
 /** The Reference Point mode writes for a pointed range (ADR-0051): `A3`, or `B7:C9` from its top-left. */

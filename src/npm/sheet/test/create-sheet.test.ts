@@ -235,6 +235,33 @@ describe('The formula entry aids (ADR-0051, ADR-0057)', () => {
         await vi.waitFor(() => { expect(told).toEqual([['Costs[Amount]']]); });
     });
 
+    it('ADR-0051, ADR-0058: the declared functions and the Linked Tables are listed as a name is typed, and Tab writes the name and shows its argument hint', async () => {
+        const { element, sheet } = sheetOf();
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('=');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        if (editor === null) throw new Error('The editor opened.');
+        const type = (text: string): void => {
+            editor.setRangeText(text, editor.value.length, editor.value.length, 'end');
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        const listed = (): (string | null)[] => [...element.querySelectorAll('.ex-completion-item')].map(item => item.textContent);
+        type('PO');
+        await vi.waitFor(() => { expect(listed()).toContain('Positions'); });
+        type('X');
+        await vi.waitFor(() => { expect(element.querySelector('.ex-completion')).toBeNull(); });
+        editor.value = '=';
+        type('SUMI');
+        await vi.waitFor(() => { expect(listed()).toEqual(['SUMIF', 'SUMIFS']); });
+        key('Tab');
+        expect(editor.value).toBe('=SUMIF(');
+        await vi.waitFor(() => { expect(element.querySelector('.ex-completion-hint strong')?.textContent).toBe('range'); });
+        expect(listed()).toEqual([]);
+        expect(element.querySelector('.ex-completion-hint')?.textContent).toMatch(/^SUMIF\(range, criteria/u);
+    });
+
     it('ADR-0051: = and ↓ point at the cell below, F4 cycles it to $A$3, and Enter commits the Formula', async () => {
         const { element } = sheetOf({ document: documentOf({ A3: '7' }) });
         await vi.waitFor(() => { expect(textAt(element, 2, 0)).toBe('7'); });

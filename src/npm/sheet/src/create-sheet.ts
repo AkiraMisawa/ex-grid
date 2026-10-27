@@ -12,7 +12,7 @@ import {
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
-    type ViewportSize, type GridEditorReference, type ReferenceKeyColour, type GridPointArrow, type GridPointState,
+    type ViewportSize, type GridEditorReference, type ReferenceKeyColour, type GridPointArrow, type GridPointState, type EditorCompletion,
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
@@ -44,7 +44,7 @@ import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes
 import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
-import { linkedColumnsOf, sameLinkedColumns, sheetCycleReference, sheetPointAt, sheetReferences, sheetReferenceText } from './sheet-formula-aids';
+import { linkedColumnsOf, sameLinkedColumns, sheetCompletion, sheetCycleReference, sheetPointAt, sheetReferences, sheetReferenceText } from './sheet-formula-aids';
 import { PointingScope, type LinkedColumnColour, type PointingSheet } from './pointing-scope';
 import type { PointingRefusal } from './pointing-refusal';
 
@@ -726,6 +726,8 @@ class SheetView {
             cycleReference: sheetCycleReference,
             onPointStateChanged: this.#onPointStateChanged,
             onPointArrowFromOutside: this.#onPointArrow,
+            // Completion and the argument hint, beneath the surface typed in (ADR-0051, ADR-0058).
+            completeEditorText: this.#completeEditorText,
             onRefused: this.#onRefused,
             onEditDiscarded: this.#onEditDiscarded,
             onOverwriteNotice: this.#onOverwriteNotice,
@@ -1032,6 +1034,8 @@ class SheetView {
     // Made again when the declared tables change: a Reference to a column is coloured only once its table is
     // declared, and the grid asks again of a new function (ADR-0057).
     #referencesIn = (text: string): readonly GridEditorReference[] => sheetReferences(this.#source.sheet, text);
+    // While an edit is open no other Sheet is shown, so the Linked Tables offered are the shown Sheet's Workbook's.
+    readonly #completeEditorText = (text: string, caret: number): EditorCompletion | undefined => sheetCompletion(this.#source.sheet, text, caret);
 
     // The colours the grid gave the keys of the Formula being edited, as the Linked Table columns they name
     // (ADR-0057): told to the Consumer when they differ from what it was last told.

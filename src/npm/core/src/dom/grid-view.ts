@@ -107,9 +107,10 @@ import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
 import { ConsumerPopoverFrame, type GridPopoverContext } from './consumer-popover';
+import { checkedCompleteEditorText, checkedCompletion, CompletionBox, completionKey, completionPlace, type CompleteEditorText, type CompletionPlace } from './completion';
 import { checkedRewrite, pointArrowOf, pointOptions, pointStep, type GridEditorRewrite, type GridPointState, type PointOptions } from './point-mode';
 import { GridPointedAt, type GridPointArrow, type GridPointedPress, type GridPointedStep, type PointedAtGrid } from './pointed-at';
-import { replaceSpan } from '../cells/editor-text';
+import { acceptCandidate, EditorCompletion, replaceSpan } from '../cells/editor-text';
 import { ReferenceOutlines, referenceOutlineOptions, withinExtent, type GridOutlinedColumn, type ReferenceOutlineOptions } from './reference-outlines';
 import { ReferenceHighlights, ReferenceTextLayer, type ColouredStretch, type PointedSpan } from './reference-text';
 import type { GridEditorReference, ReferenceColouring, ReferenceKeyColour } from '../cells/reference-colouring';
@@ -563,6 +564,17 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * rewritten Reference. Given, F4 is taken while an edit is open, and only then.
      */
     readonly cycleReference?: (text: string, start: number, end: number) => GridEditorRewrite | undefined;
+    /**
+     * Completion and the argument hint (ADR-0051): while an edit is open, the editor's text and caret are handed to
+     * this as the user types or moves the caret, in the Cell Editor and in the Formula Bar alike, and the answer is
+     * painted beneath the surface typed in, a list of candidates and a hint. ↑ and ↓ choose, Tab accepts the chosen
+     * candidate and closes the list, the text it wrote asked about again for its hint alone, and Escape closes the list
+     * and leaves the edit open. A list takes no other key: where `pointAt` says a Reference can go at the caret, ←, →,
+     * Home, End and the Shift+arrows point past it and close it, as they point without it (ADR-0058). A press on a
+     * candidate accepts it. The answer may come now or later: one for text the user has typed on from is dropped,
+     * never shown. Nothing, or an answer with nothing in it, shows nothing. None, and nothing is asked or painted.
+     */
+    readonly completeEditorText?: CompleteEditorText;
     /** Hears where the open edit stands with respect to Point (ADR-0058), when that changes and never when it does not,
      * as the key, the typing or the press that changed it is answered, and `'none'` when the edit ends. A Consumer that
      * points from other instances on the page declares them pointed at while it is not `'none'`. Never heard where
@@ -856,6 +868,7 @@ interface Taken<Row> {
     readonly formulaBar: FormulaBarDeclarations<Row>;
     readonly referenceOutlines: ReferenceOutlineOptions;
     readonly point: PointOptions;
+    readonly completeEditorText: CompleteEditorText | undefined;
     readonly pointedAt: GridPointedAt<Row> | undefined;
 }
 
@@ -1678,6 +1691,14 @@ export class GridView<Row> {
     #pointedFromOutside = false;
     #pointBefore: PointBefore | undefined;
     #pointStateTold: GridPointState = 'none';
+    // Completion (ADR-0051): the declaration, the answer shown and the candidate chosen in it, the number of the last
+    // question asked (an answer to any other is stale and dropped, DC-18), and the text and caret the core last saw,
+    // so a caret the field reports moved asks again and one that stayed does not. The caret is -1 while not known.
+    #completeEditorText: CompleteEditorText | undefined;
+    #completion: { readonly answer: EditorCompletion; selected: number } | undefined;
+    #completionAsked = 0;
+    #completionSeen: { readonly text: string; readonly caret: number } | undefined;
+    readonly #completionBox: CompletionBox;
     // The declaration this grid is pointed at through (ADR-0058), and what stops hearing it.
     #pointedAt: GridPointedAt<Row> | undefined;
     #pointedAtStop: (() => void) | undefined;
@@ -1783,6 +1804,8 @@ export class GridView<Row> {
         this.#message = element('div', { class: 'ex-message', id: `${this.#ids}message`, role: 'tooltip' });
         this.#messageSlot = new ShownSlot('cellMessage', element('span', {}));
         this.#loadingSlot = new ShownSlot('loadingIndicator', element('div', { class: 'ex-loading-indicator' }));
+        // The completion list and hint, beneath the surface typed in, outside the scroller as the message is (ADR-0051).
+        this.#completionBox = new CompletionBox(doc, this.#ids, index => { this.#acceptCandidate(index); });
         this.#rowMarks = new GridMarks(doc, () => {
             this.#marksStamp += 1;
             this.#invalidate();
@@ -2347,7 +2370,7 @@ export class GridView<Row> {
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
             rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
             dataEdge: options.dataEdge, ...summary, referenceOutlines: referenceOutlineOptions(options),
-            point: pointOptions(options), pointedAt: checkedPointedAt(options.pointedAt),
+            point: pointOptions(options), completeEditorText: checkedCompleteEditorText(options), pointedAt: checkedPointedAt(options.pointedAt),
         };
     }
 
@@ -2637,6 +2660,8 @@ export class GridView<Row> {
             pointed.mode = this.#modeAfterPointing(pointed);
         }
         this.#pointStateOwed = pointed !== undefined;
+        if (taken.completeEditorText === undefined && this.#completeEditorText !== undefined) this.#closeCompletion();
+        this.#completeEditorText = taken.completeEditorText;
         this.#bindPointedAt(taken.pointedAt);
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
@@ -4124,6 +4149,15 @@ export class GridView<Row> {
         this.#invalidate();
         // Its References are asked of the opening text now, where an answer refused is refused (ADR-0057).
         this.#colouring();
+        // A character typed onto the cell is typing, and is asked about; an edit opened on the cell's text is not,
+        // until the user types or moves the caret in it (ADR-0051). Opened by a press into the Formula Bar, the caret
+        // is where the press put it, not known until the field reports it.
+        if (mode === 'overwrite') {
+            this.#requestCompletion(this.#edit, true, text.length);
+        } else {
+            this.#closeCompletion();
+            this.#completionSeen = { text, caret: surface === 'bar' ? -1 : text.length };
+        }
         this.#tellPointState();
     }
 
@@ -4154,8 +4188,18 @@ export class GridView<Row> {
             this.#cycleReferenceKey(edit, this.#point.cycleReference);
             return;
         }
-        const keys = edit.mode === 'caret' ? 'editing' : edit.mode === 'overwrite' ? 'overwrite' : this.#pointedFromOutside ? 'pointed' : 'point';
+        // A list for another text or caret than the field's is asked again before the key is decided against it.
+        if (this.#completionListOpen() && this.#completionMoved(edit)) this.#requestCompletion(edit);
+        const listed = this.#completionListOpen();
+        const overPoint = listed && this.#completionOverPoint(edit);
+        const keys = listed ? overPoint ? 'completionOverPoint' : 'completion'
+            : edit.mode === 'caret' ? 'editing' : edit.mode === 'overwrite' ? 'overwrite' : this.#pointedFromOutside ? 'pointed' : 'point';
         if (!editingKeysByMode[keys].includes(canonical)) return;
+        if (listed && this.#completionKey(canonical, overPoint)) {
+            this.#taken(event);
+            this.#invalidate();
+            return;
+        }
         if (this.#pointKey(canonical, edit)) {
             this.#taken(event);
             this.#invalidate();
@@ -4876,6 +4920,9 @@ export class GridView<Row> {
         if (edit === undefined) return;
         this.#edit = undefined;
         if (this.#endPointing()) this.#setDragging(false);
+        // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
+        this.#closeCompletion();
+        this.#completionSeen = undefined;
         this.#tellPointState();
         // An editor taken away under its verdict's answer, its rows or columns gone (ADR-0011): nothing is to be
         // written, the answer is not taken, and the inputs held behind it are taken once the end has been told, the
@@ -4984,6 +5031,8 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit === undefined) return;
         this.#settlePointCaret(edit);
+        // Completion acts at the caret where it now stands (ADR-0051's second round).
+        if (this.#completeEditorText !== undefined && this.#completionMoved(edit)) this.#requestCompletion(edit);
         this.#tellPointState();
     };
 
@@ -5139,6 +5188,7 @@ export class GridView<Row> {
             const target = defined(pointer.extent, 'the outline\'s moving end');
             this.#revealOwed = { target, extending: pointer.focusRange, rowStart: false, stepRows: 0 };
         }
+        this.#closeCompletion();
         this.#tellPointState();
         this.#askReferences();
         this.#invalidate();
@@ -5178,6 +5228,9 @@ export class GridView<Row> {
             if (edit.mode === 'point') edit.mode = this.#modeAfterPointing(edit);
         }
         this.#writeEditText(edit, rewritten, selects ? selectionStart : selectionEnd, selectionEnd);
+        // What pointing goes on over takes no list; text rewritten otherwise is asked about at its new caret.
+        if (keeps) this.#closeCompletion();
+        else this.#requestCompletion(edit);
         this.#tellPointState();
         this.#askReferences();
         this.#invalidate();
@@ -5212,6 +5265,7 @@ export class GridView<Row> {
         this.#pointedFromOutside = true;
         this.#pointBefore = before;
         edit.mode = 'point';
+        this.#closeCompletion();
         this.#tellPointState();
         this.#askReferences();
         this.#invalidate();
@@ -5235,10 +5289,169 @@ export class GridView<Row> {
         this.#pointLength = before.length;
         this.#pointWritten = before.written;
         this.#pointedFromOutside = before.fromOutside;
+        // What Point wrote before stands again, and takes no list; text that was only waiting for a Reference is
+        // asked about again, as it was before the press.
+        if (this.#pointingContinues(edit)) this.#closeCompletion();
+        else this.#requestCompletion(edit);
         this.#tellPointState();
         this.#askReferences();
         this.#invalidate();
         return true;
+    }
+
+    // ---- Completion (ADR-0051) --------------------------------------------------------------------------------
+
+    // Whether a list of candidates is showing, the state in which ↑, ↓, Tab and Escape are the list's. A hint alone
+    // takes no key.
+    #completionListOpen(): boolean {
+        const shown = this.#completion;
+        return this.#edit !== undefined && shown !== undefined && shown.answer.candidates.length > 0;
+    }
+
+    // Whether the list is open over Point (ADR-0058, "What the tenth Windows run settled"): the caret stands where the
+    // Consumer says a Reference can go, outside Caret, whose arrows are the editor's. ←, →, Home, End and the
+    // Shift+arrows then point, as they would without the list, where in a list of names they are the editor's.
+    #completionOverPoint(edit: OpenEdit<Row>): boolean {
+        const { pointAt, referenceText } = this.#point;
+        if (edit.mode === 'caret' || pointAt === undefined || referenceText === undefined) return false;
+        const text = edit.element.value;
+        const caret = this.#caretOf(edit);
+        return caret >= 0 && caret <= text.length && pointAt(text, caret);
+    }
+
+    // Whether the field's text or caret is not the one the core last saw.
+    #completionMoved(edit: OpenEdit<Row>): boolean {
+        const seen = this.#completionSeen;
+        return seen === undefined || seen.text !== edit.element.value || seen.caret !== this.#caretOf(edit);
+    }
+
+    /**
+     * Hands the edit's text and caret to the Consumer (ADR-0051). What is showing is taken down first, and every
+     * earlier question is made stale: nothing answers the new text until its own answer comes. An answer given now is
+     * shown in the pass already on its way. `listed` false shows the answer's hint alone: for the text Tab wrote, the
+     * name just accepted as a rule, whose list would come back on it and keep Tab from moving on (ADR-0058, the tenth
+     * Windows run).
+     */
+    #requestCompletion(edit: OpenEdit<Row>, listed = true, caret = this.#caretOf(edit)): void {
+        if (this.#completion !== undefined) {
+            this.#completion = undefined;
+            this.#invalidate();
+        }
+        this.#completionAsked += 1;
+        const asked = this.#completionAsked;
+        const text = edit.element.value;
+        this.#completionSeen = { text, caret };
+        const complete = this.#completeEditorText;
+        // A caret not known is waited for, never guessed: a list for the wrong caret would replace the wrong span.
+        if (complete === undefined || caret < 0 || caret > text.length) return;
+        const answer: unknown = complete(text, caret);
+        if (isThenable(answer)) {
+            // A failure of the Consumer's reaches the page as its unhandled rejection, as a source's does (ADR-0025).
+            void Promise.resolve(answer).then(later => { this.#showCompletion(asked, text, later, listed); });
+            return;
+        }
+        this.#showCompletion(asked, text, answer, listed);
+    }
+
+    // Shows an answer, unless it is stale: asked before a later question, for text that is no longer the editor's,
+    // or after the edit closed (ADR-0051, DC-18). Its hint alone where it was asked for without a list.
+    #showCompletion(asked: number, text: string, given: unknown, listed: boolean): void {
+        const checked = checkedCompletion(given);
+        const edit = this.#edit;
+        if (this.#destroyed || asked !== this.#completionAsked || edit === undefined || edit.element.value !== text || checked === undefined) return;
+        const answer = listed || checked.candidates.length === 0 ? checked
+            : checked.hint === undefined ? EditorCompletion.none : new EditorCompletion({ candidates: [], hint: checked.hint });
+        if (answer.isEmpty) return;
+        this.#completion = { answer, selected: 0 };
+        this.#invalidate();
+    }
+
+    // Takes the list and the hint down, and makes any answer still on its way stale. The text and caret it leaves
+    // are seen: a caret that stays where it is asks nothing again.
+    #closeCompletion(): void {
+        if (this.#completion !== undefined) this.#invalidate();
+        this.#completion = undefined;
+        this.#completionAsked += 1;
+        const edit = this.#edit;
+        if (edit !== undefined) this.#completionSeen = { text: edit.element.value, caret: this.#caretOf(edit) };
+    }
+
+    // A key typed while a list is open (ADR-0051): whether it was the list's. Closed over Point by ←, →, Home, End
+    // or a Shift+arrow, the list lets the key point.
+    #completionKey(canonical: string, overPoint: boolean): boolean {
+        const shown = defined(this.#completion, 'the list a key is typed in');
+        const last = shown.answer.candidates.length - 1;
+        const action = completionKey(canonical, overPoint);
+        switch (action) {
+            case 'down': shown.selected = Math.min(last, shown.selected + 1); return true;
+            case 'up': shown.selected = Math.max(0, shown.selected - 1); return true;
+            case 'accept': this.#acceptCandidate(shown.selected); return true;
+            case 'close': this.#closeCompletion(); return true;
+            case 'closeAndPoint': this.#closeCompletion(); return false;
+            case undefined: return false;
+            default: return unreachable(action);
+        }
+    }
+
+    /**
+     * Accepts a candidate (ADR-0051), by Tab or a press on it: its span of the text is replaced by what it writes, in
+     * both surfaces, and the caret stands after it. The list closes (ADR-0058, the tenth Windows run), and the new
+     * text is asked about for its hint alone, so the hint for what was just accepted can follow.
+     */
+    #acceptCandidate(index: number): void {
+        const edit = this.#edit;
+        const candidate = this.#completionListOpen() ? this.#completion?.answer.candidates[index] : undefined;
+        if (edit === undefined || candidate === undefined) return;
+        const [text, caret] = acceptCandidate(edit.element.value, candidate);
+        this.#writeEditText(edit, text, caret, caret);
+        this.#askReferences();
+        this.#gateReferenceTexts();
+        this.#tellPointState();
+        this.#invalidate();
+        // Last: a Consumer's completion that throws leaves the References asked and the Point state told.
+        this.#requestCompletion(edit, false, caret);
+    }
+
+    // Where the box stands: beneath the surface typed in (ADR-0040). None before the grid has its geometry.
+    #completionPlaceOf(edit: OpenEdit<Row>): CompletionPlace | undefined {
+        const metrics = this.#metrics;
+        const inBar = edit.surface === 'bar' && this.#formulaBarDeclared.shown;
+        const geometry = this.#geometry;
+        if (!inBar && geometry === undefined) return undefined;
+        return completionPlace({
+            inBar, barPx: this.#barPx, nameBoxWidthPx: metrics.nameBoxWidthPx, bandHeightPx: this.#bandHeightPx,
+            rowHeightPx: metrics.rowHeightPx, visibleHeightPx: this.#visibleHeightPx,
+            cellLeftPx: inBar ? 0 : this.#cellLeftPx(edit.cell.column),
+            cellTopPx: inBar || geometry === undefined ? 0 : geometry.viewportTopPxOf(edit.cell.row, this.#scrollTopPx),
+        });
+    }
+
+    // The list and the hint, and what the editor surfaces say of them to assistive technology: `aria-autocomplete`
+    // where completion is declared, and while a list is shown, the list it controls and the chosen candidate on the
+    // surface typed in.
+    #paintCompletion(): void {
+        const edit = this.#edit;
+        const shown = this.#completion;
+        const box = this.#completionBox;
+        const place = edit === undefined || shown === undefined ? undefined : this.#completionPlaceOf(edit);
+        if (place === undefined || shown === undefined) {
+            box.element.remove();
+        } else {
+            const { leftPx, widths } = popoverAcross(place.leftPx, this.#visibleWidthPx);
+            setAttribute(box.element, 'style', `left: ${leftPx}px; top: ${place.topPx}px; ${place.above ? 'transform: translateY(-100%); ' : ''}`
+                + `${widths}; max-height: ${place.roomPx}px`);
+            box.paint(shown.answer, shown.selected);
+            if (box.element.parentNode !== this.#root) this.#scroller.after(box.element);
+        }
+        const listed = place !== undefined && this.#completionListOpen() ? shown : undefined;
+        const typedIn = edit === undefined ? undefined : this.#surfaceOf(edit);
+        const autocomplete = this.#completeEditorText === undefined ? undefined : 'list';
+        for (const surface of edit === undefined ? [this.#bar.text] : [edit.element, this.#bar.text]) {
+            const controls = surface === typedIn ? listed : undefined;
+            setAttribute(surface, 'aria-autocomplete', autocomplete);
+            setAttribute(surface, 'aria-controls', controls === undefined ? undefined : box.listId);
+            setAttribute(surface, 'aria-activedescendant', controls === undefined ? undefined : box.optionId(controls.selected));
+        }
     }
 
     // ---- The coloured text (ADR-0057) -----------------------------------------------------------------------
@@ -5769,6 +5982,8 @@ export class GridView<Row> {
         this.#typed(edit);
         this.#askReferences();
         this.#gateReferenceTexts();
+        // Last: a Consumer's completion that throws leaves the References asked and the gate told.
+        this.#requestCompletion(edit);
     };
 
     // Typed in the cell: shown in the bar as well (ADR-0051).
@@ -5779,6 +5994,8 @@ export class GridView<Row> {
         this.#typed(edit);
         this.#askReferences();
         this.#gateReferenceTexts();
+        // Last: a Consumer's completion that throws leaves the References asked and the gate told.
+        this.#requestCompletion(edit);
     };
 
     // A press back into the cell's editor: the edit is typed there again.
@@ -8889,6 +9106,7 @@ export class GridView<Row> {
         this.#paintMessage();
         this.#paintLoading();
         this.#paintFormulaBar();
+        this.#paintCompletion();
         this.#placePopover();
     }
 
