@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using ExGrid;
 using ExGrid.Chrome;
+using ExGrid.Selection;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -104,6 +105,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     /// do records that reach .NET after the handler was let go, while the browser had not yet heard so. They are asked of the source the report
     /// was computed from, under its Source Version.</summary>
     [Parameter] public EventCallback<PivotDetails> OnShowDetails { get; set; }
+
+    /// <summary>Hears the report's Selection each time it changes, in the report grid's rows and columns, as the
+    /// Razor component's does.</summary>
+    [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
 
     private PivotSource? _source;
     private Action<PivotSourceChanged>? _hearSource;
@@ -424,6 +429,8 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             json.WriteStringValue("showFieldListChanged");
         if (OnShowDetails.HasDelegate)
             json.WriteStringValue("showDetails");
+        if (SelectionChanged.HasDelegate)
+            json.WriteStringValue("selectionChanged");
         json.WriteEndArray();
         json.WriteEndObject();
     });
@@ -594,6 +601,11 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
                 var shown = payload.GetBoolean();
                 return () => ShowFieldListChanged.InvokeAsync(shown);
             }
+            case "selectionChanged":
+            {
+                var selection = Selection(payload);
+                return () => SelectionChanged.InvokeAsync(selection);
+            }
             case "showDetails":
             {
                 // The handler that took them is the one handed them, whatever the parameter holds once their turn comes.
@@ -624,6 +636,19 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             DetailItems(payload.GetProperty("columnItems")),
             valueField.ValueKind == JsonValueKind.Null ? null : Text(valueField),
             Text(payload.GetProperty("title")));
+    }
+
+    // A Selection as the browser writes it: its ranges, its Focus, and which range holds it; no range for none.
+    private static GridSelection Selection(JsonElement json)
+    {
+        var ranges = json.GetProperty("ranges").EnumerateArray().Select(range => new SelectionRange(
+            range.GetProperty("topRow").GetInt32(), range.GetProperty("leftColumn").GetInt32(),
+            range.GetProperty("rowCount").GetInt32(), range.GetProperty("columnCount").GetInt32())).ToArray();
+        if (ranges.Length == 0)
+            return GridSelection.Empty;
+        var focus = json.GetProperty("focus");
+        return GridSelection.Reported(
+            ranges, new CellPosition(focus.GetProperty("row").GetInt32(), focus.GetProperty("column").GetInt32()), json.GetProperty("focusRangeIndex").GetInt32());
     }
 
     private static IReadOnlyList<PivotDetailItem> DetailItems(JsonElement json)

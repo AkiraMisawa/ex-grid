@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Bunit;
+using ExGrid.Selection;
 using ExPivot.Components.Tests.Support;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
@@ -116,5 +117,25 @@ public class ScriptPivotTests : BunitContext
 
         Assert.False(heard);
         Assert.Equal(0, calls);
+    }
+
+    [Fact] // ADR-0201's note of 2026-10-27, ADR-0370 section 1: the report's Selection the browser reports reaches the handler as a GridSelection, and none as Empty
+    public async Task ADR0370_the_reports_selection_reaches_the_handler_as_a_GridSelection()
+    {
+        var heard = new List<GridSelection>();
+        var cut = Pivot(PivotTestContext.Bundled(), ps => ps.Add(p => p.SelectionChanged, (GridSelection selection) => heard.Add(selection)));
+        Assert.Contains("selectionChanged", Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2])
+            .GetProperty("options").GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
+
+        var two = Parsed("""{"ranges":[{"topRow":1,"leftColumn":1,"rowCount":2,"columnCount":1},{"topRow":4,"leftColumn":2,"rowCount":1,"columnCount":1}],"focus":{"row":4,"column":2},"focusRangeIndex":1}""");
+        var none = Parsed("""{"ranges":[],"focus":null,"focusRangeIndex":0}""");
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionChanged", two));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionChanged", none));
+
+        Assert.Equal(2, heard.Count);
+        Assert.Equal([new SelectionRange(1, 1, 2, 1), new SelectionRange(4, 2, 1, 1)], heard[0].Ranges);
+        Assert.Equal(new CellPosition(4, 2), heard[0].Focus);
+        Assert.Equal(new SelectionRange(4, 2, 1, 1), heard[0].FocusRange);
+        Assert.Same(GridSelection.Empty, heard[1]);
     }
 }

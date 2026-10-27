@@ -8,7 +8,7 @@ import { gridCommandIds } from '@ex-grid/core';
 import {
     PivotJson, PivotSourceFeatures, RecordPivotSource, pivotQuery, pivotRecordField, pivotWordIdList, type PivotSourceChanged,
 } from '@ex-grid/pivot-engine';
-import { labelIds } from '../src/blazor-pivot';
+import { labelIds, wireSelection } from '../src/blazor-pivot';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from '../src/dotnet-pivot-source';
 
 interface Trade {
@@ -163,5 +163,19 @@ describe('the words .NET answers for the pivot (ADR-0370 section 10)', () => {
         const ids = labelIds();
         expect(ids).toEqual(expect.arrayContaining([...pivotWordIdList(), gridCommandIds.copy, gridCommandIds.sortAscending]));
         expect(new Set(ids).size).toBe(ids.length);
+    });
+});
+
+describe('the report\'s Selection as .NET reads it (ADR-0201\'s note of 2026-10-27)', () => {
+    it('ADR-0201: no Selection crosses as no range and no Focus, which .NET reads as the empty Selection', () => {
+        expect(wireSelection({ ranges: [], focus: undefined, focusRange: undefined })).toEqual({ ranges: [], focus: null, focusRangeIndex: 0 });
+    });
+
+    it('ADR-0052: the range holding the Focus is named by identity, so of two alike rectangles the one that holds it is named', () => {
+        const first = { topRow: 1, leftColumn: 1, rowCount: 1, columnCount: 1 };
+        const second = { ...first };
+        expect(wireSelection({ ranges: [first, second], focus: { row: 1, column: 1 }, focusRange: second })).toEqual({
+            ranges: [first, second], focus: { row: 1, column: 1 }, focusRangeIndex: 1,
+        });
     });
 });

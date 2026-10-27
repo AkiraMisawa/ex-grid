@@ -50,8 +50,9 @@ internal static class ScriptJson
     internal static GridSelection Selection(JsonElement json)
     {
         var ranges = Ranges(json.GetProperty("ranges"));
+        // An empty Selection has no Focus to read.
         if (ranges.Count == 0)
             return GridSelection.Empty;
-        return GridSelection.Read(ranges, Cell(json.GetProperty("focus")), json.GetProperty("focusRangeIndex").GetInt32());
+        return GridSelection.Reported(ranges, Cell(json.GetProperty("focus")), json.GetProperty("focusRangeIndex").GetInt32());
     }
 }

@@ -137,6 +137,15 @@
             <code>light-dark()</code>, as the theme above does. Inside a <code>MudExGridPaper</code>, the tokens come
             from MudBlazor's palette, so the grid follows <code>MudThemeProvider</code>'s dark mode.
         </p>
+        <p>
+            If you bundle the stylesheet, your bundler may lower <code>light-dark()</code> for older browsers. Vite
+            does this by default, through lightningcss. Lowered colours follow only a <code>color-scheme</code> that
+            your bundled CSS declares. With none declared, the stylesheet's colours are light, as the browser's are.
+            If you set the scheme where the bundler cannot see it, keep <code>light-dark()</code> as written:
+            <code>build: { cssTarget: ['chrome123', 'edge123'] }</code> in Vite. That covers a
+            <code>&lt;meta name="color-scheme"&gt;</code>, an inline style, or a stylesheet you do not bundle. Without
+            that setting, the grid's reference colours and the Formula Bar stay light under a dark page.
+        </p>
     </DocsSection>
 
     <DocsSection Title="Built-in Chrome or MudBlazor's">
