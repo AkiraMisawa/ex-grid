@@ -197,7 +197,7 @@ describe('the Cell Editor\'s slot', () => {
             chrome: { cellEditor: (slot, context) => { context.takeFocus(slot); return () => undefined; } },
         });
         await painted();
-        expect(() => { key('1'); }).toThrow('takeFocus is handed the field the cell editor drew, or an element holding it, inside the slot.');
+        expect(() => { key('1'); }).toThrow('takeFocus is handed the field chrome.cellEditor drew, or an element holding it, inside the slot.');
         expect(root.querySelector('.ex-editor')).toBeNull();
     });
 });
