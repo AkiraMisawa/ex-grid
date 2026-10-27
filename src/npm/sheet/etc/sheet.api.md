@@ -328,9 +328,11 @@ export interface SheetHandle {
     do(edit: SheetEdit): void;
     do(sheet: string, edit: SheetEdit): void;
     readonly isEditing: boolean;
+    open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean>;
     openFormatCells(): boolean;
     pushLinkedTable(name: string, rows: Iterable<readonly (Value | undefined)[]>): void;
     redo(): boolean;
+    save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void>;
     setCellFormat(change: CellFormatChange): boolean;
     undo(): boolean;
     update(options: SheetOptions): void;

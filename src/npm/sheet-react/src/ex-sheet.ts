@@ -29,7 +29,7 @@ export type ExSheetProps = Omit<SheetOptions, 'chrome'> & {
     /** The parts of the Sheet a Chrome of the Consumer's, or a Wrapper's, draws in place of the built-in ones. */
     readonly chrome?: ExSheetChrome;
     /** A ref to what the Consumer may ask of the Sheet it rendered: its Workbook, its commands and reads, undo and
-     * redo, and its Linked Tables. */
+     * redo, its Linked Tables, and opening and saving a file. */
     readonly ref?: Ref<ExSheetApi>;
 };
 
@@ -93,6 +93,8 @@ export function ExSheet(props: ExSheetProps): ReactElement {
         redo: () => mounted(sheet.current).redo(),
         declareLinkedTable: (name, columns, key) => { mounted(sheet.current).declareLinkedTable(name, columns, key); },
         pushLinkedTable: (name, rows) => { mounted(sheet.current).pushLinkedTable(name, rows); },
+        open: read => mounted(sheet.current).open(read),
+        save: write => mounted(sheet.current).save(write),
     }), []);
     useLayoutEffect(() => () => {
         // The portals go first: the contents the Sheet takes away as it goes ask for no render of a component gone.

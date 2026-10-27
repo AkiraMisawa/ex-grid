@@ -82,6 +82,40 @@ export interface GridHandle<Row> {
      * was before that write, its text, caret and editing state, and what Point had written before it stands again.
      * False, and nothing changed, when no edit is open or that text no longer stands. */
     takeBackPointedText(): boolean;
+    /**
+     * Runs `handling`, work of the Consumer's that no input of the grid's made — a command from a button outside the
+     * grid, a save — in its place in the Input Order (ADR-0240 section 6): after every input made so far, and before any
+     * made after it. With nothing pending it runs at once, as part of the input under way where one is; while the
+     * promise it answers is out, every input made in the grid waits, in its order, and is taken once it settles, an
+     * Escape included. Once the grid is destroyed it runs nothing.
+     *
+     * @returns A promise that settles once `handling` has, with its failure where it failed.
+     */
+    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
+    /**
+     * Runs `handling`, work of the Consumer's that may take a while — a file still being read — in its place in the
+     * Input Order as `inOrder` does, and lets the user cancel it with Escape (ADR-0240 section 12, ADR-0330 section 10).
+     * From this call until it ends the Settled Stamp names it (`data-ex-work-placed`) and no longer says an Escape leaves
+     * the grid; from its turn until it ends the root is busy (`aria-busy`), names it (`data-ex-work`) and is painted as a
+     * paste under way is (`--ex-pasting-bar`, `--ex-pasting-bar-height`, `--ex-pasting-cursor`).
+     *
+     * A plain Escape whose keydown sees the work placed aborts `handling`'s signal and does nothing else: it closes no
+     * editor and no popover. The work decides when it lands. Up to that point it looks at the signal and, once aborted,
+     * rejects with the signal's reason, changing nothing; past it, it lands whatever the signal says, synchronously, so
+     * no cancel falls between the look and the landing. An Escape that found the work landed is answered in its own
+     * turn by `cancelledTooLate(true)`; one that found nothing to cancel — the work failed, or an Escape before it
+     * cancelled it already — by `cancelledTooLate(false)`. Saying what the work did is the Consumer's. This is the one
+     * outcome that depends on timing, accepted because a cancel exists to race the work it cancels, and both outcomes
+     * are said.
+     *
+     * Destroying the grid aborts the signal of the work under way, and work still waiting never runs.
+     *
+     * @returns True once the work has landed; false when it rejected with its aborted signal's reason, or never ran. Any
+     *   other failure is the promise's.
+     * @throws Error Called while cancellable work's `handling` is being called: one Escape could not say which it
+     *   cancels. Placed from a later turn, it waits behind the work under way.
+     */
+    cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean>;
     /** Stops the grid: it hears nothing more and empties its element. A source it was handed stays the
      * Consumer's. */
     destroy(): void;
@@ -111,6 +145,9 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
             return view.canSummarize;
         },
         refreshSummary: () => { view.refreshSummary(); },
+        inOrder: (handling: () => void | PromiseLike<void>) => view.inOrder(handling),
+        cancellableInOrder: (handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void) =>
+            view.cancellableInOrder(handling, cancelledTooLate),
         destroy: () => { view.destroy(); },
     });
 }

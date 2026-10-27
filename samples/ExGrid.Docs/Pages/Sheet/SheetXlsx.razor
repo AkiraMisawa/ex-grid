@@ -28,8 +28,8 @@
             <code>Blob</code>, or refuses the Workbook with an <code>XlsxSaveError</code>. The culture is a
             <code>Culture</code> or its locale, and the options pace, report and cancel through an <code>AbortSignal</code>
             as a read does. It carries, refuses and lists exactly what this package does, in the same words, because both
-            run the same cases (<code>tests/cases/sheet-xlsx</code>). ExSheet's TypeScript screen does not open or save a
-            file through it yet.
+            run the same cases (<code>tests/cases/sheet-xlsx</code>). ExSheet's React component opens and saves through
+            it, as the Example below shows under React.
         </p>
         <ul>
             <li>
@@ -66,6 +66,17 @@
             against the Workbook they were made on; <b>what is typed while the file is read waits, and lands on the
             Workbook it opens</b>, however long the read takes. A paste aimed at the old cells is refused aloud
             rather than written into the new ones.
+        </p>
+        <p>
+            Under React the same command is <code>open(read)</code> on the component's ref, and <code>read</code> takes an
+            <code>AbortSignal</code> in place of the token:
+            <code>signal =&gt; openXlsxWorkbook(file, 'en-US', { signal }).then(read =&gt; read.document)</code>. It
+            answers a promise of whether the file opened, and a cancelled read rejects with the signal's reason. The grid
+            underneath gains the seam it is built on, <code>cancellableInOrder(handling, cancelledTooLate)</code>, beside
+            <code>inOrder(handling)</code> for work no Escape cancels, for a command of your own that should take its
+            place among the user's inputs. <b>Under React only the grid's inputs wait behind the opening, and only an
+            Escape typed on its cells cancels it</b>: the toolbar and the tabs are not held yet, so a format chosen from
+            the toolbar while the file is read is made on the Workbook the file replaces.
         </p>
         <ul>
             <li>
@@ -127,6 +138,11 @@
             <code>RAND()</code>'s included, so a program that does not calculate still reads what the user saw; the
             workbook is marked to be calculated in full when Excel opens it.
         </p>
+        <p>
+            Under React it is <code>save(write)</code> on the ref, handed to <code>saveXlsxWorkbook</code>, which takes its
+            snapshot before it first yields and answers the file as a <code>Blob</code>:
+            <code>save(async workbook =&gt; { file = await saveXlsxWorkbook(workbook); })</code>.
+        </p>
         <ul>
             <li>
                 <b>Refused by name while a cell is being edited</b> (<code>SheetRefusedException</code>): the file would
@@ -159,6 +175,10 @@
             (2,097,152 characters, about 1.5 MB of file): a larger saved file is said and given no link, never cut
             short. A file over 10,000,000 bytes is refused as it is read. While a large file is read, type into the
             Sheet, or press <kbd>Escape</kbd> in it.
+        </p>
+        <p>
+            Under React the saved file is a <code>Blob</code>, and its link an object URL, so no size of file is too
+            large for it; a file larger than the read's limits is refused by name as it is read.
         </p>
         <DocsExample Builtin="typeof(XlsxOpenSave)" Mud="typeof(XlsxOpenSaveMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
     </DocsSection>

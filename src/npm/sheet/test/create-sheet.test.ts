@@ -1527,3 +1527,114 @@ describe('the Sheet Day and NOW (ADR-0121, ADR-0124)', () => {
         expect(() => sheetOf({ today: { year: 2026, month: 2, day: 30 } })).toThrow(RangeError);
     });
 });
+
+/** A read the test answers when it chooses, as a file still being read. */
+function heldRead(): { readonly read: (signal: AbortSignal) => Promise<ReturnType<Workbook['toDocument']>>; readonly answer: (document: ReturnType<Workbook['toDocument']>) => void; signal: () => AbortSignal } {
+    let given: AbortSignal | undefined;
+    let answer: ((document: ReturnType<Workbook['toDocument']>) => void) | undefined;
+    return {
+        read: signal => {
+            given = signal;
+            return new Promise(resolve => {
+                answer = document => {
+                    resolve(Promise.resolve().then(() => {
+                        signal.throwIfAborted();
+                        return document;
+                    }));
+                };
+            });
+        },
+        answer: document => {
+            if (answer === undefined) throw new Error('The read was not asked.');
+            answer(document);
+        },
+        signal: () => {
+            if (given === undefined) throw new Error('The read was not asked.');
+            return given;
+        },
+    };
+}
+
+describe('opening and saving a file in the Input Order (ADR-0330 §10)', () => {
+    it('ADR-0330 §10: a key typed while the file is read waits, and lands on the Workbook it opens', async () => {
+        const documents: unknown[] = [];
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'old' }), onWorkbookChanged: document => { documents.push(document); } });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('old'); });
+        press(element, 0, 0);
+        const file = heldRead();
+        const opened = sheet.open(file.read);
+        expect(noticeOf(element)).toBe('Opening a file. Press Escape in the Sheet to cancel.');
+        key('ArrowDown');
+        await vi.waitFor(() => { expect(element.querySelector('.ex-grid')?.getAttribute('aria-busy')).toBe('true'); });
+        expect(nameBox(element).value).toBe('A1');
+        file.answer(documentOf({ A1: 'new', A2: 'two' }));
+        expect(await opened).toBe(true);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('new'); });
+        // Taken against the Workbook opened, on its A1: the opening's own place.
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A2'); });
+        expect([documents.length, sheet.canUndo]).toEqual([1, false]);
+        expect(element.querySelector('.ex-grid')?.hasAttribute('aria-busy')).toBe(false);
+    });
+
+    it('ADR-0330 §10 / ADR-0240 §12: Escape cancels the read, the Workbook stays, and a second Escape is said to find nothing', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'old' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('old'); });
+        press(element, 0, 0);
+        const cancelled = heldRead();
+        const cancelling = sheet.open(cancelled.read);
+        key('Escape');
+        expect(cancelled.signal().aborted).toBe(true);
+        cancelled.answer(documentOf({ A1: 'new' }));
+        expect(await cancelling).toBe(false);
+        expect([textAt(element, 0, 0), noticeOf(element)]).toEqual(['old', 'Nothing was opened: the opening was cancelled. The Workbook is as it was.']);
+
+        // A second Escape finds the opening cancelled already: it is answered once the read has ended, never swallowed.
+        const twice = heldRead();
+        const cancellingTwice = sheet.open(twice.read);
+        key('Escape');
+        key('Escape');
+        twice.answer(documentOf({ A1: 'new' }));
+        expect(await cancellingTwice).toBe(false);
+        await vi.waitFor(() => { expect(noticeOf(element)).toBe('There was nothing to cancel: the opening had already ended.'); });
+        expect(textAt(element, 0, 0)).toBe('old');
+    });
+
+    it('ADR-0330 §10: an opening or a save while a cell is being edited is refused by name, and nothing is read or written', async () => {
+        const { element, sheet } = sheetOf();
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('F2');
+        let read = false;
+        const opening = sheet.open(() => { read = true; return Promise.resolve(documentOf({})); });
+        expect(noticeOf(element)).toBe('Nothing was opened: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then open the file again.');
+        await expect(opening).rejects.toBeInstanceOf(SheetRefusedError);
+        let written = false;
+        const saving = sheet.save(() => { written = true; });
+        expect(noticeOf(element)).toBe('Nothing was saved: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then save again.');
+        await expect(saving).rejects.toBeInstanceOf(SheetRefusedError);
+        expect([read, written]).toEqual([false, false]);
+        expect(element.querySelector('input.ex-editor')).not.toBeNull();
+    });
+
+    it('ADR-0330 §10: a read that fails leaves the Workbook, says why, and the failure is the caller\'s', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'old' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('old'); });
+        const refused = new Error('The file is not a workbook.');
+        await expect(sheet.open(() => Promise.reject(refused))).rejects.toBe(refused);
+        expect([textAt(element, 0, 0), noticeOf(element)]).toEqual(['old', 'Nothing was opened, and the Workbook is as it was. The file is not a workbook.']);
+    });
+
+    it('ADR-0330 §10: a save placed behind an opening writes the Workbook it opened', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'old' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('old'); });
+        const file = heldRead();
+        const opened = sheet.open(file.read);
+        const saved: unknown[] = [];
+        const saving = sheet.save(workbook => { saved.push(workbook.find('Sheet1')?.getEntryText(CellAddress.parse('A1'))); });
+        expect(saved).toEqual([]);
+        file.answer(documentOf({ A1: 'new' }));
+        await opened;
+        await saving;
+        expect([saved, noticeOf(element)]).toEqual([['new'], 'The file was opened.']);
+    });
+});
