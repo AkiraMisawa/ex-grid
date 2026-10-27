@@ -60,6 +60,14 @@ saved reordering, saved views and the whole width machinery from a tree.
 The one behaviour it does carry is the reorder gesture, below — because once the rectangles
 exist, the drag has to answer to them anyway, and the answer had better be deliberate.
 
+*(2026-10-27, decided with the user, [ADR-0400](./0400-a-header-group-draws-a-toggle-and-notifies-and-the-consumer-holds-its-columns.md):
+"no collapse" now reads **the grid collapses nothing**. A group the Consumer declares with an `id` and
+`expanded` draws a toggle, and a press on it, or Alt+Shift+↓ or ↑ from a member's cell, notifies
+`onHeaderGroupToggled`; the Consumer pushes the columns it wants and the group's new `expanded`. The line
+above stands: the grid holds no expansion, knows no levels, and membership is still the declaration. What
+changed is that the grid draws a press it does not act on, as it does for a reorder. A collapsed group may
+carry a Hidden Mark, which says that a hidden column holds a Cell State.)*
+
 ## Reordering: what you grab is the unit that moves
 
 *(2026-10-19, responsive/touch Q16, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): touch

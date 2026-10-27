@@ -286,6 +286,34 @@ review of both found what it does to keys that were on their way.)*
   (principle 6); the composition's text carries the paint its `compositionstart` read
   ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of 2026-10-08).
 
+## A Header Group's toggle keeps the Focus *(decided with the user, 2026-10-27)*
+
+*([ADR-0400](./0400-a-header-group-draws-a-toggle-and-notifies-and-the-consumer-holds-its-columns.md): a
+Header Group draws a toggle and notifies, and the Consumer pushes the columns that open or close. A
+keyboard user who closed a group lost the Focus at every toggle under the rule above, and had to find
+their place again.)*
+
+- **The Selection and the Anchor are still dropped** when the columns change after a toggle. Nothing in
+  this ADR's rule for the Selection changes.
+- **The Focus is kept.** When a toggle is notified while the grid holds a Focus, the grid remembers the
+  Focus's row and `focusColumn`, the name of its column. The first columns push that shows the toggled
+  group's `expanded` as the notification asked puts the Focus back:
+  - in `focusColumn`, when that column is still among the columns, and otherwise in the toggled group's
+    first member, in the order as pushed;
+  - on the same row, found by its Row Key where the grid has one, and otherwise by its position while the
+    Row Sequence Version has not changed.
+- **What the Focus is put back on is named, never a position.** A column by its name and a row by its key
+  cannot point at a stranger when columns come and go beside them. When neither finds the row, or the
+  group is gone from the push, the Focus is dropped as before.
+- **The remembered Focus is let go** when anything else places or drops the Focus first: a press on a
+  cell, a key that moves it, a Consumer's placement, a replaced Source. Only the latest toggle is
+  remembered; a second toggle before the push replaces the first.
+- **It holds whatever the answer's timing** (principle 6): a push that arrives before, between or after
+  two quick toggles lands the Focus by name in each case, and a push that shows the group in the other
+  state puts nothing back.
+- **An open editor** is discarded by a change of columns as above; the Focus kept is the Focus, not the
+  edit.
+
 ## Consequences
 
 - **Selection is cleared when the Row Sequence Version changes — and the version names the

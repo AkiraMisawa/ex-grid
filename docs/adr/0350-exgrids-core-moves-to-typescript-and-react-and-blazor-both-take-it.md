@@ -137,6 +137,14 @@ xUnit against the C# core and by the Script Core's test runner. A case is green 
 the Script Core takes it, so the cases are the oracle of the move. When the C# logic is removed
 (section 7), its xUnit runner goes with it and the data stays.
 
+*(2026-10-27, decided with the user,
+[ADR-0400](./0400-a-header-group-draws-a-toggle-and-notifies-and-the-consumer-holds-its-columns.md) section 10:
+"green on the C# core first" holds for behaviour the C# core has, which is what the oracle proves. A
+behaviour new to the Script Core, which the C# core never had and will not take before it is removed at
+section 7's step 3, has no move to prove: its cases go in on the Script Core alone, read by a kind no C#
+runner reads, in a file whose `about` says so. A behaviour new to both cores goes in on both, as
+ADR-0381's did.)*
+
 ### 6. The Script Core is not under ADR-0021's allowlist; what the allowlist protects still holds
 
 ADR-0021 governs JavaScript beside a Blazor core. ExGrid no longer has one, so ADR-0021 is rewritten
