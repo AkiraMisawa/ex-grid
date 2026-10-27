@@ -2,7 +2,7 @@
 // draws through and the bridge to .NET, bundled into one module the ExPivot package ships, so a Blazor Consumer
 // installs nothing from npm.
 
-export { attach } from './blazor-pivot';
+export { attach, labelIds } from './blazor-pivot';
 
 /** The SHA-256 of what this module was built from, which the component compares with the one it was built
  * with before it attaches anything (ADR-0123). The build writes it in. */

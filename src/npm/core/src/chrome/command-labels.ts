@@ -39,3 +39,9 @@ const words: ReadonlyMap<string, string> = new Map([
 export function builtInCommandLabel(id: string): string {
     return words.get(id) ?? id;
 }
+
+/** Every id the built-in Chrome has English for: the ids a Consumer's `commandLabel` answers to give the core's own
+ * words another language, as an adapter that cannot hand a function across asks them up front. */
+export function builtInLabelIds(): readonly string[] {
+    return Object.freeze([...words.keys()]);
+}

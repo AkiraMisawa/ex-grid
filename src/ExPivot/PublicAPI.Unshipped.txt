@@ -54,10 +54,14 @@ ExPivot.Script.ExPivot.DisposeAsync() -> System.Threading.Tasks.ValueTask
 ExPivot.Script.ExPivot.ExPivot() -> void
 ExPivot.Script.ExPivot.FieldListWidth.get -> double?
 ExPivot.Script.ExPivot.FieldListWidth.set -> void
+ExPivot.Script.ExPivot.Label.get -> System.Func<string!, string?>?
+ExPivot.Script.ExPivot.Label.set -> void
 ExPivot.Script.ExPivot.Layout.get -> ExPivot.Engine.PivotLayout?
 ExPivot.Script.ExPivot.Layout.set -> void
 ExPivot.Script.ExPivot.LayoutChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExPivot.Engine.PivotLayout!>
 ExPivot.Script.ExPivot.LayoutChanged.set -> void
+ExPivot.Script.ExPivot.OnShowDetails.get -> Microsoft.AspNetCore.Components.EventCallback<ExPivot.PivotDetails!>
+ExPivot.Script.ExPivot.OnShowDetails.set -> void
 ExPivot.Script.ExPivot.RedrawInterval.get -> System.TimeSpan?
 ExPivot.Script.ExPivot.RedrawInterval.set -> void
 ExPivot.Script.ExPivot.RowHeight.get -> double?

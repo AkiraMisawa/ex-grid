@@ -40,8 +40,12 @@
         <DocsExample Builtin="typeof(ScriptCorePivot)" Files="@(["Examples/Pivot/Sales.cs"])" />
         <p>
             It carries <code>Layout</code>, <code>ShowFieldList</code>, the sizes, <code>Density</code>,
-            <code>Culture</code>, <code>Caps</code>, <code>RedrawInterval</code>, <code>ChangeHighlightDuration</code>
-            and <code>DetailsView</code>. Not carried yet: <code>Label</code>, the Chromes, <code>OnShowDetails</code>,
+            <code>Culture</code>, <code>Caps</code>, <code>RedrawInterval</code>, <code>ChangeHighlightDuration</code>,
+            <code>DetailsView</code>, <code>OnShowDetails</code> and <code>Label</code>. A function cannot cross to the
+            browser, so <code>Label</code> is asked for every id the pivot and its grid have words for each time the
+            parameters are set, as the Razor component asks it on each render; the words cross only when they changed,
+            and it answers from the id alone. Records double clicked while a
+            removed <code>OnShowDetails</code> was still on its way to the browser open as if nobody had listened. Not carried yet: the Chromes,
             <code>SelectionChanged</code>, the Selection Summary's parameters, <code>OrderKeyPolicies</code>,
             <code>Clock</code>, <code>Slicing</code>, <code>CellMetrics</code> and <code>ReportSource</code>; use the pivot above for those until they arrive. A field with an
             <code>OrderKey</code>, a .NET function the browser cannot call, is refused by name; declare its order with

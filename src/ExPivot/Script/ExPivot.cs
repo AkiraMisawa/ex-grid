@@ -77,6 +77,14 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     /// <see cref="CultureInfo.CurrentCulture"/> unless set (ADR-0370 section 10). It changes no word.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
+    /// <summary>The Consumer's word for an id, or null to keep the English (ADR-0060): <see cref="PivotWords.Japanese"/>
+    /// gives Excel's Japanese edition's words in one line. A function cannot cross to the browser, so it is asked for
+    /// every id the pivot and its grid have words for each time the parameters are set, as the Razor component asks it
+    /// on each render, and the words cross only when they changed. It answers from the id alone: a Remove command's id
+    /// that names a field (<c>remove-named-field:Region</c>) is not asked, and its words are the
+    /// <c>remove-named-field</c> template filled with the caption.</summary>
+    [Parameter] public Func<string, string?>? Label { get; set; }
+
     /// <summary>The caps on what a question may ask for and a report may hold (ADR-0066); Excel's unless set.</summary>
     [Parameter] public PivotCaps? Caps { get; set; }
 
@@ -90,6 +98,12 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     /// <summary>Where the records behind a value cell open on a double click: a tab at the report's foot, or a dialog;
     /// a tab unless set.</summary>
     [Parameter] public PivotDetailsView? DetailsView { get; set; }
+
+    /// <summary>Hears Show Details (ADR-0059, ADR-0063): the records behind a value cell double clicked. A Consumer
+    /// that listens takes them, and the pivot shows nothing; otherwise they open as <see cref="DetailsView"/> says, as
+    /// do records that reach .NET after the handler was let go, while the browser had not yet heard so. They are asked of the source the report
+    /// was computed from, under its Source Version.</summary>
+    [Parameter] public EventCallback<PivotDetails> OnShowDetails { get; set; }
 
     private PivotSource? _source;
     private Action<PivotSourceChanged>? _hearSource;
@@ -124,6 +138,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     private IJSObjectReference? _pivot;
     private DotNetObjectReference<ScriptBridge>? _bridge;
     private string? _sentOptions;
+    // Every id the pivot and its grid have words for, as the module answers them: what Label is asked for.
+    private IReadOnlyList<string> _labelIds = [];
+    // The Consumer's words the browser holds, as they were sent.
+    private string? _sentWords;
     private bool _attached;
     private bool _attaching;
     private bool _refused;
@@ -187,7 +205,8 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             builder.OpenElement(2, "div");
             builder.AddAttribute(3, "role", "alert");
             builder.AddAttribute(4, "data-ex-notice", "script");
-            builder.AddContent(5, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
+            // The Consumer's words first, as the Razor component's notice has them; null keeps the English (ADR-0060).
+            builder.AddContent(5, Label?.Invoke(ReloadNoticeLabelIds.Script) ?? BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
             builder.CloseElement();
         }
         builder.CloseElement();
@@ -233,6 +252,14 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             _refused = true;
             _renderOwed = true;
             StateHasChanged();
+            return;
+        }
+        // The ids the Consumer's Label is asked for, as this version's module names them: a failure here is a defect of
+        // this build, never another version's, so it fails the component rather than ask for a reload.
+        _labelIds = await module.InvokeAsync<string[]>("labelIds");
+        if (_disposed)
+        {
+            await ReleaseAsync(null, module);
             return;
         }
         // What the attach carries is what the browser holds once it returns: anything that changes while it is on
@@ -288,9 +315,12 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         if (pivot is null || _disposed)
             return;
         var options = OptionsJson();
-        if (options == _sentOptions && !_sourceReplaced && !_layoutOwed)
+        var words = WordsJson();
+        var wordsMoved = words != _sentWords;
+        if (options == _sentOptions && !_sourceReplaced && !_layoutOwed && !wordsMoved)
             return;
         _sentOptions = options;
+        _sentWords = words;
         var update = Json(json =>
         {
             json.WriteStartObject();
@@ -305,6 +335,11 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             {
                 json.WriteString("layout", PivotLayoutJson.Write(_sentLayout ?? throw new InvalidOperationException("Internal: a layout owed and none held.")));
                 json.WriteNumber("layoutsSent", ++_layoutsSent);
+            }
+            if (wordsMoved)
+            {
+                json.WritePropertyName("words");
+                json.WriteRawValue(words);
             }
             json.WriteEndObject();
         });
@@ -330,6 +365,28 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             json.WriteNull("layout");
         }
         json.WriteNumber("layoutsSent", _layoutsSent);
+        var words = WordsJson();
+        _sentWords = words;
+        json.WritePropertyName("words");
+        json.WriteRawValue(words);
+        json.WriteEndObject();
+    });
+
+    // Each word the Consumer gives, asked here, since a .NET function cannot cross (ADR-0370 section 10); null keeps
+    // the English.
+    private string WordsJson() => Json(json =>
+    {
+        if (Label is not { } label)
+        {
+            json.WriteNullValue();
+            return;
+        }
+        json.WriteStartObject();
+        foreach (var id in _labelIds)
+        {
+            if (label(id) is { } word)
+                json.WriteString(id, word);
+        }
         json.WriteEndObject();
     });
 
@@ -365,6 +422,8 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         json.WriteStartArray("hears");
         if (ShowFieldListChanged.HasDelegate)
             json.WriteStringValue("showFieldListChanged");
+        if (OnShowDetails.HasDelegate)
+            json.WriteStringValue("showDetails");
         json.WriteEndArray();
         json.WriteEndObject();
     });
@@ -466,21 +525,29 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     }
 
     // The pivot's events, handed to the Consumer one at a time in the order the browser raised them: a handler that
-    // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do.
-    internal async Task HeardAsync(string kind, JsonElement payload)
+    // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do. What
+    // it answers is whether a handler took the event: records nobody takes now open in the browser.
+    internal async Task<bool> HeardAsync(string kind, JsonElement payload)
     {
-        Func<Task> hand;
-        try
-        {
-            hand = Prepare(kind, payload);
-        }
-        catch (Exception ex)
-        {
-            // An event .NET cannot read fails the component in its turn, as a handler's exception does.
-            hand = () => Task.FromException(ex);
-        }
+        var taken = true;
         await InvokeAsync(async () =>
         {
+            // Read in the component's turn, against the parameters as they stand when the event arrives.
+            Func<Task>? hand;
+            try
+            {
+                hand = Prepare(kind, payload);
+            }
+            catch (Exception ex)
+            {
+                // An event .NET cannot read fails the component in its turn, as a handler's exception does.
+                hand = () => Task.FromException(ex);
+            }
+            if (hand is null)
+            {
+                taken = false;
+                return;
+            }
             _heard.Enqueue(hand);
             if (_hearing)
                 return;
@@ -506,9 +573,11 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
                 _hearing = false;
             }
         });
+        return taken;
     }
 
-    private Func<Task> Prepare(string kind, JsonElement payload)
+    // What to hand the Consumer for an event, or null for records no handler takes.
+    private Func<Task>? Prepare(string kind, JsonElement payload)
     {
         switch (kind)
         {
@@ -525,10 +594,42 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
                 var shown = payload.GetBoolean();
                 return () => ShowFieldListChanged.InvokeAsync(shown);
             }
+            case "showDetails":
+            {
+                // The handler that took them is the one handed them, whatever the parameter holds once their turn comes.
+                var take = OnShowDetails;
+                if (!take.HasDelegate || _disposed)
+                    return null;
+                var details = Details(payload);
+                return () => take.InvokeAsync(details);
+            }
             default:
                 throw new InvalidOperationException($"Internal: the Script Core raised an event of the kind '{kind}'.");
         }
     }
+
+    // The cell the user asked the records of, and the question for them, asked of the source the report on screen was
+    // computed from: the browser holds it, so .NET has not let it go.
+    private PivotDetails Details(JsonElement payload)
+    {
+        var generation = payload.GetProperty("generation").GetInt32();
+        if (!_sources.TryGetValue(generation, out var source))
+            throw new InvalidOperationException($"Internal: Show Details named the source of generation {generation}, which the browser let go.");
+        var valueField = payload.GetProperty("valueField");
+        return new PivotDetails(
+            source.Fields,
+            source.DetailsAsync,
+            PivotJson.ReadDetailsQuery(Text(payload.GetProperty("query"))),
+            DetailItems(payload.GetProperty("rowItems")),
+            DetailItems(payload.GetProperty("columnItems")),
+            valueField.ValueKind == JsonValueKind.Null ? null : Text(valueField),
+            Text(payload.GetProperty("title")));
+    }
+
+    private static IReadOnlyList<PivotDetailItem> DetailItems(JsonElement json)
+        => [.. json.EnumerateArray().Select(item => new PivotDetailItem(Text(item.GetProperty("field")), Text(item.GetProperty("item"))))];
+
+    private static string Text(JsonElement json) => json.GetString() ?? throw new InvalidOperationException("Internal: the Script Core sent null for a text.");
 
     // Each question the browser asks, answered by the source of its generation, or refused as one the Consumer replaced.
     internal async Task<string> AskAsync(string kind, int generation, long call, string? query)

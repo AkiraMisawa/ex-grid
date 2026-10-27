@@ -122,7 +122,10 @@
             To take the records yourself, listen to <code>OnShowDetails</code>. ExPivot then opens neither tab
             nor dialog, and hands you a <code>PivotDetails</code> naming the cell's Items and Value Field, whose
             <code>DetailsAsync(start, count)</code> pages its records. A source over your own objects hands back
-            the objects themselves (<code>PivotDetailRecord.Record</code>).
+            the objects themselves (<code>PivotDetailRecord.Record</code>). In the TypeScript pivot,
+            <code>@@ex-grid/pivot</code>, <code>onShowDetails</code> hears the same records with the
+            <code>source</code> they are asked of, and a handler that decides not to take them hands them back with
+            the handle's <code>openDetails(event)</code>, which opens them as <code>detailsView</code> says.
         </p>
         <DocsExample Builtin="typeof(ShowDetails)" Mud="typeof(ShowDetailsMud)" Files="@(["Examples/Pivot/Sales.cs"])">
             Double-click any value.

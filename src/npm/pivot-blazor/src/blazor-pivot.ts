@@ -4,13 +4,20 @@
 // computes nothing: the report, the Field List and what each input means are the Script Core's, and the data
 // is the Consumer's, in .NET.
 
-import { createPivot, type PivotHandle, type PivotViewOptions } from '@ex-grid/pivot';
-import { readPivotLayoutJson, writePivotLayoutJson, type PivotLayout } from '@ex-grid/pivot-engine';
+import { builtInLabelIds } from '@ex-grid/core';
+import { createPivot, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
+import { PivotJson, pivotWordIdList, readPivotLayoutJson, writePivotLayoutJson, type PivotLabel, type PivotLayout } from '@ex-grid/pivot-engine';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from './dotnet-pivot-source';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. The layout is always heard,
  * since the one the pivot raised is the one it is handed back. */
-export type HeardKind = 'layoutChanged' | 'showFieldListChanged';
+export type HeardKind = 'layoutChanged' | 'showFieldListChanged' | 'showDetails';
+
+/** Every id the pivot and the grid it draws through have words for: its own, a date part's, and the grid's. .NET
+ * cannot hand a function across, so it answers each of them once and sends the words (ADR-0370 section 10). */
+export function labelIds(): readonly string[] {
+    return Object.freeze([...new Set([...pivotWordIdList(), ...builtInLabelIds()])]);
+}
 
 /** The options .NET sets as they are, with no function or object of the browser's in them. */
 type PassedOption =
@@ -29,6 +36,9 @@ export interface WireOptions extends Partial<Pick<PivotViewOptions, PassedOption
     readonly hears: readonly HeardKind[];
 }
 
+/** The Consumer's word for each of {@link labelIds} it answers, or `null` to keep the English. */
+export type WireWords = Readonly<Record<string, string>> | null;
+
 /** What `attach` is handed once: the parameters, the source, and the Consumer's layout, if it handed one. */
 export interface WireAttach {
     readonly options: WireOptions;
@@ -37,6 +47,7 @@ export interface WireAttach {
     readonly layout: string | null;
     /** How many of the Consumer's layouts .NET has sent, this one included. */
     readonly layoutsSent: number;
+    readonly words: WireWords;
 }
 
 /** What `update` is handed: the parameters again, whole; another source, if the Consumer handed one; and a layout of
@@ -47,6 +58,8 @@ export interface WireUpdate {
     readonly layout?: string;
     /** How many of the Consumer's layouts .NET has sent, this one included; with `layout`. */
     readonly layoutsSent?: number;
+    /** The Consumer's words, if it set another label. */
+    readonly words?: WireWords;
 }
 
 /** What the component asks of the pivot it attached. Each call carries its data as the JSON text .NET wrote. */
@@ -86,18 +99,26 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
     // How many of the Consumer's layouts the pivot has been given: told with each layout it raises, so .NET knows
     // whether one of the Consumer's reached the screen after it.
     let layoutsSent = init.layoutsSent;
-    const send = (kind: HeardKind, payload: unknown): void => { void bridge.invokeMethodAsync('Heard', kind, payload); };
-    const heard = handlers(send, raised => { layout = raised; }, () => layoutsSent);
-    const pivot: PivotHandle = createPivot(root, pivotOptions(init.options, source, layout, heard));
+    // The Consumer's words, made into one label, the same function until .NET sends others: the pivot holds words by the
+    // function they came from.
+    let label = labelOf(init.words);
+    const send = (kind: HeardKind, payload: unknown): Promise<unknown> => bridge.invokeMethodAsync('Heard', kind, payload);
+    // Records .NET did not take, as its handler was let go after the browser last heard of it, open as nobody had heard
+    // them: the double click is answered as it was taken.
+    const handBack = (event: PivotShowDetailsEvent): void => { pivot.openDetails(event); };
+    const heard = handlers(send, raised => { layout = raised; }, () => layoutsSent, handBack);
+    const pivot: PivotHandle = createPivot(root, pivotOptions(init.options, source, layout, label, heard));
     return Object.freeze({
         update: (text: string) => {
             const next = parsed<WireUpdate>(text);
             // Taken only once the pivot has: one it refuses, as a layout naming a field the source lacks, changes nothing.
             const nextSource = next.source === undefined ? source : sourceOf(next.source);
             const nextLayout = next.layout === undefined ? layout : readPivotLayoutJson(next.layout);
-            pivot.update(pivotOptions(next.options, nextSource, nextLayout, heard));
+            const nextLabel = next.words === undefined ? label : labelOf(next.words);
+            pivot.update(pivotOptions(next.options, nextSource, nextLayout, nextLabel, heard));
             source = nextSource;
             layout = nextLayout;
+            label = nextLabel;
             if (next.layoutsSent !== undefined) layoutsSent = next.layoutsSent;
         },
         changed: (generation: number, text: string) => {
@@ -128,21 +149,49 @@ export function parsed<T>(json: string): T {
     return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExPivot.Script writes; each reader checks what it reads
 }
 
-type Handlers = Required<Pick<PivotViewOptions, 'onLayoutChanged' | 'onShowFieldListChanged'>>;
+type Handlers = Required<Pick<PivotViewOptions, 'onLayoutChanged' | 'onShowFieldListChanged' | 'onShowDetails'>>;
 
 // One function per event, made once, so the pivot sees the same handler on every update. The layout raised is kept
 // whether or not .NET listens, since it is the layout on screen.
-function handlers(send: (kind: HeardKind, payload: unknown) => void, raised: (layout: PivotLayout) => void, layoutsSent: () => number): Handlers {
+function handlers(
+    send: (kind: HeardKind, payload: unknown) => Promise<unknown>, raised: (layout: PivotLayout) => void, layoutsSent: () => number,
+    handBack: (event: PivotShowDetailsEvent) => void,
+): Handlers {
     return Object.freeze({
         onLayoutChanged: event => {
             raised(event.layout);
-            send('layoutChanged', { layout: writePivotLayoutJson(event.layout), layoutsSent: layoutsSent() });
+            void send('layoutChanged', { layout: writePivotLayoutJson(event.layout), layoutsSent: layoutsSent() });
         },
-        onShowFieldListChanged: event => { send('showFieldListChanged', event.shown); },
+        onShowFieldListChanged: event => { void send('showFieldListChanged', event.shown); },
+        // The cell and the question for its records: .NET asks them of the source the report was computed from, and
+        // answers whether its handler took them.
+        onShowDetails: (event: PivotShowDetailsEvent) => {
+            const { source } = event;
+            if (!(source instanceof DotNetPivotSource)) throw new TypeError('Internal: Show Details named a source the bridge never made.');
+            void send('showDetails', {
+                generation: source.generation,
+                title: event.title,
+                rowItems: event.rowItems,
+                columnItems: event.columnItems,
+                valueField: event.valueField === undefined ? null : event.valueField,
+                query: PivotJson.writeDetailsQuery(event.query),
+            }).then(taken => {
+                if (taken !== true) handBack(event);
+            });
+        },
     });
 }
 
-function pivotOptions(wire: WireOptions, source: DotNetPivotSource, layout: PivotLayout | undefined, heard: Handlers): PivotViewOptions {
+// The label the Consumer's words make, or none to keep the English.
+function labelOf(words: WireWords): PivotLabel | undefined {
+    if (words === null) return undefined;
+    const held: ReadonlyMap<string, string> = new Map(Object.entries(words));
+    return id => held.get(id);
+}
+
+function pivotOptions(
+    wire: WireOptions, source: DotNetPivotSource, layout: PivotLayout | undefined, label: PivotLabel | undefined, heard: Handlers,
+): PivotViewOptions {
     const hears = new Set(wire.hears);
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
     return {
@@ -150,8 +199,10 @@ function pivotOptions(wire: WireOptions, source: DotNetPivotSource, layout: Pivo
         source,
         locale: wire.locale,
         ...(layout === undefined ? {} : { layout }),
+        ...(label === undefined ? {} : { label }),
         // Always heard: the layout the pivot raised is the one handed back on the next update.
         onLayoutChanged: heard.onLayoutChanged,
         ...(hears.has('showFieldListChanged') ? { onShowFieldListChanged: heard.onShowFieldListChanged } : {}),
+        ...(hears.has('showDetails') ? { onShowDetails: heard.onShowDetails } : {}),
     };
 }
