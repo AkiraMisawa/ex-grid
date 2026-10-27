@@ -111,6 +111,7 @@ import { checkedRewrite, pointArrowOf, pointOptions, pointStep, type GridEditorR
 import { GridPointedAt, type GridPointArrow, type GridPointedPress, type GridPointedStep, type PointedAtGrid } from './pointed-at';
 import { replaceSpan } from '../cells/editor-text';
 import { ReferenceOutlines, referenceOutlineOptions, withinExtent, type GridOutlinedColumn, type ReferenceOutlineOptions } from './reference-outlines';
+import { ReferenceHighlights, ReferenceTextLayer, type ColouredStretch, type PointedSpan } from './reference-text';
 import type { GridEditorReference, ReferenceColouring, ReferenceKeyColour } from '../cells/reference-colouring';
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
@@ -1059,6 +1060,14 @@ function checkedPointedAt<Row>(given: GridPointedAt<Row> | undefined): GridPoint
     return given;
 }
 
+// The coloured text's layers of one grid (ADR-0057).
+interface ReferenceTextLayers {
+    readonly highlights: ReferenceHighlights;
+    readonly style: HTMLStyleElement;
+    readonly cell: ReferenceTextLayer;
+    readonly bar: ReferenceTextLayer;
+}
+
 // What the pointed dashes were last found from: the declaration, the columns, the Window and the painted rows.
 interface PointDashesAsked {
     readonly dashes: object | undefined;
@@ -1680,6 +1689,11 @@ export class GridView<Row> {
     // The last press handed over: a drag from it is handed over behind it.
     #pointedPressHandOver: Promise<void> = Promise.resolve();
     // The dashes and the outlined columns as last worked out, held so a pass that changed neither finds them the same.
+    // The coloured text (ADR-0057): the grid's highlights and their stylesheet, and the layers beneath the Cell Editor
+    // and the Formula Bar's field, made the first time a References function is declared.
+    #referenceText: ReferenceTextLayers | undefined;
+    // The editor surface an IME composes in, which its layer never shows over.
+    #composingIn: HTMLInputElement | undefined;
     #pointDashesAsked: { readonly asked: PointDashesAsked; readonly range: SelectionRange | undefined } | undefined;
     #outlinedColumnsAsked: { readonly own: readonly GridOutlinedColumn[] | undefined; readonly declared: readonly GridOutlinedColumn[] | undefined;
         readonly both: readonly GridOutlinedColumn[] | undefined; } | undefined;
@@ -1810,6 +1824,7 @@ export class GridView<Row> {
         // A caret moved in the bar's text, as in the editor's (ADR-0051).
         this.#bar.text.addEventListener('keyup', this.#onEditorCaret);
         this.#bar.text.addEventListener('mouseup', this.#onEditorCaret);
+        this.#hearSurface(this.#bar.text);
         this.#spacer.append(this.#header, this.#viewport);
         this.#scroller.append(this.#spacer);
         const announce = element('div', { class: 'ex-announce', role: 'status' });
@@ -2033,6 +2048,8 @@ export class GridView<Row> {
         this.#bindPointedAt(undefined);
         // The keys go with the edit: a Consumer outlining a table's column for them hears that none is read (ADR-0057).
         this.#referenceOutlines.tellKeys(this.#colouring(), this.#referenceOptions.onReferenceKeyColoursChanged);
+        // The coloured text's highlights are this grid's own, and go with it.
+        this.#referenceText?.highlights.unregister();
         // A Chrome slot's contents are taken away with the grid, as a Template cell's are.
         const popover = this.#popover;
         this.#popover = undefined;
@@ -2739,6 +2756,7 @@ export class GridView<Row> {
         }
         if (revealed) this.#repaintAfterReveal(this.#scrollTopPx, this.#scrollLeftPx);
         this.#focusEditor();
+        this.#gateReferenceTexts();
         this.#raiseRangeIfUncovered();
         this.#raiseSelection();
         this.#referenceOutlines.tellKeys(this.#colouring(), this.#referenceOptions.onReferenceKeyColoursChanged);
@@ -4084,6 +4102,7 @@ export class GridView<Row> {
         // A caret moved by the field's own keys or a press inside its text (ADR-0051).
         element.addEventListener('keyup', this.#onEditorCaret);
         element.addEventListener('mouseup', this.#onEditorCaret);
+        this.#hearSurface(element);
         const rowKey = this.#source.rowKey;
         const held = defined(this.#rowAt(at.row), 'the row an edit opens on');
         this.#edit = {
@@ -4875,6 +4894,8 @@ export class GridView<Row> {
         // Formula Bar too, whose text then reads the Focus cell's again (ADR-0051).
         if (doc.activeElement === element || doc.activeElement === this.#bar.text) this.#takeKeyboard();
         element.remove();
+        this.#referenceText?.cell.element.remove();
+        this.#gateReferenceTexts();
         this.#invalidate();
         if (endedIn !== undefined) endedIn();
         if (discarded !== undefined) this.#onEditDiscarded?.(discarded);
@@ -5217,6 +5238,110 @@ export class GridView<Row> {
         this.#invalidate();
         return true;
     }
+
+    // ---- The coloured text (ADR-0057) -----------------------------------------------------------------------
+
+    // The layers, made the first time a References function is declared: the bar's stands in the band before its
+    // field from then on, empty while no edit is open; the cell's is placed with the editor. None while no function is
+    // declared, and those made before are taken away.
+    #referenceTextLayers(): ReferenceTextLayers | undefined {
+        const made = this.#referenceText;
+        if (this.#referenceOptions.referencesIn === undefined) {
+            if (made !== undefined) {
+                this.#bar.text.classList.remove('ex-reference-text-shown');
+                this.#edit?.element.classList.remove('ex-reference-text-shown');
+                made.cell.uncolour();
+                made.bar.uncolour();
+                made.cell.element.remove();
+                made.bar.element.remove();
+                made.style.remove();
+            }
+            return undefined;
+        }
+        const doc = this.#root.ownerDocument;
+        const layers = made ?? this.#makeReferenceTextLayers(doc);
+        if (layers.style.parentNode !== this.#root) this.#root.prepend(layers.style);
+        if (layers.bar.element.nextSibling !== this.#bar.text) this.#bar.band.insertBefore(layers.bar.element, this.#bar.text);
+        return layers;
+    }
+
+    #makeReferenceTextLayers(doc: Document): ReferenceTextLayers {
+        const highlights = new ReferenceHighlights(this.#ids);
+        const style = doc.createElement('style');
+        style.textContent = highlights.css;
+        const layers: ReferenceTextLayers = {
+            highlights, style,
+            cell: new ReferenceTextLayer(doc, 'ex-reference-text ex-reference-text-cell'),
+            bar: new ReferenceTextLayer(doc, 'ex-reference-text ex-reference-text-bar'),
+        };
+        this.#referenceText = layers;
+        return layers;
+    }
+
+    // The coloured text shown in the surface the edit is in, the field holding DOM focus, as Excel colours only that
+    // one, while the layer's text is the field's value and no IME composes there; the other surface keeps its plain
+    // text. Both layers carry the text, so the colours follow a press from one surface into the other.
+    #gateReferenceTexts(): void {
+        const layers = this.#referenceTextLayers();
+        if (layers === undefined) return;
+        const edit = this.#edit;
+        const text = edit === undefined ? '' : edit.element.value;
+        const stretches = edit === undefined ? [] : layers.highlights.coloursOf(this.#colouring(), this.#pointedSpan(edit));
+        this.#gateReferenceText(layers, layers.cell, edit?.element, text, stretches);
+        const barShown = edit !== undefined && this.#formulaBarDeclared.shown;
+        setAttribute(layers.bar.element, 'style', `left: ${this.#metrics.nameBoxWidthPx}px`);
+        this.#gateReferenceText(layers, layers.bar, this.#bar.text, barShown ? text : '', barShown ? stretches : []);
+    }
+
+    #gateReferenceText(layers: ReferenceTextLayers, layer: ReferenceTextLayer, field: HTMLInputElement | undefined, text: string,
+        stretches: readonly ColouredStretch[]): void {
+        layer.write(text, stretches);
+        const shown = field !== undefined && this.#edit !== undefined && field.ownerDocument.activeElement === field
+            && this.#composingIn !== field && field.value === text;
+        if (field !== undefined) {
+            field.classList.toggle('ex-reference-text-shown', shown);
+            layer.scrollTo(field.scrollLeft);
+        }
+        if (shown) layer.colour(layers.highlights);
+        else layer.uncolour();
+    }
+
+    // Where what Point wrote stands, shown selected (ADR-0051, ADR-0058): the Reference Point is writing, or the text a
+    // press outside the grid wrote, while pointing; none otherwise. A look only: the field's text is never selected.
+    #pointedSpan(edit: OpenEdit<Row>): PointedSpan | undefined {
+        return this.#pointingContinues(edit) ? { start: this.#pointStart, length: this.#pointLength } : undefined;
+    }
+
+    // An editor surface's own events the coloured text follows: the keyboard leaving it, a composition, and its text
+    // scrolled sideways.
+    #hearSurface(field: HTMLInputElement): void {
+        field.addEventListener('blur', this.#onSurfaceChanged);
+        field.addEventListener('focus', this.#onSurfaceChanged);
+        field.addEventListener('compositionstart', this.#onCompositionStarted);
+        field.addEventListener('compositionend', this.#onCompositionEnded);
+        field.addEventListener('scroll', this.#onSurfaceScrolled);
+    }
+
+    readonly #onSurfaceChanged = (): void => {
+        this.#gateReferenceTexts();
+    };
+
+    readonly #onCompositionStarted = (event: Event): void => {
+        if (event.target instanceof HTMLInputElement) this.#composingIn = event.target;
+        this.#gateReferenceTexts();
+    };
+
+    readonly #onCompositionEnded = (): void => {
+        this.#composingIn = undefined;
+        this.#gateReferenceTexts();
+    };
+
+    readonly #onSurfaceScrolled = (event: Event): void => {
+        const field = event.target;
+        const layers = this.#referenceText;
+        if (layers === undefined || !(field instanceof HTMLInputElement)) return;
+        (field === this.#bar.text ? layers.bar : layers.cell).scrollTo(field.scrollLeft);
+    };
 
     // ---- Pointed at from outside (ADR-0058) ---------------------------------------------------------------------
 
@@ -5633,6 +5758,7 @@ export class GridView<Row> {
         edit.element.value = text;
         this.#typed(edit);
         this.#askReferences();
+        this.#gateReferenceTexts();
     };
 
     // Typed in the cell: shown in the bar as well (ADR-0051).
@@ -5642,6 +5768,7 @@ export class GridView<Row> {
         if (edit === undefined) return;
         this.#typed(edit);
         this.#askReferences();
+        this.#gateReferenceTexts();
     };
 
     // A press back into the cell's editor: the edit is typed there again.
@@ -9554,7 +9681,7 @@ export class GridView<Row> {
         // selection layer coming or going paints no cell.
         const isLayer = (node: ChildNode): boolean =>
             node === this.#shadeLayer || node === this.#pinnedLayer || node === this.#selectionLayer || node === this.#keyFieldLayer
-            || node === this.#rowMarkLayer || node === this.#editorPinned || node === this.#edit?.element
+            || node === this.#rowMarkLayer || node === this.#editorPinned || node === this.#edit?.element || node === this.#referenceText?.cell.element
             || this.#headingStateElements.has(node);
         // The shade layer gone is taken out first, or every row after it would be moved past it.
         if (!layers.includes(this.#shadeLayer)) this.#shadeLayer.remove();
@@ -9707,6 +9834,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit === undefined) return [];
         const { element } = edit;
+        const layer = this.#referenceTextLayers()?.cell.element;
         const visible = this.#visible;
         if (visible !== undefined) {
             // Away, it takes its column's box on the first painted row, where it holds the keyboard but is neither
@@ -9719,15 +9847,22 @@ export class GridView<Row> {
             setAttribute(element, 'class', look === undefined ? base : `${base} ${look}`);
             setAttribute(element, 'style', box.style);
             setAttribute(element, 'data-ex-cell', `${at.row} ${at.column}`);
+            if (layer !== undefined) {
+                // The coloured text takes the editor's box and look, so its characters stand where the field's do.
+                const under = away ? 'ex-reference-text ex-reference-text-cell ex-editor-away' : 'ex-reference-text ex-reference-text-cell';
+                setAttribute(layer, 'class', look === undefined ? under : `${under} ${look}`);
+                setAttribute(layer, 'style', box.style);
+            }
         }
         // A Reject or a refusal is said at the editor, which the message describes (ADR-0034).
         setAttribute(element, 'aria-invalid', edit.error === undefined ? undefined : 'true');
         setAttribute(element, 'aria-describedby', edit.error === undefined ? undefined : this.#message.id);
         if (edit.cell.column < this.#styles.geometry.pinnedCount) {
             if (element.parentNode !== this.#editorPinned) this.#editorPinned.append(element);
+            if (layer !== undefined && layer.nextSibling !== element) this.#editorPinned.insertBefore(layer, element);
             return [this.#editorPinned];
         }
-        return [element];
+        return layer === undefined ? [element] : [layer, element];
     }
 
     // Whether the editor, or a message, is away from the rows painted (ADR-0011), or under a pager from the page: the

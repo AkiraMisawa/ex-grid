@@ -2,8 +2,8 @@
 // Layer 2 (ADR-0350 section 13): Reference Outlines in the DOM (ADR-0057). While an edit is open, every range the
 // Consumer's References name is outlined in the selection overlay in its colour, and the keys' colours are told
 // once per change; the columns a Consumer asks for are outlined over their bodies with or without an edit (DC-49,
-// DC-50).
-import { afterEach, describe, expect, it } from 'vitest';
+// DC-50). Beneath the editor surface the edit is typed in, a layer draws its text with each Reference coloured.
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GridEditorReference, ReferenceKeyColour } from '../src/cells/reference-colouring';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
@@ -165,5 +165,89 @@ describe('Reference Outlines (ADR-0057)', () => {
         view.update({ ...options, onReferenceKeyColoursChanged: keys => { second.push(keys); } });
         await painted();
         expect([first, second]).toEqual([[[{ key: 'Price', colour: 1 }]], [[{ key: 'Price', colour: 1 }]]]);
+    });
+});
+
+// The layer beneath a field, and what it carries.
+function layerOf(field: HTMLInputElement): { readonly text: string | null; readonly colours: string | null } {
+    const layer = field.previousElementSibling;
+    if (layer === null || !layer.classList.contains('ex-reference-text')) throw new Error('No coloured text stands before the field.');
+    return { text: layer.getAttribute('data-ex-text'), colours: layer.getAttribute('data-ex-colours') };
+}
+
+const prefix = (root: HTMLElement): string => root.id.replace(/root$/u, '');
+
+// A Custom Highlight API for a DOM that has none: a Highlight is a set of ranges, the registry a map.
+class FakeHighlight extends Set<AbstractRange> {}
+
+describe('The coloured text (ADR-0057)', () => {
+    it('stands before the editor with the field\'s text and each Reference\'s colour, shows only in the field holding the keyboard, and goes with the edit', async () => {
+        const root = grid({ referencesIn, showFormulaBar: true });
+        const field = await edit(root, '=B3+[Price]');
+        const p = prefix(root);
+        expect(layerOf(field)).toEqual({ text: '=B3+[Price]', colours: `1,2,${p}reference-1 4,7,${p}reference-2` });
+        expect(field.classList.contains('ex-reference-text-shown')).toBe(true);
+        // The bar carries the same text, and keeps its plain text while the keyboard is in the cell.
+        const bar = q(root, 'input.ex-formula-bar-text');
+        if (!(bar instanceof HTMLInputElement)) throw new TypeError('The bar\'s text is an input.');
+        expect(layerOf(bar)).toEqual({ text: '=B3+[Price]', colours: `1,2,${p}reference-1 4,7,${p}reference-2` });
+        expect(bar.classList.contains('ex-reference-text-shown')).toBe(false);
+        key('Enter');
+        await painted();
+        expect(root.querySelector('.ex-reference-text-cell')).toBeNull();
+        expect(layerOf(bar)).toEqual({ text: '', colours: '' });
+    });
+
+    it('is not shown while an IME composes in the field, and comes back as the composition ends', async () => {
+        const root = grid({ referencesIn });
+        const field = await edit(root, '=B3');
+        field.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+        expect(field.classList.contains('ex-reference-text-shown')).toBe(false);
+        field.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+        expect(field.classList.contains('ex-reference-text-shown')).toBe(true);
+    });
+
+    it('the Reference Point writes lies on the grey ground in its pointed shade, until a key typed after it ends pointing', async () => {
+        const root = grid({
+            referencesIn,
+            pointAt: (text, caret) => caret === text.length && /[=+]$/u.test(text),
+            referenceText: range => `${String.fromCharCode(65 + range.leftColumn)}${range.topRow + 1}`,
+        });
+        const field = await edit(root, '=B3+');
+        // F2 turns Caret into Point, where the arrows point.
+        key('F2');
+        key('ArrowDown');
+        await painted();
+        const p = prefix(root);
+        expect(field.value).toBe('=B3+A2');
+        expect(layerOf(field).colours).toBe(`4,2,${p}reference-pointed 1,2,${p}reference-1 4,2,${p}reference-2-pointed`);
+        retype(field, '=B3+A2*');
+        await painted();
+        expect(layerOf(field).colours).toBe(`1,2,${p}reference-1 4,2,${p}reference-2`);
+    });
+
+    it('colours through highlights of the grid\'s own names, taken out as the edit ends and with the grid', async () => {
+        vi.stubGlobal('Highlight', FakeHighlight);
+        const registry = new Map<string, FakeHighlight>();
+        const css = CSS;
+        vi.stubGlobal('CSS', { escape: (text: string) => css.escape(text), highlights: registry });
+        try {
+            const { root, view } = mounted({ referencesIn });
+            const field = await edit(root, '=B3');
+            const p = prefix(root);
+            const coloured = registry.get(`${p}reference-1`);
+            if (coloured === undefined) throw new Error('No Reference was coloured.');
+            const [range] = [...coloured];
+            expect([range?.startOffset, range?.endOffset]).toEqual([1, 3]);
+            expect(root.querySelector('style')?.textContent).toContain(`::highlight(${p}reference-1){color:var(--ex-reference-text-1)}`);
+            key('Escape');
+            await painted();
+            expect(coloured.size).toBe(0);
+            expect(field.isConnected).toBe(false);
+            view.destroy();
+            expect(registry.has(`${p}reference-1`)).toBe(false);
+        } finally {
+            vi.unstubAllGlobals();
+        }
     });
 });
