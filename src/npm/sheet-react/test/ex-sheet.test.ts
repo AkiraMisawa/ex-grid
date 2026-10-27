@@ -2,13 +2,23 @@
 // The adapter's own tests (ADR-0350 section 13): React Testing Library mounts it. What the Sheet does is
 // `@ex-grid/sheet`'s, tested there; here, that the adapter mounts it once, hands it each render's props, and
 // destroys it with the component.
-import { createElement, createRef, StrictMode } from 'react';
-import { cleanup, render } from '@testing-library/react';
+import { createElement, createRef, StrictMode, useSyncExternalStore, type ReactNode } from 'react';
+import { act, cleanup, render } from '@testing-library/react';
+import type { SheetToolbarItemSlotContext } from '@ex-grid/sheet';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CellAddress, SheetEdit } from '@ex-grid/sheet-engine';
 import { ExSheet, type ExSheetApi } from '../src/ex-sheet';
 
 afterEach(() => { cleanup(); });
+
+// A Toolbar Item of a Chrome's own: a button showing the item's name, and whether its list is asked for.
+function ListButton({ context }: { readonly context: SheetToolbarItemSlotContext }): ReactNode {
+    const view = useSyncExternalStore(context.subscribe, context.view);
+    return createElement('button', { className: 'own-list', 'aria-expanded': view.openRequest > view.closeRequest }, view.name);
+}
+
+// The split controls are the Chrome's; every other item is left to the built-in one.
+const toolbarItem = (context: SheetToolbarItemSlotContext): ReactNode => (context.kind === 'split' ? createElement(ListButton, { context }) : null);
 
 describe('ExSheet', () => {
     it('ADR-0370: the element React renders is the Sheet\'s, drawn before the browser paints, the grid and its notice inside', () => {
@@ -57,5 +67,28 @@ describe('ExSheet', () => {
         expect(root?.querySelectorAll('[role="grid"]')).toHaveLength(1);
         unmount();
         expect(root?.childElementCount).toBe(0);
+    });
+
+    it('ADR-0390: chrome.toolbarItem draws the items it answers for through a portal, null leaves the rest built in, and the view it subscribes to follows the Sheet', async () => {
+        const { container, rerender, unmount } = render(createElement(StrictMode, null,
+            createElement(ExSheet, { locale: 'en-US', showToolbar: true, chrome: { toolbarItem } })));
+        await act(async () => { await Promise.resolve(); });
+        const drawn = (): string[] => [...container.querySelectorAll('.ex-sheet-toolbar-slot .own-list')].map(button => button.textContent);
+        expect(drawn()).toEqual(['Font Colour', 'Fill Colour', 'Borders']);
+        expect(container.querySelector('.ex-sheet-toolbar-item[aria-label="Bold"]')).not.toBeNull();
+        const buttons = [...container.querySelectorAll('.own-list')];
+        // The same render function handed again draws nothing again.
+        rerender(createElement(StrictMode, null, createElement(ExSheet, { locale: 'en-US', showToolbar: true, viewportHeight: 280, chrome: { toolbarItem } })));
+        await act(async () => { await Promise.resolve(); });
+        expect([...container.querySelectorAll('.own-list')]).toEqual(buttons);
+        // ↓ on the band asks for the Fill's list, which the view says.
+        const band = container.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        act(() => { band?.focus(); });
+        for (let i = 0; i < 5; i++) band?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+        act(() => { band?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true })); });
+        await act(async () => { await Promise.resolve(); });
+        expect([...container.querySelectorAll('.own-list')].map(button => button.getAttribute('aria-expanded'))).toEqual(['false', 'true', 'false']);
+        unmount();
+        expect(buttons.map(button => button.isConnected)).toEqual([false, false, false]);
     });
 });

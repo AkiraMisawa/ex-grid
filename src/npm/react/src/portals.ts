@@ -17,6 +17,11 @@ function SlotContent({ show }: { readonly show: () => ReactNode }): ReactNode {
  * asks for one render of the ExGrid, made at once in the next microtask, so a slot's content stands, and its
  * control has taken a keyboard it was asked to, before the browser hands over the next input (the spine's sixth
  * rule).
+ *
+ * Exported for the family's Framework Adapters (`@ex-grid/sheet-react`, `@ex-grid/pivot-react`,
+ * `@ex-grid/chart-react`), whose components render a product's Chrome slots the same way, not for a Consumer: the
+ * component holds one for its lifetime, renders its {@link GridPortals.elements} beside its root, and calls
+ * {@link GridPortals.begin} and {@link GridPortals.end} as its product is made and goes.
  */
 export class GridPortals {
     readonly #portals = new Map<string, ReactElement>();
@@ -24,6 +29,7 @@ export class GridPortals {
     #owed = false;
     #live = true;
 
+    /** `render` asks the component holding the portals to render again, once per change. */
     constructor(render: () => void) {
         this.#render = render;
     }
@@ -35,6 +41,7 @@ export class GridPortals {
         this.#owe();
     }
 
+    /** Takes away the content set for `id`. */
     delete(id: string): void {
         this.#portals.delete(id);
         this.#owe();
@@ -90,7 +97,8 @@ function slotIdOf(slot: HTMLElement): string {
     return id;
 }
 
-/** Holds an ExGrid's portals, and a render of the component that asks for one. */
+/** Holds an ExGrid's portals, and a render of the component that asks for one; a family adapter's component holds
+ * its product's the same way. */
 export function useGridPortals(): GridPortals {
     const [, rendered] = useReducer((count: number) => count + 1, 0);
     const [portals] = useReducer((held: GridPortals) => held, undefined, () => new GridPortals(rendered));

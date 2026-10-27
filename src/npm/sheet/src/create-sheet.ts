@@ -32,6 +32,7 @@ import { SheetEdges } from './sheet-edges';
 import { SheetWords, type SheetLabel, type SheetToolbarBorder, type SheetToolbarCommand } from './sheet-words';
 import { SheetTabs } from './sheet-tabs';
 import { SheetToolbar, type SheetToolbarIcon, type SheetToolbarItem, type SheetToolbarPaint } from './sheet-toolbar';
+import type { SheetToolbarItemSlot } from './sheet-toolbar-slot';
 import { SheetChoicesPanel, type SheetToolbarChoice } from './sheet-choices';
 import { automaticColour, colourFromRgb, paintOf } from './cell-colour';
 import {
@@ -79,6 +80,16 @@ export interface SheetToolbarRowOptions {
     readonly items: readonly SheetToolbarEntry[];
 }
 
+/**
+ * The Sheet's own Chrome slots (ADR-0390), the C# `ISheetChrome`'s, each a mount function the Sheet calls with the
+ * slot's element and what the slot is handed. A slot not given is drawn by the built-in Chrome.
+ */
+export interface SheetChrome {
+    /** Each Toolbar Item of the Sheet Toolbar (ADR-0100): a mount that answers `undefined` leaves the item to the
+     * built-in Chrome, as the C# Chrome's `ToolbarItem` answering null does. */
+    readonly toolbarItem?: SheetToolbarItemSlot;
+}
+
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
     /** The Workbook or Sheet to open; a new Workbook of one empty Sheet unless given. A new document object opens
@@ -120,6 +131,8 @@ export interface SheetOptions {
      * claimed and stays the browser's.
      */
     readonly onShowToolbarChanged?: (shown: boolean) => void;
+    /** The parts of the Sheet a Chrome of the Consumer's, or a Wrapper's, draws in place of the built-in ones (ADR-0390). */
+    readonly chrome?: SheetChrome;
     /** ExSheet's Japanese words in place of its English (ADR-0370, section 10), chosen in one line, never by the
      * locale. */
     readonly japanese?: boolean;
@@ -405,6 +418,8 @@ class SheetView {
     #faceFill: CellColour = colourFromRgb(0xFFFF00);
     // The Borders preset the face sets: the one chosen last, Bottom Border until one is.
     #faceBorder: SheetToolbarBorder = 'bottom';
+    // The Selection a toolbar list a Chrome draws stands over: one moved from it ends the list.
+    #chromeListsOver: GridSelection | undefined;
     // A Toolbar Item's list while it stands in the grid's popover frame, and the Selection it was opened over.
     #choices: { readonly panel: SheetChoicesPanel; readonly selection: GridSelection; readonly keyTipRow: number | undefined } | undefined;
     // The Alt key went down alone where the toolbar's keys are heard, and its release has not been heard: the release
@@ -460,7 +475,16 @@ class SheetView {
         this.#notice.className = 'ex-sheet-notice';
         this.#notice.setAttribute('role', 'status');
         this.#tabs = new SheetTabs(document, { pressed: this.#onTabPressed, added: this.#onTabAdded, listKey: this.#onTabListKey });
-        this.#toolbar = new SheetToolbar(document, { giveBack: () => { this.#grid?.focus(); } });
+        this.#toolbar = new SheetToolbar(document, {
+            giveBack: () => { this.#grid?.focus(); },
+            // A choice of a list the Chrome draws, made as the built-in list's is.
+            chosen: choice => {
+                if (this.#editing) this.#tell(this.#words.toolbarWhileEditing);
+                else choice.choose();
+                this.#paintToolbar();
+            },
+            opening: () => { this.#chromeListsOver = this.#grid?.readView().selection; },
+        });
         element.replaceChildren(this.#gridElement, this.#notice);
         // Excel's keys for the Sheet Tabs, heard on the Sheet before its grid hears them, wherever in it the keyboard
         // is, so the browser does not move among its own tabs (ADR-0331 §4).
@@ -659,6 +683,8 @@ class SheetView {
         const grid = this.#grid;
         this.#grid = undefined;
         grid?.destroy();
+        // A Chrome's toolbar contents go with the Sheet.
+        this.#toolbar.dispose();
         // A destroyed Sheet points at nothing.
         this.#joinedScope?.leave(this.#pointingSheet);
         this.#joinedScope = undefined;
@@ -979,6 +1005,12 @@ class SheetView {
     };
 
     #followSelection(selection: GridSelection): void {
+        // A Chrome's toolbar list reads the Selection it opened over, as the built-in one does: a Selection moved
+        // since ends it. The notice of the Selection it opened over, given after the grid's paint, is no move.
+        if (this.#chromeListsOver?.equals(selection) === false) {
+            this.#chromeListsOver = selection;
+            this.#toolbar.endLists();
+        }
         const before = this.#selection?.focus;
         this.#selection = selection;
         // The Toolbar shows the Focus cell's state: a Selection grown or shrunk around the same Focus changes none of it.
@@ -1211,8 +1243,10 @@ class SheetView {
 
     #paintToolbar(): void {
         if (this.#options.showToolbar !== true) return;
+        // What a list a Chrome draws stands over from here, whether the band's keys or a press opens it.
+        this.#chromeListsOver = this.#grid?.readView().selection;
         const rows = this.#toolbarRows();
-        this.#toolbar.paint({ name: this.#words.toolbarName, rowHeightPx: this.#bandRowPx, rows });
+        this.#toolbar.paint({ name: this.#words.toolbarName, rowHeightPx: this.#bandRowPx, rows, itemSlot: this.#options.chrome?.toolbarItem });
     }
 
     // The rows the options give, the default one Excel's Home tab's commands in its order (ADR-0100), each item's state
@@ -1239,6 +1273,7 @@ class SheetView {
                 disabledReason: this.#editing ? words.toolbarWhileEditing : disabledReason,
                 press: act === undefined ? undefined : () => { this.#toolbarPressed(act); },
                 open: list === undefined ? undefined : (keyTipRow: number | undefined) => { this.#openChoices(name, list(), keyTipRow); },
+                list,
                 keyTip: toolbarKeyTips[key],
             };
         };
@@ -1317,6 +1352,7 @@ class SheetView {
                 else button.onPress();
             },
             open: undefined,
+            list: undefined,
             keyTip: button.keyTip?.toUpperCase(),
         };
     }
@@ -1414,6 +1450,8 @@ class SheetView {
     // Ends a Toolbar Item's list where it stands: the grid's popover closes and gives the keyboard back. One the grid
     // already closed, by Escape or a press elsewhere, has left its frame, and only the record goes.
     #endChoices(): void {
+        // A list a Chrome draws ends with it.
+        this.#toolbar.endLists();
         const standing = this.#choices;
         if (standing === undefined) return;
         this.#choices = undefined;
@@ -1977,6 +2015,12 @@ class SheetView {
         // The day is taken as it is now: one the Consumer changes in place afterwards is a new day only when handed over again.
         const taken = today === undefined ? options : { ...options, today: { year: today.year, month: today.month, day: today.day } };
         checkToolbar(options.toolbar);
+        const chrome: unknown = options.chrome;
+        if (chrome !== undefined) {
+            if (typeof chrome !== 'object' || chrome === null) throw new TypeError("A Sheet's chrome is an object of Chrome slots, each a mount function (ADR-0390).");
+            const { toolbarItem }: { readonly toolbarItem?: unknown } = chrome;
+            if (toolbarItem !== undefined && typeof toolbarItem !== 'function') throw new TypeError('chrome.toolbarItem is a mount function (ADR-0390).');
+        }
         const handlers: readonly (readonly [string, unknown])[] = [
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],

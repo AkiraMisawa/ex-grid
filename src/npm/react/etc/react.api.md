@@ -85,6 +85,17 @@ export interface FormulaBarTextHandles {
 }
 
 // @public
+export class GridPortals {
+    constructor(render: () => void);
+    begin(): void;
+    delete(id: string): void;
+    elements(): ReactElement[];
+    end(): void;
+    mount(slot: HTMLElement, show: () => ReactNode): () => void;
+    set(id: string, slot: HTMLElement, show: () => ReactNode): void;
+}
+
+// @public
 export interface MenuItemProps {
     readonly 'aria-disabled': boolean;
     readonly 'data-ex-claims': 'click keydown' | undefined;
@@ -119,6 +130,9 @@ export function useFindPanel(context: GridFindPanelSlotContext): FindPanelHandle
 
 // @public
 export function useFormulaBarText(context: GridFormulaBarTextSlotContext): FormulaBarTextHandles;
+
+// @public
+export function useGridPortals(): GridPortals;
 
 // @public
 export function useMenuItems(context: GridMenuSlotContext): (index: number) => MenuItemProps;
