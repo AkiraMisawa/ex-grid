@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 94.3% | 87.9% |
+| ExGrid | 94.4% | 88% |
 | ExSheet | 95.2% | 87.5% |
 | ExPivot | 93.5% | 85.6% |
 | ExChart | 91.8% | 86.2% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/27/2026 - 20:40:07 |
+| Generated on: | 10/27/2026 - 21:10:00 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1224 |
-| Files: | 618 |
-| **Line coverage:** | 94.2% (85064 of 90256) |
-| Covered lines: | 85064 |
-| Uncovered lines: | 5192 |
-| Coverable lines: | 90256 |
-| Total lines: | 144154 |
-| **Branch coverage:** | 87.4% (51260 of 58634) |
-| Covered branches: | 51260 |
-| Total branches: | 58634 |
+| Classes: | 1226 |
+| Files: | 620 |
+| **Line coverage:** | 94.2% (85116 of 90283) |
+| Covered lines: | 85116 |
+| Uncovered lines: | 5167 |
+| Coverable lines: | 90283 |
+| Total lines: | 144229 |
+| **Branch coverage:** | 87.4% (51281 of 58648) |
+| Covered branches: | 51281 |
+| Total branches: | 58648 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -235,11 +235,11 @@
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
 </details>
-<details><summary>ExGrid - 93.9%</summary>
+<details><summary>ExGrid - 94%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**93.9%**|**88%**|
+|**ExGrid**|**94%**|**88.1%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -326,9 +326,11 @@
 |ExGrid.Columns.DefaultGlyphWidths|100%||
 |ExGrid.Columns.GlyphWidthTable|100%|95.8%|
 |ExGrid.Columns.GridAction|91.6%||
-|ExGrid.Columns.HeaderGroup|96.5%|100%|
-|ExGrid.Columns.HeaderGroupLayout|100%|95.6%|
+|ExGrid.Columns.HeaderGroup|96.8%|100%|
+|ExGrid.Columns.HeaderGroupLayout|100%|96%|
+|ExGrid.Columns.HeaderGroupToggle|100%||
 |ExGrid.Columns.HeaderReorder|100%|100%|
+|ExGrid.Columns.HiddenMark|100%||
 |ExGrid.Columns.OverflowDecision|100%||
 |ExGrid.Columns.OverflowRules|100%|100%|
 |ExGrid.Columns.ResolvedHeaderGroup|100%||
@@ -379,8 +381,8 @@
 |ExGrid.Components.ExGrid<TRow>|90.9%|85.2%|
 |ExGrid.Components.ExGrid<TRow>|95.5%|90.4%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
-|ExGrid.Components.ExGridRow<TRow>|100%|94.6%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
+|ExGrid.Components.ExGridRow<TRow>|100%|94.6%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.GridInputText|100%||
 |ExGrid.Components.GridScriptFocus|79.1%|62.5%|
@@ -487,8 +489,8 @@
 |ExGrid.Rows.RowMarkStep.AllOf|100%||
 |ExGrid.Rows.RowMarkStep.OneKey|100%||
 |ExGrid.Script.ExGrid.Heard<TRow>|100%||
-|ExGrid.Script.ExGrid<TRow>|64.5%|64.3%|
-|ExGrid.Script.ExGrid<TRow>|70.5%|54%|
+|ExGrid.Script.ExGrid<TRow>|65.5%|64.3%|
+|ExGrid.Script.ExGrid<TRow>|76.4%|60.4%|
 |ExGrid.Script.FormatNames|50%||
 |ExGrid.Script.GridRefusal.Action<TRow>|0%||
 |ExGrid.Script.GridRefusal.Commit<TRow>|0%||
@@ -550,7 +552,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**95.9%**|**92.7%**|
+|**ExGrid.Data**|**95.9%**|**92.8%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -643,7 +645,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -998,7 +1000,7 @@
 |ExPivot.Engine.PivotReportUpdate|100%||
 |ExPivot.Engine.PivotReportVersion|100%||
 |ExPivot.Engine.PivotReportWindow|100%||
-|ExPivot.Engine.PivotRowKey|100%|85.2%|
+|ExPivot.Engine.PivotRowKey|98%|82.3%|
 |ExPivot.Engine.PivotRowLabel|100%||
 |ExPivot.Engine.PivotServerChangeBatch|100%|83.3%|
 |ExPivot.Engine.PivotSlicing|100%|60%|
