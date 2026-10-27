@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/27/2026 - 02:06:25 |
+| Generated on: | 10/27/2026 - 02:36:01 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1224 |
 | Files: | 618 |
-| **Line coverage:** | 94.2% (85025 of 90214) |
-| Covered lines: | 85025 |
-| Uncovered lines: | 5189 |
-| Coverable lines: | 90214 |
-| Total lines: | 144072 |
-| **Branch coverage:** | 87.4% (51237 of 58610) |
-| Covered branches: | 51237 |
-| Total branches: | 58610 |
+| **Line coverage:** | 94.2% (85043 of 90231) |
+| Covered lines: | 85043 |
+| Uncovered lines: | 5188 |
+| Coverable lines: | 90231 |
+| Total lines: | 144109 |
+| **Branch coverage:** | 87.4% (51246 of 58616) |
+| Covered branches: | 51246 |
+| Total branches: | 58616 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -487,8 +487,8 @@
 |ExGrid.Rows.RowMarkStep.AllOf|100%||
 |ExGrid.Rows.RowMarkStep.OneKey|100%||
 |ExGrid.Script.ExGrid.Heard<TRow>|100%||
-|ExGrid.Script.ExGrid<TRow>|64.1%|63.9%|
-|ExGrid.Script.ExGrid<TRow>|69.8%|52.9%|
+|ExGrid.Script.ExGrid<TRow>|64.5%|64.3%|
+|ExGrid.Script.ExGrid<TRow>|70.5%|54%|
 |ExGrid.Script.FormatNames|50%||
 |ExGrid.Script.GridRefusal.Action<TRow>|0%||
 |ExGrid.Script.GridRefusal.Commit<TRow>|0%||
@@ -550,7 +550,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**95.9%**|**92.7%**|
+|**ExGrid.Data**|**95.9%**|**92.8%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -643,7 +643,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1017,8 +1017,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1071,12 +1071,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
