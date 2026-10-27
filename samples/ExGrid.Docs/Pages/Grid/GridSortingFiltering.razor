@@ -180,7 +180,10 @@
             The sort and filter are plain data — <code>SortSpec</code> and <code>GridFilter</code> — so a toolbar
             button, a saved view or a link can set them. Call the source's <code>OnSortChanged</code> and
             <code>OnFilterChanged</code>; the header's sort arrow and the filter panel follow, and the source raises
-            <code>StateChanged</code> whenever the result changes, whoever changed it.
+            <code>StateChanged</code> whenever the result changes, whoever changed it. In ExGrid for React the same
+            source takes <code>setSorts</code> and <code>setFilter</code>, and <code>subscribe</code> tells you of each
+            change, so <code>useSyncExternalStore</code> over its <code>snapshot</code> keeps a line like the one
+            below in step.
         </p>
         <DocsExample Title="A saved view" Builtin="typeof(QueryFromCode)" Mud="typeof(QueryFromCodeMud)"
                      Files="@(["Examples/Data/Trade.cs"])" />

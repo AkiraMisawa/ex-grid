@@ -271,6 +271,8 @@
                 not move the rows under your hand. <code>ShowSelectionSummary="false"</code> takes it off the
                 grid; <code>OnSelectionSummaryChanged</code> still hands you the figures, for a status bar of your own.
                 Bind <code>SummaryFigures</code> to keep the menu's choice; without a binding the menu is not offered.
+                In ExGrid for React the binding is <code>summaryFigures</code> with <code>onSummaryFiguresChanged</code>,
+                and the figures arrive through <code>onSelectionSummaryChanged</code>.
             </li>
         </ul>
         <DocsExample Title="Status-bar figures" Builtin="typeof(SelectionFigures)" Mud="typeof(SelectionFiguresMud)"
