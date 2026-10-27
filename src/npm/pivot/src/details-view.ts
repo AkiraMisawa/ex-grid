@@ -4,11 +4,14 @@
 // PivotDialogFrame, PivotDetailsDialogView and PivotDetailsGrid (ADR-0350 section 4). Each sheet's records are an
 // ExGrid of their own, in an Input Root of their own (ADR-0240 section 6).
 
-import type { GridDensity, GridHandle, GridOptions } from '@ex-grid/core';
+import type { GridChrome, GridDensity, GridHandle, GridOptions } from '@ex-grid/core';
 import type { PivotDetailRecord } from '@ex-grid/pivot-engine';
+import {
+    StandingSlot, type PivotChrome, type PivotDetailsDialogSlotContext, type PivotDetailsDialogView, type PivotDetailsTabsSlotContext, type PivotDetailsTabsView,
+} from './chrome';
 import { detailCellType, DetailsSheet, type DetailsProblem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
 import { element } from './dom';
-import { defined } from './must';
+import { checkedName, swap, type PartElements } from './parts';
 import type { PivotScreenWords } from './words';
 
 /** Draws a grid into an element: ExGrid's `createGrid`, or a layer-2 test's own. */
@@ -19,6 +22,8 @@ export interface DetailsGridLook {
     readonly rowHeight: number | undefined;
     readonly density: GridDensity | undefined;
     readonly commandLabel: ((id: string) => string | undefined) | undefined;
+    /** The grid's Chrome a pivot's Chrome dresses its grids in (ADR-0390). */
+    readonly chrome: GridChrome<PivotDetailRecord> | undefined;
 }
 
 /** What the sheets ask of the pivot. */
@@ -33,6 +38,10 @@ export interface DetailsHost {
     readonly changed: () => void;
     /** The report's grid takes the keyboard back (ADR-0070). */
     readonly returnKeyboard: () => void;
+    /** The controls and anchors the pivot's parts hand in, the sheets' among them. */
+    readonly parts: PartElements;
+    /** The pivot's Chrome slots for the sheets, read each time the sheets are drawn. */
+    readonly chrome: () => Pick<PivotChrome, 'detailsTabs' | 'detailsDialog'> | undefined;
 }
 
 // One sheet's records: its grid in an Input Root of its own, or the sentence that says why there are none.
@@ -42,12 +51,15 @@ class Records {
     readonly box: HTMLElement;
     readonly #host: DetailsHost;
     readonly #leave: (() => void) | undefined;
-    readonly #keyboardHome: () => HTMLElement;
+    readonly #keyboardHome: () => void;
+    /** Whether the box stands where the records are shown: a Chrome's dialog hands in the anchor it stands in once
+     * its contents are drawn. */
+    standing = true;
     #grid: GridHandle<PivotDetailRecord> | undefined;
     #status: HTMLElement | undefined;
 
-    /** `leave` is the dialog's way out; `keyboardHome` takes the keyboard when the grid that held it goes. */
-    constructor(host: DetailsHost, sheet: DetailsSheet, leave: (() => void) | undefined, keyboardHome: () => HTMLElement) {
+    /** `leave` is the dialog's way out; `keyboardHome` gives the keyboard on when the grid that held it goes. */
+    constructor(host: DetailsHost, sheet: DetailsSheet, leave: (() => void) | undefined, keyboardHome: () => void) {
         this.#host = host;
         this.sheet = sheet;
         this.#leave = leave;
@@ -61,6 +73,7 @@ class Records {
 
     /** Draws the records, once their box stands in the document. */
     draw(): void {
+        if (!this.standing) return;
         const { problem } = this.sheet;
         if (problem !== undefined) {
             // The sentence replaces the grid, and the keyboard the grid held goes to the tab or to Close, so it stays
@@ -75,10 +88,10 @@ class Records {
                 this.box.replaceWith(this.#status);
             }
             if (this.#status.textContent !== text) this.#status.textContent = text;
-            if (held) this.#keyboardHome().focus();
+            if (held) this.#keyboardHome();
             return;
         }
-        const { rowHeight, density, commandLabel } = this.#host.look();
+        const { rowHeight, density, commandLabel, chrome } = this.#host.look();
         const options: GridOptions<PivotDetailRecord> = {
             columns: this.sheet.columns,
             source: this.sheet.source,
@@ -92,6 +105,7 @@ class Records {
             hideColumnMenu: true,
             cellType: detailCellType,
             ...(commandLabel === undefined ? {} : { commandLabel }),
+            ...(chrome === undefined ? {} : { chrome }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
             // The dialog's way out: the Escape its grid has nothing left to dismiss closes it (ADR-0070). A tab's grid
@@ -121,6 +135,8 @@ class Records {
 
 // A details tab: its tab at the report's foot, and its panel over the report.
 interface Tab {
+    /** The name its control is handed in by, the built-in button's id. */
+    readonly key: string;
     readonly records: Records;
     readonly tab: HTMLElement;
     readonly button: HTMLButtonElement;
@@ -128,12 +144,29 @@ interface Tab {
     readonly panel: HTMLElement;
 }
 
-// The dialog's frame over its backdrop, and the button that takes the keyboard when it opens.
+// The dialog's frame over its backdrop; what stands inside it, the built-in markup's or a Chrome's contents; and
+// the box its records stand in.
 interface Dialog {
     readonly records: Records;
     readonly backdrop: HTMLElement;
     readonly frame: HTMLElement;
+    /** The built-in markup's: the title, the records and Close. */
+    readonly content: HTMLElement;
+    readonly heading: HTMLElement;
+    readonly recordsBox: HTMLElement;
     readonly close: HTMLButtonElement;
+    /** Whether a Chrome's contents stand in the frame. */
+    slotted: boolean;
+}
+
+/** The name the dialog's Close is handed in by. */
+const dialogClose = 'details-close';
+/** The name of the anchor the dialog's records stand in. */
+const dialogRecords = 'details-records';
+
+// The name a tab's control is handed in by.
+function tabName(key: string): string {
+    return `tab:${key}`;
 }
 
 // Each pivot's ids are its own on the page (ADR-0018).
@@ -141,10 +174,15 @@ let pivots = 0;
 
 /** The pivot's details sheets: the tabs and the dialog. */
 export class DetailsSheets {
-    /** The tab list at the report's foot, which the pivot places after the report while a tab stands. */
-    readonly tabList: HTMLElement;
     readonly #host: DetailsHost;
     readonly #idPrefix: string;
+    readonly #builtInTabList: HTMLElement;
+    readonly #tabsSlot: StandingSlot<PivotDetailsTabsView, PivotDetailsTabsSlotContext>;
+    #tabsSlotted = false;
+    // One for every dialog, so contents refused once are not tried again at the next.
+    readonly #dialogSlot: StandingSlot<PivotDetailsDialogView, PivotDetailsDialogSlotContext>;
+    // The slots' contents that could not be drawn, for the pivot to throw once the sheets have drawn.
+    #refused: Error[] = [];
     readonly #reportTab: HTMLElement;
     readonly #reportButton: HTMLButtonElement;
     readonly #tabs: Tab[] = [];
@@ -156,12 +194,30 @@ export class DetailsSheets {
         this.#host = host;
         this.#idPrefix = `ex-pivot-${++pivots}`;
         const { document } = host;
-        this.tabList = element(document, 'div', 'ex-pivot-tabs');
-        this.tabList.setAttribute('role', 'tablist');
+        this.#builtInTabList = element(document, 'div', 'ex-pivot-tabs');
+        this.#builtInTabList.setAttribute('role', 'tablist');
+        this.#tabsSlot = new StandingSlot('detailsTabs', document, Object.freeze({ name: '', tabs: Object.freeze([]) }));
+        this.#dialogSlot = new StandingSlot('detailsDialog', document, Object.freeze({ title: '', closeLabel: '' }));
+        // The slot draws nothing (`display: contents`): the contents lay themselves out in the dialog's frame.
+        this.#dialogSlot.element.setAttribute('style', 'display: contents');
         // The report's own tab, first: selecting it uncovers the report.
         const { tab, button } = this.#tab(`${this.#idPrefix}-report`, () => { this.#select(undefined); });
         this.#reportTab = tab;
         this.#reportButton = button;
+    }
+
+    /** The tab list at the report's foot, the built-in markup's or a Chrome's, which the pivot places after the report
+     * while a tab stands. */
+    get tabList(): HTMLElement {
+        return this.#tabsSlotted ? this.#tabsSlot.element : this.#builtInTabList;
+    }
+
+    /** The slots' contents that could not be drawn since this was last asked, the built-in markup standing in their
+     * place. */
+    takeRefused(): readonly Error[] {
+        const refused = this.#refused;
+        this.#refused = [];
+        return refused;
     }
 
     /** Whether a details tab is selected, its records covering the report. */
@@ -202,23 +258,24 @@ export class DetailsSheets {
                 this.#host.changed();
             }
         });
+        const { parts } = this.#host;
         if (view === 'dialog') {
             this.#closeDialogNow();
-            // Drawn only while it stands, so its Close is there to take the keyboard.
-            const records = new Records(this.#host, sheet, () => { this.closeDialog(); }, () => defined(this.#dialog, 'the dialog the records stand in').close);
+            const records = new Records(this.#host, sheet, () => { this.closeDialog(); }, () => { parts.focus(dialogClose); });
             shown = records;
             const dialog = this.#dialogOf(records);
             this.#dialog = dialog;
+            // Its contents are drawn once its frame stands, so Close is there to take the keyboard.
             this.#host.changed();
-            records.draw();
-            dialog.close.focus();
+            this.#drawDialog(dialog);
+            parts.focus(dialogClose);
             return;
         }
         const { tab, button } = this.#tab(id, () => {
             const pressed = standing();
             if (pressed !== undefined) this.#select(pressed);
         });
-        const records = new Records(this.#host, sheet, undefined, () => button);
+        const records = new Records(this.#host, sheet, undefined, () => { parts.focus(tabName(id)); });
         shown = records;
         const tabs = this.#tabs;
         // Pressed only while the tab stands: a closed tab leaves the page.
@@ -234,7 +291,7 @@ export class DetailsSheets {
         panel.id = `${id}-panel`;
         panel.setAttribute('aria-labelledby', id);
         panel.append(records.box);
-        const made: Tab = { records, tab, button, close, panel };
+        const made: Tab = { key: id, records, tab, button, close, panel };
         this.#tabs.push(made);
         this.#selected?.records.hide();
         this.#selected = made;
@@ -243,7 +300,7 @@ export class DetailsSheets {
         records.draw();
         // The records now cover the report, so the keyboard leaves it for the new tab: keys left in a report nobody
         // sees would move and copy what is not on screen.
-        button.focus();
+        parts.focus(tabName(id));
     }
 
     /** Draws the words again and hands the records' grids the pivot's options again. */
@@ -251,10 +308,7 @@ export class DetailsSheets {
         this.#drawTabs();
         this.#selected?.records.draw();
         const dialog = this.#dialog;
-        if (dialog !== undefined) {
-            dialog.close.textContent = this.#host.words().word('close');
-            dialog.records.draw();
-        }
+        if (dialog !== undefined) this.#drawDialog(dialog);
     }
 
     /** Closes the dialog: the report's grid takes the keyboard back (ADR-0070), however it closes. */
@@ -270,6 +324,7 @@ export class DetailsSheets {
         for (const tab of this.#tabs) tab.records.dispose();
         this.#tabs.length = 0;
         this.#selected = undefined;
+        this.#tabsSlot.hide();
         this.#closeDialogNow();
     }
 
@@ -302,9 +357,65 @@ export class DetailsSheets {
         return closing;
     }
 
+    // The tab list: the built-in markup's, or a Chrome's in its place while a details tab stands, drawn from the same
+    // view. The built-in markup's buttons are handed in again each time it stands, as a Chrome's are when it draws
+    // them.
     #drawTabs(): void {
         const words = this.#host.words();
-        this.tabList.setAttribute('aria-label', words.word('sheets'));
+        const view = this.#tabsSlot.viewOf(Object.freeze({
+            name: words.word('sheets'),
+            tabs: Object.freeze([
+                Object.freeze({ key: this.#reportButton.id, title: words.word('report-tab'), selected: this.#selected === undefined }),
+                ...this.#tabs.map(tab => Object.freeze({
+                    key: tab.key,
+                    title: tab.records.sheet.details.title,
+                    selected: tab === this.#selected,
+                    panelId: tab.panel.id,
+                    closeLabel: words.fill('close-tab', tab.records.sheet.details.title),
+                })),
+            ]),
+        }));
+        const mount = this.#host.chrome()?.detailsTabs;
+        const leaving = this.tabList;
+        const held = leaving.contains(this.#host.document.activeElement);
+        const slotted = mount !== undefined && this.#tabs.length > 0 && this.#answered(this.#tabsSlot.show(mount, (shared, input) => {
+            const refs = this.#host.parts.refs();
+            return {
+                ...shared,
+                select: input((key: string) => {
+                    if (key === this.#reportButton.id) {
+                        this.#select(undefined);
+                        return;
+                    }
+                    const pressed = this.#tabs.find(tab => tab.key === key);
+                    if (pressed !== undefined) this.#select(pressed);
+                }),
+                close: input((key: string) => {
+                    const closed = this.#tabs.find(tab => tab.key === key);
+                    if (closed !== undefined) this.#closeTab(closed);
+                }),
+                control: (key: string) => refs.control(tabName(checkedKey(key))),
+            };
+        }, id => words.word(id)));
+        if (!slotted) this.#tabsSlot.hide();
+        this.#tabsSlotted = slotted;
+        if (leaving !== this.tabList) {
+            swap(leaving, this.tabList);
+            // The tab that held the keyboard went with the markup it stood in: the selected sheet's tab takes it.
+            if (held) this.#host.parts.focus(tabName(this.#selected?.key ?? this.#reportButton.id));
+        }
+        // A Chrome's tab need not take the id the built-in one does, so the panel is named by its words.
+        for (const tab of this.#tabs) {
+            if (slotted) {
+                tab.panel.removeAttribute('aria-labelledby');
+                tab.panel.setAttribute('aria-label', tab.records.sheet.details.title);
+            } else {
+                tab.panel.removeAttribute('aria-label');
+                tab.panel.setAttribute('aria-labelledby', tab.key);
+            }
+        }
+        if (slotted) return;
+        this.#builtInTabList.setAttribute('aria-label', view.name);
         this.#reportButton.textContent = words.word('report-tab');
         const all: readonly { readonly tab: HTMLElement; readonly button: HTMLButtonElement; readonly selected: boolean }[] = [
             { tab: this.#reportTab, button: this.#reportButton, selected: this.#selected === undefined },
@@ -313,6 +424,7 @@ export class DetailsSheets {
         for (const { tab, button, selected } of all) {
             tab.className = selected ? 'ex-pivot-tab ex-pivot-tab-selected' : 'ex-pivot-tab';
             button.setAttribute('aria-selected', selected ? 'true' : 'false');
+            this.#host.parts.handInControl(tabName(button.id), button);
         }
         for (const tab of this.#tabs) {
             const label = words.fill('close-tab', tab.records.sheet.details.title);
@@ -320,9 +432,16 @@ export class DetailsSheets {
             tab.close.title = label;
         }
         const children = all.map(tab => tab.tab);
-        if (children.length !== this.tabList.children.length || children.some((child, i) => this.tabList.children[i] !== child)) {
-            this.tabList.replaceChildren(...children);
+        const list = this.#builtInTabList;
+        if (children.length !== list.children.length || children.some((child, i) => list.children[i] !== child)) {
+            list.replaceChildren(...children);
         }
+    }
+
+    // Whether a slot's contents stand, as `answer` says; an error it answers is the pivot's to throw.
+    #answered(answer: { readonly shown: boolean; readonly error?: Error }): boolean {
+        if (answer.error !== undefined) this.#refused.push(answer.error);
+        return answer.shown;
     }
 
     // A tab pressed: the report's (`undefined`), or a details tab that still stands.
@@ -340,6 +459,7 @@ export class DetailsSheets {
         if (at < 0) return;
         this.#tabs.splice(at, 1);
         tab.records.dispose();
+        this.#host.parts.forget(tabName(tab.key), tab.button);
         // Excel's next sheet: the one after the closed tab, or before it, or the report.
         const moved = this.#selected === tab;
         if (moved) this.#selected = this.#tabs[Math.min(at, this.#tabs.length - 1)];
@@ -353,7 +473,7 @@ export class DetailsSheets {
             return;
         }
         if (moved) selected.records.draw();
-        selected.button.focus();
+        this.#host.parts.focus(tabName(selected.key));
     }
 
     #dialogOf(records: Records): Dialog {
@@ -392,16 +512,82 @@ export class DetailsSheets {
         close.addEventListener('click', () => { this.closeDialog(); });
         actions.append(close);
         content.append(heading, recordsBox, actions);
-        frame.append(content);
-        return { records, backdrop, frame, close };
+        return { records, backdrop, frame, content, heading, recordsBox, close, slotted: false };
+    }
+
+    // What stands inside the dialog's frame: a Chrome's contents while they are given and can be drawn, else the
+    // built-in markup's. The records stand in the anchor the contents hand in, and are drawn once they land there;
+    // Close takes the keyboard again where the markup that held it went.
+    #drawDialog(dialog: Dialog): void {
+        const words = this.#host.words();
+        const { parts } = this.#host;
+        const slot = this.#dialogSlot;
+        const view = slot.viewOf(Object.freeze({ title: dialog.records.sheet.details.title, closeLabel: words.word('close') }));
+        const mount = this.#host.chrome()?.detailsDialog;
+        const { frame, content, recordsBox, records } = dialog;
+        const held = frame.contains(this.#host.document.activeElement);
+        // The slot stands in the frame as the contents mount, so plain script hands in Close already in the page.
+        const trying = mount !== undefined && !slot.refuses(mount);
+        if (trying && slot.element.parentNode !== frame) frame.replaceChildren(slot.element);
+        const slotted = trying && this.#answered(slot.show(mount, (shared, input) => {
+            const refs = parts.refs();
+            return {
+                ...shared,
+                close: input(() => { this.closeDialog(); }),
+                control: name => {
+                    checkedName(name, ['close'], 'detailsDialog');
+                    return refs.control(dialogClose);
+                },
+                anchor: name => {
+                    checkedName(name, ['records'], 'detailsDialog');
+                    return refs.anchor(dialogRecords);
+                },
+            };
+        }, id => words.word(id)));
+        const moved = slotted !== dialog.slotted;
+        dialog.slotted = slotted;
+        if (slotted) {
+            if (moved) {
+                parts.forget(dialogClose, dialog.close);
+                records.standing = false;
+                parts.place(dialogRecords, recordsBox, () => {
+                    records.standing = true;
+                    records.draw();
+                });
+            } else {
+                records.draw();
+            }
+        } else {
+            slot.hide();
+            parts.place(dialogRecords, undefined);
+            if (content.parentNode !== frame) frame.replaceChildren(content);
+            if (recordsBox.parentNode !== content) dialog.heading.after(recordsBox);
+            parts.handInControl(dialogClose, dialog.close);
+            dialog.close.textContent = view.closeLabel;
+            records.standing = true;
+            records.draw();
+        }
+        if (moved && held) parts.focus(dialogClose);
     }
 
     #closeDialogNow(): void {
         const dialog = this.#dialog;
         if (dialog === undefined) return;
         this.#dialog = undefined;
+        this.#dialogSlot.hide();
+        this.#host.parts.unplace(dialog.recordsBox);
+        // The anchor the records stood in goes with the contents, though their framework lets go of it only later.
+        this.#host.parts.dropAnchor(dialogRecords);
+        this.#host.parts.forget(dialogClose, dialog.close);
         dialog.records.dispose();
         dialog.backdrop.remove();
         dialog.frame.remove();
     }
+}
+
+// A tab's key, as a script may hand it to `control`.
+function checkedKey(key: string): string {
+    const given: unknown = key;
+    if (typeof given !== 'string' || given === '') throw new TypeError('An ExPivot\'s sheet tabs hand in a tab\'s control by the key its view gives it (ADR-0390).');
+    return given;
 }

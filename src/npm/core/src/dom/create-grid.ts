@@ -55,9 +55,11 @@ export interface GridHandle<Row> {
      * Shows the Consumer's own contents in the grid's popover frame (ADR-0050, item 16): `content` makes the element
      * from the frame's context, which closes it. Under the header band, centred across the grid and bounded by its
      * box; its first control takes the keyboard, Tab wraps inside it, and Escape, a press elsewhere in the grid and
-     * the box shrinking below a row close it, the keyboard back on the grid. False while an edit is open.
+     * the box shrinking below a row close it, the keyboard back on the grid. False while an edit is open. `closed`
+     * hears it close, however it closes, before its contents leave the page: where a Chrome's contents are taken
+     * away (ADR-0390).
      */
-    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
+    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
     /** Closes the Consumer's popover where one stands; the keyboard returns to the grid. */
     closePopover(): void;
     /** Whether anything can answer a Selection Summary (ADR-0130): `onSummarize`, or a source that summarises.
@@ -139,7 +141,7 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         returnKeyboard: (from?: Element) => { view.returnKeyboard(from); },
         handKeyboardTo: (control: HTMLElement, how?: { readonly preventScroll?: boolean }) => { view.handKeyboardTo(control, how); },
         keyName: (event: KeyboardEvent) => view.keyName(event),
-        openPopover: (content: (context: GridPopoverContext) => HTMLElement, label: string) => view.openPopover(content, label),
+        openPopover: (content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void) => view.openPopover(content, label, closed),
         closePopover: () => { view.closePopover(); },
         get canSummarize() {
             return view.canSummarize;

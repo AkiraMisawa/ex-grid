@@ -433,11 +433,12 @@ export interface GridChrome<Row> {
     readonly editorCompletion?: GridChromeSlot<GridEditorCompletionSlotContext>;
 }
 
-/** The slots a grid's `chrome` names. */
-const slotNames: readonly (keyof GridChrome<unknown>)[] = [
+/** The slots a grid's `chrome` names (ADR-0390), in the order `GridChrome` declares them: what a product drawn by
+ * ExGrid, a Sheet or a pivot, hands on to its grid out of a `chrome` of its own. */
+export const gridChromeSlotNames: readonly (keyof GridChrome<unknown>)[] = Object.freeze([
     'columnMenu', 'contextMenu', 'filterPanel', 'findPanel', 'cellEditor', 'cellMessage', 'loadingIndicator', 'selectionSummary',
     'formulaBarText', 'nameBox', 'editorCompletion',
-];
+] as const);
 
 /** A grid's `chrome`, checked: an object whose slots are each a mount function, or not given. */
 export function checkedChrome<Row>(chrome: unknown): GridChrome<Row> | undefined {
@@ -446,8 +447,8 @@ export function checkedChrome<Row>(chrome: unknown): GridChrome<Row> | undefined
         throw new TypeError('chrome is an object of Chrome slots, each a mount function (ADR-0390).');
     }
     for (const [name, slot] of Object.entries(chrome)) {
-        if (!(slotNames as readonly string[]).includes(name)) {
-            throw new TypeError(`chrome has no slot '${name}': its slots are ${slotNames.join(', ')} (ADR-0390).`);
+        if (!(gridChromeSlotNames as readonly string[]).includes(name)) {
+            throw new TypeError(`chrome has no slot '${name}': its slots are ${gridChromeSlotNames.join(', ')} (ADR-0390).`);
         }
         if (slot !== undefined && typeof slot !== 'function') {
             throw new TypeError(`chrome.${name} is a mount function, (slot, context) => cleanup (ADR-0350 section 9).`);

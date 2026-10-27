@@ -24,6 +24,27 @@
             never over it, and takes the bridge's events itself. <code>MudChartChrome.GridChrome</code> words the
             bridge's commands in the grid's menu.
         </p>
+        <p>
+            <strong>In React.</strong> <code>@@ex-grid/chart-react</code>'s <code>useChartDock</code> (published with
+            0.3.0) holds the dock's state: spread its <code>bridgeOptions</code> into the
+            <code>GridChartBridge</code>, and hand the state to a dock that draws it.
+            <code>@@ex-grid/chart-mantine</code>'s <code>MantineChartDock</code> is that dock in Mantine's tabs, beside
+            the grid or below it, never over it: "Chart selection" opens a tab named Chart 1, Chart 2 and so on,
+            "Add to chart" offers every open tab, a refusal is said in an alert above the tabs until dismissed, and a
+            chart whose axis column has left the grid says so in its tab rather than show what it last drew. Its
+            charts take <code>mantineChartChrome</code>, the toolbar, Chart Filters and the context menu in Mantine's
+            components, and the theme's primary leads their series in light and dark. A tab not shown keeps its
+            chart, with its range and its open Chart Filters.
+        </p>
+        <p>
+            <code>@@ex-grid/chart-mui</code>'s <code>MuiChartDock</code> is the same dock in MUI's tabs, its charts
+            under <code>muiChartChrome</code>: the toolbar's commands as MUI's buttons with the downloads in a button
+            group, Chart Filters in MUI's fields (MUI has no date picker of its own, so a date is typed as the hint
+            shows), and the context menu's items as MUI's list item buttons inside the chart's own frame. Its theme is
+            made with <code>cssVariables: true</code>, or the dock refuses to draw, naming the option; the primary and
+            secondary colours lead the series, as MudBlazor's do under <code>MudChartDock</code>, and error, warning,
+            success and info are never a series' colour.
+        </p>
         <DocsExample Builtin="typeof(FromGrid)" Mud="typeof(FromGridMud)" Files="@(["Examples/Chart/CurveHistory.cs"])" CodeOpen="true" />
     </DocsSection>
 

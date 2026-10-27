@@ -6,3 +6,5 @@
  */
 export { ExPivot } from './ex-pivot';
 export type { ExPivotProps } from './ex-pivot';
+export { usePivotMenu, usePivotPanel, usePivotPart } from './chrome';
+export type { ExPivotChrome, PivotMenuHandles, PivotMenuItemProps, PivotPanelHandles } from './chrome';

@@ -187,6 +187,27 @@ the three that section 9 answered for Mantine; a different answer from the user 
 - **Menus.** MUI's `MenuItem` stands only inside its `MenuList`, which answers the arrows itself, so a menu's item is
   MUI's `ListItemButton`, and every key stays the core's table.
 
+### 11. `@ex-grid/sheet-mantine`'s answers
+
+*Decided 2026-10-27 with `@ex-grid/sheet-mantine`, on the recommendation, under the user's standing approval of
+recommendations, as sections 9 and 10 were; a different answer from the user rewrites this section.*
+
+- **Format Cells' frame.** Under React, Format Cells' contents are a Chrome's and its frame is the grid's popover,
+  the one the built-in Format Cells stands in, under every Chrome: the frame, its place, its Escape and the keyboard's
+  return are the core's (section 3). `MudSheetChrome` draws a page-level `MudDialog` in C#; a Mantine `Modal` would
+  need the Sheet to put a surface outside its root in the Input Order, the seam C#'s `JoinSurface` is, which the
+  TypeScript Sheet does not have. The grid's popover tells the opener once it closes, however it closes
+  (`openPopover`'s `closed`), so the contents are taken away with it.
+- **The lists.** A Toolbar Item's list is Mantine's `Popover`, drawn inside the Sheet, not in a portal, so the Sheet
+  hears its keys and its presses keep their place in the Input Order (ADR-0240), and fixed to the viewport, so the
+  toolbar's clipping does not cut it. Its keys are the built-in list's (ADR-0100), not Mantine's.
+- **The cells.** The Chrome is set in Mantine's font; the cells keep the Sheet's, because a Sheet's column widths are
+  counted in its characters (ADR-0027), and the Workbook's Paper and Ink, which no scheme maps (ADR-0071). The Density
+  picks the components' size as section 9 says.
+- **The Docs Site.** An Example is written for the Wrappers its product has: ExSheet's for Mantine alone, until it
+  has a MUI Wrapper. Where the reader's Chrome has no Wrapper for the product, the built-in Chrome runs and the
+  Example's toolbar says so, rather than run the built-in Chrome under that Wrapper's name (section 8).
+
 ## Open
 
 - **MUI's dates** were answered in section 10.

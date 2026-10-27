@@ -166,12 +166,13 @@ export function unmountAll(): void {
     for (const view of mounted.splice(0)) view.destroy();
 }
 
-/** Mounts a grid; `browser` sets what the browser can do before the grid attaches. */
+/** Mounts a grid; `browser` sets what the browser can do before the grid attaches, and `parent` is what the grid's
+ * root is placed in. */
 export function mount<Row>(
-    options: GridOptions<Row>, browser: Partial<Pick<Told, 'clipboardWatched'>> = {},
+    options: GridOptions<Row>, browser: Partial<Pick<Told, 'clipboardWatched'>> = {}, parent: HTMLElement = document.body,
 ): { readonly root: HTMLElement; readonly view: GridView<Row>; readonly told: Told } {
     const root = document.createElement('div');
-    document.body.append(root);
+    parent.append(root);
     const told = Object.assign(new Told(), browser);
     const view = new GridView(root, options, told);
     mounted.push(view);

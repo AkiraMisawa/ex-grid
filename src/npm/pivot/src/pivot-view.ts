@@ -24,15 +24,21 @@ import {
     pivotReportDetailsQuery, PivotItemPage, itemsOfPage, PivotChangeTimes, type PivotFieldItem,
 } from '@ex-grid/pivot-engine';
 import { detailsEvent, detailsProblemText, type PivotDetailItem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
+import {
+    checkedPivotChrome, StandingSlot, type PivotChrome, type PivotChromeSlot, type PivotReportFiltersSlotContext, type PivotReportFiltersView, type PivotStaleReportSlotContext,
+    type PivotStaleReportView, type PivotToolbarSlotContext, type PivotToolbarView,
+} from './chrome';
 import { DetailsSheets, type MountGrid } from './details-view';
 import { entryMenuCommands, entryOfField, type EntryMenuCommand, type EntryPanel } from './entry-menu';
-import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMove } from './field-list';
-import { ItemFilterPanel, itemsProblemText } from './item-filter';
+import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListHandlers, type FieldListMove } from './field-list';
+import { entryKey, SlottedFieldList } from './field-list-slot';
+import { itemFilterPanel, itemsProblemText } from './item-filter';
 import { ItemListings, pendingFirst, searchItems, type FieldItems, type ItemsUnder } from './items';
-import { PivotMenuFrame, type PivotMenuCommand } from './menu';
+import { PivotMenuFrame, SlottedMenuFrame, type PivotMenu, type PivotMenuCommand } from './menu';
 import { clearStyle, element, writeStyle } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
+import { checkedName, PartElements, swap, type PartRefs } from './parts';
 import { cellItems, ReportColumns, reportMatch, reportRows, type PivotCellItems } from './report-grid';
 import type { ReportFindGivenUp } from './report-find';
 import { captionOfRemove, removeNamedFieldId, reportMenuCommands, valueFieldAt } from './report-menu';
@@ -149,6 +155,9 @@ export interface PivotViewOptions {
     /** Where the records open when nobody hears `onShowDetails`: a tab at the report's foot, which covers the report
      * while it is selected, or a dialog; `tab` unless given. */
     readonly detailsView?: PivotDetailsView;
+    /** The parts a Wrapper's Chrome, or the Consumer's own, draws in place of the built-in markup (ADR-0061, ADR-0390),
+     * its `grid` dressing the report's grid and Show Details' grids. A part standing keeps the slot it opened with. */
+    readonly chrome?: PivotChrome;
 }
 
 export type { MountGrid } from './details-view';
@@ -252,10 +261,10 @@ interface AtEntry {
 /** What is open in the pivot (ADR-0061), one at a time: the Layout menu from the Pivot Toolbar, a placed field's menu
  * in the Field List, a panel that menu opened in its place, or Filter… under a report filter in the band. */
 type OpenSurface =
-    | { readonly kind: 'layout'; readonly popup: PivotMenuFrame }
-    | (AtEntry & { readonly kind: 'entry'; readonly popup: PivotMenuFrame })
+    | { readonly kind: 'layout'; readonly popup: PivotMenu }
+    | (AtEntry & { readonly kind: 'entry'; readonly popup: PivotMenu })
     | (AtEntry & { readonly kind: 'panel'; readonly popup: PivotPanel })
-    | { readonly kind: 'band'; readonly field: string; readonly against: PivotLayout; readonly popup: ItemFilterPanel };
+    | { readonly kind: 'band'; readonly field: string; readonly against: PivotLayout; readonly popup: PivotPanel };
 
 type EntrySurface = Extract<OpenSurface, { readonly kind: 'entry' | 'panel' }>;
 
@@ -271,6 +280,7 @@ interface BandFilter {
 // Stops what a panel asked that is still on its way, as it leaves.
 function closed(open: OpenSurface): void {
     if (open.kind === 'panel' || open.kind === 'band') open.popup.close?.();
+    else open.popup.close();
 }
 
 // The Layout menu's groups, each headed where it starts, in Excel's order (ADR-0061).
@@ -327,6 +337,7 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
     if (detailsView !== undefined && detailsView !== 'tab' && detailsView !== 'dialog') {
         throw new TypeError(`detailsView is 'tab' or 'dialog', not ${JSON.stringify(detailsView)}.`);
     }
+    checkedPivotChrome(given['chrome']);
     const locale = given['locale'];
     if (locale !== undefined && (typeof locale !== 'string' || locale === '')) {
         throw new TypeError('locale is a BCP 47 tag or "invariant", never an empty tag (ADR-0370 section 10).');
@@ -366,6 +377,19 @@ export class PivotView {
     readonly #refreshButton: HTMLButtonElement;
     readonly #layoutAnchor: HTMLElement;
     readonly #toolbarStart: HTMLElement;
+    // The built-in Pivot Toolbar, which a Chrome's toolbar stands in place of (ADR-0390).
+    readonly #toolbar: HTMLElement;
+    // The controls and anchors the toolbar, the band and the Stale Report's notice handed in, the built-in markup's or
+    // a Chrome's: the keyboard goes to them, and the popups are placed in them, by name.
+    readonly #parts: PartElements;
+    readonly #toolbarSlot: StandingSlot<PivotToolbarView, PivotToolbarSlotContext>;
+    readonly #bandSlot: StandingSlot<PivotReportFiltersView, PivotReportFiltersSlotContext>;
+    readonly #staleSlot: StandingSlot<PivotStaleReportView, PivotStaleReportSlotContext>;
+    // What a standing part's contents threw as they were mounted, thrown once the draw that mounted them is done.
+    #slotErrors: Error[] = [];
+    // Whether the draw is the Consumer's, making the pivot or updating it, which a Chrome that cannot be drawn is thrown
+    // to.
+    #consumerDraws = false;
     // The report filter band (ADR-0061): each report filter's elements, kept while it stands in Filters.
     readonly #band: HTMLElement;
     readonly #bandFilters = new Map<string, BandFilter>();
@@ -377,7 +401,11 @@ export class PivotView {
     readonly #gridRoot: HTMLElement;
     readonly #dropRemove: HTMLElement;
     readonly #fieldListBox: HTMLElement;
-    readonly #fieldList: FieldListView;
+    readonly #fieldListScroll: HTMLElement;
+    readonly #builtInFieldList: FieldListView;
+    // The Field List a Chrome draws (ADR-0390), in the built-in pane's place while it stands.
+    readonly #slottedFieldList: SlottedFieldList;
+    #fieldListSlotted = false;
     // Show Details' sheets, when the Consumer does not take the records: tabs at the report's foot, or a dialog.
     readonly #details: DetailsSheets;
     // The Show Details events this pivot handed a Consumer: the only ones it opens when they are handed back.
@@ -488,7 +516,9 @@ export class PivotView {
         // The pivot's box is its Input Root (ADR-0240 section 6): the report grid hears the whole pivot from here.
         root.setAttribute('data-ex-input-root', '');
         this.#report = div('ex-pivot-report');
+        this.#parts = new PartElements(root);
         const toolbar = div('ex-pivot-toolbar');
+        this.#toolbar = toolbar;
         const start = div('ex-pivot-toolbar-start');
         this.#toolbarStart = start;
         this.#band = div('ex-pivot-filters');
@@ -544,6 +574,14 @@ export class PivotView {
         this.#retryButton.setAttribute('data-ex-claims', 'click');
         this.#retryButton.addEventListener('click', () => { this.#retry(); });
         this.#staleNotice.append(this.#staleMessage, this.#retryButton);
+        this.#toolbarSlot = new StandingSlot('toolbar', document, Object.freeze({
+            layoutMenu: Object.freeze({ label: '', open: false }), fieldList: Object.freeze({ label: '', shown: false }), reportFilters: false,
+        }));
+        this.#bandSlot = new StandingSlot('reportFilters', document, Object.freeze({ name: '', filters: Object.freeze([]) }));
+        this.#staleSlot = new StandingSlot('staleReport', document, Object.freeze({
+            message: '', asOfText: '', reason: '', retry: Object.freeze({ label: '', enabled: false }),
+        }));
+        this.#bandSlot.element.setAttribute('role', 'group');
         this.#sheet = div('ex-pivot-sheet');
         // Records covering the report take no drop meant for it.
         this.#sheet.addEventListener('dragover', event => {
@@ -565,25 +603,33 @@ export class PivotView {
         this.#fieldListBox.setAttribute('role', 'region');
         const scroll = div('ex-pivot-field-list-scroll');
         this.#fieldListBox.append(scroll);
-        this.#fieldList = new FieldListView(scroll, {
+        this.#fieldListScroll = scroll;
+        const fieldListHandlers: FieldListHandlers = {
             edit: edit => { this.#edited(edit); },
             close: () => { this.#setFieldListShown(false); },
             dragging: removable => { this.#paintDropRemove(removable); },
             menu: entry => { this.#toggleEntryMenu(entry); },
             defer: deferred => { this.#setDeferred(deferred); },
             update: () => { this.#applyPending(); },
-        });
+        };
+        this.#builtInFieldList = new FieldListView(scroll, fieldListHandlers);
+        this.#slottedFieldList = new SlottedFieldList(document, fieldListHandlers, this.#parts);
         root.append(this.#report, this.#fieldListBox);
         this.#details = new DetailsSheets({
             document,
             mountGrid,
             words: () => this.#words,
-            look: () => ({ rowHeight: this.#options.rowHeight, density: this.#options.density, commandLabel: this.#options.label }),
+            look: () => ({ rowHeight: this.#options.rowHeight, density: this.#options.density, commandLabel: this.#options.label, chrome: this.#chrome?.grid }),
             problemText: problem => detailsProblemText(problem, this.#words),
             changed: () => { this.#draw(); },
             // The report's grid takes the keyboard back; a report with no grid has the Field List's toggle take it, so
             // the keyboard stays in the pivot.
-            returnKeyboard: () => { (this.#grid === undefined ? this.#fieldListToggle : this.#gridRoot).focus(); },
+            returnKeyboard: () => {
+                if (this.#grid === undefined) this.#parts.focus('field-list');
+                else this.#gridRoot.focus();
+            },
+            parts: this.#parts,
+            chrome: () => this.#chrome,
         });
         // A drag that moves on from an Area, anywhere in the pivot, leaves it unmarked; and one that leaves the
         // pivot for an element the browser names. WebKit names none on leaving one element for another, so a
@@ -616,7 +662,16 @@ export class PivotView {
         // Heard once the pivot is whole: a construction that throws leaves no listener on the Consumer's source.
         this.#hear(this.#reportSource);
         if (options.layout !== undefined) this.#ask(options.layout, 'consumer', []);
-        this.#draw();
+        try {
+            this.#consumerDraws = true;
+            this.#draw();
+        } catch (error) {
+            // A pivot refused as it is made leaves nothing hearing the source.
+            this.destroy();
+            throw error;
+        } finally {
+            this.#consumerDraws = false;
+        }
     }
 
     #reportSourceOf(source: PivotSource): LocalPivotReportSource {
@@ -629,7 +684,8 @@ export class PivotView {
         if (reportSource !== undefined && reportSource !== this.#reportSource && reportSource !== this.#shownReportSource) reportSource.dispose();
     }
 
-    /** Takes the options again, whole. Options refused leave the pivot as it was. */
+    /** Takes the options again, whole. Options refused leave the pivot as it was. A Chrome slot whose contents cannot
+     * be drawn is thrown once the options are taken, with the built-in markup standing in its place (ADR-0390). */
     update(options: PivotViewOptions): void {
         if (this.#destroyed) throw new Error('This ExPivot was destroyed: make a new one.');
         checkedOptions(options);
@@ -686,12 +742,22 @@ export class PivotView {
         } else if (settingsMoved || capsOf(options) !== capsOf(before)) {
             this.#ask(this.#layoutAhead, 'consumer', []);
         }
+        const gridChromeMoved = options.chrome?.grid !== before.chrome?.grid;
         if (highlightMoved || options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
-            || options.viewportWidth !== before.viewportWidth) {
+            || options.viewportWidth !== before.viewportWidth || gridChromeMoved) {
             this.#drawGrid();
         }
-        if (settingsMoved || options.rowHeight !== before.rowHeight) this.#details.draw();
-        this.#draw();
+        const detailsChromeMoved = options.chrome?.detailsTabs !== before.chrome?.detailsTabs || options.chrome?.detailsDialog !== before.chrome?.detailsDialog;
+        this.#consumerDraws = true;
+        try {
+            if (settingsMoved || options.rowHeight !== before.rowHeight || gridChromeMoved || detailsChromeMoved) {
+                this.#details.draw();
+                this.#slotErrors.push(...this.#details.takeRefused());
+            }
+            this.#draw();
+        } finally {
+            this.#consumerDraws = false;
+        }
     }
 
     /** Opens the records of a Show Details event this pivot raised, as `detailsView` says, as when nobody hears
@@ -700,7 +766,14 @@ export class PivotView {
     openDetails(event: PivotShowDetailsEvent): void {
         if (!this.#detailsRaised.has(event)) throw new Error('These records are another pivot\'s: a pivot opens only the Show Details it raised.');
         if (this.#destroyed) return;
-        this.#details.open(event, this.#options.detailsView ?? 'tab', this.#locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
+        this.#consumerDraws = true;
+        try {
+            this.#details.open(event, this.#options.detailsView ?? 'tab', this.#locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
+            this.#slotErrors.push(...this.#details.takeRefused());
+            this.#throwRefused();
+        } finally {
+            this.#consumerDraws = false;
+        }
     }
 
     /** Stops the pivot: it asks and hears nothing more, and empties its element. The source stays the
@@ -713,6 +786,11 @@ export class PivotView {
         this.#stopHearing = undefined;
         this.#disarmRedraw();
         this.#takeDown();
+        this.#toolbarSlot.hide();
+        this.#bandSlot.hide();
+        this.#staleSlot.hide();
+        this.#slottedFieldList.hide();
+        this.#parts.dispose();
         this.#items.dispose();
         this.#details.destroy();
         this.#generation++;
@@ -779,6 +857,16 @@ export class PivotView {
 
     get #locale(): string {
         return this.#localeOf(this.#options);
+    }
+
+    // The Chrome's slots, read as each part opens (ADR-0390).
+    get #chrome(): PivotChrome | undefined {
+        return this.#options.chrome;
+    }
+
+    // The Field List standing now: a Chrome's, or the built-in pane.
+    get #fieldList(): FieldListView | SlottedFieldList {
+        return this.#fieldListSlotted ? this.#slottedFieldList : this.#builtInFieldList;
     }
 
     // The report source estimates the label widths under the grid's text geometry, as the Razor component tells it
@@ -1311,6 +1399,7 @@ export class PivotView {
         this.#gridColumns = columns;
         this.#valueColumnIndexes = new Map(answer.metadata.valueColumns.map((column, index) => [column.name, index]));
         const { rowHeight, density } = this.#options;
+        const gridChrome = this.#chrome?.grid;
         const options: GridOptions<PivotDisplayRow> = {
             columns,
             headerGroups,
@@ -1333,6 +1422,7 @@ export class PivotView {
             commandLabel: this.#commandLabel,
             cellChangedAt: this.#cellChangedAt,
             changeHighlightDuration: this.#changeHighlightMs,
+            ...(gridChrome === undefined ? {} : { chrome: gridChrome }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
         };
@@ -1537,6 +1627,8 @@ export class PivotView {
             return;
         }
         this.#details.open(details, this.#options.detailsView ?? 'tab', question.locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
+        this.#slotErrors.push(...this.#details.takeRefused());
+        this.#throwRefused();
     }
 
     // The report's commands in the grid's Context Menu (ADR-0036, ADR-0059), for a row of the report on screen.
@@ -1627,7 +1719,14 @@ export class PivotView {
             this.#close('opener');
             return;
         }
+        this.#anchorFor('layout', 'chrome.toolbar hands in no anchor \'layout\': hand context.anchor(\'layout\') the element around Layout ▾');
         this.#openSurface({ kind: 'layout', popup: this.#menuFrame('toolbar-end') });
+    }
+
+    // A popup of the Pivot Toolbar's opens only in an anchor that stands: one that would stand nowhere, behind a
+    // backdrop that takes every press, is refused, naming what the Chrome did not hand in (ADR-0390).
+    #anchorFor(name: string, missing: string): void {
+        if (!this.#parts.anchored(name)) throw new Error(`An ExPivot's ${missing} (ADR-0390).`);
     }
 
     // An entry's button opens its menu, and closes the menu standing under it.
@@ -1640,11 +1739,18 @@ export class PivotView {
         }
         const pane = this.#paneLayout;
         const field = isValuesPseudoField(entry) ? undefined : fieldOf(pane, entry);
+        if (this.#fieldListSlotted) {
+            this.#anchorFor(entryKey(entry), `chrome.fieldList hands in no anchor for the entry '${entryKey(entry)}': hand context.anchor(entry.key) the element around its button`);
+        }
         this.#openSurface({ kind: 'entry', entry, field, against: pane, popup: this.#menuFrame('field-list') });
     }
 
-    #menuFrame(place: 'field-list' | 'toolbar-end'): PivotMenuFrame {
-        const frame = new PivotMenuFrame(this.#root.ownerDocument, place, () => { this.#close('opener'); });
+    #menuFrame(place: 'field-list' | 'toolbar-end'): PivotMenu {
+        const escape = (): void => { this.#close('opener'); };
+        const mount = this.#chrome?.menu;
+        const frame = mount === undefined
+            ? new PivotMenuFrame(this.#root.ownerDocument, place, escape)
+            : new SlottedMenuFrame(this.#root.ownerDocument, place, mount, this.#words, escape);
         this.#closeOnLeaving(frame.element);
         return frame;
     }
@@ -1656,7 +1762,8 @@ export class PivotView {
         frame.addEventListener('focusout', event => {
             const to = event.relatedTarget;
             const open = this.#open;
-            if (open?.popup.element !== frame || !(to instanceof Node)) return;
+            // A popup of a Chrome's contents may stand outside the frame, and take the keyboard while it is open.
+            if (open?.popup.element !== frame || !(to instanceof Node) || open.popup.innerPopupOpen?.() === true) return;
             const bounds = open.kind === 'entry' ? frame.parentNode : frame;
             if (bounds !== null && !bounds.contains(to)) this.#close('stay');
         });
@@ -1669,6 +1776,7 @@ export class PivotView {
             this.#close('opener');
             return;
         }
+        this.#anchorFor(bandName(field), `chrome.reportFilters hands in no anchor for '${field}': hand context.anchor('${field}') the element around its button`);
         const report = this.#layoutAhead;
         const handlers = {
             // OK's Hidden Items are the report's next, taken against the layout Filter… was opened on (spine rule 6),
@@ -1688,8 +1796,9 @@ export class PivotView {
                 Promise.resolve().then(() => searchItems(field, search, defined(this.#itemsUnder(field), 'a report to search the Items of'), signal)),
         };
         this.#items.retry(field);
-        const popup = new ItemFilterPanel(this.#root.ownerDocument,
-            { layout: report, field, caption: this.#captionOf(field), place: 'toolbar-start', locale: this.#locale, words: this.#words }, handlers);
+        const popup = itemFilterPanel(this.#root.ownerDocument,
+            { layout: report, field, caption: this.#captionOf(field), place: 'toolbar-start', locale: this.#locale, words: this.#words }, handlers,
+            this.#chrome?.itemFilter);
         this.#closeOnLeaving(popup.element);
         const surface: OpenSurface = { kind: 'band', field, against: report, popup };
         this.#openSurface(surface);
@@ -1718,6 +1827,7 @@ export class PivotView {
         this.#open = undefined;
         if (open === undefined) return undefined;
         closed(open);
+        this.#parts.unplace(open.popup.element);
         open.popup.element.remove();
         return open;
     }
@@ -1726,7 +1836,7 @@ export class PivotView {
     // names, where the field the menu was for stands now; a field taken out of the Areas hands it to its tick box in
     // the list.
     #returnKeyboard(open: OpenSurface, entry: PivotEntry | undefined): void {
-        if (open.kind === 'layout') this.#layoutButton.focus();
+        if (open.kind === 'layout') this.#parts.focus('layout');
         else if (open.kind === 'band') this.#focusBand(open.field);
         else if (entry !== undefined) this.#fieldList.focusEntry(entry);
         else this.#fieldList.focusField(open.field);
@@ -1735,10 +1845,9 @@ export class PivotView {
     // A report filter's button; once the field has left Filters, its tick box in the Field List, or the toggle that
     // shows the list.
     #focusBand(field: string): void {
-        const filter = this.#bandFilters.get(field);
-        if (filter !== undefined) filter.button.focus();
+        if (this.#layoutAhead.filters.some(placement => placement.field === field)) this.#parts.focus(bandName(field));
         else if (this.#fieldListShown) this.#fieldList.focusField(field);
-        else this.#fieldListToggle.focus();
+        else this.#parts.focus('field-list');
     }
 
     // Where the field a menu or panel in the Field List was for stands in the pane's layout now; none for what opened
@@ -1756,6 +1865,7 @@ export class PivotView {
         this.#open = undefined;
         closed(open);
         this.#returnKeyboard(open, run());
+        this.#parts.unplace(open.popup.element);
         open.popup.element.remove();
     }
 
@@ -1832,12 +1942,12 @@ export class PivotView {
                 const field = fieldOf(against, entry);
                 // Opened again on Items that could not be listed, it asks for them again.
                 this.#items.retry(field);
-                popup = new ItemFilterPanel(document, { layout: against, field, caption: this.#captionOf(field), place: 'field-list', locale: this.#locale, words }, {
+                popup = itemFilterPanel(document, { layout: against, field, caption: this.#captionOf(field), place: 'field-list', locale: this.#locale, words }, {
                     ...handlers,
                     items: () => this.#itemsOf(field),
                     // Asked from the panel's draw, it says a problem in a later turn, never in the middle of that draw.
                     search: (search, signal) => Promise.resolve().then(() => searchItems(field, search, defined(this.#itemsUnder(field), 'a report to search the Items of'), signal)),
-                });
+                }, this.#chrome?.itemFilter);
                 break;
             }
             case 'field-settings':
@@ -1847,7 +1957,7 @@ export class PivotView {
                     caption: this.#entryCaption(entry, captions),
                     valueCaptions: captions,
                     words,
-                }, handlers);
+                }, handlers, this.#chrome?.fieldSettings);
                 break;
             case 'value-field-settings':
                 popup = valueFieldSettingsPanel(document, {
@@ -1859,7 +1969,7 @@ export class PivotView {
                     features: this.#options.source.features,
                     locale: this.#locale,
                     words,
-                }, handlers);
+                }, handlers, this.#chrome?.valueFieldSettings);
                 break;
             default:
                 unreachable(panel);
@@ -1881,16 +1991,16 @@ export class PivotView {
             this.#takeDown();
             // Hidden with the Field List, the keyboard goes to the toggle that shows it again.
             if (held && (this.#fieldListShown || !inList)) this.#keyboardAfterDraw = open;
-            else if (held) this.#fieldListToggle.focus();
+            else if (held) this.#parts.focus('field-list');
         }
         const shown = this.#open;
-        this.#layoutLabel.textContent = this.#words.word('layout-menu');
-        this.#layoutButton.setAttribute('aria-expanded', shown?.kind === 'layout' ? 'true' : 'false');
+        this.#drawToolbar();
         if (shown?.kind === 'layout') {
             shown.popup.draw(this.#words.word('layout-menu'), this.#layoutCommands(shown));
-            if (shown.popup.element.parentNode !== this.#layoutAnchor) this.#layoutAnchor.append(shown.popup.element);
+            this.#parts.place('layout', shown.popup.element);
         }
         this.#drawBand();
+        if (shown?.kind === 'band') this.#parts.place(bandName(shown.field), shown.popup.element);
         // Under what is open from the Pivot Toolbar, a press anywhere else closes it.
         if (shown?.kind === 'layout' || shown?.kind === 'band') {
             if (this.#backdrop.parentNode !== this.#root) this.#root.append(this.#backdrop);
@@ -1906,42 +2016,152 @@ export class PivotView {
         if (shown?.kind === 'panel' || shown?.kind === 'band') shown.popup.redraw?.();
     }
 
-    // The report filter band, on the Pivot Toolbar's left (ADR-0061): each field in Filters, its caption, and a button
-    // that says what it shows and opens Filter… under it, over the report. It stands while Filters holds a field.
-    #drawBand(): void {
-        const document = this.#root.ownerDocument;
+    // Shows a standing part's contents by `mount`; answers whether they stand. Contents that cannot be drawn leave the
+    // built-in markup in their place, and are refused by name once the pivot has drawn.
+    #showStanding<View, Context>(slot: StandingSlot<View, Context>, mount: PivotChromeSlot<Context>,
+        context: (...made: [...Parameters<Parameters<StandingSlot<View, Context>['show']>[1]>, refs: PartRefs]) => Context): boolean {
+        // Each mount hands its controls and anchors in by refs of its own.
+        return this.#answered(slot.show(mount, (shared, input) => context(shared, input, this.#parts.refs()), id => this.#words.word(id)));
+    }
+
+    // Whether a standing part's contents stand, as `answer` says; an error it answers is the draw's to throw.
+    #answered(answer: { readonly shown: boolean; readonly error?: Error }): boolean {
+        if (answer.error !== undefined) this.#slotErrors.push(answer.error);
+        return answer.shown;
+    }
+
+    // The Pivot Toolbar (ADR-0061): the built-in markup's, or a Chrome's in its place, drawn from the same view; the
+    // refusal of the user's last change is the toolbar's to say. The built-in markup's controls are handed in again
+    // each time it stands, as a Chrome's are when it draws them.
+    #drawToolbar(): void {
         const words = this.#words;
-        const filters = this.#layoutAhead.filters;
+        const view = this.#toolbarSlot.viewOf(Object.freeze({
+            layoutMenu: Object.freeze({ label: words.word('layout-menu'), open: this.#open?.kind === 'layout' }),
+            ...(this.#options.source.features.canRefresh ? { refresh: Object.freeze({ label: words.word('refresh') }) } : {}),
+            fieldList: Object.freeze({ label: words.word('field-list-toggle'), shown: this.#fieldListShown }),
+            reportFilters: this.#layoutAhead.filters.length > 0,
+            ...(this.#refusal === undefined ? {} : { refusal: this.#refusal }),
+        }));
+        const mount = this.#chrome?.toolbar;
+        // A control taken away while it holds the keyboard hands it to the Field List's toggle, so it stays in the pivot.
+        const refreshHeld = view.refresh === undefined && this.#parts.holds('refresh');
+        // The slot stands in the page as the contents mount, so plain script hands in controls already in it; contents
+        // refused once leave the built-in toolbar standing, and the keyboard on it.
+        if (mount !== undefined && !this.#toolbarSlot.refuses(mount)) swap(this.#toolbar, this.#toolbarSlot.element);
+        const shown = mount !== undefined && this.#showStanding(this.#toolbarSlot, mount, (shared, input, refs) => ({
+            ...shared,
+            toggleLayoutMenu: input(() => { this.#toggleLayoutMenu(); }),
+            refresh: input(() => { if (this.#options.source.features.canRefresh) this.#refresh(); }),
+            toggleFieldList: input(() => { this.#setFieldListShown(!this.#fieldListShown); }),
+            control: name => refs.control(checkedName(name, ['layout', 'refresh', 'field-list'], 'toolbar')),
+            anchor: name => refs.anchor(checkedName(name, ['layout', 'report-filters'], 'toolbar')),
+        }));
+        if (shown) {
+            this.#notice.remove();
+        } else {
+            this.#toolbarSlot.hide();
+            swap(this.#toolbarSlot.element, this.#toolbar);
+            for (const [name, control] of [['layout', this.#layoutButton], ['refresh', this.#refreshButton], ['field-list', this.#fieldListToggle]] as const) {
+                this.#parts.handInControl(name, control);
+            }
+            this.#parts.handInAnchor('layout', this.#layoutAnchor);
+            this.#parts.handInAnchor('report-filters', this.#toolbarStart);
+            this.#layoutLabel.textContent = view.layoutMenu.label;
+            this.#layoutButton.setAttribute('aria-expanded', view.layoutMenu.open ? 'true' : 'false');
+            this.#fieldListToggle.textContent = view.fieldList.label;
+            this.#fieldListToggle.setAttribute('aria-pressed', view.fieldList.shown ? 'true' : 'false');
+            this.#refreshButton.textContent = words.word('refresh');
+            if (view.refresh === undefined) this.#refreshButton.remove();
+            else if (this.#refreshButton.parentNode === null) this.#fieldListToggle.before(this.#refreshButton);
+            const refusal = view.refusal ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- no refusal is an empty notice, which takes no room
+            if (this.#notice.textContent !== refusal) this.#notice.textContent = refusal;
+            this.#notice.hidden = view.refusal === undefined;
+            if (this.#notice.parentNode !== this.#report) this.#toolbar.after(this.#notice);
+        }
+        if (refreshHeld) this.#parts.focus('field-list');
+    }
+
+    // The report filter band, on the Pivot Toolbar's left (ADR-0061): each field in Filters, its caption, and a button
+    // that says what it shows and opens Filter… under it, over the report. It stands while Filters holds a field, in
+    // the toolbar's anchor for it; the built-in markup's or a Chrome's, drawn from the same view.
+    #drawBand(): void {
+        const words = this.#words;
         const open = this.#open;
+        const view = this.#bandSlot.viewOf(Object.freeze({
+            name: words.word('report-filters'),
+            filters: Object.freeze(this.#layoutAhead.filters.map(placement => {
+                const caption = this.#captionOf(placement.field);
+                return Object.freeze({
+                    field: placement.field,
+                    caption,
+                    summary: this.#bandSummary(placement),
+                    filtered: placement.hiddenItems.length > 0,
+                    open: open?.kind === 'band' && open.field === placement.field,
+                    buttonLabel: words.fill('filter-of', caption),
+                });
+            })),
+        }));
+        const mount = this.#chrome?.reportFilters;
+        const shown = mount !== undefined && this.#showStanding(this.#bandSlot, mount, (shared, input, refs) => ({
+            ...shared,
+            toggle: input((field: string) => { if (this.#layoutAhead.filters.some(placement => placement.field === field)) this.#toggleBand(field); }),
+            control: field => refs.control(bandName(checkedField(field))),
+            anchor: field => refs.anchor(bandName(checkedField(field))),
+        }));
+        const band = shown ? this.#bandSlot.element : this.#band;
+        if (shown) {
+            this.#band.remove();
+            for (const field of this.#bandFilters.keys()) this.#forgetBandFilter(field);
+            this.#bandSlot.element.setAttribute('aria-label', view.name);
+        } else {
+            this.#bandSlot.hide();
+            this.#bandSlot.element.remove();
+            this.#drawBuiltInBand(view);
+        }
+        if (view.filters.length === 0) {
+            band.remove();
+            this.#parts.place('report-filters', undefined);
+        } else {
+            this.#parts.place('report-filters', band);
+        }
+    }
+
+    #drawBuiltInBand(view: PivotReportFiltersView): void {
+        const document = this.#root.ownerDocument;
         const drawn: HTMLElement[] = [];
         const kept = new Set<string>();
-        for (const placement of filters) {
-            const { field } = placement;
+        for (const shown of view.filters) {
+            const { field } = shown;
             let band = this.#bandFilters.get(field);
             if (band === undefined) {
                 band = this.#bandFilter(document, field);
                 this.#bandFilters.set(field, band);
             }
+            this.#parts.handInControl(bandName(field), band.button);
+            this.#parts.handInAnchor(bandName(field), band.anchor);
             kept.add(field);
-            const caption = this.#captionOf(field);
-            const opened = open?.kind === 'band' && open.field === field;
-            if (band.caption.textContent !== caption) band.caption.textContent = caption;
-            const summary = this.#bandSummary(placement);
-            if (band.summary.textContent !== summary) band.summary.textContent = summary;
-            band.button.classList.toggle('ex-pivot-filter-active', placement.hiddenItems.length > 0);
-            band.button.setAttribute('aria-expanded', opened ? 'true' : 'false');
-            band.button.setAttribute('aria-label', words.fill('filter-of', caption));
-            if (opened && open.popup.element.parentNode !== band.anchor) band.anchor.append(open.popup.element);
+            if (band.caption.textContent !== shown.caption) band.caption.textContent = shown.caption;
+            if (band.summary.textContent !== shown.summary) band.summary.textContent = shown.summary;
+            band.button.classList.toggle('ex-pivot-filter-active', shown.filtered);
+            band.button.setAttribute('aria-expanded', shown.open ? 'true' : 'false');
+            band.button.setAttribute('aria-label', shown.buttonLabel);
             drawn.push(band.filter);
         }
         for (const field of this.#bandFilters.keys()) {
-            if (!kept.has(field)) this.#bandFilters.delete(field);
+            if (!kept.has(field)) this.#forgetBandFilter(field);
         }
-        this.#band.setAttribute('aria-label', words.word('report-filters'));
+        this.#band.setAttribute('aria-label', view.name);
         const children = this.#band.children;
         if (drawn.length !== children.length || drawn.some((filter, i) => children[i] !== filter)) this.#band.replaceChildren(...drawn);
-        if (drawn.length === 0) this.#band.remove();
-        else if (this.#band.parentNode !== this.#toolbarStart) this.#toolbarStart.append(this.#band);
+    }
+
+    // A built-in report filter that no longer stands: its elements are dropped, and taken back from the parts.
+    #forgetBandFilter(field: string): void {
+        const band = this.#bandFilters.get(field);
+        if (band === undefined) return;
+        this.#bandFilters.delete(field);
+        this.#parts.forget(bandName(field), band.button);
+        this.#parts.forget(bandName(field), band.anchor);
     }
 
     #bandFilter(document: Document, field: string): BandFilter {
@@ -2032,6 +2252,18 @@ export class PivotView {
         return this.#asked !== undefined && this.#asked.cause !== 'live';
     }
 
+    // The Field List: a Chrome's in the pane's place while one is given and can be drawn, else the built-in pane.
+    #placeFieldList(): void {
+        const mount = this.#chrome?.fieldList;
+        const slotted = mount !== undefined && this.#answered(this.#slottedFieldList.show(mount, id => this.#words.word(id)));
+        if (!slotted) this.#slottedFieldList.hide();
+        this.#fieldListSlotted = slotted;
+        const pane = slotted ? this.#slottedFieldList.element : this.#builtInFieldList.element;
+        if (pane.parentNode !== this.#fieldListScroll) this.#fieldListScroll.replaceChildren(pane);
+        // A drag whose pane went with its contents ended with them: the report no longer offers to remove its field.
+        if (!this.#fieldList.removable) this.#dropRemoveShown = false;
+    }
+
     // The Stale Report's notice, and the class by which ExPivot's stylesheet mutes the report's numbers (ADR-0067). Retry
     // is not offered twice at once: while a question a person or the Consumer asked is out, it is the one Retry would
     // ask. A quiet one for the source's notice leaves Retry offered, or a ticking source would hardly ever let it be
@@ -2041,20 +2273,42 @@ export class PivotView {
         this.#report.classList.toggle('ex-pivot-report-stale', stale !== undefined);
         // Retry taken away or disabled while it holds the keyboard hands it to the Field List toggle, so the keyboard stays
         // in the pivot, on a button whose press asks nothing of the source.
-        const held = this.#root.ownerDocument.activeElement === this.#retryButton;
-        const handOn = (): void => { if (held) this.#fieldListToggle.focus(); };
+        const held = this.#parts.holds('retry');
+        const handOn = (): void => { if (held) this.#parts.focus('field-list'); };
+        const mount = this.#chrome?.staleReport;
         if (stale === undefined) {
             this.#staleNotice.remove();
+            this.#staleSlot.hide();
+            this.#staleSlot.element.remove();
             handOn();
             return;
         }
-        const message = words.fill('stale-report', this.#asOf(), stale);
-        if (this.#staleMessage.textContent !== message) this.#staleMessage.textContent = message;
-        const retry = words.word('retry');
-        if (this.#retryButton.textContent !== retry) this.#retryButton.textContent = retry;
-        this.#retryButton.disabled = this.#loading();
-        if (this.#retryButton.disabled) handOn();
-        if (this.#staleNotice.parentNode !== this.#staleRegion) this.#staleRegion.append(this.#staleNotice);
+        const asOf = this.#asOf();
+        const view = this.#staleSlot.viewOf(Object.freeze({
+            message: words.fill('stale-report', asOf, stale),
+            asOfText: asOf,
+            reason: stale,
+            retry: Object.freeze({ label: words.word('retry'), enabled: !this.#loading() }),
+        }));
+        if (mount !== undefined && this.#staleSlot.element.parentNode !== this.#staleRegion) this.#staleRegion.append(this.#staleSlot.element);
+        const shown = mount !== undefined && this.#showStanding(this.#staleSlot, mount, (shared, input, refs) => ({
+            ...shared,
+            // Asked only while Retry is offered: one pressed while what it would ask is out asks nothing twice.
+            retry: input(() => { if (shared.view().retry.enabled) this.#retry(); }),
+            control: name => refs.control(checkedName(name, ['retry'], 'staleReport')),
+        }));
+        if (shown) {
+            this.#staleNotice.remove();
+        } else {
+            this.#staleSlot.hide();
+            this.#staleSlot.element.remove();
+            this.#parts.handInControl('retry', this.#retryButton);
+            if (this.#staleMessage.textContent !== view.message) this.#staleMessage.textContent = view.message;
+            if (this.#retryButton.textContent !== view.retry.label) this.#retryButton.textContent = view.retry.label;
+            this.#retryButton.disabled = !view.retry.enabled;
+            if (this.#staleNotice.parentNode !== this.#staleRegion) this.#staleRegion.append(this.#staleNotice);
+        }
+        if (!view.retry.enabled) handOn();
     }
 
     #draw(): void {
@@ -2066,6 +2320,7 @@ export class PivotView {
         const valueCaptions = this.#fieldListShown
             ? pivotValueCaptions(layout, fields, { locale: this.#locale, ...(words.label === undefined ? {} : { label: words.label }) })
             : undefined;
+        this.#placeFieldList();
         this.#drawMenu(valueCaptions);
         const stretch = this.#options.viewportHeight === 'stretch';
         const width = this.#options.fieldListWidth ?? 300; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0061: the Field List's declared default width, as the Razor component's
@@ -2074,17 +2329,6 @@ export class PivotView {
         // A question for the newer data the source told of is asked quietly, so a live report is not busy every interval.
         if (this.#loading()) this.#root.setAttribute('aria-busy', 'true');
         else this.#root.removeAttribute('aria-busy');
-        this.#fieldListToggle.textContent = words.word('field-list-toggle');
-        this.#refreshButton.textContent = words.word('refresh');
-        if (!this.#options.source.features.canRefresh) {
-            // A source that cannot be refreshed takes the button away; the keyboard it held goes to the toggle beside it.
-            const held = this.#root.ownerDocument.activeElement === this.#refreshButton;
-            this.#refreshButton.remove();
-            if (held) this.#fieldListToggle.focus();
-        } else if (this.#refreshButton.parentNode === null) this.#fieldListToggle.before(this.#refreshButton);
-        this.#fieldListToggle.setAttribute('aria-pressed', this.#fieldListShown ? 'true' : 'false');
-        if (this.#notice.textContent !== (this.#refusal ?? '')) this.#notice.textContent = this.#refusal ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- no refusal is an empty notice, which takes no room
-        this.#notice.hidden = this.#refusal === undefined;
         this.#drawStale(words);
         writeStyle(this.#sheet, stretch ? 'display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0' : '');
         const answered = this.#reportDrawn;
@@ -2136,6 +2380,18 @@ export class PivotView {
         const left = this.#keyboardAfterDraw;
         this.#keyboardAfterDraw = undefined;
         if (left !== undefined) this.#returnKeyboard(left, this.#entryNow(left));
+        this.#throwRefused();
+    }
+
+    // Throws the first of the slots' contents that could not be drawn: to the Consumer, where it makes or updates the
+    // pivot or opens records; otherwise on its own, as a listener's error is, so the source, the user's input or the
+    // timer that drew goes on.
+    #throwRefused(): void {
+        const [refused] = this.#slotErrors;
+        this.#slotErrors = [];
+        if (refused === undefined) return;
+        if (this.#consumerDraws) throw refused;
+        queueMicrotask(() => { throw refused; });
     }
 }
 
@@ -2194,4 +2450,16 @@ function roundHalfToEven(value: number): number {
     if (diff < 0.5) return floor;
     if (diff > 0.5) return floor + 1;
     return floor % 2 === 0 ? floor : floor + 1;
+}
+
+// The name a report filter's button and the anchor around it are handed in by.
+function bandName(field: string): string {
+    return `filter:${field}`;
+}
+
+// A report filter's field, as a script may hand it to the band's `control` or `anchor`: the field's name.
+function checkedField(field: string): string {
+    const given: unknown = field;
+    if (typeof given !== 'string') throw new TypeError('An ExPivot\'s report filter band hands in a filter\'s button and anchor by the field\'s name (ADR-0390).');
+    return given;
 }

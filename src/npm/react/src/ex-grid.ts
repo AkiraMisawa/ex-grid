@@ -79,7 +79,7 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
             else grid.current.handKeyboardTo(control, how);
         },
         keyName: (event) => mounted(grid.current).keyName(event),
-        openPopover: (content, label) => mounted(grid.current).openPopover(content, label),
+        openPopover: (content, label, closed) => mounted(grid.current).openPopover(content, label, closed),
         closePopover: () => { mounted(grid.current).closePopover(); },
         get canSummarize() {
             return mounted(grid.current).canSummarize;

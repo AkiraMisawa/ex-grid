@@ -17,6 +17,7 @@ import type { CopyRefusalReason } from '@ex-grid/core';
 import { Culture } from '@ex-grid/sheet-engine';
 import type { EditDiscardReason } from '@ex-grid/core';
 import type { FormulaSyntaxError } from '@ex-grid/sheet-engine';
+import { GridChrome } from '@ex-grid/core';
 import { GridDensity } from '@ex-grid/core';
 import type { GridDirection } from '@ex-grid/core';
 import type { GridExtent } from '@ex-grid/core';
@@ -142,6 +143,12 @@ export class FormatCellsDraft {
 
 // @public
 export type FormatCellsLabel = 'tabs' | 'category' | 'generalHint' | 'textHint' | 'decimalPlaces' | 'thousandsSeparator' | 'negativeNumbers' | 'type' | 'codes' | 'horizontal' | 'fontStyle' | 'underline' | 'underlineNone' | 'underlineSingle' | 'strikethrough' | 'normalFont' | 'colour' | 'lineStyle' | 'presets' | 'border' | 'preview' | 'backgroundColour' | 'automatic' | 'noColour' | 'moreColours' | 'ok' | 'cancel';
+
+// @public
+export function formatCellsLineStroke(style: BorderLineStyle): {
+    readonly width: string;
+    readonly dashes: string | undefined;
+};
 
 // @public
 export const formatCellsOffer: Readonly<{
@@ -294,7 +301,10 @@ export { ReferenceColour }
 export function scientificCode(places: number): string;
 
 // @public
-export interface SheetChrome {
+export interface SheetChrome extends GridChrome<unknown> {
+    readonly formatCells?: SheetFormatCellsSlot;
+    readonly sheetTab?: SheetTabSlot;
+    readonly sheetTabAdd?: SheetTabAddSlot;
     readonly toolbarItem?: SheetToolbarItemSlot;
 }
 
@@ -303,6 +313,21 @@ export class SheetEdges {
     find(from: CellAddress, direction: GridDirection): CellAddress;
     static of(sheet: Sheet): SheetEdges;
     update(sheet: Sheet, change: SheetChange): void;
+}
+
+// @public
+export type SheetFormatCellsSlot = (slot: HTMLElement, context: SheetFormatCellsSlotContext) => () => void;
+
+// @public
+export interface SheetFormatCellsSlotContext {
+    readonly cancel: () => void;
+    readonly draft: FormatCellsDraft;
+    readonly innerPopupChanged: (open: boolean) => void;
+    readonly ok: () => boolean;
+    readonly tab: FormatCellsTab;
+    readonly tabShown: (tab: FormatCellsTab) => void;
+    readonly takeKeyboard: (control: HTMLElement) => void;
+    readonly words: SheetWords;
 }
 
 // @public
@@ -415,6 +440,9 @@ export function sheetSummaryDeclined(refused: {
 }, words: SheetWords): GridSummaryResult;
 
 // @public
+export type SheetTabAddSlot = (slot: HTMLElement) => () => void;
+
+// @public
 export const sheetTabKeys: Readonly<{
     readonly previous: 'Control+PageUp';
     readonly next: 'Control+PageDown';
@@ -423,6 +451,15 @@ export const sheetTabKeys: Readonly<{
 
 // @public
 export function sheetTabKeysDeclared(): readonly string[];
+
+// @public
+export type SheetTabSlot = (slot: HTMLElement, context: SheetTabSlotContext) => () => void;
+
+// @public
+export interface SheetTabSlotContext {
+    readonly name: string;
+    readonly selected: boolean;
+}
 
 // @public
 export function sheetTabStepOf(key: string): -1 | 1 | undefined;
@@ -491,6 +528,9 @@ export interface SheetToolbarItemView {
     readonly text: string | undefined;
     readonly tooltip: string;
 }
+
+// @public
+export const sheetToolbarPictures: Readonly<Record<SheetToolbarIcon, string>>;
 
 // @public
 export interface SheetToolbarRowOptions {

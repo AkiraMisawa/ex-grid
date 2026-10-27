@@ -690,6 +690,9 @@ export interface GridChrome<Row> {
 export type GridChromeSlot<Context> = (slot: HTMLElement, context: Context) => () => void;
 
 // @public
+export const gridChromeSlotNames: readonly (keyof GridChrome<unknown>)[];
+
+// @public
 export class GridClearIntent {
     // @internal
     constructor(targets: readonly SelectionRange[], rowSequenceVersion: number);
@@ -977,7 +980,7 @@ export interface GridHandle<Row> {
     }): void;
     inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
     keyName(event: KeyboardEvent): string;
-    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
+    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     readView(): GridViewRead;
     refreshSummary(): void;

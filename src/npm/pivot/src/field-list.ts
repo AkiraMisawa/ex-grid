@@ -76,17 +76,86 @@ export interface FieldListHandlers {
 }
 
 /** What is dragged: a field from the list, or an entry of an Area. */
-type DragSubject = { readonly kind: 'field'; readonly field: string } | { readonly kind: 'entry'; readonly entry: PivotEntry };
+export type DragSubject = { readonly kind: 'field'; readonly field: string } | { readonly kind: 'entry'; readonly entry: PivotEntry };
 
-interface Drag {
+/** A drag in the pane: what is dragged, and the layout it started on, which a drop is taken against. */
+export interface Drag {
     readonly subject: DragSubject;
-    /** The layout the drag started on: a drop is taken against it. */
     readonly layout: PivotLayout;
 }
 
-interface DropAt {
+/** Where a drop would land: an Area, and the index of the entry it goes before (the Area's count for its end). */
+export interface DropAt {
     readonly area: PivotArea;
     readonly index: number;
+}
+
+// What a gesture in the pane means is decided here, once, for the built-in pane and a Chrome's alike (ADR-0390):
+// the layout a tick, a drop or a drag back to the list makes, which Area takes a drop, and when a drop's layout
+// passes the leaf cap.
+
+/** The edit a field's tick box makes: unticked out of the Areas, ticked into Rows, or a number into Values, as
+ * Excel's does. */
+export function tickEdit(layout: PivotLayout, field: PivotField): FieldListEdit {
+    if (placesField(layout, field.name)) return { layout: untickField(layout, field.name), against: layout, moved: undefined };
+    const next = tickField(layout, field);
+    const at = placementOf(next, field.name);
+    const inValues = next.values.some(value => value.field === field.name);
+    const area = at !== undefined ? at.area : inValues ? 'values' : undefined;
+    return { layout: next, against: layout, moved: area === undefined ? undefined : { field: field.name, area } };
+}
+
+/** Whether `area` takes a drop of `drag`: Σ Values goes only to Rows or Columns. */
+export function acceptsDrag(drag: Drag, area: PivotArea): boolean {
+    return drag.subject.kind === 'field' || !isValuesPseudoField(drag.subject.entry) || area === 'rows' || area === 'columns';
+}
+
+/** Whether a drop of `drag` on the report or the list removes it: a placed field's entry. */
+export function removesOnDrop(drag: Drag | undefined): boolean {
+    return drag?.subject.kind === 'entry' && !isValuesPseudoField(drag.subject.entry);
+}
+
+/** The edit a drop of `drag` at `area` and `index` makes, and what it moved. */
+export function dropEdit(drag: Drag, area: PivotArea, index: number, fields: readonly PivotField[]): FieldListEdit {
+    const layout = drag.layout;
+    if (drag.subject.kind === 'field') {
+        const name = drag.subject.field;
+        const field = defined(fields.find(f => f.name === name), `the field '${name}'`);
+        return { layout: placeField(layout, field, area, index), against: layout, moved: { field: name, area } };
+    }
+    const { entry } = drag.subject;
+    if (isValuesPseudoField(entry)) return { layout: moveEntry(layout, entry, area, index, undefined), against: layout, moved: undefined };
+    const name = fieldOf(layout, entry);
+    const field = defined(fields.find(f => f.name === name), `the field '${name}'`);
+    return { layout: moveEntry(layout, entry, area, index, field), against: layout, moved: { field: name, area } };
+}
+
+/** The edit a drop of `drag` back on the list of fields makes: a placed field taken out; none for anything else. */
+export function listDropEdit(drag: Drag | undefined): FieldListEdit | undefined {
+    if (drag === undefined || !removesOnDrop(drag) || drag.subject.kind !== 'entry') return undefined;
+    return { layout: removeEntry(drag.layout, drag.subject.entry), against: drag.layout, moved: undefined };
+}
+
+/** Whether a drop of `drag` at `at` makes a layout whose leaves the counts bound above the cap (ADR-0370 section 3):
+ * a hint from the counts, never a refusal. */
+export function dropOverCap(drag: Drag, at: DropAt, model: Pick<FieldListModel, 'counts' | 'maxLeaves' | 'fields'>): boolean {
+    const { counts, maxLeaves } = model;
+    if (counts === undefined || (at.area !== 'rows' && at.area !== 'columns') || !acceptsDrag(drag, at.area)) return false;
+    const bound = pivotLeafBound(dropEdit(drag, at.area, at.index, model.fields).layout, counts);
+    return bound !== undefined && bound > maxLeaves;
+}
+
+/** The data a drag carries for the browser: Firefox starts a drag only with data. The pivot reads what is dragged
+ * from its own state, so a drop on another pivot carries nothing it takes (ADR-0061). */
+export function startDragData(event: DragEvent, subject: DragSubject, layout: PivotLayout): void {
+    if (event.dataTransfer === null) return;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', subject.kind === 'field' ? subject.field : fieldOrValues(layout, subject.entry));
+}
+
+/** The index past an Area's last entry: Σ Values, which always stands last, is not counted. */
+export function endOf(layout: PivotLayout, area: PivotArea): number {
+    return area === 'values' ? layout.values.length : placementsIn(layout, area).length;
 }
 
 /** A field's item in the list, and the parts of it a redraw changes. */
@@ -121,6 +190,8 @@ export function sameEntry(a: PivotEntry, b: PivotEntry): boolean {
 
 /** The Field List of one pivot, drawn into the element it is given. */
 export class FieldListView {
+    /** The pane, which stands in the element the view was given. */
+    readonly element: HTMLElement;
     readonly #root: HTMLElement;
     readonly #handlers: FieldListHandlers;
     readonly #title: HTMLElement;
@@ -215,6 +286,7 @@ export class FieldListView {
         body.append(this.#chooseCaption, this.#search, this.#list, this.#dragCaption, areas, defer);
         pane.append(heading, body);
         root.append(pane);
+        this.element = pane;
     }
 
     /** Draws `model`. A drag in progress is dropped when the layout it started on is no longer the pane's. */
@@ -261,7 +333,7 @@ export class FieldListView {
 
     /** Whether a placed field is being dragged, which a drop on the report removes. */
     get removable(): boolean {
-        return this.#drag?.subject.kind === 'entry' && !isValuesPseudoField(this.#drag.subject.entry);
+        return removesOnDrop(this.#drag);
     }
 
     /** A drag entered `target`: unless it is in an Area, which hears its own entry first, no Area is the target. */
@@ -450,34 +522,18 @@ export class FieldListView {
 
     // The index past an Area's last entry: Σ Values, which always stands last, is not counted.
     #endOf(area: PivotArea): number {
-        const layout = this.#current.layout;
-        return area === 'values' ? layout.values.length : placementsIn(layout, area).length;
+        return endOf(this.#current.layout, area);
     }
 
     #tick(field: PivotField): void {
-        const layout = this.#current.layout;
-        if (placesField(layout, field.name)) {
-            this.#handlers.edit({ layout: untickField(layout, field.name), against: layout, moved: undefined });
-            return;
-        }
-        const next = tickField(layout, field);
-        // A tick puts a field in Rows, or a number in Values, as Excel's does.
-        const at = placementOf(next, field.name);
-        const inValues = next.values.some(value => value.field === field.name);
-        const area = at !== undefined ? at.area : inValues ? 'values' : undefined;
-        this.#handlers.edit({ layout: next, against: layout, moved: area === undefined ? undefined : { field: field.name, area } });
+        this.#handlers.edit(tickEdit(this.#current.layout, field));
     }
 
     #startDrag(event: DragEvent, subject: DragSubject): void {
         const layout = this.#current.layout;
         this.#drag = { subject, layout };
         this.#dropAt = undefined;
-        // Firefox starts a drag only with data; the pivot reads what is dragged from its own state, so a drop on
-        // another pivot carries nothing it takes (ADR-0061).
-        if (event.dataTransfer !== null) {
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', subject.kind === 'field' ? subject.field : fieldOrValues(layout, subject.entry));
-        }
+        startDragData(event, subject, layout);
         this.#paintDrag();
         this.#handlers.dragging(this.removable);
     }
@@ -491,7 +547,7 @@ export class FieldListView {
     }
 
     #accepts(area: PivotArea): boolean {
-        return this.#drag !== undefined && this.#acceptsDrag(this.#drag, area);
+        return this.#drag !== undefined && acceptsDrag(this.#drag, area);
     }
 
     #acceptDrop(event: DragEvent): void {
@@ -507,46 +563,18 @@ export class FieldListView {
         this.#paintDrag();
     }
 
-    // The layout a drop of the drag at `area` and `index` makes, and what it moved.
-    #dropped(drag: Drag, area: PivotArea, index: number): FieldListEdit {
-        const { fields } = this.#current;
-        const layout = drag.layout;
-        if (drag.subject.kind === 'field') {
-            const name = drag.subject.field;
-            const field = defined(fields.find(f => f.name === name), `the field '${name}'`);
-            return { layout: placeField(layout, field, area, index), against: layout, moved: { field: name, area } };
-        }
-        const { entry } = drag.subject;
-        if (isValuesPseudoField(entry)) return { layout: moveEntry(layout, entry, area, index, undefined), against: layout, moved: undefined };
-        const name = fieldOf(layout, entry);
-        const field = defined(fields.find(f => f.name === name), `the field '${name}'`);
-        return { layout: moveEntry(layout, entry, area, index, field), against: layout, moved: { field: name, area } };
-    }
-
     #drop(area: PivotArea, index: number): void {
         const drag = this.#drag;
         this.#endDrag();
-        if (drag === undefined || !this.#acceptsDrag(drag, area)) return;
-        this.#handlers.edit(this.#dropped(drag, area, index));
-    }
-
-    #acceptsDrag(drag: Drag, area: PivotArea): boolean {
-        return drag.subject.kind === 'field' || !isValuesPseudoField(drag.subject.entry) || area === 'rows' || area === 'columns';
+        if (drag === undefined || !acceptsDrag(drag, area)) return;
+        this.#handlers.edit(dropEdit(drag, area, index, this.#current.fields));
     }
 
     #dropOnList(): void {
         const drag = this.#drag;
         this.#endDrag();
-        if (drag?.subject.kind !== 'entry' || isValuesPseudoField(drag.subject.entry)) return;
-        this.#handlers.edit({ layout: removeEntry(drag.layout, drag.subject.entry), against: drag.layout, moved: undefined });
-    }
-
-    // Whether a drop at `at` makes a layout whose leaves the counts bound above the cap (ADR-0370 section 3).
-    #overCap(drag: Drag, at: DropAt): boolean {
-        const { counts, maxLeaves } = this.#current;
-        if (counts === undefined || (at.area !== 'rows' && at.area !== 'columns')) return false;
-        const bound = pivotLeafBound(this.#dropped(drag, at.area, at.index).layout, counts);
-        return bound !== undefined && bound > maxLeaves;
+        const edit = listDropEdit(drag);
+        if (edit !== undefined) this.#handlers.edit(edit);
     }
 
     // The drag's marks, as classes on the elements drawn: never a rebuild, which would take away the element
@@ -563,12 +591,12 @@ export class FieldListView {
             item.classList.toggle('ex-pivot-dragging', dragged);
             item.classList.toggle('ex-pivot-drop-before', at !== undefined && this.#accepts(at.area) && at.area === entry.area && at.index === index);
         }
-        const over = drag !== undefined && at !== undefined && this.#accepts(at.area) && this.#overCap(drag, at);
+        const over = drag !== undefined && at !== undefined && model !== undefined && dropOverCap(drag, at, model);
         for (const [area, { area: box, cap }] of this.#areas) {
             const target = at !== undefined && at.area === area && this.#accepts(area);
             box.classList.toggle('ex-pivot-drop-target', target);
             box.classList.toggle('ex-pivot-drop-over-cap', target && over);
-            const said = target && over && model !== undefined ? model.words.fill('drop-over-cap', formatPivotCount(model.maxLeaves, model.locale)) : '';
+            const said = target && over ? model.words.fill('drop-over-cap', formatPivotCount(model.maxLeaves, model.locale)) : '';
             if (cap.textContent !== said) cap.textContent = said;
         }
         this.#list.classList.toggle('ex-pivot-drop-remove', this.removable);

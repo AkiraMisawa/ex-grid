@@ -21,7 +21,12 @@ export default defineConfig({
             '@ex-grid/data-xlsx': at('../../src/npm/data-xlsx/src/index.ts'),
             '@ex-grid/sheet-xlsx': at('../../src/npm/sheet-xlsx/src/index.ts'),
             '@ex-grid/mantine': at('../../src/npm/mantine/src/index.ts'),
+            '@ex-grid/sheet-mantine': at('../../src/npm/sheet-mantine/src/index.ts'),
             '@ex-grid/mui': at('../../src/npm/mui/src/index.ts'),
+            '@ex-grid/chart': at('../../src/npm/chart/src/index.ts'),
+            '@ex-grid/chart-react': at('../../src/npm/chart-react/src/index.ts'),
+            '@ex-grid/chart-mantine': at('../../src/npm/chart-mantine/src/index.ts'),
+            '@ex-grid/chart-mui': at('../../src/npm/chart-mui/src/index.ts'),
         },
         // The Examples and the packages' sources sit outside this folder; one React for all, or its hooks see two,
         // and one of each design system, or a Wrapper's components read another provider than the frame's; the

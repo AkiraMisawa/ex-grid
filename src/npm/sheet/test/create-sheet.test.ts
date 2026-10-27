@@ -8,6 +8,7 @@ import { CellAddress, CellFormatChange, Culture, RepeatedKeyError, SheetEdit, Sh
 import { createGrid, type GridHandle } from '@ex-grid/core';
 import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
 import type { SheetToolbarContent, SheetToolbarItemSlotContext } from '../src/sheet-toolbar-slot';
+import type { SheetFormatCellsSlotContext, SheetTabSlotContext } from '../src/sheet-chrome-slots';
 import { PointingScope } from '../src/pointing-scope';
 import type { PointingRefusal } from '../src/pointing-refusal';
 
@@ -1664,6 +1665,45 @@ describe('opening and saving a file in the Input Order (ADR-0330 §10)', () => {
         expect(textAt(element, 0, 0)).toBe('old');
     });
 
+    it('ADR-0330 §10 / ADR-0240 ticket 04: a toolbar press made while the file is read waits and acts on the Workbook it opens, and Escape typed on the toolbar cancels the read', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: 'old' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('old'); });
+        press(element, 0, 0);
+        const bold = (): boolean => sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold;
+        const file = heldRead();
+        const opened = sheet.open(file.read);
+        toolbarItem(element, 'Bold').click();
+        expect(bold()).toBe(false);
+        file.answer(documentOf({ A1: 'new' }));
+        expect(await opened).toBe(true);
+        await vi.waitFor(() => { expect(bold()).toBe(true); });
+        expect([textAt(element, 0, 0), sheet.canUndo]).toEqual(['new', true]);
+        // The keyboard on the toolbar's band is the Sheet's: an Escape typed there cancels as one typed on the cells.
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        if (band === null) throw new Error('The toolbar is not drawn.');
+        band.focus();
+        expect(document.activeElement).toBe(band);
+        const cancelled = heldRead();
+        const cancelling = sheet.open(cancelled.read);
+        key('Escape');
+        expect(cancelled.signal().aborted).toBe(true);
+        cancelled.answer(documentOf({ A1: 'other' }));
+        expect(await cancelling).toBe(false);
+        expect(textAt(element, 0, 0)).toBe('new');
+        // A key the Sheet answers, typed while the file is read, is answered once, in its turn, on the Workbook opened.
+        press(element, 0, 0);
+        const third = heldRead();
+        const reopened = sheet.open(third.read);
+        key('b', { ctrlKey: true });
+        expect(bold()).toBe(true);
+        third.answer(documentOf({ A1: 'third' }));
+        expect(await reopened).toBe(true);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('third'); });
+        await vi.waitFor(() => { expect(bold()).toBe(true); });
+        sheet.undo();
+        expect(bold()).toBe(false);
+    });
+
     it('ADR-0330 §10: an opening or a save while a cell is being edited is refused by name, and nothing is read or written', async () => {
         const { element, sheet } = sheetOf();
         await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
@@ -1725,5 +1765,80 @@ describe('opening and saving a file in the Input Order (ADR-0330 §10)', () => {
         await opened;
         await saving;
         expect([saved, noticeOf(element)]).toEqual([['new'], 'The file was opened.']);
+    });
+});
+
+describe('the Sheet\'s Chrome slots (ADR-0390)', () => {
+    it('ADR-0390: the grid\'s slots in a Sheet\'s chrome reach its grid, and a slot neither has is refused before the element is touched', async () => {
+        const { element } = sheetOf({
+            showFormulaBar: true,
+            chrome: { nameBox: (slot) => { const field = document.createElement('input'); field.className = 'own-name-box'; slot.append(field); return () => { field.remove(); }; } },
+        });
+        await vi.waitFor(() => { expect(element.querySelector('.own-name-box')).not.toBeNull(); });
+        const untouched = document.createElement('div');
+        // Handed as a script may hand them, whatever the type says.
+        const unknownSlot: unknown = { tabMenu: () => () => undefined };
+        const notAMount: unknown = { cellEditor: 'mine' };
+        expect(() => createSheet(untouched, { locale: 'en-US', chrome: unknownSlot as never })).toThrow(/no slot 'tabMenu'.*toolbarItem, formatCells, sheetTab, sheetTabAdd, columnMenu/u);
+        expect(() => createSheet(untouched, { locale: 'en-US', chrome: notAMount as never })).toThrow(/chrome\.cellEditor is a mount function/u);
+        expect([untouched.className, untouched.childElementCount]).toEqual(['', 0]);
+    });
+
+    it('ADR-0071: Format Cells\' slot is mounted in the grid\'s popover frame with the draft, the tab and the words; OK sets what was touched as one step and takes the contents away', async () => {
+        const heard: string[] = [];
+        let given: SheetFormatCellsSlotContext | undefined;
+        const { element, sheet } = sheetOf({
+            document: documentOf({ A1: '1' }),
+            chrome: {
+                formatCells: (slot, context) => {
+                    given = context;
+                    const tab = document.createElement('button');
+                    tab.textContent = context.words.tabName(context.tab);
+                    slot.append(tab);
+                    context.takeKeyboard(tab);
+                    heard.push('mounted');
+                    return () => { heard.push(`taken away:${String(slot.isConnected)}`); tab.remove(); };
+                },
+            },
+        });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key('1', { ctrlKey: true });
+        const frame = element.querySelector('.ex-popover-consumer');
+        expect([frame?.getAttribute('aria-label'), frame?.querySelector('.ex-format-cells-slot')?.textContent, document.activeElement?.textContent]).toEqual(['Format Cells', 'Number', 'Number']);
+        if (given === undefined) throw new Error('Format Cells was not handed its context.');
+        // Ctrl+1 inside the contents opens nothing more.
+        key('1', { ctrlKey: true });
+        expect([heard, element.querySelectorAll('.ex-popover-consumer').length]).toEqual([['mounted'], 1]);
+        given.tabShown('font');
+        given.draft.setFontStyle('bold');
+        expect(given.ok()).toBe(true);
+        expect([heard, element.querySelector('.ex-popover-consumer'), sheet.cellFormatAt(CellAddress.parse('A1')).font.bold, sheet.canUndo]).toEqual([['mounted', 'taken away:true'], null, true, true]);
+        // The next opening shows the tab shown last; Escape closes it as a Cancel, and the contents go with it.
+        key('1', { ctrlKey: true });
+        expect(given.tab).toBe('font');
+        key('Escape');
+        expect([heard.at(-1), element.querySelector('.ex-popover-consumer'), element.contains(document.activeElement)]).toEqual(['taken away:true', null, true]);
+    });
+
+    it('ADR-0331 §4: a tab\'s face is the Chrome\'s, mounted again on its slot when the name or the Sheet shown changes; the + face once; both go with the Sheet', async () => {
+        const told: string[] = [];
+        const face = (slot: HTMLElement, context: SheetTabSlotContext): (() => void) => {
+            slot.textContent = context.selected ? `[${context.name}]` : context.name;
+            told.push(`${context.name}:${String(context.selected)}`);
+            return () => { told.push(`-${context.name}`); };
+        };
+        const { element, sheet } = sheetOf({
+            document: twoSheets(),
+            chrome: { sheetTab: face, sheetTabAdd: slot => { slot.textContent = 'Add'; told.push('add'); return () => { told.push('-add'); }; } },
+        });
+        expect([tabNames(element), element.querySelector('.ex-sheet-tab-add')?.textContent]).toEqual([['[Sheet1]', 'Second'], 'Add']);
+        expect(told).toEqual(['add', 'Sheet1:true', 'Second:false']);
+        told.length = 0;
+        click(element.querySelectorAll('.ex-sheet-tab')[1]);
+        expect([tabNames(element), told]).toEqual([['Sheet1', '[Second]'], ['-Sheet1', 'Sheet1:false', '-Second', 'Second:true']]);
+        told.length = 0;
+        sheet.destroy();
+        expect(told.toSorted()).toEqual(['-Second', '-Sheet1', '-add']);
     });
 });

@@ -52,6 +52,18 @@
             as a <code>MudDialog</code>, and ExGrid.MudBlazor's controls in the grid). ExSheet is a prerelease:
             its API may change between versions.
         </p>
+        <p>
+            Under React it is <code>@@ex-grid/sheet-react</code>, and <code>@@ex-grid/sheet-mantine</code> (published
+            with 0.3.0) draws it with Mantine: <code>MantineExSheet</code> takes an ExSheet's props, stands the Sheet in
+            Mantine's <code>Paper</code> (<code>withBorder</code>, <code>radius</code>, <code>shadow</code>), and draws the
+            Sheet Toolbar, Format Cells, the Sheet Tabs and every part of the grid inside in Mantine's components. It needs
+            a <code>MantineProvider</code> above it, and <code>@@ex-grid/mantine/styles.css</code> and
+            <code>@@ex-grid/sheet-mantine/styles.css</code> loaded after Mantine's styles. The Chrome follows the theme
+            and its scheme; the cells keep the document's own font, Paper and Ink, which are the Workbook's, not the
+            theme's, and the column widths counted in its characters. A part you give in <code>chrome</code> beats
+            Mantine's, and <code>mantineSheetChrome</code> is the Wrapper's parts alone. Switch the Example below to
+            Mantine to see it; ExSheet has no MUI Wrapper yet.
+        </p>
     </DocsSection>
 
     <DocsSection Title="A first sheet">

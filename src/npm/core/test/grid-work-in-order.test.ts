@@ -298,4 +298,60 @@ describe('work of the Consumer\'s in the Input Order', () => {
         }, () => undefined);
         expect(asked).toBe(true);
     });
+
+    it('ADR-0240 ticket 04: inside an Input Root, a key or a claimed press on a surface around the grid waits behind the work and is taken there after it, an Escape there cancels the work, and an unclaimed press is the surface\'s', async () => {
+        const box = document.createElement('div');
+        box.setAttribute('data-ex-input-root', '');
+        document.body.append(box);
+        const button = document.createElement('button');
+        button.setAttribute('data-ex-claims', 'click');
+        box.append(button);
+        let presses = 0;
+        button.addEventListener('click', () => { presses += 1; });
+        const { view } = mount<Trade>({
+            columns: [{ name: 'Book', type: 'text', value: trade => trade.book, width: 120 }],
+            rows: trades(5), rowHeight: 24, viewportHeight: 240,
+        }, {}, box);
+        try {
+            // With nothing pending, a press on the surface is its own at once.
+            button.click();
+            expect(presses).toBe(1);
+            const works: Held[] = [];
+            const placed = view.cancellableInOrder(heldWork(works), () => undefined);
+            button.click();
+            expect(presses).toBe(1);
+            defined(works[0], 'the work').land();
+            expect(await placed).toBe(true);
+            expect(presses).toBe(2);
+            // An Escape typed on the surface cancels the work, as one typed in the grid does.
+            const cancelled = view.cancellableInOrder(heldWork(works), () => undefined);
+            button.focus();
+            const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+            button.dispatchEvent(escape);
+            const second = defined(works[1], 'the second work');
+            expect([second.signal.aborted, escape.defaultPrevented]).toEqual([true, true]);
+            second.fail(second.signal.reason);
+            expect(await cancelled).toBe(false);
+            // Its repeats are that Escape's, and reach nothing on the surface (ADR-0012).
+            let escapes = 0;
+            button.addEventListener('keydown', () => { escapes += 1; });
+            const repeat = new KeyboardEvent('keydown', { key: 'Escape', repeat: true, bubbles: true, cancelable: true });
+            button.dispatchEvent(repeat);
+            expect([escapes, repeat.defaultPrevented]).toEqual([0, true]);
+            // A press on a control of the surface that claims nothing is its own, behind the work too.
+            const plain = document.createElement('span');
+            box.append(plain);
+            let plainPresses = 0;
+            plain.addEventListener('click', () => { plainPresses += 1; });
+            const third = view.cancellableInOrder(heldWork(works), () => undefined);
+            button.click();
+            plain.click();
+            expect([presses, plainPresses]).toEqual([2, 1]);
+            defined(works[2], 'the third work').land();
+            expect(await third).toBe(true);
+            expect(presses).toBe(3);
+        } finally {
+            box.remove();
+        }
+    });
 });
