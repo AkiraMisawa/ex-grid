@@ -7,14 +7,17 @@
 import type { FilterPanelView } from '@ex-grid/core';
 import type { FindPanelView } from '@ex-grid/core';
 import { FocusEvent as FocusEvent_2 } from 'react';
+import type { GridCellMessageSlotContext } from '@ex-grid/core';
 import type { GridColumn } from '@ex-grid/core';
 import type { GridColumnMenuSlotContext } from '@ex-grid/core';
 import type { GridContextMenuSlotContext } from '@ex-grid/core';
 import type { GridFilterPanelSlotContext } from '@ex-grid/core';
 import type { GridFindPanelSlotContext } from '@ex-grid/core';
 import { GridHandle } from '@ex-grid/core';
+import type { GridLoadingIndicatorSlotContext } from '@ex-grid/core';
 import type { GridMenuSlotContext } from '@ex-grid/core';
 import { GridOptions } from '@ex-grid/core';
+import type { GridSelectionSummarySlotContext } from '@ex-grid/core';
 import type { GridTemplateCell } from '@ex-grid/core';
 import { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { MouseEvent as MouseEvent_2 } from 'react';
@@ -30,10 +33,13 @@ export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
 
 // @public
 export interface ExGridChrome<Row> {
+    readonly cellMessage?: (context: GridCellMessageSlotContext) => ReactNode;
     readonly columnMenu?: (context: GridColumnMenuSlotContext) => ReactNode;
     readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
     readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
     readonly findPanel?: (context: GridFindPanelSlotContext) => ReactNode;
+    readonly loadingIndicator?: (context: GridLoadingIndicatorSlotContext) => ReactNode;
+    readonly selectionSummary?: (context: GridSelectionSummarySlotContext) => ReactNode;
 }
 
 // @public

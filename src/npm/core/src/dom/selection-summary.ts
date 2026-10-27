@@ -14,6 +14,7 @@ import { sameRange, type SelectionRange } from '../selection/range';
 import { answeredSummary, declinedSummary, summaryFigureText, type GridSummaryRequest, type GridSummaryResult } from '../summary/grid-summary';
 import { decimalCompare, decimalOf, decimalRound } from '../summary/exact-decimal';
 import { isCountFigure, summaryFigureOrder, type AggregateResult, type SummaryFigure } from '../summary/summary-accumulator';
+import { ShownSlot, type GridChromeSlot, type GridSelectionSummarySlotContext } from './grid-chrome';
 
 /** Where a Selection Summary stands (ADR-0130): no question, a question out, its answer, or its decline. */
 export type SelectionSummaryStatus = 'none' | 'pending' | 'answered' | 'declined';
@@ -228,8 +229,11 @@ function checkedAnswer(request: GridSummaryRequest, answer: unknown): GridSummar
 
 /** A figure as the line shows it: its name's id and its text. */
 export interface SummaryFigureShown {
+    /** Which figure it is. */
     readonly figure: SummaryFigure;
+    /** The id of its name, among `summaryLabelIds`. */
     readonly labelId: string;
+    /** Its value as text, formatted by the core as a cell's text is, so a Chrome cannot change what it reads. */
     readonly text: string;
 }
 
@@ -292,11 +296,19 @@ function formattedText<Row>(
 export class SummaryBox {
     /** The box, which the grid stands in its status line. */
     readonly element: HTMLElement;
+    // The Chrome's selectionSummary slot, standing in the box while it draws the summary (ADR-0390).
+    readonly #slot: ShownSlot<GridSelectionSummarySlotContext>;
     #painted = '';
 
     constructor(doc: Document) {
         this.element = doc.createElement('span');
         this.element.className = 'ex-summary';
+        this.#slot = new ShownSlot('selectionSummary', doc.createElement('span'));
+    }
+
+    /** The slot's contents go: the box has left the status line, or the grid is going. */
+    hide(): void {
+        this.#slot.hide();
     }
 
     /** Marks the box as a control of the grid's own whose right-click the grid takes, while it does (ADR-0240). */
@@ -306,16 +318,27 @@ export class SummaryBox {
         else this.element.removeAttribute('data-ex-claims');
     }
 
-    /** Writes the summary into the box. */
-    paint(summary: SelectionSummary, shown: readonly SummaryFigureShown[], words: (id: string) => string): void {
+    /** Writes the summary into the box, or has `slot`, the Chrome's, draw it there. */
+    paint(summary: SelectionSummary, shown: readonly SummaryFigureShown[], words: (id: string) => string,
+        slot: GridChromeSlot<GridSelectionSummarySlotContext> | undefined): void {
         const status = summary.status;
         const reason = summary.result?.kind === 'declined' ? summary.result.reason : '';
         const figures = shown.map(({ labelId, text }) => `${words(labelId)}: ${text}`);
         const key = JSON.stringify([status, reason, figures, status === 'pending' ? words(summaryLabelIds.pending) : '']);
+        if (slot !== undefined) {
+            this.#painted = '';
+            this.#slot.show(slot, key, () => Object.freeze({
+                status, figures: Object.freeze(shown.map(figure => Object.freeze({ ...figure }))),
+                declineReason: summary.result?.kind === 'declined' ? reason : undefined, label: words,
+            }));
+            this.element.className = boxClass(status);
+            if (this.#slot.element.parentNode !== this.element) this.element.replaceChildren(this.#slot.element);
+            return;
+        }
+        this.#slot.hide();
         if (key === this.#painted) return;
         this.#painted = key;
-        this.element.className = status === 'pending' ? 'ex-summary ex-summary-pending'
-            : status === 'declined' ? 'ex-summary ex-summary-declined' : 'ex-summary';
+        this.element.className = boxClass(status);
         const doc = this.element.ownerDocument;
         if (status === 'pending') {
             this.element.textContent = words(summaryLabelIds.pending);
@@ -330,4 +353,9 @@ export class SummaryBox {
             }));
         }
     }
+}
+
+/** The box's class, which says a summary pending or declined (ADR-0130). */
+function boxClass(status: SelectionSummaryStatus): string {
+    return status === 'pending' ? 'ex-summary ex-summary-pending' : status === 'declined' ? 'ex-summary ex-summary-declined' : 'ex-summary';
 }

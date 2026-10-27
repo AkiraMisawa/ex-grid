@@ -502,6 +502,14 @@ export interface GridActionEvent<Row> {
 }
 
 // @public
+export interface GridCellMessageSlotContext {
+    readonly close: () => void;
+    readonly column: string;
+    readonly editorError: boolean;
+    readonly message: string;
+}
+
+// @public
 export interface GridChangeBatch<Row> {
     readonly added?: readonly Row[];
     readonly changed?: readonly Row[];
@@ -510,10 +518,13 @@ export interface GridChangeBatch<Row> {
 
 // @public
 export interface GridChrome<Row> {
+    readonly cellMessage?: GridChromeSlot<GridCellMessageSlotContext>;
     readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
     readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
     readonly findPanel?: GridChromeSlot<GridFindPanelSlotContext>;
+    readonly loadingIndicator?: GridChromeSlot<GridLoadingIndicatorSlotContext>;
+    readonly selectionSummary?: GridChromeSlot<GridSelectionSummarySlotContext>;
 }
 
 // @public
@@ -803,6 +814,12 @@ export const gridLabelIds: Readonly<{
 }>;
 
 // @public
+export interface GridLoadingIndicatorSlotContext {
+    readonly loading: boolean;
+    readonly placeholderRows: number;
+}
+
+// @public
 export interface GridMenuSlotContext {
     readonly close: () => void;
     readonly commands: readonly GridCommand[];
@@ -1062,6 +1079,14 @@ export interface GridSelection {
     readonly isEmpty: boolean;
     readonly ranges: readonly SelectionRange[];
     wholeColumns(extent: GridExtent): readonly number[];
+}
+
+// @public
+export interface GridSelectionSummarySlotContext {
+    readonly declineReason: string | undefined;
+    readonly figures: readonly SummaryFigureShown[];
+    readonly label: (id: string) => string;
+    readonly status: SelectionSummaryStatus;
 }
 
 // @public
@@ -1498,6 +1523,13 @@ export type SummaryFigure = 'average' | 'count' | 'numericalCount' | 'min' | 'ma
 
 // @public
 export const summaryFigureOrder: readonly SummaryFigure[];
+
+// @public
+export interface SummaryFigureShown {
+    readonly figure: SummaryFigure;
+    readonly labelId: string;
+    readonly text: string;
+}
 
 // @public
 export const summaryLabelIds: Readonly<{

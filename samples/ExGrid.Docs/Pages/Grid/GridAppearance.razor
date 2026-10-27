@@ -212,9 +212,19 @@
             in the grid's words, for a live region. Each change and step goes to the context (<code>setText</code>,
             <code>setMatchCase</code>, <code>next</code>, <code>replaceAll</code>, …); the search, its answer and the
             Focus it moves stay the grid's. Hand the hook's <code>field</code> ref to the find field, which takes the
-            keyboard with its text selected whenever the grid asks. Enter and Shift+Enter in a field step through the
+            keyboard with its text selected when Find opens, and as it was after a Tab off either end of the panel. Enter and Shift+Enter in a field step through the
             grid's own form; a button of yours that submits it steps nothing, so have each button call the step it
             means. The words are <code>context.label(id)</code>, by the ids of <code>findPanelLabelIds</code>.
+        </p>
+        <p>
+            Three slots only show what the grid decides. <code>cellMessage</code> draws a cell's message in the grid's
+            tooltip below the cell: <code>context.message</code> is the Consumer's sentence or the Reject's, and
+            <code>editorError</code> says which. <code>selectionSummary</code> draws <code>context.figures</code> in the
+            status line, each with the id of its name and its text as the grid formatted it, and the pending words or
+            the decline's reason while there are none; the right-click that opens the figures menu stays the grid's.
+            <code>loadingIndicator</code> stands at the grid's foot and is handed whether rows are on their way and how
+            many painted rows are Placeholders; it draws nothing while nothing loads, and the Placeholder rows stay the
+            grid's. Each is drawn again when what it shows changes.
         </p>
         <p>
             <strong>Your own control in the grid's order.</strong> A handler that changes what the keys after it act on —
