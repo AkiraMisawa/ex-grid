@@ -57,6 +57,9 @@ export const MuiSizeContext: Context<MuiExGridSize>;
 // @public
 export function muiSizeOf(density: GridDensity): MuiExGridSize;
 
+// @public
+export function refuseThemeWithoutVariables(theme: object, who: string): void;
+
 // (No @packageDocumentation comment for this package)
 
 ```

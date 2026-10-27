@@ -9,7 +9,7 @@ import { Alert, Button, ButtonGroup, ListItemButton, TextField } from '@mui/mate
 import { useTheme } from '@mui/material/styles';
 import { chartWordIds, type AxisScale, type ChartCommand, type ChartFiltersSlotContext, type ChartMenuSlotContext, type ChartToolbarSlotContext } from '@ex-grid/chart';
 import { useChartFilterText, type ExChartChrome } from '@ex-grid/chart-react';
-import { MuiSizeContext } from '@ex-grid/mui';
+import { MuiSizeContext, refuseThemeWithoutVariables } from '@ex-grid/mui';
 
 const downloads: ReadonlySet<string> = new Set([chartWordIds.downloadCsv, chartWordIds.downloadSvg, chartWordIds.downloadPng]);
 
@@ -54,20 +54,6 @@ function MuiChartFilters({ context, filters }: { readonly context: ChartToolbarS
         createElement('option', { value: 'proportional' }, context.label(chartWordIds.proportional)),
         createElement('option', { value: 'categories' }, context.label(chartWordIds.categories))),
         filters.error === null ? null : createElement(Alert, { severity: 'error', className: 'mui-ex-chart-filter-error' }, filters.error));
-}
-
-/** Refuses a theme made without CSS variables (ADR-0390 section 5): the stylesheet reads the theme's colours from the
- * variables MUI writes on the page, and without them a chart would be drawn in ExChart's own colours, not the theme's. */
-export function refuseThemeWithoutVariables(theme: object, who: string): void {
-    const vars: unknown = Reflect.get(theme, 'vars');
-    if (vars === undefined || vars === null) {
-        throw new Error(`${who} needs a MUI theme with CSS variables: make it with createTheme({ cssVariables: true }) and hand it to the `
-            + 'ThemeProvider above it. Without them the theme\'s colours exist only in script, and the chart would be drawn in colours that '
-            + 'are not the theme\'s (ADR-0390 section 5).');
-    }
-    if (Reflect.get(theme, 'cssVarPrefix') !== 'mui') {
-        throw new Error(`${who} reads the theme's variables as --mui-*: make the theme with the default cssVarPrefix (ADR-0390 section 5).`);
-    }
 }
 
 /** The scale an option names: one the chart offered, never one a changed option claims. */

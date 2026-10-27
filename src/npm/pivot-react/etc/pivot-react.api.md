@@ -46,6 +46,9 @@ export type ExPivotProps = Omit<PivotViewOptions, 'chrome'> & {
 };
 
 // @public
+export function layPivotChrome(pivot: Omit<ExPivotChrome, 'grid'>, grid: ExGridChrome<unknown>, given: ExPivotChrome | undefined): ExPivotChrome;
+
+// @public
 export interface PivotMenuHandles {
     readonly item: (index: number) => PivotMenuItemProps;
     readonly view: PivotMenuView;
