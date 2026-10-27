@@ -10,7 +10,11 @@
 export {
     createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange, type SheetToolbarButton, type SheetToolbarEntry, type SheetToolbarRowOptions,
 } from './create-sheet';
+export type {
+    SheetFormatCellsSlot, SheetFormatCellsSlotContext, SheetTabAddSlot, SheetTabSlot, SheetTabSlotContext,
+} from './sheet-chrome-slots';
 export { FormatCellsDraft } from './format-cells-draft';
+export { formatCellsLineStroke } from './format-cells-panel';
 export {
     formatCellsOffer, isDisabledCategory,
     type BorderEdge, type BorderPreset, type ColourTarget, type DisabledNumberFormatCategory, type FontStyle, type FormatCellsTab,
@@ -27,6 +31,7 @@ export { SheetEdges } from './sheet-edges';
 export type {
     SheetToolbarContent, SheetToolbarIcon, SheetToolbarItemChoice, SheetToolbarItemKind, SheetToolbarItemSlot, SheetToolbarItemSlotContext, SheetToolbarItemView,
 } from './sheet-toolbar-slot';
+export { sheetToolbarPictures } from './sheet-toolbar';
 export { sheetFormatChangeFor, sheetFormatKeyOf, sheetFormatKeysDeclared, type SheetFormatKey } from './sheet-format-keys';
 export { sheetStructureEditFor, sheetStructureKeyOf, sheetStructureKeysDeclared, type SheetStructureKey } from './sheet-structure-keys';
 export { sheetSummaryCells, sheetSummaryDeclined, type SheetSummaryCells } from './sheet-summary';

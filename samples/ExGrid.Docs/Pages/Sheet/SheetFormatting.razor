@@ -182,6 +182,12 @@
                 Blazor Server too: ↓ typed straight after Escape moves the Focus, including when the dialog's title or empty space holds the keyboard. OK sets what was touched as it is
                 pressed.
             </li>
+            <li>
+                <b>Under <code>MantineExSheet</code></b> (<code>@@ex-grid/sheet-mantine</code>) it is Mantine's Tabs, radios,
+                checkboxes, selects and fields, in the same popover inside the Sheet's box the built-in one stands in, so it
+                closes, scrolls and gives the keyboard back as that one does. More Colours is a field for a hex value. An OK
+                Format Cells refuses, such as an empty code under Custom, leaves it open and says why above the buttons.
+            </li>
         </ul>
         <p>
             What the dialog offers and what OK sets do not change with the Chrome: the same choices set the same Cell
@@ -195,6 +201,16 @@
             hold, and go to wherever each step leaves the keyboard, in order: a popup inside the dialog, such as More
             Colours, joins as it opens and hands the keyboard to its opener before it closes, without ending Format Cells
             (<a href="exgrid/appearance">the grid's seam</a>).
+        </p>
+        <p>
+            Under React a Chrome's own Format Cells is <code>chrome=&#123;&#123; formatCells &#125;&#125;</code>, a render
+            function of its context, drawn inside the grid's popover: the frame, its place and its Escape stay the
+            Sheet's. <code>useFormatCells(context)</code> holds what the contents show: the tab shown and
+            <code>showTab</code>, a <code>tabControl</code> ref for the control of that tab, which takes the keyboard as
+            Format Cells opens, <code>set</code> to make a choice through the context's <code>draft</code> and draw again,
+            and <code>ok</code>, <code>cancel</code> and the <code>refusal</code> an OK met, in the Sheet's words. Read every
+            control's state from the draft and draw the tabs and choices from <code>formatCellsOffer</code>; the Sheet's
+            <code>words</code> name them.
         </p>
     </DocsSection>
 
@@ -277,7 +293,9 @@
                 to the Sheet or to the KeyTips, and the keys typed meanwhile go where it lands; the list goes after
                 that. A list that cannot open calls <code>ChoicesClosed</code> with no choice, and one the toolbar no
                 longer wants closes when <code>CloseRequest</code> changes. <code>MudSheetChrome</code>'s lists are
-                built this way.
+                built this way, and so are <code>MantineExSheet</code>'s: a toggle is Mantine's <code>ActionIcon</code>,
+                filled while it is pressed, a menu a subtle <code>Button</code>, and each list Mantine's
+                <code>Popover</code>, drawn inside the Sheet so the Sheet hears its keys, with the colours ten across.
             </li>
         </ul>
         <DocsExample Builtin="typeof(Toolbar)" Mud="typeof(ToolbarMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])" CodeOpen="true">

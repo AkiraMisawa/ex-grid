@@ -86,6 +86,32 @@ describe('a Consumer\'s popover (ADR-0050, item 16)', () => {
         expect(root.contains(document.activeElement)).toBe(true);
     });
 
+    it('ADR-0390: closed hears each close, by Escape, by the handle, by another opening or with the grid, while the contents still stand', async () => {
+        const { root, view } = await grid();
+        const heard: string[] = [];
+        const hears = (name: string) => () => { heard.push(`${name}:${String(root.querySelector('.ex-popover-consumer .mine') !== null)}`); };
+        view.openPopover(contents({ current: undefined }), 'One', hears('one'));
+        key('Escape');
+        view.openPopover(contents({ current: undefined }), 'Two', hears('two'));
+        view.openPopover(contents({ current: undefined }), 'Three', hears('three'));
+        view.closePopover();
+        view.openPopover(contents({ current: undefined }), 'Four', hears('four'));
+        view.destroy();
+        expect(heard).toEqual(['one:true', 'two:true', 'three:true', 'four:true']);
+    });
+
+    it('ADR-0390: a closed that throws as the grid goes is thrown once the grid has gone', async () => {
+        const { root, view } = await grid();
+        view.openPopover(contents({ current: undefined }), 'One', () => { throw new Error('Cleanup failed.'); });
+        expect(() => { view.destroy(); }).toThrow('Cleanup failed.');
+        expect([root.childElementCount, root.getAttribute('role')]).toEqual([0, null]);
+    });
+
+    it('ADR-0390: a closed that is not a function is refused by name', async () => {
+        const { view } = await grid();
+        expect(() => view.openPopover(contents({ current: undefined }), 'One', 'no' as never)).toThrow(/hears it close/u);
+    });
+
     it('ADR-0039: while a popup of the contents\' own is open, Escape is the popup\'s', async () => {
         const { root, view } = await grid();
         const held: { current: GridPopoverContext | undefined } = { current: undefined };

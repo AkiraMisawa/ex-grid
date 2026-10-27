@@ -33,9 +33,12 @@ const svgNamespace = 'http://www.w3.org/2000/svg';
 // Unique on the page, for the tabs' aria-controls and the radio groups' names: two Sheets each have their own.
 let instances = 0;
 
-// A line style's stroke width and dashes, as the Border tab pictures it: only a picture of the style; how a Border
-// is painted on the Sheet is the grid's (ADR-0071).
-function strokeOf(style: BorderLineStyle): { readonly width: string; readonly dashes: string | undefined } {
+/**
+ * A line style's stroke width and dashes, as Format Cells' Border tab pictures it in an SVG (ADR-0071): only a picture
+ * of the style, which a Chrome's Format Cells draws too; how a Border is painted on the Sheet is the grid's. `double`
+ * is two strokes of the width given, and `none` is none.
+ */
+export function formatCellsLineStroke(style: BorderLineStyle): { readonly width: string; readonly dashes: string | undefined } {
     switch (style) {
         case 'hair': return { width: '1', dashes: '1 1' };
         case 'dotted': return { width: '1', dashes: '1 2' };
@@ -426,7 +429,7 @@ export class FormatCellsPanel {
                 drawn.setAttribute('class', 'ex-format-cells-differs');
                 for (const [name, value] of [['stroke', '#808080'], ['stroke-width', '1'], ['stroke-dasharray', '1 2']] as const) drawn.setAttribute(name, value);
             } else {
-                const { width, dashes } = strokeOf(line.style);
+                const { width, dashes } = formatCellsLineStroke(line.style);
                 drawn.setAttribute('stroke', paintOf(line.colour));
                 drawn.setAttribute('stroke-width', width);
                 if (dashes !== undefined) drawn.setAttribute('stroke-dasharray', dashes);
@@ -446,7 +449,7 @@ export class FormatCellsPanel {
         if (style === 'double') {
             svg.append(this.#svgLine(0, 2.5, 56, 2.5), this.#svgLine(0, 5.5, 56, 5.5));
         } else if (style !== 'none') {
-            const { width, dashes } = strokeOf(style);
+            const { width, dashes } = formatCellsLineStroke(style);
             const line = this.#svgLine(0, 4, 56, 4);
             line.setAttribute('stroke-width', width);
             if (dashes !== undefined) line.setAttribute('stroke-dasharray', dashes);

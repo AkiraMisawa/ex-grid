@@ -36,6 +36,15 @@ public static class ReactChromeNames
         _ => throw new ArgumentOutOfRangeException(nameof(chrome), chrome, "No such Chrome."),
     };
 
+    /// <summary>The name the reader knows it by, as the site's switch shows it.</summary>
+    public static string DisplayName(this ReactChrome chrome) => chrome switch
+    {
+        ReactChrome.Builtin => "Built-in",
+        ReactChrome.Mantine => "Mantine",
+        ReactChrome.Mui => "MUI",
+        _ => throw new ArgumentOutOfRangeException(nameof(chrome), chrome, "No such Chrome."),
+    };
+
     /// <summary>The name the Example's frame takes it by in its address (<c>?chrome=mui</c>).</summary>
     public static string AddressName(this ReactChrome chrome) => chrome switch
     {

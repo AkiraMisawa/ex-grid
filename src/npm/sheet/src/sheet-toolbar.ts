@@ -86,8 +86,12 @@ export interface SheetToolbarHooks {
 
 const svgOpen = '<svg class="ex-sheet-toolbar-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">';
 
-// The C# Chrome's pictures, inline SVG in currentColor, so the stylesheet's Visual Tokens colour them.
-const pictures: Readonly<Record<SheetToolbarIcon, string>> = {
+/**
+ * The built-in Chrome's pictures for the Toolbar Items (ADR-0100), the C# Chrome's: each the inside of an SVG of view
+ * box `0 0 16 16`, drawn with `fill="none"` and `stroke="currentColor"`, round caps and joins, so the colour is the
+ * text's. A Chrome without pictures of its own draws these.
+ */
+export const sheetToolbarPictures: Readonly<Record<SheetToolbarIcon, string>> = Object.freeze({
     bold: '<path stroke-width="2" d="M4.5 2.5h4a2.75 2.75 0 0 1 0 5.5h-4zM4.5 8h4.75a2.75 2.75 0 0 1 0 5.5H4.5z"/>',
     italic: '<path stroke-width="1.5" d="M7 2.5h6M3 13.5h6M10 2.5 6 13.5"/>',
     underline: '<path stroke-width="1.5" d="M4.5 2v5.5a3.5 3.5 0 0 0 7 0V2M3 14.5h10"/>',
@@ -101,7 +105,7 @@ const pictures: Readonly<Record<SheetToolbarIcon, string>> = {
     fontColour: '<path stroke-width="1.5" d="M4 11.5 8 2l4 9.5M5.5 8h5"/>',
     fill: '<path stroke-width="1.25" d="M2.5 7.5 7 3l4.5 4.5L7 12zM5 1.5 7 3M13 9.5s1.5 1.8 1.5 2.8a1.5 1.5 0 0 1-3 0c0-1 1.5-2.8 1.5-2.8"/>',
     borders: '<path stroke-width="1.25" stroke-dasharray="1.5 1.5" d="M2 8h12M8 2v12"/><path stroke-width="1.5" d="M2 2h12v12H2z"/>',
-};
+});
 
 // The arrow a menu or a split control's list opens from.
 const caret = `${svgOpen}<path stroke-width="1.5" d="M4.5 6.5 8 10l3.5-3.5"/></svg>`;
@@ -392,7 +396,7 @@ export class SheetToolbar {
             }
             return;
         }
-        if (item.icon !== undefined) face.insertAdjacentHTML('beforeend', `${svgOpen}${pictures[item.icon]}</svg>`);
+        if (item.icon !== undefined) face.insertAdjacentHTML('beforeend', `${svgOpen}${sheetToolbarPictures[item.icon]}</svg>`);
         if (item.text !== undefined) {
             const text = this.#doc.createElement('span');
             text.className = 'ex-sheet-toolbar-text';
