@@ -27,6 +27,10 @@
       "@ex-grid/mui": ["../../src/npm/mui/src/index.ts"],
       "@mui/material": ["./node_modules/@mui/material/index.d.ts"],
       "@mui/material/*": ["./node_modules/@mui/material/*"],
+      "@ex-grid/chart": ["../../src/npm/chart/src/index.ts"],
+      "@ex-grid/chart-react": ["../../src/npm/chart-react/src/index.ts"],
+      "@ex-grid/chart-mantine": ["../../src/npm/chart-mantine/src/index.ts"],
+      "@ex-grid/chart-mui": ["../../src/npm/chart-mui/src/index.ts"],
       "temporal-polyfill": ["./node_modules/temporal-polyfill/index.d.ts"]
     }
   },
