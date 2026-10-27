@@ -207,6 +207,16 @@
             submits it as the browser does, and that applies as OK does, so draw no form of your own inside it.
         </p>
         <p>
+            The find panel (<code>findPanel</code>) draws <code>useFindPanel(context).view</code>: the text, the two
+            options, whether Replace is shown and whether a Replace All is still out, and what the last step came to,
+            in the grid's words, for a live region. Each change and step goes to the context (<code>setText</code>,
+            <code>setMatchCase</code>, <code>next</code>, <code>replaceAll</code>, …); the search, its answer and the
+            Focus it moves stay the grid's. Hand the hook's <code>field</code> ref to the find field, which takes the
+            keyboard with its text selected whenever the grid asks. Enter and Shift+Enter in a field step through the
+            grid's own form; a button of yours that submits it steps nothing, so have each button call the step it
+            means. The words are <code>context.label(id)</code>, by the ids of <code>findPanelLabelIds</code>.
+        </p>
+        <p>
             <strong>Your own control in the grid's order.</strong> A handler that changes what the keys after it act on —
             a button of your Chrome, a control in your popover, a command beside the grid — can run in its place among
             the keys and presses through <code>InOrderAsync(kind, handling)</code> on the grid, or the
