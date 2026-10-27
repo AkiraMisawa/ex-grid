@@ -268,6 +268,15 @@
             are refused. Click again to see new commands succeed. Without removing rows, Release lets
             the waiting commands run in the order you made them.
         </DocsExample>
+        <p>
+            In ExGrid for React the three are <code>markColumn()</code> and <code>actionColumn(name, actions)</code>
+            from <code>@@ex-grid/core</code>, and <code>templateColumn(column, render)</code> from
+            <code>@@ex-grid/react</code>, whose <code>render</code> returns React elements; <code>GridSource.from</code>
+            keeps the marks as <code>source.marks</code>, a refused mark reaches <code>onRefused</code> with kind
+            <code>'mark'</code>, and a press raises <code>onAction</code>. A template's control takes the keyboard by
+            handing its element to the cell's <code>takeKeyboard</code> from a layout effect when
+            <code>focusRequest</code> turns non-zero.
+        </p>
         <DocsExample Title="Marks, a template and actions" Builtin="typeof(SpecialColumns)" Mud="typeof(SpecialColumnsMud)"
                      Files="@(["Examples/Grid/NoteField.razor", "Examples/Grid/Position.cs"])" />
     </DocsSection>

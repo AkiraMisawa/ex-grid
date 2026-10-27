@@ -23,7 +23,9 @@ public sealed class NumericHeaderCopy
     public GridCopyAnswer Answer(GridCopyRequest request)
     {
         // This small source holds the whole result, in the current filter and sort order.
-        // Read that order synchronously, under the version the request was taken against.
+        // Read that order synchronously, under the version the request was taken against, or refuse.
+        if (Source.RowSequenceVersion != request.RowSequenceVersion)
+            return GridCopyAnswer.Refuse("Nothing was copied: the rows moved. Copy again.");
         string Cell(int row, int column) => column == 0
             ? Source.Window[row].Name
             : Source.Window[row].Amount.ToString("R", CultureInfo.InvariantCulture);
