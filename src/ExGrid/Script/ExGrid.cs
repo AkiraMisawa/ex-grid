@@ -177,6 +177,18 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// never while painting (ED-17), and the popover opens once it has answered. Null means nothing opens.</summary>
     [Parameter] public Func<TRow, GridColumn<TRow>, string?>? CellMessageOf { get; set; }
 
+    /// <summary>
+    /// The step to the next and the previous error cell, F8 and Shift+F8 (ADR-0381 section 3), answered as a Find
+    /// step is (ADR-0055): the grid knows only the cells it paints, so where the next error stands is the
+    /// Consumer's, read in the order the grid shows. <see cref="Validation.GridRuleset{TRow}.FindError"/> answers it
+    /// from the rows the Source holds in that order. It is asked in its turn among the grid's events, once what the
+    /// browser asked under is still the source's: a step asked under another order or another source is not handed
+    /// to it, and the grid says the rows moved. The token is cancelled when the user steps again before it answers.
+    /// Unset, the grid offers no step and leaves F8 to the page. It takes a <see cref="Source"/>, whose order the
+    /// Consumer can read, and refuses <see cref="Rows"/>, which the grid orders out of the Consumer's sight.
+    /// </summary>
+    [Parameter] public Func<Validation.GridErrorStepRequest, CancellationToken, Task<Finding.GridFindResult>>? OnFindError { get; set; }
+
     private ElementReference _root;
     private IJSObjectReference? _module;
     private IJSObjectReference? _grid;
@@ -229,6 +241,11 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     {
         if ((Source is null) == (Rows is null))
             throw new InvalidOperationException("ExGrid takes its rows from exactly one of Source and Rows (ADR-0350 section 16).");
+        if (OnFindError is not null && Rows is not null)
+        {
+            throw new InvalidOperationException("OnFindError answers in the order the grid shows, which a Consumer reads from its Source, and "
+                + "the grid orders Rows out of its sight: give the grid a Source, GridSource.From(rows) for rows held in memory (ADR-0381).");
+        }
         ScriptColumns.Check(Columns);
         if (!ReferenceEquals(CellState, _sentCellState))
         {
@@ -685,6 +702,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteBoolean("cellStates", true);
         if (CellMessageOf is not null)
             json.WriteNumber("cellMessages", _judgement);
+        if (OnFindError is not null)
+            json.WriteBoolean("findsErrors", true);
         json.WriteStartArray("hears");
         foreach (var (kind, heard) in Hears())
         {
@@ -983,6 +1002,57 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         return InTurnAsync(new Heard(() => Task.FromResult(
             CellMessageOf is { } message && Declared(column) is { } declared ? message(asked, declared) : null),
             Answers: true, SendsState: false));
+    }
+
+    /// <summary>The error step the browser numbered <paramref name="number"/> (ADR-0381 section 3), asked of
+    /// <see cref="OnFindError"/> in its turn among the events, and written as the core reads a Find result. A step
+    /// asked of a source since replaced, or under another order, is not handed to the Consumer, which would read
+    /// positions in an order they were not taken in: it is answered as moved, after what the source owes the browser,
+    /// which the browser takes in before it says the rows moved. A step the user gave up is not asked, and neither is
+    /// one asked as the Consumer took <see cref="OnFindError"/> away, which is answered as withdrawn.</summary>
+    internal Task<string?> FindErrorAsync(long number, int generation, JsonElement request)
+    {
+        var asked = new Validation.GridErrorStepRequest
+        {
+            Backward = request.GetProperty("backward").GetBoolean(),
+            From = ScriptJson.Present(request, "from", out var from) ? ScriptJson.Cell(from) : null,
+            Columns = ScriptJson.Texts(request.GetProperty("columns")),
+            RowSequenceVersion = request.GetProperty("rowSequenceVersion").GetInt32(),
+        };
+        return InTurnAsync(new Heard(Answered(number, async cancelled =>
+        {
+            // Read in its turn: the Consumer may have taken it away, or handed another, since the browser asked.
+            if (OnFindError is not { } find)
+                return """{"withdrawn":true}""";
+            Finding.GridFindResult? found = null;
+            if (SourceOf(generation) is { } source && source.RowSequenceVersion == asked.RowSequenceVersion)
+            {
+                found = await find(asked, cancelled);
+                cancelled.ThrowIfCancellationRequested();
+            }
+            // The browser judges the answer against the source it holds when the answer lands: what changed before
+            // it, or while the Consumer read, crosses ahead of it.
+            if (_attached)
+                await SendUpdateAsync();
+            return Json(json =>
+            {
+                json.WriteStartObject();
+                if (found is null)
+                {
+                    json.WriteBoolean("moved", true);
+                }
+                else
+                {
+                    json.WriteBoolean("found", found.IsFound);
+                    if (found.IsFound)
+                    {
+                        json.WriteNumber("row", found.Row);
+                        json.WriteString("column", found.Column);
+                    }
+                }
+                json.WriteEndObject();
+            });
+        }), Answers: true, SendsState: false));
     }
 
     /// <summary>The user cancelled the commit numbered <paramref name="number"/> with Escape (ADR-0380 section 3).

@@ -104,7 +104,8 @@
         <DocsExample Title="A domain that answers later, over the Script Core" Builtin="typeof(ScriptCoreDomainGrid)" Files="@(["Examples/Data/Trade.cs"])">
             Type <code>1500</code> into a Notional and press <kbd>Enter</kbd>: no trade of that size can be booked,
             and the editor holds. Type <code>60000000</code>: it is booked, painted as an error, and its reason opens
-            when the Focus stands on it. Press <kbd>Escape</kbd> while the answer is out to cancel the commit.
+            when the Focus stands on it. Press <kbd>Escape</kbd> while the answer is out to cancel the commit. Flag a
+            few, sort by another column, and step through them with <kbd>F8</kbd> and <kbd>Shift</kbd>+<kbd>F8</kbd>.
         </DocsExample>
         <pre class="docs-code"><code>const columns: GridColumn&lt;Trade&gt;[] = [{
     name: 'Notional', type: 'number', editable: true, value: trade =&gt; trade.notional,
@@ -148,6 +149,15 @@
             Source in the order it shows them, now or as a promise. An answer that arrives after the order moved moves
             nothing, and the grid says so; so does a step that finds no error. A grid without <code>findError</code>
             leaves <kbd>F8</kbd> to the page, and a grid given one refuses <kbd>F8</kbd> among its declared keys.
+        </p>
+        <p>
+            Blazor's <code>ExGrid.Script.ExGrid</code> takes the step as <code>OnFindError</code>, a
+            <code>Func&lt;GridErrorStepRequest, CancellationToken, Task&lt;GridFindResult&gt;&gt;</code> answered in .NET:
+            return <code>ruleset.FindError(request, rowsInOrder)</code>, the rows read from your Source in its order, which
+            an in-memory Source holds whole as its <code>Window</code>. It is asked in its turn after the edits before it,
+            and a step asked under an order your Source has since left is not handed to you: the grid says the rows moved.
+            So <code>OnFindError</code> takes a <code>Source</code>, and is refused beside <code>Rows</code>, whose order
+            the grid keeps out of your sight. The Example above steps through its flagged trades this way.
         </p>
         <pre class="docs-code"><code>const rules = new GridRuleset&lt;Trade&gt;(trade =&gt; trade.id).set(oneCurvePerCsa);
 rules.evaluate(trades, columns);   // after each apply, over the whole collection

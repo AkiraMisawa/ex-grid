@@ -1,6 +1,7 @@
 @page "/script-grid"
 @using global::ExGrid.Script
 @using global::ExGrid.Clipboard
+@using global::ExGrid.Finding
 
 <DemoNav />
 
@@ -17,7 +18,9 @@
 <p>
     Notional is judged by the trade's domain in .NET, asked across the circuit as the editor commits
     (ADR-0380): a notional under 1,000 cannot be booked and holds the editor, and one above 1,000,000
-    is booked flagged, painted as an error whose reason opens when the Focus stands on it.
+    is booked flagged, painted as an error whose reason opens when the Focus stands on it. F8 and
+    Shift+F8 step to the next and the previous flagged trade, wherever it stands in the order shown,
+    answered in .NET by the ruleset that holds the flags (ADR-0381).
 </p>
 
 <ExGrid.Script.ExGrid TRow="DemoTrade"
@@ -30,8 +33,9 @@
                      SelectionChanged="OnSelectionChanged"
                      OnEdit="OnEdit"
                      OnPaste="OnPaste"
-                     CellState="_cellState"
-                     CellMessageOf="MessageOf"
+                     CellState="_rules.State"
+                     CellMessageOf="_rules.Message"
+                     OnFindError="_findFlag"
                      OnRefused="OnRefused"
                      OnCellDoubleClick="OpenNoteAsync"
                      @ref="_grid" />
@@ -70,9 +74,20 @@
     private string _edit = "none";
     private string _refused = "none";
     private string _paste = "none";
-    // The trades booked above the limit, by Id, and the state painted for them: a new delegate when they change.
-    private readonly Dictionary<int, string> _flags = [];
-    private CellStateOf<DemoTrade>? _cellState;
+    // The trades booked above the limit, by Id, and the ruleset that marks them by Id, wherever they stand and
+    // whatever is edited on them since: each Evaluate hands the grid a new state and message, and the ruleset answers
+    // the error step in the order the source shows (ADR-0381). Held in a field, as a parameter's delegate is.
+    private readonly Dictionary<int, (DemoTrade Trade, string Why)> _flags = [];
+    private readonly GridRuleset<DemoTrade> _rules;
+    private readonly Func<GridErrorStepRequest, CancellationToken, Task<GridFindResult>> _findFlag;
+
+    public ScriptGridPage()
+    {
+        _rules = new GridRuleset<DemoTrade>(trade => trade.Id)
+            .Row(trade => _flags.TryGetValue(trade.Id, out var flag) ? [new RuleViolation("Notional", flag.Why)] : []);
+        // The source holds the whole result in the grid's order, which is what the step is read in.
+        _findFlag = (request, _) => Task.FromResult(_rules.FindError(request, _source.Window));
+    }
 
     private const decimal Minimum = 1_000m;
     private const decimal Limit = 1_000_000m;
@@ -146,16 +161,11 @@
         });
         var flagged = judged.Verdict.Kind == EditVerdictKind.Flag;
         if (flagged)
-            _flags[row.Id] = judged.Verdict.Message ?? throw new InvalidOperationException("A Flag carries its message (ADR-0034).");
+            _flags[row.Id] = (row, judged.Verdict.Message ?? throw new InvalidOperationException("A Flag carries its message (ADR-0034)."));
+        // Only the flagged trades are judged: the marks are theirs by Id, and a trade a filter hides keeps its own.
         if (flagged || _flags.Remove(row.Id))
-        {
-            var flags = _flags.Keys.ToHashSet();
-            _cellState = flags.Count == 0 ? null : (trade, column) => column.Name == "Notional" && flags.Contains(trade.Id) ? CellState.Error : CellState.Normal;
-        }
+            _rules.Evaluate(_flags.Values.Select(flag => flag.Trade), Columns);
     }
-
-    private string? MessageOf(DemoTrade row, GridColumn<DemoTrade> column)
-        => column.Name == "Notional" && _flags.TryGetValue(row.Id, out var message) ? message : null;
 
     // DC-61: handed on and given back by the grid, so a press made meanwhile keeps the keyboard.
     private async Task OpenNoteAsync(CellPosition at)

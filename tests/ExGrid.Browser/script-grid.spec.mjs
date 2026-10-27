@@ -142,6 +142,33 @@ test.describe('ADR-0380: a commit .NET answers, with 150 ms injected on the Serv
         await expect(grid(page).locator('.ex-message')).toHaveText('A notional of 2000000 is above the desk\'s limit of 1,000,000: a second signature is needed.');
     });
 
+    test('ED-38 / ADR-0381: F8 asked of .NET brings the Focus to a flagged trade outside the Window, and Shift+F8 goes back', async ({ page }) => {
+        await cell(page, 0, 2).click({ force: true });
+        await page.keyboard.type('2000000');
+        await page.keyboard.press('Enter');
+        await page.keyboard.type('3000000');
+        await page.keyboard.press('Enter');
+        await answered(page);
+        await page.keyboard.press('Control+End');
+        await settled(grid(page));
+        await circuitQuiet();
+        expect(await focusRow(page)).toBe(999);
+
+        await page.keyboard.press('F8');
+        await settled(grid(page));
+        await circuitQuiet();
+        await expect(page.locator('#script-selection')).toHaveText('Selection: 1 range(s), Focus at row 0, column 2');
+        await expect(cell(page, 0, 2)).toBeInViewport();
+        await page.keyboard.press('F8');
+        await settled(grid(page));
+        await circuitQuiet();
+        expect(await focusRow(page)).toBe(1);
+        await page.keyboard.press('Shift+F8');
+        await settled(grid(page));
+        await circuitQuiet();
+        expect(await focusRow(page)).toBe(0);
+    });
+
     test('ED-35 / ED-20: a Ctrl+Enter fill is judged once, and a Reject holds the editor and pastes nothing', async ({ page }) => {
         await cell(page, 0, 2).click({ force: true });
         await cell(page, 2, 2).click({ force: true, modifiers: ['Shift'] });

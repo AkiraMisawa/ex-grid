@@ -1,18 +1,31 @@
 @using ExGrid.Docs.Examples.Data
 @using ExGrid.Cells
 @using ExGrid.Clipboard
+@using ExGrid.Finding
+@using ExGrid.Validation
 @using ExGrid.Selection
 
 @* Notional is judged by the trade's domain, which answers later, as a server would. Type 1500 and Enter: no trade of
    that size can be booked, and the editor holds. Type 60000000: it is booked, painted as an error, and its reason
-   opens when the Focus stands on it. Escape while the answer is out cancels the commit. *@
+   opens when the Focus stands on it. Escape while the answer is out cancels the commit. F8 and Shift+F8 step through
+   the flagged trades, wherever they stand in the order shown. *@
 <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="280" ViewportWidth="ViewportSize.Stretch"
-                      OnEdit="Edit" OnPaste="Fill" CellState="_cellState" CellMessageOf="MessageOf" />
+                      OnEdit="Edit" OnPaste="Fill" CellState="_rules.State" CellMessageOf="_rules.Message" OnFindError="_nextFlag" />
 
 @code {
     private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
-    private readonly Dictionary<int, string> _flags = [];
-    private CellStateOf<Trade>? _cellState;
+    private readonly Dictionary<int, (Trade Trade, string Why)> _flags = [];
+    private readonly GridRuleset<Trade> _rules;
+    private readonly Func<GridErrorStepRequest, CancellationToken, Task<GridFindResult>> _nextFlag;
+
+    public ScriptCoreDomainGrid()
+    {
+        // The domain's flags, marked by the bundled ruleset by Id, wherever the trade stands: it paints them, says
+        // them, and steps through them.
+        _rules = new GridRuleset<Trade>(t => t.Id).Row(t => _flags.TryGetValue(t.Id, out var flag) ? [new RuleViolation("Notional", flag.Why)] : []);
+        // F8 and Shift+F8: read in the order the grid shows, which an in-memory Source holds whole.
+        _nextFlag = (request, _) => Task.FromResult(_rules.FindError(request, _source.Window));
+    }
 
     private readonly GridColumn<Trade>[] _columns =
     [
@@ -61,22 +74,19 @@
             Book(trade, notional);
     }
 
-    // Applied, and flagged where the domain flags it: the flag is painted through CellState and said through
-    // CellMessageOf, and a new CellState delegate is how the grid hears that the flags changed.
+    // Applied, and flagged where the domain flags it. Each Evaluate hands the grid a new State and Message, which is
+    // how it hears that the flags changed.
     private void Book(Trade trade, decimal notional)
     {
         var booked = trade with { Notional = notional };
         _source.ReplaceRow(trade, booked);
         if (Booking.Check(booked) is { Kind: EditVerdictKind.Flag, Message: { } why })
-            _flags[trade.Id] = why;
+            _flags[trade.Id] = (booked, why);
         else
             _flags.Remove(trade.Id);
-        var flagged = _flags.Keys.ToHashSet();
-        _cellState = (t, column) => column.Name == "Notional" && flagged.Contains(t.Id) ? CellState.Error : CellState.Normal;
+        // Only the flagged trades are judged: their marks are theirs by Id, and one a filter hides keeps its own.
+        _rules.Evaluate(_flags.Values.Select(flag => flag.Trade), _columns);
     }
-
-    private string? MessageOf(Trade trade, GridColumn<Trade> column)
-        => column.Name == "Notional" ? _flags.GetValueOrDefault(trade.Id) : null;
 
     // The domain: a trade of less than a million cannot be booked, and one above fifty million needs a second signature.
     private static class Booking

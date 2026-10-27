@@ -3,6 +3,9 @@ using Bunit;
 using ExGrid.Cells;
 using ExGrid.Clipboard;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Finding;
+using ExGrid.Selection;
+using ExGrid.Validation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Xunit;
@@ -208,5 +211,77 @@ public class ScriptGridAnswerTests : BunitContext
         var message = await cut.InvokeAsync(() => Bridge().Message(IdOf(1), "Book"));
         Assert.Equal("Book is not a book we trade.", message);
         Assert.Equal(1, messages);
+    }
+
+    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Stepping(
+        InMemoryGridSource<TestRow> source, Func<GridErrorStepRequest, CancellationToken, Task<GridFindResult>> find)
+        => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns(new("Book", ColumnType.Text, r => r.Book, editable: true)))
+            .Add(g => g.OnFindError, find));
+
+    private static JsonElement Step(int rowSequenceVersion) => Payload(
+        $$"""{"backward":true,"from":{"row":1,"column":0},"columns":["Book","Amount"],"rowSequenceVersion":{{rowSequenceVersion}}}""");
+
+    [Fact] // ED-38: F8 is answered by .NET, from the request the browser made, in the order it was asked under
+    public async Task ED38_ADR0381_an_error_step_is_asked_of_the_consumer_and_answered_as_a_find_result()
+    {
+        GridErrorStepRequest? asked = null;
+        var source = GridSource.From(_rows);
+        var cut = Stepping(source, (request, _) =>
+        {
+            asked = request;
+            return Task.FromResult(GridFindResult.Found(2, "Amount"));
+        });
+        Assert.True(Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("options").GetProperty("findsErrors").GetBoolean());
+
+        var answer = await cut.InvokeAsync(() => Bridge().FindError(1, 1, Step(source.RowSequenceVersion)));
+
+        Assert.Equal("""{"found":true,"row":2,"column":"Amount"}""", answer);
+        Assert.NotNull(asked);
+        Assert.Equal((true, new CellPosition(1, 0), source.RowSequenceVersion), (asked.Backward, asked.From, asked.RowSequenceVersion));
+        Assert.Equal(["Book", "Amount"], asked.Columns);
+    }
+
+    [Fact] // ADR-0381 / ADR-0011: a step asked under an order the source has left is not handed to the Consumer
+    public async Task ADR0381_an_error_step_asked_under_another_order_is_answered_as_moved()
+    {
+        var asked = 0;
+        var source = GridSource.From(_rows);
+        var cut = Stepping(source, (_, _) =>
+        {
+            asked++;
+            return Task.FromResult(GridFindResult.NotFound);
+        });
+        var version = source.RowSequenceVersion;
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Book", SortDirection.Descending)]));
+
+        var answer = await cut.InvokeAsync(() => Bridge().FindError(1, 1, Step(version)));
+
+        Assert.Equal("""{"moved":true}""", answer);
+        Assert.Equal(0, asked);
+        // What the source owes crosses ahead of the answer, so the browser holds the order .NET answered in.
+        var sent = Parsed(_grid.Invocations["state"][^1].Arguments[0]);
+        Assert.Equal(source.RowSequenceVersion, sent.GetProperty("rowSequenceVersion").GetInt32());
+    }
+
+    [Fact] // ADR-0381 / spine rule 6: a step the browser asked as the Consumer took OnFindError away is withdrawn, not a failure
+    public async Task ADR0381_an_error_step_asked_as_the_consumer_took_it_away_is_answered_as_withdrawn()
+    {
+        var source = GridSource.From(_rows);
+        var cut = Stepping(source, (_, _) => Task.FromResult(GridFindResult.NotFound));
+        cut.Render(ps => ps.Add(g => g.OnFindError, null));
+
+        var answer = await cut.InvokeAsync(() => Bridge().FindError(1, 1, Step(source.RowSequenceVersion)));
+
+        Assert.Equal("""{"withdrawn":true}""", answer);
+    }
+
+    [Fact] // ADR-0381: Rows are ordered out of the Consumer's sight, so the step a Consumer answers needs a Source
+    public void ADR0381_an_error_step_over_rows_the_grid_orders_itself_is_refused()
+    {
+        var refused = Assert.Throws<InvalidOperationException>(() => Grid(Columns(new("Book", ColumnType.Text, r => r.Book)), ps => ps
+            .Add(g => g.OnFindError, (_, _) => Task.FromResult(GridFindResult.NotFound))));
+        Assert.Contains("OnFindError", refused.Message);
     }
 }

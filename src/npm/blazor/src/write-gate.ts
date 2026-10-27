@@ -12,6 +12,7 @@ export class WriteGate<Update, State> {
     readonly #take: (message: Sent<Update, State>) => void;
     readonly #discard: (state: State) => void;
     readonly #held: Sent<Update, State>[] = [];
+    readonly #idle: (() => void)[] = [];
     #handling = 0;
     #stopped = false;
 
@@ -33,8 +34,21 @@ export class WriteGate<Update, State> {
         this.#handling += 1;
         return handled.finally(() => {
             this.#handling -= 1;
-            if (this.#handling === 0) this.#release();
+            if (this.#handling === 0) {
+                try {
+                    this.#release();
+                } finally {
+                    for (const resolve of this.#idle.splice(0)) resolve();
+                }
+            }
         });
+    }
+
+    /** Settles once nothing is held: at once while no write is being handled, and otherwise once every write is,
+     * and what .NET sent meanwhile is taken in. */
+    released(): Promise<void> {
+        if (this.#handling === 0) return Promise.resolve();
+        return new Promise(resolve => { this.#idle.push(resolve); });
     }
 
     /** Takes in what is held now, and holds on: .NET asked something of the grid, in a write's handler, that it
@@ -47,6 +61,8 @@ export class WriteGate<Update, State> {
     stop(): void {
         this.#stopped = true;
         this.#held.length = 0;
+        // Nothing will be taken in: whoever waits on it is let go, to a grid that reads no answer any more.
+        for (const resolve of this.#idle.splice(0)) resolve();
     }
 
     // In the order .NET sent them; of states one after another only the last, which holds all the ones before it

@@ -545,3 +545,48 @@ describe('answers .NET gives later (ADR-0380 section 5)', () => {
         expect(root.querySelector('.ex-message')?.textContent).toBe('Book is not a book we trade.');
     });
 });
+
+const focusHeard = (dotnet: FakeDotNet): unknown => Reflect.get(dotnet.heard('selectionChanged').at(-1) as object, 'focus');
+
+describe('the error step .NET answers (ADR-0381 section 3)', () => {
+    it('ED-38: F8 asks .NET by number, of the source the grid holds, and its answer brings the Focus there', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'FindError' ? '{"found":true,"row":1,"column":"Notional"}' : null);
+        const { root } = mount({ options: options({ rowHeight: 24, findsErrors: true, hears: ['selectionChanged'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        key('F8');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'FindError').map(call => call.args)).toEqual([
+            [1, 1, { backward: false, from: { row: 0, column: 0 }, columns: ['Book', 'Notional'], rowSequenceVersion: 0 }],
+        ]);
+        expect(focusHeard(dotnet)).toEqual({ row: 1, column: 1 });
+    });
+
+    it('ADR-0142: a step .NET answers as moved waits for the state a write holds, and the grid says the rows moved', async () => {
+        const dotnet = new FakeDotNet();
+        let cleared: ((answer: null) => void) | undefined;
+        const { root, grid } = mount({ options: options({ rowHeight: 24, findsErrors: true, hears: ['clear', 'selectionChanged'] }) }, dotnet);
+        dotnet.answer = (method, args) => {
+            if (method === 'Heard' && args[0] === 'clear') return new Promise(resolve => { cleared = resolve; });
+            if (method !== 'FindError') return null;
+            // .NET's source moved before the step's turn: its state crosses first, and the clear in flight holds it.
+            grid.state(JSON.stringify(state(2, [credit, rates], { rowSequenceVersion: 1 })));
+            return '{"moved":true}';
+        };
+        await turns();
+        press(root, 10, 5);
+        key('Delete');
+        key('F8');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'FindError')).toHaveLength(1);
+        // Not "none found" in an order the grid no longer shows: nothing is said until the held state is in.
+        expect(root.querySelector('.ex-announce')?.textContent).toBe('');
+
+        if (cleared === undefined) throw new Error('The clear crossed to .NET.');
+        cleared(null);
+        await turns();
+        expect(root.querySelector('.ex-announce')?.textContent)
+            .toBe('The rows moved while the next error was looked for, so the step was set aside. Press F8 again.');
+    });
+});

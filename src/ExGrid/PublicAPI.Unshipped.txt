@@ -309,6 +309,8 @@ ExGrid.Script.ExGrid<TRow>.OnEditDiscarded.get -> Microsoft.AspNetCore.Component
 ExGrid.Script.ExGrid<TRow>.OnEditDiscarded.set -> void
 ExGrid.Script.ExGrid<TRow>.OnEditingChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
 ExGrid.Script.ExGrid<TRow>.OnEditingChanged.set -> void
+ExGrid.Script.ExGrid<TRow>.OnFindError.get -> System.Func<ExGrid.Validation.GridErrorStepRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Finding.GridFindResult!>!>?
+ExGrid.Script.ExGrid<TRow>.OnFindError.set -> void
 ExGrid.Script.ExGrid<TRow>.OnLeave.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Script.ExGrid<TRow>.OnLeave.set -> void
 ExGrid.Script.ExGrid<TRow>.OnOverwriteNotice.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridOverwriteNotice>

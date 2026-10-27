@@ -220,6 +220,15 @@ but before its answer crossed back cancels a commit that has landed in .NET. The
 source holds, under the editor kept open, and the next commit from that editor raises an Overwrite Notice. A
 handler that checks its token before it writes writes nothing the user took back.)*
 
+*(2026-10-27, implemented: [ADR-0381](./0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)
+section 3's error step crosses as `OnFindError`, answered in .NET in its turn among the events and numbered as a
+verdict is, so stepping again calls off the step still out. A step asked of a source the Consumer has since
+replaced, or under a row sequence version its source has left, is not handed to the Consumer, which would read
+positions in an order they were not taken in: .NET sends what its source owes and answers it as moved, and the
+bridge waits until what a write of the user's holds is taken in, so the core holds the newer order and says the
+rows moved rather than "no error". `OnFindError` takes a `Source` and is refused beside `Rows`, whose order the
+grid keeps out of the Consumer's sight.)*
+
 ### 8. The engines stay in C#
 
 ExGrid.Data, ExPivot.Engine and ExSheet.Engine are not ported. A React application reaches them on a

@@ -5,8 +5,8 @@
 // does to them are the Consumer's, in .NET.
 
 import {
-    createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridHandle,
-    type GridOptions, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
+    createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridErrorStepRequest, type GridFindResult,
+    type GridHandle, type GridOptions, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
@@ -31,6 +31,8 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     /** Where the Consumer answers a cell's message, which .NET is asked for as the popover opens (ADR-0034): the
      * number of its judgement, which moves when it hands another, so a message shown is asked again. */
     readonly cellMessages?: number;
+    /** Whether the Consumer answers the error step, F8 and Shift+F8, which .NET is asked as it is taken (ADR-0381). */
+    readonly findsErrors?: true;
 }
 
 /** The options .NET sets as they are, with no function or object of the browser's in them. */
@@ -132,7 +134,7 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
         } else if (next.state !== undefined) {
             source.take(next.state);
         }
-        grid.update(gridOptions(next.options, columns, source, heard, paint));
+        grid.update(gridOptions(next.options, columns, source, heard, paint, findError));
     };
 
     const gate = new WriteGate<WireUpdate, WireState>(message => {
@@ -142,7 +144,23 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
     const write = (kind: HeardKind, payload: unknown): Promise<unknown> => gate.handling(dotnet.invokeMethodAsync('Heard', kind, payload));
     const heard = handlers(dotnet, write, asking);
     const paint = cellPaint(dotnet, columns);
-    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint));
+    // Asked of the source the grid holds now, by its number. .NET sends what its source owes before it answers, and
+    // answers a step asked of a source or an order it no longer holds as moved: once what a write of the user's holds
+    // meanwhile is taken in, the core holds the newer one, and says the rows moved (ADR-0381, ADR-0142).
+    const findError: FindErrorOf = (request, signal) => asking(signal, async number => {
+        const askedOf = source;
+        const answer = await dotnet.invokeMethodAsync('FindError', number, askedOf.generation, request);
+        signal.throwIfAborted();
+        const found = findResultOf(answer);
+        if (found !== 'moved') return found;
+        await gate.released();
+        // A "none found" the core would read as said of the rows it shows: .NET moved without sending what moved.
+        if (source === askedOf && source.snapshot().rowSequenceVersion === request.rowSequenceVersion) {
+            throw new Error('Internal: .NET answered the error step as moved, and sent no other source or order.');
+        }
+        return { found: false };
+    });
+    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint, findError));
     return Object.freeze({
         update: (text: string) => { gate.receive({ update: parsed<WireUpdate>(text) }); },
         state: (text: string) => { gate.receive({ state: parsed<WireState>(text) }); },
@@ -239,6 +257,22 @@ function verdictOf(answer: unknown, column: string): EditVerdict {
     throw new TypeError(`Internal: .NET answered the verdict on column '${column}' with ${JSON.stringify(verdict)}.`);
 }
 
+type FindErrorOf = (request: GridErrorStepRequest, signal: AbortSignal) => Promise<GridFindResult>;
+
+/** .NET's answer to an error step, as `ExGrid.Script` writes a Find result, or `moved` where .NET did not ask the
+ * Consumer, since what the step was asked under is gone there. A step .NET did not answer, its component gone or its
+ * `OnFindError` taken away meanwhile, is given up: nothing moves, and nothing is claimed of cells nobody read. */
+function findResultOf(answer: unknown): GridFindResult | 'moved' {
+    if (answer === null) throw new DOMException('.NET gave the error step no answer: the component is gone.', 'AbortError');
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered the error step with something other than JSON text.');
+    const found = parsed<{ readonly found: unknown; readonly row?: unknown; readonly column?: unknown; readonly moved?: unknown; readonly withdrawn?: unknown }>(answer);
+    if (found.withdrawn === true) throw new DOMException('The Consumer took OnFindError away as the step was asked.', 'AbortError');
+    if (found.moved === true) return 'moved';
+    if (found.found === false) return { found: false };
+    if (found.found === true && typeof found.row === 'number' && typeof found.column === 'string') return { found: true, row: found.row, column: found.column };
+    throw new TypeError(`Internal: .NET answered the error step with ${JSON.stringify(found)}.`);
+}
+
 type MessageOf = NonNullable<GridOptions<BlazorRow>['cellMessage']>;
 
 interface Paint {
@@ -272,7 +306,7 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
     });
 }
 
-function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint): GridOptions<BlazorRow> {
+function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf): GridOptions<BlazorRow> {
     const hears = new Set(wire.hears);
     const temporal: unknown = Reflect.get(globalThis, 'Temporal');
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
@@ -287,6 +321,7 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
         ...(temporal === undefined ? {} : { temporal: temporal as TemporalLike }), // oxlint-disable-line typescript/no-unsafe-type-assertion -- the core checks it is a Temporal namespace as it takes it
         ...(wire.cellStates === true ? { cellState: paint.cellState } : {}),
         ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
+        ...(wire.findsErrors === true ? { findError } : {}),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('edit') ? { onEdit: heard.onEdit } : {}),
         ...(hears.has('paste') ? { onPaste: heard.onPaste } : {}),
