@@ -6,7 +6,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellAddress, CellFormatChange, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
 import { createGrid, type GridHandle } from '@ex-grid/core';
-import { createSheet, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
+import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
+import type { SheetToolbarItemSlotContext } from '../src/sheet-toolbar-slot';
 import { PointingScope } from '../src/pointing-scope';
 import type { PointingRefusal } from '../src/pointing-refusal';
 
@@ -1191,6 +1192,124 @@ function onViewport(element: HTMLElement, type: string, x: number, y: number): v
     Object.defineProperty(event, 'offsetY', { value: y });
     viewport.dispatchEvent(event);
 }
+
+// A Chrome of the test's own for the toolbar's lists, as the Docs' ToolbarOwnList draws them: a button for each menu and
+// split control, its list its own; every other item left to the built-in Chrome.
+function ownLists(): { readonly chrome: SheetChrome; readonly contexts: Map<string, SheetToolbarItemSlotContext>; readonly cleanups: string[] } {
+    const contexts = new Map<string, SheetToolbarItemSlotContext>();
+    const cleanups: string[] = [];
+    const chrome: SheetChrome = {
+        toolbarItem: (slot, context) => {
+            if (context.kind !== 'menu' && context.kind !== 'split') return undefined;
+            const button = document.createElement('button');
+            button.className = 'own-list';
+            button.textContent = context.view().name;
+            slot.append(button);
+            contexts.set(context.view().name, context);
+            return () => { cleanups.push(context.view().name); button.remove(); };
+        },
+    };
+    return { chrome, contexts, cleanups };
+}
+
+function own(contexts: Map<string, SheetToolbarItemSlotContext>, name: string): SheetToolbarItemSlotContext {
+    const found = contexts.get(name);
+    if (found === undefined) throw new Error(`The Chrome drew no item named ${name}.`);
+    return found;
+}
+
+const choiceIndex = (context: SheetToolbarItemSlotContext, label: string): number => context.view().choices.findIndex(choice => choice.label === label);
+
+describe('the Sheet Toolbar drawn by a Chrome (ADR-0100, ADR-0390)', () => {
+    it('ADR-0390: the slot draws the items it answers for and the built-in Chrome the rest; the band\'s keys ask for the list, and a choice handed back is made with the keyboard on the Sheet', async () => {
+        const { chrome, contexts } = ownLists();
+        const { element, sheet } = sheetOf({ showToolbar: true, chrome, document: documentOf({ A1: 'x' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        expect([...element.querySelectorAll('.ex-sheet-toolbar-slot .own-list')].map(button => button.textContent))
+            .toEqual(['Font Colour', 'Fill Colour', 'Borders', 'Number Format']);
+        expect(toolbarItem(element, 'Bold').getAttribute('aria-pressed')).toBe('false');
+        const fill = own(contexts, 'Fill Colour');
+        expect([fill.kind, fill.view().choices.length, fill.view().choices[0], fill.view().openRequest])
+            .toEqual(['split', 71, { label: 'No Fill', swatch: undefined, selected: true, disabledReason: undefined }, 0]);
+        // ↓ on the item asks for its list; the contents take the keyboard to their own.
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        band?.focus();
+        while (!fill.view().active) key('ArrowRight');
+        expect(band?.getAttribute('aria-activedescendant')).toBe(element.querySelectorAll('.ex-sheet-toolbar-slot')[1]?.id);
+        let heard = 0;
+        const stop = fill.subscribe(() => { heard += 1; });
+        key('ArrowDown');
+        expect([fill.view().openRequest, fill.view().closeRequest, heard > 0]).toEqual([1, 0, true]);
+        stop();
+        const list = document.createElement('div');
+        list.tabIndex = -1;
+        document.body.append(list);
+        list.focus();
+        fill.choicesClosed(choiceIndex(fill, 'Red'), false);
+        expect(document.activeElement).toBe(grid);
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).fill.colour?.toString()).toBe('#FF0000');
+        await vi.waitFor(() => { expect(fill.view().choices.find(choice => choice.label === 'Red')?.selected).toBe(true); });
+        // The face sets what was chosen last, as the built-in list's choice leaves it.
+        sheet.undo();
+        fill.invoke();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).fill.colour?.toString()).toBe('#FF0000');
+        // A choice that is not the list's, or cannot be chosen, is refused by name.
+        expect(() => { fill.choicesClosed(71, false); }).toThrow(RangeError);
+        const numberFormat = own(contexts, 'Number Format');
+        expect(() => { numberFormat.choicesClosed(choiceIndex(numberFormat, 'Accounting'), false); }).toThrow(/Accounting/u);
+        // A menu's own press opens the built-in list.
+        numberFormat.invoke();
+        expect(choicesOf(element).list.getAttribute('aria-label')).toBe('Number Format');
+    });
+
+    it('ADR-0100: Escape in a list a KeyTip asked for goes back to the row\'s KeyTips; the band giving the keyboard back first closes the list it asked for', async () => {
+        const { chrome, contexts } = ownLists();
+        const { element } = sheetOf({ showToolbar: true, chrome, document: documentOf({ A1: 'x' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        const fill = own(contexts, 'Fill Colour');
+        key('F10');
+        key('h');
+        expect(element.querySelector('.ex-sheet-toolbar-slot .ex-sheet-keytip')?.textContent).toBe('FC');
+        key('h');
+        expect(fill.view().openRequest).toBe(1);
+        fill.choicesClosed(undefined, true);
+        expect(document.activeElement).toBe(band);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(14);
+        key('Escape');
+        key('Escape');
+        expect(document.activeElement).toBe(grid);
+        // Asked for from the band's keys, and the band gives the keyboard back before the list takes it.
+        band?.focus();
+        while (!fill.view().active) key('ArrowRight');
+        key('ArrowDown');
+        key('Escape');
+        expect([fill.view().openRequest, fill.view().closeRequest, document.activeElement]).toEqual([2, 2, grid]);
+    });
+
+    it('ADR-0390: contents go with their item, the slot withdrawn and the Sheet; a slot that answers anything else is refused by name', async () => {
+        const { chrome, cleanups } = ownLists();
+        const { element, sheet } = sheetOf({ showToolbar: true, chrome });
+        await vi.waitFor(() => { expect(element.querySelectorAll('.own-list')).toHaveLength(4); });
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: true, chrome, toolbar: [{ label: 'Mine', items: ['bold', 'fill'] }] });
+        expect([...cleanups]).toEqual(['Font Colour', 'Borders', 'Number Format']);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: true, toolbar: [{ label: 'Mine', items: ['bold', 'fill'] }] });
+        expect(cleanups).toHaveLength(4);
+        expect(splitPart(element, 'Fill Colour', 'arrow').getAttribute('aria-label')).toBe('Fill Colour, more');
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: true, chrome });
+        expect(element.querySelectorAll('.own-list')).toHaveLength(4);
+        sheet.destroy();
+        expect(cleanups).toHaveLength(8);
+        const loose: unknown = { toolbarItem: 'draw' };
+        expect(() => sheetOf({ showToolbar: true, chrome: loose as SheetChrome })).toThrow('chrome.toolbarItem is a mount function (ADR-0390).');
+        expect(() => sheetOf({ showToolbar: true, chrome: { toolbarItem: () => (1 as unknown as () => void) } }))
+            .toThrow(/answers the function that takes its contents away/u);
+    });
+});
 
 describe('the fill handle (ADR-0050, item 5)', () => {
     it('ADR-0050: dragging the handle down fills the series the engine reads, as one step on the undo stack, and selects source and target', async () => {

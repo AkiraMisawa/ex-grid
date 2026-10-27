@@ -29,6 +29,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ex-grid/react": "0.0.0-dev",
     "@ex-grid/sheet": "0.0.0-dev",
     "@ex-grid/sheet-engine": "0.0.0-dev"
   },

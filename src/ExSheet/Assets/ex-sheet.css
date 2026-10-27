@@ -478,6 +478,16 @@
     cursor: pointer;
 }
 .ex-sheet-toolbar-split { padding: 0; gap: 0; }
+/* An item a Chrome draws (ADR-0390): its place in the row, which wears the active mark and the KeyTip over the
+   contents, laid out as they lay themselves out. */
+.ex-sheet-toolbar-slot {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: calc(var(--ex-sheet-toolbar-row-height, 28px) - 6px);
+    border-radius: 3px;
+}
+.ex-sheet-toolbar-slot-contents { display: contents; }
 .ex-sheet-toolbar-face,
 .ex-sheet-toolbar-arrow {
     display: inline-flex;

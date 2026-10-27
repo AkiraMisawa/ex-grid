@@ -282,6 +282,17 @@
             open Format Cells, or choose a Font Colour and press Ctrl+Z straight away to undo it. The
             same keys work with either Chrome.
         </DocsExample>
+        <p>
+            Under React the same seam is <code>chrome={{ toolbarItem }}</code>: a render function of each item's
+            context that answers <code>null</code> to leave the item to the built-in Chrome. The context carries the
+            item's <code>kind</code> and a <code>view()</code> to read with <code>useSyncExternalStore</code> through its
+            <code>subscribe</code>: the name, the tooltip, whether it is pressed, why it is disabled, whether the
+            toolbar's keyboard is on it, its list's <code>choices</code>, and <code>openRequest</code> and
+            <code>closeRequest</code>, which change as they do in Blazor. <code>invoke()</code> presses the item, and
+            <code>choicesClosed(choice, escaped)</code> hands a list's close back, with the index of the choice or
+            none. The toolbar keeps its keys, the outline on the item its keyboard is on, and the KeyTips. Hand the same
+            function on every render: a new one draws the items again.
+        </p>
         <DocsExample Title="A Chrome of your own" Builtin="typeof(ToolbarOwnList)"
                      Files="@(["Examples/Sheet/OwnListChrome.cs", "Examples/Sheet/OwnListButton.razor", "Examples/Sheet/OwnListPanel.razor"])">
             This Chrome draws the toolbar's lists in a panel beside the Sheet, outside it, on the seam above. Press Alt,

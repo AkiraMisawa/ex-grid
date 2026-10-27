@@ -8,7 +8,7 @@
  * @packageDocumentation
  */
 export {
-    createSheet, type SheetHandle, type SheetOptions, type SheetsChange, type SheetToolbarButton, type SheetToolbarEntry, type SheetToolbarRowOptions,
+    createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange, type SheetToolbarButton, type SheetToolbarEntry, type SheetToolbarRowOptions,
 } from './create-sheet';
 export { FormatCellsDraft } from './format-cells-draft';
 export {
@@ -24,6 +24,9 @@ export {
 } from './number-format-codes';
 export type { PointingRefusal, PointingRefusalReason } from './pointing-refusal';
 export { SheetEdges } from './sheet-edges';
+export type {
+    SheetToolbarIcon, SheetToolbarItemChoice, SheetToolbarItemKind, SheetToolbarItemSlot, SheetToolbarItemSlotContext, SheetToolbarItemView,
+} from './sheet-toolbar-slot';
 export { sheetFormatChangeFor, sheetFormatKeyOf, sheetFormatKeysDeclared, type SheetFormatKey } from './sheet-format-keys';
 export { sheetStructureEditFor, sheetStructureKeyOf, sheetStructureKeysDeclared, type SheetStructureKey } from './sheet-structure-keys';
 export { sheetSummaryCells, sheetSummaryDeclined, type SheetSummaryCells } from './sheet-summary';

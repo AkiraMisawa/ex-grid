@@ -294,6 +294,11 @@ export { ReferenceColour }
 export function scientificCode(places: number): string;
 
 // @public
+export interface SheetChrome {
+    readonly toolbarItem?: SheetToolbarItemSlot;
+}
+
+// @public
 export class SheetEdges {
     find(from: CellAddress, direction: GridDirection): CellAddress;
     static of(sheet: Sheet): SheetEdges;
@@ -337,6 +342,7 @@ export type SheetLabel = (id: SheetWordId, english: string) => string | undefine
 
 // @public
 export interface SheetOptions {
+    readonly chrome?: SheetChrome;
     readonly density?: GridDensity;
     readonly document?: SheetDocument | WorkbookDocument | undefined;
     readonly japanese?: boolean;
@@ -435,6 +441,49 @@ export type SheetToolbarCommand = 'bold' | 'italic' | 'underline' | 'strikethrou
 
 // @public
 export type SheetToolbarEntry = SheetToolbarCommand | 'separator' | SheetToolbarButton;
+
+// @public
+export type SheetToolbarIcon = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'percent' | 'comma' | 'formatCells' | 'fontColour' | 'fill' | 'borders';
+
+// @public
+export interface SheetToolbarItemChoice {
+    readonly disabledReason: string | undefined;
+    readonly label: string;
+    readonly selected: boolean;
+    readonly swatch: string | undefined;
+}
+
+// @public
+export type SheetToolbarItemKind = 'toggle' | 'button' | 'split' | 'menu';
+
+// @public
+export type SheetToolbarItemSlot = (slot: HTMLElement, context: SheetToolbarItemSlotContext) => (() => void) | undefined;
+
+// @public
+export interface SheetToolbarItemSlotContext {
+    readonly choicesClosed: (choice: number | undefined, escaped: boolean) => void;
+    readonly id: string;
+    readonly invoke: () => void;
+    readonly kind: SheetToolbarItemKind;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly view: () => SheetToolbarItemView;
+}
+
+// @public
+export interface SheetToolbarItemView {
+    readonly active: boolean;
+    readonly choices: readonly SheetToolbarItemChoice[];
+    readonly closeRequest: number;
+    readonly disabledReason: string | undefined;
+    readonly icon: SheetToolbarIcon | undefined;
+    readonly moreName: string | undefined;
+    readonly name: string;
+    readonly openRequest: number;
+    readonly pressed: boolean;
+    readonly swatch: string | undefined;
+    readonly text: string | undefined;
+    readonly tooltip: string;
+}
 
 // @public
 export interface SheetToolbarRowOptions {

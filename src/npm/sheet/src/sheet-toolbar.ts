@@ -12,20 +12,23 @@
 // from the rows' letters to the Sheet, as Excel's does (the Windows readings of 2026-10-12, R2); any other key ends
 // them and does nothing, and every key typed while they stand is theirs, its default too. The elements wear the C# Sheet's classes, so one stylesheet lays
 // out both. What an item means is the Sheet's: this draws, and reports what was pressed.
+//
+// A Chrome's toolbarItem slot may draw an item in the band's place for it (ADR-0390): the band keeps the keys, the
+// active mark and the KeyTip, and asks for the item's list through the item's openRequest rather than opening the
+// built-in one.
 
+import type { SheetToolbarChoice } from './sheet-choices';
 import { preventDefault, setAttr } from './dom-attributes';
+import { SlottedToolbarItem, type SheetToolbarIcon, type SheetToolbarItemKind, type SheetToolbarItemShown, type SheetToolbarItemSlot } from './sheet-toolbar-slot';
 
-/** A picture the built-in Chrome draws for a Toolbar Item. */
-export type SheetToolbarIcon =
-    | 'bold' | 'italic' | 'underline' | 'strikethrough' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'percent' | 'comma'
-    | 'formatCells' | 'fontColour' | 'fill' | 'borders';
+export type { SheetToolbarIcon } from './sheet-toolbar-slot';
 
 /** One Toolbar Item as one pass shows it. */
 export interface SheetToolbarItem {
     /** Stable within the toolbar: the element's id is made from it, so the item the keyboard is on stays named. */
     readonly key: string;
     /** A split control's face does what it shows and its arrow opens its list; a menu opens its list. */
-    readonly kind: 'toggle' | 'button' | 'split' | 'menu';
+    readonly kind: SheetToolbarItemKind;
     readonly name: string;
     /** The name with its key, for the tooltip: `Bold (Ctrl+B)`. */
     readonly tooltip: string;
@@ -46,6 +49,8 @@ export interface SheetToolbarItem {
     /** For a menu or a split control, what opens its list; `keyTipRow` is the row whose KeyTips opened it, which Escape
      * there goes back to, or `undefined` where no KeyTip did. */
     readonly open: ((keyTipRow: number | undefined) => void) | undefined;
+    /** For a menu or a split control, its list's choices as they stand now, which a Chrome-drawn item is handed. */
+    readonly list: (() => readonly SheetToolbarChoice[]) | undefined;
     /** Its KeyTip letters, Excel's Home tab's, or `undefined` for none. */
     readonly keyTip: string | undefined;
 }
@@ -63,12 +68,16 @@ export interface SheetToolbarPaint {
     readonly rows: readonly SheetToolbarRow[];
     readonly rowHeightPx: number;
     readonly name: string;
+    /** The Chrome's slot for each item, or `undefined` for the built-in items alone. */
+    readonly itemSlot: SheetToolbarItemSlot | undefined;
 }
 
 /** What the band tells the Sheet. */
 export interface SheetToolbarHooks {
     /** The keyboard goes back to the Sheet: after a press from the keys, or Escape. */
     readonly giveBack: () => void;
+    /** A Chrome-drawn item's list made a choice, the keyboard given back: the Sheet makes it, as the built-in list's. */
+    readonly chosen: (choice: SheetToolbarChoice) => void;
 }
 
 const svgOpen = '<svg class="ex-sheet-toolbar-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">';
@@ -94,14 +103,19 @@ const pictures: Readonly<Record<SheetToolbarIcon, string>> = {
 const caret = `${svgOpen}<path stroke-width="1.5" d="M4.5 6.5 8 10l3.5-3.5"/></svg>`;
 
 // What an element of an item is drawn from: kept, so a pass that changes nothing writes nothing.
-interface Drawn {
+interface BuiltInDrawn {
     readonly element: HTMLElement;
     readonly buttons: readonly HTMLButtonElement[];
     readonly face: HTMLButtonElement;
+    readonly kind: SheetToolbarItemKind;
     picture: string | undefined;
     // The KeyTip shown on it, while one is.
     badge: HTMLElement | undefined;
+    // The Chrome's slot that left it to the built-in Chrome, which is not asked again.
+    readonly declinedBy: SheetToolbarItemSlot | undefined;
 }
+
+type Drawn = BuiltInDrawn | SlottedToolbarItem;
 
 // The KeyTips standing: the rows' letters, or one row's items' letters; and the letters typed at that level so far.
 interface KeyTips {
@@ -128,6 +142,9 @@ export class SheetToolbar {
     // The KeyTips while they stand.
     #keyTips: KeyTips | undefined;
     readonly #rowBadges = new Map<HTMLElement, HTMLElement>();
+    // The list the band's keys asked a Chrome-drawn item for, until it closes: the item's key, and the row whose
+    // KeyTips asked, which Escape in the list goes back to.
+    #requested: { readonly key: string; readonly keyTipRow: number | undefined } | undefined;
 
     constructor(doc: Document, hooks: SheetToolbarHooks) {
         this.#doc = doc;
@@ -164,6 +181,7 @@ export class SheetToolbar {
     /** Starts the KeyTips, the rows' letters, and takes the keyboard to the band; false where no row has a letter. */
     startKeyTips(): boolean {
         if (this.#painted?.rows.some(row => row.keyTip !== undefined) !== true) return false;
+        this.#withdrawRequest();
         this.#showKeyTips({ row: undefined, typed: '' });
         this.band.focus({ preventScroll: true });
         return true;
@@ -219,12 +237,19 @@ export class SheetToolbar {
         for (const [key, drawn] of this.#drawn) {
             if (shown.has(key)) continue;
             this.#drawn.delete(key);
-            drawn.element.remove();
+            this.#takeAway(drawn);
         }
         this.#items = items;
         // The item the keyboard was on went, or can no longer be pressed: the nearest that can, from the start.
         if (this.#active !== undefined && this.#activeItem() === undefined) this.#active = this.#enabled()[0]?.key;
         this.#showActive();
+    }
+
+    /** Takes every Chrome-drawn item's contents away, as the Sheet goes. */
+    dispose(): void {
+        for (const drawn of this.#drawn.values()) this.#takeAway(drawn);
+        this.#drawn.clear();
+        this.#requested = undefined;
     }
 
     /** Whether the keyboard is on the band. */
@@ -279,6 +304,11 @@ export class SheetToolbar {
 
     #paintItem(item: SheetToolbarItem, keyTip: string | undefined): HTMLElement {
         const drawn = this.#drawnOf(item);
+        if (drawn instanceof SlottedToolbarItem) {
+            drawn.show(this.#shownOf(item, drawn.element.classList.contains('ex-sheet-toolbar-active')));
+            drawn.badge = this.#placeBadge(drawn.element, drawn.badge, keyTip);
+            return drawn.element;
+        }
         const title = item.disabledReason === undefined ? item.tooltip : `${item.tooltip}: ${item.disabledReason}`;
         setAttr(drawn.face, 'title', title);
         setAttr(drawn.face, 'aria-label', item.name);
@@ -299,16 +329,28 @@ export class SheetToolbar {
             drawn.picture = picture;
             this.#drawFace(drawn.face, item);
         }
-        // The KeyTip stands last in the item, over its face, as the C# Chrome draws it.
-        if (keyTip === undefined) {
-            drawn.badge?.remove();
-            drawn.badge = undefined;
-        } else {
-            const badge = this.#badge(drawn.badge, keyTip, 'ex-sheet-keytip');
-            if (badge.parentElement !== drawn.element || drawn.element.lastChild !== badge) drawn.element.append(badge);
-            drawn.badge = badge;
-        }
+        drawn.badge = this.#placeBadge(drawn.element, drawn.badge, keyTip);
         return drawn.element;
+    }
+
+    // The KeyTip stands last in the item, over its face, as the C# Chrome draws it.
+    #placeBadge(element: HTMLElement, kept: HTMLElement | undefined, keyTip: string | undefined): HTMLElement | undefined {
+        if (keyTip === undefined) {
+            kept?.remove();
+            return undefined;
+        }
+        const badge = this.#badge(kept, keyTip, 'ex-sheet-keytip');
+        if (badge.parentElement !== element || element.lastChild !== badge) element.append(badge);
+        return badge;
+    }
+
+    // What a Chrome-drawn item's contents are told it shows.
+    #shownOf(item: SheetToolbarItem, active: boolean): SheetToolbarItemShown {
+        return {
+            name: item.name, tooltip: item.tooltip, icon: item.icon, text: item.text, swatch: item.swatch, moreName: item.moreName,
+            pressed: item.pressed, disabledReason: item.disabledReason, active,
+            choices: item.list?.().map(({ label, swatch, selected, disabledReason }) => ({ label, swatch, selected, disabledReason })) ?? [], // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0100: an item with no list, a toggle or a button, has no choices
+        };
     }
 
     // The face's contents: the picture, a menu's text and its caret, a colour control's swatch.
@@ -333,8 +375,28 @@ export class SheetToolbar {
 
     #drawnOf(item: SheetToolbarItem): Drawn {
         const known = this.#drawn.get(item.key);
-        if (known !== undefined && known.element.dataset['exKind'] === item.kind) return known;
-        known?.element.remove();
+        const slot = this.#painted?.itemSlot;
+        if (known !== undefined && known.kind === item.kind
+            && (known instanceof SlottedToolbarItem ? known.mount === slot : slot === undefined || known.declinedBy === slot)) return known;
+        if (known !== undefined) this.#takeAway(known);
+        this.#drawn.delete(item.key);
+        const id = `${this.#prefix}${item.key}`;
+        let declinedBy: SheetToolbarItemSlot | undefined;
+        if (slot !== undefined) {
+            // Not asked again on every pass where it fails, or answers that the built-in Chrome draws the item.
+            declinedBy = slot;
+            const slotted = SlottedToolbarItem.tryMount(this.#doc, item.key, item.kind, this.#shownOf(item, false), slot, {
+                invoke: () => { this.#invoke(item.key); },
+                choicesClosed: (choice, escaped) => { this.#choicesClosed(item.key, choice, escaped); },
+                closedChoosingNothing: escaped => { this.#choicesClosed(item.key, undefined, escaped); },
+            });
+            if (slotted !== undefined) {
+                slotted.element.id = id;
+                slotted.element.dataset['exKind'] = item.kind;
+                this.#drawn.set(item.key, slotted);
+                return slotted;
+            }
+        }
         const button = (className: string, act: () => void): HTMLButtonElement => {
             const made = this.#doc.createElement('button');
             made.type = 'button';
@@ -357,13 +419,13 @@ export class SheetToolbar {
             arrow.setAttribute('aria-haspopup', 'menu');
             arrow.innerHTML = caret;
             group.append(face, arrow);
-            drawn = { element: group, buttons: [face, arrow], face, picture: undefined, badge: undefined };
+            drawn = { element: group, buttons: [face, arrow], face, kind: item.kind, picture: undefined, badge: undefined, declinedBy };
         } else {
             const face = button(item.kind === 'menu' ? 'ex-sheet-toolbar-item ex-sheet-toolbar-menu' : 'ex-sheet-toolbar-item', item.kind === 'menu' ? open : press);
             if (item.kind === 'menu') face.setAttribute('aria-haspopup', 'menu');
-            drawn = { element: face, buttons: [face], face, picture: undefined, badge: undefined };
+            drawn = { element: face, buttons: [face], face, kind: item.kind, picture: undefined, badge: undefined, declinedBy };
         }
-        drawn.element.id = `${this.#prefix}${item.key}`;
+        drawn.element.id = id;
         drawn.element.dataset['exKind'] = item.kind;
         this.#drawn.set(item.key, drawn);
         return drawn;
@@ -377,10 +439,71 @@ export class SheetToolbar {
 
     // Opens an item's list from a press or the band's keys, not a KeyTip; answers whether the item has one.
     #openFromBand(key: string): boolean {
-        const open = this.#shownItem(key)?.open;
-        if (open === undefined) return false;
-        open(undefined);
+        const item = this.#shownItem(key);
+        if (item?.open === undefined) return false;
+        this.#openList(item, undefined);
         return true;
+    }
+
+    // Opens an item's list: the built-in one, or, for a Chrome-drawn item, the Chrome's, which the band asks for.
+    #openList(item: SheetToolbarItem, keyTipRow: number | undefined): void {
+        const drawn = this.#drawn.get(item.key);
+        if (!(drawn instanceof SlottedToolbarItem)) {
+            item.open?.(keyTipRow);
+            return;
+        }
+        this.#withdrawRequest();
+        this.#requested = { key: item.key, keyTipRow };
+        drawn.requestOpen();
+    }
+
+    // The keyboard goes back to the Sheet from the band's own keys: a list asked for and not yet closed is closed.
+    #giveBack(): void {
+        this.#withdrawRequest();
+        this.#hooks.giveBack();
+    }
+
+    #withdrawRequest(): void {
+        const requested = this.#requested;
+        if (requested === undefined) return;
+        this.#requested = undefined;
+        const drawn = this.#drawn.get(requested.key);
+        if (drawn instanceof SlottedToolbarItem) drawn.requestClose();
+    }
+
+    // A Chrome-drawn item's press: as the built-in item's, a menu's opening the built-in list.
+    #invoke(key: string): void {
+        const item = this.#shownItem(key);
+        if (item === undefined) return;
+        if (item.kind === 'menu') item.open?.(undefined);
+        else item.press?.();
+    }
+
+    // A Chrome-drawn item's list closed: the keyboard goes back, to the KeyTips after Escape in a list one opened, and
+    // the choice is then made.
+    #choicesClosed(key: string, choice: number | undefined, escaped: boolean): void {
+        const requested = this.#requested?.key === key ? this.#requested : undefined;
+        if (requested !== undefined) this.#requested = undefined;
+        if (choice === undefined) {
+            if (escaped && requested?.keyTipRow !== undefined) this.backToKeyTips(requested.keyTipRow);
+            else this.#hooks.giveBack();
+            return;
+        }
+        const choices = this.#items.find(item => item.key === key)?.list?.() ?? []; // oxlint-disable-line ex-grid/no-stand-in-default -- an item with no list has no choice to make, and the index is refused below
+        const made = choices[choice];
+        if (made === undefined) throw new RangeError(`choicesClosed is handed the index of one of the item's ${String(choices.length)} choices, not ${String(choice)} (ADR-0100).`);
+        if (made.disabledReason !== undefined) throw new Error(`The choice '${made.label}' cannot be made: ${made.disabledReason}`);
+        this.#hooks.giveBack();
+        this.#hooks.chosen(made);
+    }
+
+    #takeAway(drawn: Drawn): void {
+        if (drawn instanceof SlottedToolbarItem) {
+            if (this.#requested !== undefined && this.#drawn.get(this.#requested.key) === drawn) this.#requested = undefined;
+            drawn.dispose();
+        } else {
+            drawn.element.remove();
+        }
     }
 
     #shownItem(key: string): SheetToolbarItem | undefined {
@@ -397,7 +520,10 @@ export class SheetToolbar {
 
     #showActive(): void {
         const active = this.holdsKeyboard && this.#keyTips === undefined ? this.#activeItem() : undefined;
-        for (const [key, drawn] of this.#drawn) drawn.element.classList.toggle('ex-sheet-toolbar-active', key === active?.key);
+        for (const [key, drawn] of this.#drawn) {
+            drawn.element.classList.toggle('ex-sheet-toolbar-active', key === active?.key);
+            if (drawn instanceof SlottedToolbarItem) drawn.setActive(key === active?.key);
+        }
         if (active === undefined) this.band.removeAttribute('aria-activedescendant');
         else setAttr(this.band, 'aria-activedescendant', `${this.#prefix}${active.key}`);
     }
@@ -439,11 +565,11 @@ export class SheetToolbar {
                 const press = active === undefined ? undefined : this.#pressOf(active.key);
                 if (press === undefined) return;
                 // The keyboard goes back before the press, so an item that opens what takes it (Format Cells) keeps it.
-                this.#hooks.giveBack();
+                this.#giveBack();
                 press();
                 break;
             }
-            case 'Escape': this.#hooks.giveBack(); break;
+            case 'Escape': this.#giveBack(); break;
             default: return;
         }
         event.preventDefault();
@@ -498,16 +624,16 @@ export class SheetToolbar {
         this.#showKeyTips(undefined);
         // Excel's Alt, H, H opens the Fill's palette rather than setting its colour: a list opens.
         if (chosen.open !== undefined) {
-            chosen.open(tips.row);
+            this.#openList(chosen, tips.row);
             return;
         }
-        this.#hooks.giveBack();
+        this.#giveBack();
         chosen.press?.();
     }
 
     #endKeyTips(): void {
         this.#showKeyTips(undefined);
-        this.#hooks.giveBack();
+        this.#giveBack();
     }
 
     #showKeyTips(tips: KeyTips | undefined): void {

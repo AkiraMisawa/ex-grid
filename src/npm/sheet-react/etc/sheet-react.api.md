@@ -5,9 +5,11 @@
 ```ts
 
 import { ReactElement } from 'react';
+import { ReactNode } from 'react';
 import { Ref } from 'react';
 import { SheetHandle } from '@ex-grid/sheet';
 import { SheetOptions } from '@ex-grid/sheet';
+import { SheetToolbarItemSlotContext } from '@ex-grid/sheet';
 
 // @public
 export function ExSheet(props: ExSheetProps): ReactElement;
@@ -16,7 +18,13 @@ export function ExSheet(props: ExSheetProps): ReactElement;
 export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy'>;
 
 // @public
-export type ExSheetProps = SheetOptions & {
+export interface ExSheetChrome {
+    readonly toolbarItem?: (context: SheetToolbarItemSlotContext) => ReactNode;
+}
+
+// @public
+export type ExSheetProps = Omit<SheetOptions, 'chrome'> & {
+    readonly chrome?: ExSheetChrome;
     readonly ref?: Ref<ExSheetApi>;
 };
 
