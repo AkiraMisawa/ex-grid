@@ -148,7 +148,7 @@ export interface ChartSourceReading {
     /** The title and the definition. */
     readonly reading: ChartSpecReading;
     /** The version each Data Handle's answers named. */
-    readonly versions: ReadonlyMap<string, number>;
+    readonly versions: ReadonlyMap<string, bigint>;
 }
 
 /**
@@ -163,6 +163,9 @@ export async function readChartSpecThrough(text: string, sources: (handle: strin
     options: { readonly from?: number | null; readonly to?: number | null; readonly signal?: AbortSignal } = {}): Promise<ChartSourceReading> {
     if (!Number.isInteger(pixels) || pixels < 1) throw new RangeError(`A chart is read through its sources at one pixel or more, not ${String(pixels)}.`);
     const { from = null, to = null, signal = new AbortController().signal } = options;
+    for (const end of [from, to]) {
+        if (end !== null && !Number.isFinite(end)) throw new RangeError(`A chart is read through its sources over a range of finite positions, not ${String(end)}.`);
+    }
     let root: JsonValue;
     try {
         root = readJsonText(text);
@@ -173,16 +176,33 @@ export async function readChartSpecThrough(text: string, sources: (handle: strin
         throw error;
     }
     const { values, series } = askedOf(root);
-    // Each asked as it is reached, as C#'s reader does: a Data Handle no source answers for stops the asking there.
-    const asks = series.map((asked, i) => {
+    // Every source is found before any is asked, so a Data Handle no source answers for leaves no question in flight.
+    const found = series.map((asked, i) => {
         const source = sources(asked.data);
         if (source === undefined) {
             throw new ChartSpecRefusedError(`series[${String(i)}].data`, `series[${String(i)}].data "${asked.data}" is not known: name a Data Handle a capability returned.`);
         }
-        return source.thin({ ...asked, values, from, to, pixels }, signal);
+        return source;
     });
-    const answers = await Promise.all(asks);
-    const versions = new Map<string, number>();
+    // The questions are called off together: when the caller stops waiting, and when one fails, since the reading
+    // then fails whole and no other answer is drawn.
+    const asking = new AbortController();
+    const stop = () => { asking.abort(signal.reason); };
+    signal.addEventListener('abort', stop, { once: true });
+    let answers: ChartSourceAnswer[];
+    try {
+        answers = await Promise.all(found.map(async (source, i) => {
+            const asked = series[i];
+            if (asked === undefined) throw new Error(`Internal: series ${String(i)} is not asked.`);
+            return source.thin({ ...asked, values, from, to, pixels }, asking.signal);
+        }));
+    } catch (error) {
+        asking.abort(error);
+        throw error;
+    } finally {
+        signal.removeEventListener('abort', stop);
+    }
+    const versions = new Map<string, bigint>();
     series.forEach((asked, i) => {
         const answer = answers[i];
         if (answer === undefined) throw new Error(`Internal: series ${String(i)} has no answer.`);
@@ -894,7 +914,7 @@ function valueOf(value: unknown, path: string, handle: string, row: number): Cha
 }
 
 // A Snapshot's decimal, `{ mantissa, scale }`, recognised by its shape as @ex-grid/data recognises one.
-function asDecimal(value: unknown): SnapshotDecimal | undefined {
+export function asDecimal(value: unknown): SnapshotDecimal | undefined {
     if (typeof value !== 'object' || value === null) {
         return undefined;
     }
@@ -931,7 +951,7 @@ function decimalValue(decimal: SnapshotDecimal): ChartValue | undefined {
 }
 
 // A value written into a sentence as C#'s `Convert.ToString(value, CultureInfo.InvariantCulture)` writes it.
-function cellText(value: unknown): string {
+export function cellText(value: unknown): string {
     if (value === null || value === undefined) {
         return '';
     }
@@ -973,7 +993,7 @@ function two(n: number): string {
 const ticksPerDay = 864_000_000_000n;
 
 // A Temporal `PlainDate` (C#'s DateOnly) or `PlainDateTime` (DateTime), as its ticks since 0001-01-01.
-function temporalDate(value: unknown): { readonly ticks: bigint; readonly withTime: boolean } | undefined {
+export function temporalDate(value: unknown): { readonly ticks: bigint; readonly withTime: boolean } | undefined {
     if (typeof value !== 'object' || value === null) {
         return undefined;
     }

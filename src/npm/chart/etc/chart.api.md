@@ -344,11 +344,11 @@ export interface ChartSource {
 export interface ChartSourceAnswer {
     readonly points: ChartData;
     readonly thinned: readonly PixelSummary[];
-    readonly version: number;
+    readonly version: bigint;
 }
 
 // @public
-export function chartSourceOver(data: ChartData, version?: number): ChartSource;
+export function chartSourceOver(data: ChartData, version?: bigint): ChartSource;
 
 // @public
 export interface ChartSourceQuery {
@@ -364,7 +364,7 @@ export interface ChartSourceQuery {
 // @public
 export interface ChartSourceReading {
     readonly reading: ChartSpecReading;
-    readonly versions: ReadonlyMap<string, number>;
+    readonly versions: ReadonlyMap<string, bigint>;
 }
 
 // @public
@@ -1297,7 +1297,7 @@ export function tenor(years: number): string;
 export const theilSenLimit = 3000;
 
 // @public
-export function thinChartData(data: ChartData, query: ChartSourceQuery, version?: number): ChartSourceAnswer;
+export function thinChartData(data: ChartData, query: ChartSourceQuery, version?: bigint): ChartSourceAnswer;
 
 // @public
 export type TickPlacement =

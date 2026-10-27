@@ -449,6 +449,24 @@
       "saying": "one pixel or more"
     },
     {
+      "name": "ADR-0344: a Chart Source is asked for a range of finite positions",
+      "sourceThin": {
+        "table": "steps",
+        "query": {
+          "data": "steps",
+          "x": "x",
+          "y": "y",
+          "values": "numbers",
+          "from": "-Infinity",
+          "to": null,
+          "pixels": 3
+        },
+        "version": 0
+      },
+      "throws": "argument",
+      "saying": "A Chart Source is asked for a range of finite positions."
+    },
+    {
       "name": "ADR-0344: a column the table does not have is refused, naming its columns",
       "sourceThin": {
         "table": "steps",
@@ -482,7 +500,7 @@
         "version": 0
       },
       "throws": "chartSpecRefused",
-      "saying": "Row 2 of \"times\" holds"
+      "saying": "Row 2 of \"times\" holds \"01/02/2026 12:30:00\" across, and the axis needs a date."
     },
     {
       "name": "ADR-0344: a value that is no number is refused, naming its row",

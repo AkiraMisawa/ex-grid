@@ -301,7 +301,7 @@ export class ChartCase {
                 if (table === undefined) {
                     throw new Error(`"${this.#name}" thins the table "${handle}", which the file does not hold.`);
                 }
-                const answer = thinChartData(table, sourceQuery(a['query']), whole(a['version'], 'version'));
+                const answer = thinChartData(table, sourceQuery(a['query']), BigInt(whole(a['version'], 'version')));
                 return answerRows(answer, sourceQuery(a['query']));
             }
             case 'reading': {
@@ -1761,7 +1761,7 @@ function answerRows(answer: ChartSourceAnswer, query: ChartSourceQuery): Json {
         const y = answer.points.value(query.y, r);
         rows.push({ x: placed(answer.points.value(query.x, r)), y: y === null ? null : placed(y) });
     }
-    return { version: answer.version, rows, thinned: plain(answer.thinned) };
+    return { version: plain(answer.version), rows, thinned: plain(answer.thinned) };
 }
 
 // A value kept as a number: a date as its day number, a whole number, a decimal or a double as a double.
@@ -1796,7 +1796,7 @@ async function throughAnswer(file: ChartFile, given: JsonObject, name: string): 
     const asked: Json[] = [];
     const sources = new Map<string, ChartSource>();
     for (const [handle, listed] of Object.entries(versions)) {
-        const left = [...list(listed, `the versions of "${handle}"`)].map(v => whole(v, 'a version'));
+        const left = [...list(listed, `the versions of "${handle}"`)].map(v => BigInt(whole(v, 'a version')));
         const table = tables.get(handle);
         if (table === undefined) {
             throw new Error(`Internal: "${handle}" is not among the tables.`);
