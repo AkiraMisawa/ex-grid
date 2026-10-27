@@ -461,6 +461,11 @@ than its spelling, Blazor's surface follows it under section 14.
   React's portal, keyed by the slot, keeps the component and its state. The focus a request asks for is
   the core's to give wherever DOM focus stands, as the built-in menu's is; any other the contents ask
   for is given only while the keyboard is still the grid's (ADR-0204).)*
+  *(2026-10-27, as the filter panel's slot was built: where a part holds state the user changes while it
+  stands, the context hands that state as a view the contents read and subscribe to, and a setter per
+  choice, rather than the C# context's pull for distinct values and `FilterPanelChoices` for the contents
+  to apply. The built-in panel draws from the same state, so what a choice means is one piece of code under
+  every Chrome.)*
 
 ## Consequences
 

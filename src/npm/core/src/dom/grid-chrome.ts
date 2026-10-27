@@ -10,9 +10,12 @@
 // the same slot, as it does a Template cell's (ADR-0020): a framework that keys its rendering by the slot,
 // as `@ex-grid/react`'s portals do, keeps its component and that component's state across the two.
 
+import type { FilterPanelModel, FilterPanelView, FilterUi } from '../chrome/filter-panel-model';
 import { letterOf, menuKeyNothing, type MenuKey } from '../chrome/menu-keys';
-import type { ColumnType } from '../query/columns';
+import type { ColumnType, DateType } from '../query/columns';
+import type { FilterCombinator, FilterOperator, FilterSpec } from '../query/filter';
 import type { SelectionRange } from '../selection/range';
+import { filterSentinel, type FilterPanelAnswers, type FilterPlace } from './filter-panel';
 import type { GridCommand } from './grid-command';
 import { MenuState, type MenuAnswers, type MenuKeyTable, type MenuPlace } from './menu-popover';
 
@@ -94,6 +97,83 @@ export interface GridContextMenuSlotContext<Row> extends GridMenuSlotContext {
 }
 
 /**
+ * What a column's filter panel's contents are handed (ADR-0009, ADR-0044): the column, what the panel shows and
+ * the choices that change it, and the exits. The panel stands under the column's commands in the one popover
+ * Alt+↓ and the ▾ open, inside the slot, `.ex-popover-filter`; Tab off either end of it is the core's, which
+ * places a sentinel either side, so the contents need no wrap of their own.
+ *
+ * What a choice means is the core's: the contents read {@link GridFilterPanelSlotContext.view}, draw it, and hand
+ * each choice to its setter, which answers the input (ADR-0220) and changes the view. OK is
+ * {@link GridFilterPanelSlotContext.apply}. The "clear-filter" command above the panel clears the column's filter,
+ * so the contents draw no Clear of their own.
+ */
+export interface GridFilterPanelSlotContext {
+    /** The `name` of the column the panel filters. */
+    readonly column: string;
+    /** That column's type. */
+    readonly columnType: ColumnType;
+    /** A Date column's declared date type (ADR-0023): what a typed value reads as. */
+    readonly dateType: DateType;
+    /** What the column declared its panel lays out (ADR-0009). The view says which form stands. */
+    readonly mode: FilterUi;
+    /** The column's spec in force when the panel opened. */
+    readonly current: FilterSpec | undefined;
+    /** What the panel shows now: a new object at each change, and the same one otherwise, so a framework may
+     * compare it by reference. */
+    readonly view: () => FilterPanelView;
+    /** Hears each change to the view; answers the function that stops it. */
+    readonly subscribe: (listener: () => void) => () => void;
+    /** The search box's text. */
+    readonly setSearch: (text: string) => void;
+    /** "Add current selection to filter" ticked or not. */
+    readonly setAddToCurrent: (on: boolean) => void;
+    /** A value's checkbox ticked or not: the `value` of one of the view's entries. */
+    readonly setChecked: (value: unknown, checked: boolean) => void;
+    /** "(Select All)" pressed: toggles the values the search shows. */
+    readonly toggleAll: () => void;
+    /** The first condition's operator, one of the view's `allowed` (FN-18). */
+    readonly setOperator: (operator: FilterOperator) => void;
+    /** The text typed for the first condition's value. */
+    readonly setOperand: (text: string) => void;
+    /** How the two conditions are joined. */
+    readonly setCombinator: (combinator: FilterCombinator) => void;
+    /** The second condition's operator, or `undefined` for "(none)". */
+    readonly setSecond: (operator: FilterOperator | undefined) => void;
+    /** The text typed for the second condition's value. */
+    readonly setSecondOperand: (text: string) => void;
+    /** OK: the panel's answer is applied and the popover closes. While the view says OK is unavailable, or a typed
+     * value does not read, nothing is applied and the panel stands, saying why. The slot is a form, and Enter in a
+     * text field submits it as the browser does, which applies too: a submit button of the contents' is an OK. */
+    readonly apply: () => void;
+    /** Cancel: the popover closes, and nothing is applied. The keyboard returns to the grid. */
+    readonly cancel: () => void;
+    /**
+     * A key pressed on the value list, its checkboxes or "(Select All)", never in a text field (ADR-0044): Excel's
+     * letters act there as on the commands, S, O and C running their command and closing the popover, and E
+     * moving to the search box. Handed `KeyboardEvent.key` and whether Control, Alt or Meta was held; answers
+     * whether the key was one of those letters, whose default the contents then prevent. Not handed while an IME
+     * composes.
+     */
+    readonly valueListKey: (key: string, controlAltOrMeta: boolean) => boolean;
+    /** The count of the core's requests for a control of the panel to take the keyboard, zero at the opening, where
+     * the commands hold it. Each request mounts the contents again; whenever the count differs from the one they
+     * last answered, they focus the control {@link GridFilterPanelSlotContext.focusTarget} names through
+     * {@link GridFilterPanelSlotContext.takeFocus}. */
+    readonly focusRequest: number;
+    /** Which control the latest request names: the panel's `first` (Tab on a command, and the value list arriving
+     * while the keyboard was in the panel), its `last` (Shift+Tab on a command, wrapping), or its `search`, the
+     * field a search is typed into, Excel's E: the value list's search box, or the first condition's value where no
+     * list stands (ADR-0044). `undefined` before any request. */
+    readonly focusTarget: 'first' | 'last' | 'search' | undefined;
+    /** The contents report a popup of their own (a select's list, a date picker) opening (`true`) and closing
+     * (`false`): while one is open, Escape is the popup's, and the next closes the popover (ADR-0039). */
+    readonly innerPopupChanged: (open: boolean) => void;
+    /** Gives `control` DOM focus while the keyboard is still this grid's: DOM focus inside its root, or on
+     * nothing (ADR-0204). An element that cannot take focus hands it to the first control inside it. */
+    readonly takeFocus: (control: HTMLElement, options?: { readonly preventScroll?: boolean }) => void;
+}
+
+/**
  * The Chrome slots a grid takes (ADR-0390 section 4): the parts a Wrapper draws, each in place of the built-in
  * Chrome's. A slot not given is the built-in Chrome's.
  */
@@ -102,10 +182,12 @@ export interface GridChrome<Row> {
     readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
     /** The Context Menu (ADR-0036). */
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
+    /** A column's filter panel, under the column menu's commands (ADR-0009, ADR-0044). */
+    readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
 }
 
 /** The slots a grid's `chrome` names. */
-const slotNames: readonly (keyof GridChrome<unknown>)[] = ['columnMenu', 'contextMenu'];
+const slotNames: readonly (keyof GridChrome<unknown>)[] = ['columnMenu', 'contextMenu', 'filterPanel'];
 
 /** A grid's `chrome`, checked: an object whose slots are each a mount function, or not given. */
 export function checkedChrome<Row>(chrome: unknown): GridChrome<Row> | undefined {
@@ -133,41 +215,118 @@ function mounted<Context>(name: string, mount: GridChromeSlot<Context>, slot: HT
     return () => { Reflect.apply(cleanup, undefined, []); };
 }
 
+/** The grid's focus function, as a slot's part is handed it: wherever DOM focus stands where `owed`, the grid's own
+ * request, and otherwise only while the keyboard is still the grid's (ADR-0204). */
+export type ChromeFocus = (control: HTMLElement, preventScroll: boolean, owed: boolean) => void;
+
+/**
+ * A Chrome slot's contents while their part stands (ADR-0390): mounted with a context, mounted again with the next
+ * one for each focus request, and taken away when the part goes, after which nothing they call back reaches the
+ * grid. The focus a request asks for is owed, the grid's own to give wherever DOM focus stands, as the built-in
+ * part's is, until the contents give it or the user makes an input in the part (ADR-0039); any other focus the
+ * contents ask for is given only while the keyboard is still the grid's (ADR-0204).
+ */
+class SlotMount<Context> {
+    readonly #name: string;
+    readonly #mount: GridChromeSlot<Context>;
+    readonly #slot: HTMLElement;
+    readonly #focus: ChromeFocus;
+    readonly #cancel: () => void;
+    #owed: boolean;
+    #cleanup: (() => void) | undefined;
+    #live = true;
+    /** Whether a popup of the contents' own is open: Escape is then the popup's (ADR-0039). */
+    innerPopupOpen = false;
+
+    /** `owed` says whether the first mount answers a request of the grid's; `cancel` closes the part. */
+    constructor(name: string, mount: GridChromeSlot<Context>, slot: HTMLElement, focus: ChromeFocus, cancel: () => void, owed: boolean) {
+        this.#name = name;
+        this.#mount = mount;
+        this.#slot = slot;
+        this.#focus = focus;
+        this.#cancel = cancel;
+        this.#owed = owed;
+    }
+
+    /** Whether the part stands. */
+    get live(): boolean {
+        return this.#live;
+    }
+
+    /** Mounts the contents, once. */
+    mount(context: Context): void {
+        if (this.#live && this.#cleanup === undefined) this.#cleanup = mounted(this.#name, this.#mount, this.#slot, context);
+    }
+
+    /** A focus request: the contents are mounted again with `context`, which names it. Contents that cannot be drawn
+     * again close the part, rather than leave it standing empty. */
+    request(context: Context): void {
+        if (!this.#live) return;
+        this.#owed = true;
+        this.#unmount();
+        try {
+            this.#cleanup = mounted(this.#name, this.#mount, this.#slot, context);
+        } catch (error) {
+            this.#cancel();
+            throw error;
+        }
+    }
+
+    /** An input the user made in the part: it moves the keyboard on from here, and no focus is owed any longer. */
+    heard(): void {
+        this.#owed = false;
+    }
+
+    /** The part is going: its contents are taken away. */
+    dispose(): void {
+        if (!this.#live) return;
+        this.#live = false;
+        this.#unmount();
+    }
+
+    readonly innerPopupChanged = (open: boolean): void => {
+        if (typeof open !== 'boolean') throw new TypeError('innerPopupChanged is handed whether the popup is open.');
+        if (this.#live) this.innerPopupOpen = open;
+    };
+
+    readonly takeFocus = (control: HTMLElement, options?: { readonly preventScroll?: boolean }): void => {
+        if (!(control instanceof HTMLElement)) throw new TypeError('takeFocus is handed the element that takes the keyboard.');
+        if (!this.#live) return;
+        const owed = this.#owed;
+        this.#owed = false;
+        this.#focus(control, options?.preventScroll === true, owed);
+    };
+
+    #unmount(): void {
+        const cleanup = this.#cleanup;
+        this.#cleanup = undefined;
+        cleanup?.();
+    }
+}
+
 /**
  * A menu whose items a Chrome slot draws (ADR-0390): the place and the keys' meaning are the `MenuState` the
  * built-in `MenuItems` keeps too, and running a command and closing are the grid's; the contents draw and call
  * back.
  */
 export class SlottedMenu<Extra extends object> implements MenuPlace {
-    readonly #slot: HTMLElement;
-    readonly #name: string;
-    readonly #mount: GridChromeSlot<GridMenuSlotContext & Extra>;
+    readonly #slot: SlotMount<GridMenuSlotContext & Extra>;
     readonly #extra: Extra;
     readonly #shown: readonly GridCommand[];
     readonly #commands: readonly GridCommand[];
     readonly #state: MenuState;
     readonly #answers: MenuAnswers;
-    readonly #takeFocus: (control: HTMLElement, preventScroll: boolean, owed: boolean) => void;
     readonly #label: (id: string) => string;
     #focusRequest = 1;
-    // A request the grid made, the opening or a return from the filter, which the contents' focus answers: that
-    // focus is the grid's own to give, as the built-in menu's is, wherever DOM focus stands (ADR-0039).
-    #focusOwed = true;
-    #cleanup: (() => void) | undefined;
-    #live = true;
-    innerPopupOpen = false;
 
     constructor(slot: HTMLElement, name: string, mount: GridChromeSlot<GridMenuSlotContext & Extra>, extra: Extra,
-        commands: readonly GridCommand[], label: (id: string) => string, table: MenuKeyTable, answers: MenuAnswers,
-        takeFocus: (control: HTMLElement, preventScroll: boolean, owed: boolean) => void) {
-        this.#slot = slot;
-        this.#name = name;
-        this.#mount = mount;
+        commands: readonly GridCommand[], label: (id: string) => string, table: MenuKeyTable, answers: MenuAnswers, takeFocus: ChromeFocus) {
+        // The opening is a request of the grid's: its focus is the grid's to give, as the built-in menu's is.
+        this.#slot = new SlotMount(name, mount, slot, takeFocus, () => { answers.cancel(); }, true);
         this.#extra = extra;
         this.#shown = commands;
         this.#state = new MenuState(commands, table, answers);
         this.#answers = answers;
-        this.#takeFocus = takeFocus;
         this.#label = label;
         // What the contents invoke runs as the built-in item's press does: an input answered, and the command run
         // by the grid, which closes the menu first and asks the command again where it may have changed.
@@ -175,46 +334,34 @@ export class SlottedMenu<Extra extends object> implements MenuPlace {
             id: command.id,
             enabled: command.enabled,
             invoke: () => {
-                if (!this.#live) return;
+                if (!this.#slot.live) return;
                 this.#answers.answered();
                 this.#answers.run(index);
             },
         })));
     }
 
+    get innerPopupOpen(): boolean {
+        return this.#slot.innerPopupOpen;
+    }
+
     /** Mounts the contents, whose first mount asks them to take the keyboard. */
     focus(): void {
-        if (this.#live && this.#cleanup === undefined) this.#cleanup = mounted(this.#name, this.#mount, this.#slot, this.#context());
+        this.#slot.mount(this.#context());
     }
 
     /** Puts the place back on the first enabled item, and asks the contents to focus it: they are mounted again
-     * with the next request (ADR-0044). Contents that cannot be drawn again close the menu, rather than leave it
-     * standing empty. */
+     * with the next request (ADR-0044). */
     focusFirst(): void {
-        if (!this.#live) return;
+        if (!this.#slot.live) return;
         this.#state.toFirst();
         this.#focusRequest += 1;
-        this.#focusOwed = true;
-        this.#unmount();
-        try {
-            this.#cleanup = mounted(this.#name, this.#mount, this.#slot, this.#context());
-        } catch (error) {
-            this.#answers.cancel();
-            throw error;
-        }
+        this.#slot.request(this.#context());
     }
 
     /** The menu is going: its contents are taken away, and nothing they call back reaches the grid again. */
     dispose(): void {
-        if (!this.#live) return;
-        this.#live = false;
-        this.#unmount();
-    }
-
-    #unmount(): void {
-        const cleanup = this.#cleanup;
-        this.#cleanup = undefined;
-        cleanup?.();
+        this.#slot.dispose();
     }
 
     #context(): GridMenuSlotContext & Extra {
@@ -226,13 +373,13 @@ export class SlottedMenu<Extra extends object> implements MenuPlace {
             focusRequest: this.#focusRequest,
             resolveKey: this.#resolveKey,
             itemFocused: this.#itemFocused,
-            innerPopupChanged: this.#innerPopupChanged,
-            takeFocus: this.#focusControl,
+            innerPopupChanged: this.#slot.innerPopupChanged,
+            takeFocus: this.#slot.takeFocus,
         });
     }
 
     readonly #close = (): void => {
-        if (!this.#live) return;
+        if (!this.#slot.live) return;
         this.#answers.answered();
         this.#answers.cancel();
     };
@@ -241,9 +388,8 @@ export class SlottedMenu<Extra extends object> implements MenuPlace {
         if (typeof key !== 'string' || typeof shift !== 'boolean' || typeof controlAltOrMeta !== 'boolean') {
             throw new TypeError('resolveKey is handed the key (KeyboardEvent.key), whether Shift was held, and whether Control, Alt or Meta was.');
         }
-        if (!this.#live) return menuKeyNothing;
-        // A key the user typed moves the keyboard on from here: no focus is owed to a request any longer.
-        this.#focusOwed = false;
+        if (!this.#slot.live) return menuKeyNothing;
+        this.#slot.heard();
         return this.#state.key(key, shift, controlAltOrMeta);
     };
 
@@ -251,24 +397,144 @@ export class SlottedMenu<Extra extends object> implements MenuPlace {
         if (!Number.isSafeInteger(index) || index < 0 || index >= this.#shown.length) {
             throw new RangeError(`itemFocused is handed the index of one of the menu's ${this.#shown.length} commands, not ${index}.`);
         }
-        if (this.#live) this.#state.focused(index);
-    };
-
-    readonly #innerPopupChanged = (open: boolean): void => {
-        if (typeof open !== 'boolean') throw new TypeError('innerPopupChanged is handed whether the popup is open.');
-        if (this.#live) this.innerPopupOpen = open;
-    };
-
-    readonly #focusControl = (control: HTMLElement, options?: { readonly preventScroll?: boolean }): void => {
-        if (!(control instanceof HTMLElement)) throw new TypeError('takeFocus is handed the element that takes the keyboard.');
-        if (!this.#live) return;
-        const owed = this.#focusOwed;
-        this.#focusOwed = false;
-        this.#takeFocus(control, options?.preventScroll === true, owed);
+        if (this.#slot.live) this.#state.focused(index);
     };
 }
 
 /** The column menu's own part of its slot's context. */
 export function columnMenuExtra(column: string, columnType: ColumnType): Omit<GridColumnMenuSlotContext, keyof GridMenuSlotContext> {
     return { column, columnType, letter: letterOf };
+}
+
+/**
+ * A column's filter whose panel a Chrome slot draws (ADR-0390): what each choice means is the `FilterPanelModel`
+ * the built-in panel draws from too, and applying, closing and the letters are the grid's. The slot is a form, so
+ * Enter in a text field submits it as the browser does, which applies, and never on the Enter that confirms an
+ * IME's candidate (ADR-0010). A focus request mounts the contents again with the next count, as the menu's does.
+ */
+export class SlottedFilterPanel implements FilterPlace {
+    readonly lead: HTMLElement;
+    readonly body: HTMLElement;
+    readonly trail: HTMLElement;
+    readonly #slot: SlotMount<GridFilterPanelSlotContext>;
+    readonly #model: FilterPanelModel;
+    readonly #context: Omit<GridFilterPanelSlotContext, 'focusRequest' | 'focusTarget'>;
+    #focusRequest = 0;
+    #focusTarget: GridFilterPanelSlotContext['focusTarget'];
+    #arrived: boolean;
+
+    constructor(doc: Document, mount: GridChromeSlot<GridFilterPanelSlotContext>, model: FilterPanelModel, answers: FilterPanelAnswers,
+        takeFocus: ChromeFocus) {
+        this.lead = filterSentinel(doc, answers);
+        this.trail = filterSentinel(doc, answers);
+        const form = doc.createElement('form');
+        form.className = 'ex-popover-filter';
+        form.noValidate = true;
+        form.setAttribute('data-ex-claims', 'submit');
+        this.body = form;
+        // The commands hold the keyboard at the opening: the panel's first mount is asked for nothing.
+        const slot = new SlotMount('filterPanel', mount, form, takeFocus, () => { answers.cancel(); }, false);
+        this.#slot = slot;
+        this.#model = model;
+        this.#arrived = model.arrived;
+        // The value list arriving changes the form under the keyboard: a keyboard that was in the panel is asked onto
+        // its new first control, not left on a control the contents take away. Heard ahead of the contents, which
+        // subscribe once mounted, so the keyboard is read where the old form had it.
+        model.subscribe(() => {
+            if (!slot.live || this.#arrived === model.arrived) return;
+            this.#arrived = model.arrived;
+            if (form.contains(doc.activeElement)) this.focusFirst();
+        });
+        // Each choice is an input the user made in the panel, answered once (ADR-0220).
+        const set = <Args extends unknown[]>(change: (...args: Args) => void) => (...args: Args): void => {
+            if (!slot.live) return;
+            slot.heard();
+            answers.answered();
+            change(...args);
+        };
+        const apply = set(() => {
+            const answer = model.answer();
+            if (answer.reads) answers.apply(answer.spec);
+        });
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            apply();
+        });
+        const column = model.column;
+        this.#context = {
+            column: column.name, columnType: column.type, dateType: column.dateType, mode: column.filterUi, current: model.current,
+            view: () => model.view,
+            subscribe: listener => {
+                if (typeof listener !== 'function') throw new TypeError('subscribe is handed the function that hears each change to the view.');
+                return model.subscribe(listener);
+            },
+            setSearch: set((text: string) => { model.setSearch(text); }),
+            setAddToCurrent: set((on: boolean) => { model.setAddToCurrent(on); }),
+            setChecked: set((value: unknown, checked: boolean) => { model.setChecked(value, checked); }),
+            toggleAll: set(() => { model.toggleAll(); }),
+            setOperator: set((operator: FilterOperator) => { model.setOperator(operator); }),
+            setOperand: set((text: string) => { model.setOperand(text); }),
+            setCombinator: set((combinator: FilterCombinator) => { model.setCombinator(combinator); }),
+            setSecond: set((operator: FilterOperator | undefined) => { model.setSecond(operator); }),
+            setSecondOperand: set((text: string) => { model.setSecondOperand(text); }),
+            apply,
+            cancel: set(() => { answers.cancel(); }),
+            // As the built-in list hears them: a character typed alone is an input answered, and maybe a letter.
+            valueListKey: (key: string, controlAltOrMeta: boolean): boolean => {
+                if (typeof key !== 'string' || typeof controlAltOrMeta !== 'boolean') {
+                    throw new TypeError('valueListKey is handed the key (KeyboardEvent.key) and whether Control, Alt or Meta was held.');
+                }
+                if (!slot.live || key.length !== 1 || controlAltOrMeta) return false;
+                slot.heard();
+                answers.answered();
+                return answers.letter(key);
+            },
+            innerPopupChanged: slot.innerPopupChanged,
+            takeFocus: slot.takeFocus,
+        };
+    }
+
+    get fetching(): boolean {
+        return this.#model.fetching;
+    }
+
+    get innerPopupOpen(): boolean {
+        return this.#slot.innerPopupOpen;
+    }
+
+    /** Mounts the contents. */
+    open(): void {
+        this.#slot.mount(this.#made());
+    }
+
+    focusFirst(): void {
+        this.#request('first');
+    }
+
+    focusLast(): void {
+        this.#request('last');
+    }
+
+    focusSearch(): void {
+        this.#request('search');
+    }
+
+    close(): void {
+        try {
+            this.#slot.dispose();
+        } finally {
+            this.#model.close();
+        }
+    }
+
+    #request(target: 'first' | 'last' | 'search'): void {
+        if (!this.#slot.live) return;
+        this.#focusRequest += 1;
+        this.#focusTarget = target;
+        this.#slot.request(this.#made());
+    }
+
+    #made(): GridFilterPanelSlotContext {
+        return Object.freeze({ ...this.#context, focusRequest: this.#focusRequest, focusTarget: this.#focusTarget });
+    }
 }

@@ -6,9 +6,10 @@ import { createElement, StrictMode, useState, type ReactElement } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridColumn, GridMenuSlotContext } from '@ex-grid/core';
+import type { GridColumn, GridFilterPanelSlotContext, GridMenuSlotContext } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
-import { useMenuItems, type ExGridChrome } from '../src/chrome';
+import { useFilterPanel, useMenuItems, type ExGridChrome } from '../src/chrome';
+import { filterPanelSlotContract } from './filter-slot-contract';
 import { menuSlotContract } from './menu-slot-contract';
 
 /** A menu of plain buttons, as a Wrapper draws its design system's: it counts its mounts, to show it keeps state. */
@@ -22,10 +23,35 @@ function PlainMenu({ context }: { readonly context: GridMenuSlotContext }): Reac
 }
 let plainMounts = 0;
 
+/** A filter panel of plain controls, as a Wrapper draws its design system's: each choice handed to the core. */
+function PlainFilterPanel({ context }: { readonly context: GridFilterPanelSlotContext }): ReactElement {
+    const { view, first, last, search, onValueListKeyDown } = useFilterPanel(context);
+    const body = view.kind === 'valueList'
+        ? [
+            createElement('input', { key: 'search', type: 'search', ref: (control: HTMLInputElement | null) => { first(control); search(control); },
+                value: view.search, onChange: event => { context.setSearch(event.target.value); } }),
+            createElement('div', { key: 'list', onKeyDown: onValueListKeyDown },
+                createElement('button', { type: 'button', onClick: () => { context.toggleAll(); } }, 'Select all'),
+                ...view.entries.map(each => createElement('label', { key: each.text },
+                    createElement('input', { type: 'checkbox', checked: each.checked, onChange: event => { context.setChecked(each.value, event.target.checked); } }),
+                    each.text))),
+        ]
+        : [
+            createElement('input', { key: 'operand', ref: (control: HTMLInputElement | null) => { first(control); search(control); },
+                value: view.first.operand, onChange: event => { context.setOperand(event.target.value); } }),
+            view.first.refusal === undefined ? null : createElement('p', { key: 'refusal', role: 'alert' }, view.first.refusal),
+        ];
+    return createElement('div', null, ...body,
+        createElement('button', { type: 'button', disabled: !view.canApply, onClick: () => { context.apply(); } }, 'OK'),
+        createElement('button', { type: 'button', ref: last, onClick: () => { context.cancel(); } }, 'Cancel'));
+}
+
 const plainMenu = (context: GridMenuSlotContext): ReactElement => createElement(PlainMenu, { context });
-const plainChrome: ExGridChrome<unknown> = { columnMenu: plainMenu, contextMenu: plainMenu };
+const plainFilterPanel = (context: GridFilterPanelSlotContext): ReactElement => createElement(PlainFilterPanel, { context });
+const plainChrome: ExGridChrome<unknown> = { columnMenu: plainMenu, contextMenu: plainMenu, filterPanel: plainFilterPanel };
 
 menuSlotContract('a Chrome of plain buttons', plainChrome);
+filterPanelSlotContract('a Chrome of plain controls', plainChrome);
 
 interface Trade {
     readonly book: string;
@@ -62,6 +88,12 @@ function Unreferenced({ context }: { readonly context: GridMenuSlotContext }): R
         const { ref: _, ...props } = itemProps(index);
         return createElement('button', { ...props, key: index }, command.id);
     }));
+}
+
+/** A filter panel that takes useFilterPanel's view but hands it no control. */
+function UnreferencedPanel({ context }: { readonly context: GridFilterPanelSlotContext }): ReactElement {
+    const { view } = useFilterPanel(context);
+    return createElement('input', { value: view.kind, readOnly: true });
 }
 
 /** A menu whose first item holds a field of its own, drawn through a portal outside the menu, as a popup is. */
@@ -131,6 +163,21 @@ describe('ExGrid\'s chrome', () => {
     it('ADR-0390: chrome that is not an object of render functions is refused by name', () => {
         expect(withChrome({ filterMenu: () => null })).toThrow("chrome has no slot 'filterMenu'");
         expect(withChrome({ contextMenu: 'menu' })).toThrow('chrome.contextMenu is a render function');
+    });
+
+    it('ADR-0390: a filter panel that drew no control for the request the core made is named', async () => {
+        const { container } = render(createElement(ExGrid<Trade>, {
+            columns: [{ name: 'Book', type: 'text', value: trade => trade.book, width: 120, filterUi: 'valueList' }], rows,
+            chrome: { filterPanel: context => createElement(UnreferencedPanel, { context }) },
+        }));
+        await settled();
+        const root = container.firstElementChild;
+        if (root === null) throw new Error('The grid drew no root.');
+        await openColumnMenu(root);
+        await expect(act(async () => {
+            active().dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+            await Promise.resolve();
+        })).rejects.toThrow("The filter panel's first control is not drawn");
     });
 
     it('ADR-0390: an item drawn without useMenuItems\' props is named when the core asks it for the keyboard', async () => {
