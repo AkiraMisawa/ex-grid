@@ -1,23 +1,12 @@
 // ExPivot's built-in menu in its frame (ADR-0061): a placed field's commands, or the Layout menu's choices, in
 // the markup and under the classes the Razor component's PivotPopupFrame and PivotMenuView draw, so one
 // stylesheet paints both (ADR-0350 section 4). Where the frame stands and what closes it are the pivot's; the
-// frame says only that Escape was pressed in it.
+// frame says only that Escape was pressed in it. A Chrome's menu slot draws the commands inside the same frame.
 
-/** One command of a menu. */
-export interface PivotMenuCommand {
-    /** The command's id, which is also the id of its word (`PivotCommandIds`). */
-    readonly id: string;
-    /** What the command is called. */
-    readonly label: string;
-    /** Whether it can be pressed: one that would change nothing is disabled. */
-    readonly enabled: boolean;
-    /** For a choice among others, whether it is the current one; absent for a plain command. */
-    readonly checked?: boolean;
-    /** The heading of the group of choices that starts at this command. */
-    readonly heading?: string;
-    /** Pressed. */
-    readonly invoke: () => void;
-}
+import { SlotMount, ViewListeners, type PivotChromeSlot, type PivotMenuCommand, type PivotMenuSlotContext, type PivotMenuView } from './chrome';
+import type { PivotScreenWords } from './words';
+
+export type { PivotMenuCommand } from './chrome';
 
 /** Where a frame stands: in the Field List under its entry, or from the Pivot Toolbar over the report, at its
  * button's left edge (the report filter band) or its right edge (Layout ▾). */
@@ -28,7 +17,8 @@ export type PivotMenuPlace = 'field-list' | 'toolbar-start' | 'toolbar-end';
  * stands is its class, and Escape pressed anywhere in it calls `escape` and goes no further, so a dialog the
  * Consumer put the pivot in does not close on it too. It claims nothing of the pivot's input (ADR-0240 section 6).
  */
-export function popupFrame(document: Document, place: PivotMenuPlace, role: 'menu' | 'dialog', escape: () => void): HTMLDivElement {
+export function popupFrame(document: Document, place: PivotMenuPlace, role: 'menu' | 'dialog', escape: () => void,
+    innerPopupOpen?: () => boolean): HTMLDivElement {
     const frame = document.createElement('div');
     frame.className = {
         'field-list': 'ex-pivot-popup',
@@ -42,6 +32,8 @@ export function popupFrame(document: Document, place: PivotMenuPlace, role: 'men
     frame.setAttribute('data-ex-claims', '');
     frame.addEventListener('keydown', event => {
         if (event.key !== 'Escape' || event.ctrlKey || event.altKey || event.metaKey) return;
+        // While a popup of a Chrome's own is open in the frame, Escape is that popup's (ADR-0039).
+        if (innerPopupOpen?.() === true) return;
         event.preventDefault();
         event.stopPropagation();
         escape();
@@ -63,9 +55,34 @@ function sameShape(a: readonly PivotMenuCommand[], b: readonly PivotMenuCommand[
         });
 }
 
+// Whether a Chrome's menu shows the same thing for `b` as for `a`.
+function sameCommands(a: readonly PivotMenuCommand[], b: readonly PivotMenuCommand[]): boolean {
+    return a.length === b.length
+        && a.every((command, i) => {
+            const other = b[i];
+            return other !== undefined && other.id === command.id && other.label === command.label && other.enabled === command.enabled
+                && other.checked === command.checked && other.heading === command.heading;
+        });
+}
+
+/** A menu in ExPivot's frame, the built-in one's or a Chrome's: the pivot places its element, draws it again on every
+ * change, and takes it away. */
+export interface PivotMenu {
+    /** The frame, which the pivot places. */
+    readonly element: HTMLElement;
+    /** Draws `commands` under the accessible name `label`. */
+    draw(label: string, commands: readonly PivotMenuCommand[]): void;
+    /** Gives the keyboard to the first enabled command, or to the frame when every command is disabled. */
+    takeKeyboard(): void;
+    /** The menu is taken away. */
+    close(): void;
+    /** Whether a popup of a Chrome's contents is open, which may stand outside the frame and take the keyboard there. */
+    innerPopupOpen?(): boolean;
+}
+
 /** A menu in ExPivot's frame. The pivot draws it again on every change, and a command pressed is the one drawn
  * last: a press never reaches a command built against a layout the pane has since left. */
-export class PivotMenuFrame {
+export class PivotMenuFrame implements PivotMenu {
     /** The frame, which the pivot places. */
     readonly element: HTMLDivElement;
     readonly #menu: HTMLDivElement;
@@ -110,6 +127,11 @@ export class PivotMenuFrame {
         const drawn = this.#drawn.get(first.id);
         if (drawn === undefined) throw new Error(`Internal: the command '${first.id}' was not drawn.`);
         drawn.button.focus();
+    }
+
+    /** Nothing of the built-in menu outlives its frame. */
+    close(): void {
+        // The frame's listeners go with it.
     }
 
     #build(commands: readonly PivotMenuCommand[]): void {
@@ -157,5 +179,71 @@ export class PivotMenuFrame {
         if (drawn.size !== commands.length) throw new Error('Internal: two commands of one menu share an id.');
         this.#drawn = drawn;
         this.#menu.replaceChildren(...parts);
+    }
+}
+
+/**
+ * A menu whose commands a Chrome's slot draws (ADR-0390), inside the same frame: the commands, their order and what
+ * each does are the pivot's, and a command pressed is the one drawn last under its id, as the built-in menu's is, so a
+ * press never reaches a command built against a layout the pane has since left.
+ */
+export class SlottedMenuFrame implements PivotMenu {
+    readonly element: HTMLDivElement;
+    readonly #slot: SlotMount<PivotMenuSlotContext>;
+    readonly #listeners = new ViewListeners();
+    #view: PivotMenuView = Object.freeze({ name: '', commands: Object.freeze([]) });
+    #commands: readonly PivotMenuCommand[] = [];
+
+    constructor(document: Document, place: PivotMenuPlace, mount: PivotChromeSlot<PivotMenuSlotContext>, words: PivotScreenWords, escape: () => void) {
+        this.element = popupFrame(document, place, 'menu', escape, () => this.#slot.innerPopupOpen);
+        const body = document.createElement('div');
+        body.setAttribute('role', 'none');
+        this.element.append(body);
+        const close = (): void => { escape(); };
+        this.#slot = new SlotMount('menu', mount, body, focusRequest => Object.freeze({
+            view: () => this.#view,
+            subscribe: this.#listeners.subscribe,
+            close: this.#slot.input(close),
+            focusRequest,
+            label: (id: string) => words.word(id),
+            takeFocus: this.#slot.takeFocus,
+        }), close);
+    }
+
+    draw(label: string, commands: readonly PivotMenuCommand[]): void {
+        this.element.setAttribute('aria-label', label);
+        this.#commands = commands;
+        // The view is the same object while nothing it shows changed: a press reaches the commands drawn now anyway.
+        if (this.#view.name === label && sameCommands(this.#view.commands, commands)) {
+            this.#slot.mount();
+            return;
+        }
+        this.#view = Object.freeze({
+            name: label,
+            commands: Object.freeze(commands.map(command => Object.freeze({ ...command, invoke: this.#slot.input(() => { this.#press(command.id); }) }))),
+        });
+        // Mounted once its first commands are known, and told of each change after.
+        this.#slot.mount();
+        this.#listeners.tell();
+    }
+
+    takeKeyboard(): void {
+        if (this.#commands.some(command => command.enabled)) this.#slot.request();
+        else this.element.focus();
+    }
+
+    innerPopupOpen(): boolean {
+        return this.#slot.innerPopupOpen;
+    }
+
+    close(): void {
+        this.#listeners.clear();
+        this.#slot.dispose();
+    }
+
+    // The command drawn last under this id: the one built against the pane's layout now.
+    #press(id: string): void {
+        const current = this.#commands.find(command => command.id === id);
+        if (current?.enabled === true) current.invoke();
     }
 }

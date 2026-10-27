@@ -15,9 +15,10 @@ import {
 } from '@ex-grid/pivot-engine';
 import { lowered } from './field-list';
 import { itemListCap, type FieldItems, type ItemsProblem } from './items';
+import { ViewListeners, type PivotChromeSlot, type PivotItemFilterSlotContext, type PivotItemFilterView } from './chrome';
 import { popupFrame, type PivotMenuPlace } from './menu';
 import { defined, elementAt } from './must';
-import { actions, element, type PanelHandlers, type PivotPanel } from './panels';
+import { actions, element, slottedPanel, type PanelDraft, type PanelHandlers, type PivotPanel } from './panels';
 import type { PivotScreenWords } from './words';
 
 /** What Filter… is opened on. */
@@ -67,25 +68,15 @@ export function itemsProblemText(problem: ItemsProblem, words: PivotScreenWords)
     return refusal.kind === 'reportVersionNotHeld' ? words.word('data-changed') : words.fill('source-refused', refusal.message);
 }
 
-/** Filter…: drawn again by the pivot as the field's Items land. */
-export class ItemFilterPanel implements PivotPanel {
-    /** Its frame, which the pivot places. */
-    readonly element: HTMLDivElement;
+/** Filter…' draft: the ticks and the search, and the source's answer to a search past the Items held. It is drawn
+ * again by the pivot as the field's Items land, and by the built-in markup and a Chrome's slot alike. */
+export class ItemFilterDraft implements PanelDraft<PivotItemFilterView> {
+    readonly listeners = new ViewListeners();
     readonly #model: ItemFilterModel;
     readonly #handlers: ItemFilterHandlers;
-    readonly #searchBox: HTMLInputElement;
-    readonly #list: HTMLDivElement;
-    readonly #selectAll: DrawnItem;
-    // The notes the list shows in place of Items, or under them; each made once, so drawing again moves nothing.
-    readonly #unavailable: HTMLDivElement;
-    readonly #loading: HTMLDivElement;
-    readonly #tooMany: HTMLDivElement;
-    readonly #noMatch: HTMLDivElement;
-    readonly #refusalBox: HTMLDivElement;
-    readonly #ok: HTMLButtonElement;
     // The draft: the Items unticked, by key id.
     readonly #hidden = new Map<string, PivotItemKey>();
-    readonly #drawn = new Map<string, DrawnItem>();
+    #text = '';
     #items: FieldItems;
     #search: Search | undefined;
     #refusal: string | undefined;
@@ -98,47 +89,47 @@ export class ItemFilterPanel implements PivotPanel {
     readonly #ids = new WeakMap<PivotItemInfo, string>();
     readonly #labels = new WeakMap<PivotItemInfo, string>();
     #allHeld = true;
-    #canApply = false;
+    #view: PivotItemFilterView;
 
-    constructor(document: Document, model: ItemFilterModel, handlers: ItemFilterHandlers) {
+    constructor(model: ItemFilterModel, handlers: ItemFilterHandlers) {
         this.#model = model;
         this.#handlers = handlers;
-        const { words } = model;
         for (const key of placementHidden(model.layout, model.field)) this.#hidden.set(pivotItemKeyId(key), key);
-        this.element = popupFrame(document, model.place, 'dialog', handlers.cancel);
-        this.element.setAttribute('aria-label', words.fill('filter-of', model.caption));
-        const panel = element(document, 'div', 'ex-pivot-panel ex-pivot-item-filter');
-        this.#searchBox = element(document, 'input', 'ex-pivot-search');
-        this.#searchBox.type = 'search';
-        this.#searchBox.placeholder = words.word('search-items');
-        this.#searchBox.setAttribute('aria-label', words.word('search-items'));
-        this.#searchBox.addEventListener('input', () => {
-            this.#refusal = undefined;
-            this.#render();
-        });
-        this.#list = element(document, 'div', 'ex-pivot-item-list');
-        this.#list.setAttribute('role', 'group');
-        this.#list.setAttribute('aria-label', model.caption);
-        this.#selectAll = this.#item(document, 'ex-pivot-item ex-pivot-select-all', tick => {
-            for (const item of this.#listed) this.#tick(item.key, tick);
-        });
-        this.#selectAll.text.textContent = words.word('select-all');
-        this.#unavailable = element(document, 'div', 'ex-pivot-refusal ex-pivot-unavailable');
-        this.#unavailable.setAttribute('role', 'alert');
-        this.#loading = element(document, 'div', 'ex-pivot-note ex-pivot-loading');
-        this.#loading.setAttribute('role', 'status');
-        this.#loading.textContent = words.word('loading');
-        this.#tooMany = element(document, 'div', 'ex-pivot-note');
-        this.#tooMany.textContent = words.fill('too-many-items', formatPivotCount(itemListCap, model.locale));
-        this.#noMatch = element(document, 'div', 'ex-pivot-note');
-        this.#noMatch.textContent = words.word('no-items-match');
-        this.#refusalBox = element(document, 'div', 'ex-pivot-refusal');
-        this.#refusalBox.setAttribute('role', 'alert');
-        const exits = actions(document, words, () => { this.#apply(); }, handlers.cancel);
-        this.#ok = exits.ok;
-        panel.append(this.#searchBox, this.#list, exits.box);
-        this.element.append(panel);
         this.#items = handlers.items();
+        this.#view = this.#compute();
+    }
+
+    get view(): PivotItemFilterView {
+        return this.#view;
+    }
+
+    /** Each listed Item's key id, by its place in the view's `items`. */
+    idAt(index: number): string {
+        return this.#idOf(elementAt(this.#listed, index));
+    }
+
+    setSearch(text: string): void {
+        if (typeof text !== 'string') throw new TypeError('setSearch is handed the search as typed.');
+        this.#text = text;
+        this.#refusal = undefined;
+        this.#render();
+    }
+
+    setTicked(key: PivotItemKey, ticked: boolean): void {
+        if (typeof ticked !== 'boolean') throw new TypeError('setTicked is handed the Item and whether it is ticked.');
+        const id = pivotItemKeyId(key);
+        // Only an Item the panel lists now is ticked: a press on one a newer listing took away names nothing the user
+        // sees, and changes nothing (spine rule 6).
+        if (!this.#listed.some(item => this.#idOf(item) === id)) return;
+        this.#tick(key, ticked);
+        this.#refusal = undefined;
+        this.#render();
+    }
+
+    setAll(ticked: boolean): void {
+        if (typeof ticked !== 'boolean') throw new TypeError('setAll is handed whether every Item listed is ticked.');
+        for (const item of this.#listed) this.#tick(item.key, ticked);
+        this.#refusal = undefined;
         this.#render();
     }
 
@@ -150,30 +141,32 @@ export class ItemFilterPanel implements PivotPanel {
         this.#render();
     }
 
-    /** Gives the keyboard to the search. */
-    takeKeyboard(): void {
-        this.#searchBox.focus();
-    }
-
     /** Stops a search on its way: the panel has closed. */
     close(): void {
         this.#closed = true;
         this.#search?.controller.abort();
         this.#search = undefined;
+        this.listeners.clear();
     }
 
-    #item(document: Document, className: string, changed: (tick: boolean) => void): DrawnItem {
-        const row = element(document, 'label', className);
-        const box = element(document, 'input');
-        box.type = 'checkbox';
-        const text = element(document, 'span');
-        row.append(box, text);
-        box.addEventListener('change', () => {
-            changed(box.checked);
-            this.#refusal = undefined;
+    apply(): void {
+        if (!this.#view.canApply) return;
+        const { layout, field, words } = this.#model;
+        // With more Items than Filter… holds, that every one is unticked cannot be told, and nothing is refused for
+        // it: the rule needs every Item (ADR-0060).
+        const result = setHiddenItems(layout, field, this.#hidden.values(), this.#allHeld ? this.#held.map(item => item.key) : []);
+        if (result.refusal !== undefined) {
+            this.#refusal = words.word(refusalWord(result.refusal));
             this.#render();
-        });
-        return { row, box, text };
+            return;
+        }
+        const before = new Set(placementHidden(layout, field).map(key => pivotItemKeyId(key)));
+        const after = placementHidden(result.layout, field).map(key => pivotItemKeyId(key));
+        if (after.length === before.size && after.every(id => before.has(id))) {
+            this.#handlers.cancel();
+            return;
+        }
+        this.#handlers.apply(result.layout);
     }
 
     #idOf(item: PivotItemInfo): string {
@@ -228,9 +221,14 @@ export class ItemFilterPanel implements PivotPanel {
 
     #render(): void {
         if (this.#closed) return;
+        this.#view = this.#compute();
+        this.listeners.tell();
+    }
+
+    #compute(): PivotItemFilterView {
         const { words, locale } = this.#model;
         const items = this.#items;
-        const text = this.#searchBox.value;
+        const text = this.#text;
         let loading = items.listed === undefined && items.problem === undefined;
         let problem = items.problem;
         let matches: readonly PivotItemInfo[] = [];
@@ -258,70 +256,162 @@ export class ItemFilterPanel implements PivotPanel {
         // The Items in view, an earlier version's while the report's are on their way (ADR-0066 refined).
         this.#held = page === undefined ? [] : page.items;
         const unavailable = problem === undefined ? undefined : itemsProblemText(problem, words);
-        this.#canApply = !loading && unavailable === undefined
+        const canApply = !loading && unavailable === undefined
             && (!this.#allHeld || this.#held.length === 0 || this.#held.some(item => !this.#hidden.has(this.#idOf(item))));
+        const shown = unavailable === undefined && !loading;
+        const choices = shown
+            ? listed.map(item => Object.freeze({ key: item.key, label: item.label, ticked: !this.#hidden.has(this.#idOf(item)) }))
+            : [];
+        const ticked = choices.filter(choice => choice.ticked).length;
+        const note = !shown ? undefined
+            : matchCount > listed.length ? words.fill('too-many-items', formatPivotCount(itemListCap, locale))
+            : listed.length === 0 ? words.word('no-items-match')
+            : undefined;
+        const refusal = this.#refusal ?? (canApply || loading || unavailable !== undefined ? undefined : words.word('refused-hides-every-item'));
+        return Object.freeze({
+            caption: this.#model.caption,
+            search: text,
+            items: Object.freeze(choices),
+            allTicked: ticked === 0 ? false : ticked === choices.length ? true : undefined,
+            loading,
+            updating: items.pending && !loading,
+            canApply,
+            ...(unavailable === undefined ? {} : { unavailable }),
+            ...(note === undefined ? {} : { note }),
+            ...(refusal === undefined ? {} : { refusal }),
+        });
+    }
+}
 
-        if (loading || items.pending) this.#list.setAttribute('aria-busy', 'true');
+/** Filter…, drawn by `mount` where a Chrome gives one: drawn again by the pivot as the field's Items land. */
+export function itemFilterPanel(document: Document, model: ItemFilterModel, handlers: ItemFilterHandlers,
+    mount?: PivotChromeSlot<PivotItemFilterSlotContext>): PivotPanel {
+    const draft = new ItemFilterDraft(model, handlers);
+    const label = model.words.fill('filter-of', model.caption);
+    if (mount === undefined) return new ItemFilterPanel(document, model, handlers, draft, label);
+    return slottedPanel(document, label, model.place, 'itemFilter', mount, draft, handlers.cancel, model.words, input => ({
+        setSearch: input((text: string) => { draft.setSearch(text); }),
+        setTicked: input((key: PivotItemKey, ticked: boolean) => { draft.setTicked(key, ticked); }),
+        setAll: input((ticked: boolean) => { draft.setAll(ticked); }),
+    }), () => { draft.redraw(); }, () => { draft.close(); });
+}
+
+/** The built-in Filter…, drawn from its draft. */
+class ItemFilterPanel implements PivotPanel {
+    /** Its frame, which the pivot places. */
+    readonly element: HTMLDivElement;
+    readonly #draft: ItemFilterDraft;
+    readonly #searchBox: HTMLInputElement;
+    readonly #list: HTMLDivElement;
+    readonly #selectAll: DrawnItem;
+    // The notes the list shows in place of Items, or under them; each made once, so drawing again moves nothing.
+    readonly #unavailable: HTMLDivElement;
+    readonly #loading: HTMLDivElement;
+    readonly #note: HTMLDivElement;
+    readonly #refusalBox: HTMLDivElement;
+    readonly #ok: HTMLButtonElement;
+    readonly #drawn = new Map<string, DrawnItem>();
+
+    constructor(document: Document, model: ItemFilterModel, handlers: ItemFilterHandlers, draft: ItemFilterDraft, label: string) {
+        this.#draft = draft;
+        const { words } = model;
+        this.element = popupFrame(document, model.place, 'dialog', handlers.cancel);
+        this.element.setAttribute('aria-label', label);
+        const panel = element(document, 'div', 'ex-pivot-panel ex-pivot-item-filter');
+        this.#searchBox = element(document, 'input', 'ex-pivot-search');
+        this.#searchBox.type = 'search';
+        this.#searchBox.placeholder = words.word('search-items');
+        this.#searchBox.setAttribute('aria-label', words.word('search-items'));
+        this.#searchBox.addEventListener('input', () => { draft.setSearch(this.#searchBox.value); });
+        this.#list = element(document, 'div', 'ex-pivot-item-list');
+        this.#list.setAttribute('role', 'group');
+        this.#list.setAttribute('aria-label', model.caption);
+        this.#selectAll = this.#item(document, 'ex-pivot-item ex-pivot-select-all', tick => { draft.setAll(tick); });
+        this.#selectAll.text.textContent = words.word('select-all');
+        this.#unavailable = element(document, 'div', 'ex-pivot-refusal ex-pivot-unavailable');
+        this.#unavailable.setAttribute('role', 'alert');
+        this.#loading = element(document, 'div', 'ex-pivot-note ex-pivot-loading');
+        this.#loading.setAttribute('role', 'status');
+        this.#loading.textContent = words.word('loading');
+        this.#note = element(document, 'div', 'ex-pivot-note');
+        this.#refusalBox = element(document, 'div', 'ex-pivot-refusal');
+        this.#refusalBox.setAttribute('role', 'alert');
+        const exits = actions(document, words, () => { draft.apply(); }, handlers.cancel);
+        this.#ok = exits.ok;
+        panel.append(this.#searchBox, this.#list, exits.box);
+        this.element.append(panel);
+        draft.listeners.subscribe(() => { this.#render(); });
+        this.#render();
+    }
+
+    /** Draws the field's Items again, when they have changed. */
+    redraw(): void {
+        this.#draft.redraw();
+    }
+
+    /** Gives the keyboard to the search. */
+    takeKeyboard(): void {
+        this.#searchBox.focus();
+    }
+
+    /** Stops a search on its way: the panel has closed. */
+    close(): void {
+        this.#draft.close();
+    }
+
+    #item(document: Document, className: string, changed: (tick: boolean) => void): DrawnItem {
+        const row = element(document, 'label', className);
+        const box = element(document, 'input');
+        box.type = 'checkbox';
+        const text = element(document, 'span');
+        row.append(box, text);
+        box.addEventListener('change', () => { changed(box.checked); });
+        return { row, box, text };
+    }
+
+    #render(): void {
+        const view = this.#draft.view;
+        if (view.loading || view.updating) this.#list.setAttribute('aria-busy', 'true');
         else this.#list.removeAttribute('aria-busy');
         const parts: HTMLElement[] = [];
-        if (unavailable !== undefined) {
-            this.#unavailable.textContent = unavailable;
+        if (view.unavailable !== undefined) {
+            this.#unavailable.textContent = view.unavailable;
             parts.push(this.#unavailable);
-        } else if (loading) {
+        } else if (view.loading) {
             parts.push(this.#loading);
         } else {
             const document = this.element.ownerDocument;
-            const ticked = listed.filter(item => !this.#hidden.has(this.#idOf(item))).length;
-            if (listed.length > 0) {
-                this.#selectAll.box.checked = ticked === listed.length;
+            if (view.items.length > 0) {
+                this.#selectAll.box.checked = view.allTicked === true;
                 parts.push(this.#selectAll.row);
             }
             // An Item keeps its row while it is listed, so the one with the keyboard keeps it.
             const kept = new Map<string, DrawnItem>();
-            for (const item of listed) {
-                const id = this.#idOf(item);
+            view.items.forEach((item, at) => {
+                const id = this.#draft.idAt(at);
                 const { key } = item;
-                const drawn = this.#drawn.get(id) ?? this.#item(document, 'ex-pivot-item', tick => { this.#tick(key, tick); });
-                drawn.box.checked = !this.#hidden.has(id);
+                const drawn = this.#drawn.get(id) ?? this.#item(document, 'ex-pivot-item', tick => { this.#draft.setTicked(key, tick); });
+                drawn.box.checked = item.ticked;
                 if (drawn.text.textContent !== item.label) drawn.text.textContent = item.label;
                 kept.set(id, drawn);
                 parts.push(drawn.row);
-            }
+            });
             this.#drawn.clear();
             for (const [id, drawn] of kept) this.#drawn.set(id, drawn);
-            if (matchCount > listed.length) parts.push(this.#tooMany);
-            if (listed.length === 0) parts.push(this.#noMatch);
+            if (view.note !== undefined) {
+                this.#note.textContent = view.note;
+                parts.push(this.#note);
+            }
         }
         const children = this.#list.children;
         if (parts.length !== children.length || parts.some((part, i) => children[i] !== part)) this.#list.replaceChildren(...parts);
 
-        const refusal = this.#refusal ?? (this.#canApply || loading || unavailable !== undefined ? undefined : words.word('refused-hides-every-item'));
-        if (refusal === undefined) this.#refusalBox.remove();
+        if (view.refusal === undefined) this.#refusalBox.remove();
         else {
-            this.#refusalBox.textContent = refusal;
+            this.#refusalBox.textContent = view.refusal;
             if (this.#refusalBox.previousSibling !== this.#list) this.#list.after(this.#refusalBox);
         }
-        this.#ok.disabled = !this.#canApply;
-    }
-
-    #apply(): void {
-        if (!this.#canApply) return;
-        const { layout, field, words } = this.#model;
-        // With more Items than Filter… holds, that every one is unticked cannot be told, and nothing is refused for
-        // it: the rule needs every Item (ADR-0060).
-        const result = setHiddenItems(layout, field, this.#hidden.values(), this.#allHeld ? this.#held.map(item => item.key) : []);
-        if (result.refusal !== undefined) {
-            this.#refusal = words.word(refusalWord(result.refusal));
-            this.#render();
-            return;
-        }
-        const before = new Set(placementHidden(layout, field).map(key => pivotItemKeyId(key)));
-        const after = placementHidden(result.layout, field).map(key => pivotItemKeyId(key));
-        if (after.length === before.size && after.every(id => before.has(id))) {
-            this.#handlers.cancel();
-            return;
-        }
-        this.#handlers.apply(result.layout);
+        this.#ok.disabled = !view.canApply;
     }
 }
 

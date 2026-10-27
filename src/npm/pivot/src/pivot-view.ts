@@ -24,12 +24,13 @@ import {
     pivotReportDetailsQuery, PivotItemPage, itemsOfPage, PivotChangeTimes, type PivotFieldItem,
 } from '@ex-grid/pivot-engine';
 import { detailsEvent, detailsProblemText, type PivotDetailItem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
+import { checkedPivotChrome, type PivotChrome } from './chrome';
 import { DetailsSheets, type MountGrid } from './details-view';
 import { entryMenuCommands, entryOfField, type EntryMenuCommand, type EntryPanel } from './entry-menu';
 import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMove } from './field-list';
-import { ItemFilterPanel, itemsProblemText } from './item-filter';
+import { itemFilterPanel, itemsProblemText } from './item-filter';
 import { ItemListings, pendingFirst, searchItems, type FieldItems, type ItemsUnder } from './items';
-import { PivotMenuFrame, type PivotMenuCommand } from './menu';
+import { PivotMenuFrame, SlottedMenuFrame, type PivotMenu, type PivotMenuCommand } from './menu';
 import { clearStyle, element, writeStyle } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
@@ -149,6 +150,9 @@ export interface PivotViewOptions {
     /** Where the records open when nobody hears `onShowDetails`: a tab at the report's foot, which covers the report
      * while it is selected, or a dialog; `tab` unless given. */
     readonly detailsView?: PivotDetailsView;
+    /** The parts a Wrapper's Chrome, or the Consumer's own, draws in place of the built-in markup (ADR-0061, ADR-0390),
+     * its `grid` dressing the report's grid and Show Details' grids. A part standing keeps the slot it opened with. */
+    readonly chrome?: PivotChrome;
 }
 
 export type { MountGrid } from './details-view';
@@ -252,10 +256,10 @@ interface AtEntry {
 /** What is open in the pivot (ADR-0061), one at a time: the Layout menu from the Pivot Toolbar, a placed field's menu
  * in the Field List, a panel that menu opened in its place, or Filter… under a report filter in the band. */
 type OpenSurface =
-    | { readonly kind: 'layout'; readonly popup: PivotMenuFrame }
-    | (AtEntry & { readonly kind: 'entry'; readonly popup: PivotMenuFrame })
+    | { readonly kind: 'layout'; readonly popup: PivotMenu }
+    | (AtEntry & { readonly kind: 'entry'; readonly popup: PivotMenu })
     | (AtEntry & { readonly kind: 'panel'; readonly popup: PivotPanel })
-    | { readonly kind: 'band'; readonly field: string; readonly against: PivotLayout; readonly popup: ItemFilterPanel };
+    | { readonly kind: 'band'; readonly field: string; readonly against: PivotLayout; readonly popup: PivotPanel };
 
 type EntrySurface = Extract<OpenSurface, { readonly kind: 'entry' | 'panel' }>;
 
@@ -271,6 +275,7 @@ interface BandFilter {
 // Stops what a panel asked that is still on its way, as it leaves.
 function closed(open: OpenSurface): void {
     if (open.kind === 'panel' || open.kind === 'band') open.popup.close?.();
+    else open.popup.close();
 }
 
 // The Layout menu's groups, each headed where it starts, in Excel's order (ADR-0061).
@@ -327,6 +332,7 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
     if (detailsView !== undefined && detailsView !== 'tab' && detailsView !== 'dialog') {
         throw new TypeError(`detailsView is 'tab' or 'dialog', not ${JSON.stringify(detailsView)}.`);
     }
+    checkedPivotChrome(given['chrome']);
     const locale = given['locale'];
     if (locale !== undefined && (typeof locale !== 'string' || locale === '')) {
         throw new TypeError('locale is a BCP 47 tag or "invariant", never an empty tag (ADR-0370 section 10).');
@@ -578,7 +584,7 @@ export class PivotView {
             document,
             mountGrid,
             words: () => this.#words,
-            look: () => ({ rowHeight: this.#options.rowHeight, density: this.#options.density, commandLabel: this.#options.label }),
+            look: () => ({ rowHeight: this.#options.rowHeight, density: this.#options.density, commandLabel: this.#options.label, chrome: this.#chrome?.grid }),
             problemText: problem => detailsProblemText(problem, this.#words),
             changed: () => { this.#draw(); },
             // The report's grid takes the keyboard back; a report with no grid has the Field List's toggle take it, so
@@ -686,11 +692,12 @@ export class PivotView {
         } else if (settingsMoved || capsOf(options) !== capsOf(before)) {
             this.#ask(this.#layoutAhead, 'consumer', []);
         }
+        const gridChromeMoved = options.chrome?.grid !== before.chrome?.grid;
         if (highlightMoved || options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
-            || options.viewportWidth !== before.viewportWidth) {
+            || options.viewportWidth !== before.viewportWidth || gridChromeMoved) {
             this.#drawGrid();
         }
-        if (settingsMoved || options.rowHeight !== before.rowHeight) this.#details.draw();
+        if (settingsMoved || options.rowHeight !== before.rowHeight || gridChromeMoved) this.#details.draw();
         this.#draw();
     }
 
@@ -779,6 +786,11 @@ export class PivotView {
 
     get #locale(): string {
         return this.#localeOf(this.#options);
+    }
+
+    // The Chrome's slots, read as each part opens (ADR-0390).
+    get #chrome(): PivotChrome | undefined {
+        return this.#options.chrome;
     }
 
     // The report source estimates the label widths under the grid's text geometry, as the Razor component tells it
@@ -1311,6 +1323,7 @@ export class PivotView {
         this.#gridColumns = columns;
         this.#valueColumnIndexes = new Map(answer.metadata.valueColumns.map((column, index) => [column.name, index]));
         const { rowHeight, density } = this.#options;
+        const gridChrome = this.#chrome?.grid;
         const options: GridOptions<PivotDisplayRow> = {
             columns,
             headerGroups,
@@ -1333,6 +1346,7 @@ export class PivotView {
             commandLabel: this.#commandLabel,
             cellChangedAt: this.#cellChangedAt,
             changeHighlightDuration: this.#changeHighlightMs,
+            ...(gridChrome === undefined ? {} : { chrome: gridChrome }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
         };
@@ -1643,8 +1657,12 @@ export class PivotView {
         this.#openSurface({ kind: 'entry', entry, field, against: pane, popup: this.#menuFrame('field-list') });
     }
 
-    #menuFrame(place: 'field-list' | 'toolbar-end'): PivotMenuFrame {
-        const frame = new PivotMenuFrame(this.#root.ownerDocument, place, () => { this.#close('opener'); });
+    #menuFrame(place: 'field-list' | 'toolbar-end'): PivotMenu {
+        const escape = (): void => { this.#close('opener'); };
+        const mount = this.#chrome?.menu;
+        const frame = mount === undefined
+            ? new PivotMenuFrame(this.#root.ownerDocument, place, escape)
+            : new SlottedMenuFrame(this.#root.ownerDocument, place, mount, this.#words, escape);
         this.#closeOnLeaving(frame.element);
         return frame;
     }
@@ -1656,7 +1674,8 @@ export class PivotView {
         frame.addEventListener('focusout', event => {
             const to = event.relatedTarget;
             const open = this.#open;
-            if (open?.popup.element !== frame || !(to instanceof Node)) return;
+            // A popup of a Chrome's contents may stand outside the frame, and take the keyboard while it is open.
+            if (open?.popup.element !== frame || !(to instanceof Node) || open.popup.innerPopupOpen?.() === true) return;
             const bounds = open.kind === 'entry' ? frame.parentNode : frame;
             if (bounds !== null && !bounds.contains(to)) this.#close('stay');
         });
@@ -1688,8 +1707,9 @@ export class PivotView {
                 Promise.resolve().then(() => searchItems(field, search, defined(this.#itemsUnder(field), 'a report to search the Items of'), signal)),
         };
         this.#items.retry(field);
-        const popup = new ItemFilterPanel(this.#root.ownerDocument,
-            { layout: report, field, caption: this.#captionOf(field), place: 'toolbar-start', locale: this.#locale, words: this.#words }, handlers);
+        const popup = itemFilterPanel(this.#root.ownerDocument,
+            { layout: report, field, caption: this.#captionOf(field), place: 'toolbar-start', locale: this.#locale, words: this.#words }, handlers,
+            this.#chrome?.itemFilter);
         this.#closeOnLeaving(popup.element);
         const surface: OpenSurface = { kind: 'band', field, against: report, popup };
         this.#openSurface(surface);
@@ -1832,12 +1852,12 @@ export class PivotView {
                 const field = fieldOf(against, entry);
                 // Opened again on Items that could not be listed, it asks for them again.
                 this.#items.retry(field);
-                popup = new ItemFilterPanel(document, { layout: against, field, caption: this.#captionOf(field), place: 'field-list', locale: this.#locale, words }, {
+                popup = itemFilterPanel(document, { layout: against, field, caption: this.#captionOf(field), place: 'field-list', locale: this.#locale, words }, {
                     ...handlers,
                     items: () => this.#itemsOf(field),
                     // Asked from the panel's draw, it says a problem in a later turn, never in the middle of that draw.
                     search: (search, signal) => Promise.resolve().then(() => searchItems(field, search, defined(this.#itemsUnder(field), 'a report to search the Items of'), signal)),
-                });
+                }, this.#chrome?.itemFilter);
                 break;
             }
             case 'field-settings':
@@ -1847,7 +1867,7 @@ export class PivotView {
                     caption: this.#entryCaption(entry, captions),
                     valueCaptions: captions,
                     words,
-                }, handlers);
+                }, handlers, this.#chrome?.fieldSettings);
                 break;
             case 'value-field-settings':
                 popup = valueFieldSettingsPanel(document, {
@@ -1859,7 +1879,7 @@ export class PivotView {
                     features: this.#options.source.features,
                     locale: this.#locale,
                     words,
-                }, handlers);
+                }, handlers, this.#chrome?.valueFieldSettings);
                 break;
             default:
                 unreachable(panel);

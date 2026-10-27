@@ -4,7 +4,7 @@
 // PivotDialogFrame, PivotDetailsDialogView and PivotDetailsGrid (ADR-0350 section 4). Each sheet's records are an
 // ExGrid of their own, in an Input Root of their own (ADR-0240 section 6).
 
-import type { GridDensity, GridHandle, GridOptions } from '@ex-grid/core';
+import type { GridChrome, GridDensity, GridHandle, GridOptions } from '@ex-grid/core';
 import type { PivotDetailRecord } from '@ex-grid/pivot-engine';
 import { detailCellType, DetailsSheet, type DetailsProblem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
 import { element } from './dom';
@@ -19,6 +19,8 @@ export interface DetailsGridLook {
     readonly rowHeight: number | undefined;
     readonly density: GridDensity | undefined;
     readonly commandLabel: ((id: string) => string | undefined) | undefined;
+    /** The grid's Chrome a pivot's Chrome dresses its grids in (ADR-0390). */
+    readonly chrome: GridChrome<PivotDetailRecord> | undefined;
 }
 
 /** What the sheets ask of the pivot. */
@@ -78,7 +80,7 @@ class Records {
             if (held) this.#keyboardHome().focus();
             return;
         }
-        const { rowHeight, density, commandLabel } = this.#host.look();
+        const { rowHeight, density, commandLabel, chrome } = this.#host.look();
         const options: GridOptions<PivotDetailRecord> = {
             columns: this.sheet.columns,
             source: this.sheet.source,
@@ -92,6 +94,7 @@ class Records {
             hideColumnMenu: true,
             cellType: detailCellType,
             ...(commandLabel === undefined ? {} : { commandLabel }),
+            ...(chrome === undefined ? {} : { chrome }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
             // The dialog's way out: the Escape its grid has nothing left to dismiss closes it (ADR-0070). A tab's grid

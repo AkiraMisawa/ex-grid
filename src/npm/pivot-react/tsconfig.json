@@ -8,7 +8,8 @@
       "@ex-grid/core": ["../core/src/index.ts"],
       "@ex-grid/data": ["../data/src/index.ts"],
       "@ex-grid/pivot-engine": ["../pivot-engine/src/index.ts"],
-      "@ex-grid/pivot": ["../pivot/src/index.ts"]
+      "@ex-grid/pivot": ["../pivot/src/index.ts"],
+      "@ex-grid/react": ["../react/src/index.ts"]
     }
   },
   "include": ["src", "test", "*.config.ts"]

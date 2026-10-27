@@ -12,6 +12,7 @@ export default defineConfig({
             '@ex-grid/data': at('../data/src/index.ts'),
             '@ex-grid/pivot-engine': at('../pivot-engine/src/index.ts'),
             '@ex-grid/pivot': at('../pivot/src/index.ts'),
+            '@ex-grid/react': at('../react/src/index.ts'),
         },
     },
 });

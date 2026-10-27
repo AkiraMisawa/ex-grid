@@ -7,6 +7,10 @@
  */
 export { browserPivotLocale } from './browser-locale';
 export { createPivot } from './create-pivot';
+export type {
+    PivotChoice, PivotChrome, PivotChromeSlot, PivotFieldSettingsSlotContext, PivotFieldSettingsView, PivotItemChoice, PivotItemFilterSlotContext,
+    PivotItemFilterView, PivotMenuCommand, PivotMenuSlotContext, PivotMenuView, PivotPanelSlotContext, PivotPartSlotContext, PivotValueFieldSettingsSlotContext, PivotValueFieldSettingsView,
+} from './chrome';
 export type { PivotDetailItem, PivotDetailsView, PivotShowDetailsEvent } from './details';
 export type { PivotHandle } from './create-pivot';
 export type {
