@@ -152,12 +152,44 @@ the user rewrites this section.*
 - **Dates.** No `@mantine/dates`, and no dayjs: a date is typed, and read by the core's operand reading, as the
   built-in Chrome reads it.
 
+### 10. `@ex-grid/mui`'s answers
+
+*Decided 2026-10-27 with `@ex-grid/mui`, on the recommendation, under the user's standing approval of recommendations
+("推奨で"), as section 9 was for Mantine. It answers the question this ADR left open on MUI's dates, and asks of MUI
+the three that section 9 answered for Mantine; a different answer from the user rewrites this section.*
+
+- **Dates.** No `@mui/x-date-pickers` and no date library's adapter: a date is typed, and read by the core's operand
+  reading, as under Mantine and the built-in Chrome. The pickers would make every Consumer take a date library the
+  grid does not otherwise need, and a typed date reads the same in all three Chromes.
+- **Density.** MUI's components take `small` or `medium`, and its lists a `dense` word: Compact and Excel draw them
+  `small` with dense menus, Standard and Comfortable at MUI's own default, `medium`, since MUI has no larger field.
+  The size travels from `MuiExGrid` through React's context, as Mantine's does; the grid's geometry stays the preset's.
+- **Cell Metrics.** The cells are drawn in MUI's default stack written out literally (`"Roboto", "Helvetica",
+  "Arial", sans-serif`), not in the theme's typography, for the reason section 9 gives. The widths are the widest any
+  face of the stack was measured at: Roboto (`RobotoGlyphTable`'s records), Liberation Sans for Helvetica and Arial
+  (the faces macOS and Windows draw those names in have the widths Liberation Sans was made to match), DejaVu Sans
+  for `sans-serif` on Linux, and every platform's system face, Japanese Windows' included, which stands in for the
+  fallback that paints a glyph Helvetica or Arial lacks: neither of those two is measured itself.
+  `tests/GlyphWidths` writes `@ex-grid/mui`'s table from them.
+- **The theme.** Section 5's refusal reads the theme `useTheme()` answers: one made without CSS variables has no `vars`
+  (MUI's ThemeProvider writes `null` there), and `MuiExGrid` throws, naming `createTheme({ cssVariables: true })`. A
+  theme whose `cssVarPrefix` is not MUI's own `mui` is refused too, naming the option, since the stylesheet reads
+  `--mui-*`. The variables must also reach the Paper: a `rootSelector` naming an element the grid stands outside
+  leaves them unset there, and that is said on the Docs Site, not checked, because checking it is a read of computed
+  style the Wrapper does not make. The Paper is `outlined` unless asked otherwise: MUI lightens an elevated Paper
+  under the dark scheme with an overlay image the grid's opaque ground cannot take. The
+  stylesheet reads only variables MUI writes again for each colour scheme, so it names no scheme selector and holds
+  under any `colorSchemeSelector`. The Focus outline is the primary's main shade, which MUI's default dark scheme writes
+  lighter, as MUI draws its own focused fields.
+- **Words.** MUI's localised text has no key for any word the grid shows (its keys are the Autocomplete's,
+  Pagination's and the like), so section 6 leaves MUI's words where Mantine's are: the family's tables and the
+  Consumer's label function.
+- **Menus.** MUI's `MenuItem` stands only inside its `MenuList`, which answers the arrows itself, so a menu's item is
+  MUI's `ListItemButton`, and every key stays the core's table.
+
 ## Open
 
-- **Dates under MUI.** MUI's date inputs are `@mui/x-date-pickers`, which needs a date library's adapter.
-  Whether `@ex-grid/mui` takes that dependency, or a typed date read by the core's operand reading as
-  `@ex-grid/mantine` does (section 9), is decided with it. `ExGrid.MudBlazor`'s filter panel and ExChart's take
-  a `MudDatePicker`. MUI's Roboto takes `RobotoGlyphTable`'s widths.
+- **MUI's dates** were answered in section 10.
 
 ## Consequences
 
