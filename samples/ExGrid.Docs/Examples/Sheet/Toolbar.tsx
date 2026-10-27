@@ -1,8 +1,16 @@
 import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { CellColour, CellFill, CellFormatChange } from '@ex-grid/sheet-engine';
-import { ExSheet, type ExSheetApi } from '@ex-grid/sheet-react';
-import type { SheetToolbarRowOptions } from '@ex-grid/sheet';
+import { ExSheet, type ExSheetApi, type ExSheetToolbarRow } from '@ex-grid/sheet-react';
 import { quarterlyPnl } from './QuarterlyPnl';
+
+// An icon in the toolbar's own colour.
+function Tick(): ReactElement {
+    return (
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M2 6.5 5 9.5 10 3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+    );
+}
 
 export default function Toolbar(): ReactElement {
     const opened = useMemo(quarterlyPnl, []);
@@ -17,11 +25,12 @@ export default function Toolbar(): ReactElement {
     };
 
     // ExSheet's own row, then a row of yours, each item greyed out while an edit is open.
-    const review: SheetToolbarRowOptions = {
+    const review: ExSheetToolbarRow = {
         label: 'Review',
         keyTip: 'R',
         items: [
-            { text: 'Mark reviewed', keyTip: 'M', onPress: () => { fill(0xE2EFDA); } },
+            // Content of your own is drawn in place of the text, which still names the button.
+            { text: 'Mark reviewed', keyTip: 'M', onPress: () => { fill(0xE2EFDA); }, content: <><Tick /> Mark reviewed</> },
             { text: 'Flag for query', keyTip: 'Q', onPress: () => { fill(0xFCE4D6, true); } },
         ],
     };

@@ -19,7 +19,7 @@
 
 import type { SheetToolbarChoice } from './sheet-choices';
 import { preventDefault, setAttr } from './dom-attributes';
-import { SlottedToolbarItem, type SheetToolbarIcon, type SheetToolbarItemKind, type SheetToolbarItemShown, type SheetToolbarItemSlot } from './sheet-toolbar-slot';
+import { SlottedToolbarItem, type SheetToolbarContent, type SheetToolbarIcon, type SheetToolbarItemKind, type SheetToolbarItemShown, type SheetToolbarItemSlot } from './sheet-toolbar-slot';
 
 export type { SheetToolbarIcon } from './sheet-toolbar-slot';
 
@@ -36,6 +36,8 @@ export interface SheetToolbarItem {
     readonly icon: SheetToolbarIcon | undefined;
     /** For a menu, the text its face shows: the Number Format's category. */
     readonly text: string | undefined;
+    /** For a Consumer's button, its own content, drawn in place of its text. */
+    readonly content: SheetToolbarContent | undefined;
     /** For a colour control, the colour its face sets, as CSS paints it. */
     readonly swatch: string | undefined;
     /** For a split control, its arrow's name: `Borders, more`. */
@@ -111,6 +113,9 @@ interface BuiltInDrawn {
     readonly face: HTMLButtonElement;
     readonly kind: SheetToolbarItemKind;
     picture: string | undefined;
+    // The Consumer's content drawn on the face, and what takes it away, while it is.
+    content: SheetToolbarContent | undefined;
+    unmount: (() => void) | undefined;
     // The KeyTip shown on it, while one is.
     badge: HTMLElement | undefined;
     // The Chrome's slot that left it to the built-in Chrome, which is not asked again.
@@ -340,9 +345,9 @@ export class SheetToolbar {
         for (const button of drawn.buttons) if (button.disabled !== disabled) button.disabled = disabled;
         drawn.element.classList.toggle('ex-sheet-toolbar-pressed', item.kind === 'toggle' && item.pressed);
         const picture = JSON.stringify([item.icon, item.text, item.swatch]);
-        if (drawn.picture !== picture) {
+        if (drawn.picture !== picture || drawn.content !== item.content) {
             drawn.picture = picture;
-            this.#drawFace(drawn.face, item);
+            this.#drawFace(drawn, item);
         }
         drawn.badge = this.#placeBadge(drawn.element, drawn.badge, keyTip);
         return drawn.element;
@@ -362,15 +367,26 @@ export class SheetToolbar {
     // What a Chrome-drawn item's contents are told it shows.
     #shownOf(item: SheetToolbarItem, active: boolean): SheetToolbarItemShown {
         return {
-            name: item.name, tooltip: item.tooltip, icon: item.icon, text: item.text, swatch: item.swatch, moreName: item.moreName,
+            name: item.name, tooltip: item.tooltip, icon: item.icon, text: item.text, content: item.content, swatch: item.swatch, moreName: item.moreName,
             pressed: item.pressed, disabledReason: item.disabledReason, active,
             choices: item.list?.().map(({ label, swatch, selected, disabledReason }) => ({ label, swatch, selected, disabledReason })) ?? [], // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0100: an item with no list, a toggle or a button, has no choices
         };
     }
 
-    // The face's contents: the picture, a menu's text and its caret, a colour control's swatch.
-    #drawFace(face: HTMLButtonElement, item: SheetToolbarItem): void {
+    // The face's contents: the picture, a menu's text and its caret, a colour control's swatch; or a Consumer's own
+    // content in their place.
+    #drawFace(drawn: BuiltInDrawn, item: SheetToolbarItem): void {
+        const { face } = drawn;
+        this.#unmountContent(drawn);
         face.replaceChildren();
+        if (item.content !== undefined) {
+            const element = this.#doc.createElement('span');
+            element.className = 'ex-sheet-toolbar-content';
+            face.append(element);
+            drawn.content = item.content;
+            drawn.unmount = mountedContent(item.content, element, item.name);
+            return;
+        }
         if (item.icon !== undefined) face.insertAdjacentHTML('beforeend', `${svgOpen}${pictures[item.icon]}</svg>`);
         if (item.text !== undefined) {
             const text = this.#doc.createElement('span');
@@ -440,11 +456,11 @@ export class SheetToolbar {
             arrow.setAttribute('aria-haspopup', 'menu');
             arrow.innerHTML = caret;
             group.append(face, arrow);
-            drawn = { element: group, buttons: [face, arrow], face, kind: item.kind, picture: undefined, badge: undefined, declinedBy };
+            drawn = { element: group, buttons: [face, arrow], face, kind: item.kind, picture: undefined, content: undefined, unmount: undefined, badge: undefined, declinedBy };
         } else {
             const face = button(item.kind === 'menu' ? 'ex-sheet-toolbar-item ex-sheet-toolbar-menu' : 'ex-sheet-toolbar-item', item.kind === 'menu' ? open : press);
             if (item.kind === 'menu') face.setAttribute('aria-haspopup', 'menu');
-            drawn = { element: face, buttons: [face], face, kind: item.kind, picture: undefined, badge: undefined, declinedBy };
+            drawn = { element: face, buttons: [face], face, kind: item.kind, picture: undefined, content: undefined, unmount: undefined, badge: undefined, declinedBy };
         }
         drawn.element.id = id;
         drawn.element.dataset['exKind'] = item.kind;
@@ -525,8 +541,17 @@ export class SheetToolbar {
             if (this.#requested !== undefined && this.#drawn.get(this.#requested.key) === drawn) this.#requested = undefined;
             drawn.dispose();
         } else {
+            this.#unmountContent(drawn);
             drawn.element.remove();
         }
+    }
+
+    // The Consumer's content goes with the face it was drawn on.
+    #unmountContent(drawn: BuiltInDrawn): void {
+        const unmount = drawn.unmount;
+        drawn.content = undefined;
+        drawn.unmount = undefined;
+        unmount?.();
     }
 
     #shownItem(key: string): SheetToolbarItem | undefined {
@@ -663,4 +688,12 @@ export class SheetToolbar {
         this.#keyTips = tips;
         if (this.#painted !== undefined) this.paint(this.#painted);
     }
+}
+
+// A Consumer's content mounted on a face, and what takes it away: checked as a script may answer it.
+function mountedContent(content: SheetToolbarContent, element: HTMLElement, name: string): () => void {
+    const unmount: unknown = content(element);
+    if (typeof unmount !== 'function') throw new TypeError(`The content of the toolbar button '${name}' answers the function that takes it away (ADR-0100).`);
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- checked a function just above, the cleanup the content's type answers
+    return unmount as () => void;
 }

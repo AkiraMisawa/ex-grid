@@ -4,7 +4,10 @@
 
 import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useRef, type ReactElement, type ReactNode, type Ref } from 'react';
 import { GridPortals, useGridPortals } from '@ex-grid/react';
-import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetToolbarItemSlot, type SheetToolbarItemSlotContext } from '@ex-grid/sheet';
+import {
+    createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetToolbarButton, type SheetToolbarCommand, type SheetToolbarContent,
+    type SheetToolbarItemSlot, type SheetToolbarItemSlotContext, type SheetToolbarRowOptions,
+} from '@ex-grid/sheet';
 import type { CellAddress, SheetEdit } from '@ex-grid/sheet-engine';
 
 /**
@@ -20,12 +23,34 @@ export interface ExSheetChrome {
     readonly toolbarItem?: (context: SheetToolbarItemSlotContext) => ReactNode;
 }
 
+/** A Consumer's own action on the Sheet Toolbar (ADR-0100), the Sheet's button with its content as a React node. */
+export interface ExSheetToolbarButton extends Omit<SheetToolbarButton, 'content'> {
+    /** Its own content, such as an icon, rendered in place of its text, which still names it: the C# `ToolbarButton`'s
+     * `ChildContent`. A `chrome.toolbarItem` slot is handed it as `view().content`, a function that mounts it into an
+     * element and answers what takes it away, which a React 19 callback ref can be. */
+    readonly content?: ReactNode;
+}
+
+/** One element of a Toolbar Row for React: one of ExSheet's own items by its command, a separator, or the
+ * Consumer's own button. */
+export type ExSheetToolbarEntry = SheetToolbarCommand | 'separator' | ExSheetToolbarButton;
+
+/** A Toolbar Row of the Consumer's for React (ADR-0100): the Sheet's, its buttons' content React nodes. */
+export interface ExSheetToolbarRow extends Omit<SheetToolbarRowOptions, 'items'> {
+    /** What the row holds, in order. */
+    readonly items: readonly ExSheetToolbarEntry[];
+}
+
 /**
- * An ExSheet's props: the Sheet's options, whole, its `chrome` as render functions. `locale` is the browser's
+ * An ExSheet's props: the Sheet's options, whole, its `chrome` as render functions and its toolbar buttons' content
+ * as React nodes. `locale` is the browser's
  * language where not given, read once when the Sheet is made (ADR-0370 section 10): a Sheet's culture is recorded in
  * its document, so it is never changed on a live Sheet.
  */
-export type ExSheetProps = Omit<SheetOptions, 'chrome'> & {
+export type ExSheetProps = Omit<SheetOptions, 'chrome' | 'toolbar'> & {
+    /** The Sheet Toolbar's rows, top to bottom (ADR-0100), as `SheetOptions.toolbar`; a button's `content` is a React
+     * node. */
+    readonly toolbar?: readonly (ExSheetToolbarRow | 'default')[] | undefined;
     /** The parts of the Sheet a Chrome of the Consumer's, or a Wrapper's, draws in place of the built-in ones. */
     readonly chrome?: ExSheetChrome;
     /** A ref to what the Consumer may ask of the Sheet it rendered: its Workbook, its commands and reads, undo and
@@ -44,12 +69,18 @@ export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy'>;
  * render hands the Sheet the props again, and what did not change costs nothing (ADR-0003).
  */
 export function ExSheet(props: ExSheetProps): ReactElement {
-    const { ref, chrome, ...given } = props;
+    const { ref, chrome, toolbar, ...given } = props;
     const element = useRef<HTMLDivElement>(null);
     const portals = useGridPortals();
     const made = useRef<MadeMounts>({});
+    const contents = useRef<MadeToolbar>({ given: undefined, made: undefined, held: new Map() });
     const sheetChrome = sheetChromeOf(chrome, portals, made.current);
-    const sheetOptions: SheetOptions = sheetChrome === undefined ? given : { ...given, chrome: sheetChrome };
+    const sheetToolbar = sheetToolbarOf(toolbar, portals, contents.current);
+    const sheetOptions: SheetOptions = {
+        ...given,
+        ...(sheetChrome === undefined ? {} : { chrome: sheetChrome }),
+        ...(sheetToolbar === undefined ? {} : { toolbar: sheetToolbar }),
+    };
     const sheet = useRef<SheetHandle | undefined>(undefined);
     const browserLocale = useRef<string | undefined>(undefined);
     // Drawn before the browser paints, so a mounted Sheet is never seen empty.
@@ -63,6 +94,12 @@ export function ExSheet(props: ExSheetProps): ReactElement {
             sheet.current = createSheet(root, options);
         } else {
             sheet.current.update(options);
+        }
+        // Content handed anew for a button whose face stands is rendered again in its place.
+        for (const content of contents.current.held.values()) {
+            if (!content.stale) continue;
+            content.stale = false;
+            if (content.slot !== undefined) portals.mount(content.slot, () => content.node);
         }
     });
     useImperativeHandle(ref, () => ({
@@ -135,6 +172,84 @@ function sheetChromeOf(given: ExSheetChrome | undefined, portals: GridPortals, m
         };
     }
     return { toolbarItem: made.toolbarItem.mount };
+}
+
+// A button's content as the Sheet takes it: one mount function for the button's place, kept across renders, so the
+// Sheet does not draw the face again on each; the node it renders is the last one handed.
+interface HeldContent {
+    node: ReactNode;
+    // Handed a node the face does not show yet.
+    stale: boolean;
+    // The element the Sheet mounted the content into, while it stands.
+    slot: HTMLElement | undefined;
+    readonly mount: SheetToolbarContent;
+}
+
+// The toolbar last handed and what the Sheet was handed for it; the content held, by the button's place.
+interface MadeToolbar {
+    given: ExSheetProps['toolbar'];
+    made: SheetOptions['toolbar'];
+    held: Map<string, HeldContent>;
+}
+
+// The Sheet's toolbar: each button's React content as a mount function rendering through the portals. The same
+// toolbar handed again is the same toolbar to the Sheet, which then draws nothing again.
+function sheetToolbarOf(given: ExSheetProps['toolbar'], portals: GridPortals, made: MadeToolbar): SheetOptions['toolbar'] {
+    if (given === made.given) return made.made;
+    // Checked by the Sheet as a script may hand it: what is not a list of rows is handed on for it to refuse.
+    const rows: unknown = given;
+    if (!Array.isArray(rows)) {
+        made.given = given;
+        made.held = new Map();
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- handed on as given, for the Sheet's own check to refuse by name
+        made.made = given as SheetOptions['toolbar'];
+        return made.made;
+    }
+    const held = new Map<string, HeldContent>();
+    const sheetRows = rows.map((row: unknown, r): unknown => {
+        if (typeof row !== 'object' || row === null) return row;
+        const { items }: { readonly items?: unknown } = row;
+        if (!Array.isArray(items)) return row;
+        return {
+            ...row,
+            items: items.map((entry: unknown, i): unknown => {
+                if (typeof entry !== 'object' || entry === null) return entry;
+                // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- an object entry is a button; the Sheet checks its fields by name
+                const { content, ...button } = entry as ExSheetToolbarButton;
+                if (content === undefined || content === null || content === false) return button;
+                const place = `${String(r)}:${String(i)}`;
+                const kept = made.held.get(place);
+                const holding = kept ?? heldContent(portals);
+                if (kept !== undefined && kept.node !== content) holding.stale = true;
+                holding.node = content;
+                held.set(place, holding);
+                return { ...button, content: holding.mount };
+            }),
+        };
+    });
+    made.given = given;
+    made.held = held;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the rows as given, each button's content a mount function; the Sheet checks them by name
+    made.made = sheetRows as readonly (SheetToolbarRowOptions | 'default')[];
+    return made.made;
+}
+
+function heldContent(portals: GridPortals): HeldContent {
+    const content: HeldContent = {
+        node: undefined,
+        stale: false,
+        slot: undefined,
+        mount: element => {
+            content.slot = element;
+            content.stale = false;
+            const unmount = portals.mount(element, () => content.node);
+            return () => {
+                if (content.slot === element) content.slot = undefined;
+                unmount();
+            };
+        },
+    };
+    return content;
 }
 
 function mounted(sheet: SheetHandle | undefined): SheetHandle {

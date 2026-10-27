@@ -432,6 +432,7 @@ export type SheetToolbarBorder = 'bottom' | 'top' | 'left' | 'right' | 'none' | 
 
 // @public
 export interface SheetToolbarButton {
+    readonly content?: SheetToolbarContent | undefined;
     readonly disabledReason?: string | undefined;
     readonly keyTip?: string | undefined;
     readonly onPress: () => void;
@@ -440,6 +441,9 @@ export interface SheetToolbarButton {
 
 // @public
 export type SheetToolbarCommand = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'fontColour' | 'fill' | 'borders' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'numberFormat' | 'percent' | 'comma' | 'formatCells';
+
+// @public
+export type SheetToolbarContent = (element: HTMLElement) => () => void;
 
 // @public
 export type SheetToolbarEntry = SheetToolbarCommand | 'separator' | SheetToolbarButton;
@@ -476,6 +480,7 @@ export interface SheetToolbarItemView {
     readonly active: boolean;
     readonly choices: readonly SheetToolbarItemChoice[];
     readonly closeRequest: number;
+    readonly content: SheetToolbarContent | undefined;
     readonly disabledReason: string | undefined;
     readonly icon: SheetToolbarIcon | undefined;
     readonly moreName: string | undefined;

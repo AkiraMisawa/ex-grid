@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellAddress, CellFormatChange, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
 import { createGrid, type GridHandle } from '@ex-grid/core';
 import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
-import type { SheetToolbarItemSlotContext } from '../src/sheet-toolbar-slot';
+import type { SheetToolbarContent, SheetToolbarItemSlotContext } from '../src/sheet-toolbar-slot';
 import { PointingScope } from '../src/pointing-scope';
 import type { PointingRefusal } from '../src/pointing-refusal';
 
@@ -836,6 +836,20 @@ function toolbarItem(element: HTMLElement, name: string): HTMLButtonElement {
     return found;
 }
 
+// Options showing a row of the Consumer's with one button, its own content `content` where given.
+function reviewOptions(content?: SheetToolbarContent): SheetOptions {
+    return {
+        locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: true,
+        toolbar: [{ label: 'Review', items: [{ text: 'Approve', onPress: () => undefined, content }] }],
+    };
+}
+
+// A button's own content that writes OK, and takes it away.
+const okContent: SheetToolbarContent = place => {
+    place.textContent = 'OK';
+    return () => { place.textContent = ''; };
+};
+
 describe('the Sheet Toolbar (ADR-0100)', () => {
 
     it('ADR-0100: shown only when asked for, above the grid, its band off the Sheet\'s height; Excel\'s Home tab in its order', async () => {
@@ -1142,6 +1156,32 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect(toolbarItem(element, 'Mark reviewed').title).toBe('Mark reviewed: A cell is being edited. Press Enter to commit the edit or Escape to cancel it first.');
     });
 
+    it('ADR-0100: an own button\'s content is drawn in place of its text, which still names it; the same content is not drawn again, and it goes with the button and the Sheet', async () => {
+        const told: string[] = [];
+        const icon: SheetToolbarContent = place => {
+            const mark = document.createElement('i');
+            mark.className = 'own-icon';
+            place.append(mark);
+            told.push('mounted');
+            return () => { told.push('taken away'); };
+        };
+        const { element, sheet } = sheetOf(reviewOptions(icon));
+        await vi.waitFor(() => { expect(element.querySelector('.own-icon')).not.toBeNull(); });
+        const approve = toolbarItem(element, 'Approve');
+        expect([approve.querySelector('.ex-sheet-toolbar-content .own-icon') === null, approve.querySelector('.ex-sheet-toolbar-text'), approve.title])
+            .toEqual([false, null, 'Approve']);
+        sheet.update(reviewOptions(icon));
+        expect(told).toEqual(['mounted']);
+        sheet.update(reviewOptions());
+        expect([told, toolbarItem(element, 'Approve').textContent]).toEqual([['mounted', 'taken away'], 'Approve']);
+        sheet.update(reviewOptions(icon));
+        sheet.destroy();
+        expect(told).toEqual(['mounted', 'taken away', 'mounted', 'taken away']);
+        const loose: unknown = { showToolbar: true, toolbar: [{ label: 'Review', items: [{ text: 'Approve', onPress: () => undefined, content: 'icon' }] }] };
+        expect(() => sheetOf(loose as SheetOptions)).toThrow("The content of the toolbar button 'Approve' is a function that mounts it");
+        expect(() => sheetOf(reviewOptions(() => (1 as unknown as () => void)))).toThrow("The content of the toolbar button 'Approve' answers the function that takes it away");
+    });
+
     it('ADR-0100: KeyTips that would be taken for one another at one level are refused by name, and so is a command ExSheet has not', () => {
         expect(() => sheetOf({ showToolbar: true, toolbar: ['default', { label: 'Help', keyTip: 'H', items: ['bold'] }] }))
             .toThrow("The KeyTips 'H' of ExSheet's default row and 'H' of the Toolbar Row 'Help' collide at one level");
@@ -1307,6 +1347,24 @@ describe('the Sheet Toolbar drawn by a Chrome (ADR-0100, ADR-0390)', () => {
         const moved = fill.view().closeRequest;
         sheet.do(SheetEdit.enter(CellAddress.parse('B1'), '1'));
         expect(fill.view().closeRequest).toBeGreaterThan(moved);
+    });
+
+    it('ADR-0390: a slot is handed an own button\'s content in place of its text, to mount where it draws the button', async () => {
+        let approve: SheetToolbarItemSlotContext | undefined;
+        const chrome: SheetChrome = {
+            toolbarItem: (slot, context) => {
+                if (context.view().name !== 'Approve') return undefined;
+                approve = context;
+                const button = document.createElement('button');
+                button.className = 'own-button';
+                const unmount = context.view().content?.(button);
+                slot.append(button);
+                return () => { unmount?.(); };
+            },
+        };
+        const { element } = sheetOf({ showToolbar: true, chrome, toolbar: [{ label: 'Review', items: ['bold', { text: 'Approve', onPress: () => undefined, content: okContent }] }] });
+        await vi.waitFor(() => { expect(element.querySelector('.own-button')?.textContent).toBe('OK'); });
+        expect([approve?.view().text, approve?.view().content === okContent]).toEqual([undefined, true]);
     });
 
     it('ADR-0390: a slot that throws is thrown once, and its item is the built-in Chrome\'s; a context left to the built-in Chrome reaches nothing', async () => {

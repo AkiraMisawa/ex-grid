@@ -217,6 +217,8 @@
             What it holds, and in which order, is yours to declare in <code>ToolbarContent</code>.
             <code>DefaultToolbarRow</code> is ExSheet's row; a <code>ToolbarRow</code> is a row of your own, and a
             <code>ToolbarButton</code> an action of your own, greyed out while an edit is open like ExSheet's items.
+            Content inside a <code>ToolbarButton</code>, such as an icon, is drawn in place of its <code>Text</code>,
+            which still names it.
             ExSheet's items are <code>BoldItem</code>, <code>ItalicItem</code>, <code>UnderlineItem</code>,
             <code>StrikethroughItem</code>, <code>FontColourItem</code>, <code>FillItem</code>,
             <code>BordersItem</code>, <code>AlignLeftItem</code>, <code>AlignCenterItem</code>,
@@ -229,7 +231,8 @@
             ExSheet's row and a row of your own is <code>{ label, keyTip, items }</code>. Its items are ExSheet's by
             their commands (<code>'bold'</code>, <code>'fontColour'</code>, <code>'numberFormat'</code>,
             <code>'formatCells'</code>, …), <code>'separator'</code>, and buttons of your own,
-            <code>{ text, keyTip, onPress, disabledReason }</code>. Without <code>toolbar</code> the default row
+            <code>{ text, keyTip, onPress, disabledReason, content }</code>, where <code>content</code> is a React node,
+            such as an icon, drawn in place of the text, which still names the button. Without <code>toolbar</code> the default row
             stands alone. A press from the keys gives the keyboard back to the Sheet before <code>onPress</code> runs,
             so what it opens may take the keyboard.
         </p>
@@ -287,7 +290,9 @@
             context that answers <code>null</code> to leave the item to the built-in Chrome. The context carries the
             item's <code>kind</code> and a <code>view()</code> to read with <code>useSyncExternalStore</code> through its
             <code>subscribe</code>: the name, the tooltip, whether it is pressed, why it is disabled, whether the
-            toolbar's keyboard is on it, its list's <code>choices</code>, and <code>openRequest</code> and
+            toolbar's keyboard is on it, its list's <code>choices</code>, a button's own <code>content</code> (a function
+            that mounts it into an element and answers what takes it away, which a callback ref can be), and
+            <code>openRequest</code> and
             <code>closeRequest</code>, which change as they do in Blazor. <code>invoke()</code> presses the item, and
             <code>choicesClosed(choice, escaped)</code> hands a list's close back, with the index of the choice or
             none. The toolbar keeps its keys, the outline on the item its keyboard is on, and the KeyTips. Hand the same

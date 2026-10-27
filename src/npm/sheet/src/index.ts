@@ -25,7 +25,7 @@ export {
 export type { PointingRefusal, PointingRefusalReason } from './pointing-refusal';
 export { SheetEdges } from './sheet-edges';
 export type {
-    SheetToolbarIcon, SheetToolbarItemChoice, SheetToolbarItemKind, SheetToolbarItemSlot, SheetToolbarItemSlotContext, SheetToolbarItemView,
+    SheetToolbarContent, SheetToolbarIcon, SheetToolbarItemChoice, SheetToolbarItemKind, SheetToolbarItemSlot, SheetToolbarItemSlotContext, SheetToolbarItemView,
 } from './sheet-toolbar-slot';
 export { sheetFormatChangeFor, sheetFormatKeyOf, sheetFormatKeysDeclared, type SheetFormatKey } from './sheet-format-keys';
 export { sheetStructureEditFor, sheetStructureKeyOf, sheetStructureKeysDeclared, type SheetStructureKey } from './sheet-structure-keys';

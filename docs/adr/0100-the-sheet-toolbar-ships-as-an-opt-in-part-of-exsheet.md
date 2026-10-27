@@ -432,6 +432,23 @@ where what a key did on the toolbar depended on when it was typed (the spine's s
     declined that, because the hand-back would have taken the keyboard from the built-in popover. The
     core's hand-back from a frame now leaves a keyboard already inside the grid where it is, and the grid
     holds the keys typed meanwhile for Format Cells: Escape straight after Alt, H, O, E closes it.
+- *(2026-10-27, decided with the user: the Script Core's Sheet Toolbar is declared as data.)* `createSheet`'s
+  `toolbar` option, and the React `ExSheet`'s prop of that name, take the rows as a list: `'default'`, ExSheet's
+  row, or `{ label, keyTip, items }`. A row's items are ExSheet's by their commands (`'bold'`, `'numberFormat'`,
+  …), `'separator'`, and the Consumer's own buttons as objects, `{ text, onPress, keyTip, disabledReason,
+  content }`.
+  - The objection to a list of item ids above does not reach it. A Consumer's own action is an object in the
+    same list, carrying its handler, with no second mechanism. An item that comes to need an argument is an
+    object too.
+  - React child components (`<ToolbarRow>` inside `<ExSheet>`, as Blazor writes it) were considered. The
+    adapter would turn them into the same data, which a plain `createSheet` needs anyway. They change neither
+    what the toolbar does nor how it looks, which stays the Chrome's (`chrome.toolbarItem`, ADR-0390). They
+    can be added over the data later without changing it.
+  - The Blazor Sheet keeps its child components. Drawn by the Script Core, its adapter would build the same
+    data from them, and a button's press would reach C# by the button's place.
+  - A button's `content`, a function that mounts it into the element it is handed (a React node under React),
+    is `ToolbarButton`'s `ChildContent`: drawn in place of the text, which still names the button. A Chrome's
+    `toolbarItem` slot is handed it as `view().content`.
 
 ## Considered options
 

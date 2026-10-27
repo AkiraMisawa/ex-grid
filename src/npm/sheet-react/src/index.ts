@@ -5,4 +5,4 @@
  * @packageDocumentation
  */
 export { ExSheet } from './ex-sheet';
-export type { ExSheetApi, ExSheetChrome, ExSheetProps } from './ex-sheet';
+export type { ExSheetApi, ExSheetChrome, ExSheetProps, ExSheetToolbarButton, ExSheetToolbarEntry, ExSheetToolbarRow } from './ex-sheet';
