@@ -78,6 +78,8 @@ export interface SheetToolbarHooks {
     readonly giveBack: () => void;
     /** A Chrome-drawn item's list made a choice, the keyboard given back: the Sheet makes it, as the built-in list's. */
     readonly chosen: (choice: SheetToolbarChoice) => void;
+    /** The band's keys ask for a Chrome-drawn item's list: the Sheet notes what it is opened over. */
+    readonly opening: () => void;
 }
 
 const svgOpen = '<svg class="ex-sheet-toolbar-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">';
@@ -141,6 +143,8 @@ export class SheetToolbar {
     #painted: SheetToolbarPaint | undefined;
     // The KeyTips while they stand.
     #keyTips: KeyTips | undefined;
+    // What a Chrome's slot threw in this pass, thrown once the pass is done: the item is the built-in Chrome's.
+    #failed: Error | undefined;
     readonly #rowBadges = new Map<HTMLElement, HTMLElement>();
     // The list the band's keys asked a Chrome-drawn item for, until it closes: the item's key, and the row whose
     // KeyTips asked, which Escape in the list goes back to.
@@ -236,13 +240,24 @@ export class SheetToolbar {
         });
         for (const [key, drawn] of this.#drawn) {
             if (shown.has(key)) continue;
-            this.#drawn.delete(key);
             this.#takeAway(drawn);
+            this.#drawn.delete(key);
         }
         this.#items = items;
+        const failed = this.#failed;
+        this.#failed = undefined;
         // The item the keyboard was on went, or can no longer be pressed: the nearest that can, from the start.
         if (this.#active !== undefined && this.#activeItem() === undefined) this.#active = this.#enabled()[0]?.key;
         this.#showActive();
+        if (failed !== undefined) throw failed;
+    }
+
+    /** What the Chrome-drawn lists were opened over has changed, as it ends the built-in list: each is asked to close. */
+    endLists(): void {
+        this.#requested = undefined;
+        for (const drawn of this.#drawn.values()) {
+            if (drawn instanceof SlottedToolbarItem && (drawn.kind === 'menu' || drawn.kind === 'split')) drawn.requestClose();
+        }
     }
 
     /** Takes every Chrome-drawn item's contents away, as the Sheet goes. */
@@ -383,13 +398,19 @@ export class SheetToolbar {
         const id = `${this.#prefix}${item.key}`;
         let declinedBy: SheetToolbarItemSlot | undefined;
         if (slot !== undefined) {
-            // Not asked again on every pass where it fails, or answers that the built-in Chrome draws the item.
+            // Not asked again on every pass where it fails, or answers that the built-in Chrome draws the item. What it
+            // throws is thrown once this pass has drawn the rest.
             declinedBy = slot;
-            const slotted = SlottedToolbarItem.tryMount(this.#doc, item.key, item.kind, this.#shownOf(item, false), slot, {
-                invoke: () => { this.#invoke(item.key); },
-                choicesClosed: (choice, escaped) => { this.#choicesClosed(item.key, choice, escaped); },
-                closedChoosingNothing: escaped => { this.#choicesClosed(item.key, undefined, escaped); },
-            });
+            let slotted: SlottedToolbarItem | undefined;
+            try {
+                slotted = SlottedToolbarItem.tryMount(this.#doc, item.key, item.kind, this.#shownOf(item, false), slot, {
+                    invoke: () => { this.#invoke(item.key); },
+                    choicesClosed: (choice, escaped) => { this.#choicesClosed(item.key, choice, escaped); },
+                    closedChoosingNothing: escaped => { this.#choicesClosed(item.key, undefined, escaped); },
+                });
+            } catch (error: unknown) { // oxlint-disable-line ex-grid/no-catch -- ADR-0390: rethrown by paint once the pass has drawn the rest
+                this.#failed ??= error instanceof Error ? error : new Error('A toolbarItem slot threw something that is not an Error.', { cause: error });
+            }
             if (slotted !== undefined) {
                 slotted.element.id = id;
                 slotted.element.dataset['exKind'] = item.kind;
@@ -453,6 +474,7 @@ export class SheetToolbar {
             return;
         }
         this.#withdrawRequest();
+        this.#hooks.opening();
         this.#requested = { key: item.key, keyTipRow };
         drawn.requestOpen();
     }
@@ -486,7 +508,8 @@ export class SheetToolbar {
         if (requested !== undefined) this.#requested = undefined;
         if (choice === undefined) {
             if (escaped && requested?.keyTipRow !== undefined) this.backToKeyTips(requested.keyTipRow);
-            else this.#hooks.giveBack();
+            // A list the band asked to close, closing late, leaves the keyboard where the band has it: on its KeyTips.
+            else if (!this.holdsKeyboard) this.#hooks.giveBack();
             return;
         }
         const choices = this.#items.find(item => item.key === key)?.list?.() ?? []; // oxlint-disable-line ex-grid/no-stand-in-default -- an item with no list has no choice to make, and the index is refused below

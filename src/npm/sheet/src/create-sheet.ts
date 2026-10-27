@@ -418,6 +418,8 @@ class SheetView {
     #faceFill: CellColour = colourFromRgb(0xFFFF00);
     // The Borders preset the face sets: the one chosen last, Bottom Border until one is.
     #faceBorder: SheetToolbarBorder = 'bottom';
+    // The Selection a toolbar list a Chrome draws stands over: one moved from it ends the list.
+    #chromeListsOver: GridSelection | undefined;
     // A Toolbar Item's list while it stands in the grid's popover frame, and the Selection it was opened over.
     #choices: { readonly panel: SheetChoicesPanel; readonly selection: GridSelection; readonly keyTipRow: number | undefined } | undefined;
     // The Alt key went down alone where the toolbar's keys are heard, and its release has not been heard: the release
@@ -481,6 +483,7 @@ class SheetView {
                 else choice.choose();
                 this.#paintToolbar();
             },
+            opening: () => { this.#chromeListsOver = this.#grid?.readView().selection; },
         });
         element.replaceChildren(this.#gridElement, this.#notice);
         // Excel's keys for the Sheet Tabs, heard on the Sheet before its grid hears them, wherever in it the keyboard
@@ -1002,6 +1005,12 @@ class SheetView {
     };
 
     #followSelection(selection: GridSelection): void {
+        // A Chrome's toolbar list reads the Selection it opened over, as the built-in one does: a Selection moved
+        // since ends it. The notice of the Selection it opened over, given after the grid's paint, is no move.
+        if (this.#chromeListsOver?.equals(selection) === false) {
+            this.#chromeListsOver = selection;
+            this.#toolbar.endLists();
+        }
         const before = this.#selection?.focus;
         this.#selection = selection;
         // The Toolbar shows the Focus cell's state: a Selection grown or shrunk around the same Focus changes none of it.
@@ -1234,6 +1243,8 @@ class SheetView {
 
     #paintToolbar(): void {
         if (this.#options.showToolbar !== true) return;
+        // What a list a Chrome draws stands over from here, whether the band's keys or a press opens it.
+        this.#chromeListsOver = this.#grid?.readView().selection;
         const rows = this.#toolbarRows();
         this.#toolbar.paint({ name: this.#words.toolbarName, rowHeightPx: this.#bandRowPx, rows, itemSlot: this.#options.chrome?.toolbarItem });
     }
@@ -1439,6 +1450,8 @@ class SheetView {
     // Ends a Toolbar Item's list where it stands: the grid's popover closes and gives the keyboard back. One the grid
     // already closed, by Escape or a press elsewhere, has left its frame, and only the record goes.
     #endChoices(): void {
+        // A list a Chrome draws ends with it.
+        this.#toolbar.endLists();
         const standing = this.#choices;
         if (standing === undefined) return;
         this.#choices = undefined;

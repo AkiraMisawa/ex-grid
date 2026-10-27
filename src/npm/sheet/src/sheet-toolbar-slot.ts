@@ -53,8 +53,11 @@ export interface SheetToolbarItemView {
      * cannot open is closed at once through `choicesClosed`, choosing nothing. It starts at 0, a request not yet
      * made. */
     readonly openRequest: number;
-    /** Set to `openRequest` when the toolbar gives the keyboard back while the list it asked for may still be
-     * opening: the contents close it, telling nothing. */
+    /** Set to `openRequest` when the toolbar asks the list to close: it gives the keyboard back while the list it
+     * asked for may still be opening, or what the list was opened over has changed — the Selection moved, another
+     * Sheet shown, an operation run, the toolbar hidden — as each ends the built-in list. Where no request stood, both
+     * move on together, so a list opened by a press closes too. The contents close their list, telling nothing, and
+     * answer no `openRequest` that `closeRequest` has reached. */
     readonly closeRequest: number;
 }
 
@@ -158,7 +161,11 @@ export class SlottedToolbarItem {
             },
         });
         const cleanup: unknown = mount(slot, context);
-        if (cleanup === undefined) return undefined;
+        if (cleanup === undefined) {
+            // Left to the built-in Chrome: the context handed reaches nothing.
+            made.#live = false;
+            return undefined;
+        }
         if (typeof cleanup !== 'function') {
             throw new TypeError('A toolbarItem slot answers the function that takes its contents away, or undefined for the built-in item (ADR-0390).');
         }
@@ -187,9 +194,9 @@ export class SlottedToolbarItem {
         this.#changed();
     }
 
-    /** The toolbar gives the keyboard back while the list it asked for may still be opening. */
+    /** The toolbar asks the list to close: the one it asked for, or, where no request stands, any the contents opened. */
     requestClose(): void {
-        if (this.#closeRequest === this.#openRequest) return;
+        if (this.#closeRequest === this.#openRequest) this.#openRequest += 1;
         this.#closeRequest = this.#openRequest;
         this.#changed();
     }

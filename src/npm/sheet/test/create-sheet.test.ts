@@ -1291,6 +1291,49 @@ describe('the Sheet Toolbar drawn by a Chrome (ADR-0100, ADR-0390)', () => {
         expect([fill.view().openRequest, fill.view().closeRequest, document.activeElement]).toEqual([2, 2, grid]);
     });
 
+    it('ADR-0100: a list the Chrome opened by a press reads the Selection it opened over: a Selection moved, or an operation run, asks it to close', async () => {
+        const { chrome, contexts } = ownLists();
+        const { element, sheet } = sheetOf({ showToolbar: true, chrome, document: documentOf({ A1: 'x', A2: 'y' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        const fill = own(contexts, 'Fill Colour');
+        const before = fill.view();
+        expect(before.openRequest).toBe(before.closeRequest);
+        press(element, 1, 0);
+        await vi.waitFor(() => { expect(fill.view().closeRequest).toBeGreaterThan(before.closeRequest); });
+        // Both move on together: there is no request for the contents to answer, only a list to close.
+        expect(fill.view().openRequest).toBe(fill.view().closeRequest);
+        const moved = fill.view().closeRequest;
+        sheet.do(SheetEdit.enter(CellAddress.parse('B1'), '1'));
+        expect(fill.view().closeRequest).toBeGreaterThan(moved);
+    });
+
+    it('ADR-0390: a slot that throws is thrown once, and its item is the built-in Chrome\'s; a context left to the built-in Chrome reaches nothing', async () => {
+        const declined: SheetToolbarItemSlotContext[] = [];
+        let throws = 0;
+        const chrome: SheetChrome = {
+            toolbarItem: (_slot, context) => {
+                declined.push(context);
+                if (context.kind === 'menu') {
+                    throws += 1;
+                    throw new Error('The menu could not be drawn.');
+                }
+                return undefined;
+            },
+        };
+        const options: SheetOptions = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: true, document: documentOf({ A1: 'x' }) };
+        const { element, sheet } = sheetOf(options);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        expect(() => { sheet.update({ ...options, chrome }); }).toThrow('The menu could not be drawn.');
+        press(element, 0, 0);
+        await vi.waitFor(() => { expect(toolbarItem(element, 'Number Format').textContent).toBe('General'); });
+        expect(throws).toBe(1);
+        const bold = declined.find(context => context.view().name === 'Bold');
+        bold?.invoke();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(false);
+    });
+
     it('ADR-0390: contents go with their item, the slot withdrawn and the Sheet; a slot that answers anything else is refused by name', async () => {
         const { chrome, cleanups } = ownLists();
         const { element, sheet } = sheetOf({ showToolbar: true, chrome });
