@@ -62,16 +62,73 @@ export interface MenuAnswers {
 }
 
 /**
+ * A menu's place and what its keys mean (ADR-0039), shared by every Chrome's menu: the built-in items and a Chrome
+ * slot's. The place is held here, not read from DOM focus: it starts on the first enabled item, every key moves it
+ * or reads it, and an item focused by another way moves it there.
+ */
+export class MenuState {
+    readonly #shown: readonly MenuItem[];
+    readonly #keys: MenuKeyTable;
+    readonly #answering: MenuAnswers;
+    #at: number;
+
+    constructor(commands: readonly MenuItem[], table: MenuKeyTable, answers: MenuAnswers) {
+        this.#shown = commands;
+        this.#keys = table;
+        this.#answering = answers;
+        this.#at = firstEnabled(commands);
+    }
+
+    /** The item the menu stands on, or -1 where none is enabled. */
+    get place(): number {
+        return this.#at;
+    }
+
+    /** The place goes back to the first enabled item (ADR-0044). */
+    toFirst(): void {
+        this.#at = firstEnabled(this.#shown);
+    }
+
+    /** An item took DOM focus by another way than the keys: the place follows it. */
+    focused(index: number): void {
+        this.#at = index;
+    }
+
+    /** A key on an item, answered (ADR-0220) by the table against the place: a move moves the place, and a move
+     * into the column's filter is sent. What else it means is the caller's to do. */
+    key(pressed: string, shift: boolean, controlAltOrMeta: boolean): MenuKey {
+        this.#answering.answered();
+        const meaning = this.#keys(pressed, shift, controlAltOrMeta, this.#shown, this.#at);
+        if (meaning.kind === 'move') this.#at = meaning.item;
+        else if (meaning.kind === 'filterFirst' || meaning.kind === 'filterLast' || meaning.kind === 'filterSearch') this.#answering.toFilter?.(meaning.kind);
+        return meaning;
+    }
+}
+
+/** A menu as the grid holds it while it stands: the built-in items, or a Chrome slot's (ADR-0390). */
+export interface MenuPlace {
+    /** Puts the keyboard on the menu's place, at its opening. */
+    focus(): void;
+    /** Puts the menu's place back on its first enabled item, and the keyboard with it (ADR-0044). */
+    focusFirst(): void;
+    /** The menu is going. */
+    dispose(): void;
+    /** Whether a popup of the contents' own is open: Escape is then the popup's (ADR-0039). */
+    readonly innerPopupOpen: boolean;
+}
+
+/**
  * The items of a menu, in `container`: a button per command, a disabled one shown and never focusable. The
  * menu's place is held here, not read from DOM focus: it starts on the first enabled item, every key moves
  * it or reads it, and focus follows it, for the eye and for assistive technology (ADR-0039).
  */
-export class MenuItems {
+export class MenuItems implements MenuPlace {
     readonly #items: readonly HTMLButtonElement[];
     readonly #commands: readonly GridCommand[];
-    readonly #table: MenuKeyTable;
     readonly #answers: MenuAnswers;
-    #place: number;
+    readonly #state: MenuState;
+    /** The built-in items open no popup of their own. */
+    readonly innerPopupOpen = false;
 
     /** `lettered` marks each command's letter the way Excel shows it (ADR-0044): the column menu's, whose sort
      * and clear-filter commands answer S, O and C; the Context Menu answers no letter and marks none. */
@@ -79,9 +136,8 @@ export class MenuItems {
         answers: MenuAnswers, lettered = false) {
         const doc = container.ownerDocument;
         this.#commands = commands;
-        this.#table = table;
         this.#answers = answers;
-        this.#place = firstEnabled(commands);
+        this.#state = new MenuState(commands, table, answers);
         this.#items = commands.map(command => {
             const item = doc.createElement('button');
             item.type = 'button';
@@ -111,14 +167,20 @@ export class MenuItems {
     /** Puts DOM focus on the menu's place, the first enabled item at the opening, without scrolling the menu:
      * one already scrolled is not pulled back to its top (ADR-0039). With nothing enabled, focus stays. */
     focus(): void {
-        if (this.#place >= 0) itemAt(this.#items, this.#place).focus({ preventScroll: true });
+        const place = this.#state.place;
+        if (place >= 0) itemAt(this.#items, place).focus({ preventScroll: true });
     }
 
     /** Puts the menu's place back on its first enabled item, and DOM focus with it: Tab off either end of a
      * filter below the commands comes back here (ADR-0044). */
     focusFirst(): void {
-        this.#place = firstEnabled(this.#commands);
+        this.#state.toFirst();
         this.focus();
+    }
+
+    /** Nothing to take away: the items go with the popover's element. */
+    dispose(): void {
+        // The listeners are on the container, which goes with the popover.
     }
 
     // Every key on an item is the menu's, and its default is prevented: an arrow, Home or End would otherwise
@@ -128,11 +190,9 @@ export class MenuItems {
         const index = this.#indexOf(event.target);
         if (index < 0) return;
         event.preventDefault();
-        this.#answers.answered();
-        const meaning = this.#table(event.key, event.shiftKey, event.ctrlKey || event.altKey || event.metaKey, this.#commands, this.#place);
+        const meaning = this.#state.key(event.key, event.shiftKey, event.ctrlKey || event.altKey || event.metaKey);
         switch (meaning.kind) {
             case 'move':
-                this.#place = meaning.item;
                 itemAt(this.#items, meaning.item).focus();
                 return;
             case 'run':
@@ -144,8 +204,6 @@ export class MenuItems {
             case 'filterFirst':
             case 'filterLast':
             case 'filterSearch':
-                this.#answers.toFilter?.(meaning.kind);
-                return;
             case 'none':
                 return;
         }
@@ -157,7 +215,7 @@ export class MenuItems {
     // lands here too, on the place it has already set.
     readonly #onFocusIn = (event: FocusEvent): void => {
         const index = this.#indexOf(event.target);
-        if (index >= 0) this.#place = index;
+        if (index >= 0) this.#state.focused(index);
     };
 
     readonly #onClick = (event: MouseEvent): void => {

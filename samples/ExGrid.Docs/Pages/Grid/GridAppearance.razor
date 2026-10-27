@@ -185,6 +185,17 @@
             event that never reaches the grid leaves the keys after it waiting for the next one.
         </p>
         <p>
+            <strong>In ExGrid for React</strong> (<code>@@ex-grid/react</code>, published with 0.3.0) the same seams are
+            the <code>chrome</code> prop, one render function per part, each handed what the grid hands that part. The
+            column menu (<code>columnMenu</code>) and the Context Menu (<code>contextMenu</code>) are the first two; a
+            part not given is the built-in Chrome's. A menu draws one item per entry of <code>context.commands</code>,
+            in that order, and spreads <code>useMenuItems(context)(index)</code> onto each item's control: those props
+            hand every key on it to the grid, which answers with the move, the run or the close its table means, run a
+            command as the built-in item does, and put the keyboard on the first enabled item whenever the grid asks.
+            The words are <code>context.label(id)</code>, your <code>commandLabel</code> or the built-in English. What
+            you render is a component of its own, kept with its state while its menu stands.
+        </p>
+        <p>
             <strong>Your own control in the grid's order.</strong> A handler that changes what the keys after it act on —
             a button of your Chrome, a control in your popover, a command beside the grid — can run in its place among
             the keys and presses through <code>InOrderAsync(kind, handling)</code> on the grid, or the

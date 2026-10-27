@@ -433,6 +433,15 @@ export interface GridChangeBatch<Row> {
 }
 
 // @public
+export interface GridChrome<Row> {
+    readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
+    readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
+}
+
+// @public
+export type GridChromeSlot<Context> = (slot: HTMLElement, context: Context) => () => void;
+
+// @public
 export class GridClearIntent {
     // @internal
     constructor(targets: readonly SelectionRange[], rowSequenceVersion: number);
@@ -460,6 +469,13 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly tone?: (value: unknown) => CellTone;
     readonly validate?: (row: Row, text: string, signal: AbortSignal) => EditVerdict | PromiseLike<EditVerdict>;
     readonly width?: GridColumnWidth;
+}
+
+// @public
+export interface GridColumnMenuSlotContext extends GridMenuSlotContext {
+    readonly column: string;
+    readonly columnType: ColumnType;
+    readonly letter: (id: string) => string | undefined;
 }
 
 // @public
@@ -496,6 +512,15 @@ export interface GridContextMenuContext<Row> {
     readonly column: string;
     readonly columnType: ColumnType;
     readonly commands: readonly GridCommand[];
+    readonly row: Row;
+    readonly rowSequenceVersion: number;
+    readonly selection: readonly SelectionRange[];
+}
+
+// @public
+export interface GridContextMenuSlotContext<Row> extends GridMenuSlotContext {
+    readonly column: string;
+    readonly columnType: ColumnType;
     readonly row: Row;
     readonly rowSequenceVersion: number;
     readonly selection: readonly SelectionRange[];
@@ -650,11 +675,26 @@ export const gridLabelIds: Readonly<{
 }>;
 
 // @public
+export interface GridMenuSlotContext {
+    readonly close: () => void;
+    readonly commands: readonly GridCommand[];
+    readonly focusRequest: number;
+    readonly innerPopupChanged: (open: boolean) => void;
+    readonly itemFocused: (index: number) => void;
+    readonly label: (id: string) => string;
+    readonly resolveKey: (key: string, shift: boolean, controlAltOrMeta: boolean) => MenuKey;
+    readonly takeFocus: (control: HTMLElement, options?: {
+        readonly preventScroll?: boolean;
+    }) => void;
+}
+
+// @public
 export function gridNumberOf(value: SnapshotDecimal): number;
 
 // @public
 export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptions<Row> {
     readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>;
+    readonly chrome?: GridChrome<Row>;
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
@@ -1105,6 +1145,15 @@ export interface MarksHost<Row> {
     heldRows(): readonly Row[];
     shown(key: RowKey): Row | undefined;
 }
+
+// @public
+export interface MenuKey {
+    readonly item: number;
+    readonly kind: MenuKeyKind;
+}
+
+// @public
+export type MenuKeyKind = 'none' | 'move' | 'run' | 'close' | 'filterFirst' | 'filterLast' | 'filterSearch';
 
 // @public
 export function parseClipboard(html: string | undefined, text: string | undefined): readonly (readonly string[])[] | undefined;
