@@ -68,6 +68,9 @@ export function MuiExGrid<Row>(props: MuiExGridProps<Row>): ReactElement {
     const merged = useMemo(() => (chrome === undefined ? muiChrome : { ...muiChrome, ...chrome }), [chrome]);
     const classes = ['mui-ex-grid'];
     if (square === true) classes.push('mui-ex-grid-square');
+    // A Stretch grid follows its container's width (ADR-0045), so the Paper round it does too, rather than take the
+    // width of every column as its own.
+    if (grid.viewportWidth === 'stretch') classes.push('mui-ex-grid-stretch');
     if (withColumnBorders === true) classes.push('mui-ex-grid-column-borders');
     if (className !== undefined) classes.push(className);
     // The family is written beside the widths the grid is handed, in the same render (ADR-0027).

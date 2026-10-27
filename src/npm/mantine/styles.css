@@ -93,6 +93,12 @@
        dark body, hue and chroma kept, as the MudBlazor Wrapper raises its own. */
     --mantine-ex-strong: oklch(from var(--mantine-primary-color-filled) max(l, 0.64) c h);
 }
+/* A Stretch grid's Paper (ADR-0045): as wide as the container, so the grid inside it takes the container's width, not
+   its columns'. */
+.mantine-ex-grid.mantine-ex-grid-stretch {
+    display: flex;
+    width: 100%;
+}
 .mantine-ex-grid.mantine-ex-grid-square {
     padding: 0;
 }

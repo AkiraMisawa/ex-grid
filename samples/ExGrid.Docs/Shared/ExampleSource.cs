@@ -28,17 +28,18 @@ internal static partial class ExampleSources
     public static ExampleSource For(Type component) => Get(PathOf(component) + ".razor");
 
     /// <summary>
-    /// The React counterpart of the Example component <paramref name="component"/> (ADR-0350 section 12): the .tsx
-    /// file beside its .razor, and the files of the Example's own folder it imports, in the order it imports them;
-    /// <see langword="null"/> when it has none.
+    /// The React counterpart of the Example component <paramref name="component"/> under <paramref name="chrome"/>
+    /// (ADR-0350 section 12, ADR-0390 section 8): the .tsx file beside its .razor, its name followed by the Wrapper's,
+    /// <c>FirstGrid.tsx</c>, <c>FirstGridMantine.tsx</c>, <c>FirstGridMui.tsx</c>, and the files of the Example's own
+    /// folder it imports, in the order it imports them; <see langword="null"/> when it has none.
     /// </summary>
-    public static ReactExample? ReactFor(Type component) => ReactExamples.GetOrAdd(component, ReadReact);
+    public static ReactExample? ReactFor(Type component, ReactChrome chrome = ReactChrome.Builtin) =>
+        ReactExamples.GetOrAdd((component, chrome), key => ReadReact(PathOf(key.Component) + key.Chrome.FileSuffix()));
 
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, ReactExample?> ReactExamples = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(Type Component, ReactChrome Chrome), ReactExample?> ReactExamples = new();
 
-    private static ReactExample? ReadReact(Type component)
+    private static ReactExample? ReadReact(string path)
     {
-        var path = PathOf(component);
         if (!All.TryGetValue(path + ".tsx", out var example))
             return null;
         var folder = path[..(path.LastIndexOf('/') + 1)];

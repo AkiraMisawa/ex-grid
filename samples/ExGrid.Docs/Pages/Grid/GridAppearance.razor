@@ -296,7 +296,8 @@
             has no word like Dense, so the Density picks the components' size: <code>xs</code> for Compact and Excel,
             <code>sm</code> for Standard, <code>md</code> for Comfortable. Mantine's Table words <code>striped</code> and
             <code>highlightOnHover</code> turn on Row Stripes and the hover band where the grid is given neither, and
-            <code>withColumnBorders</code> draws a rule between columns. The cells are drawn in Mantine's default font
+            <code>withColumnBorders</code> draws a rule between columns. The Paper is as wide as its grid, and a grid of
+            <code>viewportWidth="stretch"</code> takes it along to its container's width. The cells are drawn in Mantine's default font
             stack, with the widest widths any face it resolves to was measured at, and not in the theme's font, whose
             widths the grid would not know: to put the theme's font in the cells, hand <code>MantineExGrid</code> a
             <code>font</code> with its family and the widths measured for it. A part you give in <code>chrome</code>
@@ -319,7 +320,7 @@
             components' size: <code>small</code> with dense menus for Compact and Excel, MUI's own <code>medium</code> for
             Standard and Comfortable. MUI's Table has no stripes, so Row Stripes and the hover band are the grid's own
             <code>stripeRows</code> and <code>highlightHoverRow</code>; <code>withColumnBorders</code> draws a rule between
-            columns. The cells are drawn in MUI's default font stack, Roboto, Helvetica, Arial, with the widest widths any
+            columns. As with Mantine, the Paper is as wide as its grid, or as its container when the grid stretches. The cells are drawn in MUI's default font stack, Roboto, Helvetica, Arial, with the widest widths any
             face it resolves to was measured at, and not in the theme's typography; to put another font in the cells,
             hand <code>MuiExGrid</code> a <code>font</code> with its family and its measured widths. A part you give in
             <code>chrome</code> beats MUI's, and <code>muiChrome</code> with <code>MuiSizeContext</code> is the Wrapper's

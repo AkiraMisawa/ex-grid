@@ -20,9 +20,13 @@ export default defineConfig({
             '@ex-grid/sheet-react': at('../../src/npm/sheet-react/src/index.ts'),
             '@ex-grid/data-xlsx': at('../../src/npm/data-xlsx/src/index.ts'),
             '@ex-grid/sheet-xlsx': at('../../src/npm/sheet-xlsx/src/index.ts'),
+            '@ex-grid/mantine': at('../../src/npm/mantine/src/index.ts'),
+            '@ex-grid/mui': at('../../src/npm/mui/src/index.ts'),
         },
-        // The Examples and the packages' sources sit outside this folder; one React for all, or its hooks see two.
-        dedupe: ['react', 'react-dom'],
+        // The Examples and the packages' sources sit outside this folder; one React for all, or its hooks see two,
+        // and one of each design system, or a Wrapper's components read another provider than the frame's; the
+        // Examples' other imports are this project's too.
+        dedupe: ['react', 'react-dom', '@mantine/core', '@mantine/hooks', '@mui/material', '@emotion/react', '@emotion/styled', 'temporal-polyfill'],
     },
     oxc: { jsx: { runtime: 'automatic' } },
     server: { fs: { allow: [at('../..')] } },
@@ -37,5 +41,13 @@ export default defineConfig({
         emptyOutDir: true,
         // ExSheet, its engine and the grid are one chunk, shared by every Sheet Example and fetched once.
         chunkSizeWarningLimit: 1024,
+        rolldownOptions: {
+            // Mantine and MUI mark their modules "use client" for React Server Components; the frame runs only on the
+            // client, so the directive has nothing to keep, and its warning, one per module, would bury any other.
+            onwarn(warning, warn) {
+                if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes('"use client"')) return;
+                warn(warning);
+            },
+        },
     },
 });
