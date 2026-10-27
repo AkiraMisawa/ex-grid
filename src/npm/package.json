@@ -16,6 +16,7 @@
     "react",
     "blazor",
     "pivot-react",
+    "pivot-blazor",
     "board-react",
     "sheet-engine",
     "sheet",

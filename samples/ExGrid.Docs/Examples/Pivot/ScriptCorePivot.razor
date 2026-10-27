@@ -1,0 +1,15 @@
+@using ExPivot.Engine
+
+<ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="360" />
+
+@code {
+    // The same source as ExPivot.Components.ExPivot's: it answers in .NET, and the report is built in the browser.
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Region")],
+        Columns = [new PivotFieldPlacement("Year")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+}

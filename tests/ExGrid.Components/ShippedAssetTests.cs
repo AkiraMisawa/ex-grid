@@ -140,6 +140,7 @@ public class ShippedAssetTests
                 .Order(StringComparer.Ordinal);
             var served = Directory.EnumerateFiles(Wwwroot(package))
                 .Select(Path.GetFileName)
+                .Where(name => package != "ExPivot" || name?.StartsWith(PivotScriptModule, StringComparison.Ordinal) != true)
                 .Order(StringComparer.Ordinal);
             Assert.Equal(expected, served);
         }
@@ -148,6 +149,11 @@ public class ShippedAssetTests
     /// <summary>The Script Core's module, which ExGrid's build bundles from <c>src/npm</c> rather than from an
     /// <c>Assets</c> source (ADR-0123's note of 2026-10-26).</summary>
     private const string ScriptCoreModule = "ex-grid-core.min.js";
+
+    /// <summary>ExPivot's Script Core's module, which ExPivot's build bundles from <c>src/npm</c> as ExGrid's does
+    /// (ADR-0370 section 1). This project does not build ExPivot, so the module is there or not as ExPivot was last
+    /// built: ExPivot's own tests, which build it, hold it to the stamp its component is built with.</summary>
+    private const string PivotScriptModule = "ex-pivot.min.js";
 
     [Fact] // ADR-0123 / ADR-0350 s7: the bundled module answers the stamp the component is built with, at the version its address carries
     public void The_script_core_module_is_the_one_the_component_was_built_with()

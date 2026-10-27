@@ -1,0 +1,651 @@
+using System.Buffers;
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.Json;
+using ExGrid;
+using ExGrid.Chrome;
+using ExPivot.Engine;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.JSInterop;
+
+namespace ExPivot.Script;
+
+/// <summary>
+/// Excel's PivotTable for Blazor, drawn by ExPivot's Script Core (ADR-0370 section 1): Blazor's Framework Adapter
+/// over <c>@ex-grid/pivot</c>. The component renders one element, the pivot's root, mounts the Script Core on it,
+/// hands it its parameters as options and its <see cref="PivotSource"/> as a source the browser asks through .NET,
+/// and raises the pivot's events as <see cref="EventCallback"/>s. It holds no state of the pivot's, draws nothing
+/// inside the root and decides nothing: the report, the Field List, the Pivot Toolbar and what each input means are
+/// the Script Core's, in the browser, on both hosting models. The data stays the Consumer's, in .NET.
+/// </summary>
+/// <remarks>
+/// <para>Every question the report asks crosses to .NET as the <see cref="PivotJson"/> both engines read and write,
+/// and the source answers it there with its Leaf Aggregates, as a server answers a fetching source (ADR-0370 section
+/// 3); the engine in the browser builds the report and its totals from them. A source's <see cref="PivotSource.Changed"/>
+/// crosses as a notice, and the report asks again (ADR-0067).</para>
+/// <para>It stands beside <see cref="Components.ExPivot"/>, the Razor component, until ExPivot's Blazor step holds
+/// (ADR-0370 section 11). What this adapter does not carry yet is refused by name, never left out quietly: a field
+/// with an <see cref="PivotField.OrderKey"/>, which is a .NET function, or with declared Items that are not text,
+/// numbers or Booleans.</para>
+/// </remarks>
+public sealed class ExPivot : ComponentBase, IAsyncDisposable
+{
+    /// <summary>The script's address under the application's base: the package's minified Script Core and bridge.</summary>
+    private const string ScriptPath = "_content/ExPivot/ex-pivot.min.js";
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    /// <summary>The Pivot Source the report is computed from: its fields are what the Field List offers (ADR-0066). A new
+    /// instance is a new source, and the report asks it again.</summary>
+    [Parameter, EditorRequired] public PivotSource Source { get; set; } = default!;
+
+    /// <summary>The Pivot Layout, View State the Consumer holds (ADR-0059). A layout handed in replaces the one on
+    /// screen; one this pivot raised through <see cref="LayoutChanged"/> and handed back, however late, is its own and
+    /// asks nothing. Left out, the pivot starts from nothing and keeps the user's changes itself.</summary>
+    [Parameter] public PivotLayout? Layout { get; set; }
+
+    /// <summary>Raised with the layout the report shows after each change the user made, once it is answered.</summary>
+    [Parameter] public EventCallback<PivotLayout> LayoutChanged { get; set; }
+
+    /// <summary>Whether the Field List stands beside the report; true unless set, as the Razor component has it.</summary>
+    [Parameter] public bool ShowFieldList { get; set; } = true;
+
+    /// <summary>Raised when the user shows or hides the Field List.</summary>
+    [Parameter] public EventCallback<bool> ShowFieldListChanged { get; set; }
+
+    /// <summary>The Field List's width in CSS pixels; the Script Core's (300) unless set.</summary>
+    [Parameter] public double? FieldListWidth { get; set; }
+
+    /// <summary>The report grid's height, header included: pixels, or <see cref="ViewportSize.Stretch"/>; the Script
+    /// Core's (400) unless set.</summary>
+    [Parameter] public ViewportSize? ViewportHeight { get; set; }
+
+    /// <summary>The report grid's width: pixels, or <see cref="ViewportSize.Stretch"/>, what the Field List leaves; the
+    /// Script Core's (stretch) unless set.</summary>
+    [Parameter] public ViewportSize? ViewportWidth { get; set; }
+
+    /// <summary>The report's row height in CSS pixels; the density's unless set.</summary>
+    [Parameter] public double? RowHeight { get; set; }
+
+    /// <summary>The report's density preset (ADR-0028); the grid's unless set.</summary>
+    [Parameter] public GridDensity? Density { get; set; }
+
+    /// <summary>The culture numbers, dates and counts are written in and text Items ordered by; the component's
+    /// <see cref="CultureInfo.CurrentCulture"/> unless set (ADR-0370 section 10). It changes no word.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    /// <summary>The caps on what a question may ask for and a report may hold (ADR-0066); Excel's unless set.</summary>
+    [Parameter] public PivotCaps? Caps { get; set; }
+
+    /// <summary>How long after a change of data reached the screen the next is asked for (ADR-0067); 250 ms unless set.</summary>
+    [Parameter] public TimeSpan? RedrawInterval { get; set; }
+
+    /// <summary>How long the Change Highlight marks a value the data changed (ADR-0068); one second unless set. Zero
+    /// marks nothing.</summary>
+    [Parameter] public TimeSpan? ChangeHighlightDuration { get; set; }
+
+    /// <summary>Where the records behind a value cell open on a double click: a tab at the report's foot, or a dialog;
+    /// a tab unless set.</summary>
+    [Parameter] public PivotDetailsView? DetailsView { get; set; }
+
+    private PivotSource? _source;
+    private Action<PivotSourceChanged>? _hearSource;
+    private int _generation;
+    private bool _sourceReplaced;
+    private string? _sourceJson;
+    // The sources the browser may still ask, by generation: the current one, and every one before it that the browser
+    // still holds, as an open Details tab holds the source its records came from. The browser says when it has let one
+    // go, and only then is it let go here.
+    private readonly Dictionary<int, PivotSource> _sources = [];
+    // A notice a source gave while the pivot was attaching, and the generation it is of, sent once it is attached.
+    private (int Generation, string Notice)? _noticeOwed;
+
+    // The layouts the pivot raised, by identity, each with the number of the Consumer's layouts the browser had been
+    // sent when it raised it. Handed back while no other layout of the Consumer's has been sent since, it is the one on
+    // screen and is not sent; handed back after one was, the screen has moved on, and it is sent like any other.
+    private readonly ConditionalWeakTable<PivotLayout, StrongBox<int>> _raised = [];
+    // The Layout parameter as last set: a layout is the Consumer's to send only when the parameter moves to one, so a
+    // layout set once and never bound leaves the user's changes on screen, and one set again after the user's is sent.
+    private PivotLayout? _layoutParameter;
+    private PivotLayout? _sentLayout;
+    private bool _layoutOwed;
+    // How many of the Consumer's layouts have been put on their way to the browser.
+    private int _layoutsSent;
+
+    private readonly ConcurrentDictionary<long, CancellationTokenSource> _asked = new();
+    private readonly Queue<Func<Task>> _heard = new();
+    private bool _hearing;
+
+    private ElementReference _root;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _pivot;
+    private DotNetObjectReference<ScriptBridge>? _bridge;
+    private string? _sentOptions;
+    private bool _attached;
+    private bool _attaching;
+    private bool _refused;
+    private bool _disposed;
+    private bool _renderOwed = true;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (Source is null)
+            throw new InvalidOperationException("ExPivot takes its data from a Source (ADR-0066).");
+        if (!ReferenceEquals(Source, _source))
+        {
+            // Checked before anything moves: a source this adapter cannot carry leaves the pivot on the one it had.
+            var generation = _generation + 1;
+            var sourceJson = SourceJson(Source, generation);
+            if (_source is not null)
+            {
+                _source.Changed -= _hearSource;
+                _sourceReplaced = true;
+            }
+            _source = Source;
+            _generation = generation;
+            _sources[generation] = Source;
+            _sourceJson = sourceJson;
+            // Each source's notices carry its own generation, whatever thread it says them on.
+            _hearSource = change => OnSourceChanged(generation, change);
+            Source.Changed += _hearSource;
+        }
+        if (!ReferenceEquals(Layout, _layoutParameter))
+        {
+            _layoutParameter = Layout;
+            var onScreen = Layout is { } raised && _raised.TryGetValue(raised, out var sentThen) && sentThen.Value == _layoutsSent;
+            if (Layout is { } layout && !onScreen)
+            {
+                _sentLayout = layout;
+                _layoutOwed = true;
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_attached)
+            await SendUpdateAsync();
+    }
+
+    /// <inheritdoc />
+    protected override bool ShouldRender() => _renderOwed;
+
+    /// <inheritdoc />
+    protected override void BuildRenderTree(RenderTreeBuilder builder)
+    {
+        _renderOwed = false;
+        builder.OpenElement(0, "div");
+        builder.AddElementReferenceCapture(1, element => _root = element);
+        if (_refused)
+        {
+            // The Script Core never attached: the root is Blazor's to say why, in the built-in words (ADR-0123).
+            builder.OpenElement(2, "div");
+            builder.AddAttribute(3, "role", "alert");
+            builder.AddAttribute(4, "data-ex-notice", "script");
+            builder.AddContent(5, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
+            builder.CloseElement();
+        }
+        builder.CloseElement();
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        // The script this build was made with, by an address that changes with its content (ADR-0123), and refused
+        // when the browser holds another version's: nothing is attached, and the root says so.
+        var address = "./" + AddressOf(Assets, ScriptPath, ScriptCoreAsset.Version);
+        IJSObjectReference? module = null;
+        string? stamp;
+        try
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", address);
+            _module = module;
+            stamp = await module.InvokeAsync<string?>("stamp");
+        }
+        catch (JSException)
+        {
+            // A module that does not load, or one older than the stamp, which has no `stamp` to call.
+            stamp = null;
+        }
+        catch (JsonException)
+        {
+            // An answer that is not a string is no stamp of this family's.
+            stamp = null;
+        }
+        if (_disposed)
+        {
+            // Disposed while the module loaded: what DisposeAsync could not yet see is let go here.
+            await ReleaseAsync(null, module);
+            return;
+        }
+        if (module is null || stamp != ScriptCoreAsset.Stamp)
+        {
+            // Another version's module is let go at once: nothing of it is called.
+            _module = null;
+            await ReleaseAsync(null, module);
+            _refused = true;
+            _renderOwed = true;
+            StateHasChanged();
+            return;
+        }
+        // What the attach carries is what the browser holds once it returns: anything that changes while it is on
+        // its way is owed again, and sent after it, in the order it changed.
+        var options = OptionsJson();
+        var attach = AttachJson(options);
+        _sentOptions = options;
+        _sourceReplaced = false;
+        _layoutOwed = false;
+        var bridge = DotNetObjectReference.Create(new ScriptBridge(this));
+        _bridge = bridge;
+        _attaching = true;
+        IJSObjectReference pivot;
+        try
+        {
+            pivot = await module.InvokeAsync<IJSObjectReference>("attach", _root, bridge, attach);
+        }
+        catch (Exception) when (_disposed)
+        {
+            // Disposed while it attached, and the attach failed with it, as it does when the circuit closes: what
+            // DisposeAsync left to the attach is let go here, and nobody is left to tell of the failure.
+            await ReleaseAsync(null, module);
+            bridge.Dispose();
+            return;
+        }
+        finally
+        {
+            _attaching = false;
+        }
+        if (_disposed)
+        {
+            // Disposed while it attached: the browser's pivot is stopped before the object it calls is let go.
+            await ReleaseAsync(pivot, module);
+            bridge.Dispose();
+            return;
+        }
+        _pivot = pivot;
+        _attached = true;
+        await SendUpdateAsync();
+        if (_noticeOwed is var (generation, notice))
+        {
+            // A source replaced meanwhile went with its notice: the update sent the next, which is asked afresh.
+            _noticeOwed = null;
+            if (generation == _generation)
+                await pivot.InvokeVoidAsync("changed", generation, notice);
+        }
+    }
+
+    // The parameters, another source and the Consumer's layout, whichever changed since the browser last heard them.
+    private async Task SendUpdateAsync()
+    {
+        var pivot = _pivot;
+        if (pivot is null || _disposed)
+            return;
+        var options = OptionsJson();
+        if (options == _sentOptions && !_sourceReplaced && !_layoutOwed)
+            return;
+        _sentOptions = options;
+        var update = Json(json =>
+        {
+            json.WriteStartObject();
+            json.WritePropertyName("options");
+            json.WriteRawValue(options);
+            if (_sourceReplaced)
+            {
+                json.WritePropertyName("source");
+                json.WriteRawValue(_sourceJson ?? throw new InvalidOperationException("Internal: the pivot has no source."));
+            }
+            if (_layoutOwed)
+            {
+                json.WriteString("layout", PivotLayoutJson.Write(_sentLayout ?? throw new InvalidOperationException("Internal: a layout owed and none held.")));
+                json.WriteNumber("layoutsSent", ++_layoutsSent);
+            }
+            json.WriteEndObject();
+        });
+        _sourceReplaced = false;
+        _layoutOwed = false;
+        await pivot.InvokeVoidAsync("update", update);
+    }
+
+    private string AttachJson(string options) => Json(json =>
+    {
+        json.WriteStartObject();
+        json.WritePropertyName("options");
+        json.WriteRawValue(options);
+        json.WritePropertyName("source");
+        json.WriteRawValue(_sourceJson ?? throw new InvalidOperationException("Internal: the pivot has no source."));
+        if (_layoutOwed && _sentLayout is { } layout)
+        {
+            json.WriteString("layout", PivotLayoutJson.Write(layout));
+            _layoutsSent += 1;
+        }
+        else
+        {
+            json.WriteNull("layout");
+        }
+        json.WriteNumber("layoutsSent", _layoutsSent);
+        json.WriteEndObject();
+    });
+
+    private string OptionsJson() => Json(json =>
+    {
+        json.WriteStartObject();
+        // The culture the component reads, as the Razor component reads it (ADR-0370 section 10).
+        var culture = (Culture ?? CultureInfo.CurrentCulture).Name;
+        json.WriteString("locale", culture.Length == 0 ? "invariant" : culture);
+        json.WriteBoolean("showFieldList", ShowFieldList);
+        if (FieldListWidth is { } fieldListWidth)
+            json.WriteNumber("fieldListWidth", fieldListWidth);
+        if (ViewportHeight is { } height)
+            WriteSize(json, "viewportHeight", height);
+        if (ViewportWidth is { } width)
+            WriteSize(json, "viewportWidth", width);
+        if (RowHeight is { } rowHeight)
+            json.WriteNumber("rowHeight", rowHeight);
+        if (Density is { } density)
+            json.WriteString("density", Camel(density));
+        if (Caps is { } caps)
+        {
+            json.WriteNumber("maxLeaves", caps.MaxLeaves);
+            json.WriteNumber("maxRows", caps.MaxRows);
+            json.WriteNumber("maxColumns", caps.MaxColumns);
+        }
+        if (RedrawInterval is { } redraw)
+            json.WriteNumber("redrawInterval", redraw.TotalMilliseconds);
+        if (ChangeHighlightDuration is { } highlight)
+            json.WriteNumber("changeHighlightDuration", highlight.TotalMilliseconds);
+        if (DetailsView is { } detailsView)
+            json.WriteString("detailsView", Camel(detailsView));
+        json.WriteStartArray("hears");
+        if (ShowFieldListChanged.HasDelegate)
+            json.WriteStringValue("showFieldListChanged");
+        json.WriteEndArray();
+        json.WriteEndObject();
+    });
+
+    // The source as the browser declares it: its fields and what it answers. A field this adapter cannot carry is
+    // refused by name.
+    private static string SourceJson(PivotSource source, int generation) => Json(json =>
+    {
+        json.WriteStartObject();
+        json.WriteNumber("generation", generation);
+        json.WriteStartArray("fields");
+        foreach (var field in source.Fields)
+            WriteField(json, field);
+        json.WriteEndArray();
+        var features = source.Features;
+        json.WriteStartArray("aggregations");
+        foreach (var aggregation in features.Aggregations)
+            json.WriteStringValue(Camel(aggregation));
+        json.WriteEndArray();
+        json.WriteBoolean("canRefresh", features.CanRefresh);
+        json.WriteBoolean("countsItems", features.CountsItems);
+        json.WriteBoolean("answersLevels", features.AnswersLevels);
+        json.WriteEndObject();
+    });
+
+    private static void WriteField(Utf8JsonWriter json, PivotField field)
+    {
+        if (field.OrderKey is not null)
+        {
+            throw new NotSupportedException(
+                $"Pivot Field '{field.Name}' has an Order Key, a .NET function the pivot in the browser cannot call (ADR-0370 section 1). "
+                + "Declare its Items' order with ItemOrder instead.");
+        }
+        json.WriteStartObject();
+        json.WriteString("name", field.Name);
+        json.WriteString("type", Camel(field.Type));
+        json.WriteString("caption", field.Caption);
+        if (field.Format is { } format)
+            json.WriteString("format", format);
+        else
+            json.WriteNull("format");
+        json.WriteStartArray("itemOrder");
+        foreach (var item in field.ItemOrder)
+        {
+            switch (item)
+            {
+                case string text: json.WriteStringValue(text); break;
+                case bool flag: json.WriteBooleanValue(flag); break;
+                case int whole: json.WriteNumberValue(whole); break;
+                case long whole: json.WriteNumberValue(whole); break;
+                case double number when double.IsFinite(number): json.WriteNumberValue(number); break;
+                case double number:
+                    throw new NotSupportedException(
+                        $"Pivot Field '{field.Name}' declares the Item {number}, which no Item of a field can be: an Item is a finite number.");
+                case decimal number: json.WriteNumberValue(number); break;
+                default:
+                    throw new NotSupportedException(
+                        $"Pivot Field '{field.Name}' declares an Item of the type {item.GetType().Name}, which the pivot in the browser does not "
+                        + "read yet: declared Items are text, numbers or Booleans (ADR-0370 section 1).");
+            }
+        }
+        json.WriteEndArray();
+        if (field.Column is { } column)
+            json.WriteString("column", column);
+        else
+            json.WriteNull("column");
+        if (field.DatePart is { } part)
+            json.WriteString("datePart", Camel(part));
+        else
+            json.WriteNull("datePart");
+        json.WriteEndObject();
+    }
+
+    private void OnSourceChanged(int generation, PivotSourceChanged change)
+    {
+        var text = PivotJson.Write(change);
+        // A source may say it changed from any thread: its notices cross from the component's context, in the order
+        // it said them.
+        _ = InvokeAsync(async () =>
+        {
+            if (_disposed || generation != _generation)
+                return;
+            var pivot = _pivot;
+            if (pivot is null)
+            {
+                // Attaching: the browser may already have asked the data before this change. Said once it is attached.
+                _noticeOwed = (generation, text);
+                return;
+            }
+            try
+            {
+                await pivot.InvokeVoidAsync("changed", generation, text);
+            }
+            catch (Exception ex) when (ex is not JSDisconnectedException)
+            {
+                await DispatchExceptionAsync(ex);
+            }
+        });
+    }
+
+    // The pivot's events, handed to the Consumer one at a time in the order the browser raised them: a handler that
+    // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do.
+    internal async Task HeardAsync(string kind, JsonElement payload)
+    {
+        Func<Task> hand;
+        try
+        {
+            hand = Prepare(kind, payload);
+        }
+        catch (Exception ex)
+        {
+            // An event .NET cannot read fails the component in its turn, as a handler's exception does.
+            hand = () => Task.FromException(ex);
+        }
+        await InvokeAsync(async () =>
+        {
+            _heard.Enqueue(hand);
+            if (_hearing)
+                return;
+            _hearing = true;
+            try
+            {
+                while (_heard.TryDequeue(out var next))
+                {
+                    if (_disposed)
+                        continue;
+                    try
+                    {
+                        await next();
+                    }
+                    catch (Exception ex)
+                    {
+                        await DispatchExceptionAsync(ex);
+                    }
+                }
+            }
+            finally
+            {
+                _hearing = false;
+            }
+        });
+    }
+
+    private Func<Task> Prepare(string kind, JsonElement payload)
+    {
+        switch (kind)
+        {
+            case "layoutChanged":
+            {
+                var layout = PivotLayoutJson.Read(payload.GetProperty("layout").GetString()
+                    ?? throw new InvalidOperationException("Internal: the Script Core raised no layout."));
+                // The one on screen as soon as it is read, unless a layout of the Consumer's reached the browser after it.
+                _raised.AddOrUpdate(layout, new StrongBox<int>(payload.GetProperty("layoutsSent").GetInt32()));
+                return () => LayoutChanged.InvokeAsync(layout);
+            }
+            case "showFieldListChanged":
+            {
+                var shown = payload.GetBoolean();
+                return () => ShowFieldListChanged.InvokeAsync(shown);
+            }
+            default:
+                throw new InvalidOperationException($"Internal: the Script Core raised an event of the kind '{kind}'.");
+        }
+    }
+
+    // Each question the browser asks, answered by the source of its generation, or refused as one the Consumer replaced.
+    internal async Task<string> AskAsync(string kind, int generation, long call, string? query)
+    {
+        if (_disposed || !_sources.TryGetValue(generation, out var source))
+            throw new OperationCanceledException("The Pivot Source asked was replaced, and the browser has heard so.");
+        using var cancellation = new CancellationTokenSource();
+        if (!_asked.TryAdd(call, cancellation))
+            throw new InvalidOperationException($"Internal: the browser asked question {call} twice.");
+        try
+        {
+            var token = cancellation.Token;
+            return kind switch
+            {
+                "aggregate" => PivotJson.Write(await source.AggregateAsync(PivotJson.ReadQuery(Must(query)), token)),
+                "items" => PivotJson.Write(await source.ItemsAsync(PivotJson.ReadItemsQuery(Must(query)), token)),
+                "details" => PivotJson.Write(await source.DetailsAsync(PivotJson.ReadDetailsQuery(Must(query)), token)),
+                "itemCounts" => PivotJson.Write(await source.ItemCountsAsync(token)),
+                _ => throw new InvalidOperationException($"Internal: the browser asked a question of the kind '{kind}'."),
+            };
+        }
+        finally
+        {
+            _asked.TryRemove(call, out _);
+        }
+    }
+
+    private static string Must(string? query) => query ?? throw new InvalidOperationException("Internal: the browser asked without a question.");
+
+    internal async Task RefreshAsync(int generation)
+    {
+        if (_disposed || !_sources.TryGetValue(generation, out var source))
+            throw new OperationCanceledException("The Pivot Source asked was replaced, and the browser has heard so.");
+        await source.RefreshAsync();
+    }
+
+    // The browser let go of the source of `generation`: it asks it nothing more.
+    internal void Release(int generation)
+    {
+        if (generation != _generation)
+            _sources.Remove(generation);
+    }
+
+    internal void Cancel(long call)
+    {
+        if (_asked.TryGetValue(call, out var asked))
+            asked.Cancel();
+    }
+
+    private static void WriteSize(Utf8JsonWriter json, string name, ViewportSize size)
+    {
+        if (size.IsStretch)
+            json.WriteString(name, "stretch");
+        else
+            json.WriteNumber(name, size.Px);
+    }
+
+    // An enum member as the Script Core spells it: `CountNumbers` is `countNumbers`. A value that names no member is
+    // refused here, rather than sent as a number the browser would refuse later.
+    private static string Camel<TEnum>(TEnum value) where TEnum : struct, Enum
+    {
+        if (!Enum.IsDefined(value))
+            throw new ArgumentOutOfRangeException(nameof(value), value, $"{value} is not a {typeof(TEnum).Name}.");
+        var name = value.ToString();
+        return string.Concat(char.ToLowerInvariant(name[0]).ToString(), name.AsSpan(1));
+    }
+
+    private static string Json(Action<Utf8JsonWriter> write)
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+            write(json);
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
+
+    // The address a package's file is asked for at (ADR-0123), as ExGrid's PackageStylesheet gives it: the host's
+    // fingerprinted address where it knows one, else the path with the version as `?v=`. Written again here rather than
+    // taken from ExGrid's internals, which no package of the family reads (ADR-0201).
+    private static string AddressOf(ResourceAssetCollection assets, string path, string version)
+    {
+        var fingerprinted = assets[path];
+        return fingerprinted != path ? fingerprinted : $"{path}?v={version}";
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+        if (_source is not null)
+            _source.Changed -= _hearSource;
+        foreach (var asked in _asked.Values.ToArray())
+            asked.Cancel();
+        // While it attaches, the pivot it makes is stopped once it is made, and the bridge let go after it.
+        if (_attaching)
+            return;
+        await ReleaseAsync(_pivot, _module);
+        _bridge?.Dispose();
+    }
+
+    /// <summary>Stops the browser's pivot, and lets go what .NET holds of the browser.</summary>
+    private static async Task ReleaseAsync(IJSObjectReference? pivot, IJSObjectReference? module)
+    {
+        try
+        {
+            if (pivot is not null)
+            {
+                await pivot.InvokeVoidAsync("dispose");
+                await pivot.DisposeAsync();
+            }
+            if (module is not null)
+                await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the browser's pivot with it: nothing is left there to stop.
+        }
+    }
+}
