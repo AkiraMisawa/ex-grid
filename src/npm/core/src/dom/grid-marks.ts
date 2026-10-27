@@ -66,11 +66,13 @@ export class GridMarks<Row> {
     /**
      * Writes the header's checkbox and the count from the counts the Consumer answers, never from the Window: a
      * fully marked Window inside a larger result is "some" (ADR-0043, MK-2). Counts not yet known claim neither
-     * none nor all. Answers the count while it says something, for the grid to stand in its status line.
+     * none nor all. Under a pager the header shows `page`, what the grid asked of the page's rows, since its press
+     * lines up the page (ADR-0015). Answers the count while it says something, for the grid to stand in its status
+     * line.
      */
-    paint(words: (id: string) => string): HTMLElement | undefined {
+    paint(words: (id: string) => string, page?: Checked): HTMLElement | undefined {
         const counts = this.#marks?.counts;
-        setIfChanged(this.headerBox, 'aria-checked', counts === undefined ? 'mixed' : headerChecked[rowMarkHeaderState(counts)]);
+        setIfChanged(this.headerBox, 'aria-checked', page ?? (counts === undefined ? 'mixed' : headerChecked[rowMarkHeaderState(counts)]));
         setIfChanged(this.headerBox, 'aria-label', words(markLabelIds.markAllRows));
         const text = this.#marks === undefined ? undefined : markCountText(counts, words);
         if (text === undefined) return undefined;

@@ -202,3 +202,21 @@ The existing root input listener remembers only these owned surfaces; while a te
 checks that rendered fact on animation frames, reading no layout and sending no typing message.
 A removed surface is released; the command that removed it still owes its numbered answer.
 Popover/dialog drafts remain outside until their committing input. ASY-7 reflects this boundary.
+
+## The box a paint changes joins the mark, 2026-10-26 (Script Core)
+
+The Script Core's mark already waited for the browser's first report of the Viewport and the ceiling.
+It did not wait for the report a paint itself brings. Rows written so that the content comes to
+overflow make the browser show a scrollbar, and the Viewport loses its strip: on React's `/sizing` the
+scroller went from 1216px to 1204px about 20 ms after the mark went up. The grid then built its header
+band again, so a test that read a header's box just after the mark could find it gone. This showed as
+SR-2d and UX-11b failing in CI on the React host, and passing on a re-run.
+
+From now on, the mark stays off after a pass that writes a different box for the root, the scroller or the
+scroll content, or that adds or removes one of the root's parts (a pager or a status line, say). It stays off
+until `BrowserReports.afterLayout` has run. In the browser, that is a timer of no delay set from the animation
+frame callbacks of the frame after the next. The browser lays out what was written after a frame's animation
+frame callbacks, then delivers that frame's resize observations, and the grid hands those reports on through a
+timer of no delay. The browser runs timers of equal delay in the order they were set, so the report is told
+first. This is an order, not a wait on time. The layer-2 emulation lays out nothing, so it answers at once,
+unless a test holds the layout to prove the wait (`grid-dom.test.ts`).

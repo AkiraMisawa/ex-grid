@@ -70,9 +70,23 @@ row can break and fix on its own stays a verdict, and may Reject (ADR-0380 secti
   evaluates. A Consumer without the ruleset answers from its own errors. A grid without the seam offers no
   step. It never steps through only the cells it has painted, which would skip every error outside the Window
   without saying so.
+
+  *(2026-10-26, on implementing it: the ruleset is handed the order with each step, not with the rows it
+  evaluates. `Evaluate` is handed the Consumer's collection, which is not the order the grid shows once a Sort
+  or a Filter is in force, so a position looked up in it would name another row. `FindError(request,
+  rowsInOrder)` takes the rows in the grid's current order, which the Consumer reads from its Source when the
+  step is asked, and the answer is read in that order as a Find step's is. A marked row the Filter hides, or a
+  marked column that is hidden, is not stepped to, as Find does not step to it.)*
 - **The key and its words are Chrome's**: the built-in Chrome's English, replaceable through its label
   function (ADR-0203), and the MUI and MudBlazor Wrappers' own. The count shows in the status line beside
   the Selection Summary when the Consumer turns it on.
+
+  *(2026-10-26, decided with the user: **the step is F8 for the next error cell and Shift+F8 for the previous**,
+  the keys VS Code and Visual Studio step through problems with. They are claimed only on a grid given
+  `findError`, so a grid without the seam leaves F8 to the page, and a Consumer that declares F8 itself on a grid
+  without the seam keeps it. On a grid given `findError`, F8 or Shift+F8 among the declared keys is refused when the
+  grid is made, since the key would mean two things. Excel's F8 is Extend Selection mode, which ExGrid does not take; adopting it later means choosing
+  another key for this step.)*
 
 ### 4. Paste, fill and program code reach the same marks
 

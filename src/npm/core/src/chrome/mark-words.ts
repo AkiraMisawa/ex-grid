@@ -11,6 +11,8 @@ export const markLabelIds = Object.freeze({
     marked: 'mark-count',
     /** The count while some lie outside it: every mark at `{count}`, the ones outside at `{outside}`. */
     markedOutside: 'mark-count-outside-filter',
+    /** Under a pager, the button that marks every row of the result, past the page, at `{count}` (ADR-0015). */
+    markAllResultRows: 'mark-all-result-rows',
 } as const);
 
 /** The built-in English for the Mark Column's ids, as the C# core says them. */
@@ -19,6 +21,7 @@ export const markWords: readonly (readonly [string, string])[] = Object.freeze([
     [markLabelIds.markAllRows, 'Mark all rows'],
     [markLabelIds.marked, '{count} marked'],
     [markLabelIds.markedOutside, '{count} marked ({outside} outside the current filter)'],
+    [markLabelIds.markAllResultRows, 'Mark all {count} rows'],
 ]);
 
 /**

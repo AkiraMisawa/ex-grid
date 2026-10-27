@@ -14,8 +14,13 @@ import type { CellPosition } from '../selection/cell';
  * - `reject` holds the editor: every commit gesture stops, the message is shown at the editor and said in the
  *   live region, and Escape is the only way out without applying. Excel's Stop style.
  *
- * The intended split is that an unparseable text rejects and a parseable value a rule dislikes flags. It runs
- * on the commit's path, so it is cheap; anything needing a round trip is flag-tier by construction.
+ * The intended split is that an unparseable text rejects and a parseable value a rule dislikes flags. A Consumer
+ * may also reject an object its domain says cannot exist, which it composes from the row and the text (ADR-0380
+ * section 4).
+ *
+ * A column's `validate` answers one at once or as a promise (ADR-0380 section 1). While a promise is out, the
+ * commit is pending: the editor stands with the text, every input made meanwhile waits for the answer, and Escape
+ * cancels it, aborting the signal the verdict was handed.
  */
 export type EditVerdict =
     | { readonly kind: 'accept' }
@@ -44,14 +49,18 @@ export type EditDiscardReason =
     | 'sourceChanged';
 
 /** Why a Cell Editor commit was refused: the grid cannot find, in the rows it holds now, the row the editor
- * was opened on (ADR-0142). The editor stays open with what was typed, and Escape leaves without writing. */
+ * was opened on (ADR-0142), or the user cancelled it while its answer was out (ADR-0380). The editor stays open
+ * with what was typed, and Escape leaves without writing. */
 export type CommitRefusalReason =
     /** A Row Key is in force and no row in the Window answers the key of the row the editor was opened on. A
      * commit made once the row is back in the Window lands. */
     | 'rowLeftTheWindow'
     /** No Row Key is in force and the Row Sequence Version moved while the editor was open: its position
      * names another row now. */
-    | 'orderMoved';
+    | 'orderMoved'
+    /** Escape was typed while the commit was pending, its verdict or its `onEdit` not yet answered (ADR-0380
+     * section 3): the signal they were handed is aborted, and nothing is written. */
+    | 'cancelled';
 
 /**
  * The Edit Intent (ADR-0007): the notification a commit raises, with the row it lands on, the column and the
@@ -59,8 +68,9 @@ export type CommitRefusalReason =
  *
  * It carries the text the user saw of the cell when the editor opened, and the text the cell painted as the
  * commit landed (ADR-0142): when the two differ, the value changed under the editor. A Consumer that will not
- * write it calls {@link GridEditIntent.refuse} before its `onEdit` returns, and the editor stays open with the
- * typing, the message shown at it and said in the live region, as a verdict's reject is (ADR-0034).
+ * write it calls {@link GridEditIntent.refuse} before its `onEdit` returns, or before the promise `onEdit` returns
+ * settles (ADR-0380 section 2), and the editor stays open with the typing, the message shown at it and said in the
+ * live region, as a verdict's reject is (ADR-0034).
  */
 export class GridEditIntent<Row> {
     /** The row instance the edit lands on: Row Identity, not a position. */
@@ -73,16 +83,20 @@ export class GridEditIntent<Row> {
     readonly seenText: string;
     /** What the edited cell paints as the commit lands: what the commit replaces. */
     readonly replacedText: string;
+    /** Aborted when the user cancels the commit with Escape while `onEdit`'s promise is out (ADR-0380 section 3):
+     * nothing is to be written then, and a refusal after it throws. The verdict was handed the same signal. */
+    readonly signal: AbortSignal;
     #refusal: string | undefined;
     #sealed = false;
 
     /** @internal */
-    constructor(row: Row, column: string, value: string, seenText: string, replacedText: string) {
+    constructor(row: Row, column: string, value: string, seenText: string, replacedText: string, signal: AbortSignal) {
         this.row = row;
         this.column = column;
         this.value = value;
         this.seenText = seenText;
         this.replacedText = replacedText;
+        this.signal = signal;
     }
 
     /** The message the Consumer refused the intent with, or `undefined` while it has not. */
@@ -97,14 +111,17 @@ export class GridEditIntent<Row> {
 
     /**
      * The Consumer's answer that it does not write this edit (ADR-0142, ADR-0034). Called before `onEdit`
-     * returns, the editor stays open with the text typed, the gesture that committed keeps no meaning of its
-     * own, and `message` is shown at the editor and said in the live region. A later commit raises the intent
-     * again. Called after, it throws: the editor has closed, and a refusal it never heard would leave the
-     * screen saying the edit was taken.
+     * returns, or before the promise it returned settles (ADR-0380), the editor stays open with the text typed, the
+     * gesture that committed keeps no meaning of its own, and `message` is shown at the editor and said in the live
+     * region. A later commit raises the intent again. Called after, it throws: the editor has closed, and a refusal
+     * it never heard would leave the screen saying the edit was taken. Called once the user has cancelled the
+     * commit, it throws too: nothing was to be written.
      */
     refuse(message: string): void {
         if (this.#sealed) {
-            throw new Error('This edit was answered when onEdit returned: refuse it before then (ADR-0142).');
+            throw new Error(this.signal.aborted
+                ? 'This edit was cancelled while onEdit was answering it: nothing is to be written (ADR-0380).'
+                : 'This edit was answered when onEdit returned, or when its promise settled: refuse it before then (ADR-0142, ADR-0380).');
         }
         // From an untyped caller anything; a refusal that says nothing is the silence ADR-0034 rules out.
         const given: unknown = message;

@@ -131,6 +131,8 @@ export const englishSheetWordTable: Readonly<Record<SheetWordId, string>> = Obje
         "What was typed was not entered: another Sheet was shown, or another Sheet Document opened, while {0} was being edited, so nothing was written. Press Escape to leave it.",
     'commitRefused.rowLeftTheWindow':
         "What was typed was not entered: the row of {0} is not among the rows the Sheet holds now. Bring it back into view and press Enter again, or press Escape to leave it.",
+    'commitRefused.cancelled':
+        "What was typed was not entered: the edit of {0} was cancelled while it was being checked, so nothing was written.",
     'placementRefused.orderMoved':
         "The selection was not moved: another Sheet was shown, or another Sheet Document opened, after it was asked for.",
     'placementRefused.sourceChanged':
@@ -408,6 +410,8 @@ export const japaneseSheetWordTable: Readonly<Record<SheetWordId, string>> = Obj
         "入力した内容は確定されませんでした: {0} の編集中に別のシートが表示されたか、別のシート ドキュメントが開かれたため、何も書き込まれませんでした。Esc キーで編集を終了してください。",
     'commitRefused.rowLeftTheWindow':
         "入力した内容は確定されませんでした: {0} の行は、シートが現在保持している行にありません。その行を表示してもう一度 Enter キーを押すか、Esc キーで編集を終了してください。",
+    'commitRefused.cancelled':
+        "入力した内容は確定されませんでした: {0} の編集は確認中に取り消されたため、何も書き込まれませんでした。",
     'placementRefused.orderMoved':
         "選択範囲は移動されませんでした: 要求された後に別のシートが表示されたか、別のシート ドキュメントが開かれました。",
     'placementRefused.sourceChanged':

@@ -1037,6 +1037,12 @@
    is overridden, so a Wrapper's token keeps its colour; no script is involved. The Formula Bar's
    field is outlined only while it has focus, and needs nothing. */
 .ex-grid:not(:focus-within) .ex-viewport .ex-editor { outline-width: 1px; }
+/* A Pending Commit (ADR-0380 section 3): while the Consumer's answer to a commit is out, the root
+   carries data-ex-pending-commit and the pointer says the grid is busy; the editor, read-only and
+   aria-busy, keeps its text and the keyboard, its outline dashed. The style alone is overridden, so a
+   Wrapper's --ex-editor-outline keeps its colour and width. */
+.ex-grid[data-ex-pending-commit] { cursor: progress; }
+.ex-viewport .ex-editor[aria-busy="true"] { outline-style: dashed; }
 /* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
 .ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
 /* The Keyboard Field (ADR-0080), which holds the keyboard on a grid that edits while no edit is

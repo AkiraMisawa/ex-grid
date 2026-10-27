@@ -9,10 +9,13 @@
 // microtask, so a burst of changes in one task paints once.
 
 import { AutoWidth } from '../columns/auto-width';
-import { assembleCopy, checkedCopyAnswer, type CopyFlavours, type GridCopyAnswer, type GridCopyRequest } from '../clipboard/clipboard-data';
+import { assembleCopy, checkedCopyAnswer, fieldCopyFlavours, type CopyFlavours, type GridCopyAnswer, type GridCopyRequest } from '../clipboard/clipboard-data';
 import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
 import { GridClearIntent } from '../clipboard/clear-intent';
-import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, rowCommandRefusalId, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
+import {
+    columnPlaceholder, commitCancelledId, copyRefusalWords, errorStepMovedId, errorStepNoneId, heldInputLostId, pasteRefusalWords, replaceCellChangedId, rowCommandRefusalId,
+    shapeMismatchMaySpillWords,
+} from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
 import { summaryLabelIds } from '../chrome/summary-words';
 import { markLabelIds } from '../chrome/mark-words';
@@ -33,6 +36,10 @@ import { decideOverflow } from '../columns/overflow-rules';
 import { changeHighlightShowingUntil } from '../cells/change-highlight';
 import { entryFor, rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
+import {
+    cancelsPending, elementDefault, eventAgain, heldEventTypes, heldInputOf, isClipboardKey, keyDefault, selectionOf, typedField, typeText,
+    type HeldInput,
+} from './pending-commit';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import { matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type GridFindResult } from '../finding/find';
 import { columnHeaderId, findHeaders, groupHeaderId, matchingHeaders, sameHeaders, type FindHeader } from '../finding/header-find';
@@ -40,7 +47,8 @@ import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-wa
 import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '../finding/replace';
 import { defined, itemAt } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
-import { canonicalKey, declareKeys, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
+import { canonicalKey, declareKeys, errorStepOf, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
+import type { GridErrorStepRequest } from '../cells/grid-ruleset';
 import { cellClasses, type CellTone, type MatchMark } from '../paint/cell-classes';
 import { columnMark, rowMark } from '../paint/heading-mark-styles';
 import { rowClasses, type RowKind } from '../paint/row-classes';
@@ -61,11 +69,12 @@ import { isSummaryFigure, summaryFigureOrder, defaultSummaryFigures, type Summar
 import { keyOf, type RowKey } from '../source/row-key';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import { ViewportBox } from '../viewport/viewport-box';
+import { PageGeometry } from '../viewport/page-geometry';
 import { ViewportGeometry } from '../viewport/viewport-geometry';
 import type { BrowserReports, ViewportReport } from './browser-reports';
 import { ClipboardLedger, type LedgerWrite } from './clipboard-ledger';
 import { ColumnStyles } from './column-styles';
-import { cellBox, editorAway, editorCell, keyFieldBox, opensAnEdit } from './cell-editing';
+import { cellBox, editorAway, keyFieldBox, opensAnEdit } from './cell-editing';
 import {
     boundaryLeftPx, columnsResizedWith, dragThresholdPx, dropBoundaries, grabbedAt, guideLeftPx, nearestBoundary, type ColumnGesture, type GridColumnWidthChange,
 } from './column-gestures';
@@ -219,9 +228,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * The grid writes nothing; the screen changes when the source hands over new row instances. A Consumer
      * that will not write it calls `intent.refuse()` before this returns, and the Selection stays where it
      * was (ADR-0050, item 3). Only columns declared `editable` take a paste; one that covers another is
-     * refused whole (ADR-0035).
+     * refused whole (ADR-0035). It may answer later with a promise: until it settles the paste is pending, every
+     * input made meanwhile waits for it, `refuse` may still be called, and Escape cancels it, aborting
+     * `intent.signal` (ADR-0380).
      */
-    readonly onPaste?: (intent: GridPasteIntent) => void;
+    readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
     /** Whether a block pasted onto one cell spills from it (ADR-0050, item 3): written with that cell at its
      * top-left, and once accepted the block becomes the Selection. Off unless given, and a block onto one
      * cell is then refused (ADR-0014). Declared by a Consumer that holds every cell, such as a Sheet. */
@@ -274,6 +285,13 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * Placeholder; Row Kind and Cell State paint over it, and the overlays above it. The colour is
      * `--ex-row-stripe-background`. */
     readonly stripeRows?: boolean;
+    /**
+     * Rows per page: a pager exists when this is given, and its absence is continuous scrolling (ADR-0015). The
+     * page is the context the grid shows: the scrollbar spans the page, a drag stops at its edge, and Ctrl+A and the
+     * corner select it, while the keyboard crosses pages and the status line offers the whole result. A page turned
+     * raises the same Range Request a scroll does. At least one.
+     */
+    readonly pageSize?: number;
     /** What role each row plays, detail, group or total (ADR-0024): none, and every row is a detail row. Asked once
      * per row painted, and by the Row Marks of every row of the result when they count or mark all, so it is a cheap
      * read of the row; its identity is the change signal: a new function paints the rows again, and the same one
@@ -301,11 +319,14 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * Hears the Edit Intent each Cell Editor commit raises (ADR-0007): the row, the column and the text as the
      * user entered it. The grid writes nothing; the screen changes when the source hands over a new row
      * instance. A Consumer that will not write it calls `intent.refuse(message)` before this returns, and the
-     * editor stays open with the typing (ADR-0142). Without it no Cell Editor opens: typing onto a cell is
+     * editor stays open with the typing (ADR-0142). It may answer later with a promise, against the newest
+     * version it holds: until it settles the commit is pending, the editor stands read-only with the text, every
+     * input made meanwhile waits for it, `refuse` may still be called, and Escape cancels it, aborting
+     * `intent.signal` (ADR-0380). Without it no Cell Editor opens: typing onto a cell is
      * heard by nobody, and a grid with no column `editable` is display-only, its keyboard on its root
      * (ADR-0080).
      */
-    readonly onEdit?: (intent: GridEditIntent<Row>) => void;
+    readonly onEdit?: (intent: GridEditIntent<Row>) => void | PromiseLike<void>;
     /** Hears whether an edit is open, each time that changes (ADR-0050 section 6): once as one opens and once
      * as it ends, after what it ended in — the Edit Intent, or the discard — has been heard. */
     readonly onEditingChanged?: (open: boolean) => void;
@@ -414,6 +435,15 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * function makes every painted row judge its cells again (ADR-0003).
      */
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
+    /**
+     * The next or the previous error cell (ADR-0381 section 3), asked when F8 or Shift+F8 is typed on the grid:
+     * answered as a Find step is, with a row in the order the request was read in and a column name, or nothing
+     * found. The grid knows only the cells it paints, so the step is the Consumer's; `GridRuleset.findError` answers
+     * it from what the ruleset marked, given the rows in the grid's order. Without it the grid offers no step and
+     * leaves F8 to the page; with it, F8 and Shift+F8 cannot be among `declaredKeys`. An answer about rows or columns
+     * that moved while it was out moves nothing, and is said; none found is said too.
+     */
+    readonly findError?: (request: GridErrorStepRequest, signal: AbortSignal) => GridFindResult | PromiseLike<GridFindResult>;
     /** Whether Find searches the column headers and Header Group labels too (ADR-0333): true unless given. A
      * header found is the current match, marked and named in the panel, and the Focus stays where it is. Turn
      * it off where the headers are addresses rather than content. */
@@ -681,7 +711,7 @@ interface Taken<Row> {
     readonly onAction: ((event: GridActionEvent<Row>) => void) | undefined;
     /** Who holds the marks of the Mark Column, while one is declared. */
     readonly marks: RowMarks<Row> | undefined;
-    readonly onPaste: ((intent: GridPasteIntent) => void) | undefined;
+    readonly onPaste: ((intent: GridPasteIntent) => void | PromiseLike<void>) | undefined;
     readonly pasteMaySpill: boolean;
     readonly showFillHandle: boolean;
     readonly onFill: ((intent: GridFillIntent) => void) | undefined;
@@ -691,12 +721,13 @@ interface Taken<Row> {
     readonly declaredKeys: ReadonlySet<string>;
     readonly onDeclaredKey: ((press: GridDeclaredKeyPress) => void) | undefined;
     readonly stripeRows: boolean;
+    readonly pageSize: number | undefined;
     readonly rowKind: ((row: Row) => RowKind) | undefined;
     readonly pasteByteCap: number;
     readonly onClear: ((intent: GridClearIntent) => void) | undefined;
     readonly onUndo: (() => void) | undefined;
     readonly onRedo: (() => void) | undefined;
-    readonly onEdit: ((intent: GridEditIntent<Row>) => void) | undefined;
+    readonly onEdit: ((intent: GridEditIntent<Row>) => void | PromiseLike<void>) | undefined;
     readonly onEditingChanged: ((open: boolean) => void) | undefined;
     readonly onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
     readonly onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
@@ -714,6 +745,7 @@ interface Taken<Row> {
     readonly temporal: TemporalLike | undefined;
     readonly onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
     readonly findMatch: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
+    readonly findError: ((request: GridErrorStepRequest, signal: AbortSignal) => GridFindResult | PromiseLike<GridFindResult>) | undefined;
     readonly findsHeaders: boolean;
     readonly cellPaint: CellPaint<Row>;
     readonly headerClickSelects: boolean;
@@ -910,6 +942,29 @@ interface OpenEdit<Row> {
     surface: 'cell' | 'bar';
 }
 
+/** A commit whose answer is out (ADR-0380 section 3): a verdict, or the Consumer's to an intent, answered as a
+ * promise. */
+interface PendingCommit<Row> {
+    /** What the root's `data-ex-pending-commit` says while it stands. */
+    readonly stamp: number;
+    /** Handed to the answer as its signal, and aborted when the user cancels. */
+    readonly controller: AbortController;
+    /** The editor standing read-only with the text, or none: a paste's, or a fill's once its editor is down. */
+    readonly edit: OpenEdit<Row> | undefined;
+    /** The verdict's answer, before any intent was raised, or the Consumer's to one. The rows or columns handed over
+     * under the latter are the commit's own doing, as they are while a handler runs (ADR-0142), so they do not take
+     * its editor away. */
+    readonly phase: 'verdict' | 'intent';
+    /** The input whose handler made the commit, taken again once it lands: its gesture keeps its meaning. */
+    readonly trigger: Event | undefined;
+    /** The inputs made meanwhile, in the order they were made. */
+    readonly held: HeldInput[];
+    /** What a cancel says, and what it takes back. */
+    readonly cancelled: () => void;
+    /** The text field that held the keyboard, read-only while the answer is out, where it is not the editor. */
+    readonly stilled: HTMLInputElement | HTMLTextAreaElement | undefined;
+}
+
 // What the Formula Bar last read of the Focus, and what it was read through (ADR-0051).
 interface BarReading<Row> {
     readonly focus: CellPosition | undefined;
@@ -1044,6 +1099,18 @@ function stretchRootStyle(width: ViewportSize, height: ViewportSize): string {
  * One grid in one element. Made by `createGrid`, which hands back its handle; nothing outside the core
  * holds it.
  */
+/** A press on a mark of the grid's own, held to the order and source it was taken against (MK-9). */
+interface MarkPress {
+    readonly sequence: number;
+    readonly source: unknown;
+}
+
+/** A press on the header's checkbox: under a pager, the page it was pressed on too (ADR-0015). */
+interface HeaderMarkPress extends MarkPress {
+    readonly paged: boolean;
+    readonly page: RowRange | undefined;
+}
+
 export class GridView<Row> {
     readonly #root: HTMLElement;
     readonly #reports: BrowserReports;
@@ -1112,7 +1179,9 @@ export class GridView<Row> {
     readonly #rowMarks: GridMarks<Row>;
     readonly #markBoxes = new WeakMap<Element, boolean>();
     #markPress: { readonly box: Element; readonly pressed: PressedRow<Row> } | undefined;
-    #headerMarkPress: { readonly sequence: number; readonly source: unknown } | undefined;
+    // The order and source a press on the header's checkbox was made under, and, while a pager stood, the page it
+    // named: `paged` with no `page` is a page that held no row (ADR-0043, ADR-0015).
+    #headerMarkPress: HeaderMarkPress | undefined;
     // The status line after the rows (ADR-0014): the marks' count and the Selection Summary, standing while either
     // has its place in it.
     readonly #status: HTMLElement;
@@ -1134,7 +1203,7 @@ export class GridView<Row> {
     readonly #summary: SummaryQuestions;
     readonly #summaryBox: SummaryBox;
     #summaryRowsStamp = 0;
-    #pasteHeard: ((intent: GridPasteIntent) => void) | undefined;
+    #pasteHeard: ((intent: GridPasteIntent) => void | PromiseLike<void>) | undefined;
     #pasteMaySpill = false;
     #showFillHandle = false;
     #fillHeard: ((intent: GridFillIntent) => void) | undefined;
@@ -1147,6 +1216,26 @@ export class GridView<Row> {
     #highlightFocusRow = false;
     #highlightHoverRow = false;
     #stripeRows = false;
+    // The pager (ADR-0015): the rows a page holds while one stands, and the page shown, transient view state as the
+    // scroll offset is. The geometry runs over that page alone. The pager's buttons and count, the status line's offer
+    // of the whole result, and the Mark Column's, one each for the grid's life.
+    #pageSize: number | undefined;
+    #pageIndex = 0;
+    readonly #pager: HTMLElement;
+    readonly #pageBack: HTMLButtonElement;
+    readonly #pageOn: HTMLButtonElement;
+    readonly #pageShown: HTMLElement;
+    readonly #selectWholeResult: HTMLElement;
+    readonly #markResult: HTMLElement;
+    #markResultPress: MarkPress | undefined;
+    // How many times the marks have said they changed, and the page's checkbox state with what it was asked over, so a
+    // pass that changed none of it asks no row again (ADR-0027).
+    #marksStamp = 0;
+    #pageMarkedMemo: {
+        readonly window: readonly Row[]; readonly windowStart: number; readonly start: number; readonly count: number;
+        readonly rowKind: ((row: Row) => RowKind) | undefined; readonly marks: RowMarks<Row> | undefined; readonly stamp: number;
+        readonly checked: 'false' | 'true' | 'mixed';
+    } | undefined;
     #rowKind: ((row: Row) => RowKind) | undefined;
     // The row under the pointer, while the hover band is on and the pointer is over a row (ADR-0029).
     #hoverRow: number | undefined;
@@ -1160,7 +1249,7 @@ export class GridView<Row> {
     #restAt: { readonly x: number; readonly y: number; readonly movedAt: number } | undefined;
     #shownMessage: { readonly cell: CellPosition; readonly text: string; readonly row: Row; readonly column: string } | undefined;
     #pasteByteCap = defaultPasteByteCap;
-    #editHeard: ((intent: GridEditIntent<Row>) => void) | undefined;
+    #editHeard: ((intent: GridEditIntent<Row>) => void | PromiseLike<void>) | undefined;
     #onEditingChanged: ((open: boolean) => void) | undefined;
     #onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
     #onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
@@ -1241,6 +1330,11 @@ export class GridView<Row> {
     #announcedRanges: readonly SelectionRange[] = [];
     #describesSelection = false;
     #cancelAnnounce: (() => void) | undefined;
+    // Owed while the browser may yet tell a box the last written scroll content changed (ADR-0220).
+    #cancelBoxTold: (() => void) | undefined;
+    // The root's, the scroller's and the scroll content's boxes as last written, and the root's parts, whose change
+    // is what may change the box the browser tells.
+    #laidOut: string | undefined;
 
     // What the browser told (ADR-0013, ADR-0028, ADR-0053, ADR-0090).
     #viewportReport: ViewportReport | undefined;
@@ -1332,6 +1426,9 @@ export class GridView<Row> {
     // was found under. The marks are judged once per search, never per frame (ADR-0332 §4).
     #onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
     #findMatch: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
+    // The error step (ADR-0381 section 3): who answers it, and the question still out.
+    #findError: ((request: GridErrorStepRequest, signal: AbortSignal) => GridFindResult | PromiseLike<GridFindResult>) | undefined;
+    #errorStepping: AbortController | undefined;
     #findsHeaders = true;
     // The per-cell declarations (ADR-0050, items 6, 7, 11 and 15), the row appearances resolved from them, and
     // the generated stylesheet their classes name, last in the root (ADR-0071).
@@ -1368,6 +1465,15 @@ export class GridView<Row> {
     #findOutcome: FindOutcome = { kind: 'none' };
     #findStepping: AbortController | undefined;
     #replacing = 0;
+    // A Pending Commit (ADR-0380 section 3), and the stamps given so far. `#input` is the last input the root heard
+    // ahead of everything in it: while its dispatch is under way, it is the gesture a commit made in its handler
+    // waits with. `#retaking` carries that gesture from a verdict answered to the intent it raises.
+    #pending: PendingCommit<Row> | undefined;
+    #pendingStamps = 0;
+    #input: Event | undefined;
+    #retaking: Event | undefined;
+    // An Escape cancelled a commit, and its repeats are its own.
+    #escapeCancelled = false;
     #findCurrent: { readonly cell: CellPosition; readonly version: number } | undefined;
     #findCurrentHeader: {
         readonly id: string; readonly selection: Selection; readonly columns: readonly ResolvedColumn<Row>[]; readonly layout: HeaderGroupLayout;
@@ -1386,6 +1492,8 @@ export class GridView<Row> {
     #viewAhead: { readonly selection: Selection; readonly version: number; readonly topPx: number; readonly leftPx: number } | undefined;
     // Whether the offsets taken from a view are still to be kept inside the rows shown, as the browser keeps them.
     #viewScrollUnclamped = false;
+    // The row a new page size brings to the top of the view, once the geometry over it is made (ADR-0015).
+    #topRowOwed: number | undefined;
     #layerInputs: Readonly<Record<string, unknown>> | undefined;
     #shadeHolds = false;
 
@@ -1469,6 +1577,7 @@ export class GridView<Row> {
         // which the editor is described by. Not a live region: the root's says it once.
         this.#message = element('div', { class: 'ex-message', id: `${this.#ids}message`, role: 'tooltip' });
         this.#rowMarks = new GridMarks(doc, () => {
+            this.#marksStamp += 1;
             this.#invalidate();
         });
         // The status line sits where the C# core's holds it (ADR-0014, ADR-0043, ADR-0130): after the rows, outside
@@ -1477,6 +1586,24 @@ export class GridView<Row> {
         this.#offScreen = element('span', {});
         this.#goToSelection = element('button', { type: 'button', 'data-ex-claims': 'click' });
         this.#goToSelection.addEventListener('click', this.#onGoToSelection);
+        this.#selectWholeResult = element('button', { type: 'button', 'data-ex-claims': 'click' });
+        this.#selectWholeResult.addEventListener('click', this.#onSelectWholeResult);
+        this.#markResult = element('button', { type: 'button', class: 'ex-mark-result', 'data-ex-claims': 'click' });
+        this.#markResult.addEventListener('mousedown', this.#onMarkResultPress);
+        this.#markResult.addEventListener('click', this.#onMarkResult);
+        // The pager stands after the rows, ahead of the status line, as the C# core's does (ADR-0015).
+        this.#pager = element('div', { class: 'ex-pager', role: 'presentation' });
+        const pagerButton = (text: string, turned: () => void): HTMLButtonElement => {
+            const button = doc.createElement('button');
+            Object.assign(button, { type: 'button', textContent: text });
+            button.setAttribute('data-ex-claims', 'click');
+            button.addEventListener('click', turned);
+            return button;
+        };
+        this.#pageBack = pagerButton('‹', this.#onPageBack);
+        this.#pageShown = element('span', {});
+        this.#pageOn = pagerButton('›', this.#onPageOn);
+        this.#pager.append(this.#pageBack, this.#pageShown, this.#pageOn);
         this.#summary = new SummaryQuestions(() => {
             this.#invalidate();
         });
@@ -1508,6 +1635,9 @@ export class GridView<Row> {
                 this.#onScroll();
             };
             this.#scroller.addEventListener('scroll', onScroll, { passive: true });
+            // Every input, heard on the root ahead of the grid's own listeners, so a Pending Commit holds it first
+            // (ADR-0380 section 3).
+            for (const type of heldEventTypes) root.addEventListener(type, this.#onInput, true);
             // The keys, heard on the root in the capture phase, ahead of anything inside it (ADR-0018).
             root.addEventListener('keydown', this.#onKeyDown, true);
             this.#viewport.addEventListener('mousedown', this.#onPress);
@@ -1535,6 +1665,7 @@ export class GridView<Row> {
             root.addEventListener('paste', this.#onPaste);
             this.#stops.push(
                 () => { this.#scroller.removeEventListener('scroll', onScroll); },
+                () => { for (const type of heldEventTypes) root.removeEventListener(type, this.#onInput, true); },
                 () => { root.removeEventListener('keydown', this.#onKeyDown, true); },
                 () => { this.#viewport.removeEventListener('mousedown', this.#onPress); },
                 () => { this.#viewport.removeEventListener('mouseup', this.#onRelease); },
@@ -1612,7 +1743,7 @@ export class GridView<Row> {
      * brought in another source (`sourceChanged`, ADR-0142) or moved the columns (`columnsMoved`, ADR-0011). The
      * version is all a request carries, so one made after the source was replaced is taken as written for the
      * new one, as the C# grid takes it. True once placed; false when refused, or when a Reject or a refusal held
-     * the open edit (ADR-0034), which says so itself. A range reaching outside the grid, a Focus outside the
+     * the open edit (ADR-0034), which says so itself, or while its commit is pending (ADR-0380). A range reaching outside the grid, a Focus outside the
      * range, or a grid with no cells throws a RangeError and changes nothing.
      */
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
@@ -1637,7 +1768,8 @@ export class GridView<Row> {
         const names = this.#columns.map(({ column }) => column.name);
         this.#answered += 1;
         this.#invalidate();
-        if (!this.#commitEdit()) return false;
+        // The Consumer's call is answered here: a commit pending makes it false, and nothing takes it again.
+        if (!this.#commitEdit(false)) return false;
         // A menu standing at the old place closes, and a drag ends, so its next move does not reshape the place
         // from the old anchor.
         this.#closePopover(true);
@@ -1679,6 +1811,7 @@ export class GridView<Row> {
         this.#destroyed = true;
         this.#cancelSettle?.();
         this.#cancelAnnounce?.();
+        this.#cancelBoxTold?.();
         this.#cancelFollow?.();
         this.#cancelMessage?.();
         this.#cancelRest?.();
@@ -1687,8 +1820,13 @@ export class GridView<Row> {
         this.#stopHighlightTimer();
         this.#copy?.abort();
         this.#fill?.abort();
+        this.#errorStepping?.abort();
+        this.#errorStepping = undefined;
         this.#findStepping?.abort();
         this.#findStepping = undefined;
+        // A commit pending as the grid goes is cancelled: nothing is to be written, and its held inputs go with it.
+        this.#pending?.controller.abort();
+        this.#pending = undefined;
         // An edit open as the grid goes ends with it: the Consumer hears the end of every open (ADR-0050
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
         this.#edit = undefined;
@@ -1706,7 +1844,7 @@ export class GridView<Row> {
         this.#root.replaceChildren();
         for (const name of ['tabindex', 'dir', 'id', 'role', 'aria-multiselectable', 'data-ex-reveal', 'data-ex-follow',
             'data-ex-follow-focus', 'aria-activedescendant', 'data-ex-settled', 'class', 'style', 'aria-rowcount', 'aria-colcount',
-            'data-ex-focus-visible']) {
+            'data-ex-focus-visible', 'data-ex-pending-commit']) {
             this.#root.removeAttribute(name);
         }
     }
@@ -1822,12 +1960,25 @@ export class GridView<Row> {
             throw new TypeError('onDeclaredKey is a function of the key pressed (ADR-0050, item 14).');
         }
         const declaredKeys = declareKeys(options.declaredKeys);
+        const { findError }: { readonly findError?: unknown } = options;
+        if (findError !== undefined && typeof findError !== 'function') {
+            throw new TypeError('findError is a function of the error step\'s request and an abort signal (ADR-0381).');
+        }
+        const stepKey = findError === undefined ? undefined : ['F8', 'Shift+F8'].find(key => declaredKeys.has(key));
+        if (stepKey !== undefined) {
+            throw new TypeError(`declaredKeys names ${stepKey}, which is the error step on a grid given findError: the key would mean two things `
+                + '(ADR-0381, ADR-0050 item 14).');
+        }
         if (declaredKeys.size > 0 && onDeclaredKey === undefined) {
             throw new TypeError('declaredKeys names keys, but no onDeclaredKey hears them: the keys would be taken from the page and nobody told '
                 + '(ADR-0050, item 14).');
         }
         const { stripeRows, rowKind }: { readonly stripeRows?: unknown; readonly rowKind?: unknown } = options;
         if (stripeRows !== undefined && typeof stripeRows !== 'boolean') throw new TypeError('stripeRows is true or false.');
+        const { pageSize }: { readonly pageSize?: unknown } = options;
+        if (pageSize !== undefined && (typeof pageSize !== 'number' || !Number.isInteger(pageSize) || pageSize < 1)) {
+            throw new RangeError('A page holds at least one row; continuous scrolling is pageSize left unset (ADR-0015).');
+        }
         if (rowKind !== undefined && typeof rowKind !== 'function') throw new TypeError('rowKind is a function of the row (ADR-0024).');
         if (onClear !== undefined && typeof onClear !== 'function') {
             throw new TypeError('onClear is a function of the clear\'s intent.');
@@ -1958,7 +2109,7 @@ export class GridView<Row> {
             showFillHandle: options.showFillHandle === true, onFill: options.onFill,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             cellMessage: options.cellMessage, declaredKeys, onDeclaredKey: options.onDeclaredKey,
-            stripeRows: options.stripeRows === true, rowKind: options.rowKind,
+            stripeRows: options.stripeRows === true, pageSize: options.pageSize, rowKind: options.rowKind,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick, onLeave: options.onLeave,
@@ -1966,7 +2117,7 @@ export class GridView<Row> {
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
             hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
-            onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
+            onReplace: options.onReplace, findMatch: options.findMatch, findError: options.findError, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
             rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
             dataEdge: options.dataEdge, ...summary,
@@ -2135,6 +2286,21 @@ export class GridView<Row> {
         this.#onRefused = taken.onRefused;
         this.#onAction = taken.onAction;
         this.#rowMarks.bind(taken.marks, taken.rowKind);
+        if (taken.pageSize !== this.#pageSize) {
+            // A new size shows the first row shown before — the page's first, or the first painted without a pager —
+            // at the top of the page that holds it, kept inside the pages there are as the geometry is made.
+            // Nothing painted yet shows no row, and the first page is shown from its top.
+            const first = this.#pageSize === undefined ? this.#visible?.start : this.#pageIndex * this.#pageSize;
+            this.#pageIndex = taken.pageSize === undefined || first === undefined ? 0 : Math.floor(first / taken.pageSize);
+            this.#topRowOwed = first;
+            this.#pageSize = taken.pageSize;
+            this.#viewScrollUnclamped = true;
+            if (taken.pageSize === undefined) {
+                this.#pager.remove();
+            } else if (!this.#pager.isConnected) {
+                this.#root.insertBefore(this.#pager, this.#status.isConnected ? this.#status : this.#announce);
+            }
+        }
         if (taken.stripeRows !== this.#stripeRows) {
             this.#stripeRows = taken.stripeRows;
             // A Placeholder wears its stripe too, and is painted again with it.
@@ -2214,6 +2380,7 @@ export class GridView<Row> {
         this.#temporal = taken.temporal;
         this.#onReplace = taken.onReplace;
         this.#findMatch = taken.findMatch;
+        this.#findError = taken.findError;
         this.#findsHeaders = taken.findsHeaders;
         this.#cellPaint = taken.cellPaint;
         this.#headerClickSelects = taken.headerClickSelects;
@@ -2337,6 +2504,7 @@ export class GridView<Row> {
         const revealed = this.#stageReveal();
         this.#stageFollow();
         this.#paint();
+        this.#lookForNewLayout();
         const stepped = this.#scrollOwed;
         this.#scrollOwed = false;
         if (revealed || stepped) {
@@ -2359,12 +2527,13 @@ export class GridView<Row> {
     // holds no row waits on the browser to grow the box, which nothing the grid does brings, so it is not owed.
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
+            && this.#cancelBoxTold === undefined
             && this.#repaint === undefined && this.#cancelMessage === undefined
             && (this.#followArmed === undefined || this.#visible === undefined)
             && this.#cancelFollow === undefined
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
             && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
-            && this.#findStepping === undefined && this.#replacing === 0);
+            && this.#findStepping === undefined && this.#errorStepping === undefined && this.#replacing === 0 && this.#pending === undefined);
     }
 
     #showSettled(settled: boolean): void {
@@ -2432,19 +2601,38 @@ export class GridView<Row> {
             return;
         }
         // The rows share the scroll content with the header band, so they get what it leaves, under the
-        // ceiling less the band (ADR-0013, ADR-0053).
-        this.#geometry = new ViewportGeometry({
+        // ceiling less the band (ADR-0013, ADR-0053). Under a pager the arithmetic runs over the page alone: the
+        // scrollbar spans the page, and the page's edge is where a drag stops (ADR-0015).
+        const size = this.#pageSize;
+        if (size !== undefined && this.#pageIndex > this.#pageCount - 1) {
+            // The result shrank under the page shown: its new last page is shown from its top, as a turn shows it.
+            this.#pageIndex = this.#pageCount - 1;
+            this.#scrollTopPx = 0;
+            this.#scrollOwed = true;
+            this.#hoverRow = undefined;
+            this.#dropRest();
+        }
+        const firstRow = size === undefined ? 0 : this.#pageIndex * size;
+        const rows = {
             rowHeightPx: this.#metrics.rowHeightPx,
             viewportHeightPx: visibleHeightPx - band,
-            totalRowCount: total,
+            totalRowCount: size === undefined ? total : Math.min(Math.max(total - firstRow, 0), size),
             scrollRoomPx: Math.max(1, (this.#ceilingPx ?? ViewportGeometry.maxScrollHeightPx) - band),
-        });
+        };
+        const geometry = size === undefined ? new ViewportGeometry(rows) : new PageGeometry(firstRow, rows);
+        this.#geometry = geometry;
+        const top = this.#topRowOwed;
+        this.#topRowOwed = undefined;
+        if (top !== undefined && top >= firstRow && top < firstRow + rows.totalRowCount) {
+            this.#scrollTopPx = geometry.scrollTopAt(geometry.offsetPxOf(top));
+            this.#scrollOwed = true;
+        }
         // Offsets from a view of other rows may lie past these rows' end. They are kept inside here, as the browser
         // keeps the ones written, from the arithmetic and never read back (ADR-0331, ADR-0021).
         const clampView = this.#viewScrollUnclamped;
         this.#viewScrollUnclamped = false;
-        if (clampView) this.#scrollTopPx = Math.min(Math.max(this.#scrollTopPx, 0), this.#geometry.maxScrollTopPx);
-        this.#visible = this.#geometry.sliceAt(this.#scrollTopPx);
+        if (clampView) this.#scrollTopPx = Math.min(Math.max(this.#scrollTopPx, 0), geometry.maxScrollTopPx);
+        this.#visible = geometry.sliceAt(this.#scrollTopPx);
         this.#observeAutoWidths();
         this.#resolveColumnGeometry(visibleWidthPx);
         if (clampView) this.#scrollLeftPx = Math.min(Math.max(this.#scrollLeftPx, 0), this.#styles.geometry.maxScrollLeftPx);
@@ -2888,6 +3076,14 @@ export class GridView<Row> {
             this.#openColumnMenuAtFocus();
             return;
         }
+        // F8 and Shift+F8 step to the next and the previous error cell, on a grid given findError (ADR-0381). Not
+        // past an edit left open (ED-26): the step would move the Focus out from under it.
+        const errorStep = this.#findError === undefined || this.#edit !== undefined ? undefined : errorStepOf(press);
+        if (errorStep !== undefined) {
+            this.#taken(event);
+            this.#stepToError(errorStep === 'previous');
+            return;
+        }
         if (action.kind !== 'leave' && !movingKinds.has(action.kind)) return;
         this.#taken(event);
         if (action.kind === 'leave') {
@@ -2938,7 +3134,8 @@ export class GridView<Row> {
         // The Consumer's edge is asked on the arrows only: Home and End resolve to the same moves and keep ADR-0012's
         // meaning (ADR-0050, item 2).
         const edge = this.#dataEdge !== undefined && key.startsWith('Arrow') ? this.#dataEdge : undefined;
-        const move = moveByKey(action, this.#held.selection, this.#extent, start, viewportRows, edge);
+        const extent = this.#extent;
+        const move = moveByKey(action, this.#held.selection, extent, start, viewportRows, edge, this.#selectAllContext(extent));
         if (move === undefined) return;
         this.#apply(move.selection);
         this.#revealOwed = move.reveal;
@@ -3039,11 +3236,16 @@ export class GridView<Row> {
     // stood at the press: made on what a source since replaced painted, or under an order that has moved since,
     // it marks nothing and is refused once, for the Consumer to word (MK-9). A click no press came before, one a
     // script made, names what the header names now.
-    #pressHeaderMark(press: { readonly sequence: number; readonly source: unknown } | undefined): void {
+    // Under a pager it lines up the page's rows instead, as positions, since a single gesture does not vault past the
+    // page, and the whole result is offered beside the count (ADR-0015). A press names what was in force at it: the
+    // page it was made on, though turned, resized or the pager removed since, or the whole result, though a pager
+    // was added since.
+    #pressHeaderMark(press: HeaderMarkPress | undefined): void {
         const marks = this.#rowMarks.marks;
-        if (marks === undefined) return;
-        if (press !== undefined && (press.source !== this.#source || press.sequence !== this.#sequence())) {
-            this.#onRefused?.({ kind: 'mark', reason: press.source === this.#source ? 'orderMoved' : 'sourceChanged' });
+        if (marks === undefined || !this.#markPressHolds(press)) return;
+        if (press === undefined ? this.#pageSize !== undefined : press.paged) {
+            const page = press === undefined ? this.#pageRows() : press.page;
+            if (page !== undefined) this.#raiseMark(marks, { kind: 'positions', ranges: [page], rowSequenceVersion: this.#state.rowSequenceVersion });
             return;
         }
         const { counts } = marks;
@@ -3051,6 +3253,15 @@ export class GridView<Row> {
             kind: 'allRows', marked: rowMarkHeaderPress(counts === undefined ? 'some' : rowMarkHeaderState(counts)),
             rowSequenceVersion: this.#state.rowSequenceVersion,
         });
+    }
+
+    // Whether a press on a mark that names rows by position still names them: made on what a source since replaced
+    // painted, or under an order that has moved since, it marks nothing and is refused once, for the Consumer to word
+    // (MK-9). A click no press came before names what is there now.
+    #markPressHolds(press: MarkPress | undefined): boolean {
+        if (press === undefined || (press.source === this.#source && press.sequence === this.#sequence())) return true;
+        this.#onRefused?.({ kind: 'mark', reason: press.source === this.#source ? 'orderMoved' : 'sourceChanged' });
+        return false;
     }
 
     // Space aimed with a Selection an order move or a replaced source has dropped since (ADR-0142, LV-12,
@@ -3663,9 +3874,15 @@ export class GridView<Row> {
     /**
      * A commit leaves the grid as an Edit Intent and nothing else (ADR-0007): the painted value does not change
      * until the source hands over a new row instance. True once no edit stands; false when a Reject or a
-     * refusal held the editor, whose gesture then keeps no meaning of its own (ADR-0034).
+     * refusal held the editor, whose gesture then keeps no meaning of its own (ADR-0034), and false while the
+     * commit is pending (ADR-0380): its gesture is taken again once it lands. `retake` is false for a commit made
+     * by the Consumer's own call, whose caller is told and has no gesture to take again. `judged` is a verdict
+     * answered later, with the signal it was handed: the commit is taken again against the rows as they stand
+     * then, and the verdict is not asked again.
      */
-    #commitEdit(): boolean {
+    #commitEdit(retake = true, judged?: { readonly verdict: EditVerdict; readonly controller: AbortController }): boolean {
+        // One commit at a time (ADR-0142): nothing is committed, nor placed after it, while another is pending.
+        if (this.#pending !== undefined) return false;
         const edit = this.#edit;
         if (edit === undefined) return true;
         // Made on the newest rows the source holds: one that gathers live changes puts them out now
@@ -3694,10 +3911,12 @@ export class GridView<Row> {
         }
         const text = edit.element.value;
         const { row } = landing;
-        // The Consumer's judgement, at the one moment a veto is still possible (ADR-0034).
-        const verdict: EditVerdict = column.column.validate === undefined
-            ? { kind: 'accept' }
-            : checkedVerdict(column.column.validate(row, text), name);
+        const controller = judged?.controller ?? new AbortController();
+        // The Consumer's judgement, at the one moment a veto is still possible (ADR-0034), now or later (ADR-0380).
+        const verdict = judged?.verdict ?? this.#verdictOf(column, row, text, controller,
+            { edit, cancelled: () => { this.#commitCancelled(edit, name); } }, retake,
+            answered => this.#edit === edit && this.#commitEdit(retake, { verdict: answered, controller }));
+        if (verdict === undefined) return false;
         if (verdict.kind === 'reject') {
             this.#holdEdit(edit, verdict.message);
             return false;
@@ -3705,34 +3924,322 @@ export class GridView<Row> {
         // The commit lands over whatever the cell paints now, and the intent says what the user saw of it
         // (ADR-0142). A flag raises the intent unchanged: the mark comes back through what the cell shows.
         this.#supersedeFill();
-        const intent = new GridEditIntent(row, name, text, edit.seenText, this.#paintedTextAt(landing.cell));
+        const intent = new GridEditIntent(row, name, text, edit.seenText, this.#paintedTextAt(landing.cell), controller.signal);
         // The user's own write (D1), noted before the Consumer hears it, and taken back if refused.
         const written = this.#noteUserWrite([fromCorners(landing.cell, landing.cell)]);
+        const answer = this.#heardNow(() => heard(intent), failed => { this.#intentAnswered(intent, written, failed); });
+        if (answer !== undefined) {
+            this.#pend(answer, {
+                controller, edit, phase: 'intent',
+                cancelled: () => {
+                    this.#intentAnswered(intent, written, true);
+                    this.#commitCancelled(edit, name);
+                },
+            }, retake, () => {
+                this.#intentAnswered(intent, written, false);
+                return this.#editLanded(edit, intent, landing.cell);
+            }, () => { this.#intentAnswered(intent, written, true); });
+            return false;
+        }
+        return this.#editLanded(edit, intent, landing.cell);
+    }
+
+    // A column's verdict on `text` for `row` (ADR-0034), or none yet: answered with a promise, the commit is pending,
+    // and `again` takes it up with the verdict once it comes, against the rows as they stand then (ADR-0380).
+    #verdictOf(column: ResolvedColumn<Row>, row: Row, text: string, controller: AbortController,
+        pending: Pick<PendingCommit<Row>, 'edit' | 'cancelled'>, retake: boolean, again: (verdict: EditVerdict) => boolean): EditVerdict | undefined {
+        const { validate, name } = column.column;
+        const given: unknown = validate === undefined ? { kind: 'accept' } : validate(row, text, controller.signal);
+        if (!isThenable(given)) return checkedVerdict(given, name);
+        this.#pend(given, { ...pending, controller, phase: 'verdict' }, retake, answer => again(checkedVerdict(answer, name)));
+        return undefined;
+    }
+
+    // A Consumer's handler heard (ADR-0142, ADR-0380 section 2): answered now, `answered` ends the time to refuse in
+    // at once, told whether the handler threw; answered with a promise, that is handed back, and the caller ends it
+    // once the promise settles.
+    #heardNow(hear: () => unknown, answered: (failed: boolean) => void): PromiseLike<unknown> | undefined {
+        let answer: unknown;
         let returned = false;
         try {
-            heard(intent);
+            answer = hear();
             returned = true;
         } finally {
-            intent.seal();
-            // What the source gathered while the Consumer wrote is put out as its handler returns (D5).
-            this.#source.publishGathered?.();
-            this.#userWriteAnswered(written, !returned || intent.refused);
+            if (!returned || !isThenable(answer)) answered(!returned);
         }
-        // A source or columns the Consumer handed over while it heard the intent are the commit's own doing:
-        // accepted, the edit ends as committed; refused, the editor cannot stand over rows or columns the grid
-        // no longer shows, and the edit is discarded with the reason (ADR-0142). Neither raises a notice: its
-        // cell would name a position among rows or columns the grid no longer shows.
+        return isThenable(answer) ? answer : undefined;
+    }
+
+    // The Consumer has answered an Edit Intent or a paste intent: the time to refuse in ends, what the source gathered
+    // while it wrote is put out (D5), and the user's write is taken back where it was refused, cancelled or its handler
+    // failed.
+    #intentAnswered(intent: { seal(): void; readonly refused: boolean }, written: UserWrite, failed: boolean): void {
+        intent.seal();
+        this.#source.publishGathered?.();
+        this.#userWriteAnswered(written, failed || intent.refused);
+    }
+
+    // An intent answered and not refused ends the edit as committed; refused, it holds the editor. A source or
+    // columns the Consumer handed over while it answered are the commit's own doing: accepted, the edit ends as
+    // committed; refused, the editor cannot stand over rows or columns the grid no longer shows, and the edit is
+    // discarded with the reason (ADR-0142). Neither raises a notice: its cell would name a position among rows or
+    // columns the grid no longer shows.
+    #editLanded(edit: OpenEdit<Row>, intent: GridEditIntent<Row>, cell: CellPosition): boolean {
         const outlived = this.#outlivedBy(edit);
         const refusal = intent.refusalMessage;
         if (refusal === undefined || outlived !== undefined) {
             this.#endEdit(refusal === undefined ? undefined : outlived);
             if (refusal === undefined && outlived === undefined) {
-                this.#raiseOverwriteNotice(landing.cell, name, intent.seenText, intent.replacedText);
+                this.#raiseOverwriteNotice(cell, intent.column, intent.seenText, intent.replacedText);
             }
             return true;
         }
         this.#holdEdit(edit, refusal);
         return false;
+    }
+
+    // A commit the user cancelled while its answer was out (ADR-0380 section 3): the editor stays with the text, and
+    // the cancel is said aloud and raised, as a refused commit is.
+    #commitCancelled(edit: OpenEdit<Row>, column: string): void {
+        if (this.#edit === edit) this.#holdEdit(edit, undefined);
+        this.#sayRefusal(this.#labelOf(commitCancelledId));
+        this.#onRefused?.({ kind: 'commit', reason: 'cancelled', cell: edit.cell, column });
+    }
+
+    // ---- A Pending Commit (ADR-0380 section 3) ------------------------------------------------------------
+    //
+    // A verdict, or the Consumer's answer to an intent, may be a promise. While it is out the commit is pending:
+    // the root carries a stamp, set in the handler of the gesture that committed, so the next input's handler sees
+    // it however fast it follows; the editor stands read-only with its text and the keyboard; and every input made
+    // meanwhile is held, in the order it was made, and taken once the answer has come, against what it left. Typed
+    // fast or slow, the same inputs end with the same cells (spine rule 6). An Escape whose keydown sees the stamp
+    // cancels instead: an input that acts ahead of its turn (ADR-0240 section 12).
+
+    // A commit's answer is out. `answered` takes it, against the rows as they stand then, and says whether the
+    // commit landed: the gesture that made it is then taken again, where `retake` allows, and the held inputs after
+    // it. `failed` takes back what an answer that failed leaves, and the failure is rethrown once they are taken.
+    #pend<T>(answer: PromiseLike<T>, pending: Pick<PendingCommit<Row>, 'controller' | 'edit' | 'phase' | 'cancelled'>, retake: boolean,
+        answered: (value: T) => boolean, failed?: () => void): void {
+        const input = this.#input;
+        const trigger = retake ? this.#retaking ?? (input !== undefined && input.eventPhase !== Event.NONE ? input : undefined) : undefined;
+        // The field that holds the keyboard takes no input of its own either, so no IME starts in it meanwhile.
+        const holder = typedField(this.#keyboardHolder());
+        const stilled = holder === undefined || holder === pending.edit?.element ? undefined : holder;
+        this.#pendingStamps += 1;
+        const out: PendingCommit<Row> = { ...pending, stamp: this.#pendingStamps, trigger, held: [], stilled };
+        this.#pending = out;
+        this.#root.setAttribute('data-ex-pending-commit', String(out.stamp));
+        this.#markPending(out, true);
+        this.#showSettled(false);
+        this.#invalidate();
+        // oxlint-disable-next-line ex-grid/no-catch -- a failed answer holds nothing: the inputs are taken, and the failure rethrown
+        void Promise.resolve(answer).then(value => {
+            if (!this.#unpend(out)) return;
+            this.#retaking = out.trigger;
+            let landed = false;
+            try {
+                landed = answered(value);
+            } finally {
+                this.#retaking = undefined;
+                this.#afterAnswer(out, landed);
+            }
+        }, (error: unknown) => {
+            if (!this.#unpend(out)) return;
+            try {
+                failed?.();
+            } finally {
+                this.#afterAnswer(out, false);
+            }
+            throw error;
+        });
+    }
+
+    // The answer is in, or the commit cancelled: the stamp goes, and the editor takes input again. False where the
+    // commit was no longer pending: cancelled already, its editor taken away, or the grid destroyed.
+    #unpend(out: PendingCommit<Row>): boolean {
+        if (this.#pending !== out || this.#destroyed) return false;
+        this.#pending = undefined;
+        this.#root.removeAttribute('data-ex-pending-commit');
+        this.#markPending(out, false);
+        this.#invalidate();
+        return true;
+    }
+
+    // The editor of a Pending Commit, and the field that holds the keyboard, take no input of their own, and the
+    // editor says it is busy (ADR-0380 section 3).
+    #markPending(out: PendingCommit<Row>, pending: boolean): void {
+        if (out.stilled !== undefined) out.stilled.readOnly = pending;
+        const element = out.edit?.element;
+        if (element === undefined) return;
+        element.readOnly = pending;
+        if (pending) element.setAttribute('aria-busy', 'true');
+        else element.removeAttribute('aria-busy');
+    }
+
+    // What an answer leaves to take: the gesture, where the commit landed, and the inputs held behind it. A commit
+    // that goes on pending, its intent now out, keeps them waiting.
+    #afterAnswer(out: PendingCommit<Row>, landed: boolean): void {
+        const next = this.#pending;
+        if (next !== undefined) {
+            next.held.push(...out.held);
+            return;
+        }
+        this.#takeAgain(landed && out.trigger !== undefined ? [{ kind: 'event', event: out.trigger }, ...out.held] : out.held);
+    }
+
+    // The held inputs taken in their order. One that makes another commit pending holds the rest behind it. Those that
+    // could not be taken are said, once.
+    #takeAgain(inputs: readonly HeldInput[]): void {
+        let lost = false;
+        for (let i = 0; i < inputs.length && !this.#destroyed; i++) {
+            const next = this.#pending;
+            if (next !== undefined) {
+                next.held.push(...inputs.slice(i));
+                break;
+            }
+            if (!this.#takeOne(itemAt(inputs, i))) lost = true;
+        }
+        if (this.#destroyed) return;
+        if (lost) this.#sayRefusal(this.#labelOf(heldInputLostId));
+        this.#lookSettled();
+    }
+
+    // One held input, taken at its turn where it lands now. A key, typed text and the clipboard's commands go to
+    // what holds the keyboard; a press to where it was made. An event made again has no default of its own, so
+    // what the browser would have done with one the page left alone is done here: a field types or moves its caret,
+    // a control is pressed, Tab moves on, a press focuses. False for one that cannot be taken again.
+    #takeOne(input: HeldInput): boolean {
+        const holder = this.#keyboardHolder();
+        const field = typedField(holder);
+        const grids = holder === this.#root || holder === this.#keyField;
+        switch (input.kind) {
+            case 'paste': {
+                const { flavours } = input;
+                if (!grids) {
+                    if (field !== undefined && flavours !== undefined) typeText(field, flavours.text, 'insertFromPaste');
+                } else if (flavours === undefined) {
+                    this.#refuse({ kind: 'paste', reason: 'unreadable' });
+                } else {
+                    this.#pasteFlavours(flavours.text, flavours.html);
+                }
+                return true;
+            }
+            case 'copy':
+            case 'cut':
+                if (field !== undefined && !grids) this.#fieldCopy(field, input.kind === 'cut');
+                // The grid's copy, by the asynchronous route a menu's takes: the event that carried data is gone.
+                // The grid has no cut of its own (ADR-0005).
+                else if (grids && input.kind === 'copy') this.#menuCopy(false);
+                return true;
+            case 'event':
+                break;
+        }
+        const { event } = input;
+        if (event instanceof CompositionEvent && event.type === 'compositionend') {
+            // A composition held whole is taken as its text (ADR-0380 section 3).
+            if (field !== undefined && event.data !== '') typeText(field, event.data, 'insertText');
+            return true;
+        }
+        // What follows a key or a composition is its consequence, which taking them again brings about.
+        if (event.type === 'compositionstart' || event.type === 'compositionupdate' || event.type === 'beforeinput' || event.type === 'input') {
+            return true;
+        }
+        const again = eventAgain(event);
+        if (event instanceof KeyboardEvent) {
+            // A key an IME was composing carries none of its text: it cannot be typed again.
+            if (event.type === 'keydown' && (event.isComposing || event.keyCode === 229)) return false;
+            holder.dispatchEvent(again);
+            if (event.type !== 'keydown' || again.defaultPrevented) return true;
+            const done = field === undefined ? 'none' : keyDefault(field, event, this.#metaIsPrimary);
+            return (done === 'none' ? elementDefault(holder, event) : done) !== 'lost';
+        }
+        // A press lands where it was made. A pass may have painted that control anew since: it lands then on what stands
+        // at the same point, and on nothing where nothing of the grid's does.
+        let target = event.target;
+        if (!(target instanceof Element) || !target.isConnected) {
+            const doc = this.#root.ownerDocument;
+            const under = event instanceof MouseEvent && typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(event.clientX, event.clientY) : null;
+            target = under !== null && this.#root.contains(under) ? under : null;
+        }
+        if (!(target instanceof Element)) return false;
+        target.dispatchEvent(again);
+        if (event.type === 'mousedown' && !again.defaultPrevented) {
+            const focusable = target.closest<HTMLElement>('input, textarea, select, button, [tabindex]');
+            focusable?.focus({ preventScroll: true });
+        }
+        return true;
+    }
+
+    // What holds the keyboard in the grid now: what has DOM focus inside the root, or, where the keyboard has left
+    // it, what the grid would hand it to (ADR-0080).
+    #keyboardHolder(): HTMLElement {
+        const active = this.#root.ownerDocument.activeElement;
+        if (active instanceof HTMLElement && this.#root.contains(active)) return active;
+        const edit = this.#edit;
+        if (edit !== undefined && edit.element.isConnected) return edit.element;
+        return this.#keyField.isConnected ? this.#keyField : this.#root;
+    }
+
+    // A copy or a cut in a text field, taken at its turn: its selected text goes to the clipboard as the field's own
+    // copy would put it, and a cut deletes it.
+    #fieldCopy(field: HTMLInputElement | HTMLTextAreaElement, cut: boolean): void {
+        const start = selectionOf(field, 'start');
+        const end = selectionOf(field, 'end');
+        if (start === end) return;
+        const text = field.value.slice(start, end);
+        // oxlint-disable-next-line ex-grid/no-catch -- a field's copy the browser refused is said, as the grid's own is; anything else is rethrown
+        void this.#reports.writeClipboard(this.#root, Promise.resolve(fieldCopyFlavours(text))).then(undefined, (error: unknown) => {
+            if (this.#destroyed) return;
+            if (typeof error === 'object' && error !== null && Reflect.get(error, 'name') === 'NotAllowedError') {
+                this.#refuse({ kind: 'copy', reason: 'clipboardUnavailable' });
+                return;
+            }
+            throw error;
+        });
+        if (cut) typeText(field, '', 'deleteByCut');
+    }
+
+    // Every input on the root, heard ahead of everything in it. With no commit pending it is noted as the input under
+    // way; while one is, it is held in its turn, nothing inside hearing it and the browser's own meaning prevented,
+    // and an Escape cancels the commit instead. A move with no button down is the hover's, and passes. A clipboard
+    // key keeps its default, which is the copy, cut or paste event held in its turn after it.
+    readonly #onInput = (event: Event): void => {
+        const pending = this.#pending;
+        if (pending === undefined) {
+            this.#input = event;
+            // The repeats of an Escape that cancelled are that Escape's, and close nothing (ADR-0012).
+            if (event instanceof KeyboardEvent && event.type === 'keydown') {
+                if (event.repeat && event.key === 'Escape' && this.#escapeCancelled) {
+                    event.stopImmediatePropagation();
+                    event.preventDefault();
+                    return;
+                }
+                if (!event.repeat) this.#escapeCancelled = false;
+            }
+            return;
+        }
+        if (event instanceof MouseEvent && event.type === 'mousemove' && event.buttons === 0) return;
+        event.stopImmediatePropagation();
+        if (cancelsPending(event)) {
+            event.preventDefault();
+            this.#cancelPending(pending);
+            return;
+        }
+        if (event.cancelable && !isClipboardKey(event)) event.preventDefault();
+        pending.held.push(heldInputOf(event));
+    };
+
+    // Escape on a Pending Commit (ADR-0380 section 3). Its keydown saw the stamp, so the answer has not been taken:
+    // the signal is aborted, nothing is written, and the cancel is said. The editor stays with the text, the inputs
+    // held before the Escape are taken in it, and the Escape's own turn closes nothing, its repeats included.
+    #cancelPending(pending: PendingCommit<Row>): void {
+        this.#escapeAnswered = true;
+        this.#escapeCancelled = true;
+        this.#answered += 1;
+        if (!this.#unpend(pending)) return;
+        pending.controller.abort();
+        pending.cancelled();
+        this.#takeAgain(pending.held);
     }
 
     // ---- D1: the user's own writes count as seen, for the Overwrite Notice (ADR-0142) ----------------------
@@ -3927,7 +4434,9 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit === undefined) return;
         const outlived = this.#outlivedBy(edit);
-        if (outlived !== undefined) {
+        // Under an intent's answer, what the Consumer hands over is the commit's own doing, answered when it lands.
+        const answering = this.#pending?.edit === edit && this.#pending.phase === 'intent';
+        if (outlived !== undefined && !answering) {
             this.#endEdit(outlived);
             return;
         }
@@ -3953,8 +4462,10 @@ export class GridView<Row> {
 
     // Ctrl+Enter fills the Selection with the editor's text (ADR-0007, ADR-0035): one paste intent carrying
     // every cell, judged by the paste's gate over the whole Selection, not the one cell the editor opened on.
-    // A refusal judges the operation and never the text, so the editor stays with the typing in it.
-    #commitFill(edit: OpenEdit<Row>): void {
+    // A refusal judges the operation and never the text, so the editor stays with the typing in it. `judged` is a
+    // verdict answered later (ADR-0380): the gate is passed again, and the verdict not asked again.
+    #commitFill(edit: OpenEdit<Row>, judged?: { readonly verdict: EditVerdict; readonly controller: AbortController }): void {
+        if (this.#pending !== undefined) return;
         this.#source.publishGathered?.();
         this.#reconcileSelection();
         if (this.#edit !== edit) return;
@@ -3976,19 +4487,24 @@ export class GridView<Row> {
         const text = edit.element.value;
         // The verdict judges the value, once, against the row the editor opened on, as the Window holds it now
         // or, gone from it, as it opened: a fill's targets may lie outside the Window, with no row to pass for
-        // most of them (ADR-0034's fill carve-out), and a fill is never left unjudged.
+        // most of them (ADR-0034's fill carve-out), and a fill is never left unjudged. The other rows are the
+        // Consumer's to judge in onPaste (ADR-0380 section 4).
         const column = itemAt(columns, edit.cell.column);
+        const name = column.column.name;
+        const controller = judged?.controller ?? new AbortController();
         const held = this.#rowAt(edit.cell.row);
-        const judged = held === undefined ? edit.openedOn : held.row;
-        const verdict: EditVerdict = column.column.validate === undefined
-            ? { kind: 'accept' }
-            : checkedVerdict(column.column.validate(judged, text), column.column.name);
+        const verdict = judged?.verdict ?? this.#verdictOf(column, held === undefined ? edit.openedOn : held.row, text, controller,
+            { edit, cancelled: () => { this.#commitCancelled(edit, name); } }, false, answered => {
+                if (this.#edit === edit) this.#commitFill(edit, { verdict: answered, controller });
+                return false;
+            });
+        if (verdict === undefined) return;
         if (verdict.kind === 'reject') {
             this.#holdEdit(edit, verdict.message);
             return;
         }
         this.#supersedeFill();
-        const intent = new GridPasteIntent(decision.plan, [[text]], [['shownText']], this.#handedVersion(), undefined, edit.cell);
+        const intent = new GridPasteIntent(decision.plan, [[text]], [['shownText']], this.#handedVersion(), undefined, controller.signal, edit.cell);
         // The fill lands over its target as entered (ADR-0142, LV-13). The edited cell lay under the editor: a
         // change there is told once the fill lands (LV-11).
         const seen = edit.seenText;
@@ -3996,18 +4512,31 @@ export class GridView<Row> {
         const written = this.#noteUserWrite(decision.plan.targets);
         // The editor is down before the Consumer hears the fill, so whatever it hands over meanwhile discards
         // nothing: it is the fill's own doing (ADR-0142), and no notice follows another source or other columns.
+        let answer: PromiseLike<unknown> | undefined;
         this.#endEdit(undefined, () => {
-            let returned = false;
-            try {
-                defined(heard, 'the paste\'s listener')(intent);
-                returned = true;
-            } finally {
-                intent.seal();
-                this.#source.publishGathered?.();
-                this.#userWriteAnswered(written, !returned || intent.refused);
-            }
+            answer = this.#heardNow(() => defined(heard, 'the paste\'s listener')(intent), failed => { this.#intentAnswered(intent, written, failed); });
         });
-        if (this.#outlivedBy(edit) === undefined && !intent.refused) this.#raiseOverwriteNotice(edit.cell, column.column.name, seen, replaced);
+        const landed = (): void => {
+            if (this.#outlivedBy(edit) === undefined && !intent.refused) this.#raiseOverwriteNotice(edit.cell, name, seen, replaced);
+        };
+        if (answer === undefined) landed();
+        else this.#pastePending(answer, intent, controller, written, landed);
+    }
+
+    // A paste intent's answer out (ADR-0380 section 2): the paste is pending with no editor, and an Escape cancels
+    // it aloud. `landed` runs once the Consumer has answered, refused or not.
+    #pastePending(answer: PromiseLike<unknown>, intent: GridPasteIntent, controller: AbortController, written: UserWrite, landed: () => void): void {
+        this.#pend(answer, {
+            controller, edit: undefined, phase: 'intent',
+            cancelled: () => {
+                this.#intentAnswered(intent, written, true);
+                this.#refuse({ kind: 'paste', reason: 'cancelled' });
+            },
+        }, false, () => {
+            this.#intentAnswered(intent, written, false);
+            landed();
+            return true;
+        }, () => { this.#intentAnswered(intent, written, true); });
     }
 
     /**
@@ -4019,6 +4548,16 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit === undefined) return;
         this.#edit = undefined;
+        // An editor taken away under its verdict's answer, its rows or columns gone (ADR-0011): nothing is to be
+        // written, the answer is not taken, and the inputs held behind it are taken once the end has been told, the
+        // gesture with them, as a discard at once lets it keep its meaning.
+        const pending = this.#pending;
+        if (pending?.edit === edit && this.#unpend(pending)) {
+            pending.controller.abort();
+            queueMicrotask(() => {
+                if (!this.#destroyed) this.#afterAnswer(pending, true);
+            });
+        }
         this.#editorFocusOwed = false;
         const element = edit.element;
         const doc = this.#root.ownerDocument;
@@ -4180,7 +4719,8 @@ export class GridView<Row> {
     // takes the keyboard back to where it was typed (ADR-0051, ADR-0034).
     readonly #onNameBoxFocused = (): void => {
         const edit = this.#edit;
-        if (edit === undefined || this.#commitEdit()) return;
+        // A commit pending lands in place too, the keyboard left where the user put it (ADR-0380).
+        if (edit === undefined || this.#commitEdit(false) || this.#pending?.edit === edit) return;
         const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
         if (surface.isConnected) surface.focus({ preventScroll: true });
     };
@@ -4302,7 +4842,7 @@ export class GridView<Row> {
     }
 
     // Whether a write key is the grid's: someone hears the write, and some column takes one.
-    #writes(heard: ((intent: never) => void) | undefined): boolean {
+    #writes(heard: ((intent: never) => unknown) | undefined): boolean {
         return heard !== undefined && this.#columns.some(({ editable }) => editable);
     }
 
@@ -4412,25 +4952,19 @@ export class GridView<Row> {
     }
 
     // The fill's one paste intent, its block read from the source's rows as each cell's raw value.
-    #raiseFill(plan: FillPlan, rows: readonly Row[], heard: (intent: GridPasteIntent) => void): void {
+    #raiseFill(plan: FillPlan, rows: readonly Row[], heard: (intent: GridPasteIntent) => void | PromiseLike<void>): void {
         const { source } = plan;
         const columns = this.#columns;
         const values = rows.map(row => Array.from({ length: source.columnCount },
             (_, offset) => rawText(itemAt(columns, source.leftColumn + offset).column.value(row))));
         // Raw values are written in the invariant notation, and read so (ADR-0050, item 10): never shown text,
         // which a Consumer reads under its own culture, `1234.5` becoming 12345 under de-DE.
+        const controller = new AbortController();
         const intent = new GridPasteIntent(plan.paste, values, values.map(row => row.map(() => 'invariant' as const)),
-            this.#handedVersion(), undefined, undefined, source);
+            this.#handedVersion(), undefined, controller.signal, undefined, source);
         const written = this.#noteUserWrite(plan.paste.targets);
-        let returned = false;
-        try {
-            heard(intent);
-            returned = true;
-        } finally {
-            intent.seal();
-            this.#source.publishGathered?.();
-            this.#userWriteAnswered(written, !returned || intent.refused);
-        }
+        const answer = this.#heardNow(() => heard(intent), failed => { this.#intentAnswered(intent, written, failed); });
+        if (answer !== undefined) this.#pastePending(answer, intent, controller, written, () => undefined);
         this.#invalidate();
     }
 
@@ -4465,8 +4999,16 @@ export class GridView<Row> {
     #openContextMenuAtFocus(): void {
         this.#reconcileSelection();
         const focus = this.#held.selection.focus;
-        const geometry = this.#geometry;
-        if (focus === undefined || geometry === undefined) return;
+        if (focus === undefined || this.#geometry === undefined) return;
+        // Under a pager the Focus may stand on another page, which the menu turns to and reveals the Focus on, as a
+        // key that reveals it does (ADR-0015): the menu opens over the page that holds its cell.
+        const size = this.#pageSize;
+        if (size !== undefined && this.#turnPageTo(Math.floor(focus.row / size))) {
+            this.#scrollTopPx = defined(this.#geometry, 'the geometry a page turn resolves').scrollTopToReveal(focus.row, 0);
+            this.#resolve();
+            this.#invalidate();
+        }
+        const geometry = defined(this.#geometry, 'the geometry a page turn resolves');
         this.#openContextMenu(focus, this.#cellLeftPx(focus.column), geometry.viewportTopPxOf(focus.row, this.#scrollTopPx));
     }
 
@@ -4988,6 +5530,77 @@ export class GridView<Row> {
         });
     }
 
+    /**
+     * The error step (ADR-0381 section 3): asked of the Consumer from the Focus, in the columns' current order and
+     * the source's version, as a Find step is. A found cell becomes the Focus and is revealed, wherever it stands in
+     * the result. An answer under another version or source, or naming a column that has left, moves nothing and is
+     * said, and so is none found. A new step makes the answer of the one still out nobody's.
+     */
+    #stepToError(backward: boolean): void {
+        const ask = defined(this.#findError, 'the error step\'s findError');
+        this.#errorStepping?.abort();
+        this.#errorStepping = undefined;
+        this.#reconcileSelection();
+        const source = this.#source;
+        const selection = this.#held.selection;
+        const request: GridErrorStepRequest = Object.freeze({
+            backward, from: selection.focus, columns: Object.freeze(this.#columns.map(({ column }) => column.name)),
+            rowSequenceVersion: this.#state.rowSequenceVersion,
+        });
+        const stepping = new AbortController();
+        this.#errorStepping = stepping;
+        this.#invalidate();
+        // oxlint-disable-next-line ex-grid/no-catch -- a step given up by whoever answers moves nothing; any other failure is rethrown
+        Promise.resolve().then(() => ask(request, stepping.signal)).then(answer => {
+            if (this.#destroyed || this.#errorStepping !== stepping) return;
+            this.#errorStepping = undefined;
+            this.#invalidate();
+            this.#errorAnswered(request, answer, source);
+        }, (error: unknown) => {
+            if (this.#destroyed || this.#errorStepping !== stepping) return;
+            this.#errorStepping = undefined;
+            this.#invalidate();
+            // Given up by whoever answers, who says why itself: nothing moves, and no "no error" is claimed for cells
+            // nobody read (ADR-0055's rule for a Find step).
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+            throw error;
+        });
+    }
+
+    // An error step's answer, judged against what it was asked under (ADR-0381, ADR-0011, ADR-0142).
+    #errorAnswered(request: GridErrorStepRequest, answer: GridFindResult, source: GridSource<Row>): void {
+        // The shape first: a Consumer's defect is the same defect whether or not the rows moved meanwhile.
+        const given: unknown = answer;
+        if (typeof given !== 'object' || given === null || typeof (given as { readonly found?: unknown }).found !== 'boolean') {
+            throw new TypeError('findError answered something other than a Find result: { found: true, row, column } or { found: false } (ADR-0381).');
+        }
+        if (source !== this.#source || request.rowSequenceVersion !== this.#state.rowSequenceVersion) {
+            this.#sayRefusal(this.#labelOf(errorStepMovedId));
+            return;
+        }
+        const total = this.#totalRows;
+        if (answer.found && (!request.columns.includes(answer.column) || !Number.isInteger(answer.row) || answer.row < 0 || answer.row >= total)) {
+            throw new RangeError(`The error step's answer (row ${answer.row}, column '${answer.column}') is outside the request: it asked about `
+                + `the columns [${request.columns.join(', ')}] of a result of ${total} rows (ADR-0381).`);
+        }
+        if (!answer.found) {
+            this.#sayRefusal(this.#labelOf(errorStepNoneId));
+            return;
+        }
+        const column = this.#columns.findIndex(({ column: declared }) => declared.name === answer.column);
+        if (column < 0) {
+            this.#sayRefusal(this.#labelOf(errorStepMovedId));
+            return;
+        }
+        this.#reconcileSelection();
+        const found = cellPosition(answer.row, column);
+        this.#apply(this.#held.selection.click(found, this.#extent));
+        this.#revealOwed = { target: found, extending: undefined, rowStart: false, stepRows: 0 };
+        this.#revealHeaderOwed = undefined;
+        this.#followArmed = { focus: found, target: found };
+        this.#invalidate();
+    }
+
     // A step's answer, judged against what it was asked under (ADR-0055, ADR-0333 §3).
     #findAnswered(request: GridFindRequest, answer: GridFindResult, source: GridSource<Row>, selection: Selection,
         headers: readonly FindHeader[]): void {
@@ -5164,7 +5777,8 @@ export class GridView<Row> {
      * Verdict, and then the next match found. With no current match, this finds the next one, so the user sees
      * what the next press writes; a current match whose entry no longer matches is passed over to the next. One
      * that cannot be written, its column not Editable, a Reject or the Consumer's refusal, writes nothing and is
-     * said, and stays the current match.
+     * said, and stays the current match. A verdict or an `onEdit` answered later makes the Replace a Pending
+     * Commit with no editor (ADR-0380): an Escape cancels it, and it is said as a write refused.
      */
     #replaceOne(): void {
         const popover = this.#popover;
@@ -5203,34 +5817,57 @@ export class GridView<Row> {
             refused(undefined);
             return;
         }
-        // The Consumer's judgement, as at a commit (ADR-0034): a Reject writes nothing.
-        const verdict: EditVerdict = resolved.column.validate === undefined
-            ? { kind: 'accept' }
-            : checkedVerdict(resolved.column.validate(holding.row, text), name);
-        if (verdict.kind === 'reject') {
-            refused(verdict.message);
-            return;
-        }
-        this.#supersedeFill();
-        const intent = new GridEditIntent(holding.row, name, text, painted, painted);
-        // The user's own write (D1), noted before the Consumer hears it, and taken back if refused.
-        const written = this.#noteUserWrite([fromCorners(cell, cell)]);
-        let returned = false;
-        try {
-            heard(intent);
-            returned = true;
-        } finally {
-            intent.seal();
-            // What the source gathered while the Consumer wrote is put out as its handler returns (D5).
+        const controller = new AbortController();
+        const cancelled = (): void => {
+            refused(this.#labelOf(commitCancelledId));
+        };
+        const judged = (verdict: EditVerdict): void => {
+            if (verdict.kind === 'reject') {
+                refused(verdict.message);
+                return;
+            }
+            this.#supersedeFill();
+            const intent = new GridEditIntent(holding.row, name, text, painted, painted, controller.signal);
+            // The user's own write (D1), noted before the Consumer hears it, and taken back if refused.
+            const written = this.#noteUserWrite([fromCorners(cell, cell)]);
+            const replaced = (): void => {
+                const refusal = intent.refusalMessage;
+                if (refusal !== undefined) refused(refusal);
+                else this.#findStep(false);
+            };
+            const answer = this.#heardNow(() => heard(intent), failed => { this.#intentAnswered(intent, written, failed); });
+            if (answer === undefined) {
+                replaced();
+                return;
+            }
+            this.#pend(answer, {
+                controller, edit: undefined, phase: 'intent',
+                cancelled: () => {
+                    this.#intentAnswered(intent, written, true);
+                    cancelled();
+                },
+            }, false, () => {
+                this.#intentAnswered(intent, written, false);
+                replaced();
+                return true;
+            }, () => { this.#intentAnswered(intent, written, true); });
+        };
+        // The Consumer's judgement, as at a commit (ADR-0034): a Reject writes nothing. Answered later, it is taken
+        // against the rows as they stand then: a source replaced or an order moved meanwhile makes the match another
+        // row's, and the Replace is refused as a Replace All's answer is (ADR-0011); a cell whose row or entry changed
+        // would be written with text made from what it held before, and is refused aloud.
+        const source = this.#source;
+        const sequence = this.#sequence();
+        const opening = this.#openingTextAt(cell);
+        const verdict = this.#verdictOf(resolved, holding.row, text, controller, { edit: undefined, cancelled }, false, answered => {
             this.#source.publishGathered?.();
-            this.#userWriteAnswered(written, !returned || intent.refused);
-        }
-        const refusal = intent.refusalMessage;
-        if (refusal !== undefined) {
-            refused(refusal);
-            return;
-        }
-        this.#findStep(false);
+            if (this.#source !== source) this.#refuseFind('sourceChanged');
+            else if (this.#sequence() !== sequence) this.#refuseFind('orderChanged');
+            else if (this.#rowAt(cell.row)?.row !== holding.row || this.#openingTextAt(cell) !== opening) refused(this.#labelOf(replaceCellChangedId));
+            else judged(answered);
+            return true;
+        });
+        if (verdict !== undefined) judged(verdict);
     }
 
     /**
@@ -5641,15 +6278,18 @@ export class GridView<Row> {
             this.#refuse({ kind: 'paste', reason: 'unreadable' });
             return;
         }
-        const text = data.getData('text/plain');
-        const html = data.getData('text/html');
+        this.#pasteFlavours(data.getData('text/plain'), data.getData('text/html'));
+    };
+
+    // A paste's two flavours, read in its event, or kept from it while a commit was pending (ADR-0380).
+    #pasteFlavours(text: string, html: string): void {
         if (exceedsUtf8([text, html], this.#pasteByteCap)) {
             this.#refuse({ kind: 'paste', reason: 'tooLarge' });
             return;
         }
         const block = parseClipboardBlock(html, text);
         if (block !== undefined) this.#paste(block);
-    };
+    }
 
     // Plans a parsed block onto the Selection and raises its one intent (ADR-0014, ADR-0035, ADR-0050 item 3).
     #paste(block: ClipboardBlock): void {
@@ -5679,20 +6319,20 @@ export class GridView<Row> {
         const { plan } = decision;
         const version = this.#sequence();
         this.#supersedeFill();
-        const intent = new GridPasteIntent(plan, block.values, block.origins, this.#handedVersion(), block.marks);
+        const controller = new AbortController();
+        const intent = new GridPasteIntent(plan, block.values, block.origins, this.#handedVersion(), block.marks, controller.signal);
         const noted = this.#noteUserWrite(plan.targets);
-        let returned = false;
-        try {
-            defined(this.#pasteHeard, 'the paste\'s listener')(intent);
-            returned = true;
-        } finally {
-            // Answered once it returns: a refusal after that would be one the grid can no longer honour.
-            intent.seal();
-            // What the source gathered while the Consumer wrote is put out as its handler returns, or throws
-            // (ADR-0142 D5).
-            this.#source.publishGathered?.();
-            this.#userWriteAnswered(noted, !returned || intent.refused);
-        }
+        // Answered once it returns, or once its promise settles: a refusal after that would be one the grid can no
+        // longer honour. What the source gathered while the Consumer wrote is put out then (ADR-0142 D5).
+        const hear = defined(this.#pasteHeard, 'the paste\'s listener');
+        const answer = this.#heardNow(() => hear(intent), failed => { this.#intentAnswered(intent, noted, failed); });
+        if (answer === undefined) this.#pasted(intent, target, version);
+        else this.#pastePending(answer, intent, controller, noted, () => { this.#pasted(intent, target, version); });
+    }
+
+    // A paste the Consumer answered: written, the Selection collapses to it or takes the block it spilled.
+    #pasted(intent: GridPasteIntent, target: Selection, version: number): void {
+        const { plan } = intent;
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.refused) return;
         this.#reconcileSelection();
@@ -5763,6 +6403,7 @@ export class GridView<Row> {
         this.#actionPress = undefined;
         this.#markPress = undefined;
         this.#headerMarkPress = undefined;
+        this.#markResultPress = undefined;
         // Ended before the press is marked: the field left says the keyboard has gone (#onFocusLeft).
         if (this.#composing && event.button === 0) this.#keyField.blur();
         this.#keyboardByPress = true;
@@ -5788,6 +6429,7 @@ export class GridView<Row> {
     // (#releaseMarkPress), since it may stand over the checkbox a pass put in the pressed one's place.
     readonly #onRootRelease = (event: MouseEvent): void => {
         if (event.target !== this.#rowMarks.headerBox) this.#headerMarkPress = undefined;
+        if (event.target !== this.#markResult) this.#markResultPress = undefined;
         if (!(event.target instanceof Node && this.#viewport.contains(event.target))) this.#markPress = undefined;
     };
 
@@ -6117,7 +6759,9 @@ export class GridView<Row> {
         // keyboard, and notes the order and source it was made under for its click (ADR-0043, MK-9).
         if (event.target === this.#rowMarks.headerBox) {
             event.preventDefault();
-            if (event.button === 0) this.#headerMarkPress = { sequence: this.#sequence(), source: this.#source };
+            if (event.button === 0) {
+                this.#headerMarkPress = { sequence: this.#sequence(), source: this.#source, paged: this.#pageSize !== undefined, page: this.#pageRows() };
+            }
             return;
         }
         if (event.button !== 0) return;
@@ -6439,7 +7083,7 @@ export class GridView<Row> {
     #selectAllFromCorner(): void {
         const extent = this.#extent;
         if (extent.rowCount <= 0 || extent.columnCount <= 0) return;
-        let all = this.#held.selection.selectAll(extent);
+        let all = this.#held.selection.selectAll(extent, this.#selectAllContext(extent));
         const [whole] = all.ranges;
         const topLeft = this.#firstVisibleCell();
         if (whole !== undefined && topLeft !== undefined && rangeContains(whole, topLeft)) all = all.place(whole, topLeft, extent);
@@ -6669,10 +7313,9 @@ export class GridView<Row> {
     // Moves the model to where a key's reveal is going, and resolves the slice there, so the pass paints
     // the rows at the offset it then writes (ADR-0012, 2026-09-29). Whether there is an offset to write.
     #stageReveal(): boolean {
-        const geometry = this.#geometry;
         // A box too small for a row has no offset to reveal at: the reveal stays owed for the pass that has one,
         // so a key that moved the Focus meanwhile brings it into view once the box grows back (ADR-0040).
-        if (geometry === undefined) return false;
+        if (this.#geometry === undefined) return false;
         const reveal = this.#revealOwed;
         this.#revealOwed = undefined;
         const across = this.#revealHeaderOwed;
@@ -6689,25 +7332,31 @@ export class GridView<Row> {
         if (reveal === undefined) return false;
         const { target } = reveal;
         if (target.row >= this.#totalRows || target.column >= columns.count) return false;
-        // PageUp and PageDown scroll by the rows the Focus moved, through the mapping, so a compressed grid
-        // moves by rows (ADR-0053); the reveal still runs over the stepped offset.
-        const stepped = reveal.stepRows === 0
-            ? this.#scrollTopPx
-            : geometry.scrollTopStepped(this.#scrollTopPx, reveal.stepRows * this.#metrics.rowHeightPx);
-        let top = geometry.scrollTopToReveal(target.row, stepped);
-        // "Go to the beginning" is not "make this cell visible": with Pinned Columns the two come apart.
-        let left = reveal.rowStart ? 0 : columns.scrollLeftToReveal(target.column, this.#scrollLeftPx);
         // While extending, an axis the range spans end to end is not scrolled for (ADR-0052, 2026-09-29).
         const range = reveal.extending;
-        if (range !== undefined) {
-            const extent = this.#extent;
-            if (spansEveryRow(range, extent)) {
-                top = this.#scrollTopPx;
-                const follow = this.#followArmed;
-                if (follow !== undefined) this.#followArmed = { ...follow, rowsKept: true };
-            }
-            if (spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
+        const extent = this.#extent;
+        const keepsRows = range !== undefined && spansEveryRow(range, extent);
+        // The keyboard crosses pages; dragging does not (ADR-0015): a cell carried past the page's edge turns the
+        // page, and the reveal then places it in the new one. A page turn is the pager's scroll, so an extension the
+        // view does not scroll down for turns none.
+        const size = this.#pageSize;
+        if (size !== undefined && !keepsRows) this.#turnPageTo(Math.floor(target.row / size));
+        const geometry = defined(this.#geometry, 'the geometry a page turn resolves');
+        let top = this.#scrollTopPx;
+        if (keepsRows) {
+            const follow = this.#followArmed;
+            if (follow !== undefined) this.#followArmed = { ...follow, rowsKept: true };
+        } else {
+            // PageUp and PageDown scroll by the rows the Focus moved, through the mapping, so a compressed grid
+            // moves by rows (ADR-0053); the reveal still runs over the stepped offset.
+            const stepped = reveal.stepRows === 0
+                ? this.#scrollTopPx
+                : geometry.scrollTopStepped(this.#scrollTopPx, reveal.stepRows * this.#metrics.rowHeightPx);
+            top = geometry.scrollTopToReveal(target.row, stepped);
         }
+        // "Go to the beginning" is not "make this cell visible": with Pinned Columns the two come apart.
+        let left = reveal.rowStart ? 0 : columns.scrollLeftToReveal(target.column, this.#scrollLeftPx);
+        if (range !== undefined && spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
         return this.#revealAt(top, left);
     }
 
@@ -6936,13 +7585,45 @@ export class GridView<Row> {
         }
     }
 
+    // A box or scroll content written may change the box the browser tells: content that comes to overflow shows a
+    // scrollbar, which takes its strip out of the Viewport (ADR-0013). Until the browser has laid it out and told
+    // any such change the grid is not settled: a reading taken before would see a band built again (ADR-0220).
+    #lookForNewLayout(): void {
+        const layout = `${this.#root.getAttribute('style')}|${this.#scroller.getAttribute('style')}|${this.#spacer.getAttribute('style')}|`
+            + [...this.#root.children].map(child => child.className).join(' ');
+        if (layout === this.#laidOut) return;
+        this.#laidOut = layout;
+        this.#awaitBoxTold();
+    }
+
+    #awaitBoxTold(): void {
+        this.#cancelBoxTold?.();
+        this.#cancelBoxTold = undefined;
+        const ask = { open: true };
+        const cancel = this.#reports.afterLayout(this.#root, () => {
+            const owed = ask.open && this.#cancelBoxTold !== undefined;
+            ask.open = false;
+            if (!owed) return;
+            this.#cancelBoxTold = undefined;
+            this.#lookSettled();
+        });
+        // Told as it was asked, where nothing is laid out: nothing is owed.
+        if (ask.open) {
+            this.#cancelBoxTold = () => {
+                ask.open = false;
+                cancel();
+            };
+        }
+    }
+
     #paint(): void {
         // What is painted now is what the next key is aimed at.
         this.#droppedAim = undefined;
         const metrics = this.#metrics;
         const geometry = this.#styles.geometry;
         const root = this.#root;
-        this.#write(root, 'root', 'class', this.#state.loading ? 'ex-grid ex-loading' : 'ex-grid');
+        // ex-loading while rows are on their way, and ex-editing while the Cell Editor stands (ADR-0029).
+        this.#write(root, 'root', 'class', `ex-grid${this.#state.loading ? ' ex-loading' : ''}${this.#edit === undefined ? '' : ' ex-editing'}`);
         // The Geometry Tokens, inline on the root from the same resolved metrics the arithmetic reads
         // (ADR-0027, ADR-0028), and the Device Pixel once told (ADR-0090).
         this.#write(root, 'root', 'style', `--ex-row-height: ${metrics.rowHeightPx}px; --ex-header-height: ${metrics.headerHeightPx}px; `
@@ -6980,8 +7661,8 @@ export class GridView<Row> {
         // or peel the Copied Range (ADR-0230 section 1, ADR-0037, ADR-0170).
         this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves',
             choice === undefined && this.#copied === undefined && this.#edit === undefined && this.#popover === undefined ? '' : undefined);
-        this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
+        this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);
         // A current match the user has moved off is no longer marked as one (ADR-0332 §4).
         this.#forgetCurrentMatchOffFocus();
@@ -7027,10 +7708,24 @@ export class GridView<Row> {
     // Summary, standing whenever the grid can summarise, figures or none, so the strip does not come and go with
     // every selection (ADR-0130).
     #paintStatus(): void {
-        const count = this.#rowMarks.marks === undefined ? undefined : this.#rowMarks.paint(id => this.#labelOf(id));
+        this.#paintPager();
+        const paged = this.#pageSize !== undefined;
+        const count = this.#rowMarks.marks === undefined ? undefined
+            : this.#rowMarks.paint(id => this.#labelOf(id), paged ? this.#pageMarked() : undefined);
         this.#reviewSummary();
-        const shown: HTMLElement[] = [...this.#offScreenStatus()];
+        const shown: HTMLElement[] = [...this.#selectionStatus()];
         if (count !== undefined) shown.push(count);
+        // Under a pager the header's checkbox lines up the page, and the whole result is the explicit step past it
+        // (ADR-0015, ADR-0043).
+        if (paged && this.#rowMarks.marks !== undefined) {
+            const counts = this.#rowMarks.marks.counts;
+            // The rows the marks count in the result, and until they have counted, the result's rows, as the C# core
+            // says it (MarkableRows): the button is offered before the Consumer's first answer.
+            const rows = counts === undefined ? this.#totalRows : counts.rowsInResult;
+            const said = this.#labelOf(markLabelIds.markAllResultRows).replaceAll('{count}', String(rows));
+            if (this.#markResult.textContent !== said) this.#markResult.textContent = said;
+            shown.push(this.#markResult);
+        }
         if (this.#showSelectionSummary && this.canSummarize) {
             const summary = this.#summary.summary;
             const focus = this.#held.selection.focus;
@@ -7064,15 +7759,72 @@ export class GridView<Row> {
 
     // The off-screen indicator (ADR-0014, ADR-0015): a Selection none of whose rectangles meets what is painted is
     // said, with its size, so a paste into it is never made unseen and unannounced, and a button brings it back.
-    // Judged against the offset the scroller is going to (ADR-0012), and with no row data.
-    #offScreenStatus(): readonly HTMLElement[] {
+    // Judged against the offset the scroller is going to (ADR-0012), and with no row data. Under a pager the count
+    // stands whenever anything is selected, with the offer of the whole result, the explicit way past the page's
+    // context (ADR-0015).
+    #selectionStatus(): readonly HTMLElement[] {
         const { ranges } = this.#held.selection;
-        if (ranges.length === 0 || this.#selectionInView(ranges)) return [];
-        const said = this.#labelOf(selectionLabelIds.selectedOutsideView).replaceAll('{count}', String(this.#held.selection.cellCount));
+        const paged = this.#pageSize !== undefined;
+        if (ranges.length === 0) return [];
+        const inView = this.#selectionInView(ranges);
+        if (inView && !paged) return [];
+        const said = this.#labelOf(inView ? selectionLabelIds.selectedCells : selectionLabelIds.selectedOutsideView)
+            .replaceAll('{count}', String(this.#held.selection.cellCount));
         if (this.#offScreen.textContent !== said) this.#offScreen.textContent = said;
-        const go = this.#labelOf(selectionLabelIds.goToSelection);
-        if (this.#goToSelection.textContent !== go) this.#goToSelection.textContent = go;
-        return [this.#offScreen, this.#goToSelection];
+        const shown = [this.#offScreen];
+        if (!inView) {
+            const go = this.#labelOf(selectionLabelIds.goToSelection);
+            if (this.#goToSelection.textContent !== go) this.#goToSelection.textContent = go;
+            shown.push(this.#goToSelection);
+        }
+        if (paged) {
+            const all = this.#labelOf(selectionLabelIds.selectAllRows).replaceAll('{count}', String(this.#totalRows));
+            if (this.#selectWholeResult.textContent !== all) this.#selectWholeResult.textContent = all;
+            shown.push(this.#selectWholeResult);
+        }
+        return shown;
+    }
+
+    // The pager's count and its buttons, each disabled at its end (ADR-0015).
+    #paintPager(): void {
+        if (this.#pageSize === undefined) return;
+        const count = this.#pageCount;
+        const said = `${this.#pageIndex + 1} / ${count}`;
+        if (this.#pageShown.textContent !== said) this.#pageShown.textContent = said;
+        if (this.#pageBack.disabled !== (this.#pageIndex === 0)) this.#pageBack.disabled = this.#pageIndex === 0;
+        if (this.#pageOn.disabled !== (this.#pageIndex >= count - 1)) this.#pageOn.disabled = this.#pageIndex >= count - 1;
+    }
+
+    // What the header's checkbox shows under a pager (ADR-0043, ADR-0015): the page's rows, asked one by one, so
+    // nothing is guessed, as the C# core asks them. A page row not in hand claims neither none nor all; Group and Total
+    // rows take no mark. Asked again only when the page, the Window, the Row Kind or the marks moved.
+    #pageMarked(): 'false' | 'true' | 'mixed' {
+        const page = this.#pageRows();
+        if (page === undefined) return 'false';
+        const { window, windowStart } = this.#state;
+        const memo = this.#pageMarkedMemo;
+        const marks = this.#rowMarks.marks;
+        if (memo !== undefined && memo.window === window && memo.windowStart === windowStart && memo.start === page.start
+            && memo.count === page.count && memo.rowKind === this.#rowKind && memo.marks === marks && memo.stamp === this.#marksStamp) {
+            return memo.checked;
+        }
+        const checked = this.#askPageMarked(page, window, windowStart);
+        this.#pageMarkedMemo = { window, windowStart, start: page.start, count: page.count, rowKind: this.#rowKind, marks, stamp: this.#marksStamp, checked };
+        return checked;
+    }
+
+    #askPageMarked(page: RowRange, window: readonly Row[], windowStart: number): 'false' | 'true' | 'mixed' {
+        let marked = 0;
+        let rows = 0;
+        for (let row = page.start; row < page.start + page.count; row++) {
+            const slice = row - windowStart;
+            if (slice < 0 || slice >= window.length) return 'mixed';
+            const data = itemAt(window, slice);
+            if (this.#rowKind !== undefined && this.#rowKind(data) !== 'detail') continue;
+            rows += 1;
+            if (this.#rowMarks.isMarked(data)) marked += 1;
+        }
+        return marked === 0 ? 'false' : marked === rows ? 'true' : 'mixed';
     }
 
     // Whether any rectangle meets the painted rows and, on them, a pinned column or the painted slice of the others.
@@ -7087,7 +7839,96 @@ export class GridView<Row> {
                 || (scrollable !== undefined && range.leftColumn < scrollable.start + scrollable.count && rightColumn(range) >= scrollable.start)));
     }
 
-    // Go to selection: the Focus is revealed, and the keyboard is the grid's again (ADR-0014).
+    // "Mark all N rows" under a pager (ADR-0015, ADR-0043): the explicit step past the page, every row of the result
+    // marked, judged against the order and source of its press as the header's is (MK-9).
+    readonly #onMarkResultPress = (event: MouseEvent): void => {
+        if (event.button === 0) this.#markResultPress = { sequence: this.#sequence(), source: this.#source };
+    };
+
+    readonly #onMarkResult = (): void => {
+        const press = this.#markResultPress;
+        this.#markResultPress = undefined;
+        const marks = this.#rowMarks.marks;
+        if (this.#destroyed || marks === undefined || !this.#commitEdit()) return;
+        this.#takeKeyboard();
+        if (!this.#markPressHolds(press)) return;
+        this.#raiseMark(marks, { kind: 'allRows', marked: true, rowSequenceVersion: this.#state.rowSequenceVersion });
+    };
+
+    // "Select all N rows" under a pager (ADR-0015): what Ctrl+A does without one, the explicit way past the page.
+    // An open edit is committed first, as a press on the corner commits it, and a Reject keeps the Selection.
+    readonly #onSelectWholeResult = (): void => {
+        if (this.#destroyed || !this.#commitEdit()) return;
+        this.#reconcileSelection();
+        const extent = this.#extent;
+        if (extent.rowCount <= 0 || extent.columnCount <= 0) return;
+        this.#apply(this.#held.selection.selectAll(extent));
+        this.#takeKeyboard();
+        this.#invalidate();
+    };
+
+    readonly #onPageBack = (): void => {
+        this.#turnPageBy(-1);
+    };
+
+    readonly #onPageOn = (): void => {
+        this.#turnPageBy(1);
+    };
+
+    // A page turned by the pager (ADR-0015): the same machinery as a scroll, the new page's slice resolved at its top
+    // and the Range Request raised if the Window does not cover it. The keyboard comes back to the grid, so an open
+    // edit is committed first: left standing, it would hold no keyboard on a page that does not show it, and a Reject
+    // keeps the page.
+    #turnPageBy(delta: number): void {
+        if (this.#destroyed || this.#pageSize === undefined || !this.#commitEdit()) return;
+        this.#turnPageTo(this.#pageIndex + delta);
+        this.#takeKeyboard();
+        this.#invalidate();
+    }
+
+    // Shows another page from its top, whether it turned. The offset is written with the rows the pass paints, and
+    // the pointer's band and rest go with the rows that moved from under it.
+    #turnPageTo(index: number): boolean {
+        const size = this.#pageSize;
+        if (size === undefined) return false;
+        const target = Math.min(Math.max(index, 0), this.#pageCount - 1);
+        if (target === this.#pageIndex) return false;
+        this.#pageIndex = target;
+        this.#scrollTopPx = 0;
+        this.#scrollOwed = true;
+        this.#hoverRow = undefined;
+        this.#dropRest();
+        this.#resolve();
+        return true;
+    }
+
+    get #pageCount(): number {
+        const size = this.#pageSize;
+        return size === undefined ? 1 : Math.max(1, Math.ceil(this.#totalRows / size));
+    }
+
+    // The rows of the page shown, as positions in the whole result: none while no pager stands or the page is empty.
+    #pageRows(): RowRange | undefined {
+        const size = this.#pageSize;
+        if (size === undefined) return undefined;
+        const first = this.#pageIndex * size;
+        const count = Math.min(size, this.#totalRows - first);
+        return count > 0 ? rowRange(first, count) : undefined;
+    }
+
+    // What Ctrl+A and the corner select under a pager (ADR-0015): the page, which reads as the world; with none, every
+    // row.
+    #selectAllContext(extent: GridExtent): { readonly firstRow: number; readonly rowCount: number } | undefined {
+        const size = this.#pageSize;
+        if (size === undefined) return undefined;
+        // The page the next pass shows: a result that shrank since the last keeps its last page.
+        const index = Math.min(this.#pageIndex, Math.max(0, Math.ceil(extent.rowCount / size) - 1));
+        const firstRow = Math.min(index * size, extent.rowCount - 1);
+        return { firstRow, rowCount: Math.min(extent.rowCount - firstRow, size) };
+    }
+
+    // Go to selection: the Focus is revealed, on its page under a pager, and the keyboard is the grid's again
+    // (ADR-0014, ADR-0015).
     readonly #onGoToSelection = (): void => {
         const focus = this.#held.selection.focus;
         if (this.#destroyed || focus === undefined) return;
@@ -7754,10 +8595,13 @@ export class GridView<Row> {
         const { element } = edit;
         const visible = this.#visible;
         if (visible !== undefined) {
-            const at = editorCell(edit.cell, visible);
+            // Away, it takes its column's box on the first painted row, where it holds the keyboard but is neither
+            // seen nor pressed (ADR-0011's note of 2026-10-07).
+            const away = this.#editorAway(edit.cell, visible);
+            const at = away ? cellPosition(visible.start, edit.cell.column) : edit.cell;
             const box = defined(cellBox(at, this.#styles.geometry, this.#metrics.rowHeightPx, visible), 'the box of a cell among the painted rows');
             const look = this.#editorLook(edit.cell, edit.openedOn);
-            const base = editorAway(edit.cell, visible) ? 'ex-editor ex-editor-away' : 'ex-editor';
+            const base = away ? 'ex-editor ex-editor-away' : 'ex-editor';
             setAttribute(element, 'class', look === undefined ? base : `${base} ${look}`);
             setAttribute(element, 'style', box.style);
             setAttribute(element, 'data-ex-cell', `${at.row} ${at.column}`);
@@ -7770,6 +8614,13 @@ export class GridView<Row> {
             return [this.#editorPinned];
         }
         return [element];
+    }
+
+    // Whether the editor, or a message, is away from the rows painted (ADR-0011), or under a pager from the page: the
+    // row just before a page is on the page before, and never scrolls into this one (ADR-0015).
+    #editorAway(at: CellPosition, painted: RowRange): boolean {
+        const page = this.#pageRows();
+        return editorAway(at, painted) || (page !== undefined && (at.row < page.start || at.row >= page.start + page.count));
     }
 
     // The message an editor is held with, or the one a flagged cell says while no edit is open (ADR-0034): below
@@ -7785,7 +8636,7 @@ export class GridView<Row> {
             this.#shownMessage = undefined;
         }
         const said = edit === undefined ? this.#shownMessage : edit.error === undefined ? undefined : { cell: edit.cell, text: edit.error };
-        if (said === undefined || geometry === undefined || visible === undefined || editorAway(said.cell, visible)) {
+        if (said === undefined || geometry === undefined || visible === undefined || this.#editorAway(said.cell, visible)) {
             this.#message.remove();
             return;
         }

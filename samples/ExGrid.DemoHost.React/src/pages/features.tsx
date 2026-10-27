@@ -91,6 +91,8 @@ function commitRefused(reason: CommitRefusalReason, column: string): string {
             return `OrderMoved — ${column} was not written: the rows moved while you were typing; press Escape to leave it`;
         case 'rowLeftTheWindow':
             return `RowLeftTheWindow — ${column} was not written: the row is not in the rows the grid holds now; bring it back into view and commit again, or press Escape`;
+        case 'cancelled':
+            return `Cancelled — ${column} was not written: the edit was cancelled while it was being checked`;
     }
 }
 
@@ -276,6 +278,8 @@ export function Features(): ReactElement {
     const late = useQuery('late') === '1';
     const upstream = useQuery('upstream') === '1';
     const rowKeyAsked = useQuery('rowkey') === '1';
+    // ?paged=1 gives the main grid a pager of 50 rows a page (ADR-0015), as Features.razor's does.
+    const paged = useQuery('paged') === '1';
     const rowKeyOn = upstream && rowKeyAsked;
     const source = useMemo(() => GridSource.from(rows, rowKeyOn ? { rowKey: tradeNumber } : {}), [rowKeyOn]);
     const second = useMemo(() => GridSource.from(rows.slice(0, 20)), []);
@@ -581,6 +585,7 @@ export function Features(): ReactElement {
                 onColumnHidden={onColumnHidden}
                 onPinnedCountChanged={setPinned}
                 onReplace={onReplace}
+                {...(paged ? { pageSize: 50 } : {})}
                 {...(upstream ? { declaredKeys: rowKeyOn ? upstreamAndResortKeys : upstreamKeys, onDeclaredKey: onUpstreamKey, onAction } : {})}
                 contextCommands={contextCommands} />
             <p className="demo-status"><span id="intent-count">Intents: {counts.edits} edits, {counts.pastes} pastes</span></p>

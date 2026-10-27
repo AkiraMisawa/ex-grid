@@ -66,9 +66,13 @@ ADR-0050 item 3 has it.
 ### 3. While an answer is out, the commit is pending
 
 - **The editor stands, with the text and the keyboard, and takes no input of its own.** It keeps DOM
-  focus and its text, and carries `aria-busy` and `readonly`. The root carries a class of its own,
-  painted from Visual Tokens, and a stamp naming the pending commit. Nothing is applied, and no Edit
-  Intent is raised until the verdict has accepted or flagged the commit.
+  focus and its text, and carries `aria-busy` and `readonly`. The root carries a stamp naming the
+  pending commit, `data-ex-pending-commit`, which the stylesheet paints: the pointer shows the grid
+  busy, and the editor's outline is dashed in the colour and width its Visual Token gives. Nothing is
+  applied, and no Edit Intent is raised until the verdict has accepted or flagged the commit.
+  *(Implemented in the Script Core on 2026-10-26. This first said "a class of its own … and a stamp".
+  The stamp alone marks the root, since one attribute both says that a commit is pending and names
+  it, and the root's class list is written by every pass.)*
 - **The pending state starts in the commit gesture's own handler.** The Script Core takes the gesture
   in the browser, synchronously, and marks the commit pending before that handler returns, on every host.
   So any later input's handler sees it. This includes the next keydown, however fast it follows. On

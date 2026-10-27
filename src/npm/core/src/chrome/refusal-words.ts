@@ -56,3 +56,37 @@ export const rowCommandRefusalId = 'key-refusal-row-command-target-left';
 export const rowCommandRefusalWords: readonly (readonly [string, string])[] = Object.freeze([
     [rowCommandRefusalId, 'The row is no longer available. Repeat the command on the current data.'],
 ]);
+
+/** The id of what a commit says when the user cancelled it while its verdict or its `onEdit` was still answering
+ * (ADR-0380 section 3), resolved through the grid's `commandLabel` as {@link rowCommandRefusalId} is. A Replace
+ * cancelled so names its cell with these words. */
+export const commitCancelledId = 'edit-commit-cancelled';
+
+/** The id of what a Replace says when its cell changed while its verdict was answering (ADR-0380 section 3): the
+ * text it would write was made from the entry as it stood before. */
+export const replaceCellChangedId = 'replace-cell-changed';
+
+/** The id of what the grid says when an input held while a commit was pending could not be taken again at its turn
+ * (ADR-0380 section 3): a press whose control is gone, a Tab past the page's last control, a key an IME was composing.
+ * Said once for the inputs of one answer. */
+export const heldInputLostId = 'pending-input-lost';
+
+/** The error step found no cell with an error anywhere the Consumer looked (ADR-0381 section 3). */
+export const errorStepNoneId = 'error-step-none';
+
+/** The error step's answer came back about rows or columns that moved while it was out: nothing moved (ADR-0381,
+ * ADR-0011). */
+export const errorStepMovedId = 'error-step-moved';
+
+/** The built-in English for the error step's words (ADR-0381 section 3). */
+export const errorStepWords: readonly (readonly [string, string])[] = Object.freeze([
+    [errorStepNoneId, 'No error among the rows and columns shown.'],
+    [errorStepMovedId, 'The rows moved while the next error was looked for, so the step was set aside. Press F8 again.'],
+]);
+
+/** The built-in English for a Pending Commit's words. */
+export const pendingCommitWords: readonly (readonly [string, string])[] = Object.freeze([
+    [commitCancelledId, 'Nothing was changed: the edit was cancelled while it was being checked.'],
+    [replaceCellChangedId, 'Nothing was replaced: the cell changed while the replacement was being checked.'],
+    [heldInputLostId, 'An input made while an edit was being checked could not be taken. Make it again.'],
+]);
