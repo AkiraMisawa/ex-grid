@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { GridColumn, GridCommand } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
 import type { ExGridChrome } from '../src/chrome';
+import type { ContractHost } from './contract-host';
 
 interface Trade {
     readonly book: string;
@@ -54,7 +55,7 @@ function menuOf(root: Element, selector: string): Element {
 }
 
 /** An ExGrid under `chrome`, with a disabled command of the Consumer's and an enabled one, worded by the Consumer. */
-function mounted(chrome: ExGridChrome<unknown>): { readonly root: HTMLElement; readonly ran: string[] } {
+function mounted(chrome: ExGridChrome<unknown>, host: ContractHost): { readonly root: HTMLElement; readonly ran: string[] } {
     const ran: string[] = [];
     const contextCommands = (): readonly GridCommand[] => [
         { id: 'audit', enabled: false, invoke: () => { ran.push('audit'); } },
@@ -63,8 +64,8 @@ function mounted(chrome: ExGridChrome<unknown>): { readonly root: HTMLElement; r
     const { container } = render(createElement(ExGrid<Trade>, {
         columns, rows, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, contextCommands, chrome,
         commandLabel: id => (id === 'open-trade' ? 'Open trade' : undefined),
-    }));
-    const root = container.firstElementChild;
+    }), host);
+    const root = container.querySelector('[role=grid]'); // a provider may draw beside it
     if (!(root instanceof HTMLElement)) throw new Error('The grid drew no root.');
     return { root, ran };
 }
@@ -86,12 +87,12 @@ async function openContextMenu(root: HTMLElement): Promise<Element> {
  * Registers the contract's tests against a Wrapper's Chrome: `chrome` names it, and must fill the column menu's
  * and the Context Menu's slots.
  */
-export function menuSlotContract(name: string, chrome: ExGridChrome<unknown>): void {
+export function menuSlotContract(name: string, chrome: ExGridChrome<unknown>, host: ContractHost = {}): void {
     describe(`${name}: the menu slots' contract (ADR-0390 section 7)`, () => {
         afterEach(() => { cleanup(); });
 
         it('ADR-0036: the Context Menu draws the core\'s commands in the core\'s order, each enabled as the core says, in the core\'s words', async () => {
-            const { root } = mounted(chrome);
+            const { root } = mounted(chrome, host);
             await settled();
             const items = drawnItems(await openContextMenu(root));
             expect(items.map(item => [item.label, item.enabled])).toEqual([
@@ -101,7 +102,7 @@ export function menuSlotContract(name: string, chrome: ExGridChrome<unknown>): v
         });
 
         it('ADR-0039: a key is the core\'s table; Enter runs the item with the menu closed and the keyboard back on the grid', async () => {
-            const { root, ran } = mounted(chrome);
+            const { root, ran } = mounted(chrome, host);
             await settled();
             await openContextMenu(root);
             const moved: string[] = [];
@@ -117,7 +118,7 @@ export function menuSlotContract(name: string, chrome: ExGridChrome<unknown>): v
         });
 
         it('ADR-0010: a click on a disabled item runs nothing, and a click on an enabled one runs it', async () => {
-            const { root, ran } = mounted(chrome);
+            const { root, ran } = mounted(chrome, host);
             await settled();
             const items = drawnItems(await openContextMenu(root));
             items[2]?.element.click();
@@ -128,7 +129,7 @@ export function menuSlotContract(name: string, chrome: ExGridChrome<unknown>): v
         });
 
         it('ADR-0044: the column menu draws its column\'s commands, and Excel\'s letters run through the core', async () => {
-            const { root } = mounted(chrome);
+            const { root } = mounted(chrome, host);
             await settled();
             root.focus();
             const button = root.querySelectorAll<HTMLElement>('.ex-header-cell > .ex-menu-button')[1];

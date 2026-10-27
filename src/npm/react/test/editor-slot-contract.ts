@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { GridColumn, GridEditIntent } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
 import type { ExGridChrome } from '../src/chrome';
+import type { ContractHost } from './contract-host';
 
 interface Trade {
     readonly book: string;
@@ -48,12 +49,12 @@ function typeText(field: HTMLInputElement | HTMLTextAreaElement, text: string): 
 }
 
 /** An ExGrid under `chrome` with the Focus on Notional's first cell and the keyboard on the grid. */
-async function opened(chrome: ExGridChrome<unknown>): Promise<{ readonly root: HTMLElement; readonly edits: GridEditIntent<Trade>[] }> {
+async function opened(chrome: ExGridChrome<unknown>, host: ContractHost): Promise<{ readonly root: HTMLElement; readonly edits: GridEditIntent<Trade>[] }> {
     const edits: GridEditIntent<Trade>[] = [];
     const { container } = render(createElement(ExGrid<Trade>, {
         columns, rows, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, chrome, onEdit: intent => { edits.push(intent); },
-    }));
-    const root = container.firstElementChild;
+    }), host);
+    const root = container.querySelector('[role=grid]'); // a provider may draw beside it
     if (!(root instanceof HTMLElement)) throw new Error('The grid drew no root.');
     await settled();
     const viewport = root.querySelector('.ex-viewport');
@@ -78,12 +79,12 @@ function editorField(root: HTMLElement): HTMLInputElement | HTMLTextAreaElement 
 }
 
 /** Registers the contract's tests against a Wrapper's Chrome: `chrome` names it, and must fill the cellEditor slot. */
-export function cellEditorSlotContract(name: string, chrome: ExGridChrome<unknown>): void {
+export function cellEditorSlotContract(name: string, chrome: ExGridChrome<unknown>, host: ContractHost = {}): void {
     describe(`${name}: the Cell Editor slot's contract (ADR-0390 section 7)`, () => {
         afterEach(() => { cleanup(); });
 
         it('ADR-0010: a key typed on a cell opens the Wrapper\'s field holding it and the keyboard, and Enter commits what was typed', async () => {
-            const { root, edits } = await opened(chrome);
+            const { root, edits } = await opened(chrome, host);
             key('1');
             await settled();
             const field = editorField(root);
@@ -96,7 +97,7 @@ export function cellEditorSlotContract(name: string, chrome: ExGridChrome<unknow
         });
 
         it('ADR-0034: a Reject marks the Wrapper\'s field, which the core\'s message describes, and keeps the keyboard in it', async () => {
-            const { root, edits } = await opened(chrome);
+            const { root, edits } = await opened(chrome, host);
             key('a');
             await settled();
             key('Enter');

@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { replacedCells, type GridColumn, type GridSelection } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
 import type { ExGridChrome } from '../src/chrome';
+import type { ContractHost } from './contract-host';
 
 interface Deal {
     readonly trader: string;
@@ -42,13 +43,13 @@ function typeText(field: HTMLInputElement, text: string): void {
     field.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function mounted(chrome: ExGridChrome<unknown>): { readonly root: HTMLElement; readonly selections: GridSelection[] } {
+function mounted(chrome: ExGridChrome<unknown>, host: ContractHost): { readonly root: HTMLElement; readonly selections: GridSelection[] } {
     const selections: GridSelection[] = [];
     const { container } = render(createElement(ExGrid<Deal>, {
         columns, rows, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, findsHeaders: false, chrome,
         onSelectionChanged: selection => { selections.push(selection); }, onEdit: () => undefined, onReplace: () => replacedCells(12, 0),
-    }));
-    const root = container.firstElementChild;
+    }), host);
+    const root = container.querySelector('[role=grid]'); // a provider may draw beside it
     if (!(root instanceof HTMLElement)) throw new Error('The grid drew no root.');
     return { root, selections };
 }
@@ -63,12 +64,12 @@ function panelOf(root: Element): HTMLElement {
  * Registers the contract's tests against a Wrapper's Chrome: `chrome` names it, and must fill the find panel's slot.
  * `replaceAll` is the words of its Replace All.
  */
-export function findPanelSlotContract(name: string, chrome: ExGridChrome<unknown>, replaceAll = 'Replace All'): void {
+export function findPanelSlotContract(name: string, chrome: ExGridChrome<unknown>, replaceAll = 'Replace All', host: ContractHost = {}): void {
     describe(`${name}: the find panel slot's contract (ADR-0390 section 7)`, () => {
         afterEach(() => { cleanup(); });
 
         it('FD-1 / FD-5: the find field takes the keyboard; Enter in it steps from the Focus through the core\'s form, and the keyboard stays', async () => {
-            const { root, selections } = mounted(chrome);
+            const { root, selections } = mounted(chrome, host);
             await settled();
             root.focus();
             key(root, 'f', { ctrlKey: true });
@@ -85,7 +86,7 @@ export function findPanelSlotContract(name: string, chrome: ExGridChrome<unknown
         });
 
         it('ADR-0332 §2 / §3: Ctrl+H shows Replace in the same panel, and Replace All says what the Consumer answered', async () => {
-            const { root } = mounted(chrome);
+            const { root } = mounted(chrome, host);
             await settled();
             root.focus();
             key(root, 'h', { ctrlKey: true });

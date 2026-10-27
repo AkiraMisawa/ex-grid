@@ -12,7 +12,8 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
 | `<face>.<platform>.json` | One face as `measure.mjs` measured it, on one platform, in Chrome: `system-ui.macos.json`, `roboto.macos.json` and `dejavu-sans.macos.json` (2026-10-01) |
 | `<face>.<platform>.<browser>.json` | One face measured on one platform in the browser `--browser` named: `system-ui.windows.chrome.json`, `system-ui.windows.msedge.json`, `roboto.windows.chrome.json` and `roboto.windows.msedge.json` (Chrome 154 and Edge 155, display en-GB at 150%, the seventeenth Windows run, 2026-10-11) |
 | `<face>.windows-ja.<browser>.json` | Windows under a Japanese display language, where `system-ui` is Yu Gothic UI: `system-ui.windows-ja.chrome.json` and `system-ui.windows-ja.msedge.json` (Chrome 154 and Edge 155, display ja-JP at 150%, regional format en-GB, 2026-10-12; `verification/2026-10-12-windows-glyphs-ja/`). `measure.mjs` names a record by platform only, so the display language was added to the name by hand. Roboto's records of the same run are not here (What stays out) |
-| `tables.mjs` | Writes the per-glyph tables from the records: `src/ExGrid/Columns/DefaultGlyphWidths.cs` and `src/ExGrid.MudBlazor/RobotoGlyphTable.cs` |
+| `liberation-sans.linux.json` | Liberation Sans, what Linux paints Helvetica and Arial in, measured as a web font as DejaVu Sans is (Chromium 153, 2026-10-27): a face of `@ex-grid/mantine`'s stack, read only by its widths |
+| `tables.mjs` | Writes the per-glyph tables from the records: `src/ExGrid/Columns/DefaultGlyphWidths.cs`, `src/ExGrid.MudBlazor/RobotoGlyphTable.cs`, the Script Core's, and `src/npm/mantine/src/mantine-glyph-widths.ts` with the class widths `@ex-grid/mantine` hands its grid |
 | `classes.mjs` | The glyphs `CellTextMetrics` names in a class, which a table leaves out |
 | `GlyphWidthRecord.cs` | Reads a record; compiled into the test projects below |
 
@@ -27,6 +28,10 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
   Weights 400 to 600 are held to the regular widths, 700 to the bold ones.
 - **ExGrid.MudBlazor.Tests, `RobotoGlyphWidthCorpusTests`**: the same, under the widths
   `MudExGridPresentation` cascades, in `roboto.*` (macOS's and Windows' under an English display).
+
+- **@ex-grid/mantine, `glyph-widths.test.ts`**: the same, under the widths `MantineExGrid` hands its grid,
+  in every face Mantine's default stack resolves to: `system-ui.*` but Japanese Windows' (Segoe UI is named
+  ahead of Yu Gothic UI), `roboto.*`, `dejavu-sans.*` and `liberation-sans.*`.
 
 A record measured from another corpus is refused (`corpusSha256`).
 
@@ -43,6 +48,8 @@ has not been measured yet:
    node tests/GlyphWidths/measure.mjs system-ui
    node tests/GlyphWidths/measure.mjs dejavu-sans \
      --dejavu "$(nix build --no-link --print-out-paths nixpkgs#dejavu_fonts)/share/fonts/truetype"
+   node tests/GlyphWidths/measure.mjs liberation-sans \
+     --liberation "$(nix build --no-link --print-out-paths nixpkgs#liberation_ttf)/share/fonts/truetype"
    ```
 
    Each writes `<face>.<platform>.json` here. `system-ui` is whatever the platform resolves it to,
@@ -82,6 +89,10 @@ class otherwise (ticket 83). A table holds only glyphs its face draws itself in 
   painted it, and DejaVu Sans — measured at 14px and at 12px apart;
 - **Roboto's** a glyph Roboto draws, at the wider of its 14px width and its 12px one scaled to 14,
   because the core scales the table.
+- **Mantine's** a glyph every Linux face of its stack draws itself (Roboto, Liberation Sans and DejaVu
+  Sans), at the widest any of the stack's records shows, at 14px and at 12px scaled to 14. Its class
+  widths are written beside it, each the widest glyph of the class in those records; its other class is
+  the widest glyph any of them paints outside the classes and the table, full-width blocks aside.
 
 Each width is the widest at 400, 500 and 600 (regular) or at 700 (bold), a shade over. A glyph a face
 lacks is painted in a fallback the platform chooses, so it stays the other class's.

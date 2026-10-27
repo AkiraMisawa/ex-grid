@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { GridSource, type FilterSpec, type GridColumn } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
 import type { ExGridChrome } from '../src/chrome';
+import type { ContractHost } from './contract-host';
 
 interface Trade {
     readonly trader: string | null;
@@ -53,10 +54,11 @@ function panelOf(root: Element): HTMLElement {
     return panel;
 }
 
-/** The checkbox of the value whose label reads `words`. */
+/** The checkbox of the value whose label reads `words`: a label around it or one naming it, as a design system's
+ * checkbox may set its label beside the box rather than around it. */
 function entry(panel: Element, words: string): HTMLInputElement {
     const box = [...panel.querySelectorAll('input[type=checkbox]')]
-        .find(each => each instanceof HTMLInputElement && (each.closest('label')?.textContent.trim() ?? each.getAttribute('aria-label')) === words);
+        .find(each => each instanceof HTMLInputElement && (each.labels?.[0]?.textContent.trim() ?? each.getAttribute('aria-label')) === words);
     if (!(box instanceof HTMLInputElement)) throw new Error(`No checkbox reads ${words}.`);
     return box;
 }
@@ -68,10 +70,10 @@ function buttonOf(panel: Element, words: string): HTMLButtonElement {
 }
 
 /** An ExGrid under `chrome` over a source whose Filter the test reads. */
-function mounted(chrome: ExGridChrome<unknown>): { readonly root: HTMLElement; readonly spec: (column: string) => FilterSpec | undefined } {
+function mounted(chrome: ExGridChrome<unknown>, host: ContractHost): { readonly root: HTMLElement; readonly spec: (column: string) => FilterSpec | undefined } {
     const source = GridSource.from(rows);
-    const { container } = render(createElement(ExGrid<Trade>, { columns, source, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, chrome }));
-    const root = container.firstElementChild;
+    const { container } = render(createElement(ExGrid<Trade>, { columns, source, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, chrome }), host);
+    const root = container.querySelector('[role=grid]'); // a provider may draw beside it
     if (!(root instanceof HTMLElement)) throw new Error('The grid drew no root.');
     return { root, spec: column => source.snapshot().filter?.columns[column] };
 }
@@ -88,12 +90,12 @@ async function openColumnMenu(root: HTMLElement, column: number): Promise<HTMLEl
  * Registers the contract's tests against a Wrapper's Chrome: `chrome` names it, and must fill the filter panel's
  * slot. `ok` is the words of the panel's OK, and `search` the selector of its search box.
  */
-export function filterPanelSlotContract(name: string, chrome: ExGridChrome<unknown>, ok = 'OK', search = 'input[type=search]'): void {
+export function filterPanelSlotContract(name: string, chrome: ExGridChrome<unknown>, ok = 'OK', search = 'input[type=search]', host: ContractHost = {}): void {
     describe(`${name}: the filter panel slot's contract (ADR-0390 section 7)`, () => {
         afterEach(() => { cleanup(); });
 
         it('ADR-0009: the value list is the core\'s, every value ticked; OK applies what was ticked, and the keyboard is back on the grid', async () => {
-            const { root, spec } = mounted(chrome);
+            const { root, spec } = mounted(chrome, host);
             await settled();
             const panel = await openColumnMenu(root, 0);
             expect(['Novak', 'Osei', 'Ishikawa'].map(words => entry(panel, words).checked)).toEqual([true, true, true]);
@@ -107,7 +109,7 @@ export function filterPanelSlotContract(name: string, chrome: ExGridChrome<unkno
         });
 
         it('ADR-0023 / KB-31: the condition\'s field submits the slot\'s form; a typed value that does not read applies nothing, and the panel says why in the core\'s words', async () => {
-            const { root, spec } = mounted(chrome);
+            const { root, spec } = mounted(chrome, host);
             await settled();
             const panel = await openColumnMenu(root, 1);
             const field = panel.querySelector<HTMLInputElement>('input:not([type]), input[type=text]');
@@ -121,7 +123,7 @@ export function filterPanelSlotContract(name: string, chrome: ExGridChrome<unkno
         });
 
         it('ADR-0044: Tab, Shift+Tab and E on a command put the keyboard on the panel\'s first control, its last, and its search box', async () => {
-            const { root } = mounted(chrome);
+            const { root } = mounted(chrome, host);
             await settled();
             const panel = await openColumnMenu(root, 0);
             const command = active();
@@ -143,7 +145,7 @@ export function filterPanelSlotContract(name: string, chrome: ExGridChrome<unkno
         });
 
         it('ADR-0044: S on the value list sorts through the core and closes; another letter is the list\'s own', async () => {
-            const { root } = mounted(chrome);
+            const { root } = mounted(chrome, host);
             await settled();
             const panel = await openColumnMenu(root, 0);
             const box = entry(panel, 'Novak');

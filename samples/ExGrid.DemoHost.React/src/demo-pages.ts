@@ -59,6 +59,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'A density preset changed while the grid is on screen: rows, header band and Selection follow the resolved Grid Metrics together (ADR-0027, ADR-0028).',
     },
     {
+        route: 'mantine', title: 'Mantine Wrapper', group: 'Layout',
+        description: 'ExGrid inside @ex-grid/mantine\'s Paper under a MantineProvider: Mantine\'s components in the Chrome slots, the theme\'s colours in both schemes, and the Density picking the components\' size (ADR-0390).',
+    },
+    {
         route: 'lifecycle', title: 'Lifecycle', group: 'Layout',
         description: 'Mount and dispose a grid repeatedly; nothing it attached stays behind (ADR-0018, ADR-0021).',
     },

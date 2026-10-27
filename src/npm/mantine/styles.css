@@ -1,0 +1,192 @@
+/* @ex-grid/mantine — the Wrapper's stylesheet (ADR-0390 section 5, ADR-0030). Every rule is scoped under the
+   Wrapper's own element, .mantine-ex-grid, so it outranks the core's bare-class defaults whatever order the two
+   stylesheets load in. It sets Visual Tokens, mapped onto the variables MantineProvider writes on the page, so a
+   change of scheme or a palette edit recolours the grid with no render anywhere (ADR-0027), and styles the
+   Wrapper's own elements. It touches no geometry, no internal class and no ARIA (ADR-0029/0030). Mantine's own
+   styles.layer.css sits in @layer mantine, which these unlayered rules always beat. */
+.mantine-ex-grid {
+    /* Ground. No --ex-font-family: it is metrics-bearing (ADR-0027/0030), so MantineExGrid writes it inline, its
+       font's family beside the widths it hands the grid in the same render, never --mantine-font-family, whose
+       widths the grid would not know. A frame without it keeps the core's font and the core's widths. */
+    --ex-background: var(--mantine-color-body);
+    --ex-color: var(--mantine-color-text);
+    /* Header: Mantine's table header is the body at the 600 weight, its rules the table's border colour. */
+    --ex-header-background: var(--mantine-color-body);
+    --ex-header-color: var(--mantine-color-text);
+    --ex-header-font-weight: 600;
+    --ex-header-rule-color: var(--mantine-ex-rule);
+    /* Rules: rows always, columns only with withColumnBorders, as Mantine's Table draws them. */
+    --ex-row-rule-color: var(--mantine-ex-rule);
+    --ex-column-rule-color: transparent;
+    --ex-pinned-background: var(--mantine-color-body);
+    /* Selection from the primary colour, translucent so the value reads through it (ADR-0008); the Focus outline
+       and everything drawn with it is the primary filled. */
+    --ex-selection-fill: color-mix(in srgb, var(--mantine-primary-color-filled) 18%, transparent);
+    --ex-focus-row-fill: color-mix(in srgb, var(--mantine-primary-color-filled) 8%, transparent);
+    --ex-row-hover-background: var(--mantine-ex-hover);
+    /* Row Stripes (ADR-0038): Mantine's own striped colour. */
+    --ex-row-stripe-background: var(--mantine-ex-stripe);
+    --ex-focus-outline: var(--mantine-ex-strong);
+    /* Heading Mark shades are opaque, so nothing beneath can alter the frame's shade. */
+    --ex-heading-mark-background: color-mix(in srgb, var(--mantine-color-text) 12%, var(--mantine-color-body));
+    --ex-heading-mark-whole-background: color-mix(in srgb, var(--mantine-primary-color-filled) 20%, var(--mantine-color-body));
+    --ex-grid-focus-outline: 2px solid var(--mantine-ex-strong);
+    --ex-editor-background: var(--mantine-color-body);
+    --ex-editor-color: var(--mantine-color-text);
+    --ex-editor-outline: 2px solid var(--mantine-ex-strong);
+    --ex-placeholder-background: var(--mantine-color-default-hover);
+    --ex-resize-guide-color: var(--mantine-primary-color-filled);
+    --ex-drop-indicator-color: var(--mantine-primary-color-filled);
+    /* The Size Tip (ADR-0052): the colours Mantine gives its own Tooltip, which read in both schemes. */
+    --ex-size-tip-background: var(--mantine-ex-tooltip-background);
+    --ex-size-tip-color: var(--mantine-ex-tooltip-color);
+    --ex-size-tip-outline: none;
+    /* Tone (ADR-0006): a loss in the theme's error, a gain in its success. */
+    --ex-tone-negative-color: var(--mantine-color-error);
+    --ex-tone-positive-color: var(--mantine-color-success);
+    /* Cell State (ADR-0006): the theme's error, and the primary for a Modified mark. */
+    --ex-state-error-color: var(--mantine-color-error);
+    --ex-state-modified-mark: var(--mantine-primary-color-filled);
+    --ex-state-stale-color: var(--mantine-color-dimmed);
+    --ex-state-missing-background: var(--mantine-color-default-hover);
+    /* The Change Highlight (ADR-0068): a highlighter's amber, none of the colours above, translucent beneath the
+       text. */
+    --ex-change-highlight-background: color-mix(in srgb, var(--mantine-color-yellow-filled) 25%, transparent);
+    /* The Match Mark (ADR-0332 §4): the matches in view in grape, the current one in orange, more strongly, so the
+       two read apart and neither reads as the selection's primary or the Change Highlight's amber. */
+    --ex-match-mark-fill: color-mix(in srgb, var(--mantine-color-grape-filled) 22%, transparent);
+    --ex-match-mark-current-fill: color-mix(in srgb, var(--mantine-color-orange-filled) 45%, transparent);
+    --ex-scrollbar-color: var(--mantine-ex-scrollbar);
+
+    /* The surface itself. Inline-flex so the paper is as wide as its grid; a flex or grid parent may give it less
+       than its columns' width, and a Stretch grid then takes that box (ADR-0045). */
+    display: inline-flex;
+    flex-direction: column;
+    min-width: 0;
+    box-sizing: border-box;
+    color: var(--mantine-color-text);
+    font-family: var(--mantine-font-family);
+    /* The inset that keeps the grid's square corners inside the paper's round ones (ADR-0030): a rounded paper
+       cannot clip its content, which would clip the grid's popovers (UX-11). */
+    padding: var(--paper-radius, var(--mantine-radius-default));
+}
+/* The colours Mantine's Table and Tooltip take per scheme, named once here so the tokens above read one variable. */
+:where([data-mantine-color-scheme='light']) .mantine-ex-grid {
+    --mantine-ex-rule: var(--mantine-color-gray-3);
+    --mantine-ex-hover: var(--mantine-color-gray-1);
+    --mantine-ex-stripe: var(--mantine-color-gray-0);
+    --mantine-ex-tooltip-background: var(--mantine-color-gray-9);
+    --mantine-ex-tooltip-color: var(--mantine-color-white);
+    --mantine-ex-scrollbar: var(--mantine-color-gray-4);
+    /* What the keyboard's marks are drawn in, the Focus outline, the grid's and the editor's: the primary, which
+       the light body sets off. */
+    --mantine-ex-strong: var(--mantine-primary-color-filled);
+}
+:where([data-mantine-color-scheme='dark']) .mantine-ex-grid {
+    --mantine-ex-rule: var(--mantine-color-dark-4);
+    --mantine-ex-hover: var(--mantine-color-dark-5);
+    --mantine-ex-stripe: var(--mantine-color-dark-6);
+    --mantine-ex-tooltip-background: var(--mantine-color-gray-2);
+    --mantine-ex-tooltip-color: var(--mantine-color-black);
+    --mantine-ex-scrollbar: var(--mantine-color-dark-3);
+    /* The dark scheme's (UX-9): the primary with its lightness raised just far enough to clear 3:1 against the
+       dark body, hue and chroma kept, as the MudBlazor Wrapper raises its own. */
+    --mantine-ex-strong: oklch(from var(--mantine-primary-color-filled) max(l, 0.64) c h);
+}
+.mantine-ex-grid.mantine-ex-grid-square {
+    padding: 0;
+}
+.mantine-ex-grid.mantine-ex-grid-column-borders {
+    --ex-column-rule-color: var(--mantine-ex-rule);
+}
+
+/* The menus' items (ADR-0010/0036): Mantine's subtle buttons laid out as its Menu's items, each label at the
+   start. Scoped to the menu's own element, which stands inside the core's popover; the popover, its place and its
+   box stay the core's. */
+.mantine-ex-grid-menu {
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+}
+.mantine-ex-grid-menu .mantine-ex-grid-menu-item {
+    justify-content: flex-start;
+    font-weight: 400;
+}
+.mantine-ex-grid-menu .mantine-ex-grid-menu-item .mantine-Button-inner {
+    justify-content: flex-start;
+}
+
+/* The filter panel (ADR-0009/0030): Mantine's controls in a column inside the core's popover, the value list
+   scrolling on its own and the actions at the end. No width of its own: the core's popover sets it (ADR-0040). */
+.mantine-ex-grid-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.mantine-ex-grid-filter-values {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 240px;
+    min-height: 48px;
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+.mantine-ex-grid-filter-actions,
+.mantine-ex-grid-find-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+/* The find panel (ADR-0055): the filter panel's column, with no list to give way. The outcome line keeps its height
+   when empty, so the panel does not jump when a step finds nothing. */
+.mantine-ex-grid-find {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    min-height: 0;
+}
+.mantine-ex-grid-find-outcome { min-height: 1.4em; }
+
+/* The Cell Editor's field (ADR-0010): fills the box the core floats over the cell; the box, its outline and its
+   background are the core's (.ex-editor). No padding of its own, since the box already pads by the cell's, and the
+   text would jump at the start and the commit of an edit. */
+.mantine-ex-grid .ex-editor .mantine-ex-editor,
+.mantine-ex-grid .ex-name-box .mantine-ex-name-box,
+.mantine-ex-grid .ex-formula-bar-text .mantine-ex-formula-bar-text {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    font: inherit;
+    line-height: inherit;
+    background: transparent;
+    color: inherit;
+}
+.mantine-ex-grid .ex-editor .mantine-ex-editor {
+    box-shadow: inset 0 -2px 0 var(--mantine-ex-strong);
+}
+/* A Reject stands (ADR-0034): the underline turns the theme's error colour. Painted, not laid out. */
+.mantine-ex-grid .ex-editor .mantine-ex-editor[aria-invalid='true'] {
+    box-shadow: inset 0 -2px 0 var(--mantine-color-error);
+}
+.mantine-ex-grid .ex-name-box .mantine-ex-name-box,
+.mantine-ex-grid .ex-formula-bar-text .mantine-ex-formula-bar-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mantine-ex-grid .ex-formula-bar-text .mantine-ex-formula-bar-text[data-borrowed] {
+    color: var(--mantine-color-dimmed);
+}
+.mantine-ex-grid .ex-formula-bar-text .mantine-ex-formula-bar-text:not([readonly]):focus {
+    box-shadow: inset 0 -2px 0 var(--mantine-ex-strong);
+}

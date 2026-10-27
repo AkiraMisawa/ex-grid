@@ -1,12 +1,9 @@
 import { unreachable } from '../must';
 import type { CellTextMetrics } from './cell-text-metrics';
 
-/**
- * The declared type of a Column. Declared by the Consumer, never inferred from values (ADR-0002): it
- * decides which filter operators exist (ADR-0023) and how a value too wide for its column is painted
- * (ADR-0016).
- */
-export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
+import type { ColumnType } from '../query/columns';
+
+export type { ColumnType };
 
 /** What the cell paints (ADR-0016). Presentation only: selection, copy, editing and screen readers all
  * deal with the real value. */
