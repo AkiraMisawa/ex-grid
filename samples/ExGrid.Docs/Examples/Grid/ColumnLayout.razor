@@ -59,7 +59,8 @@
 
     private void OnOrderChanged(IReadOnlyList<string> order)
     {
-        _order = [.. order, .. _order.Where(name => !order.Contains(name))];
+        // Each hidden column keeps its place inside its groups.
+        _order = ColumnOrder.Reordered(_order, order, AllGroups);
         Rebuild();
     }
 

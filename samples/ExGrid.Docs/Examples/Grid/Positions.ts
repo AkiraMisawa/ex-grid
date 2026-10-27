@@ -14,6 +14,8 @@ export interface Position {
     readonly pnl: number;
     readonly tradeDate: Temporal.PlainDate;
     readonly hedged: boolean;
+    /** How much of the desk's limit the position takes, 1 being all of it. */
+    readonly limitUsed: number;
 }
 
 const desks = ['Rates', 'Credit', 'FX', 'Equities'];
@@ -25,17 +27,23 @@ const instruments: readonly (readonly [string, string, number])[] = [
     ['NKY Mar', 'JPY', 38.9], ['DAX Jun', 'EUR', 182.4], ['FTSE Sep', 'GBP', 81.15],
 ];
 
-/** `count` invented positions, the same on every call: the rows come from a fixed seed. They are not the Blazor
- * Examples' rows, since .NET's generator draws another sequence from the same seed. */
-export function samplePositions(count = 300): Position[] {
-    // mulberry32: a small generator whose sequence is the same on every browser.
-    let seed = 20261003;
-    const next = (): number => {
+// mulberry32: a small generator whose sequence is the same on every browser.
+function mulberry32(start: number): () => number {
+    let seed = start;
+    return () => {
         seed = (seed + 0x6d2b79f5) | 0;
         let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
+}
+
+/** `count` invented positions, the same on every call: the rows come from a fixed seed. They are not the Blazor
+ * Examples' rows, since .NET's generator draws another sequence from the same seed. */
+export function samplePositions(count = 300): Position[] {
+    const next = mulberry32(20261003);
+    // The limit used is drawn from a sequence of its own, so the other values stay what they were before it.
+    const nextLimit = mulberry32(20261004);
     const below = (n: number): number => Math.floor(next() * n);
     const cents = (value: number): number => Math.round(value * 100) / 100;
     const firstDay = Temporal.PlainDate.from('2026-09-01');
@@ -56,6 +64,7 @@ export function samplePositions(count = 300): Position[] {
             pnl: cents((price - cost) * quantity),
             tradeDate: firstDay.add({ days: below(30) }),
             hedged: below(3) !== 0,
+            limitUsed: Math.round(nextLimit() * 1.1 * 1000) / 1000,
         };
     });
 }

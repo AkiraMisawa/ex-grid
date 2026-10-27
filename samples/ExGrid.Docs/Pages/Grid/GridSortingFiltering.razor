@@ -148,6 +148,8 @@
                 new row instance or a refusal — and it plans every match, applies the rewritten rows at once if
                 none refused, and gives you the result for the grid and the rows it changed for your undo stack.
                 <code>GridReplace.Plan</code> is that reference implementation, for a server that answers itself.
+                In ExGrid for React it is <code>GridSource.from</code>'s <code>replace</code>, whose answer's
+                <code>result</code> goes back to the grid's <code>onReplace</code>.
             </li>
             <li>
                 The panel's Replace field and its two buttons take their place in the order of input with the
