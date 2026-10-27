@@ -11,6 +11,7 @@ import { SheetHandle } from '@ex-grid/sheet';
 import { SheetOptions } from '@ex-grid/sheet';
 import { SheetToolbarButton } from '@ex-grid/sheet';
 import { SheetToolbarCommand } from '@ex-grid/sheet';
+import { SheetToolbarContent } from '@ex-grid/sheet';
 import { SheetToolbarItemSlotContext } from '@ex-grid/sheet';
 import { SheetToolbarRowOptions } from '@ex-grid/sheet';
 
@@ -34,7 +35,7 @@ export type ExSheetProps = Omit<SheetOptions, 'chrome' | 'toolbar'> & {
 
 // @public
 export interface ExSheetToolbarButton extends Omit<SheetToolbarButton, 'content'> {
-    readonly content?: ReactNode;
+    readonly content?: ReactNode | SheetToolbarContent;
 }
 
 // @public

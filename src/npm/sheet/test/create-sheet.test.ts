@@ -844,6 +844,9 @@ function reviewOptions(content?: SheetToolbarContent): SheetOptions {
     };
 }
 
+// A button's own content that throws.
+const throwing: SheetToolbarContent = () => { throw new Error('The icon could not be drawn.'); };
+
 // A button's own content that writes OK, and takes it away.
 const okContent: SheetToolbarContent = place => {
     place.textContent = 'OK';
@@ -1156,7 +1159,7 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect(toolbarItem(element, 'Mark reviewed').title).toBe('Mark reviewed: A cell is being edited. Press Enter to commit the edit or Escape to cancel it first.');
     });
 
-    it('ADR-0100: an own button\'s content is drawn in place of its text, which still names it; the same content is not drawn again, and it goes with the button and the Sheet', async () => {
+    it('ADR-0100: an own button\'s content is drawn in place of its text, which still names it; the same content is not drawn again, one that throws is thrown once the rest is drawn, and it goes with the button and the Sheet', async () => {
         const told: string[] = [];
         const icon: SheetToolbarContent = place => {
             const mark = document.createElement('i');
@@ -1175,6 +1178,10 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         sheet.update(reviewOptions());
         expect([told, toolbarItem(element, 'Approve').textContent]).toEqual([['mounted', 'taken away'], 'Approve']);
         sheet.update(reviewOptions(icon));
+        // Content that throws is thrown once the pass has drawn the rest.
+        const both = { ...reviewOptions(), toolbar: [{ label: 'Review', items: [{ text: 'Approve', onPress: () => undefined, content: throwing }, 'bold' as const] }] };
+        expect(() => { sheet.update(both); }).toThrow('The icon could not be drawn.');
+        expect(toolbarItem(element, 'Bold').isConnected).toBe(true);
         sheet.destroy();
         expect(told).toEqual(['mounted', 'taken away', 'mounted', 'taken away']);
         const loose: unknown = { showToolbar: true, toolbar: [{ label: 'Review', items: [{ text: 'Approve', onPress: () => undefined, content: 'icon' }] }] };

@@ -20,9 +20,9 @@ function ListButton({ context }: { readonly context: SheetToolbarItemSlotContext
 // The split controls are the Chrome's; every other item is left to the built-in one.
 const toolbarItem = (context: SheetToolbarItemSlotContext): ReactNode => (context.kind === 'split' ? createElement(ListButton, { context }) : null);
 
-// A row of the Consumer's whose button shows `mark` as its own content.
+// A row of the Consumer's whose button shows `mark` as its own content, or its text where `mark` is empty.
 const reviewRow = (mark: string): ExSheetProps['toolbar'] => [{
-    label: 'Review', items: ['bold', { text: 'Approve', onPress: () => undefined, content: createElement('b', { className: 'own-icon' }, mark) }],
+    label: 'Review', items: ['bold', { text: 'Approve', onPress: () => undefined, content: mark === '' ? '' : createElement('b', { className: 'own-icon' }, mark) }],
 }];
 
 describe('ExSheet', () => {
@@ -107,6 +107,9 @@ describe('ExSheet', () => {
         rerender(createElement(StrictMode, null, createElement(ExSheet, { locale: 'en-US', showToolbar: true, toolbar: reviewRow('B') })));
         await act(async () => { await Promise.resolve(); });
         expect([container.querySelector('.ex-sheet-toolbar-content'), place?.querySelector('.own-icon')?.textContent]).toEqual([place, 'B']);
+        // A node that renders nothing leaves the button its text.
+        rerender(createElement(StrictMode, null, createElement(ExSheet, { locale: 'en-US', showToolbar: true, toolbar: reviewRow('') })));
+        expect(container.querySelector('.ex-sheet-toolbar-item[aria-label="Approve"]')?.textContent).toBe('Approve');
         unmount();
         expect(place?.isConnected).toBe(false);
     });

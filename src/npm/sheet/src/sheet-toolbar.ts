@@ -383,8 +383,13 @@ export class SheetToolbar {
             const element = this.#doc.createElement('span');
             element.className = 'ex-sheet-toolbar-content';
             face.append(element);
+            // Not mounted again on every pass where it fails: what it throws is thrown once this pass has drawn the rest.
             drawn.content = item.content;
-            drawn.unmount = mountedContent(item.content, element, item.name);
+            try {
+                drawn.unmount = mountedContent(item.content, element, item.name);
+            } catch (error: unknown) { // oxlint-disable-line ex-grid/no-catch -- ADR-0390: rethrown by paint once the pass has drawn the rest
+                this.#failed ??= error instanceof Error ? error : new Error(`The content of the toolbar button '${item.name}' threw something that is not an Error.`, { cause: error });
+            }
             return;
         }
         if (item.icon !== undefined) face.insertAdjacentHTML('beforeend', `${svgOpen}${pictures[item.icon]}</svg>`);
