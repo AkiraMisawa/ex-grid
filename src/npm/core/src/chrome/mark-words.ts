@@ -1,4 +1,5 @@
 import type { RowMarkCounts } from '../rows/row-marks';
+import { filledWords } from './filled-words';
 
 /** The ids of the words the Mark Column shows (ADR-0043, ADR-0370 section 10), resolved through the grid's
  * `commandLabel`, as the menus' words are. */
@@ -32,8 +33,6 @@ export const markWords: readonly (readonly [string, string])[] = Object.freeze([
  */
 export function markCountText(counts: RowMarkCounts | undefined, words: (id: string) => string): string | undefined {
     if (counts === undefined || counts.marked === 0) return undefined;
-    if (counts.markedOutsideResult === 0) return words(markLabelIds.marked).replaceAll('{count}', String(counts.marked));
-    return words(markLabelIds.markedOutside)
-        .replaceAll('{count}', String(counts.marked))
-        .replaceAll('{outside}', String(counts.markedOutsideResult));
+    if (counts.markedOutsideResult === 0) return filledWords(words(markLabelIds.marked), { count: String(counts.marked) });
+    return filledWords(words(markLabelIds.markedOutside), { count: String(counts.marked), outside: String(counts.markedOutsideResult) });
 }

@@ -33,4 +33,6 @@ export const gridLabelIds = Object.freeze({
     nameBox: 'name-box',
     /** The Formula Bar's text field. */
     formulaBar: 'formula-bar',
+    /** A header's ▾, which opens the column menu (ADR-0044). */
+    columnMenu: 'column-menu',
 } as const);

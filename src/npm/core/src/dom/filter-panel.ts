@@ -10,6 +10,7 @@
 
 import type { FilterOperator, FilterSpec } from '../query/filter';
 import type { FilterPanelCondition, FilterPanelModel, FilterPanelValueList } from '../chrome/filter-panel-model';
+import { filterPanelLabelIds, operatorLabelId } from '../chrome/filter-panel-words';
 
 export type { FilterPanelColumn, FilterUi } from '../chrome/filter-panel-model';
 
@@ -145,8 +146,9 @@ export class FilterPanel implements FilterPlace {
         // Each closes the popover: marked so, as the C# core marks them (ADR-0010, ADR-0044's note of 2026-10-12).
         const actions = doc.createElement('div');
         actions.className = 'ex-popover-actions';
-        const ok = button(doc, 'OK', () => { this.#apply(); }, this.#answers);
-        const cancel = button(doc, 'Cancel', () => { this.#answers.cancel(); }, this.#answers);
+        const words = this.model.label;
+        const ok = button(doc, words(filterPanelLabelIds.ok), () => { this.#apply(); }, this.#answers);
+        const cancel = button(doc, words(filterPanelLabelIds.cancel), () => { this.#answers.cancel(); }, this.#answers);
         actions.append(ok, cancel);
         this.#form.append(actions);
         this.#ok = ok;
@@ -161,7 +163,8 @@ export class FilterPanel implements FilterPlace {
         const model = this.model;
         const search = doc.createElement('input');
         search.type = 'search';
-        search.placeholder = 'Search';
+        search.placeholder = model.label(filterPanelLabelIds.search);
+        search.setAttribute('aria-label', search.placeholder);
         search.value = initial.search;
         const add = doc.createElement('label');
         add.className = 'ex-popover-add';
@@ -173,7 +176,7 @@ export class FilterPanel implements FilterPlace {
             model.setAddToCurrent(addBox.checked);
             this.#showCanApply();
         });
-        add.append(addBox, 'Add current selection to filter');
+        add.append(addBox, model.label(filterPanelLabelIds.addToCurrent));
         const entries = doc.createElement('div');
         entries.className = 'ex-popover-list ex-value-list';
         entries.setAttribute('data-ex-claims', 'keydown');
@@ -221,7 +224,7 @@ export class FilterPanel implements FilterPlace {
             const view = model.view;
             if (view.kind !== 'valueList') throw new Error('Internal: the value list was drawn over the condition form.');
             all.setAttribute('aria-checked', ariaChecked(view.selectAll));
-            all.textContent = view.search.length > 0 ? '(Select All Search Results)' : '(Select All)';
+            all.textContent = model.label(view.search.length > 0 ? filterPanelLabelIds.selectAllSearchResults : filterPanelLabelIds.selectAll);
             const labels = view.entries.map(({ value, text, checked }) => {
                 const { label, box } = boxOf(value, text);
                 box.checked = checked;
@@ -262,7 +265,7 @@ export class FilterPanel implements FilterPlace {
         const view = model.view;
         if (view.kind !== 'conditions') throw new Error('Internal: the condition form was drawn over the value list.');
         const { allowed } = view;
-        const first = operatorSelect(doc, allowed, false, view.first.operator);
+        const first = operatorSelect(doc, allowed, false, view.first.operator, model.label);
         first.addEventListener('change', () => {
             this.#answers.answered();
             model.setOperator(operatorOf(first.value, allowed));
@@ -291,10 +294,10 @@ export class FilterPanel implements FilterPlace {
                 this.#answers.answered();
                 if (radio.checked) model.setCombinator(combinator);
             });
-            label.append(radio, combinator === 'and' ? 'And' : 'Or');
+            label.append(radio, model.label(combinator === 'and' ? filterPanelLabelIds.and : filterPanelLabelIds.or));
             join.append(label);
         }
-        const second = operatorSelect(doc, allowed, true, view.second?.operator);
+        const second = operatorSelect(doc, allowed, true, view.second?.operator, model.label);
         second.classList.add('ex-popover-second');
         const secondOperand = doc.createElement('input');
         secondOperand.className = 'ex-popover-second';
@@ -399,11 +402,12 @@ function refusalLine(doc: Document): HTMLElement {
 }
 
 // An operator's select: the operators the core offers the column, and "(none)" first for the second
-// condition. Each option shows the operator's name as the C# core's enum names it.
-function operatorSelect(doc: Document, allowed: readonly FilterOperator[], none: boolean, chosen: FilterOperator | undefined): HTMLSelectElement {
+// condition. Each option shows the operator's name in `words`, the C# core's enum's names in the built-in English.
+function operatorSelect(doc: Document, allowed: readonly FilterOperator[], none: boolean, chosen: FilterOperator | undefined,
+    words: (id: string) => string): HTMLSelectElement {
     const select = doc.createElement('select');
-    if (none) select.append(option(doc, '', '(none)'));
-    for (const operator of allowed) select.append(option(doc, operator, operator.charAt(0).toUpperCase() + operator.slice(1)));
+    if (none) select.append(option(doc, '', words(filterPanelLabelIds.none)));
+    for (const operator of allowed) select.append(option(doc, operator, words(operatorLabelId(operator))));
     select.value = chosen === undefined ? '' : chosen;
     return select;
 }

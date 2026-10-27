@@ -13,6 +13,8 @@ import type { ColumnType, DateType } from '../query/columns';
 import { displayText } from '../cells/display-text';
 import { invariantLocale, gridCulture, type GridCulture } from './grid-culture';
 import { defined } from '../must';
+import { filledWords } from './filled-words';
+import { builtInFilterWord, filterPanelLabelIds } from './filter-panel-words';
 
 /** Why a typed operand was refused (ADR-0023; ADR-0006, note of 2026-10-01). */
 export type OperandRefusal =
@@ -150,29 +152,27 @@ function subSecond(operand: object): number | undefined {
 }
 
 /**
- * Why a typed operand was refused, in the built-in Chrome's words: what the text reads as, and how to type it
- * so it reads one way. `undefined` where it was not refused. A Chrome with words of its own words the refusal
- * itself.
+ * Why a typed operand was refused, in `words`, the filter panel's words by id, the built-in English unless given:
+ * what the text reads as, and how to type it so it reads one way. `undefined` where it was not refused.
  */
-export function refusalText(reading: OperandReading, text: string, culture: GridCulture): string | undefined {
+export function refusalText(reading: OperandReading, text: string, culture: GridCulture, words: (id: string) => string = builtInFilterWord): string | undefined {
     switch (reading.refusal) {
         case 'none': return undefined;
         case 'readsTwoWays': {
             const [first, second] = reading.readings ?? refused('readsTwoWays carries its two readings');
             if (isReadDate(first) && isReadDate(second)) {
-                const [one, other] = [isoDateText(first), isoDateText(second)];
-                return `“${text}” reads two ways: as ${one}, and as ${other}. Type the one you mean as ${one} or ${other}.`;
+                return filledWords(words(filterPanelLabelIds.readsTwoDates), { text, first: isoDateText(first), second: isoDateText(second) });
             }
-            const asCulture = operandText(first, culture);
-            return `“${text}” reads two ways: as ${asCulture}, and as ${operandText(second, gridCulture(invariantLocale))}. `
-                + `Type ${asCulture} without separators, or ${operandText(second, culture)} for the other.`;
+            return filledWords(words(filterPanelLabelIds.readsTwoNumbers), {
+                text, first: operandText(first, culture), second: operandText(second, gridCulture(invariantLocale)), other: operandText(second, culture),
+            });
         }
         case 'notTheColumnsDateForm': {
             const read = reading.read ?? refused('notTheColumnsDateForm carries what was read');
             const declared = reading.declared ?? refused('notTheColumnsDateForm carries the declared type');
-            return dateFormRefusal(text, read, declared);
+            return dateFormRefusal(text, read, declared, words);
         }
-        case 'notReadable': return `“${text}” is not a value of this column as ${culture.displayName} writes it.`;
+        case 'notReadable': return filledWords(words(filterPanelLabelIds.notReadable), { text, culture: culture.displayName });
         default: return refused(`an operand refusal is one of four kinds, not ${JSON.stringify(reading.refusal)}`);
     }
 }
@@ -439,19 +439,14 @@ function isoDateText(read: ReadDate): string {
 }
 
 /** Why a date is not the column's declared type, naming the form to type (ADR-0023, section of 2026-10-02). */
-function dateFormRefusal(text: string, read: ReadDate, declared: DateType): string {
-    const quoted = `“${text}”`;
+function dateFormRefusal(text: string, read: ReadDate, declared: DateType, words: (id: string) => string): string {
     const time = `${two(read.hour)}:${two(read.minute)}:${two(read.second)}`;
     if (declared === 'dateOnly') {
-        return read.offset === undefined
-            ? `${quoted} has a time, and this column holds days. Type the day alone, as ${isoDay(read)}.`
-            : `${quoted} has an offset, and this column holds days. Type the day alone, as ${isoDay(read)}.`;
+        return filledWords(words(read.offset === undefined ? filterPanelLabelIds.dayHasTime : filterPanelLabelIds.dayHasOffset), { text, day: isoDay(read) });
     }
-    if (declared === 'dateTime') {
-        return `${quoted} has an offset, and this column's dates have none. Type it without one, as ${isoDateText(read)}.`;
-    }
+    if (declared === 'dateTime') return filledWords(words(filterPanelLabelIds.dateTimeHasOffset), { text, date: isoDateText(read) });
     // An offset is read in ISO's forms only, so an instant is refused here for having none.
-    return `${quoted} has no offset, and this column holds moments. Type it with one, as ${isoDay(read)}T${time}+hh:mm, or with Z for UTC.`;
+    return filledWords(words(filterPanelLabelIds.instantHasNoOffset), { text, day: isoDay(read), time });
 }
 
 function refused(what: string): never {

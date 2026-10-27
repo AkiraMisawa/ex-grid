@@ -12,6 +12,7 @@ import {
     matches, offersAddToFilter, stateOfAll, takesOperand, toggleAll, type SelectAllState,
 } from './filter-panel-choices';
 import type { GridCulture } from './grid-culture';
+import { builtInFilterWord, filterPanelLabelIds } from './filter-panel-words';
 import { operandText, readOperand, refusalText, type OperandReading, type TemporalLike } from './operand-reading';
 
 /** What a column's filter panel lays out (ADR-0009): the condition form alone, the safe default, which never
@@ -29,11 +30,9 @@ export interface FilterPanelColumn {
     readonly textOf: (value: unknown) => string;
 }
 
-/** The built-in Chrome's words for a Blank in the value list (ADR-0023). */
-export const blankWords = '(Blanks)';
-
 /** A value the list shows: the value, the text the panel shows for it and its search matches, and whether it
- * is ticked. A Blank's text is the built-in words for it, which the search matches, and `blank` says it is one. */
+ * is ticked. A Blank's text is the grid's words for it, `filter-blanks` as `commandLabel` answers it, which the
+ * search matches, and `blank` says it is one. */
 export interface FilterPanelEntry {
     /** The value, as the source listed it: what the panel hands back when it is ticked. */
     readonly value: unknown;
@@ -130,6 +129,8 @@ export class FilterPanelModel {
     readonly #culture: GridCulture;
     readonly #temporal: TemporalLike | undefined;
     readonly #fetched: () => void;
+    /** The panel's words, by the ids `filterPanelLabelIds` names: the grid's `commandLabel`, else the built-in English. */
+    readonly label: (id: string) => string;
     readonly #listeners = new Set<() => void>();
     readonly #working: Working;
     readonly #startedOn: FilterOperator;
@@ -145,10 +146,11 @@ export class FilterPanelModel {
     /**
      * Opens over `current`, the column's spec in force. `distinct` asks the source for the column's values; it is
      * asked only where the column declares a value list, and the condition form stands while the answer is on its
-     * way, as the C# core's does. `fetched` hears that answer arrive, or be given up.
+     * way, as the C# core's does. `fetched` hears that answer arrive, or be given up. `label` words the Blank and a
+     * refusal, the built-in English unless given.
      */
     constructor(column: FilterPanelColumn, current: FilterSpec | undefined, culture: GridCulture, temporal: TemporalLike | undefined,
-        distinct: (signal: AbortSignal) => Promise<DistinctValues>, fetched: () => void) {
+        distinct: (signal: AbortSignal) => Promise<DistinctValues>, fetched: () => void, label: (id: string) => string = builtInFilterWord) {
         if (column.type === 'date' && temporal === undefined) {
             throw new TypeError(`Column '${column.name}' holds dates, and a date typed into its filter is made with Temporal, `
                 + 'which the grid was not given: pass `temporal`, the browser\'s Temporal or a polyfill\'s (ADR-0350 section 16).');
@@ -158,6 +160,7 @@ export class FilterPanelModel {
         this.#culture = culture;
         this.#temporal = temporal;
         this.#fetched = fetched;
+        this.label = label;
         const operator = initialOperator(column.type, current, false);
         const second = initialSecond(current);
         this.#startedOn = operator;
@@ -337,7 +340,8 @@ export class FilterPanelModel {
     }
 
     // A value as the panel lists it and its search matches it: the text its cell shows, a Blank in words.
-    readonly #textOf = (value: unknown): string => (value === null || value === undefined ? blankWords : this.#column.textOf(value));
+    readonly #textOf = (value: unknown): string => (value === null || value === undefined
+        ? this.label(filterPanelLabelIds.blanks) : this.#column.textOf(value));
 
     // The same, read from the list made as it arrived.
     readonly #listedText = (value: unknown): string => {
@@ -378,7 +382,7 @@ export class FilterPanelModel {
 
     #condition(operator: FilterOperator, operand: string): FilterPanelCondition {
         const takes = takesOperand(operator);
-        const refusal = !takes || operand.length === 0 ? undefined : refusalText(this.#read(operand), operand, this.#culture);
+        const refusal = !takes || operand.length === 0 ? undefined : refusalText(this.#read(operand), operand, this.#culture, this.label);
         return Object.freeze({ operator, operand, takesOperand: takes, refusal });
     }
 
