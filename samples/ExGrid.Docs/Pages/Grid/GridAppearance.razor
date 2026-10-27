@@ -258,6 +258,15 @@
             once the keyboard has left them.
         </p>
         <p>
+            The completion list (<code>editorCompletion</code>) draws what <code>completeEditorText</code> answered,
+            in the grid's box beneath the editor: <code>context.candidates</code>, the chosen one at
+            <code>context.selected</code>, then <code>context.hint</code>, whose <code>parts()</code> set off the
+            argument the caret is in. <code>useEditorCompletion(context)</code> hands the list its props and each
+            candidate its own: the ids the editor names for assistive technology, and a press that accepts it. The box,
+            its place and its scrolling are the grid's, and so are ↑, ↓, Tab and Escape, which stay with the editor, so
+            the list takes no focus and draws no key handler.
+        </p>
+        <p>
             Three slots only show what the grid decides. <code>cellMessage</code> draws a cell's message in the grid's
             tooltip below the cell: <code>context.message</code> is the Consumer's sentence or the Reject's, and
             <code>editorError</code> says which. <code>selectionSummary</code> draws <code>context.figures</code> in the
@@ -287,7 +296,8 @@
             has no word like Dense, so the Density picks the components' size: <code>xs</code> for Compact and Excel,
             <code>sm</code> for Standard, <code>md</code> for Comfortable. Mantine's Table words <code>striped</code> and
             <code>highlightOnHover</code> turn on Row Stripes and the hover band where the grid is given neither, and
-            <code>withColumnBorders</code> draws a rule between columns. The cells are drawn in Mantine's default font
+            <code>withColumnBorders</code> draws a rule between columns. The Paper is as wide as its grid, and a grid of
+            <code>viewportWidth="stretch"</code> takes it along to its container's width. The cells are drawn in Mantine's default font
             stack, with the widest widths any face it resolves to was measured at, and not in the theme's font, whose
             widths the grid would not know: to put the theme's font in the cells, hand <code>MantineExGrid</code> a
             <code>font</code> with its family and the widths measured for it. A part you give in <code>chrome</code>
@@ -295,6 +305,28 @@
             into an ExGrid's <code>chrome</code> inside an element of the class <code>mantine-ex-grid</code> and a
             <code>MantineSizeContext</code>, as <code>MantineExGrid</code> draws them. Mantine's components carry no words of their own, so the words are your
             <code>commandLabel</code>'s, as above. A date is typed, as in the built-in Chrome.
+        </p>
+        <p>
+            <strong>With MUI.</strong> <code>@@ex-grid/mui</code> (published with 0.3.0) draws the same parts in MUI's
+            components: <code>MuiExGrid</code> takes an ExGrid's props, stands the grid in MUI's <code>Paper</code>
+            (<code>variant</code>, <code>outlined</code> unless you ask for <code>elevation</code>, whose dark-scheme overlay
+            the grid's ground does not take; <code>square</code>), and needs <code>@@ex-grid/mui/styles.css</code>
+            loaded and a <code>ThemeProvider</code> above it whose theme is made with
+            <code>createTheme(&#123; cssVariables: true &#125;)</code>, with MUI's own <code>--mui</code> prefix and a
+            <code>rootSelector</code> the grid stands inside. The stylesheet maps the grid's colours onto the
+            theme's CSS variables, so a palette edit or a change of scheme recolours the grid with no render, under any
+            <code>colorSchemeSelector</code>. A theme made without CSS variables is refused: <code>MuiExGrid</code> throws,
+            naming the option, rather than draw the grid in colours that are not your theme's. The Density picks the
+            components' size: <code>small</code> with dense menus for Compact and Excel, MUI's own <code>medium</code> for
+            Standard and Comfortable. MUI's Table has no stripes, so Row Stripes and the hover band are the grid's own
+            <code>stripeRows</code> and <code>highlightHoverRow</code>; <code>withColumnBorders</code> draws a rule between
+            columns. As with Mantine, the Paper is as wide as its grid, or as its container when the grid stretches. The cells are drawn in MUI's default font stack, Roboto, Helvetica, Arial, with the widest widths any
+            face it resolves to was measured at, and not in the theme's typography; to put another font in the cells,
+            hand <code>MuiExGrid</code> a <code>font</code> with its family and its measured widths. A part you give in
+            <code>chrome</code> beats MUI's, and <code>muiChrome</code> with <code>MuiSizeContext</code> is the Wrapper's
+            parts alone, inside an element of the class <code>mui-ex-grid</code>. MUI's localised text has no key for any
+            of the grid's words, so the words are your <code>commandLabel</code>'s, as above, and a date is typed, with no
+            date picker and no date library.
         </p>
         <p>
             <strong>Your own control in the grid's order.</strong> A handler that changes what the keys after it act on —

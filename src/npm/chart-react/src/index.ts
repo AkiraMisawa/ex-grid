@@ -6,6 +6,6 @@
  * @packageDocumentation
  */
 export { ExChart } from './ex-chart';
-export type { ExChartApi, ExChartProps } from './ex-chart';
+export type { ExChartApi, ExChartChrome, ExChartProps } from './ex-chart';
 export { ExSurface } from './ex-surface';
 export type { ExSurfaceApi, ExSurfaceProps } from './ex-surface';

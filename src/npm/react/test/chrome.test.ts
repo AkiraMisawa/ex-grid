@@ -7,12 +7,15 @@ import { act, cleanup, render } from '@testing-library/react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-    filterPanelLabelIds, type GridCellEditorSlotContext, type GridColumn, type GridFilterPanelSlotContext, type GridFindPanelSlotContext,
-    type GridFormulaBarTextSlotContext, type GridMenuSlotContext, type GridNameBoxSlotContext,
+    filterPanelLabelIds, type GridCellEditorSlotContext, type GridColumn, type GridEditorCompletionSlotContext, type GridFilterPanelSlotContext,
+    type GridFindPanelSlotContext, type GridFormulaBarTextSlotContext, type GridMenuSlotContext, type GridNameBoxSlotContext,
 } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
-import { useCellEditor, useFilterPanel, useFindPanel, useFormulaBarText, useMenuItems, useNameBox, type ExGridChrome } from '../src/chrome';
+import {
+    useCellEditor, useEditorCompletion, useFilterPanel, useFindPanel, useFormulaBarText, useMenuItems, useNameBox, type ExGridChrome,
+} from '../src/chrome';
 import { formulaBarSlotContract } from './bar-slot-contract';
+import { completionSlotContract } from './completion-slot-contract';
 import { cellEditorSlotContract } from './editor-slot-contract';
 import { filterPanelSlotContract } from './filter-slot-contract';
 import { findPanelSlotContract } from './find-slot-contract';
@@ -92,6 +95,15 @@ function PlainNameBox({ context }: { readonly context: GridNameBoxSlotContext })
     return createElement('input', { ref: field, className: 'plain-name-box' });
 }
 
+/** The completion list of plain elements, the hint beneath it. */
+function PlainCompletion({ context }: { readonly context: GridEditorCompletionSlotContext }): ReactElement {
+    const { list, option } = useEditorCompletion(context);
+    return createElement('div', null,
+        context.candidates.length === 0 ? null : createElement('ul', list,
+            ...context.candidates.map((candidate, index) => createElement('li', { ...option(index), key: index }, candidate.label))),
+        context.hint === undefined ? null : createElement('p', null, context.hint.text));
+}
+
 const plainMenu = (context: GridMenuSlotContext): ReactElement => createElement(PlainMenu, { context });
 const plainFilterPanel = (context: GridFilterPanelSlotContext): ReactElement => createElement(PlainFilterPanel, { context });
 const plainFindPanel = (context: GridFindPanelSlotContext): ReactElement => createElement(PlainFindPanel, { context });
@@ -105,6 +117,7 @@ const plainChrome: ExGridChrome<unknown> = {
         : context.figures.map(figure => createElement('span', { key: figure.figure }, `${context.label(figure.labelId)}: ${figure.text} `))),
     formulaBarText: context => createElement(PlainBarText, { context }),
     nameBox: context => createElement(PlainNameBox, { context }),
+    editorCompletion: context => createElement(PlainCompletion, { context }),
 };
 
 menuSlotContract('a Chrome of plain buttons', plainChrome);
@@ -113,6 +126,7 @@ findPanelSlotContract('a Chrome of plain controls', plainChrome);
 shownSlotContract('a Chrome of plain elements', plainChrome);
 cellEditorSlotContract('a Chrome of a plain field', plainChrome);
 formulaBarSlotContract('a Chrome of plain fields', plainChrome);
+completionSlotContract('a Chrome of plain elements', plainChrome);
 
 interface Trade {
     readonly book: string;

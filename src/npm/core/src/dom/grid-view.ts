@@ -1848,7 +1848,7 @@ export class GridView<Row> {
         this.#messageSlot = new ShownSlot('cellMessage', element('span', {}));
         this.#loadingSlot = new ShownSlot('loadingIndicator', element('div', { class: 'ex-loading-indicator' }));
         // The completion list and hint, beneath the surface typed in, outside the scroller as the message is (ADR-0051).
-        this.#completionBox = new CompletionBox(doc, this.#ids, index => { this.#acceptCandidate(index); });
+        this.#completionBox = new CompletionBox(doc, this.#ids, (index, answer) => { this.#acceptCandidate(index, answer); });
         this.#rowMarks = new GridMarks(doc, () => {
             this.#marksStamp += 1;
             this.#invalidate();
@@ -2134,6 +2134,7 @@ export class GridView<Row> {
         this.#rowMarks.destroy();
         this.#summary.destroy();
         this.#summaryBox.hide();
+        this.#completionBox.hide();
         this.#messageSlot.hide();
         this.#loadingSlot.hide();
         this.#bar.dispose();
@@ -5689,7 +5690,7 @@ export class GridView<Row> {
         switch (action) {
             case 'down': shown.selected = Math.min(last, shown.selected + 1); return true;
             case 'up': shown.selected = Math.max(0, shown.selected - 1); return true;
-            case 'accept': this.#acceptCandidate(shown.selected); return true;
+            case 'accept': this.#acceptCandidate(shown.selected, shown.answer); return true;
             case 'close': this.#closeCompletion(); return true;
             case 'closeAndPoint': this.#closeCompletion(); return false;
             case undefined: return false;
@@ -5702,9 +5703,10 @@ export class GridView<Row> {
      * both surfaces, and the caret stands after it. The list closes (ADR-0058, the tenth Windows run), and the new
      * text is asked about for its hint alone, so the hint for what was just accepted can follow.
      */
-    #acceptCandidate(index: number): void {
+    #acceptCandidate(index: number, shown: EditorCompletion): void {
         const edit = this.#edit;
-        const candidate = this.#completionListOpen() ? this.#completion?.answer.candidates[index] : undefined;
+        // An accept carries the answer it was made on, and is refused once another has come (the spine's sixth rule).
+        const candidate = this.#completionListOpen() && this.#completion?.answer === shown ? shown.candidates[index] : undefined;
         if (edit === undefined || candidate === undefined) return;
         const [text, caret] = acceptCandidate(this.#editorText(edit), candidate);
         this.#writeEditText(edit, text, caret, caret);
@@ -5739,12 +5741,13 @@ export class GridView<Row> {
         const box = this.#completionBox;
         const place = edit === undefined || shown === undefined ? undefined : this.#completionPlaceOf(edit);
         if (place === undefined || shown === undefined) {
+            box.hide();
             box.element.remove();
         } else {
             const { leftPx, widths } = popoverAcross(place.leftPx, this.#visibleWidthPx);
             setAttribute(box.element, 'style', `left: ${leftPx}px; top: ${place.topPx}px; ${place.above ? 'transform: translateY(-100%); ' : ''}`
                 + `${widths}; max-height: ${place.roomPx}px`);
-            box.paint(shown.answer, shown.selected);
+            box.paint(shown.answer, shown.selected, this.#chrome?.editorCompletion);
             if (box.element.parentNode !== this.#root) this.#scroller.after(box.element);
         }
         const listed = place !== undefined && this.#completionListOpen() ? shown : undefined;

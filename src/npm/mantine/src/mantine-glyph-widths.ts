@@ -440,7 +440,7 @@ const at14: readonly Row[] = [
 
 let built: GlyphWidthTable | undefined;
 
-/** The letters and currency signs every Linux face of Mantine's stack draws itself, at 14px. Built on first
+/** The letters and currency signs every Linux face of Mantine's default stack draws itself, at 14px. Built on first
  * asking, so loading the module does no work. */
 export function mantineGlyphWidths(): GlyphWidthTable {
     built ??= new GlyphWidthTable(14, at14);

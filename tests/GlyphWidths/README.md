@@ -12,8 +12,8 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
 | `<face>.<platform>.json` | One face as `measure.mjs` measured it, on one platform, in Chrome: `system-ui.macos.json`, `roboto.macos.json` and `dejavu-sans.macos.json` (2026-10-01) |
 | `<face>.<platform>.<browser>.json` | One face measured on one platform in the browser `--browser` named: `system-ui.windows.chrome.json`, `system-ui.windows.msedge.json`, `roboto.windows.chrome.json` and `roboto.windows.msedge.json` (Chrome 154 and Edge 155, display en-GB at 150%, the seventeenth Windows run, 2026-10-11) |
 | `<face>.windows-ja.<browser>.json` | Windows under a Japanese display language, where `system-ui` is Yu Gothic UI: `system-ui.windows-ja.chrome.json` and `system-ui.windows-ja.msedge.json` (Chrome 154 and Edge 155, display ja-JP at 150%, regional format en-GB, 2026-10-12; `verification/2026-10-12-windows-glyphs-ja/`). `measure.mjs` names a record by platform only, so the display language was added to the name by hand. Roboto's records of the same run are not here (What stays out) |
-| `liberation-sans.linux.json` | Liberation Sans, what Linux paints Helvetica and Arial in, measured as a web font as DejaVu Sans is (Chromium 153, 2026-10-27): a face of `@ex-grid/mantine`'s stack, read only by its widths |
-| `tables.mjs` | Writes the per-glyph tables from the records: `src/ExGrid/Columns/DefaultGlyphWidths.cs`, `src/ExGrid.MudBlazor/RobotoGlyphTable.cs`, the Script Core's, and `src/npm/mantine/src/mantine-glyph-widths.ts` with the class widths `@ex-grid/mantine` hands its grid |
+| `liberation-sans.linux.json` | Liberation Sans, what Linux paints Helvetica and Arial in, measured as a web font as DejaVu Sans is (Chromium 153, 2026-10-27): a face of `@ex-grid/mantine`'s and `@ex-grid/mui`'s stacks, read only by its widths |
+| `tables.mjs` | Writes the per-glyph tables from the records: `src/ExGrid/Columns/DefaultGlyphWidths.cs`, `src/ExGrid.MudBlazor/RobotoGlyphTable.cs`, the Script Core's, and `src/npm/mantine/src/mantine-glyph-widths.ts` and `src/npm/mui/src/mui-glyph-widths.ts` with the class widths `@ex-grid/mantine` and `@ex-grid/mui` hand their grids |
 | `classes.mjs` | The glyphs `CellTextMetrics` names in a class, which a table leaves out |
 | `GlyphWidthRecord.cs` | Reads a record; compiled into the test projects below |
 
@@ -32,6 +32,9 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
 - **@ex-grid/mantine, `glyph-widths.test.ts`**: the same, under the widths `MantineExGrid` hands its grid,
   in every face Mantine's default stack resolves to: `system-ui.*` but Japanese Windows' (Segoe UI is named
   ahead of Yu Gothic UI), `roboto.*`, `dejavu-sans.*` and `liberation-sans.*`.
+- **@ex-grid/mui, `glyph-widths.test.ts`**: the same, under the widths `MuiExGrid` hands its grid, in every face
+  MUI's default stack resolves to: `roboto.*`, `liberation-sans.*` (Helvetica and Arial) and `dejavu-sans.*`, and
+  every `system-ui.*`, the platforms' faces that paint a glyph Helvetica or Arial lacks.
 
 A record measured from another corpus is refused (`corpusSha256`).
 

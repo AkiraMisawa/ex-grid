@@ -5,6 +5,7 @@
 
 import { EditorCompletion } from '../cells/editor-text';
 import { editingKeysByMode } from '../keys/editing-keys';
+import { ShownSlot, type GridChromeSlot, type GridEditorCompletionSlotContext } from './grid-chrome';
 
 /**
  * The Consumer's completion (ADR-0051): asked with the editor's text and caret, it answers what to offer there, now or
@@ -108,27 +109,41 @@ function clamp(value: number, low: number, high: number): number {
 /**
  * The box the answer is painted in (ADR-0051), the C# core's markup: a list of options, the chosen one marked, and the
  * hint with the argument the caret is in set off. A press in it keeps the keyboard in the editor; a press on a
- * candidate accepts it.
+ * candidate accepts it. The Chrome's editorCompletion slot may draw the list and the hint in the box instead
+ * (ADR-0390): the box, its place and every key stay the core's.
  */
 export class CompletionBox {
     readonly element: HTMLElement;
     readonly #listId: string;
     readonly #optionPrefix: string;
+    readonly #accept: (index: number, answer: EditorCompletion) => void;
+    // The Chrome's editorCompletion slot, standing in the box while it draws the answer (ADR-0390).
+    readonly #slot: ShownSlot<GridEditorCompletionSlotContext>;
     #painted: { readonly answer: EditorCompletion; readonly selected: number } | undefined;
+    // The answer the slot was last handed, and how many have been: the slot's key tells a new answer from the one
+    // standing by the count.
+    #answer: EditorCompletion | undefined;
+    #answers = 0;
 
-    constructor(doc: Document, idPrefix: string, accept: (index: number) => void) {
+    /** `accept` takes a candidate's index with the answer it was shown from, which the grid refuses once another stands. */
+    constructor(doc: Document, idPrefix: string, accept: (index: number, answer: EditorCompletion) => void) {
         this.#listId = `${idPrefix}completion`;
         this.#optionPrefix = `${idPrefix}completion-`;
+        this.#accept = accept;
+        this.#slot = new ShownSlot('editorCompletion', doc.createElement('div'));
         this.element = doc.createElement('div');
         this.element.className = 'ex-completion';
         this.element.setAttribute('role', 'presentation');
+        // A press is the box's alone, whoever drew it: a slot's contents accept on the click that follows, which
+        // reaches their framework where it listens (React, at its root).
         this.element.addEventListener('mousedown', event => {
             event.preventDefault();
             event.stopPropagation();
-            if (event.button !== 0 || !(event.target instanceof Element)) return;
+            const painted = this.#painted;
+            if (event.button !== 0 || !(event.target instanceof Element) || painted === undefined) return;
             const option = event.target.closest('[data-ex-candidate]');
             const index = option === null ? undefined : Number(option.getAttribute('data-ex-candidate'));
-            if (index !== undefined) accept(index);
+            if (index !== undefined) accept(index, painted.answer);
         });
     }
 
@@ -142,8 +157,32 @@ export class CompletionBox {
         return `${this.#optionPrefix}${index}`;
     }
 
-    /** Paints the answer, built again only when it or the chosen candidate changed. */
-    paint(answer: EditorCompletion, selected: number): void {
+    /** The slot's contents go: the box has left the grid, or the grid is going. */
+    hide(): void {
+        this.#slot.hide();
+    }
+
+    /** Paints the answer, built again only when it or the chosen candidate changed; or has `slot`, the Chrome's, draw
+     * it in the box, mounted again when either changes. */
+    paint(answer: EditorCompletion, selected: number, slot: GridChromeSlot<GridEditorCompletionSlotContext> | undefined): void {
+        if (slot !== undefined) {
+            this.#painted = undefined;
+            if (this.#answer !== answer) {
+                this.#answer = answer;
+                this.#answers += 1;
+            }
+            this.#slot.show(slot, `${this.#answers}:${selected}`, standing => Object.freeze({
+                candidates: answer.candidates, selected: answer.candidates.length === 0 ? -1 : selected, hint: answer.hint,
+                listId: this.#listId,
+                optionId: (index: number) => this.optionId(index),
+                accept: (index: number) => { if (standing()) this.#accept(index, answer); },
+            }));
+            if (this.#slot.element.parentNode !== this.element || this.element.childNodes.length !== 1) {
+                this.element.replaceChildren(this.#slot.element);
+            }
+            return;
+        }
+        this.#slot.hide();
         const painted = this.#painted;
         if (painted?.answer === answer && painted.selected === selected) return;
         this.#painted = { answer, selected };

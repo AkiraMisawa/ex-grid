@@ -93,6 +93,12 @@
        dark body, hue and chroma kept, as the MudBlazor Wrapper raises its own. */
     --mantine-ex-strong: oklch(from var(--mantine-primary-color-filled) max(l, 0.64) c h);
 }
+/* A Stretch grid's Paper (ADR-0045): as wide as the container, so the grid inside it takes the container's width, not
+   its columns'. */
+.mantine-ex-grid.mantine-ex-grid-stretch {
+    display: flex;
+    width: 100%;
+}
 .mantine-ex-grid.mantine-ex-grid-square {
     padding: 0;
 }
@@ -189,4 +195,25 @@
 }
 .mantine-ex-grid .ex-formula-bar-text .mantine-ex-formula-bar-text:not([readonly]):focus {
     box-shadow: inset 0 -2px 0 var(--mantine-ex-strong);
+}
+
+/* The completion list and the argument hint (ADR-0051): a row's height per candidate in the cell's font, as the
+   core's own list, the chosen one in the theme's primary as Mantine's Combobox marks its selected option. The box
+   beneath the editor, its place, its bound and its scrolling are the core's (.ex-completion). */
+.mantine-ex-grid .mantine-ex-grid-completion-item,
+.mantine-ex-grid .mantine-ex-grid-completion-hint {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mantine-ex-grid .mantine-ex-grid-completion-item { cursor: pointer; }
+.mantine-ex-grid .mantine-ex-grid-completion-hint { color: var(--mantine-color-dimmed); }
+.mantine-ex-grid .mantine-ex-grid-completion-item[aria-selected='true'] {
+    background: var(--mantine-primary-color-filled);
+    color: var(--mantine-primary-color-contrast);
+}
+.mantine-ex-grid .mantine-ex-grid-completion-list + .mantine-ex-grid-completion-hint {
+    border-top: var(--ex-rule-width, 1px) solid var(--mantine-ex-rule);
 }

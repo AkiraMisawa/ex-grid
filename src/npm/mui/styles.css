@@ -1,0 +1,202 @@
+/* @ex-grid/mui — the Wrapper's stylesheet (ADR-0390 section 5, ADR-0030). Every rule is scoped under the Wrapper's
+   own element, .mui-ex-grid, so it outranks the core's bare-class defaults whatever order the two stylesheets load
+   in. It sets Visual Tokens, mapped onto the variables a MUI theme made with cssVariables writes on the page, so a
+   change of scheme or a palette edit recolours the grid with no render anywhere (ADR-0027), and styles the
+   Wrapper's own elements. Every variable it reads is one MUI writes again per colour scheme, so it names no scheme
+   selector of its own, and works under whichever colorSchemeSelector the theme was made with. It touches no
+   geometry, no internal class and no ARIA (ADR-0029/0030). */
+.mui-ex-grid {
+    /* Ground. No --ex-font-family: it is metrics-bearing (ADR-0027/0030), so MuiExGrid writes it inline, its font's
+       family beside the widths it hands the grid in the same render, never the theme's typography, whose widths the
+       grid would not know. A frame without it keeps the core's font and the core's widths. */
+    --ex-background: var(--mui-palette-background-paper);
+    --ex-color: var(--mui-palette-text-primary);
+    /* Header: MUI's table head is the paper at the 500 weight, its rules the table cell's border colour. */
+    --ex-header-background: var(--mui-palette-background-paper);
+    --ex-header-color: var(--mui-palette-text-primary);
+    --ex-header-font-weight: 500;
+    --ex-header-rule-color: var(--mui-palette-TableCell-border);
+    /* Rules: rows always, columns only with withColumnBorders, as MUI's Table draws them. */
+    --ex-row-rule-color: var(--mui-palette-TableCell-border);
+    --ex-column-rule-color: transparent;
+    --ex-pinned-background: var(--mui-palette-background-paper);
+    /* Selection from the primary colour, translucent so the value reads through it (ADR-0008); the Focus outline
+       and everything drawn with it is the primary's main shade, which MUI writes lighter for the dark scheme, as it
+       draws its own focused fields. */
+    --ex-selection-fill: color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent);
+    --ex-focus-row-fill: color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent);
+    --ex-row-hover-background: var(--mui-palette-action-hover);
+    /* Row Stripes (ADR-0038): MUI has no striped table, so the text colour at a whisper, which turns with the
+       scheme. */
+    --ex-row-stripe-background: color-mix(in srgb, var(--mui-palette-text-primary) 3%, transparent);
+    --ex-focus-outline: var(--mui-palette-primary-main);
+    /* Heading Mark shades are opaque, so nothing beneath can alter the frame's shade. */
+    --ex-heading-mark-background: color-mix(in srgb, var(--mui-palette-text-primary) 12%, var(--mui-palette-background-paper));
+    --ex-heading-mark-whole-background: color-mix(in srgb, var(--mui-palette-primary-main) 20%, var(--mui-palette-background-paper));
+    --ex-grid-focus-outline: 2px solid var(--mui-palette-primary-main);
+    --ex-editor-background: var(--mui-palette-background-paper);
+    --ex-editor-color: var(--mui-palette-text-primary);
+    --ex-editor-outline: 2px solid var(--mui-palette-primary-main);
+    --ex-placeholder-background: var(--mui-palette-action-hover);
+    --ex-resize-guide-color: var(--mui-palette-primary-main);
+    --ex-drop-indicator-color: var(--mui-palette-primary-main);
+    /* The Size Tip (ADR-0052): the colours MUI gives its own Tooltip. */
+    --ex-size-tip-background: var(--mui-palette-Tooltip-bg);
+    --ex-size-tip-color: var(--mui-palette-common-white);
+    --ex-size-tip-outline: none;
+    /* Tone (ADR-0006): a loss in the theme's error, a gain in its success. */
+    --ex-tone-negative-color: var(--mui-palette-error-main);
+    --ex-tone-positive-color: var(--mui-palette-success-main);
+    /* Cell State (ADR-0006): the theme's error, and the primary for a Modified mark. */
+    --ex-state-error-color: var(--mui-palette-error-main);
+    --ex-state-modified-mark: var(--mui-palette-primary-main);
+    --ex-state-stale-color: var(--mui-palette-text-secondary);
+    --ex-state-missing-background: var(--mui-palette-action-hover);
+    /* The Change Highlight (ADR-0068): the theme's warning, translucent beneath the text. */
+    --ex-change-highlight-background: color-mix(in srgb, var(--mui-palette-warning-main) 25%, transparent);
+    /* The Match Mark (ADR-0332 §4): the matches in view in the theme's secondary, the current one in its warning,
+       more strongly, so the two read apart and neither reads as the selection's primary. */
+    --ex-match-mark-fill: color-mix(in srgb, var(--mui-palette-secondary-main) 22%, transparent);
+    --ex-match-mark-current-fill: color-mix(in srgb, var(--mui-palette-warning-main) 45%, transparent);
+    --ex-scrollbar-color: var(--mui-palette-action-disabled);
+
+    /* The surface itself. Inline-flex so the paper is as wide as its grid; a flex or grid parent may give it less
+       than its columns' width, and a Stretch grid then takes that box (ADR-0045). */
+    display: inline-flex;
+    flex-direction: column;
+    min-width: 0;
+    box-sizing: border-box;
+    color: var(--mui-palette-text-primary);
+    /* The inset that keeps the grid's square corners inside the paper's round ones (ADR-0030): a rounded paper
+       cannot clip its content, which would clip the grid's popovers (UX-11). */
+    padding: var(--mui-shape-borderRadius);
+}
+/* A Stretch grid's Paper (ADR-0045): as wide as the container, so the grid inside it takes the container's width, not
+   its columns'. */
+.mui-ex-grid.mui-ex-grid-stretch {
+    display: flex;
+    width: 100%;
+}
+.mui-ex-grid.mui-ex-grid-square {
+    padding: 0;
+}
+.mui-ex-grid.mui-ex-grid-column-borders {
+    --ex-column-rule-color: var(--mui-palette-TableCell-border);
+}
+
+/* The menus' items (ADR-0010/0036): MUI's list item buttons, laid out as its Menu's list. Scoped to the
+   menu's own element, which stands inside the core's popover; the popover, its place and its box stay the core's. */
+.mui-ex-grid-menu {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+}
+/* Only the width and the text: ButtonBase already takes the button's own border and ground away, and a background
+   set here would tie with MUI's hover and keyboard-focus shades and, loaded after them, hide which item Enter runs. */
+.mui-ex-grid-menu .mui-ex-grid-menu-item {
+    width: 100%;
+    font: var(--mui-font-body1);
+}
+.mui-ex-grid-menu .mui-ex-grid-menu-item.MuiListItemButton-dense {
+    font: var(--mui-font-body2);
+}
+
+/* The filter panel (ADR-0009/0030): MUI's controls in a column inside the core's popover, the value list scrolling
+   on its own and the actions at the end. No width of its own: the core's popover sets it (ADR-0040). */
+.mui-ex-grid-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.mui-ex-grid-filter-values {
+    display: flex;
+    flex-direction: column;
+    max-height: 240px;
+    min-height: 48px;
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+.mui-ex-grid-filter .mui-ex-grid-label,
+.mui-ex-grid-find .mui-ex-grid-label {
+    margin-inline: 0;
+}
+.mui-ex-grid-filter-actions,
+.mui-ex-grid-find-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+/* The find panel (ADR-0055): the filter panel's column, with no list to give way. The outcome line keeps its height
+   when empty, so the panel does not jump when a step finds nothing. */
+.mui-ex-grid-find {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    min-height: 0;
+}
+.mui-ex-grid-find-outcome { min-height: 1.4em; }
+
+/* The Cell Editor's field (ADR-0010): fills the box the core floats over the cell; the box, its outline and its
+   background are the core's (.ex-editor). No padding of its own, since the box already pads by the cell's, and the
+   text would jump at the start and the commit of an edit. */
+.mui-ex-grid .ex-editor .mui-ex-editor,
+.mui-ex-grid .ex-name-box .mui-ex-name-box,
+.mui-ex-grid .ex-formula-bar-text .mui-ex-formula-bar-text {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    font: inherit;
+    line-height: inherit;
+    background: transparent;
+    color: inherit;
+}
+.mui-ex-grid .ex-editor .mui-ex-editor {
+    box-shadow: inset 0 -2px 0 var(--mui-palette-primary-main);
+}
+/* A Reject stands (ADR-0034): the underline turns the theme's error colour, as MUI's field marks an error. Painted,
+   not laid out. */
+.mui-ex-grid .ex-editor .mui-ex-editor[aria-invalid='true'] {
+    box-shadow: inset 0 -2px 0 var(--mui-palette-error-main);
+}
+.mui-ex-grid .ex-name-box .mui-ex-name-box,
+.mui-ex-grid .ex-formula-bar-text .mui-ex-formula-bar-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mui-ex-grid .ex-formula-bar-text .mui-ex-formula-bar-text[data-borrowed] {
+    color: var(--mui-palette-text-secondary);
+}
+.mui-ex-grid .ex-formula-bar-text .mui-ex-formula-bar-text:not([readonly]):focus {
+    box-shadow: inset 0 -2px 0 var(--mui-palette-primary-main);
+}
+
+/* The completion list and the argument hint (ADR-0051): a row's height per candidate in the cell's font, as the
+   core's own list, the chosen one in the theme's selected tint of the primary as MUI's Autocomplete marks its
+   highlighted option. The box beneath the editor, its place, its bound and its scrolling are the core's
+   (.ex-completion). */
+.mui-ex-grid .mui-ex-grid-completion-item,
+.mui-ex-grid .mui-ex-grid-completion-hint {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mui-ex-grid .mui-ex-grid-completion-item { cursor: pointer; }
+.mui-ex-grid .mui-ex-grid-completion-hint { color: var(--mui-palette-text-secondary); }
+.mui-ex-grid .mui-ex-grid-completion-item[aria-selected='true'] {
+    background: rgba(var(--mui-palette-primary-mainChannel) / var(--mui-palette-action-selectedOpacity));
+}
+.mui-ex-grid .mui-ex-grid-completion-list + .mui-ex-grid-completion-hint {
+    border-top: var(--ex-rule-width, 1px) solid var(--mui-palette-divider);
+}

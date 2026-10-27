@@ -20,7 +20,14 @@
       "@ex-grid/sheet": ["../../src/npm/sheet/src/index.ts"],
       "@ex-grid/sheet-react": ["../../src/npm/sheet-react/src/index.ts"],
       "@ex-grid/data-xlsx": ["../../src/npm/data-xlsx/src/index.ts"],
-      "@ex-grid/sheet-xlsx": ["../../src/npm/sheet-xlsx/src/index.ts"]
+      "@ex-grid/sheet-xlsx": ["../../src/npm/sheet-xlsx/src/index.ts"],
+      "@ex-grid/mantine": ["../../src/npm/mantine/src/index.ts"],
+      "@mantine/core": ["./node_modules/@mantine/core/lib/index.d.mts"],
+      "@mantine/hooks": ["./node_modules/@mantine/hooks/lib/index.d.mts"],
+      "@ex-grid/mui": ["../../src/npm/mui/src/index.ts"],
+      "@mui/material": ["./node_modules/@mui/material/index.d.ts"],
+      "@mui/material/*": ["./node_modules/@mui/material/*"],
+      "temporal-polyfill": ["./node_modules/temporal-polyfill/index.d.ts"]
     }
   },
   "include": ["src", "vite.config.ts", "../ExGrid.Docs/Examples/**/*.ts", "../ExGrid.Docs/Examples/**/*.tsx"]

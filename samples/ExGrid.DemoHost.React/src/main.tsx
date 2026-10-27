@@ -22,6 +22,7 @@ import { FilterPanel } from './pages/filter-panel';
 import { Home } from './pages/home';
 import { Lifecycle } from './pages/lifecycle';
 import { MantineDemo } from './pages/mantine';
+import { MuiDemo } from './pages/mui';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
@@ -74,6 +75,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     sizing: Sizing,
     board: Board,
     mantine: MantineDemo,
+    mui: MuiDemo,
 };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */

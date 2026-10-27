@@ -53,6 +53,9 @@ export function MantineExGrid<Row>(props: MantineExGridProps<Row>): ReactElement
     const merged = useMemo(() => (chrome === undefined ? mantineChrome : { ...mantineChrome, ...chrome }), [chrome]);
     const classes = ['mantine-ex-grid'];
     if (radius === 0) classes.push('mantine-ex-grid-square');
+    // A Stretch grid follows its container's width (ADR-0045), so the Paper round it does too, rather than take the
+    // width of every column as its own.
+    if (grid.viewportWidth === 'stretch') classes.push('mantine-ex-grid-stretch');
     if (withColumnBorders === true) classes.push('mantine-ex-grid-column-borders');
     if (className !== undefined) classes.push(className);
     // The family is written beside the widths the grid is handed, in the same render (ADR-0027).
