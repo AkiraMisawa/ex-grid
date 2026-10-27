@@ -7,7 +7,7 @@ import { act, cleanup, render } from '@testing-library/react';
 import type { SheetToolbarItemSlotContext } from '@ex-grid/sheet';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CellAddress, SheetEdit } from '@ex-grid/sheet-engine';
-import { ExSheet, type ExSheetApi } from '../src/ex-sheet';
+import { ExSheet, type ExSheetApi, type ExSheetProps } from '../src/ex-sheet';
 
 afterEach(() => { cleanup(); });
 
@@ -19,6 +19,11 @@ function ListButton({ context }: { readonly context: SheetToolbarItemSlotContext
 
 // The split controls are the Chrome's; every other item is left to the built-in one.
 const toolbarItem = (context: SheetToolbarItemSlotContext): ReactNode => (context.kind === 'split' ? createElement(ListButton, { context }) : null);
+
+// A row of the Consumer's whose button shows `mark` as its own content, or its text where `mark` is empty.
+const reviewRow = (mark: string): ExSheetProps['toolbar'] => [{
+    label: 'Review', items: ['bold', { text: 'Approve', onPress: () => undefined, content: mark === '' ? '' : createElement('b', { className: 'own-icon' }, mark) }],
+}];
 
 describe('ExSheet', () => {
     it('ADR-0370: the element React renders is the Sheet\'s, drawn before the browser paints, the grid and its notice inside', () => {
@@ -90,5 +95,22 @@ describe('ExSheet', () => {
         expect([...container.querySelectorAll('.own-list')].map(button => button.getAttribute('aria-expanded'))).toEqual(['false', 'true', 'false']);
         unmount();
         expect(buttons.map(button => button.isConnected)).toEqual([false, false, false]);
+    });
+
+    it('ADR-0100: an own button\'s React content is rendered in place of its text, kept in its place across renders, and shows the node handed last', async () => {
+        const { container, rerender, unmount } = render(createElement(StrictMode, null, createElement(ExSheet, { locale: 'en-US', showToolbar: true, toolbar: reviewRow('A') })));
+        await act(async () => { await Promise.resolve(); });
+        const face = container.querySelector('.ex-sheet-toolbar-item[aria-label="Approve"]');
+        const place = face?.querySelector('.ex-sheet-toolbar-content');
+        expect([place?.querySelector('.own-icon')?.textContent, face?.querySelector('.ex-sheet-toolbar-text')]).toEqual(['A', null]);
+        // A new toolbar with a new node: the face keeps its place, which renders the new node.
+        rerender(createElement(StrictMode, null, createElement(ExSheet, { locale: 'en-US', showToolbar: true, toolbar: reviewRow('B') })));
+        await act(async () => { await Promise.resolve(); });
+        expect([container.querySelector('.ex-sheet-toolbar-content'), place?.querySelector('.own-icon')?.textContent]).toEqual([place, 'B']);
+        // A node that renders nothing leaves the button its text.
+        rerender(createElement(StrictMode, null, createElement(ExSheet, { locale: 'en-US', showToolbar: true, toolbar: reviewRow('') })));
+        expect(container.querySelector('.ex-sheet-toolbar-item[aria-label="Approve"]')?.textContent).toBe('Approve');
+        unmount();
+        expect(place?.isConnected).toBe(false);
     });
 });

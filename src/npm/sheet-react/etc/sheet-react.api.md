@@ -9,7 +9,11 @@ import { ReactNode } from 'react';
 import { Ref } from 'react';
 import { SheetHandle } from '@ex-grid/sheet';
 import { SheetOptions } from '@ex-grid/sheet';
+import { SheetToolbarButton } from '@ex-grid/sheet';
+import { SheetToolbarCommand } from '@ex-grid/sheet';
+import { SheetToolbarContent } from '@ex-grid/sheet';
 import { SheetToolbarItemSlotContext } from '@ex-grid/sheet';
+import { SheetToolbarRowOptions } from '@ex-grid/sheet';
 
 // @public
 export function ExSheet(props: ExSheetProps): ReactElement;
@@ -23,9 +27,23 @@ export interface ExSheetChrome {
 }
 
 // @public
-export type ExSheetProps = Omit<SheetOptions, 'chrome'> & {
+export type ExSheetProps = Omit<SheetOptions, 'chrome' | 'toolbar'> & {
+    readonly toolbar?: readonly (ExSheetToolbarRow | 'default')[] | undefined;
     readonly chrome?: ExSheetChrome;
     readonly ref?: Ref<ExSheetApi>;
 };
+
+// @public
+export interface ExSheetToolbarButton extends Omit<SheetToolbarButton, 'content'> {
+    readonly content?: ReactNode | SheetToolbarContent;
+}
+
+// @public
+export type ExSheetToolbarEntry = SheetToolbarCommand | 'separator' | ExSheetToolbarButton;
+
+// @public
+export interface ExSheetToolbarRow extends Omit<SheetToolbarRowOptions, 'items'> {
+    readonly items: readonly ExSheetToolbarEntry[];
+}
 
 ```

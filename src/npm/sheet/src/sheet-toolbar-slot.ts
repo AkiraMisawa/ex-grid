@@ -9,6 +9,13 @@ export type SheetToolbarIcon =
     | 'bold' | 'italic' | 'underline' | 'strikethrough' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'percent' | 'comma'
     | 'formatCells' | 'fontColour' | 'fill' | 'borders';
 
+/**
+ * A Consumer's own content for a Toolbar Item (ADR-0100), such as an icon, drawn in place of its text: mounted into
+ * `element`, it answers the function that takes it away. The item's text still names it, as its accessible name and its
+ * tooltip. The C# `ToolbarButton`'s `ChildContent`.
+ */
+export type SheetToolbarContent = (element: HTMLElement) => () => void;
+
 /** What a Toolbar Item is: a split control's face does what it shows and its arrow opens its list; a menu opens its
  * list. */
 export type SheetToolbarItemKind = 'toggle' | 'button' | 'split' | 'menu';
@@ -34,8 +41,12 @@ export interface SheetToolbarItemView {
     readonly tooltip: string;
     /** The built-in Chrome's picture for it, or `undefined` for an item that shows its text. */
     readonly icon: SheetToolbarIcon | undefined;
-    /** For a menu, the text its face shows: the Number Format's category. */
+    /** For a menu, the text its face shows: the Number Format's category; for a Consumer's button, its text, unless it
+     * has `content`. */
     readonly text: string | undefined;
+    /** For a Consumer's button, its own content, drawn in place of its text: the contents mount it into an element of
+     * theirs, and call what it answers when they take that element away. */
+    readonly content: SheetToolbarContent | undefined;
     /** For a colour control, the colour its face sets, as CSS paints it. */
     readonly swatch: string | undefined;
     /** For a split control, its arrow's name: `Borders, more`. */
@@ -176,8 +187,9 @@ export class SlottedToolbarItem {
 
     /** What the item shows now: the contents hear it where it changed. */
     show(shown: SheetToolbarItemShown): void {
+        // A function is not written by JSON: the content is compared as itself.
         const key = JSON.stringify(shown);
-        if (key === this.#shownKey) return;
+        if (key === this.#shownKey && shown.content === this.#shown.content) return;
         this.#shown = shown;
         this.#shownKey = key;
         this.#changed();

@@ -521,6 +521,8 @@
 .ex-sheet-toolbar-menu > .ex-sheet-toolbar-icon:last-of-type { width: 10px; height: 10px; }
 .ex-sheet-toolbar-menu { min-width: 7em; justify-content: space-between; }
 .ex-sheet-toolbar-text { white-space: nowrap; }
+/* A Consumer's own content on the Script Core's face lays out as the C# Chrome's, inside the button itself. */
+.ex-sheet-toolbar-content { display: contents; }
 .ex-sheet-toolbar-swatch {
     display: block;
     width: 14px;

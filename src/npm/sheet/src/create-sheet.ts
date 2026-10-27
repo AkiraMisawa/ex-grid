@@ -32,7 +32,7 @@ import { SheetEdges } from './sheet-edges';
 import { SheetWords, type SheetLabel, type SheetToolbarBorder, type SheetToolbarCommand } from './sheet-words';
 import { SheetTabs } from './sheet-tabs';
 import { SheetToolbar, type SheetToolbarIcon, type SheetToolbarItem, type SheetToolbarPaint } from './sheet-toolbar';
-import type { SheetToolbarItemSlot } from './sheet-toolbar-slot';
+import type { SheetToolbarContent, SheetToolbarItemSlot } from './sheet-toolbar-slot';
 import { SheetChoicesPanel, type SheetToolbarChoice } from './sheet-choices';
 import { automaticColour, colourFromRgb, paintOf } from './cell-colour';
 import {
@@ -64,6 +64,9 @@ export interface SheetToolbarButton {
     readonly keyTip?: string | undefined;
     /** Why it cannot be pressed now, shown in its tooltip; `undefined` where it can. */
     readonly disabledReason?: string | undefined;
+    /** Its own content, such as an icon, drawn in place of its text, which still names it. Hand the same function on
+     * every update: a new one draws the content again. */
+    readonly content?: SheetToolbarContent | undefined;
 }
 
 /** One element of a Toolbar Row: one of ExSheet's own items, named by its command and carrying Excel's KeyTip; a
@@ -1432,7 +1435,7 @@ class SheetView {
             const name = words.toolbarItem(key);
             const kind = list === undefined ? (pressed === undefined ? 'button' : 'toggle') : (act === undefined ? 'menu' : 'split');
             return {
-                key, kind, name, icon, pressed: pressed === true, text,
+                key, kind, name, icon, pressed: pressed === true, text, content: undefined,
                 tooltip: shortcut === undefined ? name : words.toolbarItemWithShortcut(name, shortcut),
                 swatch: swatch === undefined ? undefined : paintOf(swatch),
                 moreName: kind === 'split' ? words.toolbarMore(name) : undefined,
@@ -1510,7 +1513,8 @@ class SheetView {
     // A Consumer's own button (ADR-0100): pressed as ExSheet's items are, and unavailable while an edit is open.
     #consumerItem(button: SheetToolbarButton, key: string): SheetToolbarItem {
         return {
-            key, kind: 'button', name: button.text, tooltip: button.text, icon: undefined, text: button.text, swatch: undefined,
+            key, kind: 'button', name: button.text, tooltip: button.text, icon: undefined,
+            text: button.content === undefined ? button.text : undefined, content: button.content, swatch: undefined,
             moreName: undefined, pressed: false,
             disabledReason: this.#editing ? this.#words.toolbarWhileEditing : button.disabledReason,
             // An edit opened since the last pass refuses the press, as ExSheet's own items do, whatever that pass showed.
@@ -2283,12 +2287,15 @@ function checkToolbar(given: unknown): void {
                 if (!Object.hasOwn(toolbarKeyTips, entry)) throw new RangeError(`'${entry}' is not one of ExSheet's toolbar commands: ${Object.keys(toolbarKeyTips).join(', ')}.`);
                 continue;
             }
-            if (typeof entry !== 'object' || entry === null) throw new TypeError("A Toolbar Row's item is one of ExSheet's commands, 'separator', or a button { text, onPress, keyTip?, disabledReason? }.");
-            const { text, onPress, keyTip: letters, disabledReason }: { readonly text?: unknown; readonly onPress?: unknown; readonly keyTip?: unknown; readonly disabledReason?: unknown } = entry;
+            if (typeof entry !== 'object' || entry === null) throw new TypeError("A Toolbar Row's item is one of ExSheet's commands, 'separator', or a button { text, onPress, keyTip?, disabledReason?, content? }.");
+            const { text, onPress, keyTip: letters, disabledReason, content }: {
+                readonly text?: unknown; readonly onPress?: unknown; readonly keyTip?: unknown; readonly disabledReason?: unknown; readonly content?: unknown;
+            } = entry;
             if (typeof text !== 'string' || text === '') throw new TypeError("A toolbar button's text, its name, is a string that is not empty.");
             if (typeof onPress !== 'function') throw new TypeError(`The toolbar button '${text}' has an onPress, which is a function.`);
             checkKeyTip(letters, `the button '${text}'`);
             if (disabledReason !== undefined && typeof disabledReason !== 'string') throw new TypeError(`The disabledReason of the toolbar button '${text}' is a string, or undefined where it can be pressed.`);
+            if (content !== undefined && typeof content !== 'function') throw new TypeError(`The content of the toolbar button '${text}' is a function that mounts it into the element it is handed.`);
         }
     }
     refuseCollidingKeyTips(given);

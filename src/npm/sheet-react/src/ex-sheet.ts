@@ -2,9 +2,12 @@
 // hands the Sheet its props, and unmounts it. It holds no state of the Sheet's, draws nothing inside the element,
 // and decides nothing: the Workbook, the undo stack and every word are the Sheet's.
 
-import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useRef, type ReactElement, type ReactNode, type Ref } from 'react';
+import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useRef, useSyncExternalStore, type ReactElement, type ReactNode, type Ref } from 'react';
 import { GridPortals, useGridPortals } from '@ex-grid/react';
-import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetToolbarItemSlot, type SheetToolbarItemSlotContext } from '@ex-grid/sheet';
+import {
+    createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetToolbarButton, type SheetToolbarCommand, type SheetToolbarContent,
+    type SheetToolbarItemSlot, type SheetToolbarItemSlotContext, type SheetToolbarRowOptions,
+} from '@ex-grid/sheet';
 import type { CellAddress, SheetEdit } from '@ex-grid/sheet-engine';
 
 /**
@@ -20,12 +23,36 @@ export interface ExSheetChrome {
     readonly toolbarItem?: (context: SheetToolbarItemSlotContext) => ReactNode;
 }
 
+/** A Consumer's own action on the Sheet Toolbar (ADR-0100), the Sheet's button with its content as a React node. */
+export interface ExSheetToolbarButton extends Omit<SheetToolbarButton, 'content'> {
+    /** Its own content, such as an icon, rendered in place of its text, which still names it: the C# `ToolbarButton`'s
+     * `ChildContent`. A node that renders nothing (`null`, `false`, `true`, `''`) leaves the text. A function is the
+     * Sheet's own `SheetToolbarContent`, handed on as it is. A `chrome.toolbarItem` slot is handed the content as
+     * `view().content`, a function that mounts it into an element and answers what takes it away, which a React 19
+     * callback ref can be. */
+    readonly content?: ReactNode | SheetToolbarContent;
+}
+
+/** One element of a Toolbar Row for React: one of ExSheet's own items by its command, a separator, or the
+ * Consumer's own button. */
+export type ExSheetToolbarEntry = SheetToolbarCommand | 'separator' | ExSheetToolbarButton;
+
+/** A Toolbar Row of the Consumer's for React (ADR-0100): the Sheet's, its buttons' content React nodes. */
+export interface ExSheetToolbarRow extends Omit<SheetToolbarRowOptions, 'items'> {
+    /** What the row holds, in order. */
+    readonly items: readonly ExSheetToolbarEntry[];
+}
+
 /**
- * An ExSheet's props: the Sheet's options, whole, its `chrome` as render functions. `locale` is the browser's
+ * An ExSheet's props: the Sheet's options, whole, its `chrome` as render functions and its toolbar buttons' content
+ * as React nodes. `locale` is the browser's
  * language where not given, read once when the Sheet is made (ADR-0370 section 10): a Sheet's culture is recorded in
  * its document, so it is never changed on a live Sheet.
  */
-export type ExSheetProps = Omit<SheetOptions, 'chrome'> & {
+export type ExSheetProps = Omit<SheetOptions, 'chrome' | 'toolbar'> & {
+    /** The Sheet Toolbar's rows, top to bottom (ADR-0100), as `SheetOptions.toolbar`; a button's `content` is a React
+     * node. */
+    readonly toolbar?: readonly (ExSheetToolbarRow | 'default')[] | undefined;
     /** The parts of the Sheet a Chrome of the Consumer's, or a Wrapper's, draws in place of the built-in ones. */
     readonly chrome?: ExSheetChrome;
     /** A ref to what the Consumer may ask of the Sheet it rendered: its Workbook, its commands and reads, undo and
@@ -44,12 +71,18 @@ export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy'>;
  * render hands the Sheet the props again, and what did not change costs nothing (ADR-0003).
  */
 export function ExSheet(props: ExSheetProps): ReactElement {
-    const { ref, chrome, ...given } = props;
+    const { ref, chrome, toolbar, ...given } = props;
     const element = useRef<HTMLDivElement>(null);
     const portals = useGridPortals();
     const made = useRef<MadeMounts>({});
+    const contents = useRef<MadeToolbar>({ given: undefined, made: undefined, held: new Map() });
     const sheetChrome = sheetChromeOf(chrome, portals, made.current);
-    const sheetOptions: SheetOptions = sheetChrome === undefined ? given : { ...given, chrome: sheetChrome };
+    const sheetToolbar = sheetToolbarOf(toolbar, portals, contents.current);
+    const sheetOptions: SheetOptions = {
+        ...given,
+        ...(sheetChrome === undefined ? {} : { chrome: sheetChrome }),
+        ...(sheetToolbar === undefined ? {} : { toolbar: sheetToolbar }),
+    };
     const sheet = useRef<SheetHandle | undefined>(undefined);
     const browserLocale = useRef<string | undefined>(undefined);
     // Drawn before the browser paints, so a mounted Sheet is never seen empty.
@@ -64,6 +97,8 @@ export function ExSheet(props: ExSheetProps): ReactElement {
         } else {
             sheet.current.update(options);
         }
+        // The content this render handed is what each button's place shows from now on.
+        for (const content of contents.current.held.values()) content.show();
     });
     useImperativeHandle(ref, () => ({
         get workbook() {
@@ -135,6 +170,90 @@ function sheetChromeOf(given: ExSheetChrome | undefined, portals: GridPortals, m
         };
     }
     return { toolbarItem: made.toolbarItem.mount };
+}
+
+// A button's content as the Sheet takes it: one mount function for the button's place, kept across renders, so the
+// Sheet does not draw the face again on each. What a render hands waits in `next` until that render is committed,
+// and the places mounted hear it then, without the portals rendering again.
+interface HeldContent {
+    next: ReactNode;
+    readonly mount: SheetToolbarContent;
+    readonly show: () => void;
+}
+
+// The toolbar last handed and what the Sheet was handed for it; the content held, by the button's place.
+interface MadeToolbar {
+    given: ExSheetProps['toolbar'];
+    made: SheetOptions['toolbar'];
+    held: Map<string, HeldContent>;
+}
+
+// Whether a node renders nothing, which leaves the button its text.
+function rendersNothing(node: ReactNode): boolean {
+    return node === undefined || node === null || typeof node === 'boolean' || node === '';
+}
+
+// The Sheet's toolbar: each button's React content as a mount function rendering through the portals. The same
+// toolbar handed again is the same toolbar to the Sheet, which then draws nothing again; a row or a button with no
+// React content is handed on as it was given.
+function sheetToolbarOf(given: ExSheetProps['toolbar'], portals: GridPortals, made: MadeToolbar): SheetOptions['toolbar'] {
+    if (given === made.given) return made.made;
+    // Checked by the Sheet as a script may hand it: what is not a list of rows is handed on for it to refuse.
+    const rows: unknown = given;
+    const held = new Map<string, HeldContent>();
+    const sheetRows = !Array.isArray(rows) ? rows : rows.map((row: unknown, r): unknown => {
+        if (typeof row !== 'object' || row === null) return row;
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- an object row is a Toolbar Row; the Sheet checks its fields by name
+        const { label, keyTip, items } = row as ExSheetToolbarRow;
+        const entries: unknown = items;
+        if (!Array.isArray(entries)) return row;
+        const sheetItems = entries.map((entry: unknown, i): unknown => {
+            if (typeof entry !== 'object' || entry === null) return entry;
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- an object entry is a button; the Sheet checks its fields by name
+            const button = entry as ExSheetToolbarButton;
+            const { content } = button;
+            if (typeof content === 'function') return entry;
+            // Read through the button, as the Sheet reads it, so a button of a class of the Consumer's keeps its fields.
+            const { text, onPress, keyTip: letters, disabledReason } = button;
+            if (rendersNothing(content)) return { text, onPress, keyTip: letters, disabledReason };
+            const place = `${String(r)}:${String(i)}`;
+            const holding = made.held.get(place) ?? heldContent(portals, content);
+            holding.next = content;
+            held.set(place, holding);
+            return { text, onPress, keyTip: letters, disabledReason, content: holding.mount };
+        });
+        return sheetItems.some((item, i) => item !== entries[i]) ? { label, keyTip, items: sheetItems } : row;
+    });
+    made.given = given;
+    made.held = held;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the rows as given, each button's React content a mount function; the Sheet checks them by name
+    made.made = sheetRows as SheetOptions['toolbar'];
+    return made.made;
+}
+
+function heldContent(portals: GridPortals, first: ReactNode): HeldContent {
+    let shown = first;
+    const listeners = new Set<() => void>();
+    const subscribe = (listener: () => void): (() => void) => {
+        listeners.add(listener);
+        return () => { listeners.delete(listener); };
+    };
+    const read = (): ReactNode => shown;
+    const content: HeldContent = {
+        next: first,
+        mount: element => portals.mount(element, () => createElement(HeldNode, { subscribe, read })),
+        show: () => {
+            if (content.next === shown) return;
+            shown = content.next;
+            for (const listener of listeners) listener();
+        },
+    };
+    return content;
+}
+
+// A button's content where it is mounted: the node committed last.
+function HeldNode({ subscribe, read }: { readonly subscribe: (listener: () => void) => () => void; readonly read: () => ReactNode }): ReactNode {
+    return useSyncExternalStore(subscribe, read);
 }
 
 function mounted(sheet: SheetHandle | undefined): SheetHandle {
