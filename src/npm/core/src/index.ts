@@ -16,6 +16,10 @@ export { formulaBarHeight, type FormulaBarOptions } from './dom/formula-bar';
 export { referenceColour, referencePaletteLength, type GridEditorReference, type ReferenceColour, type ReferenceKeyColour } from './cells/reference-colouring';
 export type { GridOutlinedColumn } from './dom/reference-outlines';
 export type { GridEditorRewrite, GridPointState } from './dom/point-mode';
+export { GridPointedAt } from './dom/pointed-at';
+export type {
+    GridPointArrow, GridPointDashes, GridPointedPress, GridPointedPressKind, GridPointedStep, GridPointedStepKind, PointedAtGrid,
+} from './dom/pointed-at';
 export type { BorderStyle, CellAppearance, CellBorder, CellTextMeasure, EdgeBorderOf } from './cells/cell-appearance';
 export type { ActionRefusalReason, FindRefusalReason, GridRefusal, PlacementRefusalReason } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';

@@ -895,6 +895,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
     readonly onPinnedCountChanged?: (count: number) => void;
+    readonly onPointArrowFromOutside?: (arrow: GridPointArrow) => void;
     readonly onPointStateChanged?: (state: GridPointState) => void;
     readonly onRedo?: () => void;
     readonly onReferenceKeyColoursChanged?: (keys: readonly ReferenceKeyColour[]) => void;
@@ -911,6 +912,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
     readonly pointAt?: (text: string, caret: number) => boolean;
+    readonly pointedAt?: GridPointedAt<Row>;
     readonly referencesIn?: (text: string) => readonly GridEditorReference[] | undefined;
     readonly referenceText?: (range: SelectionRange) => string;
     readonly rowHeadings?: (row: number) => string;
@@ -971,6 +973,60 @@ export class GridPasteIntent {
     valueFor(target: CellPosition): string;
     readonly values: readonly (readonly string[])[];
 }
+
+// @public
+export interface GridPointArrow {
+    readonly direction: GridDirection;
+    readonly extends?: boolean;
+    readonly toEdge?: boolean;
+}
+
+// @public
+export interface GridPointDashes<TRow> {
+    readonly column: string;
+    readonly row: ((row: TRow) => boolean) | undefined;
+}
+
+// @public
+export class GridPointedAt<TRow> {
+    constructor(onPress: (press: GridPointedPress<TRow>) => Promise<void>);
+    attach(grid: PointedAtGrid<TRow>): () => void;
+    get dashes(): GridPointDashes<TRow> | undefined;
+    set dashes(value: GridPointDashes<TRow> | undefined);
+    get isPointedAt(): boolean;
+    set isPointedAt(value: boolean);
+    onChanged(listener: () => void): () => void;
+    readonly onPress: (press: GridPointedPress<TRow>) => Promise<void>;
+    get outlinedColumns(): readonly GridOutlinedColumn[] | undefined;
+    set outlinedColumns(value: readonly GridOutlinedColumn[] | undefined);
+    get pointingRootId(): string | undefined;
+    set pointingRootId(value: string | undefined);
+    reveal(isRow: (row: TRow) => boolean, column: string): Promise<boolean>;
+    revealColumn(column: string): Promise<boolean>;
+    step(isRow: (row: TRow) => boolean, column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
+    stepFromColumn(column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
+}
+
+// @public
+export interface GridPointedPress<TRow> {
+    readonly column?: string;
+    readonly dragged?: boolean;
+    readonly kind: GridPointedPressKind;
+    readonly row?: TRow | undefined;
+}
+
+// @public
+export type GridPointedPressKind = 'cell' | 'columnHeader' | 'severalCells' | 'severalColumns' | 'headerGroup';
+
+// @public
+export interface GridPointedStep<TRow> {
+    readonly column?: string;
+    readonly kind: GridPointedStepKind;
+    readonly row?: TRow | undefined;
+}
+
+// @public
+export type GridPointedStepKind = 'cell' | 'edge' | 'rowNotArrived' | 'notHeld' | 'column';
 
 // @public
 export type GridPointState = 'none' | 'inPoint' | 'writtenFromOutside';
@@ -1374,6 +1430,14 @@ export function plainDateOf(ticks: bigint): object;
 
 // @public
 export function plainDateTimeOf(ticks: bigint): object;
+
+// @public
+export interface PointedAtGrid<TRow> {
+    reveal(isRow: (row: TRow) => boolean, column: string): Promise<boolean>;
+    revealColumn(column: string): Promise<boolean>;
+    step(isRow: (row: TRow) => boolean, column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
+    stepFromColumn(column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
+}
 
 // @public
 export interface QueryColumn<Row> {

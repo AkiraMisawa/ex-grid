@@ -98,10 +98,17 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
                 gives you the columns and colours to pass to the grid's <code>OutlinedColumns</code> yourself. Under
                 React, the Sheet's <code>onLinkedColumnColoursChanged</code> tells the same list, and you hand each entry to
                 the ExGrid that shows the table as one of its <code>outlinedColumns</code>: the name of the grid column
-                that shows the table column, with the same <code>colour</code>. The Pointing Scope itself is not there
-                yet.
+                that shows the table column, with the same <code>colour</code>.
             </li>
         </ul>
+        <p>
+            Under React it is the same Scope, from <code>@@ex-grid/sheet</code>: make one <code>new PointingScope()</code>
+            per group, pass <code>scope.registerGrid('CostCentres', toRow)</code> to the ExGrid's <code>pointedAt</code>,
+            and the Scope itself to the ExSheet's <code>pointingScope</code>, with <code>onPointingRefused</code> to hear
+            why a press wrote nothing. Make the Scope and each registration once, in a <code>useMemo</code>, as the
+            Example does: a new one on every render is a new Scope that has forgotten what was pressed. Switch the
+            Example above to React to run it.
+        </p>
     </DocsSection>
 
     <DocsSection Title="API">

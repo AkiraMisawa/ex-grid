@@ -63,14 +63,16 @@ export interface PointPaint {
 }
 
 /** The Reference Outlines (ADR-0057): one per range the open edit's text names, cut to the grid, in the order they
- * stand in the text, and one per column a Consumer asks for, over its body; and Point's outline over them. */
+ * stand in the text, and one per column a Consumer asks for, over its body; Point's outline over them; and the
+ * dashes a Consumer pointing from outside asks for, over a cell or a column's body (ADR-0058). */
 export interface OutlinePaint {
     readonly references: readonly OutlinedRange[];
     readonly columns: readonly OutlinedRange[];
     readonly point: PointPaint | undefined;
+    readonly pointDashes?: SelectionRange | undefined;
 }
 
-const noOutlines: OutlinePaint = Object.freeze({ references: Object.freeze([]), columns: Object.freeze([]), point: undefined });
+const noOutlines: OutlinePaint = Object.freeze({ references: Object.freeze([]), columns: Object.freeze([]), point: undefined, pointDashes: undefined });
 
 const outlineClass = ([, colour]: OutlinedRange): string => `ex-reference-outline ex-reference-${String(colour)}`;
 
@@ -104,6 +106,9 @@ export function selectionLayers(
         // Point's outline is one more rectangle over them; the Selection and the Focus beneath it do not move.
         ...(withReferences && outlines.point !== undefined ? pieceOf(outlines.point.className, pinnedLayer
             ? pinnedPart(outlines.point.range, columns, rowHeightPx, painted) : scrollablePart(outlines.point.range, columns, rowHeightPx, painted)) : []),
+        // What a press outside the grid wrote for is dashed, Selection or none, cut at the boundary as a column is.
+        ...(outlines.pointDashes === undefined ? [] : pieceOf('ex-point-dashes', pinnedLayer
+            ? pinnedPart(outlines.pointDashes, columns, rowHeightPx, painted) : scrollablePart(outlines.pointDashes, columns, rowHeightPx, painted))),
     ];
     const focus = selection.focus;
     // With no column there is no row to band.
@@ -115,7 +120,7 @@ export function selectionLayers(
     const scrollableBands = rowBands.flatMap(({ className, range }) => pieceOf(className, scrollablePart(range, columns, rowHeightPx, painted)));
     const bandShade = columns.pinnedCount > 0 && rowBands.some(({ range }) => reaches(range, columns, painted, true));
     if (focus === undefined) {
-        if (rowBands.length === 0 && copied.length === 0 && outlines.columns.length === 0) return nothing;
+        if (rowBands.length === 0 && copied.length === 0 && outlines.columns.length === 0 && outlines.pointDashes === undefined) return nothing;
         return {
             shade: bandShade ? pinnedBands : undefined,
             pinned: [...dashes(true), ...outlinePieces(true, false)],

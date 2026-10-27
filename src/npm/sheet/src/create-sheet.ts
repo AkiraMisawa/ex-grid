@@ -12,11 +12,11 @@ import {
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
-    type ViewportSize, type GridEditorReference, type ReferenceKeyColour,
+    type ViewportSize, type GridEditorReference, type ReferenceKeyColour, type GridPointArrow, type GridPointState,
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
-    Sheet, SheetRefusal, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
+    Sheet, SheetRefusal, type LinkedTable, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { elementAt, unreachable } from './must';
 import { browserTimeZone, checkTimeZone, dayOf, momentIn, sameDay, untilTheDayIsReadAgainMs, untilTheMinuteTurnsMs } from './sheet-moment';
@@ -45,7 +45,8 @@ import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
 import { linkedColumnsOf, sameLinkedColumns, sheetCycleReference, sheetPointAt, sheetReferences, sheetReferenceText } from './sheet-formula-aids';
-import type { LinkedColumnColour } from './pointing-scope';
+import { PointingScope, type LinkedColumnColour, type PointingSheet } from './pointing-scope';
+import type { PointingRefusal } from './pointing-refusal';
 
 /**
  * A Consumer's own action on the Sheet Toolbar (ADR-0100), a Toolbar Item like ExSheet's: it stands in a row of its own
@@ -158,6 +159,31 @@ export interface SheetOptions {
      * reads.
      */
     readonly onLinkedColumnColoursChanged?: (columns: readonly LinkedColumnColour[]) => void;
+    /**
+     * The Pointing Scope this Sheet belongs to (ADR-0058), or none. While this Sheet holds the keyboard, has an edit
+     * open and is in Point, its caret standing where a Reference can go or what Point wrote there still standing, the
+     * grids registered in the Scope are pointed at: a press on a cell writes
+     * `XLOOKUP("R-4471", Positions[Id], Positions[PV])`, reading the cell by its row's key, where Point writes, and a
+     * press on a column header `Positions[PV]`, in the table's column names as this Sheet declares them. A further press, on a registered grid or on this Sheet, replaces what this Point
+     * wrote. A press that stands for anything else writes nothing, and is told through `onPointingRefused`. When the
+     * keyboard leaves this Sheet, no grid is pointed at, and the edit stands.
+     *
+     * After such a press F4 changes nothing, and the arrow keys point inside the grid pressed: ↑ and ↓ one row further
+     * in its current order, ← and → to the next column its table has, rewriting what this Point wrote, and the grid
+     * scrolls the cell into view. After a press on a column header, ↓ points at the column's first row, and ← and → at
+     * the next column its table has, as a column; ↑ moves nothing. The Scope also outlines, in the grids registered
+     * for their table, the Linked Table columns the Formula edited here reads, and dashes the cell or column a press
+     * wrote for until Point over what it wrote ends.
+     */
+    readonly pointingScope?: PointingScope | undefined;
+    /**
+     * Hears that a press on a grid of `pointingScope`, or an arrow key after one, wrote nothing into the Formula being
+     * edited, and why (ADR-0058): more than one cell or column, a Header Group, a column the table does not have, a
+     * table declared without a key, a blank key, a row not yet arrived. A drag that reached another cell took back
+     * what its press wrote. The Formula's text is as it was before the press or the key. The Sheet shows nothing of
+     * it itself: show the refusal's `message` where the page tells its user things.
+     */
+    readonly onPointingRefused?: (refusal: PointingRefusal) => void;
     /** Hears the grid's Selection each time it changes, as ExGrid reports it (ADR-0011/0014): what a status line
      * counts. The formatting commands do not wait for it: they act on the Selection the grid holds when they run. */
     readonly onSelectionChanged?: (selection: GridSelection) => void;
@@ -354,6 +380,12 @@ class SheetView {
     #selection: GridSelection | undefined;
     #editing = false;
     #linkedColumnsTold: readonly LinkedColumnColour[] = [];
+    // The Pointing Scope this Sheet joined (ADR-0058), where the grid last said its edit stands with respect to Point,
+    // whether DOM focus is inside the Sheet as the browser last said, and whether the Scope last heard it points.
+    #joinedScope: PointingScope | undefined;
+    #pointState: GridPointState = 'none';
+    #holdsKeyboard = false;
+    #scopeHeardPoints = false;
     // The copy last put on the clipboard, whose Entries a paste of exactly it carries (ADR-0048), and the sentence a
     // copy of the Sheet's own was last refused with (ADR-0049).
     #ownCopy: SheetOwnCopy | undefined;
@@ -437,7 +469,11 @@ class SheetView {
         element.addEventListener('focusout', this.#onSheetFocusOut);
         element.addEventListener('pointerdown', this.#forgetAlt, { capture: true });
         element.addEventListener('wheel', this.#forgetAlt, { capture: true, passive: true });
+        element.addEventListener('focusin', this.#onKeyboardIn);
+        element.addEventListener('focusout', this.#onKeyboardOut);
+        this.#holdsKeyboard = element.contains(element.ownerDocument.activeElement);
         this.#grid = createGrid(this.#gridElement, gridOptions);
+        this.#bindPointingScope();
         this.#paintFrame();
         this.#armTheDay();
         this.#armTheMinute();
@@ -491,6 +527,7 @@ class SheetView {
             this.#armTheMinute();
         }
         this.#grid?.update(this.#gridOptions());
+        this.#bindPointingScope();
         this.#paintFrame();
     }
 
@@ -622,6 +659,11 @@ class SheetView {
         const grid = this.#grid;
         this.#grid = undefined;
         grid?.destroy();
+        // A destroyed Sheet points at nothing.
+        this.#joinedScope?.leave(this.#pointingSheet);
+        this.#joinedScope = undefined;
+        this.#element.removeEventListener('focusin', this.#onKeyboardIn);
+        this.#element.removeEventListener('focusout', this.#onKeyboardOut);
         this.#element.removeEventListener('keydown', this.#onSheetKey, { capture: true });
         this.#element.removeEventListener('keyup', this.#onSheetKeyUp, { capture: true });
         this.#element.removeEventListener('focusout', this.#onSheetFocusOut);
@@ -682,6 +724,8 @@ class SheetView {
             pointAt: sheetPointAt,
             referenceText: sheetReferenceText,
             cycleReference: sheetCycleReference,
+            onPointStateChanged: this.#onPointStateChanged,
+            onPointArrowFromOutside: this.#onPointArrow,
             onRefused: this.#onRefused,
             onEditDiscarded: this.#onEditDiscarded,
             onOverwriteNotice: this.#onOverwriteNotice,
@@ -995,7 +1039,68 @@ class SheetView {
         const columns = linkedColumnsOf(this.#source.sheet, keys);
         if (sameLinkedColumns(columns, this.#linkedColumnsTold)) return;
         this.#linkedColumnsTold = columns;
+        this.#joinedScope?.outlineLinkedColumns(this.#pointingSheet, columns);
         this.#options.onLinkedColumnColoursChanged?.(columns);
+    };
+
+    // ---- The Pointing Scope (ADR-0058) -------------------------------------------------------------------------
+
+    // What the Scope asks of this Sheet: its declared tables, and its edit to write into. The TS grid keeps a press
+    // on another grid in its place among this Sheet's keys by the browser's own event order, so no root is named.
+    readonly #pointingSheet: PointingSheet = pointingSheet(() => this.#source.sheet.linkedTables, {
+        writePointedText: async text => this.#grid !== undefined && this.#grid.writePointedText(text),
+        takeBackPointedText: async () => this.#grid !== undefined && this.#grid.takeBackPointedText(),
+        tellPointingRefused: async refusal => { this.#options.onPointingRefused?.(refusal); },
+    });
+
+    // Joins the Scope given, leaving one no longer given.
+    #bindPointingScope(): void {
+        const scope = this.#options.pointingScope;
+        if (scope === this.#joinedScope) return;
+        this.#joinedScope?.leave(this.#pointingSheet);
+        this.#scopeHeardPoints = false;
+        this.#joinedScope = scope;
+        if (scope === undefined) return;
+        scope.join(this.#pointingSheet);
+        // The columns an edit already open reads are outlined in the new Scope's grids.
+        scope.outlineLinkedColumns(this.#pointingSheet, this.#linkedColumnsTold);
+        this.#tellScopeWhetherPointing();
+    }
+
+    // Tells the Scope whether this Sheet points, when that changed: it holds the keyboard and its edit is in Point.
+    #tellScopeWhetherPointing(): void {
+        const scope = this.#joinedScope;
+        if (scope === undefined) return;
+        const points = this.#holdsKeyboard && this.#pointState !== 'none';
+        if (points === this.#scopeHeardPoints) return;
+        this.#scopeHeardPoints = points;
+        scope.points(this.#pointingSheet, points);
+    }
+
+    readonly #onPointStateChanged = (state: GridPointState): void => {
+        this.#pointState = state;
+        if (this.#destroyed) return;
+        this.#tellScopeWhetherPointing();
+        // Whether or not this Sheet holds the keyboard: the dashes go once Point over what a press wrote has ended.
+        this.#joinedScope?.pointStateChanged(this.#pointingSheet, state);
+    };
+
+    // The arrows point inside the grid the press landed on (ADR-0058, "The keyboard").
+    readonly #onPointArrow = (arrow: GridPointArrow): void => {
+        void this.#joinedScope?.pointArrow(this.#pointingSheet, arrow);
+    };
+
+    // The keyboard coming into the Sheet, or leaving it: a move inside it, the grid's root to the editor as `=`
+    // opens it, leaves it inside.
+    readonly #onKeyboardIn = (): void => {
+        this.#holdsKeyboard = true;
+        this.#tellScopeWhetherPointing();
+    };
+
+    readonly #onKeyboardOut = (event: FocusEvent): void => {
+        const to = event.relatedTarget;
+        this.#holdsKeyboard = to instanceof Node && this.#element.contains(to);
+        this.#tellScopeWhetherPointing();
     };
 
     readonly #onEditDiscarded = (reason: EditDiscardReason): void => {
@@ -1872,12 +1977,28 @@ class SheetView {
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
             ['onShowToolbarChanged', options.onShowToolbarChanged], ['onLinkedColumnColoursChanged', options.onLinkedColumnColoursChanged],
+            ['onPointingRefused', options.onPointingRefused],
         ];
+        const scope: unknown = options.pointingScope;
+        if (scope !== undefined && !(scope instanceof PointingScope)) throw new TypeError('pointingScope is a PointingScope (ADR-0058).');
         for (const [name, handler] of handlers) {
             if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
         }
         return taken;
     }
+}
+
+// A Sheet as its Pointing Scope reads it (ADR-0058): its declared tables, read as they stand when asked.
+function pointingSheet(
+    linkedTables: () => readonly LinkedTable[], edit: Pick<PointingSheet, 'writePointedText' | 'takeBackPointedText' | 'tellPointingRefused'>,
+): PointingSheet {
+    return {
+        get linkedTables() { return linkedTables(); },
+        rootId: undefined,
+        writePointedText: edit.writePointedText,
+        takeBackPointedText: edit.takeBackPointedText,
+        tellPointingRefused: edit.tellPointingRefused,
+    };
 }
 
 // The Match Mark's rule (ADR-0332 §4): the one a step finds by, so a mark is never a match no step reaches.

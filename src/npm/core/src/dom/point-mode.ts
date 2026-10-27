@@ -4,6 +4,7 @@
 // key means here, and the options checked; the state is the grid's. As the C# core's ExGrid.Pointing.
 
 import type { GridDirection } from '../selection/cell';
+import type { GridPointArrow } from './pointed-at';
 import type { SelectionRange } from '../selection/range';
 
 /** Where the open edit stands with respect to Point (ADR-0058): in Point while `pointAt` says a Reference can go
@@ -27,6 +28,7 @@ export interface PointOptions {
     readonly referenceText: ((range: SelectionRange) => string) | undefined;
     readonly cycleReference: ((text: string, start: number, end: number) => GridEditorRewrite | undefined) | undefined;
     readonly onPointStateChanged: ((state: GridPointState) => void) | undefined;
+    readonly onPointArrowFromOutside: ((arrow: GridPointArrow) => void) | undefined;
 }
 
 /** The options checked, refused by name where they are not what they say, or where `pointAt` is given without the
@@ -36,9 +38,13 @@ export function pointOptions(given: {
     readonly referenceText?: PointOptions['referenceText'];
     readonly cycleReference?: PointOptions['cycleReference'];
     readonly onPointStateChanged?: PointOptions['onPointStateChanged'];
+    readonly onPointArrowFromOutside?: PointOptions['onPointArrowFromOutside'];
 }): PointOptions {
     // Read as unknown first: a Consumer in plain JavaScript hands whatever it hands.
-    const loose: { readonly pointAt?: unknown; readonly referenceText?: unknown; readonly cycleReference?: unknown; readonly onPointStateChanged?: unknown } = given;
+    const loose: {
+        readonly pointAt?: unknown; readonly referenceText?: unknown; readonly cycleReference?: unknown; readonly onPointStateChanged?: unknown;
+        readonly onPointArrowFromOutside?: unknown;
+    } = given;
     for (const name of pointOptionNames) {
         const value = loose[name];
         if (value !== undefined && typeof value !== 'function') throw new TypeError(`${name} is a function (ADR-0051).`);
@@ -47,7 +53,10 @@ export function pointOptions(given: {
         throw new TypeError('pointAt needs referenceText: pointing writes the Consumer\'s Reference text for the pointed range, and the grid has '
             + 'no name of its own for a position (ADR-0051).');
     }
-    return { pointAt: given.pointAt, referenceText: given.referenceText, cycleReference: given.cycleReference, onPointStateChanged: given.onPointStateChanged };
+    return {
+        pointAt: given.pointAt, referenceText: given.referenceText, cycleReference: given.cycleReference, onPointStateChanged: given.onPointStateChanged,
+        onPointArrowFromOutside: given.onPointArrowFromOutside,
+    };
 }
 
 /** A rewrite F4's Consumer answered, checked: its text a string, and its selection inside it. */
@@ -62,7 +71,7 @@ export function checkedRewrite(answer: unknown): GridEditorRewrite {
     return { text, selectionStart, selectionEnd };
 }
 
-const pointOptionNames = ['pointAt', 'referenceText', 'cycleReference', 'onPointStateChanged'] as const;
+const pointOptionNames = ['pointAt', 'referenceText', 'cycleReference', 'onPointStateChanged', 'onPointArrowFromOutside'] as const;
 
 /** How a key moves the outline: a step, a Shift step, to the grid's edge, Shift to the grid's edge, to the data
  * edge, or Shift to the data edge. */
@@ -77,6 +86,20 @@ export type PointMove = 'move' | 'extend' | 'edge' | 'extendToEdge' | 'dataEdge'
 export function pointStep(canonical: string): Step | undefined {
     return pointSteps.get(canonical);
 }
+
+/** An arrow key as a Consumer pointing from outside hears it (ADR-0058, "The keyboard"), with Shift or the Primary
+ * Modifier or both; `undefined` for any other key. */
+export function pointArrowOf(canonical: string): GridPointArrow | undefined {
+    const toEdge = canonical.startsWith('Control+');
+    const rest = toEdge ? canonical.slice('Control+'.length) : canonical;
+    const extending = rest.startsWith('Shift+');
+    const direction = arrowDirections.get(extending ? rest.slice('Shift+'.length) : rest);
+    return direction === undefined ? undefined : { direction, extends: extending, toEdge };
+}
+
+const arrowDirections: ReadonlyMap<string, GridDirection> = new Map([
+    ['ArrowUp', 'up'], ['ArrowDown', 'down'], ['ArrowLeft', 'left'], ['ArrowRight', 'right'],
+]);
 
 type Step = { readonly direction: GridDirection; readonly move: PointMove };
 

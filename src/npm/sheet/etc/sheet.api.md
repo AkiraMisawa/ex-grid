@@ -21,6 +21,14 @@ import { GridDensity } from '@ex-grid/core';
 import type { GridDirection } from '@ex-grid/core';
 import type { GridExtent } from '@ex-grid/core';
 import type { GridOutlinedColumn } from '@ex-grid/core';
+import type { GridPointArrow } from '@ex-grid/core';
+import type { GridPointDashes } from '@ex-grid/core';
+import { GridPointedAt } from '@ex-grid/core';
+import type { GridPointedPress } from '@ex-grid/core';
+import type { GridPointedPressKind } from '@ex-grid/core';
+import type { GridPointedStep } from '@ex-grid/core';
+import type { GridPointedStepKind } from '@ex-grid/core';
+import type { GridPointState } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
 import type { GridSummaryRequest } from '@ex-grid/core';
 import type { GridSummaryResult } from '@ex-grid/core';
@@ -30,6 +38,7 @@ import type { LinkedTableColumn } from '@ex-grid/sheet-engine';
 import { NumberFormat } from '@ex-grid/sheet-engine';
 import type { PasteRefusalReason } from '@ex-grid/core';
 import type { PlacementRefusalReason } from '@ex-grid/core';
+import type { PointedAtGrid } from '@ex-grid/core';
 import type { ReferenceColour } from '@ex-grid/core';
 import { Sheet } from '@ex-grid/sheet-engine';
 import { SheetChange } from '@ex-grid/sheet-engine';
@@ -163,59 +172,19 @@ export type FormatCellsRefusal = {
 // @public
 export type FormatCellsTab = 'number' | 'alignment' | 'font' | 'border' | 'fill';
 
-// @public
-export interface GridPointArrow {
-    readonly direction: GridDirection;
-    readonly extends?: boolean;
-    readonly toEdge?: boolean;
-}
+export { GridPointArrow }
 
-// @public
-export interface GridPointDashes<TRow> {
-    readonly column: string;
-    readonly row: ((row: TRow) => boolean) | undefined;
-}
+export { GridPointDashes }
 
-// @public
-export class GridPointedAt<TRow> {
-    constructor(onPress: (press: GridPointedPress<TRow>) => Promise<void>);
-    attach(grid: PointedAtGrid<TRow>): () => void;
-    get dashes(): GridPointDashes<TRow> | undefined;
-    set dashes(value: GridPointDashes<TRow> | undefined);
-    get isPointedAt(): boolean;
-    set isPointedAt(value: boolean);
-    onChanged(listener: () => void): () => void;
-    readonly onPress: (press: GridPointedPress<TRow>) => Promise<void>;
-    get outlinedColumns(): readonly OutlinedColumn[] | undefined;
-    set outlinedColumns(value: readonly OutlinedColumn[] | undefined);
-    get pointingRootId(): string | undefined;
-    set pointingRootId(value: string | undefined);
-    reveal(isRow: (row: TRow) => boolean, column: string): Promise<boolean>;
-    revealColumn(column: string): Promise<boolean>;
-    step(isRow: (row: TRow) => boolean, column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
-    stepFromColumn(column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
-}
+export { GridPointedAt }
 
-// @public
-export interface GridPointedPress<TRow> {
-    readonly column?: string;
-    readonly dragged?: boolean;
-    readonly kind: GridPointedPressKind;
-    readonly row?: TRow;
-}
+export { GridPointedPress }
 
-// @public
-export type GridPointedPressKind = 'cell' | 'columnHeader' | 'severalCells' | 'severalColumns' | 'headerGroup';
+export { GridPointedPressKind }
 
-// @public
-export interface GridPointedStep<TRow> {
-    readonly column?: string;
-    readonly kind: GridPointedStepKind;
-    readonly row?: TRow;
-}
+export { GridPointedStep }
 
-// @public
-export type GridPointedStepKind = 'cell' | 'edge' | 'rowNotArrived' | 'notHeld' | 'column';
+export { GridPointedStepKind }
 
 // @public
 export function isDisabledCategory(category: NumberFormatCategory): category is DisabledNumberFormatCategory;
@@ -263,13 +232,7 @@ export interface PaletteSwatch {
 // @public
 export function percentageCode(places: number): string;
 
-// @public
-export interface PointedAtGrid<TRow> {
-    reveal(isRow: (row: TRow) => boolean, column: string): Promise<boolean>;
-    revealColumn(column: string): Promise<boolean>;
-    step(isRow: (row: TRow) => boolean, column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
-    stepFromColumn(column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
-}
+export { PointedAtGrid }
 
 // @public
 export interface PointingRefusal {
@@ -305,7 +268,7 @@ export interface PointingSheet {
 }
 
 // @public
-export type PointState = 'none' | 'inPoint' | 'writtenFromOutside';
+export type PointState = GridPointState;
 
 // @public
 export function readNameBoxPlace(typed: string): NameBoxPlace | undefined;
@@ -381,11 +344,13 @@ export interface SheetOptions {
     readonly locale?: string;
     readonly onEditingChanged?: (open: boolean) => void;
     readonly onLinkedColumnColoursChanged?: (columns: readonly LinkedColumnColour[]) => void;
+    readonly onPointingRefused?: (refusal: PointingRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly onSheetsChanged?: (change: SheetsChange) => void;
     readonly onShowToolbarChanged?: (shown: boolean) => void;
     readonly onWorkbookChanged?: (document: WorkbookDocument) => void;
     readonly pinnedColumnCount?: number;
+    readonly pointingScope?: PointingScope | undefined;
     readonly rowHeight?: number;
     readonly seed?: bigint;
     readonly showColumnHeadings?: boolean;

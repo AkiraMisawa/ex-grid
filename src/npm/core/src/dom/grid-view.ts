@@ -58,7 +58,7 @@ import { cell as cellPosition, sameCell, type CellPosition, type GridDirection, 
 import { markedColumns, markedRows, wholeColumnRuns, wholeRowRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
-import { bottomRow, boundingRange, fromCorners, rangeCellCount, rangeContains, rightColumn, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
+import { bottomRow, boundingRange, fromCorners, rangeCellCount, rangeContains, rightColumn, sameRange as sameSelectionRange, selectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { GridFillIntent } from '../selection/fill-intent';
 import { fillExtensionFor, fillHandleCorner, fillHandleRange, planHandleFill, type FillHandleCorner } from '../selection/fill-rules';
 import { Selection, type EdgeAnswer, type GridSelection } from '../selection/selection';
@@ -107,7 +107,8 @@ import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
 import { ConsumerPopoverFrame, type GridPopoverContext } from './consumer-popover';
-import { checkedRewrite, pointOptions, pointStep, type GridEditorRewrite, type GridPointState, type PointOptions } from './point-mode';
+import { checkedRewrite, pointArrowOf, pointOptions, pointStep, type GridEditorRewrite, type GridPointState, type PointOptions } from './point-mode';
+import { GridPointedAt, type GridPointArrow, type GridPointedPress, type GridPointedStep, type PointedAtGrid } from './pointed-at';
 import { replaceSpan } from '../cells/editor-text';
 import { ReferenceOutlines, referenceOutlineOptions, withinExtent, type GridOutlinedColumn, type ReferenceOutlineOptions } from './reference-outlines';
 import type { GridEditorReference, ReferenceColouring, ReferenceKeyColour } from '../cells/reference-colouring';
@@ -566,6 +567,26 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * points from other instances on the page declares them pointed at while it is not `'none'`. Never heard where
      * `pointAt` is not given. */
     readonly onPointStateChanged?: (state: GridPointState) => void;
+    /**
+     * Hears the arrow keys pressed while what Point wrote in the open edit was written from outside the grid
+     * (`writtenFromOutside`; ADR-0058, "The keyboard"): ↑, ↓, ← and →, with Shift (`extends`) or the Primary
+     * Modifier (`toEdge`) or both. They move nothing here, since the text stands for a cell of another instance: the
+     * Consumer that wrote it moves it there, writing again through the handle's `writePointedText`, or refuses. Not
+     * given, the arrows are taken and move nothing.
+     */
+    readonly onPointArrowFromOutside?: (arrow: GridPointArrow) => void;
+    /**
+     * A Consumer declaration (ADR-0058): that this grid is pointed at from outside, a Formula edited elsewhere on the
+     * page pointing at its cells, and what it draws meanwhile. While `isPointedAt` holds and the grid has no edit of
+     * its own open, a primary press on the rows or the column headers moves neither DOM focus nor the Selection and
+     * the Focus, runs no sort, column menu, reorder, resize or Heading drag, and is handed to the declaration's
+     * `onPress` as the pressed cell, the pressed column header, or a shape the Consumer will refuse; a drag onto
+     * another cell or column is handed over once more. The root wears `ex-pointed-at`. Whether or not it holds, the
+     * declaration's dashes and outlined columns are drawn in the selection overlay, and the grid answers the
+     * declaration's steps and reveals for arrow keys pressed elsewhere (DC-55). The grid follows the declaration's
+     * changes as it is told of them. None changes nothing.
+     */
+    readonly pointedAt?: GridPointedAt<Row>;
     /** Hears a change of figures made on the status line (ADR-0130): given, a right-click there opens Excel's menu
      * of the six figures, each ticked while shown, and a press on one reports the figures with it ticked or
      * unticked, in Excel's order. The grid holds no choice: the figures stay as `summaryFigures` says until the
@@ -834,6 +855,7 @@ interface Taken<Row> {
     readonly formulaBar: FormulaBarDeclarations<Row>;
     readonly referenceOutlines: ReferenceOutlineOptions;
     readonly point: PointOptions;
+    readonly pointedAt: GridPointedAt<Row> | undefined;
 }
 
 // The popover standing (ADR-0039, ADR-0040): its element and the commands it shows, and where it stands. The
@@ -1019,6 +1041,25 @@ interface OpenEdit<Row> {
 }
 
 /** An open edit's Point as it stood before a write from outside: what taking the write back returns it to. */
+// A press handed over whose button is still down (ADR-0058): where it was, on a header or not, and where the pointer
+// stood, to place a header drag by its client delta.
+interface PointedDrag {
+    readonly from: CellPosition;
+    readonly fromHeader: boolean;
+    readonly x: number;
+    readonly clientX: number;
+}
+
+// The pointedAt option checked: a declaration, or none.
+function checkedPointedAt<Row>(given: GridPointedAt<Row> | undefined): GridPointedAt<Row> | undefined {
+    // Read as unknown first: a Consumer in plain JavaScript hands whatever it hands.
+    const loose: unknown = given;
+    if (loose !== undefined && !(loose instanceof GridPointedAt)) {
+        throw new TypeError('pointedAt is a GridPointedAt, made by the Consumer that points (ADR-0058).');
+    }
+    return given;
+}
+
 interface PointBefore {
     readonly text: string;
     readonly caret: number;
@@ -1599,7 +1640,9 @@ export class GridView<Row> {
     // selection moved by the transitions the Selection's own use; the span of the text its Reference occupies, and
     // the text as the core last wrote it. Pointing stands only while the editor's text is still that text and its
     // caret stands after it: anything typed ends it, as a caret moved does.
-    #point: PointOptions = { pointAt: undefined, referenceText: undefined, cycleReference: undefined, onPointStateChanged: undefined };
+    #point: PointOptions = {
+        pointAt: undefined, referenceText: undefined, cycleReference: undefined, onPointStateChanged: undefined, onPointArrowFromOutside: undefined,
+    };
     #pointer: Selection | undefined;
     #pointStart = 0;
     #pointLength = 0;
@@ -1610,6 +1653,20 @@ export class GridView<Row> {
     #pointedFromOutside = false;
     #pointBefore: PointBefore | undefined;
     #pointStateTold: GridPointState = 'none';
+    // The declaration this grid is pointed at through (ADR-0058), and what stops hearing it.
+    #pointedAt: GridPointedAt<Row> | undefined;
+    #pointedAtStop: (() => void) | undefined;
+    // Whether the last press on the rows or the header was handed over: the click, the double click and the context
+    // menu that follow it are the same gesture, and keep no meaning of their own.
+    #pressHandedOver = false;
+    // A press handed over whose button is still down: a move onto another cell or column hands the drag over once.
+    #pointedDrag: PointedDrag | undefined;
+    // The last press handed over: a drag from it is handed over behind it.
+    #pointedPressHandOver: Promise<void> = Promise.resolve();
+    // The dashes and the outlined columns as last worked out, held so a pass that changed neither finds them the same.
+    #pointDashesPainted: SelectionRange | undefined;
+    #outlinedColumnsAsked: { readonly own: readonly GridOutlinedColumn[] | undefined; readonly declared: readonly GridOutlinedColumn[] | undefined;
+        readonly both: readonly GridOutlinedColumn[] | undefined; } | undefined;
     // Options handed over while an edit is open: the next pass tells the Point state as they left it, when it is not
     // what the Consumer last heard, through whichever handler it now hands.
     #pointStateOwed = false;
@@ -1956,6 +2013,8 @@ export class GridView<Row> {
         this.#tellEditing();
         this.#endPointing();
         this.#tellPointState();
+        // A declaration this grid answered for is answered no more: its steps find no grid.
+        this.#bindPointedAt(undefined);
         // The keys go with the edit: a Consumer outlining a table's column for them hears that none is read (ADR-0057).
         this.#referenceOutlines.tellKeys(this.#colouring(), this.#referenceOptions.onReferenceKeyColoursChanged);
         // A Chrome slot's contents are taken away with the grid, as a Template cell's are.
@@ -2255,7 +2314,7 @@ export class GridView<Row> {
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
             rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
             dataEdge: options.dataEdge, ...summary, referenceOutlines: referenceOutlineOptions(options),
-            point: pointOptions(options),
+            point: pointOptions(options), pointedAt: checkedPointedAt(options.pointedAt),
         };
     }
 
@@ -2545,6 +2604,7 @@ export class GridView<Row> {
             pointed.mode = this.#modeAfterPointing(pointed);
         }
         this.#pointStateOwed = pointed !== undefined;
+        this.#bindPointedAt(taken.pointedAt);
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -3626,6 +3686,12 @@ export class GridView<Row> {
     }
 
     readonly #onPress = (event: MouseEvent): void => {
+        // Pointed at from outside, the press is handed over and means nothing here (ADR-0058).
+        if (this.#pointedAtNow()) {
+            this.#handOverRowsPress(event);
+            return;
+        }
+        this.#pressHandedOver = false;
         // Only a press on the rows' own box, whose cells take no pointer events: its offsets are the
         // Viewport's, which the arithmetic reads (ADR-0012).
         if (event.button !== 0 || event.target !== this.#viewport) return;
@@ -3679,6 +3745,10 @@ export class GridView<Row> {
         if (this.#headingDrag) {
             if (!this.#headingHears(event)) return;
             this.#moveHeadingDrag(event);
+            return;
+        }
+        if (this.#pointedDrag !== undefined) {
+            this.#movePointedDrag(event);
             return;
         }
         if (event.target !== this.#viewport) return;
@@ -4903,7 +4973,13 @@ export class GridView<Row> {
         const step = pointStep(canonical);
         if (pointAt === undefined || referenceText === undefined || step === undefined) return false;
         const continues = this.#pointingContinues(edit);
-        if (continues && this.#pointedFromOutside) return true;
+        if (continues && this.#pointedFromOutside) {
+            // The text stands for a cell of another instance: the Consumer that wrote it moves it there (ADR-0058).
+            const arrow = pointArrowOf(canonical);
+            const heard = this.#point.onPointArrowFromOutside;
+            if (arrow !== undefined && heard !== undefined) heard(arrow);
+            return true;
+        }
         const extent = this.#extent;
         if (extent.rowCount <= 0 || extent.columnCount <= 0) return false;
         let pointer = continues ? this.#pointer : undefined;
@@ -5115,6 +5191,273 @@ export class GridView<Row> {
         this.#askReferences();
         this.#invalidate();
         return true;
+    }
+
+    // ---- Pointed at from outside (ADR-0058) ---------------------------------------------------------------------
+
+    // Whether the grid is pointed at now: declared so, and holding no open edit of its own, which a press goes to.
+    #pointedAtNow(): boolean {
+        return this.#pointedAt?.isPointedAt === true && this.#edit === undefined;
+    }
+
+    // Hears the declaration passed, and answers its steps; stops hearing one no longer passed.
+    #bindPointedAt(declared: GridPointedAt<Row> | undefined): void {
+        if (declared === this.#pointedAt) return;
+        this.#pointedAtStop?.();
+        this.#pointedAtStop = undefined;
+        this.#pointedAt = declared;
+        if (declared === undefined) return;
+        const stopHearing = declared.onChanged(() => { if (!this.#destroyed) this.#invalidate(); });
+        const detach = declared.attach(this.#pointedAtAnswers);
+        this.#pointedAtStop = () => {
+            stopHearing();
+            detach();
+        };
+    }
+
+    // What the grid answers a declaration for arrow keys pressed elsewhere (DC-55): the Selection, the Focus and the
+    // scroll do not move, except as a reveal asks.
+    readonly #pointedAtAnswers: PointedAtGrid<Row> = {
+        step: async (isRow, column, direction, isColumn) => this.#pointedStep(isRow, column, direction, isColumn),
+        stepFromColumn: async (column, direction, isColumn) => this.#pointedStepFromColumn(column, direction, isColumn),
+        reveal: async (isRow, column) => this.#revealPointedCell(isRow, column),
+        revealColumn: async column => this.#revealPointedColumn(column),
+    };
+
+    /**
+     * A press on the rows while the grid is pointed at (ADR-0058): its default prevented, so DOM focus stays where it
+     * is, and handed over as the cell it landed on, or as more than one cell with Shift or on a Row Heading. The
+     * Selection and the Focus do not move, and no edit opens or commits. A press on a cell is followed while its
+     * button is down, so that a drag onto another cell is handed over too.
+     */
+    #handOverRowsPress(event: MouseEvent): void {
+        event.preventDefault();
+        this.#answered += 1;
+        this.#invalidate();
+        this.#pressHandedOver = true;
+        this.#setDragging(false);
+        const pointedAt = this.#pointedAt;
+        if (event.button !== 0 || pointedAt === undefined || event.target !== this.#viewport) return;
+        const at = this.#cellUnder(event);
+        let press: GridPointedPress<Row>;
+        if (this.#inRowHeadings(event)) {
+            if (at === undefined) return;
+            press = { kind: 'severalCells' };
+        } else if (event.offsetX < 0 || event.offsetX >= this.#styles.geometry.totalWidthPx || at === undefined) {
+            // Past the last column the rows are dead space, not the last column again.
+            return;
+        } else if (event.shiftKey) {
+            press = { kind: 'severalCells' };
+        } else {
+            press = { kind: 'cell', row: this.#rowAt(at.row)?.row, column: itemAt(this.#columns, at.column).column.name };
+            this.#setDragging(true);
+            this.#pointedDrag = { from: at, fromHeader: false, x: event.offsetX, clientX: event.clientX };
+        }
+        this.#handOver(pointedAt, press);
+    }
+
+    /**
+     * A press on the header while the grid is pointed at (ADR-0058): handed over as the column whose header it landed
+     * on, as several columns with Shift, as a Header Group's rectangle, or as more than one cell on the corner where
+     * the Headings meet. Nothing is sorted, selected, grabbed or opened. A press on a column's header is followed
+     * while its button is down, so that a drag onto another column is handed over too.
+     */
+    #handOverHeaderPress(event: MouseEvent): void {
+        event.preventDefault();
+        this.#pressHandedOver = true;
+        this.#setDragging(false);
+        const pointedAt = this.#pointedAt;
+        if (event.button !== 0 || pointedAt === undefined || event.target !== this.#header) return;
+        let press: GridPointedPress<Row>;
+        if (this.#rowHeadingStyle !== undefined && this.#styles.geometry.isInLead(event.offsetX, this.#scrollLeftPx)) {
+            press = { kind: 'severalCells' };
+        } else {
+            const column = this.#columnUnderHeader(event);
+            if (column === undefined) return;
+            const layout = this.#headerLayout;
+            const tierPx = this.#metrics.headerHeightPx;
+            if (layout.tierCount > 0 && event.offsetY < this.#bandHeightPx - (layout.leafTierSpanOf(column) * tierPx)) {
+                const tier = layout.tierCount - Math.floor(event.offsetY / tierPx);
+                const group = layout.groups.find(candidate => column >= candidate.firstColumn && column < candidate.firstColumn + candidate.memberCount
+                    && tier >= candidate.bottomTier && tier <= candidate.topTier);
+                // An empty tier above a leaf that does not stretch there is no header at all.
+                if (group === undefined) return;
+                press = { kind: 'headerGroup' };
+            } else if (event.shiftKey) {
+                press = { kind: 'severalColumns' };
+            } else {
+                press = { kind: 'columnHeader', column: itemAt(this.#columns, column).column.name };
+                this.#setDragging(true);
+                this.#pointedDrag = { from: cellPosition(0, column), fromHeader: true, x: event.offsetX, clientX: event.clientX };
+            }
+        }
+        this.#handOver(pointedAt, press);
+    }
+
+    // A press handed over: the Consumer's answer is its own, and a failure of it reaches the page as its unhandled
+    // rejection, as a source's does (ADR-0025).
+    #handOver(pointedAt: GridPointedAt<Row>, press: GridPointedPress<Row>): void {
+        const handOver = pointedAt.onPress(press);
+        this.#pointedPressHandOver = handOver;
+        void handOver;
+    }
+
+    /**
+     * A move while a press handed over is held. From a cell, reaching another cell makes it a drag across cells;
+     * from a header, reaching another column makes it a drag across columns. Either is handed over once, behind the
+     * press it began with, and the drag ends there: nothing it passes over is selected.
+     */
+    #movePointedDrag(event: MouseEvent): void {
+        const drag = defined(this.#pointedDrag, 'the press a pointed drag began with');
+        const pointedAt = this.#pointedAt;
+        let moved: boolean;
+        if (drag.fromHeader) {
+            // Placed by its client delta from the press, whatever element the event fired on, as a Heading drag is.
+            const x = drag.x + (event.clientX - drag.clientX);
+            const column = Number.isFinite(x) ? this.#styles.geometry.columnAt(x, this.#scrollLeftPx) : undefined;
+            moved = column !== undefined && column !== drag.from.column;
+        } else {
+            const at = event.target === this.#viewport ? this.#cellUnder(event) : undefined;
+            moved = at !== undefined && !sameCell(at, drag.from);
+        }
+        if (!moved) return;
+        this.#setDragging(false);
+        if (pointedAt === undefined) return;
+        const dragged: GridPointedPress<Row> = { kind: drag.fromHeader ? 'severalColumns' : 'severalCells', dragged: true };
+        const press = this.#pointedPressHandOver;
+        // The press's own failure still reaches the page, after the drag is handed over.
+        void (async () => {
+            try {
+                await press;
+            } finally {
+                await pointedAt.onPress(dragged);
+            }
+        })();
+    }
+
+    // The first painted row `isRow` names, or none.
+    #paintedRowOf(isRow: (row: Row) => boolean): number | undefined {
+        const visible = this.#visible;
+        if (visible === undefined) return undefined;
+        for (let row = visible.start; row < visible.start + visible.count; row += 1) {
+            const held = this.#rowAt(row);
+            if (held !== undefined && isRow(held.row)) return row;
+        }
+        return undefined;
+    }
+
+    // The position, in the whole result, of the row `isRow` names: the painted rows are asked first, since the cell
+    // pointed at was pressed or revealed there, and then the rest of the Window. None when the grid holds no such row.
+    #pointedRowOf(isRow: (row: Row) => boolean): number | undefined {
+        const painted = this.#paintedRowOf(isRow);
+        if (painted !== undefined) return painted;
+        const { window, windowStart } = this.#state;
+        const found = window.findIndex(row => isRow(row));
+        return found < 0 ? undefined : windowStart + found;
+    }
+
+    // The name of the nearest column left or right of `from` that `isColumn` answers true for, passing over the rest.
+    #nearestColumn(from: number, direction: GridDirection, isColumn: (column: string) => boolean): string | undefined {
+        const step = direction === 'left' ? -1 : 1;
+        for (let c = from + step; c >= 0 && c < this.#columns.length; c += step) {
+            const { name } = itemAt(this.#columns, c).column;
+            if (isColumn(name)) return name;
+        }
+        return undefined;
+    }
+
+    // The cell one step from the named one (ADR-0058, "The keyboard"; DC-55): a row up or down in the current order,
+    // in the same column, or the nearest column the Consumer names left or right, in the same row.
+    #pointedStep(isRow: (row: Row) => boolean, column: string, direction: GridDirection, isColumn: (column: string) => boolean): GridPointedStep<Row> {
+        const from = this.#columnNamed(column);
+        const row = this.#destroyed || !this.#pointedAtNow() || from === undefined ? undefined : this.#pointedRowOf(isRow);
+        if (from === undefined || row === undefined) return { kind: 'notHeld' };
+        if (direction === 'up' || direction === 'down') {
+            const next = direction === 'up' ? row - 1 : row + 1;
+            if (next < 0 || next >= this.#totalRows) return { kind: 'edge' };
+            const held = this.#rowAt(next);
+            return held === undefined ? { kind: 'rowNotArrived', column } : { kind: 'cell', row: held.row, column };
+        }
+        const reached = this.#nearestColumn(from, direction, isColumn);
+        return reached === undefined ? { kind: 'edge' } : { kind: 'cell', row: this.#rowAt(row)?.row, column: reached };
+    }
+
+    // What one step from a whole column reaches (ADR-0058, "The keyboard"; DC-55): down, the column's first row in
+    // the current order; left or right, the nearest column the Consumer names, as a column; up, nothing.
+    #pointedStepFromColumn(column: string, direction: GridDirection, isColumn: (column: string) => boolean): GridPointedStep<Row> {
+        const from = this.#columnNamed(column);
+        if (this.#destroyed || !this.#pointedAtNow() || from === undefined) return { kind: 'notHeld' };
+        switch (direction) {
+            case 'up':
+                return { kind: 'edge' };
+            case 'down': {
+                if (this.#totalRows === 0) return { kind: 'edge' };
+                const first = this.#rowAt(0);
+                return first === undefined ? { kind: 'rowNotArrived', column } : { kind: 'cell', row: first.row, column };
+            }
+            case 'left':
+            case 'right': {
+                const reached = this.#nearestColumn(from, direction, isColumn);
+                return reached === undefined ? { kind: 'edge' } : { kind: 'column', column: reached };
+            }
+            default:
+                return unreachable(direction);
+        }
+    }
+
+    // Scrolls the named cell into view, as Point's outline is kept in view (DC-55): the page turns where one is
+    // paged. The Selection and the Focus do not move. Whether the grid holds the cell.
+    #revealPointedCell(isRow: (row: Row) => boolean, column: string): boolean {
+        const c = this.#columnNamed(column);
+        const row = this.#destroyed || c === undefined ? undefined : this.#pointedRowOf(isRow);
+        if (c === undefined || row === undefined) return false;
+        this.#revealOwed = { target: cellPosition(row, c), extending: undefined, rowStart: false, stepRows: 0 };
+        this.#revealHeaderOwed = undefined;
+        this.#invalidate();
+        return true;
+    }
+
+    // Scrolls the named column into view across only (ADR-0058, 2026-10-01; DC-55): its body is what is dashed, and
+    // no row of it is the one pointed at, so the rows stay where they are. Whether the grid shows the column.
+    #revealPointedColumn(column: string): boolean {
+        const c = this.#destroyed ? undefined : this.#columnNamed(column);
+        if (c === undefined) return false;
+        this.#revealOwed = undefined;
+        this.#revealHeaderOwed = { first: c, last: c };
+        this.#invalidate();
+        return true;
+    }
+
+    // The dashes the declaration asks for, as the range they are drawn over: the named column's body across all its
+    // rows, or its cell in the first painted row the declaration names. None for no dashes asked, a column the grid
+    // does not show, or a row that is not painted: the grid never scrolls to show one. The same range while it is.
+    #pointDashesRange(): SelectionRange | undefined {
+        const dashes = this.#pointedAt?.dashes;
+        const column = dashes === undefined || this.#totalRows <= 0 ? undefined : this.#columnNamed(dashes.column);
+        let range: SelectionRange | undefined;
+        if (dashes !== undefined && column !== undefined) {
+            const isRow = dashes.row;
+            if (isRow === undefined) {
+                range = selectionRange(0, column, this.#totalRows, 1);
+            } else {
+                const found = this.#paintedRowOf(isRow);
+                if (found !== undefined) range = selectionRange(found, column, 1, 1);
+            }
+        }
+        const was = this.#pointDashesPainted;
+        if (range === undefined || was === undefined || !sameSelectionRange(range, was)) this.#pointDashesPainted = range;
+        return this.#pointDashesPainted;
+    }
+
+    // The columns outlined: the Consumer's own, then the declaration's, the same list while neither changed.
+    #outlinedColumnsBoth(): readonly GridOutlinedColumn[] | undefined {
+        const own = this.#referenceOptions.outlinedColumns;
+        const declared = this.#pointedAt?.outlinedColumns;
+        const was = this.#outlinedColumnsAsked;
+        if (was !== undefined && was.own === own && was.declared === declared) return was.both;
+        const both = own === undefined ? declared : declared === undefined ? own : [...own, ...declared];
+        this.#outlinedColumnsAsked = { own, declared, both };
+        return both;
     }
 
     // ---- The Formula Bar (ADR-0051) ---------------------------------------------------------------------------
@@ -5531,6 +5874,7 @@ export class GridView<Row> {
     readonly #onContextMenu = (event: MouseEvent): void => {
         if (event.target !== this.#viewport) return;
         event.preventDefault();
+        if (this.#pressHandedOver) return;
         this.#answered += 1;
         this.#invalidate();
         if (!this.#commitEdit()) return;
@@ -7172,7 +7516,7 @@ export class GridView<Row> {
     // editor's, and the editor's own takes no part here.
     readonly #onDoubleClick = (event: MouseEvent): void => {
         // A double click on a Row Heading is two presses on it, and opens nothing (ADR-0050, item 1).
-        if (event.button !== 0 || event.target !== this.#viewport || this.#edit !== undefined || this.#inRowHeadings(event)) return;
+        if (event.button !== 0 || event.target !== this.#viewport || this.#edit !== undefined || this.#inRowHeadings(event) || this.#pressHandedOver) return;
         this.#reconcileSelection();
         const at = this.#cellUnder(event);
         if (at === undefined) return;
@@ -7193,6 +7537,7 @@ export class GridView<Row> {
             this.#forgetHeadingDrag();
             this.#endHandleDrag();
             this.#pointDragging = false;
+            this.#pointedDrag = undefined;
         }
         if (dragging === this.#dragging) return;
         this.#dragging = dragging;
@@ -7388,6 +7733,11 @@ export class GridView<Row> {
     readonly #onHeaderPress = (event: MouseEvent): void => {
         this.#answered += 1;
         this.#invalidate();
+        if (this.#pointedAtNow()) {
+            this.#handOverHeaderPress(event);
+            return;
+        }
+        this.#pressHandedOver = false;
         // A new press is a new story: a release outside the header raises no click, and a flag left
         // standing would eat the next genuine sort.
         this.#gestureConsumedClick = false;
@@ -7455,6 +7805,7 @@ export class GridView<Row> {
     readonly #onHeaderClick = (event: MouseEvent): void => {
         this.#answered += 1;
         this.#invalidate();
+        if (this.#pressHandedOver) return;
         if (event.target === this.#rowMarks.headerBox) {
             const press = this.#headerMarkPress;
             this.#headerMarkPress = undefined;
@@ -7516,7 +7867,7 @@ export class GridView<Row> {
     readonly #onHeaderDoubleClick = (event: MouseEvent): void => {
         const grip = event.target instanceof Element ? this.#grips.get(event.target) : undefined;
         const heard = this.#onColumnWidthChanged;
-        if (grip === undefined || heard === undefined) return;
+        if (grip === undefined || heard === undefined || this.#pressHandedOver) return;
         this.#answered += 1;
         this.#invalidate();
         this.#reconcileSelection();
@@ -8196,7 +8547,8 @@ export class GridView<Row> {
             // Each held, so a pass that changed neither text nor columns finds them the same.
             colouring: this.#colouring(), extentRows: this.#totalRows, extentColumns: this.#columns.length,
             pointer: this.#edit === undefined ? undefined : this.#pointer,
-            outlinedColumns: this.#referenceOutlines.columns(this.#referenceOptions.outlinedColumns, this.#columnNames, this.#totalRows),
+            outlinedColumns: this.#referenceOutlines.columns(this.#outlinedColumnsBoth(), this.#columnNames, this.#totalRows),
+            pointDashes: this.#pointDashesRange(),
         };
         const was = this.#layerInputs;
         // A pass that moved none of them, every scroll frame along an axis the layers ignore, writes nothing.
@@ -8213,6 +8565,7 @@ export class GridView<Row> {
                         }),
                         columns: inputs.outlinedColumns,
                         point: this.#pointPaint(inputs.pointer, inputs.colouring),
+                        pointDashes: inputs.pointDashes,
                     });
             const signature = JSON.stringify(pieces);
             if (signature !== this.#paintedLayers) {
@@ -8309,7 +8662,8 @@ export class GridView<Row> {
         const geometry = this.#styles.geometry;
         const root = this.#root;
         // ex-loading while rows are on their way, and ex-editing while the Cell Editor stands (ADR-0029).
-        this.#write(root, 'root', 'class', `ex-grid${this.#state.loading ? ' ex-loading' : ''}${this.#edit === undefined ? '' : ' ex-editing'}`);
+        this.#write(root, 'root', 'class',
+            `ex-grid${this.#state.loading ? ' ex-loading' : ''}${this.#edit === undefined ? '' : ' ex-editing'}${this.#pointedAtNow() ? ' ex-pointed-at' : ''}`);
         // The Geometry Tokens, inline on the root from the same resolved metrics the arithmetic reads
         // (ADR-0027, ADR-0028), and the Device Pixel once told (ADR-0090).
         this.#write(root, 'root', 'style', `--ex-row-height: ${metrics.rowHeightPx}px; --ex-header-height: ${metrics.headerHeightPx}px; `

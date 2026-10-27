@@ -5,7 +5,10 @@
 // what it refuses (ADR-0370 section 10).
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellAddress, CellFormatChange, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
+import { createGrid, type GridHandle } from '@ex-grid/core';
 import { createSheet, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
+import { PointingScope } from '../src/pointing-scope';
+import type { PointingRefusal } from '../src/pointing-refusal';
 
 const mounted: SheetHandle[] = [];
 
@@ -244,6 +247,63 @@ describe('The formula entry aids (ADR-0051, ADR-0057)', () => {
         expect(editor?.value).toBe('=$A$3');
         key('Enter');
         await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('7'); });
+    });
+});
+
+// A press on a cell of the registered grid, its default prevented or not, where the keyboard then is.
+function pressGrid(element: HTMLElement, row: number, column: number, init: MouseEventInit = {}): MouseEvent {
+    const viewport = element.querySelector<HTMLElement>('.ex-viewport');
+    if (viewport === null) throw new Error('The grid has no viewport.');
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, buttons: 1, ...init });
+    Object.defineProperty(event, 'offsetX', { value: (column * 100) + 10 });
+    Object.defineProperty(event, 'offsetY', { value: (row * 24) + 5 });
+    viewport.dispatchEvent(event);
+    return event;
+}
+
+describe('The Pointing Scope (ADR-0058)', () => {
+    interface Position { readonly id: string; readonly pv: number }
+    const positions: readonly Position[] = [{ id: 'R-1', pv: 110 }, { id: 'R-2', pv: 250 }, { id: 'R-3', pv: 75 }];
+    const grids: GridHandle<Position>[] = [];
+    afterEach(() => { for (const grid of grids.splice(0)) grid.destroy(); });
+
+    it('a press on a registered grid writes the cell\'s lookup where the Sheet points, the arrows move it there, and a range is refused', async () => {
+        const scope = new PointingScope();
+        const refusals: PointingRefusal[] = [];
+        const { element, sheet } = sheetOf({ pointingScope: scope, onPointingRefused: refusal => { refusals.push(refusal); } });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        const gridElement = document.createElement('div');
+        document.body.append(gridElement);
+        grids.push(createGrid<Position>(gridElement, {
+            columns: [
+                { name: 'Id', type: 'text', value: row => row.id, width: 100 },
+                { name: 'PV', type: 'number', value: row => row.pv, width: 100 },
+            ],
+            rows: positions, rowHeight: 24, viewportHeight: 200,
+            pointedAt: scope.registerGrid<Position>('Positions', row => [Value.fromText(row.id), Value.fromNumber(row.pv)]),
+        }));
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        await vi.waitFor(() => { expect(gridElement.querySelector('[role="row"] [role="gridcell"]')).not.toBeNull(); });
+        press(element, 1, 0);
+        key('=');
+        await vi.waitFor(() => { expect(gridElement.classList.contains('ex-pointed-at')).toBe(true); });
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        expect(pressGrid(gridElement, 1, 1).defaultPrevented).toBe(true);
+        await vi.waitFor(() => { expect(editor?.value).toBe('=XLOOKUP("R-2", Positions[Id], Positions[PV])'); });
+        expect(document.activeElement).toBe(editor);
+        await vi.waitFor(() => { expect(gridElement.querySelectorAll('.ex-point-dashes')).toHaveLength(1); });
+        key('ArrowDown');
+        await vi.waitFor(() => { expect(editor?.value).toBe('=XLOOKUP("R-3", Positions[Id], Positions[PV])'); });
+        pressGrid(gridElement, 0, 1, { shiftKey: true });
+        await vi.waitFor(() => { expect(refusals.map(refusal => refusal.reason)).toEqual(['severalCells']); });
+        expect(editor?.value).toBe('=XLOOKUP("R-3", Positions[Id], Positions[PV])');
+        // Typing ends Point over what the press wrote: the dashes go, and the grid is still pointed at while a
+        // Reference can go at the caret.
+        editor?.setRangeText('+', editor.value.length, editor.value.length, 'end');
+        editor?.dispatchEvent(new Event('input', { bubbles: true }));
+        await vi.waitFor(() => { expect(gridElement.querySelectorAll('.ex-point-dashes')).toHaveLength(0); });
+        key('Escape');
+        await vi.waitFor(() => { expect(gridElement.classList.contains('ex-pointed-at')).toBe(false); });
     });
 });
 
