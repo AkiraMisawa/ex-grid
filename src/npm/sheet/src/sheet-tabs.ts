@@ -73,6 +73,8 @@ export class SheetTabs {
         this.#plus.textContent = '+';
         this.#add.append(this.#plus);
         // A press keeps the keyboard where it is: in the grid, where the next key acts on the Sheet it showed.
+        // Its press takes its place in the Sheet's order, behind a commit or an opening (ADR-0240).
+        this.#add.setAttribute('data-ex-claims', 'click');
         this.#add.addEventListener('mousedown', preventDefault);
         this.#add.addEventListener('click', () => { hooks.added(); });
         // Past the last tab: the strip's empty end.
@@ -179,6 +181,7 @@ export class SheetTabs {
         tab.type = 'button';
         tab.className = 'ex-sheet-tab';
         tab.setAttribute('role', 'tab');
+        tab.setAttribute('data-ex-claims', 'click');
         tab.addEventListener('mousedown', preventDefault);
         tab.addEventListener('click', () => { this.#hooks.pressed(sheet); });
         this.#tabs.set(sheet, tab);

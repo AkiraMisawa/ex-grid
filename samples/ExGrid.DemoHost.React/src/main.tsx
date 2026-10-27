@@ -24,12 +24,14 @@ import { Lifecycle } from './pages/lifecycle';
 import { MantineDemo } from './pages/mantine';
 import { MantineChartDemo } from './pages/mantine-chart';
 import { MuiDemo } from './pages/mui';
+import { MuiChartDemo } from './pages/mui-chart';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
 import { PivotCsv } from './pages/pivot-csv';
 import { PivotDb } from './pages/pivot-db';
 import { PivotLive } from './pages/pivot-live';
+import { PivotMantineDemo } from './pages/pivot-mantine';
 import { PivotRisk } from './pages/pivot-risk';
 import { SheetDemo } from './pages/sheet';
 import { Sizing } from './pages/sizing';
@@ -65,6 +67,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     'pivot-db': PivotDb,
     'pivot-csv': PivotCsv,
     'pivot-live': PivotLive,
+    'pivot-mantine': PivotMantineDemo,
     sheet: SheetDemo,
     marks: Marks,
     stripes: Stripes,
@@ -78,6 +81,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     mantine: MantineDemo,
     'mantine-chart': MantineChartDemo,
     mui: MuiDemo,
+    'mui-chart': MuiChartDemo,
 };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */

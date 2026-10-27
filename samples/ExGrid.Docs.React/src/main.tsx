@@ -6,6 +6,7 @@ import { StrictMode, type ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
 import '../../../src/ExSheet/wwwroot/ex-sheet.min.css';
+import '../../../src/ExChart/wwwroot/ex-chart.min.css';
 import './frame.css';
 import { chromeFrame, chromeOf } from './chrome-frame';
 

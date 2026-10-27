@@ -449,6 +449,8 @@ export class SheetToolbar {
             made.className = className;
             made.tabIndex = -1;
             // A press keeps the keyboard where it is: on the Sheet, where the next key acts on what the command left.
+            // Its press takes its place in the Sheet's order, behind a commit or an opening (ADR-0240).
+            made.setAttribute('data-ex-claims', 'click');
             made.addEventListener('mousedown', preventDefault);
             made.addEventListener('click', act);
             return made;

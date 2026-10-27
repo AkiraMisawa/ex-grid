@@ -2,11 +2,11 @@
 // it, never over it, holding the charts made from the grid's selection as Mantine's tabs. What it shows is the dock's
 // state, `useChartDock`'s, which takes the bridge's events; this component draws that state and calls back.
 
-import { createElement, useEffect, useRef, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from 'react';
+import { createElement, type CSSProperties, type KeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import { Alert, CloseButton, Paper, Tabs } from '@mantine/core';
 import type { GridDensity } from '@ex-grid/core';
 import type { GridChartBridge } from '@ex-grid/chart';
-import { DockedChart, type ChartDockPlacement, type ChartDockState, type ExChartChrome } from '@ex-grid/chart-react';
+import { DockedChart, useChartDockKeyboard, type ChartDockPlacement, type ChartDockState, type ExChartChrome } from '@ex-grid/chart-react';
 import { MantineSizeContext, mantineSizeOf } from '@ex-grid/mantine';
 import { mantineChartChrome } from './chart-chrome';
 
@@ -48,14 +48,7 @@ export function MantineChartDock<Row>(props: MantineChartDockProps<Row>): ReactE
     const {
         dock, bridge, children, placement = 'right', chartWidth = 640, chartHeight = 320, density = 'compact', chrome = mantineChartChrome, className, style,
     } = props;
-    const panelRef = useRef<HTMLDivElement>(null);
-    // A tab closed by Delete hands the keyboard to the tab shown in its place, once that tab is drawn.
-    const refocus = useRef(false);
-    useEffect(() => {
-        if (!refocus.current) return;
-        refocus.current = false;
-        panelRef.current?.querySelector<HTMLElement>('[role=tab][aria-selected=true]')?.focus();
-    });
+    const keyboard = useChartDockKeyboard(dock);
     const { charts, active, refusal } = dock;
     const classes = ['mantine-ex-chart', 'mantine-ex-chart-dock', `mantine-ex-chart-dock-${placement}`];
     if (className !== undefined) classes.push(className);
@@ -63,7 +56,7 @@ export function MantineChartDock<Row>(props: MantineChartDockProps<Row>): ReactE
     // never clipped by a narrow page. Content-box, so the stylesheet's padding is not paired here.
     const panelStyle: CSSProperties | undefined = placement === 'right' ? { flex: '0 0 auto', boxSizing: 'content-box', width: chartWidth } : undefined;
     const panel = charts.length === 0 && refusal === undefined ? null : createElement(Paper<'div'>, {
-        ref: panelRef, withBorder: true, className: 'mantine-ex-chart-dock-panel', role: 'region', 'aria-label': 'Charts', ...(panelStyle === undefined ? {} : { style: panelStyle }),
+        ref: keyboard.panel, withBorder: true, className: 'mantine-ex-chart-dock-panel', role: 'region', 'aria-label': 'Charts', ...(panelStyle === undefined ? {} : { style: panelStyle }),
     },
     refusal === undefined ? null : createElement(Alert, {
         color: 'yellow', variant: 'light', withCloseButton: true, closeButtonLabel: 'Dismiss', onClose: dock.dismiss, className: 'mantine-ex-chart-dock-refusal', p: 'xs',
@@ -77,11 +70,7 @@ export function MantineChartDock<Row>(props: MantineChartDockProps<Row>): ReactE
     createElement(Tabs.List, null, ...charts.map(({ name }) => createElement(Tabs.Tab, {
         key: name, value: name,
         // Delete closes the tab the keyboard is on, as the close mark does under the pointer.
-        onKeyDown: (event: KeyboardEvent) => {
-            if (event.key !== 'Delete') return;
-            refocus.current = true;
-            dock.close(name);
-        },
+        onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Delete') keyboard.closeByKey(name); },
         // A span, not a button: a button inside the tab's button is not one the browser lets stand.
         rightSection: createElement(CloseButton<'span'>, {
             component: 'span', size: 'xs', role: 'button', 'aria-label': `Close ${name}`, className: 'mantine-ex-chart-dock-close',
@@ -96,6 +85,6 @@ export function MantineChartDock<Row>(props: MantineChartDockProps<Row>): ReactE
         }),
     }))));
     return createElement('div', { className: classes.join(' '), ...(style === undefined ? {} : { style }) },
-        createElement('div', { className: 'mantine-ex-chart-dock-content' }, children),
+        createElement('div', { ref: keyboard.content, className: 'mantine-ex-chart-dock-content' }, children),
         createElement(MantineSizeContext.Provider, { value: mantineSizeOf(density) }, panel));
 }

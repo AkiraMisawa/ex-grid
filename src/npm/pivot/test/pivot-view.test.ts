@@ -14,7 +14,11 @@ import {
 import { findInReport } from '../src/report-find';
 import { browserPivotLocale } from '../src/browser-locale';
 import { defined, elementAt } from '../src/must';
+import type {
+    PivotDetailsDialogSlotContext, PivotMenuSlotContext, PivotReportFiltersSlotContext, PivotStaleReportSlotContext, PivotStaleReportView, PivotToolbarSlotContext, PivotValueFieldSettingsSlotContext,
+} from '../src/chrome';
 import type { PivotShowDetailsEvent } from '../src/details';
+import { PartElements } from '../src/parts';
 import { PivotView, type PivotFailedEvent, type PivotSelectionChangedEvent, type PivotViewOptions } from '../src/pivot-view';
 
 interface Trade {
@@ -2322,6 +2326,363 @@ describe('ExPivot\'s Find over the report (ADR-0332, ADR-0333)', () => {
         expect(await findInReport(source, metadata, { ...request, text: 'z', from: cellAt(60, 0), scope }, signal))
             .toEqual({ kind: 'answered', answer: { found: false } });
         expect(asked).toEqual([{ top: 61, left: 0, bottom: 79, right: 0 }, { top: 60, left: 0, bottom: 60, right: 0 }]);
+    });
+});
+
+// The errors thrown on their own, in a microtask, as a page would see them reported, until `stop`.
+function reportedErrors(): { readonly thrown: unknown[]; readonly stop: () => void } {
+    const thrown: unknown[] = [];
+    const queue = globalThis.queueMicrotask;
+    const reported = vi.spyOn(globalThis, 'queueMicrotask').mockImplementation(task => {
+        queue(() => {
+            try {
+                task();
+            } catch (error) { // oxlint-disable-line ex-grid/no-catch -- what a page would see reported, kept for the test to read
+                thrown.push(error);
+            }
+        });
+    });
+    return { thrown, stop: () => { reported.mockRestore(); } };
+}
+
+// A button of a Chrome's standing part, handed in by its ref.
+function chromeButton(label: string, ref: (element: HTMLElement | null) => void, pressed: () => void): HTMLButtonElement {
+    const made = document.createElement('button');
+    made.type = 'button';
+    made.textContent = label;
+    made.addEventListener('click', pressed);
+    ref(made);
+    return made;
+}
+
+// A Chrome's toolbar and band, drawn as a framework draws them: again at each change, each control and anchor handed in
+// by its ref.
+function chromeToolbar(slot: HTMLElement, context: PivotToolbarSlotContext): () => void {
+    const draw = (): void => {
+        const view = context.view();
+        const band = document.createElement('div');
+        context.anchor('report-filters')(band);
+        const layout = document.createElement('span');
+        layout.className = 'chrome-layout';
+        layout.append(chromeButton(view.layoutMenu.label, context.control('layout'), context.toggleLayoutMenu));
+        context.anchor('layout')(layout);
+        slot.replaceChildren(band, layout, chromeButton(view.fieldList.label, context.control('field-list'), context.toggleFieldList));
+    };
+    draw();
+    return context.subscribe(draw);
+}
+
+function chromeBand(slot: HTMLElement, context: PivotReportFiltersSlotContext): () => void {
+    const draw = (): void => {
+        slot.replaceChildren(...context.view().filters.map(filter => {
+            const at = document.createElement('span');
+            at.className = 'chrome-filter';
+            at.append(chromeButton(filter.summary, context.control(filter.field), () => { context.toggle(filter.field); }));
+            at.lastElementChild?.setAttribute('aria-label', filter.buttonLabel);
+            context.anchor(filter.field)(at);
+            return at;
+        }));
+    };
+    draw();
+    return context.subscribe(draw);
+}
+
+// A Chrome's toolbar whose framework takes its elements back after the pivot has drawn the built-in markup in their
+// place.
+function lettingGoLate(slot: HTMLElement, context: PivotToolbarSlotContext): () => void {
+    const stop = chromeToolbar(slot, context);
+    return () => {
+        stop();
+        queueMicrotask(() => {
+            context.control('layout')(null);
+            context.anchor('layout')(null);
+        });
+    };
+}
+
+// A Chrome's Show Details dialog: a section its records stand in, and Close.
+function chromeDialog(slot: HTMLElement, context: PivotDetailsDialogSlotContext): () => void {
+    const records = document.createElement('section');
+    context.anchor('records')(records);
+    const close = chromeButton(context.view().closeLabel, context.control('close'), context.close);
+    close.className = 'chrome-close';
+    slot.replaceChildren(records, close);
+    return () => undefined;
+}
+
+// A Chrome's toolbar that hands in Layout ▾ and no anchor around it.
+function unanchoredToolbar(slot: HTMLElement, context: PivotToolbarSlotContext): () => void {
+    slot.append(chromeButton('Layout', context.control('layout'), context.toggleLayoutMenu));
+    return () => undefined;
+}
+
+describe('ExPivot\'s Chrome slots (ADR-0390)', () => {
+    it('ADR-0390: a chrome naming a slot the pivot does not have, or a slot that is not a mount function, is refused by name', () => {
+        // Handed as an untyped caller may hand them.
+        const unknownSlot: unknown = { ribbon: () => () => undefined };
+        const notMount: unknown = { menu: 'Mantine' };
+        expect(() => mount({ source: local(), chrome: unknownSlot as NonNullable<PivotViewOptions['chrome']> })).toThrow(/no slot 'ribbon'/);
+        expect(() => mount({ source: local(), chrome: notMount as NonNullable<PivotViewOptions['chrome']> })).toThrow(/chrome\.menu is a mount function/);
+    });
+
+    it('ADR-0390: the Chrome\'s grid slots dress the report\'s grid and Show Details\' grids', async () => {
+        const gridChrome = { cellMessage: () => () => undefined };
+        const { grid } = mount({ source: local(), layout: byRegionAndDesk, chrome: { grid: gridChrome } });
+        await settled();
+        expect(grid.current.chrome).toBe(gridChrome);
+        await doubleClick(grid, 0, 3);
+        expect(defined(grid.detailsShown[0], 'a details grid').options.chrome).toBe(gridChrome);
+    });
+
+    it('ADR-0390, spine rule 6: a menu\'s contents are mounted once and told each change; a request for the keyboard mounts them again; nothing they call reaches the pivot once it closed', async () => {
+        const contexts: PivotMenuSlotContext[] = [];
+        let cleanups = 0;
+        const drawMenu = (slot: HTMLElement, context: PivotMenuSlotContext): (() => void) => {
+            contexts.push(context);
+            slot.textContent = context.view().commands.map(each => each.label).join('|');
+            return () => { cleanups++; };
+        };
+        const changed: PivotLayout[] = [];
+        const { root } = mount({ source: local(), layout: byRegion, chrome: { menu: drawMenu }, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        const layout = layoutButton(root);
+        layout.click();
+        // Mounted as it opened, and again for the keyboard the opening owes.
+        expect(contexts.map(context => context.focusRequest)).toEqual([0, 1]);
+        const frame = root.querySelector<HTMLElement>('.ex-pivot-popup[role=menu]');
+        if (frame === null) throw new Error('The Layout menu did not open.');
+        expect([frame.getAttribute('aria-label'), frame.querySelector('[data-ex-pivot-slot=menu]')?.textContent.split('|')[9]]).toEqual(['Layout', 'Show in Tabular Form']);
+        const held = defined(contexts.at(-1), 'the contents\' context');
+        const tabular = defined(held.view().commands.find(each => each.label === 'Show in Tabular Form'), 'Tabular Form');
+        tabular.invoke();
+        await settled();
+        expect([root.querySelector('.ex-pivot-popup'), changed.at(-1)?.form, cleanups, document.activeElement]).toEqual([null, 'tabular', 2, layout]);
+        // Called again once the menu has closed, the command and the close reach nothing.
+        const asked = changed.length;
+        tabular.invoke();
+        held.close();
+        await settled();
+        expect(changed.length).toBe(asked);
+    });
+
+    it('ADR-0390, ADR-0061: a Chrome\'s toolbar and band stand in place of the built-in markup, their popups open in the anchors they hand in, and the keyboard comes back to the buttons they hand in', async () => {
+        const { root } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region'], values: ['Amount'], filters: ['Desk'] }), chrome: { toolbar: chromeToolbar, reportFilters: chromeBand } });
+        await settled();
+        expect([root.querySelector('.ex-pivot-toolbar'), root.querySelector('.ex-pivot-filters')]).toEqual([null, null]);
+        const layout = shownIn(root, '.chrome-layout button');
+        layout.click();
+        const layoutMenu = shownIn(root, '.chrome-layout .ex-pivot-popup[role=menu]');
+        layoutMenu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect([root.querySelector('.ex-pivot-popup'), document.activeElement]).toEqual([null, layout]);
+        const filter = shownIn(root, '[data-ex-pivot-slot=reportFilters] .chrome-filter button');
+        expect([filter.textContent, filter.getAttribute('aria-label')]).toEqual(['(All)', 'Filter Desk']);
+        filter.click();
+        await settled();
+        shownIn(root, '.chrome-filter .ex-pivot-popup[role=dialog] .ex-pivot-cancel').click();
+        expect([root.querySelector('.ex-pivot-popup'), document.activeElement]).toEqual([null, shownIn(root, '.chrome-filter button')]);
+    });
+
+    it('ADR-0390: a Chrome\'s toolbar taken away hands the built-in one its buttons, even where the Chrome lets go of its own late', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion, chrome: { toolbar: lettingGoLate } };
+        const { root, view } = mount(options);
+        await settled();
+        view.update({ ...options, chrome: {} });
+        await settled();
+        const layout = layoutButton(root);
+        layout.click();
+        shownIn(root, '.ex-pivot-toolbar-anchor .ex-pivot-popup[role=menu]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect([root.querySelector('[data-ex-pivot-slot=toolbar]'), document.activeElement]).toEqual([null, layout]);
+    });
+
+    it('ADR-0390: contents that let go of their buttons late take nothing of the contents drawn after them', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion, chrome: { toolbar: lettingGoLate } };
+        const { root, view } = mount(options);
+        await settled();
+        view.update({ ...options, chrome: { toolbar: chromeToolbar } });
+        await settled();
+        shownIn(root, '.chrome-layout button').click();
+        shownIn(root, '.chrome-layout .ex-pivot-popup[role=menu]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect([root.querySelector('.ex-pivot-popup'), document.activeElement]).toEqual([null, shownIn(root, '.chrome-layout button')]);
+    });
+
+    it('ADR-0390: a Stale Report notice that cannot be drawn as the report goes stale is thrown on its own, not into the source, and the built-in notice stands', async () => {
+        const { thrown, stop } = reportedErrors();
+        try {
+            const live = liveServer();
+            const answersNothing: unknown = { staleReport: Object };
+            const { root } = mount({ source: live.source, layout: byRegion, redrawInterval: 0, locale: 'en-US', chrome: answersNothing as NonNullable<PivotViewOptions['chrome']> });
+            await settled();
+            live.fail(true);
+            live.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+            await settled();
+            expect([thrown.map(String), root.querySelector('.ex-pivot-stale-notice')?.isConnected]).toEqual([[expect.stringMatching(/chrome\.staleReport answered object/)], true]);
+        } finally {
+            stop();
+        }
+    });
+
+    it('ADR-0390, ADR-0059: Show Details\' tabs and dialog a Chrome cannot draw are thrown on their own, and the built-in ones stand, holding the keyboard', async () => {
+        const { thrown, stop } = reportedErrors();
+        try {
+            const answersNothing: unknown = { detailsTabs: Object, detailsDialog: Object };
+            const options: PivotViewOptions = { source: local(), layout: byRegionAndDesk, chrome: answersNothing as NonNullable<PivotViewOptions['chrome']> };
+            const { root, grid, view } = mount(options);
+            await settled();
+            await doubleClick(grid, 0, 3);
+            expect([tabTitles(root), document.activeElement?.getAttribute('aria-selected')]).toEqual([['PivotTable', 'Details: EU / Rates*'], 'true']);
+            view.update({ ...options, detailsView: 'dialog' });
+            await doubleClick(grid, 0, 3);
+            expect([document.activeElement?.className, thrown.map(String)]).toEqual([
+                'ex-pivot-close', [expect.stringMatching(/chrome\.detailsTabs answered object/), expect.stringMatching(/chrome\.detailsDialog answered object/)],
+            ]);
+        } finally {
+            stop();
+        }
+    });
+
+    it('ADR-0390, ADR-0059: a dialog the Consumer opens with contents that cannot be drawn stands built in, Close holding the keyboard, before they are refused', async () => {
+        const handedBack: PivotShowDetailsEvent[] = [];
+        const answersNothing: unknown = { detailsDialog: Object };
+        const { view, root, grid } = mount({
+            source: local(), layout: byRegionAndDesk, detailsView: 'dialog', chrome: answersNothing as NonNullable<PivotViewOptions['chrome']>, onShowDetails: event => handedBack.push(event),
+        });
+        await settled();
+        await doubleClick(grid, 0, 3);
+        expect(() => { view.openDetails(defined(handedBack[0], 'the records heard')); }).toThrow(/chrome\.detailsDialog answered object/);
+        expect([root.querySelector('.ex-pivot-dialog .ex-pivot-dialog-records') !== null, document.activeElement?.className]).toEqual([true, 'ex-pivot-close']);
+    });
+
+    it('ADR-0390, ADR-0059: a dialog whose contents a Chrome takes over, and gives back, keeps the keyboard on Close and its records where Close stands', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegionAndDesk, detailsView: 'dialog' };
+        const { view, root, grid } = mount(options);
+        await settled();
+        await doubleClick(grid, 0, 3);
+        view.update({ ...options, chrome: { detailsDialog: chromeDialog } });
+        await settled();
+        expect([document.activeElement?.className, root.querySelector('.ex-pivot-dialog section .ex-pivot-dialog-records') !== null, grid.detailsShown.length]).toEqual(['chrome-close', true, 1]);
+        view.update(options);
+        await settled();
+        expect([document.activeElement?.className, root.querySelector('.ex-pivot-dialog-content .ex-pivot-dialog-records') !== null, grid.detailsShown.length]).toEqual(['ex-pivot-close', true, 1]);
+        shownIn(root, '.ex-pivot-close').click();
+        expect([root.querySelector('.ex-pivot-dialog'), grid.detailsShown]).toEqual([null, []]);
+    });
+
+    it('ADR-0204: a control owed the keyboard does not take it once a press elsewhere has moved the keyboard on', () => {
+        const root = document.createElement('div');
+        document.body.append(root);
+        const parts = new PartElements(root);
+        const retry = document.createElement('button');
+        parts.focus('retry');
+        document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+        root.append(retry);
+        parts.handInControl('retry', retry);
+        const unasked = document.activeElement;
+        parts.focus('retry');
+        expect([unasked === retry, document.activeElement === retry]).toEqual([false, true]);
+        parts.dispose();
+        root.remove();
+    });
+
+    it('ADR-0390: a toolbar that cannot be drawn is refused by name once and the built-in one stands; one that hands in no anchor for Layout ▾ is refused as it is pressed', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion };
+        const { root, view } = mount(options);
+        await settled();
+        const answersNothing: unknown = { toolbar: Object };
+        const refused = { ...options, chrome: answersNothing as NonNullable<PivotViewOptions['chrome']> };
+        expect(() => { view.update(refused); }).toThrow(/chrome\.toolbar answered object/);
+        // The built-in toolbar stands through each draw after, the keyboard staying on it.
+        layoutButton(root).focus();
+        tick(root, 'Desk');
+        await settled();
+        expect([root.querySelector('[data-ex-pivot-slot=toolbar]'), document.activeElement]).toEqual([null, layoutButton(root)]);
+        view.update({ ...options, chrome: { toolbar: unanchoredToolbar } });
+        expect(() => { shownIn(root, '[data-ex-pivot-slot=toolbar] button').click(); }).toThrow(/hands in no anchor 'layout'/);
+        expect([root.querySelector('.ex-pivot-popup'), root.querySelector('.ex-pivot-backdrop')]).toEqual([null, null]);
+    });
+
+    it('ADR-0390: a pivot whose Chrome cannot be drawn as it is made is not made: nothing of it stays to hear the source', () => {
+        const answersNothing: unknown = { staleReport: Object, toolbar: Object };
+        const root = document.createElement('div');
+        document.body.append(root);
+        expect(() => new PivotView(root, { source: local(), chrome: answersNothing as NonNullable<PivotViewOptions['chrome']> }, new GridStandIn().mount)).toThrow(/chrome\.toolbar answered object/);
+        expect([root.childElementCount, root.classList.contains('ex-pivot')]).toEqual([0, false]);
+    });
+
+    it('ADR-0390, ADR-0067: a Chrome\'s Stale Report notice stands in the pivot\'s live region while the report is stale, and Retry it hands in passes the keyboard on as the built-in one does', async () => {
+        const live = liveServer();
+        let views: PivotStaleReportView[] = [];
+        const drawStale = (slot: HTMLElement, context: PivotStaleReportSlotContext): (() => void) => {
+            const retry = document.createElement('button');
+            retry.className = 'chrome-retry';
+            retry.addEventListener('click', context.retry);
+            context.control('retry')(retry);
+            const draw = (): void => {
+                const view = context.view();
+                views.push(view);
+                retry.textContent = view.retry.label;
+                retry.disabled = !view.retry.enabled;
+            };
+            draw();
+            slot.append(retry);
+            return context.subscribe(draw);
+        };
+        const { root } = mount({ source: live.source, layout: byRegion, redrawInterval: 0, locale: 'en-US', chrome: { staleReport: drawStale } });
+        await settled();
+        live.fail(true);
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+        await settled();
+        expect([root.querySelector('.ex-pivot-stale-notice'), views.at(-1)?.reason]).toEqual([null, 'the source could not answer: The server is down.']);
+        expect(shownIn(root, '.ex-pivot-stale[role=status] [data-ex-pivot-slot=staleReport]').contains(shownIn(root, '.chrome-retry'))).toBe(true);
+        live.fail(false);
+        const release = live.hold();
+        const retry = shownIn(root, '.chrome-retry');
+        retry.focus();
+        retry.click();
+        await settled();
+        expect([views.at(-1)?.retry.enabled, document.activeElement?.classList.contains('ex-pivot-field-list-toggle')]).toEqual([false, true]);
+        views = [];
+        release();
+        await settled();
+        expect(root.querySelector('[data-ex-pivot-slot=staleReport]')).toBeNull();
+    });
+
+    it('ADR-0390: a panel whose contents cannot be drawn closes, and the slot is named', async () => {
+        // Object answers the slot it is handed, where a mount function answers its cleanup.
+        const chrome: unknown = { valueFieldSettings: Object };
+        const { root } = mount({ source: local(), layout: byRegion, chrome: chrome as NonNullable<PivotViewOptions['chrome']> });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        expect(() => { command(root, 'Value Field Settings…').click(); }).toThrow(/chrome\.valueFieldSettings answered object/);
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+    });
+
+    it('ADR-0390, ADR-0039, ADR-0204: a popup of the contents\' own keeps its panel while the keyboard is in it, and a focus asked once the keyboard left the pivot is not taken', async () => {
+        const contexts: PivotValueFieldSettingsSlotContext[] = [];
+        const outside = document.createElement('input');
+        const drawPanel = (slot: HTMLElement, context: PivotValueFieldSettingsSlotContext): (() => void) => {
+            contexts.push(context);
+            const caption = document.createElement('input');
+            slot.append(caption);
+            if (context.focusRequest > 0) context.takeFocus(caption);
+            return () => { caption.remove(); };
+        };
+        document.body.append(outside);
+        const { root } = mount({ source: local(), layout: byRegion, chrome: { valueFieldSettings: drawPanel } });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        command(root, 'Value Field Settings…').click();
+        const held = defined(contexts.at(-1), 'the contents\' context');
+        const caption = panel(root).querySelector('input');
+        if (caption === null) throw new Error('The contents drew no caption.');
+        expect(document.activeElement).toBe(caption);
+        // A select's list, drawn on the page's body as a design system draws it, takes the keyboard while it is open.
+        held.innerPopupChanged(true);
+        outside.focus();
+        expect(root.querySelector('.ex-pivot-popup')).not.toBeNull();
+        held.innerPopupChanged(false);
+        // The request answered, a focus the contents ask for later leaves the keyboard where the user put it.
+        held.takeFocus(caption);
+        expect(document.activeElement).toBe(outside);
     });
 });
 

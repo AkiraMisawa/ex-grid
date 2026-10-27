@@ -16,10 +16,18 @@ import { GridChartBridgeOptions } from '@ex-grid/chart';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { Ref } from 'react';
+import { RefObject } from 'react';
 import { SurfaceOptions } from '@ex-grid/chart';
 
 // @public
 export type ChartDockBridgeOptions = Required<Pick<GridChartBridgeOptions<unknown>, 'targets' | 'onChart' | 'onAdded' | 'onRefused'>>;
+
+// @public
+export interface ChartDockKeyboard {
+    readonly closeByKey: (name: string) => void;
+    readonly content: RefObject<HTMLDivElement | null>;
+    readonly panel: RefObject<HTMLDivElement | null>;
+}
 
 // @public
 export type ChartDockPlacement = 'right' | 'bottom';
@@ -94,6 +102,9 @@ export type ExSurfaceProps = SurfaceOptions & {
 
 // @public
 export function useChartDock(): ChartDockState;
+
+// @public
+export function useChartDockKeyboard(dock: ChartDockState): ChartDockKeyboard;
 
 // @public
 export function useChartFilterText(filters: ChartFiltersSlotContext): ChartFilterText;

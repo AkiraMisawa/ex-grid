@@ -4,14 +4,20 @@
 
 ```ts
 
+import type { GridChrome } from '@ex-grid/core';
 import { GridDensity } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
+import type { PivotAggregation } from '@ex-grid/pivot-engine';
+import type { PivotArea } from '@ex-grid/pivot-engine';
 import { PivotDetailPage } from '@ex-grid/pivot-engine';
 import { PivotDetailsQuery } from '@ex-grid/pivot-engine';
+import type { PivotEntry } from '@ex-grid/pivot-engine';
 import { PivotField } from '@ex-grid/pivot-engine';
 import { PivotFieldItem } from '@ex-grid/pivot-engine';
+import type { PivotItemKey } from '@ex-grid/pivot-engine';
 import { PivotLabel } from '@ex-grid/pivot-engine';
 import { PivotLayout } from '@ex-grid/pivot-engine';
+import type { PivotShowValuesAs } from '@ex-grid/pivot-engine';
 import { PivotSlicing } from '@ex-grid/pivot-engine';
 import { PivotSource } from '@ex-grid/pivot-engine';
 import { ViewportSize } from '@ex-grid/core';
@@ -29,13 +35,81 @@ export interface PivotCellItems {
 }
 
 // @public
+export interface PivotChoice<T> {
+    readonly enabled: boolean;
+    readonly label: string;
+    readonly reason?: string;
+    readonly value: T;
+}
+
+// @public
+export interface PivotChrome {
+    readonly detailsDialog?: PivotChromeSlot<PivotDetailsDialogSlotContext>;
+    readonly detailsTabs?: PivotChromeSlot<PivotDetailsTabsSlotContext>;
+    readonly fieldList?: PivotChromeSlot<PivotFieldListSlotContext>;
+    readonly fieldSettings?: PivotChromeSlot<PivotFieldSettingsSlotContext>;
+    readonly grid?: GridChrome<unknown>;
+    readonly itemFilter?: PivotChromeSlot<PivotItemFilterSlotContext>;
+    readonly menu?: PivotChromeSlot<PivotMenuSlotContext>;
+    readonly reportFilters?: PivotChromeSlot<PivotReportFiltersSlotContext>;
+    readonly staleReport?: PivotChromeSlot<PivotStaleReportSlotContext>;
+    readonly toolbar?: PivotChromeSlot<PivotToolbarSlotContext>;
+    readonly valueFieldSettings?: PivotChromeSlot<PivotValueFieldSettingsSlotContext>;
+}
+
+// @public
+export type PivotChromeSlot<Context> = (slot: HTMLElement, context: Context) => () => void;
+
+// @public
 export interface PivotDetailItem {
     readonly field: string;
     readonly item: string;
 }
 
 // @public
+export interface PivotDetailsDialogSlotContext extends PivotStandingSlotContext<PivotDetailsDialogView> {
+    readonly anchor: (name: 'records') => PivotPartRef;
+    readonly close: () => void;
+    readonly control: (name: 'close') => PivotPartRef;
+}
+
+// @public
+export interface PivotDetailsDialogView {
+    readonly closeLabel: string;
+    readonly title: string;
+}
+
+// @public
+export interface PivotDetailsTabsSlotContext extends PivotStandingSlotContext<PivotDetailsTabsView> {
+    readonly close: (key: string) => void;
+    readonly control: (key: string) => PivotPartRef;
+    readonly select: (key: string) => void;
+}
+
+// @public
+export interface PivotDetailsTabsView {
+    readonly name: string;
+    readonly tabs: readonly PivotDetailsTabView[];
+}
+
+// @public
+export interface PivotDetailsTabView {
+    readonly closeLabel?: string;
+    readonly key: string;
+    readonly panelId?: string;
+    readonly selected: boolean;
+    readonly title: string;
+}
+
+// @public
 export type PivotDetailsView = 'tab' | 'dialog';
+
+// @public
+export type PivotDragSubject = {
+    readonly field: string;
+} | {
+    readonly entry: PivotEntry;
+};
 
 // @public
 export interface PivotFailedEvent {
@@ -44,8 +118,99 @@ export interface PivotFailedEvent {
 }
 
 // @public
+export interface PivotFieldListAreaView {
+    readonly area: PivotArea;
+    readonly dropTarget: boolean;
+    readonly end: number;
+    readonly entries: readonly PivotFieldListEntryView[];
+    readonly overCap?: string;
+    readonly title: string;
+}
+
+// @public
+export interface PivotFieldListEntryView {
+    readonly caption: string;
+    readonly dragging: boolean;
+    readonly dropBefore: boolean;
+    readonly dropIndex: number;
+    readonly entry: PivotEntry;
+    readonly filtered: boolean;
+    readonly key: string;
+    readonly menuLabel: string;
+    readonly menuOpen: boolean;
+    readonly values: boolean;
+}
+
+// @public
+export interface PivotFieldListFieldView {
+    readonly caption: string;
+    readonly count?: string;
+    readonly countLabel?: string;
+    readonly dragging: boolean;
+    readonly filtered: boolean;
+    readonly key: string;
+    readonly name: string;
+    readonly placed: boolean;
+}
+
+// @public
 export interface PivotFieldListShownEvent {
     readonly shown: boolean;
+}
+
+// @public
+export interface PivotFieldListSlotContext extends PivotStandingSlotContext<PivotFieldListView> {
+    readonly anchor: (key: string) => PivotPartRef;
+    readonly area: (area: PivotArea) => PivotPartRef;
+    readonly close: () => void;
+    readonly control: (key: string) => PivotPartRef;
+    readonly dragEnter: (area: PivotArea, index: number) => void;
+    readonly dragOver: (event: DragEvent) => void;
+    readonly drop: (event: DragEvent, area: PivotArea, index: number) => void;
+    readonly dropOnList: (event: DragEvent) => void;
+    readonly endDrag: () => void;
+    readonly openMenu: (entry: PivotEntry) => void;
+    readonly setDeferred: (deferred: boolean) => void;
+    readonly setSearch: (text: string) => void;
+    readonly startDrag: (event: DragEvent, subject: PivotDragSubject) => void;
+    readonly toggle: (field: string) => void;
+    readonly update: () => void;
+}
+
+// @public
+export interface PivotFieldListView {
+    readonly areas: readonly PivotFieldListAreaView[];
+    readonly chooseCaption: string;
+    readonly defer: {
+        readonly label: string;
+        readonly ticked: boolean;
+    };
+    readonly dragCaption: string;
+    readonly dropRemoves: boolean;
+    readonly fields: readonly PivotFieldListFieldView[];
+    readonly hideLabel: string;
+    readonly search: string;
+    readonly searchLabel: string;
+    readonly title: string;
+    readonly update: {
+        readonly label: string;
+        readonly enabled: boolean;
+    };
+}
+
+// @public
+export interface PivotFieldSettingsSlotContext extends PivotPanelSlotContext {
+    readonly setSort: (index: number) => void;
+    readonly setSubtotals: (automatic: boolean) => void;
+    readonly view: () => PivotFieldSettingsView;
+}
+
+// @public
+export interface PivotFieldSettingsView {
+    readonly caption: string;
+    readonly sort: number;
+    readonly sorts: readonly string[];
+    readonly subtotals: boolean;
 }
 
 // @public
@@ -56,14 +221,107 @@ export interface PivotHandle {
 }
 
 // @public
+export interface PivotItemChoice {
+    readonly key: PivotItemKey;
+    readonly label: string;
+    readonly ticked: boolean;
+}
+
+// @public
+export interface PivotItemFilterSlotContext extends PivotPanelSlotContext {
+    readonly setAll: (ticked: boolean) => void;
+    readonly setSearch: (text: string) => void;
+    readonly setTicked: (key: PivotItemKey, ticked: boolean) => void;
+    readonly view: () => PivotItemFilterView;
+}
+
+// @public
+export interface PivotItemFilterView {
+    readonly allTicked: boolean | undefined;
+    readonly canApply: boolean;
+    readonly caption: string;
+    readonly items: readonly PivotItemChoice[];
+    readonly loading: boolean;
+    readonly note?: string;
+    readonly refusal?: string;
+    readonly search: string;
+    readonly unavailable?: string;
+    readonly updating: boolean;
+}
+
+// @public
 export interface PivotLayoutChangedEvent {
     readonly layout: PivotLayout;
+}
+
+// @public
+export interface PivotMenuCommand {
+    readonly checked?: boolean;
+    readonly enabled: boolean;
+    readonly heading?: string;
+    readonly id: string;
+    readonly invoke: () => void;
+    readonly label: string;
+}
+
+// @public
+export interface PivotMenuSlotContext extends PivotPartSlotContext {
+    readonly close: () => void;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly view: () => PivotMenuView;
+}
+
+// @public
+export interface PivotMenuView {
+    readonly commands: readonly PivotMenuCommand[];
+    readonly name: string;
+}
+
+// @public
+export interface PivotPanelSlotContext extends PivotPartSlotContext {
+    readonly apply: () => void;
+    readonly cancel: () => void;
+    readonly innerPopupChanged: (open: boolean) => void;
+    readonly subscribe: (listener: () => void) => () => void;
+}
+
+// @public
+export type PivotPartRef = (element: HTMLElement | null) => void;
+
+// @public
+export interface PivotPartSlotContext {
+    readonly focusRequest: number;
+    readonly label: (id: string) => string;
+    readonly takeFocus: (control: HTMLElement) => void;
 }
 
 // @public
 export interface PivotRefusedEvent {
     readonly fields: readonly string[];
     readonly message: string;
+}
+
+// @public
+export interface PivotReportFiltersSlotContext extends PivotStandingSlotContext<PivotReportFiltersView> {
+    readonly anchor: (field: string) => PivotPartRef;
+    readonly control: (field: string) => PivotPartRef;
+    readonly toggle: (field: string) => void;
+}
+
+// @public
+export interface PivotReportFiltersView {
+    readonly filters: readonly PivotReportFilterView[];
+    readonly name: string;
+}
+
+// @public
+export interface PivotReportFilterView {
+    readonly buttonLabel: string;
+    readonly caption: string;
+    readonly field: string;
+    readonly filtered: boolean;
+    readonly open: boolean;
+    readonly summary: string;
 }
 
 // @public
@@ -85,8 +343,82 @@ export interface PivotShowDetailsEvent {
 }
 
 // @public
+export interface PivotStaleReportSlotContext extends PivotStandingSlotContext<PivotStaleReportView> {
+    readonly control: (name: 'retry') => PivotPartRef;
+    readonly retry: () => void;
+}
+
+// @public
+export interface PivotStaleReportView {
+    readonly asOfText: string;
+    readonly message: string;
+    readonly reason: string;
+    readonly retry: {
+        readonly label: string;
+        readonly enabled: boolean;
+    };
+}
+
+// @public
+export interface PivotStandingSlotContext<View> {
+    readonly label: (id: string) => string;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly view: () => View;
+}
+
+// @public
+export interface PivotToolbarSlotContext extends PivotStandingSlotContext<PivotToolbarView> {
+    readonly anchor: (name: 'layout' | 'report-filters') => PivotPartRef;
+    readonly control: (name: 'layout' | 'refresh' | 'field-list') => PivotPartRef;
+    readonly refresh: () => void;
+    readonly toggleFieldList: () => void;
+    readonly toggleLayoutMenu: () => void;
+}
+
+// @public
+export interface PivotToolbarView {
+    readonly fieldList: {
+        readonly label: string;
+        readonly shown: boolean;
+    };
+    readonly layoutMenu: {
+        readonly label: string;
+        readonly open: boolean;
+    };
+    readonly refresh?: {
+        readonly label: string;
+    };
+    readonly refusal?: string;
+    readonly reportFilters: boolean;
+}
+
+// @public
+export interface PivotValueFieldSettingsSlotContext extends PivotPanelSlotContext {
+    readonly setAggregation: (aggregation: PivotAggregation) => void;
+    readonly setCaption: (text: string) => void;
+    readonly setNumberFormat: (text: string) => void;
+    readonly setShowValuesAs: (showValuesAs: PivotShowValuesAs) => void;
+    readonly view: () => PivotValueFieldSettingsView;
+}
+
+// @public
+export interface PivotValueFieldSettingsView {
+    readonly aggregation: PivotAggregation;
+    readonly aggregations: readonly PivotChoice<PivotAggregation>[];
+    readonly caption: string;
+    readonly numberFormat: string;
+    readonly numberFormatPlaceholder: string;
+    readonly refusal?: string;
+    readonly sample: string;
+    readonly showValuesAs: PivotShowValuesAs;
+    readonly showValuesAsChoices: readonly PivotChoice<PivotShowValuesAs>[];
+    readonly sourceCaption: string;
+}
+
+// @public
 export interface PivotViewOptions {
     readonly changeHighlightDuration?: number;
+    readonly chrome?: PivotChrome;
     readonly density?: GridDensity;
     readonly detailsView?: PivotDetailsView;
     readonly fieldListWidth?: number;

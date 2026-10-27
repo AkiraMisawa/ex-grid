@@ -1,0 +1,47 @@
+/* @ex-grid/chart-mui — the Wrapper's stylesheet (ADR-0390 section 5, ADR-0281). It does two things and nothing else.
+   It maps ExChart's Visual Tokens onto the variables a MUI theme made with cssVariables writes on the page, under the
+   grid Wrapper's paper, .mui-ex-grid, and under the Chart Dock, .mui-ex-chart, so a chart in either follows the theme
+   and a change of scheme recolours it with no render anywhere (ADR-0027). And it lays out this package's own
+   elements, each rule scoped to its own mui-ex-chart- class. It writes no geometry ExChart computes, no rule against a
+   class of ExChart's own, and no font: the chart lays its labels out by the widths of its own (ADR-0027).
+
+   The colour slots: the theme's primary and secondary lead (slots 1 and 2, as MudBlazor's primary and secondary do
+   under ExChart.MudBlazor; MUI has no tertiary), and slots 3 to 10 keep ExChart's own palette. MUI's error, warning,
+   success and info are never a series' colour: on a screen of profit and risk a red series reads as an error or a
+   loss and a green one as good news, and info would read as a notice (ADR-0281). They stay for what they mean. */
+.mui-ex-grid,
+.mui-ex-chart {
+    --ex-chart-colour-0: var(--mui-palette-primary-main);
+    --ex-chart-colour-1: var(--mui-palette-secondary-main);
+    --ex-chart-text: var(--mui-palette-text-primary);
+    --ex-chart-background: var(--mui-palette-background-paper);
+    --ex-chart-error: var(--mui-palette-error-main);
+}
+
+/* The toolbar and Chart Filters, above the plot. */
+.mui-ex-chart-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-bottom: 4px; }
+.mui-ex-chart-toolbar .mui-ex-chart-command { text-transform: none; }
+.mui-ex-chart-downloads .MuiButton-root { text-transform: none; }
+.mui-ex-chart-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; }
+.mui-ex-chart-filters > .mui-ex-chart-end { flex: 0 1 12em; min-width: 9em; }
+.mui-ex-chart-filters > .mui-ex-chart-apply { text-transform: none; }
+/* The axis switch takes effect at once, so it stands apart from the range Apply commits. */
+.mui-ex-chart-filters > .mui-ex-chart-scale { margin-left: 16px; min-width: 10em; }
+.mui-ex-chart-filters > .mui-ex-chart-filter-error { flex-basis: 100%; }
+
+/* The context menu's items, inside the chart's frame (.ex-chart-menu), which stays the chart's. */
+.mui-ex-chart-menu { display: flex; flex-direction: column; padding: 4px 0; }
+/* Only the width and the text, as the grid's menu: ButtonBase already takes the button's own border and ground away,
+   and a background set here would tie with MUI's hover and keyboard-focus shades and hide which item Enter runs. */
+.mui-ex-chart-menu .mui-ex-chart-menu-item { width: 100%; font: var(--mui-font-body1); }
+.mui-ex-chart-menu .mui-ex-chart-menu-item.MuiListItemButton-dense { font: var(--mui-font-body2); }
+
+/* The Chart Dock (ADR-0258): the grid and a panel of charts beside it or below it, never over it. */
+.mui-ex-chart-dock { display: flex; gap: 12px; align-items: flex-start; }
+.mui-ex-chart-dock-bottom { flex-direction: column; align-items: stretch; }
+.mui-ex-chart-dock-content { flex: 1 1 auto; min-width: 0; overflow-x: auto; }
+.mui-ex-chart-dock-panel { flex: 1 1 auto; min-width: 0; padding: 4px 8px 8px; }
+.mui-ex-chart-dock-tabs .mui-ex-chart-dock-tab-button { text-transform: none; }
+.mui-ex-chart-dock-label { display: inline-flex; align-items: center; gap: 4px; }
+.mui-ex-chart-dock-tab { padding-top: 8px; }
+.mui-ex-chart-dock-refusal { margin-bottom: 8px; }

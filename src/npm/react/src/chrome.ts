@@ -56,7 +56,8 @@ export type ChromeMountsMade = Map<string, {
  * through the ExGrid's portals (ADR-0350 section 9). A render function handed again in another `chrome` keeps the
  * mount function `made` holds for it, so a part the core keeps standing, the Formula Bar's fields, is not drawn again.
  * Which slots there are is the core's to check, as it checks a mount function handed it directly; a render function
- * that is not a function is named here, in React's terms. */
+ * that is not a function is named here, in React's terms. Exported for the family's Framework Adapters, whose products
+ * hand ExGrid's Chrome on to the grids they draw, not for a Consumer. */
 export function chromeMounts<Row>(given: ExGridChrome<Row> | undefined, portals: GridPortals, made: ChromeMountsMade): GridChrome<Row> | undefined {
     // Checked as a script may hand it, whatever its type says.
     const chrome: unknown = given;
