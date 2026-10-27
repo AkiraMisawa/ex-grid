@@ -467,6 +467,56 @@ const turns = async (): Promise<void> => {
 
 const editorOf = (root: HTMLElement): HTMLInputElement | null => root.querySelector<HTMLInputElement>('input.ex-editor');
 
+// A pointer event on the viewport where the grid reads it: offsets in the viewport's own pixels.
+function pointer(root: HTMLElement, name: string, x: number, y: number): void {
+    const event = new MouseEvent(name, { bubbles: true, cancelable: true, button: 0, buttons: name === 'mouseup' ? 0 : 1 });
+    Object.defineProperty(event, 'offsetX', { value: x });
+    Object.defineProperty(event, 'offsetY', { value: y });
+    const viewport = root.querySelector('.ex-viewport');
+    if (viewport === null) throw new Error('The grid drew no viewport.');
+    viewport.dispatchEvent(event);
+}
+
+// Book's first cell, then its handle (7 px at its bottom-right, Book being 120 px wide) dragged one row down.
+async function fillDown(root: HTMLElement): Promise<void> {
+    pointer(root, 'mousedown', 10, 5);
+    pointer(root, 'mouseup', 10, 5);
+    await turns();
+    pointer(root, 'mousedown', 120, 24);
+    pointer(root, 'mousemove', 10, 29);
+    pointer(root, 'mouseup', 10, 29);
+    await turns();
+}
+
+const lastRanges = (dotnet: FakeDotNet): unknown => Reflect.get(dotnet.heard('selectionChanged').at(-1) as object, 'ranges');
+
+describe('fills (ADR-0050 item 5)', () => {
+    it('ADR-0050 item 5 / ADR-0380: a fill reaches .NET as its source, target, direction and order, and once taken the Selection holds both', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({
+            options: options({ rowHeight: 24, showFillHandle: true, hears: ['fill', 'selectionChanged'] }), state: state(1, [rates, credit], { rowSequenceVersion: 4 }),
+        }, dotnet);
+        await turns();
+        await fillDown(root);
+        expect(dotnet.heard('fill')).toEqual([{
+            answer: 1, source: { topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }, target: { topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 1 },
+            direction: 'down', rowSequenceVersion: 4,
+        }]);
+        expect(lastRanges(dotnet)).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 2, columnCount: 1 }]);
+    });
+
+    it('DC-27 / ADR-0380 section 5: a fill .NET refuses leaves the Selection on the source', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = (method, args) => (method === 'Heard' && args[0] === 'fill' ? '' : null);
+        const { root } = mount({ options: options({ rowHeight: 24, showFillHandle: true, hears: ['fill', 'selectionChanged'] }) }, dotnet);
+        await turns();
+        await fillDown(root);
+        expect(dotnet.heard('fill')).toHaveLength(1);
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(false);
+        expect(lastRanges(dotnet)).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }]);
+    });
+});
+
 describe('answers .NET gives later (ADR-0380 section 5)', () => {
     const validated: WireColumn = { ...book, validates: true };
 

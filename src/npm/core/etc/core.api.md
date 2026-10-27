@@ -566,13 +566,14 @@ export interface GridExtent {
 // @public
 export class GridFillIntent {
     // @internal
-    constructor(source: SelectionRange, target: SelectionRange, direction: GridDirection, rowSequenceVersion: number);
+    constructor(source: SelectionRange, target: SelectionRange, direction: GridDirection, rowSequenceVersion: number, signal: AbortSignal);
     readonly direction: GridDirection;
     refuse(): void;
     get refused(): boolean;
     readonly rowSequenceVersion: number;
     // @internal
     seal(): void;
+    readonly signal: AbortSignal;
     readonly source: SelectionRange;
     readonly target: SelectionRange;
 }
@@ -686,7 +687,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onEdit?: (intent: GridEditIntent<Row>) => void | PromiseLike<void>;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
-    readonly onFill?: (intent: GridFillIntent) => void;
+    readonly onFill?: (intent: GridFillIntent) => void | PromiseLike<void>;
     readonly onLeave?: () => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;

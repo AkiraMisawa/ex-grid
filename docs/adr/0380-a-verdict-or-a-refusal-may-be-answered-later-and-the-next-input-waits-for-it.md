@@ -61,7 +61,10 @@ it, and Accept, Flag and Reject keep ADR-0034's meanings.
 holds the editor as a Reject does. This restores ADR-0142's "One commit at a time" in the Script Core. It
 is what a Consumer needs to refuse against the newest version it holds: a reducer, a server, a domain
 service. `onPaste` takes the same, so that a `GridPasteIntent.refuse` answered later refuses the paste as
-ADR-0050 item 3 has it.
+ADR-0050 item 3 has it. *(2026-10-27: `onFill`, the fill handle's intent, which reached the Script Core after
+this was decided, takes the same, so that a `GridFillIntent.refuse` answered later leaves the Selection on the
+source as ADR-0050 item 5 has it. On Blazor it crosses as a paste's answer does (section 5), with the token on
+`GridFillIntent.CancellationToken`; a fill refused there no longer fails the component.)*
 
 ### 3. While an answer is out, the commit is pending
 

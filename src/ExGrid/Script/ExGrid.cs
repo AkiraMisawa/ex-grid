@@ -121,6 +121,21 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// calls <see cref="GridPasteIntent.Refuse"/> before then leaves the Selection where it was (ADR-0050 item 3).</summary>
     [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
 
+    /// <summary>
+    /// Whether the fill handle is painted on a single-range Selection while no edit is open (ADR-0050, item 5): at its
+    /// bottom-right, at the top-right of whole columns and at the bottom-left of whole rows. Dragged along one axis and released, it raises one <see cref="OnFill"/> intent; a target over
+    /// a column that is not Editable is refused first, through <see cref="OnRefused"/>. Off unless set.
+    /// </summary>
+    [Parameter] public bool ShowFillHandle { get; set; }
+
+    /// <summary>
+    /// Hears a fill-handle drag, released (ADR-0050, item 5): the source, the target beside it and the direction. The
+    /// Consumer writes the fill, and the rows it then shows are what the cells paint. As with <see cref="OnPaste"/>, the
+    /// fill is pending until the handler completes (ADR-0380): one that calls <see cref="GridFillIntent.Refuse"/> before
+    /// then leaves the Selection on the source, and otherwise it becomes the source and the target together.
+    /// </summary>
+    [Parameter] public EventCallback<GridFillIntent> OnFill { get; set; }
+
     /// <summary>Hears Delete over editable cells (ADR-0035): the Consumer clears them.</summary>
     [Parameter] public EventCallback<GridClearIntent> OnClear { get; set; }
 
@@ -673,6 +688,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteBoolean("hideCopyWithHeaders", HideCopyWithHeaders);
         json.WriteBoolean("headerClickSelects", HeaderClickSelects);
         json.WriteBoolean("pasteMaySpill", PasteMaySpill);
+        json.WriteBoolean("showFillHandle", ShowFillHandle);
         json.WriteBoolean("findsHeaders", FindsHeaders);
         // Nothing answers a Selection Summary over a source in .NET yet (ADR-0130): none is drawn, rather than a
         // status line that never fills.
@@ -719,6 +735,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         yield return ("selectionChanged", SelectionChanged.HasDelegate);
         yield return ("edit", OnEdit.HasDelegate);
         yield return ("paste", OnPaste.HasDelegate);
+        yield return ("fill", OnFill.HasDelegate);
         yield return ("clear", OnClear.HasDelegate);
         yield return ("undo", OnUndo.HasDelegate);
         yield return ("redo", OnRedo.HasDelegate);
@@ -936,22 +953,23 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// meant even if the browser lets that row go before the event's turn comes. Each is handed to the Consumer once
     /// the one before it was, in the order the grid raised them, whatever a handler awaits (the spine's sixth rule).
     /// What the handler wrote to the source crosses before the browser hears the event was handled, so the browser,
-    /// which holds what .NET sends while an edit, a paste or a clear is being handled, takes in a Window that holds
-    /// the write, never one sent before it (ADR-0142, D1). A handler that throws fails the component as a handler of
-    /// Blazor's own events does, so an error boundary or the host's error UI says so. What .NET answers is an edit's
-    /// or a paste's refusal (ADR-0380 section 5): null where the Consumer took it, and where it refused it, the
-    /// Consumer's sentence, empty for a paste, which carries none. An edit or a paste whose handler failed is
-    /// answered by the failure, so the browser does not take a write the Consumer never made as made.</summary>
+    /// which holds what .NET sends while an edit, a paste, a fill or a clear is being handled, takes in a Window that
+    /// holds the write, never one sent before it (ADR-0142, D1). A handler that throws fails the component as a handler
+    /// of Blazor's own events does, so an error boundary or the host's error UI says so. What .NET answers is an edit's,
+    /// a paste's or a fill's refusal (ADR-0380 section 5): null where the Consumer took it, and where it refused it, the
+    /// Consumer's sentence, empty for a paste or a fill, which carry none. An edit, a paste or a fill whose handler
+    /// failed is answered by the failure, so the browser does not take a write the Consumer never made as made.</summary>
     internal Task<string?> HeardAsync(string kind, JsonElement payload)
     {
         Func<Task<string?>> hand;
-        var answers = kind is "edit" or "paste";
+        var answers = kind is "edit" or "paste" or "fill";
         try
         {
             hand = kind switch
             {
                 "edit" => PrepareEdit(payload),
                 "paste" => PreparePaste(payload),
+                "fill" => PrepareFill(payload),
                 _ => Unanswered(Prepare(kind, payload)),
             };
         }
@@ -1179,6 +1197,19 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             var intent = new GridPasteIntent(plan, values, version, origins, fillSource, enteredAt) { CancellationToken = cancelled };
             await OnPaste.InvokeAsync(intent);
+            return intent.IsRefused ? "" : null;
+        });
+    }
+
+    private Func<Task<string?>> PrepareFill(JsonElement payload)
+    {
+        var source = ScriptJson.Range(payload.GetProperty("source"));
+        var extension = new FillExtension(ScriptJson.Range(payload.GetProperty("target")), ScriptJson.Member<GridDirection>(payload.GetProperty("direction")));
+        var version = payload.GetProperty("rowSequenceVersion").GetInt32();
+        return Answered(payload.GetProperty("answer").GetInt64(), async cancelled =>
+        {
+            var intent = new GridFillIntent(source, extension, version) { CancellationToken = cancelled };
+            await OnFill.InvokeAsync(intent);
             return intent.IsRefused ? "" : null;
         });
     }

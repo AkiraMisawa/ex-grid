@@ -10,7 +10,7 @@
            @bind:get="Note" @bind:set="SetNote" @bind:event="oninput" @onkeydown="NoteKeyAsync" @ref="_noteField" />
 </div>
 <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
-                      OnEdit="Edit" OnCellDoubleClick="OpenNoteAsync" @ref="_grid" />
+                      OnEdit="Edit" ShowFillHandle OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" @ref="_grid" />
 
 @code {
     // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.
@@ -63,4 +63,29 @@
 
     // The browser committed the edit; your source holds what the cell shows from then on.
     private void Edit(GridEditIntent<Trade> intent) => _source.ReplaceRow(intent.Row, intent.Row with { Book = intent.Value });
+
+    // Each target cell takes the text of the source cell it repeats. Only Book is editable, so every target cell is a
+    // Book, whichever way the drag went. A fill raised under an order that has since moved names other rows: it is
+    // refused, so the grid neither selects nor counts cells nothing wrote. Every row is resolved before one is written,
+    // since a write could reorder them.
+    private void Fill(GridFillIntent fill)
+    {
+        if (fill.RowSequenceVersion != _source.RowSequenceVersion)
+        {
+            fill.Refuse();
+            return;
+        }
+        var rows = _source.Window;
+        var (source, target) = (fill.Source, fill.Target);
+        var writes = Enumerable.Range(target.TopRow, target.RowCount).Select(at =>
+        {
+            var from = rows[source.TopRow + Mod(at - source.TopRow, source.RowCount)];
+            var column = _columns[source.LeftColumn + Mod(target.LeftColumn - source.LeftColumn, source.ColumnCount)];
+            return (Row: rows[at], Book: column.Info.TextOf(from));
+        }).ToList();
+        foreach (var (row, book) in writes)
+            _source.ReplaceRow(row, row with { Book = book });
+    }
+
+    private static int Mod(int value, int by) => ((value % by) + by) % by;
 }

@@ -80,8 +80,8 @@
             promise, before which <code>intent.refuse(message)</code> still holds the editor. Each is handed an
             <code>AbortSignal</code>. In Blazor's <code>ExGrid.Script.ExGrid</code> a column declares
             <code>ValidateAsync</code>, answering a <code>ValueTask&lt;EditVerdict&gt;</code> with a
-            <code>CancellationToken</code>, in place of <code>Validate</code>; an asynchronous <code>OnEdit</code> or
-            <code>OnPaste</code> handler is waited for the same way, and its intent carries the token. Every verdict
+            <code>CancellationToken</code>, in place of <code>Validate</code>; an asynchronous <code>OnEdit</code>,
+            <code>OnPaste</code> or <code>OnFill</code> handler is waited for the same way, and its intent carries the token. Every verdict
             there, <code>Validate</code>'s too, crosses from .NET, so on Blazor Server each commit waits one round trip.
             Check the token before your handler writes: <kbd>Escape</kbd> is decided in the browser, so a cancel that
             reaches .NET after your handler wrote finds the write made, and the cell shows it under the editor. While the answer is out the commit is pending: the editor keeps the text and the
@@ -90,8 +90,9 @@
             meanwhile waits, and is taken once the answer has come, against what it left: <code>150</code>
             <kbd>Enter</kbd> <code>200</code> <kbd>Enter</kbd> typed at once ends in the same cells as typed after each
             answer, under a Reject as under an Accept. <kbd>Escape</kbd> while it is pending cancels: the signal is
-            aborted, nothing is written, the editor stays open with the text, and the grid says so. A paste or a fill whose
-            <code>onPaste</code> answers later is pending in the same way, with no editor.
+            aborted, nothing is written, the editor stays open with the text, and the grid says so. A paste whose
+            <code>onPaste</code>, or a fill whose <code>onFill</code>, answers later is pending in the same way, with no
+            editor, and is handed the same signal.
         </p>
         <p>
             That lets a verdict judge the object an edit would make, not only its text. Compose it from the row and the

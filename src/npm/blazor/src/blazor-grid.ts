@@ -15,7 +15,7 @@ import { WriteGate } from './write-gate';
 /** The events .NET listens to: each one the component has a handler for, and no other, since a grid given a
  * handler can behave otherwise than one without (a grid without `onEdit` edits nothing). */
 export type HeardKind =
-    | 'selectionChanged' | 'edit' | 'paste' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
+    | 'selectionChanged' | 'edit' | 'paste' | 'fill' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
     | 'columnHidden' | 'pinnedCountChanged' | 'editingChanged' | 'editDiscarded' | 'cellDoubleClick' | 'leave' | 'overwriteNotice' | 'action';
 
 /** The component's parameters, as the core's options are spelt. .NET sends only what the Consumer set, and the
@@ -39,12 +39,12 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
 type PassedOption =
     | 'density' | 'rowHeight' | 'headerHeight' | 'viewportHeight' | 'viewportWidth' | 'pinnedColumnCount' | 'virtualiseColumns' | 'stripeRows'
     | 'highlightFocusRow' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
-    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups';
+    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'density', 'rowHeight', 'headerHeight', 'viewportHeight', 'viewportWidth', 'pinnedColumnCount', 'virtualiseColumns', 'stripeRows',
     'highlightFocusRow', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
-    'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups',
+    'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle',
 ]);
 
 /** What the component asks of the grid it attached. Each call carries its data as the JSON text .NET wrote, read
@@ -191,15 +191,15 @@ export function parsed<T>(json: string): T {
 }
 
 type Handlers = Required<Pick<GridOptions<BlazorRow>,
-    | 'onSelectionChanged' | 'onEdit' | 'onPaste' | 'onClear' | 'onUndo' | 'onRedo' | 'onRefused' | 'onColumnWidthChanged' | 'onColumnOrderChanged'
+    | 'onSelectionChanged' | 'onEdit' | 'onPaste' | 'onFill' | 'onClear' | 'onUndo' | 'onRedo' | 'onRefused' | 'onColumnWidthChanged' | 'onColumnOrderChanged'
     | 'onColumnHidden' | 'onPinnedCountChanged' | 'onEditingChanged' | 'onEditDiscarded' | 'onCellDoubleClick' | 'onLeave' | 'onOverwriteNotice'
     | 'onAction'>>;
 
 type Asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>) => Promise<T>;
 
 // One function per event, made once, so the core sees the same handler on every update (ADR-0003). A write of the
-// user's own goes by `write`, which holds what .NET sends until .NET has handled it. An edit and a paste are answered
-// by .NET, which may refuse them: the commit is pending until it has (ADR-0380 sections 2 and 5).
+// user's own goes by `write`, which holds what .NET sends until .NET has handled it. An edit, a paste and a fill are
+// answered by .NET, which may refuse them: each is pending until it has (ADR-0380 sections 2 and 5).
 function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknown) => Promise<unknown>, asking: Asking): Handlers {
     const send = (kind: HeardKind, payload: unknown): void => { void dotnet.invokeMethodAsync('Heard', kind, payload); };
     return Object.freeze({
@@ -222,6 +222,14 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
             // A paste is refused without a sentence of the grid's: telling the user why is the Consumer's (ADR-0050 item 3).
             if (refusal !== undefined) intent.refuse();
         }),
+        onFill: intent => asking(intent.signal, async answer => {
+            const answered = await write('fill', {
+                answer, source: intent.source, target: intent.target, direction: intent.direction, rowSequenceVersion: intent.rowSequenceVersion,
+            });
+            intent.signal.throwIfAborted();
+            // A fill, as a paste, is refused without a sentence of the grid's (ADR-0050 item 5).
+            if (refusalOf(answered) !== undefined) intent.refuse();
+        }),
         onClear: intent => { void write('clear', { targets: intent.targets, rowSequenceVersion: intent.rowSequenceVersion }); },
         onUndo: () => { send('undo', null); },
         onRedo: () => { send('redo', null); },
@@ -240,7 +248,7 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
 }
 
 /** What .NET answered a write of the user's own: `null` where it took it, and where it refused it, the Consumer's
- * sentence, empty for a paste, which carries none. */
+ * sentence, empty for a paste or a fill, which carry none. */
 function refusalOf(answer: unknown): string | undefined {
     if (answer === null) return undefined;
     if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a write with something other than a refusal.');
@@ -325,6 +333,7 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('edit') ? { onEdit: heard.onEdit } : {}),
         ...(hears.has('paste') ? { onPaste: heard.onPaste } : {}),
+        ...(hears.has('fill') ? { onFill: heard.onFill } : {}),
         ...(hears.has('clear') ? { onClear: heard.onClear } : {}),
         ...(hears.has('undo') ? { onUndo: heard.onUndo } : {}),
         ...(hears.has('redo') ? { onRedo: heard.onRedo } : {}),

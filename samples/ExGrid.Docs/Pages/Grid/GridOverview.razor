@@ -52,10 +52,15 @@
             crosses the circuit. It takes the same <code>GridColumn</code>s and <code>IGridSource</code>, and its
             parameters and events are named as the core's are. Edit a Book below: the commit waits for
             <code>OnEdit</code> to answer, and the cell then paints the row your source holds. A column's
-            <code>Validate</code>, a <code>Refuse</code> from <code>OnEdit</code> or <code>OnPaste</code>, and
-            <code>CellState</code> and <code>CellMessageOf</code> work as on the grid above; each answer crosses
-            from .NET, and the input behind it waits for it
-            (<a href="exgrid/editing#validation">a verdict may come later</a>).
+            <code>Validate</code>, a <code>Refuse</code> from <code>OnEdit</code>, <code>OnPaste</code> or
+            <code>OnFill</code>, and <code>CellState</code> and <code>CellMessageOf</code> work as on the grid
+            above; each answer crosses from .NET, and the input behind it waits for it
+            (<a href="exgrid/editing#validation">a verdict may come later</a>). Select a few Books and drag the
+            small square at the Selection's bottom-right down or up, or select a Trader alone and drag it left onto
+            Book: with
+            <code>ShowFillHandle</code> set, the release reaches <code>OnFill</code> as the same
+            <code>GridFillIntent</code>, and once your handler completes without refusing, the Selection is the
+            source and the target together.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreGrid)" Files="@(["Examples/Data/Trade.cs"])" />
         <p>
