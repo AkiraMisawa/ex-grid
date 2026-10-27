@@ -6,9 +6,10 @@ import { createElement, StrictMode, useState, type ReactElement } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridColumn, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridMenuSlotContext } from '@ex-grid/core';
+import type { GridCellEditorSlotContext, GridColumn, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridMenuSlotContext } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
-import { useFilterPanel, useFindPanel, useMenuItems, type ExGridChrome } from '../src/chrome';
+import { useCellEditor, useFilterPanel, useFindPanel, useMenuItems, type ExGridChrome } from '../src/chrome';
+import { cellEditorSlotContract } from './editor-slot-contract';
 import { filterPanelSlotContract } from './filter-slot-contract';
 import { findPanelSlotContract } from './find-slot-contract';
 import { menuSlotContract } from './menu-slot-contract';
@@ -69,11 +70,18 @@ function PlainFindPanel({ context }: { readonly context: GridFindPanelSlotContex
         createElement('div', { role: 'status' }, view.outcome));
 }
 
+/** A Cell Editor of one plain field, uncontrolled, as the hook asks: its error state drawn from the core's view. */
+function PlainCellEditor({ context }: { readonly context: GridCellEditorSlotContext }): ReactElement {
+    const { view, field, defaultValue } = useCellEditor(context);
+    return createElement('input', { ref: field, defaultValue, className: view.error === undefined ? 'plain-editor' : 'plain-editor plain-editor-error' });
+}
+
 const plainMenu = (context: GridMenuSlotContext): ReactElement => createElement(PlainMenu, { context });
 const plainFilterPanel = (context: GridFilterPanelSlotContext): ReactElement => createElement(PlainFilterPanel, { context });
 const plainFindPanel = (context: GridFindPanelSlotContext): ReactElement => createElement(PlainFindPanel, { context });
 const plainChrome: ExGridChrome<unknown> = {
     columnMenu: plainMenu, contextMenu: plainMenu, filterPanel: plainFilterPanel, findPanel: plainFindPanel,
+    cellEditor: context => createElement(PlainCellEditor, { context }),
     cellMessage: context => createElement('span', null, context.message),
     loadingIndicator: context => (context.loading ? createElement('progress', { 'aria-label': 'Loading' }) : null),
     selectionSummary: context => createElement('span', null, context.status === 'pending' ? context.label('summary-pending')
@@ -85,6 +93,7 @@ menuSlotContract('a Chrome of plain buttons', plainChrome);
 filterPanelSlotContract('a Chrome of plain controls', plainChrome);
 findPanelSlotContract('a Chrome of plain controls', plainChrome);
 shownSlotContract('a Chrome of plain elements', plainChrome);
+cellEditorSlotContract('a Chrome of a plain field', plainChrome);
 
 interface Trade {
     readonly book: string;

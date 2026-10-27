@@ -217,6 +217,16 @@
             means. The words are <code>context.label(id)</code>, by the ids of <code>findPanelLabelIds</code>.
         </p>
         <p>
+            The Cell Editor (<code>cellEditor</code>) draws one text field in the grid's editor box over the cell, from
+            <code>useCellEditor(context)</code>: hand it the hook's <code>field</code> ref and <code>defaultValue</code>,
+            and no <code>value</code>. The text is the grid's: it reads the field at the Enter that commits it and writes
+            it where it types itself, as from the Formula Bar, so the field stays uncontrolled. The field takes the
+            keyboard once drawn, with the caret at its end; Enter, Tab, Escape, F2 and Overwrite's arrows stay the
+            grid's, and the hook's <code>view</code> says the mode, a Reject's sentence and a pending commit, which the
+            grid has already marked on the field. The box carries the cell's padding, outline and background, so style
+            the field to fill it with none of its own.
+        </p>
+        <p>
             Three slots only show what the grid decides. <code>cellMessage</code> draws a cell's message in the grid's
             tooltip below the cell: <code>context.message</code> is the Consumer's sentence or the Reject's, and
             <code>editorError</code> says which. <code>selectionSummary</code> draws <code>context.figures</code> in the
