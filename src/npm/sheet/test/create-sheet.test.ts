@@ -1664,6 +1664,45 @@ describe('opening and saving a file in the Input Order (ADR-0330 §10)', () => {
         expect(textAt(element, 0, 0)).toBe('old');
     });
 
+    it('ADR-0330 §10 / ADR-0240 ticket 04: a toolbar press made while the file is read waits and acts on the Workbook it opens, and Escape typed on the toolbar cancels the read', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: 'old' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('old'); });
+        press(element, 0, 0);
+        const bold = (): boolean => sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold;
+        const file = heldRead();
+        const opened = sheet.open(file.read);
+        toolbarItem(element, 'Bold').click();
+        expect(bold()).toBe(false);
+        file.answer(documentOf({ A1: 'new' }));
+        expect(await opened).toBe(true);
+        await vi.waitFor(() => { expect(bold()).toBe(true); });
+        expect([textAt(element, 0, 0), sheet.canUndo]).toEqual(['new', true]);
+        // The keyboard on the toolbar's band is the Sheet's: an Escape typed there cancels as one typed on the cells.
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        if (band === null) throw new Error('The toolbar is not drawn.');
+        band.focus();
+        expect(document.activeElement).toBe(band);
+        const cancelled = heldRead();
+        const cancelling = sheet.open(cancelled.read);
+        key('Escape');
+        expect(cancelled.signal().aborted).toBe(true);
+        cancelled.answer(documentOf({ A1: 'other' }));
+        expect(await cancelling).toBe(false);
+        expect(textAt(element, 0, 0)).toBe('new');
+        // A key the Sheet answers, typed while the file is read, is answered once, in its turn, on the Workbook opened.
+        press(element, 0, 0);
+        const third = heldRead();
+        const reopened = sheet.open(third.read);
+        key('b', { ctrlKey: true });
+        expect(bold()).toBe(true);
+        third.answer(documentOf({ A1: 'third' }));
+        expect(await reopened).toBe(true);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('third'); });
+        await vi.waitFor(() => { expect(bold()).toBe(true); });
+        sheet.undo();
+        expect(bold()).toBe(false);
+    });
+
     it('ADR-0330 §10: an opening or a save while a cell is being edited is refused by name, and nothing is read or written', async () => {
         const { element, sheet } = sheetOf();
         await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
