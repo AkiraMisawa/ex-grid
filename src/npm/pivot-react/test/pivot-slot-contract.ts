@@ -165,7 +165,7 @@ function reportGrid(root: HTMLElement): HTMLElement {
 }
 
 /** Double-clicks the report's first value cell, EU's Sum of Amount, past the labels' column, as the browser does. */
-async function showDetails(root: HTMLElement): Promise<void> {
+export async function showDetails(root: HTMLElement): Promise<void> {
     const grid = reportGrid(root);
     const viewport = grid.querySelector('.ex-viewport');
     const labels = grid.querySelector<HTMLElement>('.ex-header-cell');

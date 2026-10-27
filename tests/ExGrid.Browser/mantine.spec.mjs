@@ -166,3 +166,42 @@ test('ADR-0258, ADR-0390: the Mantine Chart Dock opens a chart beside the grid, 
     const dark = await colours();
     expect([dark.series, dark.ground], JSON.stringify(dark)).toEqual([dark.primary, dark.body]);
 });
+
+// @ex-grid/pivot-mantine on /pivot-mantine: what only a browser shows of ExPivot under Mantine. What each slot draws
+// and calls back is the contract layer 2 runs against mantinePivotChrome; here, the pane's layout under Mantine's
+// styles, the mark the stylesheet draws on the current choice, and the theme's colours in both schemes.
+test('ADR-0061, ADR-0390: under Mantine the Field List keeps its Areas whole at the pane\'s foot, the current layout choice is marked, and the theme paints the pivot in light and dark', async ({ page }) => {
+    await page.goto('/pivot-mantine');
+    const pivot = page.locator('.mantine-ex-pivot');
+    const pane = pivot.locator('.ex-pivot-field-list');
+    await expect(pivot.locator('.ex-pivot-sheet [role=grid] .ex-row').first()).toBeVisible();
+    await expect(pane.locator('.mantine-ex-pivot-areas')).toBeVisible();
+
+    // The four Areas stand whole inside the pane, under the list of fields, which scrolls on its own.
+    const [paneBox, areasBox, fieldsBox] = await Promise.all([pane, pane.locator('.mantine-ex-pivot-areas'), pane.locator('.mantine-ex-pivot-fields')].map(at => at.boundingBox()));
+    expect(areasBox.y + areasBox.height, JSON.stringify({ paneBox, areasBox })).toBeLessThanOrEqual(paneBox.y + paneBox.height);
+    expect(areasBox.y, JSON.stringify({ fieldsBox, areasBox })).toBeGreaterThanOrEqual(fieldsBox.y + fieldsBox.height);
+
+    // The mark is the stylesheet's, off aria-checked: the current form carries it, the others none.
+    await pivot.getByRole('button', { name: /^Layout/ }).click();
+    const mark = (words) => pivot.locator('[role=menuitemradio]').filter({ hasText: new RegExp(`^${words}$`) })
+        .evaluate((item) => getComputedStyle(item.querySelector('.mantine-ex-pivot-menu-mark'), '::before').content);
+    expect([await mark('Show in Compact Form'), await mark('Show in Outline Form')]).toEqual(['"✓"', 'none']);
+    await page.keyboard.press('Escape');
+    await expect(pivot.locator('.ex-pivot-popup')).toHaveCount(0);
+
+    const colours = async () => {
+        const css = await pane.evaluate((element) => {
+            const theme = getComputedStyle(element.closest('.mantine-ex-pivot'));
+            return { pane: getComputedStyle(element).backgroundColor, body: theme.getPropertyValue('--mantine-color-body') };
+        });
+        return Object.fromEntries(await Promise.all(Object.entries(css).map(async ([name, colour]) => [name, await resolvedColour(page, colour)])));
+    };
+    const light = await colours();
+    expect(light.pane, JSON.stringify(light)).toEqual(light.body);
+    await page.locator('#toggle-dark').click();
+    await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+    await expect.poll(async () => (await colours()).pane).not.toEqual(light.pane);
+    const dark = await colours();
+    expect(dark.pane, JSON.stringify(dark)).toEqual(dark.body);
+});
