@@ -192,6 +192,33 @@ describe('Linked Tables (ADR-0049)', () => {
     });
 });
 
+describe('Reference Outlines (ADR-0057)', () => {
+    it('DC-49: a Formula being edited outlines the cells it names, and tells each Linked Table column it reads in its colour, once per change', async () => {
+        const told: (readonly { readonly table: string; readonly column: string; readonly colour: number }[])[] = [];
+        const { element, sheet } = sheetOf({
+            onLinkedColumnColoursChanged: columns => { told.push(columns.map(({ column, colour }) => ({ table: column.table, column: column.column, colour }))); },
+        });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 3, 3);
+        key('F2');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        if (editor === null) throw new Error('The editor opened.');
+        // The table and column are matched ignoring case, and told under the names declared.
+        editor.value = '=A1+B2:C3+a1+SUM(positions[pv])';
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        await vi.waitFor(() => {
+            expect([...element.querySelectorAll('.ex-selection .ex-reference-outline')].map(piece => piece.className)).toEqual([
+                'ex-reference-outline ex-reference-1', 'ex-reference-outline ex-reference-2', 'ex-reference-outline ex-reference-1',
+            ]);
+        });
+        expect(told).toEqual([[{ table: 'Positions', column: 'PV', colour: 3 }]]);
+        key('Escape');
+        await vi.waitFor(() => { expect(element.querySelector('.ex-reference-outline')).toBeNull(); });
+        expect(told).toEqual([[{ table: 'Positions', column: 'PV', colour: 3 }], []]);
+    });
+});
+
 describe('Widening (ADR-0047, second round)', () => {
     it('SH-20: a number typed into a column too narrow for it widens the column, in the same step as the entry', async () => {
         const { element, sheet } = sheetOf();

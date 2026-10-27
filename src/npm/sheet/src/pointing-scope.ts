@@ -7,18 +7,14 @@
 // @ex-grid/core does not have yet. It is declared below, in the same shape, so the Scope's decisions run
 // without it; when core gains it, these move there and the Scope imports them.
 
-import type { GridDirection } from '@ex-grid/core';
+import type { GridDirection, ReferenceColour } from '@ex-grid/core';
 import { lookupFinds, lookupText, structuredReferenceText } from '@ex-grid/sheet-engine';
 import type { LinkedTable, LinkedTableColumn, Value } from '@ex-grid/sheet-engine';
 import { defined, elementAt } from './must';
 import type { PointingRefusal, PointingRefusalReason } from './pointing-refusal';
 import { sheetWords, type SheetWords } from './sheet-words';
 
-/**
- * A place in the palette the Reference Outlines take their colours from, 1 to 7 (ADR-0057). Core declares this
- * type as `ReferenceColour` and does not export it yet.
- */
-export type ReferenceColour = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type { ReferenceColour };
 
 /**
  * What a press handed over by a grid pointed at from outside landed on (ADR-0058). The grid names the shape and

@@ -2,14 +2,16 @@
 // shade layer, emitted only while it holds a pinned band or tint — the hover band, the Focus band, then each
 // tint; the pinned selection layer, each range's box, then the Focus, then the Copied Range's dashes; and the
 // scrollable layer, the hover band, the Focus band, every tint, then every box, then the Focus, then the
-// dashes, and last the fill handle and a fill drag's target outline (ADR-0050, item 5). No row learns the Selection: it is painted over them, so every row still skips its
-// paint when the Selection moves (ADR-0003).
+// dashes, and the fill handle and a fill drag's target outline (ADR-0050, item 5); then, in both, the Reference
+// Outlines of the open edit's text and the columns a Consumer asks to be outlined (ADR-0057). No row learns the
+// Selection: it is painted over them, so every row still skips its paint when the Selection moves (ADR-0003).
 
 import type { ColumnGeometry } from '../columns/column-geometry';
 import {
     box, copied as copiedStyle, focusStyle, handle as handleStyle, pinned as pinnedPart, reaches, scrollable as scrollablePart, tint, tinted,
-    type OutlineCover, type ReadableEdge,
+    whole, type OutlineCover, type ReadableEdge,
 } from '../paint/selection-styles';
+import type { OutlinedRange } from './reference-outlines';
 import type { FillHandleCorner } from '../selection/fill-rules';
 import type { SelectionRange } from '../selection/range';
 import type { Selection } from '../selection/selection';
@@ -54,10 +56,22 @@ export interface FillPaint {
 
 const noFill: FillPaint = Object.freeze({ outline: undefined, handle: undefined });
 
+/** The Reference Outlines (ADR-0057): one per range the open edit's text names, cut to the grid, in the order they
+ * stand in the text, and one per column a Consumer asks for, over its body. */
+export interface OutlinePaint {
+    readonly references: readonly OutlinedRange[];
+    readonly columns: readonly OutlinedRange[];
+}
+
+const noOutlines: OutlinePaint = Object.freeze({ references: Object.freeze([]), columns: Object.freeze([]) });
+
+const outlineClass = ([, colour]: OutlinedRange): string => `ex-reference-outline ex-reference-${String(colour)}`;
+
 /** The rectangles the layers hold over the painted rows `painted`, the Copied Range's `copied` among them. */
 export function selectionLayers(
     selection: Selection, copied: readonly SelectionRange[], columns: ColumnGeometry, rowHeightPx: number, painted: RowRange,
     cover: OutlineCover, bands: RowBands = { hoverRow: undefined, focusRow: false }, fill: FillPaint = noFill,
+    outlines: OutlinePaint = noOutlines,
 ): SelectionLayers {
     // The Copied Range's dashes (ADR-0170) come after the Focus, so they lie over the Selection's outline
     // that a copy usually shares.
@@ -74,6 +88,13 @@ export function selectionLayers(
         ...(fill.handle === undefined ? []
             : pieceOf('ex-fill-handle', handleStyle(fill.handle.range, fill.handle.corner, columns, rowHeightPx, painted, fill.handle.sizePx, pinnedLayer, fill.handle.readable))),
     ];
+    // A Reference Outline is drawn whole in each layer it reaches, as a range's box is, over the ranges; a column's
+    // is cut at the boundary, as a whole-column range is. Selection or none, as a Linked Table's grid has none.
+    const outlinePieces = (pinnedLayer: boolean, withReferences: boolean): readonly LayerPiece[] => [
+        ...(withReferences ? outlines.references : []).flatMap(named => pieceOf(outlineClass(named), whole(named[0], columns, rowHeightPx, painted, pinnedLayer))),
+        ...outlines.columns.flatMap(named => pieceOf(outlineClass(named),
+            pinnedLayer ? pinnedPart(named[0], columns, rowHeightPx, painted) : scrollablePart(named[0], columns, rowHeightPx, painted))),
+    ];
     const focus = selection.focus;
     // With no column there is no row to band.
     const rowBands = columns.count === 0 ? [] : [
@@ -84,11 +105,11 @@ export function selectionLayers(
     const scrollableBands = rowBands.flatMap(({ className, range }) => pieceOf(className, scrollablePart(range, columns, rowHeightPx, painted)));
     const bandShade = columns.pinnedCount > 0 && rowBands.some(({ range }) => reaches(range, columns, painted, true));
     if (focus === undefined) {
-        if (rowBands.length === 0 && copied.length === 0) return nothing;
+        if (rowBands.length === 0 && copied.length === 0 && outlines.columns.length === 0) return nothing;
         return {
             shade: bandShade ? pinnedBands : undefined,
-            pinned: dashes(true),
-            scrollable: [...scrollableBands, ...dashes(false)],
+            pinned: [...dashes(true), ...outlinePieces(true, false)],
+            scrollable: [...scrollableBands, ...dashes(false), ...outlinePieces(false, false)],
         };
     }
     const { ranges } = selection;
@@ -105,6 +126,7 @@ export function selectionLayers(
         ...pieceOf(focusClass, focusStyle(focus, columns, rowHeightPx, painted, true, cover)),
         ...dashes(true),
         ...fillPieces(true),
+        ...outlinePieces(true, true),
     ];
     const scrollable = [
         ...scrollableBands,
@@ -113,6 +135,7 @@ export function selectionLayers(
         ...pieceOf(focusClass, focusStyle(focus, columns, rowHeightPx, painted, false, cover)),
         ...dashes(false),
         ...fillPieces(false),
+        ...outlinePieces(false, true),
     ];
     return { shade, pinned, scrollable };
 }

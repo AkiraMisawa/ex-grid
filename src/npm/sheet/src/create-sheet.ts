@@ -12,7 +12,7 @@ import {
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
-    type ViewportSize,
+    type ViewportSize, type GridEditorReference, type ReferenceKeyColour,
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
@@ -44,6 +44,8 @@ import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes
 import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
+import { linkedColumnsOf, sameLinkedColumns, sheetReferences } from './sheet-formula-aids';
+import type { LinkedColumnColour } from './pointing-scope';
 
 /**
  * A Consumer's own action on the Sheet Toolbar (ADR-0100), a Toolbar Item like ExSheet's: it stands in a row of its own
@@ -145,6 +147,16 @@ export interface SheetOptions {
      * buttons for them, as Excel greys out its ribbon.
      */
     readonly onEditingChanged?: (open: boolean) => void;
+    /**
+     * Hears each Linked Table column the Formula being edited reads, and the colour its References wear in the
+     * editor (ADR-0057, ADR-0049): each column once, in order of first appearance, under the table's and the
+     * column's names as the Consumer declared them. Told once whenever that list changes and never when it does
+     * not, and with an empty list when the edit ends. A table or column not declared names nothing and is not
+     * told. The Sheet does not know where, or whether, the table is on screen, and outlines none of it itself: the
+     * Consumer passes the list to the grid that shows the table (`outlinedColumns`), and only it can vouch that
+     * that grid shows the rows the Formula reads.
+     */
+    readonly onLinkedColumnColoursChanged?: (columns: readonly LinkedColumnColour[]) => void;
     /** Hears the grid's Selection each time it changes, as ExGrid reports it (ADR-0011/0014): what a status line
      * counts. The formatting commands do not wait for it: they act on the Selection the grid holds when they run. */
     readonly onSelectionChanged?: (selection: GridSelection) => void;
@@ -340,6 +352,7 @@ class SheetView {
     // The Selection the grid last reported, and whether an edit is open there.
     #selection: GridSelection | undefined;
     #editing = false;
+    #linkedColumnsTold: readonly LinkedColumnColour[] = [];
     // The copy last put on the clipboard, whose Entries a paste of exactly it carries (ADR-0048), and the sentence a
     // copy of the Sheet's own was last refused with (ADR-0049).
     #ownCopy: SheetOwnCopy | undefined;
@@ -655,6 +668,10 @@ class SheetView {
             onColumnWidthChanged: this.#onColumnWidthChanged,
             onSelectionChanged: this.#onSelectionChanged,
             onEditingChanged: this.#onEditingChanged,
+            // The References in the Formula being edited are coloured and outlined (ADR-0057). While an edit is open
+            // no other Sheet is shown, so they are the shown Sheet's.
+            referencesIn: this.#referencesIn,
+            onReferenceKeyColoursChanged: this.#onKeyColoursChanged,
             onRefused: this.#onRefused,
             onEditDiscarded: this.#onEditDiscarded,
             onOverwriteNotice: this.#onOverwriteNotice,
@@ -956,6 +973,17 @@ class SheetView {
         if (this.#destroyed) return;
         this.#paintToolbar();
         this.#options.onEditingChanged?.(open);
+    };
+
+    readonly #referencesIn = (text: string): readonly GridEditorReference[] => sheetReferences(this.#source.sheet, text);
+
+    // The colours the grid gave the keys of the Formula being edited, as the Linked Table columns they name
+    // (ADR-0057): told to the Consumer when they differ from what it was last told.
+    readonly #onKeyColoursChanged = (keys: readonly ReferenceKeyColour[]): void => {
+        const columns = linkedColumnsOf(this.#source.sheet, keys);
+        if (sameLinkedColumns(columns, this.#linkedColumnsTold)) return;
+        this.#linkedColumnsTold = columns;
+        this.#options.onLinkedColumnColoursChanged?.(columns);
     };
 
     readonly #onEditDiscarded = (reason: EditDiscardReason): void => {
@@ -1831,7 +1859,7 @@ class SheetView {
         const handlers: readonly (readonly [string, unknown])[] = [
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
-            ['onShowToolbarChanged', options.onShowToolbarChanged],
+            ['onShowToolbarChanged', options.onShowToolbarChanged], ['onLinkedColumnColoursChanged', options.onLinkedColumnColoursChanged],
         ];
         for (const [name, handler] of handlers) {
             if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);

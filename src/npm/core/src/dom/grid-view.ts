@@ -107,6 +107,8 @@ import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
 import { ConsumerPopoverFrame, type GridPopoverContext } from './consumer-popover';
+import { ReferenceOutlines, referenceOutlineOptions, withinExtent, type GridOutlinedColumn, type ReferenceOutlineOptions } from './reference-outlines';
+import type { GridEditorReference, ReferenceColouring, ReferenceKeyColour } from '../cells/reference-colouring';
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
 export type ViewportSize = number | 'stretch';
@@ -508,6 +510,32 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * Consumer that shows the figures elsewhere, such as an application-wide status bar. The grid never writes
      * them to a live region. */
     readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
+    /**
+     * The References in the editor's text (ADR-0057), the fifth formula entry aid. Asked synchronously while an
+     * edit is open, from either editor surface, with the text as it stands after each change; it answers each
+     * Reference's span and either the cells it names on this grid or a key naming something the grid does not
+     * hold. It must answer for text that is not finished, `=SUM(A1,`, since a Formula is unfinished for as long as
+     * it is typed, and with nothing for text that is not a Formula. References naming the same cells, or carrying
+     * the same key, share a colour, handed out in order of first appearance round a palette of seven; a Consumer
+     * never picks one. Each range answered is outlined in the selection overlay, cut to the painted rows, and the
+     * grid never scrolls to show one. A commit or a cancel takes every outline away. A span that does not lie
+     * inside the text, or overlaps another, is refused by name. None, and nothing is outlined.
+     */
+    readonly referencesIn?: (text: string) => readonly GridEditorReference[] | undefined;
+    /** Hears the colour each key `referencesIn` answered was given (ADR-0057): each key once, in order of first
+     * appearance, whenever that set changes and never when it does not, and an empty list when the edit ends. A
+     * Reference naming cells on this grid is not told: the grid outlines it itself. The Consumer outlines what a
+     * key names wherever it shows it, a Linked Table's column in the grid that shows the table. */
+    readonly onReferenceKeyColoursChanged?: (keys: readonly ReferenceKeyColour[]) => void;
+    /**
+     * Columns to outline, each in a colour (ADR-0057): a Reference Outline over the column's body, across all its
+     * rows, cut to the painted rows, with or without an edit or a Selection. It is how the grid that shows a Linked
+     * Table outlines the columns a Formula edited elsewhere reads, in the colours that Formula's grid told its
+     * Consumer. A column is named by its `name` and outlined wherever the order puts it; a name the grid does not
+     * show is outlined nowhere, and a column listed twice is outlined twice in list order, the later over the
+     * earlier. None, and nothing is outlined.
+     */
+    readonly outlinedColumns?: readonly GridOutlinedColumn[];
     /** Hears a change of figures made on the status line (ADR-0130): given, a right-click there opens Excel's menu
      * of the six figures, each ticked while shown, and a press on one reports the figures with it ticked or
      * unticked, in Excel's order. The grid holds no choice: the figures stay as `summaryFigures` says until the
@@ -774,6 +802,7 @@ interface Taken<Row> {
     readonly onSelectionSummaryChanged: ((summary: SelectionSummary) => void) | undefined;
     readonly onSummaryFiguresChanged: ((figures: readonly SummaryFigure[]) => void) | undefined;
     readonly formulaBar: FormulaBarDeclarations<Row>;
+    readonly referenceOutlines: ReferenceOutlineOptions;
 }
 
 // The popover standing (ADR-0039, ADR-0040): its element and the commands it shows, and where it stands. The
@@ -1519,6 +1548,9 @@ export class GridView<Row> {
     // The row a new page size brings to the top of the view, once the geometry over it is made (ADR-0015).
     #topRowOwed: number | undefined;
     #layerInputs: Readonly<Record<string, unknown>> | undefined;
+    // The Reference Outline options (ADR-0057), and the colouring, columns and key colours they make.
+    #referenceOptions: ReferenceOutlineOptions = { referencesIn: undefined, onReferenceKeyColoursChanged: undefined, outlinedColumns: undefined };
+    readonly #referenceOutlines = new ReferenceOutlines();
     #shadeHolds = false;
 
     // The Settled Mark (ADR-0220).
@@ -2153,7 +2185,7 @@ export class GridView<Row> {
             onReplace: options.onReplace, findMatch: options.findMatch, findError: options.findError, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
             rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
-            dataEdge: options.dataEdge, ...summary,
+            dataEdge: options.dataEdge, ...summary, referenceOutlines: referenceOutlineOptions(options),
         };
     }
 
@@ -2432,6 +2464,7 @@ export class GridView<Row> {
         this.#summaryFigures = taken.summaryFigures;
         this.#onSelectionSummaryChanged = taken.onSelectionSummaryChanged;
         this.#onSummaryFiguresChanged = taken.onSummaryFiguresChanged;
+        this.#referenceOptions = taken.referenceOutlines;
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -2552,6 +2585,7 @@ export class GridView<Row> {
         this.#focusEditor();
         this.#raiseRangeIfUncovered();
         this.#raiseSelection();
+        this.#referenceOutlines.tellKeys(this.#colouring(), this.#referenceOptions.onReferenceKeyColoursChanged);
         void this.#summary.settle(() => this.#summaryAnswerer, this.#onSelectionSummaryChanged);
         this.#lookSettled();
     }
@@ -4767,12 +4801,15 @@ export class GridView<Row> {
             return;
         }
         edit.element.value = text;
+        // The References are asked again of the text as it now stands (ADR-0057).
+        if (this.#referenceOptions.referencesIn !== undefined) this.#invalidate();
     };
 
     // Typed in the cell: shown in the bar as well (ADR-0051).
     readonly #onEditorTyped = (): void => {
         const edit = this.#edit;
         if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.text.value = edit.element.value;
+        if (edit !== undefined && this.#referenceOptions.referencesIn !== undefined) this.#invalidate();
     };
 
     // A press back into the cell's editor: the edit is typed there again.
@@ -7651,6 +7688,12 @@ export class GridView<Row> {
             || (this.#root.contains(active) && active.closest('.ex-grid') === this.#root);
     }
 
+    // The colours of the References in the open edit's text (ADR-0057), asked of the Consumer only when the text or
+    // the function changed since it was last asked; none while no edit is open.
+    #colouring(): ReferenceColouring {
+        return this.#referenceOutlines.colouring(this.#edit?.element.value, this.#referenceOptions.referencesIn);
+    }
+
     // The selection layers' rectangles over the painted rows, written only when they changed. The layers
     // the Viewport holds first, in order.
     #paintLayers(): readonly HTMLElement[] {
@@ -7671,6 +7714,9 @@ export class GridView<Row> {
             // A row the source has since taken away has no band; the next movement finds the row there now.
             hoverRow: this.#hoverRow !== undefined && this.#hoverRow < this.#totalRows ? this.#hoverRow : undefined,
             focusRow: this.#highlightFocusRow,
+            // Each held, so a pass that changed neither text nor columns finds them the same.
+            colouring: this.#colouring(), extentRows: this.#totalRows, extentColumns: this.#columns.length,
+            outlinedColumns: this.#referenceOutlines.columns(this.#referenceOptions.outlinedColumns, this.#columnNames, this.#totalRows),
         };
         const was = this.#layerInputs;
         // A pass that moved none of them, every scroll frame along an axis the layers ignore, writes nothing.
@@ -7680,7 +7726,13 @@ export class GridView<Row> {
                 ? { shade: undefined, pinned: [], scrollable: [] }
                 : selectionLayers(inputs.selection, inputs.copied === undefined ? [] : inputs.copied.rectangles, this.#styles.geometry, inputs.rowHeightPx, visible,
                     { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true }, { hoverRow: inputs.hoverRow, focusRow: inputs.focusRow },
-                    this.#fillPaint(handle, readable));
+                    this.#fillPaint(handle, readable), {
+                        references: inputs.colouring.outlines.flatMap(([range, colour]) => {
+                            const drawn = withinExtent(range, { rowCount: inputs.extentRows, columnCount: inputs.extentColumns });
+                            return drawn === undefined ? [] : [[drawn, colour] as const];
+                        }),
+                        columns: inputs.outlinedColumns,
+                    });
             const signature = JSON.stringify(pieces);
             if (signature !== this.#paintedLayers) {
                 this.#paintedLayers = signature;

@@ -13,6 +13,8 @@ export type { GridPopoverContext } from './dom/consumer-popover';
 export type { GridDeclaredKeyPress, GridHeaderGroup, GridOptions, GridViewRead, ViewportSize } from './dom/grid-view';
 export { cellTextMeasure, type CellPaintOptions } from './dom/cell-paint';
 export { formulaBarHeight, type FormulaBarOptions } from './dom/formula-bar';
+export { referenceColour, referencePaletteLength, type GridEditorReference, type ReferenceColour, type ReferenceKeyColour } from './cells/reference-colouring';
+export type { GridOutlinedColumn } from './dom/reference-outlines';
 export type { BorderStyle, CellAppearance, CellBorder, CellTextMeasure, EdgeBorderOf } from './cells/cell-appearance';
 export type { ActionRefusalReason, FindRefusalReason, GridRefusal, PlacementRefusalReason } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';

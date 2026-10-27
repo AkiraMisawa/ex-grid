@@ -29,6 +29,7 @@ import type { LinkedTableColumn } from '@ex-grid/sheet-engine';
 import { NumberFormat } from '@ex-grid/sheet-engine';
 import type { PasteRefusalReason } from '@ex-grid/core';
 import type { PlacementRefusalReason } from '@ex-grid/core';
+import type { ReferenceColour } from '@ex-grid/core';
 import { Sheet } from '@ex-grid/sheet-engine';
 import { SheetChange } from '@ex-grid/sheet-engine';
 import { SheetDay } from '@ex-grid/sheet-engine';
@@ -326,8 +327,7 @@ export interface RecognisedNumberFormat {
 // @public
 export function recogniseNumberFormat(format: NumberFormat, culture: Culture): RecognisedNumberFormat;
 
-// @public
-export type ReferenceColour = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export { ReferenceColour }
 
 // @public
 export function scientificCode(places: number): string;
@@ -382,6 +382,7 @@ export interface SheetOptions {
     readonly label?: SheetLabel;
     readonly locale?: string;
     readonly onEditingChanged?: (open: boolean) => void;
+    readonly onLinkedColumnColoursChanged?: (columns: readonly LinkedColumnColour[]) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly onSheetsChanged?: (change: SheetsChange) => void;
     readonly onShowToolbarChanged?: (shown: boolean) => void;

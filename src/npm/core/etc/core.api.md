@@ -664,6 +664,14 @@ export class GridEditIntent<Row> {
 }
 
 // @public
+export interface GridEditorReference {
+    readonly key?: string | undefined;
+    readonly length: number;
+    readonly range?: SelectionRange | undefined;
+    readonly start: number;
+}
+
+// @public
 export interface GridErrorStepRequest {
     readonly backward: boolean;
     readonly columns: readonly string[];
@@ -878,6 +886,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
     readonly onPinnedCountChanged?: (count: number) => void;
     readonly onRedo?: () => void;
+    readonly onReferenceKeyColoursChanged?: (keys: readonly ReferenceKeyColour[]) => void;
     readonly onRefused?: (refusal: GridRefusal<Row>) => void;
     readonly onReplace?: (request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
@@ -885,10 +894,12 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onSummarize?: (request: GridSummaryRequest, signal: AbortSignal) => GridSummaryResult | Promise<GridSummaryResult>;
     readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
     readonly onUndo?: () => void;
+    readonly outlinedColumns?: readonly GridOutlinedColumn[];
     readonly pageSize?: number;
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
+    readonly referencesIn?: (text: string) => readonly GridEditorReference[] | undefined;
     readonly rowHeadings?: (row: number) => string;
     readonly rowHeadingWidth?: number;
     readonly rowHeight?: number;
@@ -903,6 +914,12 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
     readonly virtualiseColumns?: boolean;
+}
+
+// @public
+export interface GridOutlinedColumn {
+    readonly colour: ReferenceColour;
+    readonly column: string;
 }
 
 // @public
@@ -1360,6 +1377,21 @@ export function readGridQueryJson(json: string): GridQuery;
 
 // @public
 export function readGridViewStateJson(json: string, columns: Iterable<string>): GridViewState;
+
+// @public
+export type ReferenceColour = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+// @public
+export function referenceColour(place: number): ReferenceColour;
+
+// @public
+export interface ReferenceKeyColour {
+    readonly colour: ReferenceColour;
+    readonly key: string;
+}
+
+// @public
+export const referencePaletteLength = 7;
 
 // @public
 export function refusedCells(cells: readonly GridReplaceRefusedCell[], rowSequenceVersion: number): GridReplaceResult;
