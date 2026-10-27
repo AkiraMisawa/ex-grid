@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChartDefinition, type ChartDefinitionOptions } from '../src/definition';
 import { createChart, type ChartHandle } from '../src/dom/create-chart';
 import type { ChartOptions, ChartPointClick, ChartRange, SeriesVisibility } from '../src/dom/chart-element';
+import type { ChartChrome, ChartCommand, ChartFiltersSlotContext, ChartMenuSlotContext, ChartToolbarSlotContext } from '../src/dom/chart-chrome';
 import { fileName, themeStyle, tokenNames } from '../src/dom/chart-files';
 import { japaneseChartWords } from '../src/dom/chart-words';
 import { stylesheetStamp } from '../src/dom/shipped-stylesheet';
@@ -91,6 +92,30 @@ function drag(root: HTMLElement, from: number, to: number): void {
 
 function click(element: Element): void {
     element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+}
+
+// The last of what a slot was handed: a slot that was handed nothing fails the test here.
+function last<T>(handed: readonly T[]): T {
+    const found = handed.at(-1);
+    if (found === undefined) {
+        throw new Error('The slot was handed nothing.');
+    }
+    return found;
+}
+
+function command(context: { readonly commands: readonly ChartCommand[] }, id: string): ChartCommand {
+    const found = context.commands.find(c => c.id === id);
+    if (found === undefined) {
+        throw new Error(`The slot was handed no ${id}.`);
+    }
+    return found;
+}
+
+function filtersOf(context: ChartToolbarSlotContext): ChartFiltersSlotContext {
+    if (context.filters === undefined) {
+        throw new Error('Chart Filters is not open.');
+    }
+    return context.filters;
 }
 
 describe('createChart', () => {
@@ -360,6 +385,124 @@ describe('createChart', () => {
         expect(document.activeElement).toBe(open);
         open.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(root.querySelector('.ex-chart-menu')).toBeNull();
+    });
+
+    it('ADR-0281, ADR-0390: a toolbar slot is handed the commands in order, mounted again only when they change, and runs through the chart', () => {
+        const heard: (ChartRange | null)[] = [];
+        const scales: string[] = [];
+        const handed: ChartToolbarSlotContext[] = [];
+        let standing = 0;
+        const toolbar = (slot: HTMLElement, context: ChartToolbarSlotContext): (() => void) => {
+            handed.push(context);
+            standing += 1;
+            // What a Wrapper draws: a control carrying the built-in's class runs nothing of the chart's.
+            slot.innerHTML = '<button type="button" class="ex-chart-reset" data-ex-command="exchart.table">Drawn</button>';
+            return () => { standing -= 1; slot.replaceChildren(); };
+        };
+        const options: ChartOptions = {
+            definition: definition(), title: 'Exposure', chrome: { toolbar },
+            onRangeChanged: range => { heard.push(range); }, onScaleChanged: scale => { scales.push(scale); },
+        };
+        const { root, chart } = mount(options);
+        expect(root.querySelector('.ex-chart-toolbar')).toBeNull();
+        const slot = q(root, '.ex-chart-toolbar-slot', HTMLElement);
+        expect(slot.nextElementSibling).toBe(q(root, '.ex-chart-stage'));
+        const first = last(handed);
+        expect(first.name).toBe('Exposure');
+        expect(first.commands.map(c => [c.id, c.label, c.enabled, c.expanded])).toEqual([
+            ['exchart.filters', 'Chart Filters', true, false],
+            ['exchart.reset-range', 'Reset range', false, undefined],
+            ['exchart.table', 'View as table', true, false],
+            ['exchart.download.csv', 'CSV', true, undefined],
+            ['exchart.download.svg', 'SVG', true, undefined],
+            ['exchart.download.png', 'PNG', true, undefined],
+        ]);
+        expect(first.filters).toBeUndefined();
+        expect(first.label('exchart.filters.apply')).toBe('Apply');
+        click(q(slot, 'button'));
+        expect(root.querySelector('.ex-chart-table')).toBeNull();
+        // A pointer move, and the same options again, mount nothing.
+        pointer('pointermove', at(root, 0.5));
+        chart.update({ ...options, definition: definition(), chrome: { toolbar } });
+        expect([handed.length, standing]).toEqual([1, 1]);
+        // A disabled command runs nothing.
+        command(first, 'exchart.reset-range').invoke();
+        expect(heard).toEqual([]);
+        command(first, 'exchart.filters').invoke();
+        expect([handed.length, standing]).toEqual([2, 1]);
+        const filters = filtersOf(last(handed));
+        expect([filters.values, filters.labels, filters.from, filters.to, filters.hint, filters.error, filters.scale]).toEqual(
+            ['numbers', [], null, null, 'number', null, 'proportional']);
+        filters.apply('one', null);
+        expect(filtersOf(last(handed)).error).toBe('“one” is not a number on this axis.');
+        expect(heard).toEqual([]);
+        // A context handed to contents since mounted again with another acts on nothing (spine rule 6).
+        filters.apply('1', '3');
+        expect(heard).toEqual([]);
+        filtersOf(last(handed)).apply('1', ' 3 ');
+        expect(heard).toEqual([{ from: 1, to: 3 }]);
+        const applied = filtersOf(last(handed));
+        expect([applied.from, applied.to, applied.error]).toEqual(['1', '3', null]);
+        expect(command(last(handed), 'exchart.reset-range').enabled).toBe(true);
+        command(last(handed), 'exchart.reset-range').invoke();
+        expect(heard).toEqual([{ from: 1, to: 3 }, null]);
+        filtersOf(last(handed)).setScale('categories');
+        expect(scales).toEqual(['categories']);
+        expect(() => { filtersOf(last(handed)).setScale('logarithmic'); }).toThrow(RangeError);
+        // The built-in toolbar comes back with the slot gone, and the contents are taken away.
+        chart.update({ ...options, chrome: {} });
+        expect(standing).toBe(0);
+        expect(root.querySelector('.ex-chart-toolbar-slot')).toBeNull();
+        expect(q(root, '.ex-chart-toolbar').nextElementSibling?.className).toBe('ex-chart-filters');
+    });
+
+    it('ADR-0281, ADR-0390: a menu slot draws the items inside ExChart\'s frame, which a command invoked closes', () => {
+        const handed: ChartMenuSlotContext[] = [];
+        let standing = 0;
+        const menu = (slot: HTMLElement, context: ChartMenuSlotContext): (() => void) => {
+            handed.push(context);
+            standing += 1;
+            slot.innerHTML = '<button type="button" role="menuitem" data-ex-command="exchart.table">Drawn</button>';
+            return () => { standing -= 1; };
+        };
+        const { root, chart } = mount({ definition: definition(), chrome: { menu } });
+        hit(root).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 120, clientY: 80, cancelable: true }));
+        const frame = q(root, '.ex-chart-menu', HTMLElement);
+        expect([frame.getAttribute('role'), frame.getAttribute('aria-label'), frame.getAttribute('style')]).toEqual(['menu', 'Chart', 'left: 120px; top: 80px;']);
+        expect(document.activeElement).toBe(frame);
+        expect(last(handed).commands.map(c => [c.id, c.label, c.enabled])).toEqual([
+            ['exchart.reset-range', 'Reset range', false],
+            ['exchart.table', 'View as table', true],
+            ['exchart.download.csv', 'Download CSV', true],
+            ['exchart.download.svg', 'Download SVG', true],
+            ['exchart.download.png', 'Download PNG', true],
+        ]);
+        // The contents' own control runs nothing by the built-in's attribute: only through the context.
+        click(q(frame, 'button'));
+        expect(q(root, '.ex-chart-menu')).toBe(frame);
+        command(last(handed), 'exchart.table').invoke();
+        expect([root.querySelector('.ex-chart-menu'), standing]).toEqual([null, 0]);
+        expect(root.querySelector('.ex-chart-table')).not.toBeNull();
+        hit(root).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        expect(command(last(handed), 'exchart.table').label).toBe('Hide table');
+        last(handed).close();
+        expect([root.querySelector('.ex-chart-menu'), standing]).toEqual([null, 0]);
+        hit(root).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        q(root, '.ex-chart-menu').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect([root.querySelector('.ex-chart-menu'), standing]).toEqual([null, 0]);
+        hit(root).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        const stale = last(handed);
+        chart.destroy();
+        expect(standing).toBe(0);
+        command(stale, 'exchart.table').invoke();
+        stale.close();
+        expect(() => mount({ definition: definition(), chrome: { menu: 'draw' } as unknown as ChartChrome })).toThrow(/mount function/);
+        // A Chrome that cannot draw the toolbar makes no chart: the element is left as it was given.
+        const given = document.createElement('div');
+        expect(() => createChart(given, { definition: definition(), chrome: { toolbar: () => { throw new Error('The design system is not loaded.'); } } }))
+            .toThrow('The design system is not loaded.');
+        expect([given.className, given.childElementCount]).toEqual(['', 0]);
+        expect(() => mount({ definition: definition(), chrome: { legend: menu } as unknown as ChartChrome })).toThrow(/no slot 'legend'/);
     });
 
     it('ADR-0282: the CSV and SVG are saved on the click, the SVG being the drawing with its stylesheet and no pointer', async () => {

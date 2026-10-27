@@ -24,6 +24,7 @@ import { readingAt, readingOfEdge, readingOfMark, type ChartReading } from '../r
 import { buildScene, legendMembers, positionAt, valueAt, type ChartScene, type LegendPlacement } from '../scene';
 import { chartSummary } from '../summary';
 import type { AxisStyle } from '../ticks';
+import { ChartSlot, checkedChartChrome, type ChartChrome, type ChartCommand, type ChartFiltersSlotContext, type ChartMenuSlotContext, type ChartToolbarSlotContext } from './chart-chrome';
 import { bandMarkup, drawingParts, guideMarkup, tooltipMarkup, type DrawingPart, type GuideDot } from './chart-drawing';
 import { fileName, mediaType, paintPng, save, screenTheme, svgFile, type ChartFileFormat } from './chart-files';
 import { chartWord, chartWordIds, type ChartLabel } from './chart-words';
@@ -107,6 +108,9 @@ export interface ChartOptions {
     readonly fileName?: string;
     /** The words of the built-in markup by id (ADR-0370 section 10): the Consumer's, `japaneseChartWords`, or the English. */
     readonly label?: ChartLabel;
+    /** The parts a Wrapper's Chrome draws in place of the built-in markup: the toolbar and the context menu's
+     * contents (ADR-0281, ADR-0390). */
+    readonly chrome?: ChartChrome;
 }
 
 // The lattice, in CSS pixels, a drag across a scatter is followed on (ADR-0290).
@@ -160,6 +164,8 @@ interface Command {
     readonly label: string;
     readonly enabled: boolean;
     readonly run: () => void;
+    readonly expanded?: boolean;
+    readonly title?: string;
 }
 
 const sameRange = (a: ChartRange | null, b: ChartRange | null): boolean =>
@@ -253,6 +259,9 @@ export class ChartElement {
     // The SVG parts of the scene last drawn, kept while the scene and the angle are the same.
     #drawn: { readonly built: Built; readonly angle: number; readonly parts: readonly DrawingPart[] } | null = null;
     #menuParts: readonly HTMLElement[] = [];
+    // The Chrome's parts, while a slot is given for them (ADR-0390).
+    #toolbarSlot: ChartSlot<ChartToolbarSlotContext> | null = null;
+    #menuSlot: ChartSlot<ChartMenuSlotContext> | null = null;
     #notes: HTMLUListElement | null = null;
     #tableBlock: HTMLElement | null = null;
     #tableShown: ChartTable | 'notice' | null = null;
@@ -315,7 +324,13 @@ export class ChartElement {
         this.#builtFrom = this.#inputs();
         this.#built = this.#layout();
         this.#version = 1;
-        this.#paint();
+        // A chart its Chrome cannot draw is not made: what it attached is taken back, and the error thrown on.
+        try {
+            this.#paint();
+        } catch (error) {
+            this.destroy();
+            throw error;
+        }
     }
 
     /** Takes the options again, whole: what did not change costs nothing. */
@@ -336,6 +351,9 @@ export class ChartElement {
         for (const stop of this.#unlisten) {
             stop();
         }
+        // The Chrome's contents go before the elements they stand in.
+        this.#toolbarSlot?.hide();
+        this.#menuSlot?.hide();
         this.#root.replaceChildren();
         this.#root.classList.remove('ex-chart');
         for (const property of ChartElement.#rootProperties) {
@@ -379,10 +397,12 @@ export class ChartElement {
 
     static #checked(options: ChartOptions): ChartOptions {
         // An untyped caller's options are checked here, at the boundary (CONVENTIONS.md).
-        const { definition, width, height, onSeriesVisibilityChanged, onRangeChanged, onScaleChanged, onPointClick, label }: {
+        const { definition, width, height, onSeriesVisibilityChanged, onRangeChanged, onScaleChanged, onPointClick, label, chrome }: {
             readonly definition?: unknown; readonly width?: unknown; readonly height?: unknown; readonly onSeriesVisibilityChanged?: unknown;
             readonly onRangeChanged?: unknown; readonly onScaleChanged?: unknown; readonly onPointClick?: unknown; readonly label?: unknown;
+            readonly chrome?: unknown;
         } = options;
+        checkedChartChrome(chrome);
         if (!(definition instanceof ChartDefinition)) {
             throw new TypeError('An ExChart is given its definition, a ChartDefinition.');
         }
@@ -974,10 +994,12 @@ export class ChartElement {
         });
     }
 
-    #setScale(value: string): void {
-        const scale: AxisScale | undefined = value === 'Proportional' ? 'proportional' : value === 'Categories' ? 'categories' : undefined;
-        if (scale === undefined) {
-            throw new Error(`Internal: the axis switch offered '${value}', which is no scale it switches to.`);
+    #setScale(scale: AxisScale): void {
+        if (scale !== 'proportional' && scale !== 'categories') {
+            throw new RangeError(`The axis switch switches to 'proportional' or 'categories', not '${scale}' (ADR-0251).`);
+        }
+        if (!this.#scaleSwitchable) {
+            throw new Error('This chart\'s axis cannot be switched: it holds categories, or a series is sampled (ADR-0251).');
         }
         if (scale === (this.#scale ?? this.#options.definition.axis.effectiveScale)) {
             return;
@@ -1007,6 +1029,10 @@ export class ChartElement {
         }
         if (target.closest('.ex-chart-menu-backdrop') !== null) {
             this.#closeMenu();
+            return;
+        }
+        // A Chrome's contents run what they draw through their context, never through the built-in controls' classes.
+        if (inSlot(target)) {
             return;
         }
         const button = target.closest('button');
@@ -1084,7 +1110,7 @@ export class ChartElement {
 
     #onInput(event: Event): void {
         const target = event.target;
-        if (!(target instanceof HTMLInputElement)) {
+        if (!(target instanceof HTMLInputElement) || inSlot(target)) {
             return;
         }
         if (target.classList.contains('ex-chart-from')) {
@@ -1096,8 +1122,12 @@ export class ChartElement {
 
     #onChange(event: Event): void {
         const target = event.target;
-        if (target instanceof HTMLSelectElement && target.classList.contains('ex-chart-scale')) {
-            this.#setScale(target.value);
+        if (target instanceof HTMLSelectElement && target.classList.contains('ex-chart-scale') && !inSlot(target)) {
+            const value = target.value;
+            if (value !== 'Proportional' && value !== 'Categories') {
+                throw new Error(`Internal: the axis switch offered '${value}', which is no scale it switches to.`);
+            }
+            this.#setScale(value === 'Proportional' ? 'proportional' : 'categories');
         }
     }
 
@@ -1105,10 +1135,13 @@ export class ChartElement {
 
     #toolbarCommands(): readonly Command[] {
         return [
-            { id: chartWordIds.filters, label: this.#word(chartWordIds.filters), enabled: true, run: () => { this.#toggleFilters(); } },
+            { id: chartWordIds.filters, label: this.#word(chartWordIds.filters), enabled: true, expanded: this.#filtersOpen, run: () => { this.#toggleFilters(); } },
             { id: chartWordIds.resetRange, label: this.#word(chartWordIds.resetRange), enabled: this.#range !== null, run: () => { this.#resetRange(); } },
-            { id: chartWordIds.table, label: this.#word(chartWordIds.table), enabled: true, run: () => { this.#toggleTable(); } },
-            { id: chartWordIds.downloadCsv, label: this.#word(chartWordIds.downloadCsv), enabled: !this.#thinnedAtSource, run: () => { void this.download('csv'); } },
+            { id: chartWordIds.table, label: this.#word(chartWordIds.table), enabled: true, expanded: this.#tableOpen, run: () => { this.#toggleTable(); } },
+            {
+                id: chartWordIds.downloadCsv, label: this.#word(chartWordIds.downloadCsv), enabled: !this.#thinnedAtSource,
+                ...(this.#thinnedAtSource ? { title: this.#word(chartWordIds.thinnedAtSource) } : {}), run: () => { void this.download('csv'); },
+            },
             { id: chartWordIds.downloadSvg, label: this.#word(chartWordIds.downloadSvg), enabled: true, run: () => { void this.download('svg'); } },
             { id: chartWordIds.downloadPng, label: this.#word(chartWordIds.downloadPng), enabled: true, run: () => { void this.download('png'); } },
         ];
@@ -1137,17 +1170,35 @@ export class ChartElement {
         root.style.setProperty('width', `${n(this.#width)}px`);
         root.style.setProperty('font-size', `${n(this.#fontSize)}px`);
         root.style.setProperty('--ex-chart-line-height', `${n(this.#lineHeight)}px`);
-        this.#paintToolbar();
-        this.#paintFilters();
+        setText(this.#notice, this.#word(chartWordIds.stylesheetNotice));
+        const toolbarMount = this.#options.chrome?.toolbar;
+        if (toolbarMount === undefined) {
+            this.#paintToolbar();
+            this.#paintFilters();
+        } else {
+            this.#placeToolbarSlot();
+        }
         this.#paintStage();
         this.#paintMenu();
         this.#paintNotes();
         this.#paintTable();
+        // A Chrome's contents are mounted last: what the chart draws itself stands whatever they do.
+        if (toolbarMount !== undefined) {
+            this.#showToolbarSlot(toolbarMount);
+        }
+        this.#showMenuSlot();
     }
 
     #paintToolbar(): void {
-        setText(this.#notice, this.#word(chartWordIds.stylesheetNotice));
         const toolbar = this.#toolbar;
+        if (this.#toolbarSlot !== null) {
+            this.#toolbarSlot.hide();
+            this.#toolbarSlot.element.remove();
+            this.#toolbarSlot = null;
+        }
+        if (toolbar.parentElement !== this.#root) {
+            this.#stage.before(toolbar);
+        }
         toolbar.setAttribute('aria-label', this.#name);
         if (toolbar.childElementCount === 0) {
             const downloads = document.createElement('span');
@@ -1177,6 +1228,104 @@ export class ChartElement {
                 button.removeAttribute('title');
             }
         }
+    }
+
+    // The toolbar a Chrome draws (ADR-0281, ADR-0390), in place of the built-in one.
+    #placeToolbarSlot(): void {
+        this.#toolbar.remove();
+        this.#filters?.remove();
+        this.#filters = null;
+        let slot = this.#toolbarSlot;
+        if (slot === null) {
+            slot = new ChartSlot<ChartToolbarSlotContext>('toolbar', document.createElement('div'));
+            slot.element.className = 'ex-chart-toolbar-slot';
+            this.#toolbarSlot = slot;
+        }
+        if (slot.element.parentElement !== this.#root) {
+            this.#stage.before(slot.element);
+        }
+    }
+
+    // Its contents are mounted again only when what they are handed changed, so a pointer move draws nothing of them
+    // (ADR-0252); the context is made only then.
+    #showToolbarSlot(mount: NonNullable<ChartChrome['toolbar']>): void {
+        const slot = this.#toolbarSlot;
+        if (slot === null) {
+            throw new Error('Internal: the toolbar slot is shown before it is placed.');
+        }
+        const commands = this.#toolbarCommands();
+        const filters = this.#filtersView();
+        const words = [chartWordIds.from, chartWordIds.to, chartWordIds.apply, chartWordIds.axis, chartWordIds.proportional, chartWordIds.categories,
+            chartWordIds.downloads, chartWordIds.filters].map(id => this.#word(id));
+        const key = JSON.stringify([this.#name, commandShape(commands), words, filters]);
+        slot.show(mount, key, standing => Object.freeze({
+            name: this.#name,
+            commands: this.#slotCommands(commands, standing, false),
+            ...(filters === undefined ? {} : { filters: this.#filtersContext(filters, standing) }),
+            label: (id: string) => this.#word(id),
+        }));
+    }
+
+    // What Chart Filters shows while it is open (ADR-0273): plain values, which tell whether its contents would be drawn
+    // the same.
+    #filtersView(): Omit<ChartFiltersSlotContext, 'apply' | 'setScale'> | undefined {
+        if (!this.#filtersOpen) {
+            return undefined;
+        }
+        const axis = this.#options.definition.axis;
+        return {
+            values: axis.values,
+            labels: axis.values === 'labels' ? Object.freeze([...axis.labels]) : Object.freeze([]),
+            from: this.#fromText,
+            to: this.#toText,
+            hint: this.#word(axis.values === 'dates' ? chartWordIds.dateHint : axis.values === 'labels' ? chartWordIds.categoryHint : chartWordIds.numberHint),
+            error: this.#filterError,
+            ...(this.#scaleSwitchable ? { scale: (this.#scale ?? axis.effectiveScale) === 'categories' ? 'categories' as const : 'proportional' as const } : {}),
+        };
+    }
+
+    // Chart Filters as a Chrome is handed it: what it shows, and what it answers through while its contents stand.
+    #filtersContext(view: Omit<ChartFiltersSlotContext, 'apply' | 'setScale'>, standing: () => boolean): ChartFiltersSlotContext {
+        return Object.freeze({
+            ...view,
+            apply: (from: string | null, to: string | null) => {
+                if ((from !== null && typeof from !== 'string') || (to !== null && typeof to !== 'string')) {
+                    throw new TypeError('Chart Filters applies the text typed for each end, or null for the axis\' own end.');
+                }
+                if (!standing()) {
+                    return;
+                }
+                this.#fromText = from;
+                this.#toText = to;
+                this.#applyTypedRange();
+            },
+            setScale: (scale: AxisScale) => {
+                if (standing()) {
+                    this.#setScale(scale);
+                }
+            },
+        });
+    }
+
+    // The commands as a Chrome invokes them, as the built-in controls run them: one not enabled runs nothing, and none
+    // runs once the contents it was handed to no longer stand (spine rule 6); from the menu, the menu closes first.
+    #slotCommands(commands: readonly Command[], standing: () => boolean, closesMenu: boolean): readonly ChartCommand[] {
+        return Object.freeze(commands.map(command => Object.freeze({
+            id: command.id,
+            label: command.label,
+            enabled: command.enabled,
+            ...(command.expanded === undefined ? {} : { expanded: command.expanded }),
+            ...(command.title === undefined ? {} : { title: command.title }),
+            invoke: () => {
+                if (!standing() || !command.enabled) {
+                    return;
+                }
+                if (closesMenu) {
+                    this.#closeMenu();
+                }
+                command.run();
+            },
+        })));
     }
 
     #paintFilters(): void {
@@ -1417,12 +1566,16 @@ export class ChartElement {
     #paintMenu(): void {
         const at = this.#menu;
         const commands = this.#menuCommands();
-        // An open menu is kept while it would be drawn the same, so a paint behind it never takes its focus.
-        const shape = at === null ? null : JSON.stringify([at, this.#name, commands.map(c => [c.id, c.label, c.enabled])]);
+        // An open menu is kept while it would be drawn the same, so a paint behind it never takes its focus. A Chrome's
+        // frame is kept while it stands where it was asked for: its contents are mounted again in it (#showMenuSlot).
+        const mount = this.#options.chrome?.menu;
+        const shape = at === null ? null : JSON.stringify(mount === undefined ? [at, this.#name, commandShape(commands)] : [at, 'slot']);
         if (shape === this.#menuShape) {
             return;
         }
         this.#menuShape = shape;
+        this.#menuSlot?.hide();
+        this.#menuSlot = null;
         this.#menuParts.forEach(part => { part.remove(); });
         this.#menuParts = [];
         if (at === null) {
@@ -1438,6 +1591,13 @@ export class ChartElement {
         menu.setAttribute('aria-label', this.#name);
         menu.tabIndex = -1;
         menu.style.cssText = `left:${n(at.x)}px;top:${n(at.y)}px`;
+        if (mount !== undefined) {
+            // A Chrome draws the items inside ExChart's frame: the frame is the slot.
+            this.#stage.after(backdrop, menu);
+            this.#menuParts = [backdrop, menu];
+            this.#menuSlot = new ChartSlot<ChartMenuSlotContext>('menu', menu);
+            return;
+        }
         for (const command of commands) {
             const item = document.createElement('button');
             item.type = 'button';
@@ -1450,6 +1610,25 @@ export class ChartElement {
         }
         this.#stage.after(backdrop, menu);
         this.#menuParts = [backdrop, menu];
+    }
+
+    // The menu's contents a Chrome draws, mounted again in the frame only when what they are handed changed.
+    #showMenuSlot(): void {
+        const slot = this.#menuSlot;
+        const mount = this.#options.chrome?.menu;
+        if (slot === null || mount === undefined) {
+            return;
+        }
+        const commands = this.#menuCommands();
+        slot.show(mount, JSON.stringify([this.#name, commandShape(commands)]), standing => Object.freeze({
+            name: this.#name,
+            commands: this.#slotCommands(commands, standing, true),
+            close: () => {
+                if (standing()) {
+                    this.#closeMenu();
+                }
+            },
+        }));
     }
 
     #paintNotes(): void {
@@ -1550,6 +1729,13 @@ function toolbarClass(id: string): string {
         default: throw new Error(`Internal: the toolbar has no button for ${id}.`);
     }
 }
+
+// What a command shows, for telling whether a Chrome's part would be drawn the same (JSON writes an absent one as null).
+const commandShape = (commands: readonly Command[]): unknown[] =>
+    commands.map(c => [c.id, c.label, c.enabled, c.expanded, c.title]);
+
+// Whether `element` stands in a Chrome's slot, whose contents answer through their context (ADR-0390).
+const inSlot = (element: Element): boolean => element.closest('[data-ex-chart-slot]') !== null;
 
 /** The value, which the chart knows is there: `null` throws, naming what was missing. */
 function found<T>(value: T | null, what: string): T {

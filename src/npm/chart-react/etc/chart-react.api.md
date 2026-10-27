@@ -5,8 +5,11 @@
 ```ts
 
 import { ChartFileFormat } from '@ex-grid/chart';
+import { ChartMenuSlotContext } from '@ex-grid/chart';
 import { ChartOptions } from '@ex-grid/chart';
+import { ChartToolbarSlotContext } from '@ex-grid/chart';
 import { ReactElement } from 'react';
+import { ReactNode } from 'react';
 import { Ref } from 'react';
 import { SurfaceOptions } from '@ex-grid/chart';
 
@@ -19,7 +22,14 @@ export interface ExChartApi {
 }
 
 // @public
-export type ExChartProps = ChartOptions & {
+export interface ExChartChrome {
+    readonly menu?: (context: ChartMenuSlotContext) => ReactNode;
+    readonly toolbar?: (context: ChartToolbarSlotContext) => ReactNode;
+}
+
+// @public
+export type ExChartProps = Omit<ChartOptions, 'chrome'> & {
+    readonly chrome?: ExChartChrome;
     readonly ref?: Ref<ExChartApi>;
 };
 
