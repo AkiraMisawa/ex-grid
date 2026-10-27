@@ -89,6 +89,13 @@ export interface CellBorder {
 export type CellChangedAt<Row> = (row: Row, column: string) => number | undefined;
 
 // @public
+export interface CellEditorView {
+    readonly error: string | undefined;
+    readonly mode: 'overwrite' | 'caret' | 'point';
+    readonly pending: boolean;
+}
+
+// @public
 export interface CellPaintOptions<Row> {
     readonly cellAlign?: (row: Row, column: GridColumn<Row>) => CellAlign;
     readonly cellAppearance?: (row: Row, column: GridColumn<Row>) => CellAppearance;
@@ -538,6 +545,19 @@ export interface GridActionEvent<Row> {
 }
 
 // @public
+export interface GridCellEditorSlotContext {
+    readonly column: string;
+    readonly columnType: ColumnType;
+    readonly focusRequest: number;
+    readonly initialText: string;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly takeFocus: (control: HTMLElement, options?: {
+        readonly preventScroll?: boolean;
+    }) => void;
+    readonly view: () => CellEditorView;
+}
+
+// @public
 export interface GridCellMessageSlotContext {
     readonly close: () => void;
     readonly column: string;
@@ -554,6 +574,7 @@ export interface GridChangeBatch<Row> {
 
 // @public
 export interface GridChrome<Row> {
+    readonly cellEditor?: GridChromeSlot<GridCellEditorSlotContext>;
     readonly cellMessage?: GridChromeSlot<GridCellMessageSlotContext>;
     readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;

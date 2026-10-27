@@ -9,7 +9,7 @@ import {
     type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
 import type {
-    FilterPanelView, FindPanelView, GridCellMessageSlotContext, GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext,
+    CellEditorView, FilterPanelView, FindPanelView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext,
     GridFilterPanelSlotContext, GridFindPanelSlotContext, GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridSelectionSummarySlotContext,
 } from '@ex-grid/core';
 import type { GridPortals } from './portals';
@@ -29,6 +29,8 @@ export interface ExGridChrome<Row> {
     readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
     /** The find panel and its Replace (ADR-0055, ADR-0332), drawn with {@link useFindPanel}. */
     readonly findPanel?: (context: GridFindPanelSlotContext) => ReactNode;
+    /** The Cell Editor's field (ADR-0010), drawn with {@link useCellEditor}. */
+    readonly cellEditor?: (context: GridCellEditorSlotContext) => ReactNode;
     /** A cell's message (ADR-0034): its text, drawn in the core's box below the cell. */
     readonly cellMessage?: (context: GridCellMessageSlotContext) => ReactNode;
     /** The loading indicator (ADR-0010), at the grid's foot: nothing while nothing loads. */
@@ -228,3 +230,45 @@ export function useFindPanel(context: GridFindPanelSlotContext): FindPanelHandle
 
 /** The find panel's contexts whose request has been answered, as {@link answeredRequests} keeps the filter panel's. */
 const answeredFinds = new WeakSet<GridFindPanelSlotContext>();
+
+/** What {@link useCellEditor} hands the editor's contents. */
+export interface CellEditorHandles {
+    /** What the editor shows besides its text: the mode, a Reject's sentence, a pending commit. */
+    readonly view: CellEditorView;
+    /** Takes the text field, which the core reads and writes, and which takes the keyboard as the editor opens. */
+    readonly field: (control: HTMLInputElement | HTMLTextAreaElement | null) => void;
+    /** The text the field opens holding: hand it to the field as its default, and no value, since the text is the
+     * core's to read and write (ADR-0010). */
+    readonly defaultValue: string;
+}
+
+/**
+ * Draws the Cell Editor's slot from its context (ADR-0390 section 3): one text field, uncontrolled, opening with the
+ * core's text, which the core reads at each commit and writes where it types itself, as from the Formula Bar. The
+ * field takes the keyboard once drawn, the caret at its end. Enter, Tab, Escape, F2 and Overwrite's arrows are the
+ * core's, so the contents draw no key handler of their own.
+ */
+export function useCellEditor(context: GridCellEditorSlotContext): CellEditorHandles {
+    const view = useSyncExternalStore(context.subscribe, context.view);
+    const control = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+    const handed = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+    // After every render: the field drawn first is handed over for the keyboard the opening owes, and a field drawn
+    // anew, an input swapped for a textarea say, is handed over too, so the core reads it and it keeps the keyboard.
+    useLayoutEffect(() => {
+        const field = control.current;
+        if (!answeredEditors.has(context)) {
+            answeredEditors.add(context);
+            if (field === null) throw new Error("The cell editor's field is not drawn: hand useCellEditor's `field` ref to the text field.");
+        } else if (field === null || field === handed.current) {
+            return;
+        }
+        handed.current = field;
+        context.takeFocus(field);
+    });
+    const [field] = useState(() => (element: HTMLInputElement | HTMLTextAreaElement | null): void => { control.current = element; });
+    return { view, field, defaultValue: context.initialText };
+}
+
+/** The editors whose opening request has been answered: StrictMode runs an effect twice, and the keyboard is taken
+ * once. */
+const answeredEditors = new WeakSet<GridCellEditorSlotContext>();

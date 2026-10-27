@@ -74,10 +74,11 @@ export function shownSlotContract(name: string, chrome: ExGridChrome<unknown>): 
             press(root, 130, 5);
             root.focus();
             key('a');
+            await settled();
             key('Enter');
             await settled();
             const message = boxOf(root, ':scope > .ex-message');
-            expect([message.textContent.trim(), boxOf(root, 'input.ex-editor').getAttribute('aria-describedby')]).toEqual(['\'a\' is not a number', message.id]);
+            expect([message.textContent.trim(), document.activeElement?.getAttribute('aria-describedby')]).toEqual(['\'a\' is not a number', message.id]);
         });
 
         it('ADR-0130: the Selection Summary shows the core\'s figures, each as the core formatted it, in Excel\'s order', async () => {

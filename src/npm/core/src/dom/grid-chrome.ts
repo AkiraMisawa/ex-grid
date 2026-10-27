@@ -248,6 +248,46 @@ export interface GridFindPanelSlotContext {
     readonly takeFocus: (control: HTMLElement, options?: { readonly preventScroll?: boolean }) => void;
 }
 
+/** What the Cell Editor shows besides its text (ADR-0010, ADR-0034, ADR-0380). */
+export interface CellEditorView {
+    /** Overwrite, Excel's Enter mode, where the arrows commit and move; Caret, where they are the field's; or Point,
+     * only where the Consumer declares it, where the arrows and the mouse point at cells and the Reference is written
+     * at the caret (ADR-0051). F2 switches Overwrite and Caret, and from Point to Caret; typing ends Point. */
+    readonly mode: 'overwrite' | 'caret' | 'point';
+    /** The sentence a Reject or a refusal holds the editor with, while one does: the core has marked the field
+     * `aria-invalid` and described it by the message, and the contents may paint their own error state. */
+    readonly error: string | undefined;
+    /** Whether the commit is pending (ADR-0380 section 3): the core has made the field read only, and the box busy. */
+    readonly pending: boolean;
+}
+
+/**
+ * What the Cell Editor's contents are handed (ADR-0010, ADR-0030). The core owns the box, its place over the cell,
+ * the keys and the uncommitted text; the contents draw one text field, an `input` or a `textarea`, inside the slot,
+ * the core's `ex-editor` box, which the field fills. The field is the core's to read and write: it opens holding
+ * `initialText`, uncontrolled, and the core reads its value and places its caret, so what was typed is the core's
+ * at the Enter that commits it, whatever the contents' framework has rendered (ADR-0010). Enter, Tab, Escape, F2
+ * and Overwrite's arrows never reach the field: the root's capture listener takes them.
+ */
+export interface GridCellEditorSlotContext {
+    /** The name of the column the cell is in. */
+    readonly column: string;
+    /** The column's type. */
+    readonly columnType: ColumnType;
+    /** The text the field opens holding: what was typed to open it, or the cell's text. */
+    readonly initialText: string;
+    /** What the editor shows now besides its text. */
+    readonly view: () => CellEditorView;
+    /** Hears each change to the view; answers the function that stops it. */
+    readonly subscribe: (listener: () => void) => () => void;
+    /** The core's request that the field take the keyboard as the editor opens: the contents answer it once drawn,
+     * by handing the field to {@link GridCellEditorSlotContext.takeFocus}. */
+    readonly focusRequest: number;
+    /** Gives the editor the keyboard, the caret at the end of its text, while the keyboard is still this grid's
+     * (ADR-0010, ADR-0204). `control` is the field, or an element holding it. */
+    readonly takeFocus: (control: HTMLElement, options?: { readonly preventScroll?: boolean }) => void;
+}
+
 /**
  * What a cell's message is handed while it shows (ADR-0034): the Consumer's sentence for a flagged cell, or the
  * standing Reject's while an editor holds. The core decides when it shows and where, and supplies the text; the
@@ -311,6 +351,8 @@ export interface GridChrome<Row> {
     readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
     /** The find panel, and its Replace (ADR-0055, ADR-0332). */
     readonly findPanel?: GridChromeSlot<GridFindPanelSlotContext>;
+    /** The Cell Editor's field (ADR-0010). */
+    readonly cellEditor?: GridChromeSlot<GridCellEditorSlotContext>;
     /** A cell's message (ADR-0034). */
     readonly cellMessage?: GridChromeSlot<GridCellMessageSlotContext>;
     /** The loading indicator (ADR-0010). */
@@ -321,7 +363,7 @@ export interface GridChrome<Row> {
 
 /** The slots a grid's `chrome` names. */
 const slotNames: readonly (keyof GridChrome<unknown>)[] = [
-    'columnMenu', 'contextMenu', 'filterPanel', 'findPanel', 'cellMessage', 'loadingIndicator', 'selectionSummary',
+    'columnMenu', 'contextMenu', 'filterPanel', 'findPanel', 'cellEditor', 'cellMessage', 'loadingIndicator', 'selectionSummary',
 ];
 
 /** A grid's `chrome`, checked: an object whose slots are each a mount function, or not given. */
@@ -881,5 +923,122 @@ export class SlottedFindPanel implements FindPlace {
     #changed(): void {
         this.#view = undefined;
         for (const listener of this.#listeners) listener();
+    }
+}
+
+/** A text field the core reads and writes. */
+export type EditorField = HTMLInputElement | HTMLTextAreaElement;
+
+/**
+ * The Cell Editor, drawn by a Chrome slot (ADR-0390): the box is the core's, standing over the cell as the built-in
+ * editor does, and the contents draw the field inside it and hand it over through `takeFocus`, as they draw it and
+ * whenever they draw it anew. The core reads the field's text and places its caret (ADR-0010); until a field is
+ * handed over, the text is the one the editor opened with, or one the core wrote since, which a field is handed as
+ * it is taken. Mounted once, its focus owed: the core gives the first field the keyboard as it gives its own editor.
+ */
+export class SlottedEditor {
+    readonly box: HTMLElement;
+    readonly #slot: SlotMount<GridCellEditorSlotContext>;
+    readonly #context: GridCellEditorSlotContext;
+    readonly #view: () => CellEditorView;
+    readonly #taken: (field: EditorField) => void;
+    readonly #listeners = new Set<() => void>();
+    // The text as the core last knew it: the opening text, what the field held at its last input, or what the core
+    // wrote. A field handed over anew is handed it.
+    #text: string;
+    #field: EditorField | undefined;
+    #shown: CellEditorView | undefined;
+
+    /** `taken` hears each field handed over, for the core to make it what its editor is now: read only while a commit
+     * is pending, say. */
+    constructor(doc: Document, mount: GridChromeSlot<GridCellEditorSlotContext>, opened: { readonly column: string; readonly columnType: ColumnType;
+        readonly initialText: string; }, view: () => CellEditorView, takeFocus: ChromeFocus, cancel: () => void, taken: (field: EditorField) => void) {
+        this.box = doc.createElement('div');
+        this.#text = opened.initialText;
+        this.#view = view;
+        this.#taken = taken;
+        this.#slot = new SlotMount('cellEditor', mount, this.box, takeFocus, cancel, true);
+        // What is typed is kept, for a field the contents draw anew.
+        this.box.addEventListener('input', event => {
+            if (event.target === this.#field) this.#text = this.#field.value;
+        });
+        this.#context = Object.freeze({
+            ...opened,
+            view: () => this.#made(),
+            subscribe: (listener: () => void) => {
+                if (typeof listener !== 'function') throw new TypeError('subscribe is handed the function that hears each change to the view.');
+                this.#listeners.add(listener);
+                return () => { this.#listeners.delete(listener); };
+            },
+            focusRequest: 1,
+            takeFocus: (control: HTMLElement, options?: { readonly preventScroll?: boolean }) => {
+                if (!(control instanceof HTMLElement) || !this.box.contains(control) || control === this.box) {
+                    throw new TypeError('takeFocus is handed the field the cell editor drew, or an element holding it, inside the slot.');
+                }
+                const field = control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement ? control
+                    : control.querySelector<EditorField>('input, textarea');
+                if (field === null) throw new Error('The cell editor\'s contents handed over no text field: draw one input or textarea in the slot.');
+                if (!this.#slot.live) return;
+                if (field !== this.#field) {
+                    this.#field = field;
+                    if (field.value !== this.#text) field.value = this.#text;
+                    this.#taken(field);
+                }
+                this.#slot.takeFocus(field, options);
+            },
+        });
+    }
+
+    /** Mounts the contents. */
+    open(): void {
+        this.#slot.mount(this.#context);
+    }
+
+    /** The field the contents handed over, while it stands; undefined before. */
+    field(): EditorField | undefined {
+        const field = this.#field;
+        return field !== undefined && field.isConnected && this.box.contains(field) ? field : undefined;
+    }
+
+    /** The editor's text. Read for a commit, it is refused while the contents have handed over no field: what they
+     * show is then not what would be written (the spine's first rule). */
+    get text(): string {
+        // Before a field is handed over, the text is the one the core holds (ADR-0010).
+        return this.field()?.value ?? this.#text;
+    }
+
+    /** Writes the editor's text, as the core writes its own editor's: the field's, where one stands. */
+    set text(text: string) {
+        this.#text = text;
+        const field = this.field();
+        if (field !== undefined && field.value !== text) field.value = text;
+    }
+
+    /** The text to commit: the field's, which must stand. */
+    committed(): string {
+        const field = this.field();
+        if (field === undefined) throw new Error('The cell editor\'s contents drew no text field to commit: hand the field to takeFocus once drawn (ADR-0390).');
+        return field.value;
+    }
+
+    /** Tells the contents the view, where it changed since they last heard it. */
+    review(): void {
+        const view = this.#view();
+        const shown = this.#shown;
+        if (shown !== undefined && shown.mode === view.mode && shown.error === view.error && shown.pending === view.pending) return;
+        this.#shown = Object.freeze(view);
+        if (shown === undefined) return;
+        for (const listener of this.#listeners) listener();
+    }
+
+    /** The editor is going: its contents are taken away. */
+    dispose(): void {
+        this.#slot.dispose();
+        this.#listeners.clear();
+    }
+
+    #made(): CellEditorView {
+        this.#shown ??= Object.freeze(this.#view());
+        return this.#shown;
     }
 }

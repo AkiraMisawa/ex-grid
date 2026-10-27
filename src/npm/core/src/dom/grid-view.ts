@@ -83,7 +83,8 @@ import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
 import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, popoverMinWidthPx, type MenuKeyTable, type MenuPlace } from './menu-popover';
 import {
-    checkedChrome, columnMenuExtra, ShownSlot, SlottedFilterPanel, SlottedFindPanel, SlottedMenu, type GridCellMessageSlotContext, type GridChrome,
+    checkedChrome, columnMenuExtra, ShownSlot, SlottedEditor, SlottedFilterPanel, SlottedFindPanel, SlottedMenu, type EditorField,
+    type CellEditorView, type GridCellMessageSlotContext, type GridChrome,
     type GridChromeSlot, type GridLoadingIndicatorSlotContext, type GridMenuSlotContext,
 } from './grid-chrome';
 import { FilterPanel, type FilterPlace, type FilterUi } from './filter-panel';
@@ -1030,7 +1031,11 @@ interface OpenEdit<Row> {
     /** Overwrite, Excel's Enter mode, where the arrows commit and move; Caret, where they are the field's; or Point,
      * where they move the pointing outline (ADR-0051). */
     mode: 'overwrite' | 'caret' | 'point';
-    readonly element: HTMLInputElement;
+    /** The editor's box over the cell: the core's own field, or the box a Chrome's cellEditor slot draws its field in
+     * (ADR-0390). */
+    readonly element: HTMLElement;
+    /** The Chrome's contents, where its cellEditor slot draws the field. */
+    readonly slot: SlottedEditor | undefined;
     /** The source, the columns and the Row Sequence Version it opened under. */
     readonly source: GridSource<Row>;
     readonly columnNames: readonly string[];
@@ -2063,6 +2068,7 @@ export class GridView<Row> {
         this.#pending = undefined;
         // An edit open as the grid goes ends with it: the Consumer hears the end of every open (ADR-0050
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
+        this.#edit?.slot?.dispose();
         this.#edit = undefined;
         this.#tellEditing();
         this.#endPointing();
@@ -3157,7 +3163,7 @@ export class GridView<Row> {
             // keyboard: its root, its Keyboard Field, or an editor surface.
             const edit = this.#edit;
             const held = event.target === this.#root || event.target === this.#keyField
-                || (edit !== undefined && (event.target === edit.element || event.target === this.#bar.text));
+                || (edit !== undefined && (this.#inEditor(edit, event.target) || event.target === this.#bar.text));
             if (event.key === 'Alt' && held) this.#raiseDeclaredKey(event, press);
             return;
         }
@@ -3192,7 +3198,7 @@ export class GridView<Row> {
         }
         const edit = this.#edit;
         // The Formula Bar's text is the editor's second surface, and its keys are the editor's (ADR-0051).
-        if (edit !== undefined && (event.target === edit.element || event.target === this.#bar.text)) {
+        if (edit !== undefined && (this.#inEditor(edit, event.target) || event.target === this.#bar.text)) {
             if (this.#raiseDeclaredKey(event, press)) return;
             this.#onEditorKey(event, press, edit);
             return;
@@ -4117,25 +4123,54 @@ export class GridView<Row> {
         // opened away from a row scrolled out of the Viewport has no cell in the page to bring in.
         const focus = this.#held.selection.focus;
         if (surface === 'cell' && focus !== undefined && sameCell(focus, at) && this.#cellIsPainted(at)) this.#followArmed = { focus, target: at };
-        const element = this.#root.ownerDocument.createElement('input');
+        const doc = this.#root.ownerDocument;
+        const declared = this.#chrome?.cellEditor;
+        const column = itemAt(this.#columns, at.column).column;
+        // A Chrome's cellEditor draws the field in a box of the core's (ADR-0390); it hands the field over once
+        // drawn, and the keyboard owed is given then, as to the core's own.
+        const slot: SlottedEditor | undefined = declared === undefined ? undefined : new SlottedEditor(doc, declared,
+            { column: column.name, columnType: column.type, initialText: text },
+            (): CellEditorView => {
+                const edit = this.#edit;
+                if (edit === undefined || edit.slot !== slot) throw new Error('Internal: the cell editor\'s view is read while its edit is not open.');
+                return { mode: edit.mode, error: edit.error, pending: this.#pending !== undefined && this.#pending.edit === edit };
+            },
+            (control, preventScroll, owed) => {
+                if (this.#edit?.slot !== slot) return;
+                if (owed) this.#focusEditor();
+                else this.#takeChromeFocus(control, preventScroll, false);
+            },
+            () => { if (this.#edit?.slot === slot) this.#endEdit(undefined); },
+            // A field drawn anew while the commit is pending takes no input either (ADR-0380 section 3); the pass marks
+            // it as the editor stands.
+            field => {
+                const edit = this.#edit;
+                if (edit?.slot !== slot) return;
+                field.readOnly = this.#pending !== undefined && this.#pending.edit === edit;
+                this.#invalidate();
+            });
+        const element = slot?.box ?? doc.createElement('input');
         element.className = 'ex-editor';
-        element.value = text;
+        if (element instanceof HTMLInputElement) element.value = text;
         // One uncommitted text in two places: what is typed in the cell is shown in the bar (ADR-0051), and a
-        // press back into the cell types there again.
+        // press back into the cell types there again. Heard on the box a Chrome draws in, as its field's events rise.
         element.addEventListener('input', this.#onEditorTyped);
-        element.addEventListener('focus', this.#onEditorFocused);
-        // A caret moved by the field's own keys or a press inside its text (ADR-0051).
+        element.addEventListener('focusin', this.#onEditorFocused);
+        // A caret moved by the field's own keys or a press inside its text (ADR-0051), heard as they rise from a
+        // Chrome's field too.
         element.addEventListener('keyup', this.#onEditorCaret);
         element.addEventListener('mouseup', this.#onEditorCaret);
-        this.#hearSurface(element);
+        // The coloured text is laid over the core's own field only, whose text it is measured to match (ADR-0057).
+        if (slot === undefined) this.#hearSurface(builtInEditor(element));
         const rowKey = this.#source.rowKey;
         const held = defined(this.#rowAt(at.row), 'the row an edit opens on');
-        this.#edit = {
-            cell: at, mode, element, source: this.#source, columnNames: this.#columnNames, sequence: this.#sequence(),
+        const opened: OpenEdit<Row> = {
+            cell: at, mode, element, slot, source: this.#source, columnNames: this.#columnNames, sequence: this.#sequence(),
             key: rowKey === undefined ? undefined : keyOf(rowKey, held.row, 'The row an edit opens on'),
             seenText: this.#paintedTextAt(at), openedOn: held.row, error: undefined,
             awaits: this.#userWritesOver(at), rebaseOwed: false, surface,
         };
+        this.#edit = opened;
         // The editor takes the keyboard in the task that opened it, with the caret placed by the core at the end
         // of the opening text: a key typed next lands in it whenever the pass paints, never in the Keyboard
         // Field behind it (the spine's sixth rule). The pass then sets it over its cell.
@@ -4144,6 +4179,7 @@ export class GridView<Row> {
         for (const node of this.#paintEditor()) {
             if (!node.isConnected) this.#viewport.insertBefore(node, firstRow === undefined ? null : firstRow);
         }
+        slot?.open();
         this.#focusEditor();
         this.#tellEditing();
         this.#invalidate();
@@ -4278,7 +4314,7 @@ export class GridView<Row> {
             this.#endEdit('columnNoLongerEditable');
             return true;
         }
-        const text = edit.element.value;
+        const text = this.#committedText(edit);
         const { row } = landing;
         const controller = judged?.controller ?? new AbortController();
         // The Consumer's judgement, at the one moment a veto is still possible (ADR-0034), now or later (ADR-0380).
@@ -4393,7 +4429,7 @@ export class GridView<Row> {
         const trigger = retake ? this.#retaking ?? (input !== undefined && input.eventPhase !== Event.NONE ? input : undefined) : undefined;
         // The field that holds the keyboard takes no input of its own either, so no IME starts in it meanwhile.
         const holder = typedField(this.#keyboardHolder());
-        const stilled = holder === undefined || holder === pending.edit?.element ? undefined : holder;
+        const stilled = holder === undefined || (pending.edit !== undefined && this.#inEditor(pending.edit, holder)) ? undefined : holder;
         this.#pendingStamps += 1;
         const out: PendingCommit<Row> = { ...pending, stamp: this.#pendingStamps, trigger, held: [], stilled };
         this.#pending = out;
@@ -4438,11 +4474,13 @@ export class GridView<Row> {
     // editor says it is busy (ADR-0380 section 3).
     #markPending(out: PendingCommit<Row>, pending: boolean): void {
         if (out.stilled !== undefined) out.stilled.readOnly = pending;
-        const element = out.edit?.element;
-        if (element === undefined) return;
-        element.readOnly = pending;
-        if (pending) element.setAttribute('aria-busy', 'true');
-        else element.removeAttribute('aria-busy');
+        const edit = out.edit;
+        if (edit === undefined) return;
+        const field = this.#editorField(edit);
+        if (field !== undefined) field.readOnly = pending;
+        if (pending) edit.element.setAttribute('aria-busy', 'true');
+        else edit.element.removeAttribute('aria-busy');
+        edit.slot?.review();
     }
 
     // What an answer leaves to take: the gesture, where the commit landed, and the inputs held behind it. A commit
@@ -4545,7 +4583,7 @@ export class GridView<Row> {
         const active = this.#root.ownerDocument.activeElement;
         if (active instanceof HTMLElement && this.#root.contains(active)) return active;
         const edit = this.#edit;
-        if (edit !== undefined && edit.element.isConnected) return edit.element;
+        if (edit !== undefined && edit.element.isConnected) return this.#editorField(edit) ?? edit.element;
         return this.#keyField.isConnected ? this.#keyField : this.#root;
     }
 
@@ -4853,7 +4891,7 @@ export class GridView<Row> {
             this.#refuse({ kind: 'paste', reason: decision.reason }, decision.reason === 'targetNotEditable' ? decision.column : undefined);
             return;
         }
-        const text = edit.element.value;
+        const text = this.#committedText(edit);
         // The verdict judges the value, once, against the row the editor opened on, as the Window holds it now
         // or, gone from it, as it opened: a fill's targets may lie outside the Window, with no row to pass for
         // most of them (ADR-0034's fill carve-out), and a fill is never left unjudged. The other rows are the
@@ -4939,8 +4977,9 @@ export class GridView<Row> {
         const doc = this.#root.ownerDocument;
         // Handed back before the editor goes, so DOM focus never falls to the page between the two; from the
         // Formula Bar too, whose text then reads the Focus cell's again (ADR-0051).
-        if (doc.activeElement === element || doc.activeElement === this.#bar.text) this.#takeKeyboard();
+        if (this.#inEditor(edit, doc.activeElement) || doc.activeElement === this.#bar.text) this.#takeKeyboard();
         element.remove();
+        edit.slot?.dispose();
         this.#referenceText?.cell.element.remove();
         // A composition the editor took with it is over, whether or not the browser says so.
         this.#composingIn = undefined;
@@ -4954,28 +4993,29 @@ export class GridView<Row> {
 
     // ---- Point (ADR-0051) -------------------------------------------------------------------------------------
 
-    // The field the edit is typed in: the cell's editor, or the Formula Bar's text.
-    #surfaceOf(edit: OpenEdit<Row>): HTMLInputElement {
-        return edit.surface === 'bar' ? this.#bar.text : edit.element;
+    // The field the edit is typed in: the cell's editor, or the Formula Bar's text. None while a Chrome's cellEditor
+    // slot has drawn no field yet (ADR-0390).
+    #surfaceOf(edit: OpenEdit<Row>): EditorField | undefined {
+        return edit.surface === 'bar' ? this.#bar.text : this.#editorField(edit);
     }
 
-    // The caret in the surface the edit is typed in, or -1 where the field holds none.
+    // The caret in the surface the edit is typed in, or -1 where the field holds none, or none stands yet.
     #caretOf(edit: OpenEdit<Row>): number {
-        return this.#surfaceOf(edit).selectionStart ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0051: a caret not known is never guessed at, and -1 points nowhere
+        return this.#surfaceOf(edit)?.selectionStart ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0051: a caret not known is never guessed at, and -1 points nowhere
     }
 
     // Writes the edit's text into both surfaces and places the selection in the one typed in (ADR-0051): no input
     // event is fired, so it is not typing.
     #writeEditText(edit: OpenEdit<Row>, text: string, start: number, end: number): void {
-        edit.element.value = text;
+        this.#writeEditorText(edit, text);
         if (this.#formulaBarDeclared.shown) this.#bar.text.value = text;
-        this.#surfaceOf(edit).setSelectionRange(start, end);
+        this.#surfaceOf(edit)?.setSelectionRange(start, end);
     }
 
     // Whether what Point wrote stands, its outline over this grid's cells or text written from outside, the
     // editor's text is still the text it was written into, and the caret still stands after it.
     #pointingContinues(edit: OpenEdit<Row>): boolean {
-        return (this.#pointer !== undefined || this.#pointedFromOutside) && edit.element.value === this.#pointWritten
+        return (this.#pointer !== undefined || this.#pointedFromOutside) && this.#editorText(edit) === this.#pointWritten
             && this.#caretOf(edit) === this.#pointStart + this.#pointLength;
     }
 
@@ -5017,7 +5057,7 @@ export class GridView<Row> {
             return;
         }
         if (this.#pointingContinues(edit)) return;
-        if (edit.element.value !== this.#pointWritten) {
+        if (this.#editorText(edit) !== this.#pointWritten) {
             this.#typed(edit);
             return;
         }
@@ -5042,13 +5082,15 @@ export class GridView<Row> {
         const { pointAt } = this.#point;
         if (edit === undefined || pointAt === undefined) return 'none';
         if (this.#pointingContinues(edit)) return this.#pointedFromOutside ? 'writtenFromOutside' : 'inPoint';
-        const text = edit.element.value;
+        const text = this.#editorText(edit);
         const caret = this.#caretOf(edit);
         return caret >= 0 && caret <= text.length && pointAt(text, caret) ? 'inPoint' : 'none';
     }
 
     // Tells the Consumer the Point state when it is not what the Consumer last heard.
     #tellPointState(): void {
+        // A Chrome's cell editor hears the mode where it changed, Point's steps among them (ADR-0390).
+        this.#edit?.slot?.review();
         const told = this.#point.onPointStateChanged;
         if (told === undefined) return;
         const state = this.#currentPointState();
@@ -5084,7 +5126,7 @@ export class GridView<Row> {
             this.#endPointing();
             const caret = this.#caretOf(edit);
             // Caret's arrows are the field's.
-            if (edit.mode === 'caret' || caret < 0 || !pointAt(edit.element.value, caret)) return false;
+            if (edit.mode === 'caret' || caret < 0 || !pointAt(this.#editorText(edit), caret)) return false;
             // End turns on an End Mode in Excel, which the grid does not have: it writes nothing and commits nothing.
             if (canonical === 'End') return true;
             pointer = Selection.empty.click(edit.cell, extent);
@@ -5124,7 +5166,7 @@ export class GridView<Row> {
             this.#endPointing();
             const caret = this.#caretOf(edit);
             // A caret not known is not guessed at: the Reference would land somewhere else.
-            if (caret < 0 || !pointAt(edit.element.value, caret)) return false;
+            if (caret < 0 || !pointAt(this.#editorText(edit), caret)) return false;
             this.#pointStart = caret;
             this.#pointLength = 0;
         }
@@ -5152,7 +5194,7 @@ export class GridView<Row> {
     #f2(edit: OpenEdit<Row>): void {
         const { pointAt, referenceText } = this.#point;
         const caret = this.#caretOf(edit);
-        const points = pointAt !== undefined && referenceText !== undefined && caret >= 0 && pointAt(edit.element.value, caret);
+        const points = pointAt !== undefined && referenceText !== undefined && caret >= 0 && pointAt(this.#editorText(edit), caret);
         edit.mode = edit.mode === 'point' ? 'caret' : edit.mode === 'caret' ? (points ? 'point' : 'overwrite') : 'caret';
         if (this.#endPointing()) this.#invalidate();
         // Point here has written nothing: it stands at this caret until the caret moves.
@@ -5176,7 +5218,7 @@ export class GridView<Row> {
         if (typeof reference !== 'string' || reference === '') {
             throw new TypeError('referenceText answered no text for a pointed range: a Reference is a non-empty string (ADR-0051).');
         }
-        const [text, caret] = replaceSpan(edit.element.value, this.#pointStart, this.#pointLength, reference);
+        const [text, caret] = replaceSpan(this.#editorText(edit), this.#pointStart, this.#pointLength, reference);
         this.#pointLength = reference.length;
         this.#writeEditText(edit, text, caret, caret);
         this.#pointWritten = text;
@@ -5205,9 +5247,9 @@ export class GridView<Row> {
     #cycleReferenceKey(edit: OpenEdit<Row>, cycle: NonNullable<PointOptions['cycleReference']>): void {
         const pointing = this.#pointingContinues(edit);
         if (pointing && this.#pointedFromOutside) return;
-        const text = edit.element.value;
+        const text = this.#editorText(edit);
         const start = pointing ? this.#pointStart : this.#caretOf(edit);
-        let end = pointing ? this.#pointStart + this.#pointLength : this.#surfaceOf(edit).selectionEnd ?? start;
+        let end = pointing ? this.#pointStart + this.#pointLength : this.#surfaceOf(edit)?.selectionEnd ?? start;
         if (start < 0 || start > text.length) return;
         if (end < start || end > text.length) end = start;
         const answer: unknown = cycle(text, start, end);
@@ -5253,10 +5295,10 @@ export class GridView<Row> {
             this.#pointLength = 0;
         }
         const before: PointBefore = {
-            text: edit.element.value, caret: this.#caretOf(edit), mode: edit.mode, pointer: this.#pointer, start: this.#pointStart,
+            text: this.#editorText(edit), caret: this.#caretOf(edit), mode: edit.mode, pointer: this.#pointer, start: this.#pointStart,
             length: this.#pointLength, written: this.#pointWritten, fromOutside: this.#pointedFromOutside,
         };
-        const [written, caret] = replaceSpan(edit.element.value, this.#pointStart, this.#pointLength, text);
+        const [written, caret] = replaceSpan(this.#editorText(edit), this.#pointStart, this.#pointLength, text);
         this.#pointer = undefined;
         this.#setDragging(false);
         this.#pointLength = text.length;
@@ -5314,7 +5356,7 @@ export class GridView<Row> {
     #completionOverPoint(edit: OpenEdit<Row>): boolean {
         const { pointAt, referenceText } = this.#point;
         if (edit.mode === 'caret' || pointAt === undefined || referenceText === undefined) return false;
-        const text = edit.element.value;
+        const text = this.#editorText(edit);
         const caret = this.#caretOf(edit);
         return caret >= 0 && caret <= text.length && pointAt(text, caret);
     }
@@ -5322,7 +5364,7 @@ export class GridView<Row> {
     // Whether the field's text or caret is not the one the core last saw.
     #completionMoved(edit: OpenEdit<Row>): boolean {
         const seen = this.#completionSeen;
-        return seen === undefined || seen.text !== edit.element.value || seen.caret !== this.#caretOf(edit);
+        return seen === undefined || seen.text !== this.#editorText(edit) || seen.caret !== this.#caretOf(edit);
     }
 
     /**
@@ -5339,7 +5381,7 @@ export class GridView<Row> {
         }
         this.#completionAsked += 1;
         const asked = this.#completionAsked;
-        const text = edit.element.value;
+        const text = this.#editorText(edit);
         this.#completionSeen = { text, caret };
         const complete = this.#completeEditorText;
         // A caret not known is waited for, never guessed: a list for the wrong caret would replace the wrong span.
@@ -5358,7 +5400,7 @@ export class GridView<Row> {
     #showCompletion(asked: number, text: string, given: unknown, listed: boolean): void {
         const checked = checkedCompletion(given);
         const edit = this.#edit;
-        if (this.#destroyed || asked !== this.#completionAsked || edit === undefined || edit.element.value !== text || checked === undefined) return;
+        if (this.#destroyed || asked !== this.#completionAsked || edit === undefined || this.#editorText(edit) !== text || checked === undefined) return;
         const answer = listed || checked.candidates.length === 0 ? checked
             : checked.hint === undefined ? EditorCompletion.none : new EditorCompletion({ candidates: [], hint: checked.hint });
         if (answer.isEmpty) return;
@@ -5373,7 +5415,7 @@ export class GridView<Row> {
         this.#completion = undefined;
         this.#completionAsked += 1;
         const edit = this.#edit;
-        if (edit !== undefined) this.#completionSeen = { text: edit.element.value, caret: this.#caretOf(edit) };
+        if (edit !== undefined) this.#completionSeen = { text: this.#editorText(edit), caret: this.#caretOf(edit) };
     }
 
     // A key typed while a list is open (ADR-0051): whether it was the list's. Closed over Point by ←, →, Home, End
@@ -5402,7 +5444,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         const candidate = this.#completionListOpen() ? this.#completion?.answer.candidates[index] : undefined;
         if (edit === undefined || candidate === undefined) return;
-        const [text, caret] = acceptCandidate(edit.element.value, candidate);
+        const [text, caret] = acceptCandidate(this.#editorText(edit), candidate);
         this.#writeEditText(edit, text, caret, caret);
         this.#askReferences();
         this.#gateReferenceTexts();
@@ -5446,7 +5488,8 @@ export class GridView<Row> {
         const listed = place !== undefined && this.#completionListOpen() ? shown : undefined;
         const typedIn = edit === undefined ? undefined : this.#surfaceOf(edit);
         const autocomplete = this.#completeEditorText === undefined ? undefined : 'list';
-        for (const surface of edit === undefined ? [this.#bar.text] : [edit.element, this.#bar.text]) {
+        const cellField = edit === undefined ? undefined : this.#editorField(edit);
+        for (const surface of cellField === undefined ? [this.#bar.text] : [cellField, this.#bar.text]) {
             const controls = surface === typedIn ? listed : undefined;
             setAttribute(surface, 'aria-autocomplete', autocomplete);
             setAttribute(surface, 'aria-controls', controls === undefined ? undefined : box.listId);
@@ -5506,9 +5549,11 @@ export class GridView<Row> {
         if (layers === undefined) return;
         const edit = this.#edit;
         const outlines = this.#referenceOutlines;
-        const text = edit === undefined ? '' : edit.element.value;
+        const text = edit === undefined ? '' : this.#editorText(edit);
         const stretches = edit === undefined || outlines.askedFor !== text ? [] : layers.highlights.coloursOf(outlines.asked, this.#pointedSpan(edit));
-        this.#gateReferenceText(layers, layers.cell, edit?.element, text, stretches);
+        // The core's own field only: a Chrome's field is drawn in a look the layer is not measured against (ADR-0057).
+        const cellField = edit === undefined || edit.slot !== undefined ? undefined : builtInEditor(edit.element);
+        this.#gateReferenceText(layers, layers.cell, cellField, text, stretches);
         const barShown = edit !== undefined && this.#formulaBarDeclared.shown;
         setAttribute(layers.bar.element, 'style', `left: ${this.#metrics.nameBoxWidthPx}px`);
         this.#gateReferenceText(layers, layers.bar, this.#bar.text, barShown ? text : '', barShown ? stretches : []);
@@ -5894,7 +5939,7 @@ export class GridView<Row> {
             this.#takeKeyboard();
             return;
         }
-        const surface = this.#surfaceOf(edit);
+        const surface = this.#surfaceOf(edit) ?? edit.element;
         if (surface.isConnected) surface.focus({ preventScroll: true });
     }
 
@@ -5953,6 +5998,7 @@ export class GridView<Row> {
             if (edit.surface !== 'bar') {
                 edit.surface = 'bar';
                 edit.mode = 'caret';
+                edit.slot?.review();
                 // The outline goes with the move, and its Reference stays written (ADR-0051).
                 if (this.#endPointing()) this.#invalidate();
                 this.#tellPointState();
@@ -5978,7 +6024,7 @@ export class GridView<Row> {
             this.#invalidate();
             return;
         }
-        edit.element.value = text;
+        this.#writeEditorText(edit, text);
         this.#typed(edit);
         this.#askReferences();
         this.#gateReferenceTexts();
@@ -5989,7 +6035,7 @@ export class GridView<Row> {
     // Typed in the cell: shown in the bar as well (ADR-0051).
     readonly #onEditorTyped = (): void => {
         const edit = this.#edit;
-        if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.text.value = edit.element.value;
+        if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.text.value = this.#editorText(edit);
         if (edit === undefined) return;
         this.#typed(edit);
         this.#askReferences();
@@ -6010,7 +6056,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         // A commit pending lands in place too, the keyboard left where the user put it (ADR-0380).
         if (edit === undefined || this.#commitEdit(false) || this.#pending?.edit === edit) return;
-        const surface = this.#surfaceOf(edit);
+        const surface = this.#surfaceOf(edit) ?? edit.element;
         if (surface.isConnected) surface.focus({ preventScroll: true });
     };
 
@@ -6043,7 +6089,7 @@ export class GridView<Row> {
                 const edit = this.#edit;
                 if (edit !== undefined) {
                     edit.surface = 'cell';
-                    edit.element.focus({ preventScroll: true });
+                    (this.#editorField(edit) ?? edit.element).focus({ preventScroll: true });
                 } else {
                     this.#takeKeyboard();
                 }
@@ -6059,7 +6105,7 @@ export class GridView<Row> {
             widthPx: this.#width === 'stretch' ? undefined : this.#width,
             nameBoxWidthPx: this.#metrics.nameBoxWidthPx,
             nameBox: read.named,
-            text: edit === undefined ? read.text : edit.element.value,
+            text: edit === undefined ? read.text : this.#editorText(edit),
             borrowed: edit === undefined && read.borrowed,
             editable: edit !== undefined || read.editable,
             nameBoxLabel: read.nameBoxLabel,
@@ -7754,7 +7800,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit !== undefined && (target === this.#root || target === this.#scroller || target === this.#keyField)) {
             // Back into a grid whose edit stands, the keyboard is the edit's (ED-26), on the surface it was typed on.
-            const surface = edit.surface === 'bar' && this.#bar.text.isConnected ? this.#bar.text : edit.element;
+            const surface = edit.surface === 'bar' && this.#bar.text.isConnected ? this.#bar.text : this.#editorField(edit) ?? edit.element;
             if (surface.isConnected) surface.focus({ preventScroll: true });
             return;
         }
@@ -7874,13 +7920,18 @@ export class GridView<Row> {
         this.#carried = field.value.length;
         const edit = this.#edit;
         if (edit !== undefined) {
-            const { element } = edit;
-            const start = element.selectionStart ?? element.value.length;
-            if (text !== '') {
-                element.setRangeText(text, start, element.selectionEnd ?? start, 'end');
-                // Typed as the field types, so the bar shows it and its References are asked again (ADR-0051, ADR-0057).
-                this.#onEditorTyped();
+            const editor = this.#editorField(edit);
+            if (editor === undefined) {
+                // Typed before a Chrome drew the field: the field is handed it once drawn.
+                this.#writeEditorText(edit, this.#editorText(edit) + text);
+            } else {
+                const start = editor.selectionStart ?? editor.value.length;
+                if (text !== '') editor.setRangeText(text, start, editor.selectionEnd ?? start, 'end');
+                // Typed by the core, with no input event: a field drawn anew is handed it too.
+                if (edit.slot !== undefined) edit.slot.text = editor.value;
             }
+            // Typed as the field types, so the bar shows it and its References are asked again (ADR-0051, ADR-0057).
+            if (text !== '') this.#onEditorTyped();
         } else if (!this.#destroyed && this.#canEdit) {
             this.#answered += 1;
             // Aimed at what was painted as it began: a Selection dropped since, or dropped before it and not
@@ -8892,7 +8943,7 @@ export class GridView<Row> {
     // The colours of the References in the open edit's text (ADR-0057), asked of the Consumer only when the text or
     // the function changed since it was last asked; none while no edit is open.
     #colouring(): ReferenceColouring {
-        return this.#referenceOutlines.colouring(this.#edit?.element.value, this.#referenceOptions.referencesIn);
+        return this.#referenceOutlines.colouring(this.#edit === undefined ? undefined : this.#editorText(this.#edit), this.#referenceOptions.referencesIn);
     }
 
     // The References asked again of the editor's text as it now stands, where it changed (ADR-0057): an answer refused
@@ -9786,7 +9837,8 @@ export class GridView<Row> {
         // A control of a Template cell's content holding the keyboard: a row painted again moves its slot,
         // which takes DOM focus off it, so it is given back once the rows stand (ADR-0020).
         const active = doc.activeElement;
-        const slotHeld = active instanceof HTMLElement && active !== this.#keyField && active !== this.#edit?.element
+        const edit = this.#edit;
+        const slotHeld = active instanceof HTMLElement && active !== this.#keyField && (edit === undefined || !this.#inEditor(edit, active))
             && viewport.contains(active) ? active : undefined;
         // The Template slots this pass paints; every other is taken away after it (ADR-0020).
         const used = new Set<MountedTemplate<Row>>();
@@ -9927,7 +9979,9 @@ export class GridView<Row> {
             if (held) this.#root.focus({ preventScroll: true });
         }
         // Moving a focused field blurs it: the editor taken into or out of the pinned anchor keeps the keyboard.
-        const editorHeld = this.#edit !== undefined && doc.activeElement === this.#edit.element ? this.#edit.element : undefined;
+        const editing = this.#edit;
+        const editorHeld = editing !== undefined && doc.activeElement instanceof HTMLElement && this.#inEditor(editing, doc.activeElement)
+            ? doc.activeElement : undefined;
         if (!editor.includes(this.#editorPinned)) this.#editorPinned.remove();
         let at: ChildNode | null = viewport.firstChild;
         for (const row of rows) {
@@ -10062,7 +10116,10 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit === undefined) return [];
         const { element } = edit;
-        const layer = this.#referenceTextLayers()?.cell.element;
+        // The coloured text stands under the core's own field only: a Chrome's field is drawn in a look the layer is not
+        // measured against (ADR-0057, ADR-0390).
+        const layers = this.#referenceTextLayers();
+        const layer = edit.slot === undefined ? layers?.cell.element : undefined;
         const visible = this.#visible;
         if (visible !== undefined) {
             // Away, it takes its column's box on the first painted row, where it holds the keyboard but is neither
@@ -10084,9 +10141,13 @@ export class GridView<Row> {
                 setAttribute(layer, 'style', box.style);
             }
         }
-        // A Reject or a refusal is said at the editor, which the message describes (ADR-0034).
-        setAttribute(element, 'aria-invalid', edit.error === undefined ? undefined : 'true');
-        setAttribute(element, 'aria-describedby', edit.error === undefined ? undefined : this.#message.id);
+        // A Reject or a refusal is said at the editor's field, which the message describes (ADR-0034).
+        const field = this.#editorField(edit);
+        if (field !== undefined) {
+            setAttribute(field, 'aria-invalid', edit.error === undefined ? undefined : 'true');
+            setAttribute(field, 'aria-describedby', edit.error === undefined ? undefined : this.#message.id);
+        }
+        edit.slot?.review();
         if (edit.cell.column < this.#styles.geometry.pinnedCount) {
             if (element.parentNode !== this.#editorPinned) this.#editorPinned.append(element);
             if (layer !== undefined && layer.nextSibling !== element) this.#editorPinned.insertBefore(layer, element);
@@ -10159,18 +10220,46 @@ export class GridView<Row> {
     // (ADR-0080); `toward` is where the keyboard is going when the field is being left.
     #focusEditor(toward?: Element): void {
         if (!this.#editorFocusOwed || this.#composing || this.#imeKeyTold) return;
-        this.#editorFocusOwed = false;
         const edit = this.#edit;
+        // A Chrome's field not yet drawn: its contents hand it over once drawn, and the request waits for them.
+        if (edit !== undefined && edit.surface === 'cell' && edit.slot !== undefined && edit.slot.field() === undefined) return;
+        this.#editorFocusOwed = false;
         if (edit === undefined || !edit.element.isConnected || !this.#keyboardHere(toward)) return;
         // An edit typed in the Formula Bar keeps the keyboard there, its caret where the user put it (ADR-0051).
         if (edit.surface === 'bar' && this.#bar.text.isConnected) {
             if (this.#root.ownerDocument.activeElement !== this.#bar.text) this.#bar.text.focus({ preventScroll: true });
             return;
         }
-        const { element } = edit;
-        if (this.#root.ownerDocument.activeElement === element) return;
+        const element = this.#editorField(edit);
+        if (element === undefined || this.#root.ownerDocument.activeElement === element) return;
         element.focus({ preventScroll: true });
         element.setSelectionRange(element.value.length, element.value.length);
+    }
+
+    // Whether `target` is the editor's: its own field, or anything in the box a Chrome draws it in.
+    #inEditor(edit: OpenEdit<Row>, target: EventTarget | null): boolean {
+        return target instanceof Node && edit.element.contains(target);
+    }
+
+    // The field an edit's text is typed in: the core's own, or the one a Chrome drew, once it has.
+    #editorField(edit: OpenEdit<Row>): EditorField | undefined {
+        return edit.slot === undefined ? builtInEditor(edit.element) : edit.slot.field();
+    }
+
+    // The edit's uncommitted text (ADR-0010).
+    #editorText(edit: OpenEdit<Row>): string {
+        return edit.slot === undefined ? builtInEditor(edit.element).value : edit.slot.text;
+    }
+
+    // The text a commit writes: the field's, which a Chrome must have drawn (ADR-0390).
+    #committedText(edit: OpenEdit<Row>): string {
+        return edit.slot === undefined ? builtInEditor(edit.element).value : edit.slot.committed();
+    }
+
+    // Writes the edit's uncommitted text, as typing in the Formula Bar does (ADR-0051).
+    #writeEditorText(edit: OpenEdit<Row>, text: string): void {
+        if (edit.slot === undefined) builtInEditor(edit.element).value = text;
+        else edit.slot.text = text;
     }
 
     // Whether the row at this position in the whole result wears a stripe: the second, the fourth, …, counted in the
@@ -10563,4 +10652,10 @@ const headingMarkClasses: Readonly<Record<HeadingMark, string>> = {
 function headerClass(align: GridColumn<unknown>['align'], pinned: boolean, mark: HeadingMark): string {
     const base = pinned ? 'ex-header-cell ex-pinned' : 'ex-header-cell';
     return (align === undefined || align === 'auto' ? base : `${base} ex-align-${align}`) + headingMarkClasses[mark];
+}
+
+// The core's own editor, the field its edit's box is (ADR-0010).
+function builtInEditor(element: HTMLElement): HTMLInputElement {
+    if (!(element instanceof HTMLInputElement)) throw new Error('Internal: the built-in Cell Editor is an input.');
+    return element;
 }
