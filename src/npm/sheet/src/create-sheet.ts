@@ -16,9 +16,10 @@ import {
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
-    Sheet, SheetRefusal, type CellColour, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
+    Sheet, SheetRefusal, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { elementAt, unreachable } from './must';
+import { browserTimeZone, checkTimeZone, dayOf, momentIn, sameDay, untilTheDayIsReadAgainMs, untilTheMinuteTurnsMs } from './sheet-moment';
 import { exactNumberFor, isTooNarrowToShow, refusedIn, typedFor } from './sheet-clipboard';
 import { rangeOf, sheetCopyAnswer, type SheetOwnCopy } from './sheet-copy';
 import { appearanceLookup, charactersOfColumn, SheetColumns, sheetCellPaint } from './sheet-columns';
@@ -43,6 +44,37 @@ import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes
 import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
+
+/**
+ * A Consumer's own action on the Sheet Toolbar (ADR-0100), a Toolbar Item like ExSheet's: it stands in a row of its own
+ * or among the formatting items, and while an edit is open it cannot be pressed. It carries a KeyTip only where one is
+ * given.
+ */
+export interface SheetToolbarButton {
+    /** Its name: the text it shows, its accessible name and its tooltip. */
+    readonly text: string;
+    /** What pressing it does. A press from the keys gives the keyboard back to the Sheet first, so what the press opens
+     * may take it. */
+    readonly onPress: () => void;
+    /** Its KeyTip letters among its row's items. */
+    readonly keyTip?: string | undefined;
+    /** Why it cannot be pressed now, shown in its tooltip; `undefined` where it can. */
+    readonly disabledReason?: string | undefined;
+}
+
+/** One element of a Toolbar Row: one of ExSheet's own items, named by its command and carrying Excel's KeyTip; a
+ * separator between groups; or the Consumer's own button. */
+export type SheetToolbarEntry = SheetToolbarCommand | 'separator' | SheetToolbarButton;
+
+/** A Toolbar Row of the Consumer's (ADR-0100): one band of the Sheet Toolbar, as tall as the Formula Bar. */
+export interface SheetToolbarRowOptions {
+    /** The row's accessible name. */
+    readonly label: string;
+    /** The row's KeyTip letters, as a ribbon tab's; a row without one is reached by Tab and the arrows only. */
+    readonly keyTip?: string | undefined;
+    /** What the row holds, in order. */
+    readonly items: readonly SheetToolbarEntry[];
+}
 
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
@@ -70,6 +102,21 @@ export interface SheetOptions {
     /** Shows the Sheet Toolbar above the Formula Bar (ADR-0100): Excel's Home tab formatting commands, acting on this
      * Sheet's Selection. Off unless `true`. Its band, a row as tall as the Formula Bar, comes off `viewportHeight`. */
     readonly showToolbar?: boolean;
+    /**
+     * The Sheet Toolbar's rows, top to bottom (ADR-0100). `'default'` is ExSheet's own row, Excel's Home tab's commands,
+     * whose KeyTip is H; a row of the Consumer's holds ExSheet's items by their commands, separators and the Consumer's
+     * own buttons, in the order given. Without it the toolbar is the default row alone. Every row is as tall as the
+     * Formula Bar and comes off `viewportHeight`; what a row holds is fitted to it and clipped. KeyTips that would be
+     * taken for one another at one level, two rows' or two items' of one row, are refused.
+     */
+    readonly toolbar?: readonly (SheetToolbarRowOptions | 'default')[] | undefined;
+    /**
+     * Hears the other value of `showToolbar` when the user asks to hide or show the Sheet Toolbar with Ctrl+F1, Excel's
+     * key for the ribbon (ADR-0100). The Sheet holds nothing: whether the toolbar is shown is View State, the
+     * Consumer's, so handing the value back as `showToolbar` is what lets the key work. Without it, Ctrl+F1 is not
+     * claimed and stays the browser's.
+     */
+    readonly onShowToolbarChanged?: (shown: boolean) => void;
     /** ExSheet's Japanese words in place of its English (ADR-0370, section 10), chosen in one line, never by the
      * locale. */
     readonly japanese?: boolean;
@@ -110,6 +157,19 @@ export interface SheetOptions {
      * seed is not recorded in the document.
      */
     readonly seed?: bigint;
+    /**
+     * A fixed Sheet Day: what `TODAY()` answers whatever the clock says (ADR-0121), for a report that must show the same
+     * day whenever it is opened. It goes before `timeZone`. Unless given, the day is the clock's in the zone, read again
+     * at midnight there, and at least once an hour.
+     */
+    readonly today?: SheetDay | undefined;
+    /**
+     * The IANA time zone whose day `TODAY()` and whose time of day `NOW()` answer (ADR-0121, ADR-0124), such as head
+     * office's for a site that keeps one business day for every user. The browser's zone unless given, as Excel takes the
+     * day on the user's own device; one the browser does not know is refused by name. A fixed `today` goes before it for
+     * `TODAY()`, not for `NOW()`, which moves on as each minute turns.
+     */
+    readonly timeZone?: string | undefined;
 }
 
 /** The Sheets' names before and after a change to the Sheets (ADR-0331 §6), in the Workbook's order. */
@@ -217,6 +277,19 @@ export interface SheetHandle {
     destroy(): void;
 }
 
+// Whether `day` is a calendar day the engine takes as a Sheet Day (ADR-0121).
+function isSheetDay(day: unknown): day is SheetDay {
+    if (typeof day !== 'object' || day === null) return false;
+    const { year, month, day: date }: { readonly year?: unknown; readonly month?: unknown; readonly day?: unknown } = day;
+    if (typeof year !== 'number' || typeof month !== 'number' || typeof date !== 'number') return false;
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(date) || year < 1900 || year > 9999) return false;
+    const read = new Date(Date.UTC(year, month - 1, date));
+    return read.getUTCFullYear() === year && read.getUTCMonth() === month - 1 && read.getUTCDate() === date;
+}
+
+// Excel's key for the ribbon, which hides and shows the Sheet Toolbar (ADR-0100).
+const toolbarToggleKey = 'Control+F1';
+
 // The largest seed: a seed is an unsigned 64-bit integer, as the engine and C#'s ulong hold it (ADR-0180).
 const maxSeed = (1n << 64n) - 1n;
 
@@ -313,6 +386,11 @@ class SheetView {
     // The Sheets' names as the Consumer last heard them, so a change says what it was taken from (ADR-0331 §6): at
     // open, the document's own.
     #sheetNames: readonly string[] = [];
+    // The day read again at midnight in the zone, and NOW moved on as the minute turns (ADR-0121, ADR-0124).
+    #dayTimer: ReturnType<typeof setTimeout> | undefined;
+    #minuteTimer: ReturnType<typeof setTimeout> | undefined;
+    // The browser's zone, read once, as the C# Sheet is told it once at attach (ADR-0122).
+    readonly #browserZone = browserTimeZone();
 
     constructor(element: HTMLElement, options: SheetOptions) {
         this.#element = element;
@@ -347,6 +425,8 @@ class SheetView {
         element.addEventListener('wheel', this.#forgetAlt, { capture: true, passive: true });
         this.#grid = createGrid(this.#gridElement, gridOptions);
         this.#paintFrame();
+        this.#armTheDay();
+        this.#armTheMinute();
     }
 
     get workbook(): Workbook { return this.#workbook; }
@@ -373,6 +453,7 @@ class SheetView {
         }
         if (next.label !== this.#options.label || next.japanese !== this.#options.japanese) this.#words = new SheetWords({ japanese: next.japanese, label: next.label });
         const seedBefore = this.#options.seed;
+        const previous = this.#options;
         this.#options = next;
         // A document this Sheet raised, handed back, is its own state: nothing is opened again.
         if (next.document !== undefined && this.#raised.has(next.document)) this.#document = next.document;
@@ -382,11 +463,19 @@ class SheetView {
             this.#workbook = this.#open(next);
             this.#history.clear();
             this.#showSheet(this.#workbook.shown);
+            this.#armTheDay();
+            this.#armTheMinute();
             return;
         }
         // A new seed, or none, which goes back to the one chosen at opening, draws again at the same count of changes:
         // no change of the Sheet's, so neither the document nor the notice hears it.
         if (next.seed !== seedBefore) this.#changed([this.#workbook.setSeed(next.seed ?? this.#chosenSeed)], false, false);
+        // A new fixed day or zone sets the day at once, and NOW reads the new zone.
+        if (!sameDay(next.today, previous.today) || next.timeZone !== previous.timeZone) {
+            this.#changed([this.#workbook.setToday(this.#resolveDay(next)), this.#workbook.recalculateVolatile()], false, false);
+            this.#armTheDay();
+            this.#armTheMinute();
+        }
         this.#grid?.update(this.#gridOptions());
         this.#paintFrame();
     }
@@ -508,8 +597,12 @@ class SheetView {
     destroy(): void {
         if (this.#destroyed) return;
         this.#destroyed = true;
-        this.#grid?.destroy();
+        clearTimeout(this.#dayTimer);
+        clearTimeout(this.#minuteTimer);
+        // Let go of first, so nothing the grid tells as it goes reads it again.
+        const grid = this.#grid;
         this.#grid = undefined;
+        grid?.destroy();
         this.#element.removeEventListener('keydown', this.#onSheetKey, { capture: true });
         this.#element.removeEventListener('keyup', this.#onSheetKeyUp, { capture: true });
         this.#element.removeEventListener('focusout', this.#onSheetFocusOut);
@@ -806,6 +899,7 @@ class SheetView {
     }
 
     readonly #onSelectionChanged = (selection: GridSelection): void => {
+        if (this.#destroyed) return;
         this.#followSelection(selection);
         // Heard last, so a Consumer that reads or formats from here finds the Sheet already following the move.
         this.#options.onSelectionChanged?.(selection);
@@ -855,9 +949,11 @@ class SheetView {
         }
     };
 
-    // The grid tells only a change, so each call is one the Consumer hears.
+    // The grid tells only a change, so each call is one the Consumer hears. An edit the destroyed grid discards is not
+    // told: the Sheet is gone, and a handler that asked it anything would be refused.
     readonly #onEditingChanged = (open: boolean): void => {
         this.#editing = open;
+        if (this.#destroyed) return;
         this.#paintToolbar();
         this.#options.onEditingChanged?.(open);
     };
@@ -951,7 +1047,7 @@ class SheetView {
         const height = options.viewportHeight;
         if (typeof height !== 'number') return height;
         const tabs = SheetView.#tabsHeightOf(options);
-        const toolbar = options.showToolbar === true ? SheetToolbar.heightPx(toolbarRowCount, SheetView.#bandRowPxOf(options)) : 0;
+        const toolbar = options.showToolbar === true ? SheetToolbar.heightPx(toolbarRowsOf(options).length, SheetView.#bandRowPxOf(options)) : 0;
         if (height <= tabs + toolbar) {
             const bands = [
                 ...(toolbar > 0 ? [`its Sheet Toolbar's ${String(toolbar)}px band (ADR-0100)`] : []),
@@ -967,12 +1063,12 @@ class SheetView {
     #paintToolbar(): void {
         if (this.#options.showToolbar !== true) return;
         const rows = this.#toolbarRows();
-        if (rows.length !== toolbarRowCount) throw new Error(`Internal: the Toolbar draws ${String(rows.length)} rows, and its band is laid out for ${String(toolbarRowCount)}.`);
         this.#toolbar.paint({ name: this.#words.toolbarName, rowHeightPx: this.#bandRowPx, rows });
     }
 
-    // The default row, Excel's Home tab's commands in its order (ADR-0100), each item's state the Focus cell's as the
-    // grid holds it now. While an edit is open every item is unavailable, and says why.
+    // The rows the options give, the default one Excel's Home tab's commands in its order (ADR-0100), each item's state
+    // the Focus cell's as the grid holds it now. While an edit is open every item is unavailable, the Consumer's
+    // included, and says why.
     #toolbarRows(): SheetToolbarPaint['rows'] {
         const focus = this.#grid?.readView().selection.focus;
         const format = focus === undefined ? undefined : this.#source.sheet.getCellFormat(new CellAddress(focus.row, focus.column));
@@ -1003,57 +1099,77 @@ class SheetView {
         const fontColour = this.#faceFontColour;
         const fill = this.#faceFill;
         const border = this.#faceBorder;
-        return [{
-            label: words.toolbarHomeRow,
-            keyTip: 'H',
-            items: [
-                item('bold', 'bold', key('bold'), { pressed: format?.font.bold === true, shortcut: 'Ctrl+B' }),
-                item('italic', 'italic', key('italic'), { pressed: format?.font.italic === true, shortcut: 'Ctrl+I' }),
-                item('underline', 'underline', key('underline'), { pressed: format?.font.underline === true, shortcut: 'Ctrl+U' }),
-                item('strikethrough', 'strikethrough', key('strikethrough'), { pressed: format?.font.strikethrough === true, shortcut: 'Ctrl+5' }),
-                'separator',
-                item('fontColour', 'fontColour', () => new CellFormatChange({ fontColour }), {
-                    swatch: fontColour,
-                    list: () => this.#colourChoices(words.toolbarAutomatic,
-                        format === undefined || format.font.colour.isAutomatic ? undefined : format.font.colour,
-                        chosen => {
-                            // Taking the colour away is not kept: the face goes on setting the last colour chosen.
-                            if (!chosen.isAutomatic) this.#faceFontColour = chosen;
-                            return new CellFormatChange({ fontColour: chosen });
-                        }),
-                }),
-                item('fill', 'fill', () => new CellFormatChange({ fill: CellFill.solid(fill) }), {
-                    swatch: fill,
-                    list: () => this.#colourChoices(words.toolbarNoFill, format?.fill.colour, chosen => {
-                        if (chosen.isAutomatic) return new CellFormatChange({ fill: CellFill.none });
-                        this.#faceFill = chosen;
-                        return new CellFormatChange({ fill: CellFill.solid(chosen) });
+        const commands: Readonly<Record<SheetToolbarCommand, SheetToolbarItem>> = {
+            bold: item('bold', 'bold', key('bold'), { pressed: format?.font.bold === true, shortcut: 'Ctrl+B' }),
+            italic: item('italic', 'italic', key('italic'), { pressed: format?.font.italic === true, shortcut: 'Ctrl+I' }),
+            underline: item('underline', 'underline', key('underline'), { pressed: format?.font.underline === true, shortcut: 'Ctrl+U' }),
+            strikethrough: item('strikethrough', 'strikethrough', key('strikethrough'), { pressed: format?.font.strikethrough === true, shortcut: 'Ctrl+5' }),
+            fontColour: item('fontColour', 'fontColour', () => new CellFormatChange({ fontColour }), {
+                swatch: fontColour,
+                list: () => this.#colourChoices(words.toolbarAutomatic,
+                    format === undefined || format.font.colour.isAutomatic ? undefined : format.font.colour,
+                    chosen => {
+                        // Taking the colour away is not kept: the face goes on setting the last colour chosen.
+                        if (!chosen.isAutomatic) this.#faceFontColour = chosen;
+                        return new CellFormatChange({ fontColour: chosen });
                     }),
+            }),
+            fill: item('fill', 'fill', () => new CellFormatChange({ fill: CellFill.solid(fill) }), {
+                swatch: fill,
+                list: () => this.#colourChoices(words.toolbarNoFill, format?.fill.colour, chosen => {
+                    if (chosen.isAutomatic) return new CellFormatChange({ fill: CellFill.none });
+                    this.#faceFill = chosen;
+                    return new CellFormatChange({ fill: CellFill.solid(chosen) });
                 }),
-                'separator',
-                item('borders', 'borders', () => new CellFormatChange({ borders: borderPresets[border] }), {
-                    list: () => toolbarBorders.map(preset => this.#choice(words.toolbarBorder(preset), () => {
-                        this.#faceBorder = preset;
-                        this.#formatFromFocus(() => new CellFormatChange({ borders: borderPresets[preset] }), widensAsAHomeTabButtonDoes);
-                    })),
+            }),
+            borders: item('borders', 'borders', () => new CellFormatChange({ borders: borderPresets[border] }), {
+                list: () => toolbarBorders.map(preset => this.#choice(words.toolbarBorder(preset), () => {
+                    this.#faceBorder = preset;
+                    this.#formatFromFocus(() => new CellFormatChange({ borders: borderPresets[preset] }), widensAsAHomeTabButtonDoes);
+                })),
+            }),
+            alignLeft: item('alignLeft', 'alignLeft', align('left'), { pressed: format?.alignment === 'left' }),
+            alignCenter: item('alignCenter', 'alignCenter', align('center'), { pressed: format?.alignment === 'center' }),
+            alignRight: item('alignRight', 'alignRight', align('right'), { pressed: format?.alignment === 'right' }),
+            numberFormat: item('numberFormat', undefined, undefined, {
+                text: words.categoryName(shown),
+                list: () => this.#numberFormatChoices(shown),
+            }),
+            percent: item('percent', 'percent', key('percent'), { shortcut: 'Ctrl+Shift+%' }),
+            // Excel's Comma Style pads with `*`, as Accounting does, which ExSheet does not read: shown, and disabled
+            // with the reason, rather than set as something else under Excel's name.
+            comma: item('comma', 'comma', undefined, { disabledReason: words.commaStyleUnread }),
+            formatCells: item('formatCells', 'formatCells', 'formatCells', { shortcut: 'Ctrl+1' }),
+        };
+        return toolbarRowsOf(this.#options).map((row, r) => {
+            const { label, keyTip, items }: SheetToolbarRowOptions = row === 'default' ? { label: words.toolbarHomeRow, keyTip: 'H', items: defaultToolbarRow } : row;
+            return {
+                label,
+                keyTip: keyTip?.toUpperCase(),
+                // Each item's key is its place, so the item the keyboard is on stays named while the rows stay as they are.
+                items: items.map((entry, i): SheetToolbarItem | 'separator' => {
+                    if (entry === 'separator') return entry;
+                    if (typeof entry === 'string') return { ...commands[entry], key: `${String(r)}-${entry}` };
+                    return this.#consumerItem(entry, `${String(r)}-${String(i)}`);
                 }),
-                'separator',
-                item('alignLeft', 'alignLeft', align('left'), { pressed: format?.alignment === 'left' }),
-                item('alignCenter', 'alignCenter', align('center'), { pressed: format?.alignment === 'center' }),
-                item('alignRight', 'alignRight', align('right'), { pressed: format?.alignment === 'right' }),
-                'separator',
-                item('numberFormat', undefined, undefined, {
-                    text: words.categoryName(shown),
-                    list: () => this.#numberFormatChoices(shown),
-                }),
-                item('percent', 'percent', key('percent'), { shortcut: 'Ctrl+Shift+%' }),
-                // Excel's Comma Style pads with `*`, as Accounting does, which ExSheet does not read: shown, and disabled
-                // with the reason, rather than set as something else under Excel's name.
-                item('comma', 'comma', undefined, { disabledReason: words.commaStyleUnread }),
-                'separator',
-                item('formatCells', 'formatCells', 'formatCells', { shortcut: 'Ctrl+1' }),
-            ],
-        }];
+            };
+        });
+    }
+
+    // A Consumer's own button (ADR-0100): pressed as ExSheet's items are, and unavailable while an edit is open.
+    #consumerItem(button: SheetToolbarButton, key: string): SheetToolbarItem {
+        return {
+            key, kind: 'button', name: button.text, tooltip: button.text, icon: undefined, text: button.text, swatch: undefined,
+            moreName: undefined, pressed: false,
+            disabledReason: this.#editing ? this.#words.toolbarWhileEditing : button.disabledReason,
+            // An edit opened since the last pass refuses the press, as ExSheet's own items do, whatever that pass showed.
+            press: () => {
+                if (this.#editing) this.#tell(this.#words.toolbarWhileEditing);
+                else button.onPress();
+            },
+            open: undefined,
+            keyTip: button.keyTip?.toUpperCase(),
+        };
     }
 
     #categoryOf(format: NumberFormat, culture: Culture): NumberFormatCategory {
@@ -1300,6 +1416,10 @@ class SheetView {
     // "Keys"; ADR-0050 item 14), where the grid takes keys: not in the Name Box or a panel the grid opened, whose
     // fields keep their own. Ctrl+1 waits on Format Cells.
     #onCellKey(event: KeyboardEvent, key: string): void {
+        if (key === toolbarToggleKey) {
+            this.#toolbarToggleKey(event);
+            return;
+        }
         const format = sheetFormatKeyOf(key);
         const structure = format === undefined ? sheetStructureKeyOf(key) : undefined;
         if (format === undefined && structure === undefined) return;
@@ -1316,6 +1436,16 @@ class SheetView {
         event.stopPropagation();
         if (format !== undefined) this.#formatKey(format);
         else if (structure !== undefined) this.#structureKey(structure);
+    }
+
+    // Ctrl+F1, claimed only where the Consumer hears it: the toolbar's other state is told, and the Consumer shows it.
+    #toolbarToggleKey(event: KeyboardEvent): void {
+        const changed = this.#options.onShowToolbarChanged;
+        const target = event.target;
+        if (changed === undefined || (target !== this.#toolbar.band && !this.#takesGridKeys(target))) return;
+        event.preventDefault();
+        event.stopPropagation();
+        changed(this.#options.showToolbar !== true);
     }
 
     // A formatting key sets its change on every range of the Selection as one step, its toggle's direction the Focus
@@ -1599,8 +1729,59 @@ class SheetView {
     #open(options: SheetOptions): Workbook {
         const workbook = options.document === undefined ? new Workbook(Culture.of(options.locale ?? navigator.language)) : Workbook.open(options.document);
         workbook.setSeed(options.seed ?? this.#chosenSeed, 0);
+        // The day and the clock, before any row is read: every Sheet reads them, one added later too. NOW reads the zone
+        // the options name when the engine asks, once per recalculation.
+        workbook.nowSource = () => momentIn(this.#zoneOf(this.#options), new Date());
+        workbook.setToday(this.#resolveDay(options));
+        // The document's NOW was computed before the clock was given, and waits until it is read again.
+        workbook.recalculateVolatile();
         this.#sheetNames = workbook.sheets.map(sheet => sheet.name);
         return workbook;
+    }
+
+    // ---- The Sheet Day and NOW (ADR-0121, ADR-0124) ---------------------------------------------------------
+
+    #zoneOf(options: SheetOptions): string {
+        return options.timeZone ?? this.#browserZone;
+    }
+
+    // The fixed day, else the day in the zone now.
+    #resolveDay(options: SheetOptions): SheetDay {
+        return options.today ?? dayOf(momentIn(this.#zoneOf(options), new Date()));
+    }
+
+    // Reads the day again when it can have changed: at the next midnight in the zone, and at most an hour after this
+    // reading. With a fixed day, nothing is armed.
+    #armTheDay(): void {
+        clearTimeout(this.#dayTimer);
+        this.#dayTimer = undefined;
+        if (this.#options.today !== undefined) return;
+        const due = untilTheDayIsReadAgainMs(momentIn(this.#zoneOf(this.#options), new Date()));
+        this.#dayTimer = setTimeout(() => {
+            this.#dayTimer = undefined;
+            if (this.#destroyed) return;
+            const change = this.#workbook.setToday(this.#resolveDay(this.#options));
+            this.#armTheDay();
+            this.#changedByTheClock(change);
+        }, due);
+    }
+
+    // Moves NOW on as the minute turns: the volatile Formulas are recalculated, and nothing at all where there are none.
+    #armTheMinute(): void {
+        clearTimeout(this.#minuteTimer);
+        this.#minuteTimer = setTimeout(() => {
+            this.#minuteTimer = undefined;
+            if (this.#destroyed) return;
+            this.#armTheMinute();
+            if (this.#workbook.hasVolatileFormulas) this.#changedByTheClock(this.#workbook.recalculateVolatile());
+        }, untilTheMinuteTurnsMs(Date.now()));
+    }
+
+    // What the clock moved, painted only where it reached a row of the Sheet shown: a RAND or an OFFSET recalculated by
+    // the minute changes nothing there, and the Sheet is left as it stands.
+    #changedByTheClock(change: WorkbookChange): void {
+        const shown = change.for(this.#source.sheet);
+        if (shown.rows.length > 0 || shown.recalculated.length > 0) this.#changed([change], false, false);
     }
 
     // ---- The notice ------------------------------------------------------------------------------------------
@@ -1638,14 +1819,24 @@ class SheetView {
         if (seed !== undefined && (typeof seed !== 'bigint' || seed < 0n || seed > maxSeed)) {
             throw new RangeError(`${typeof seed === 'bigint' ? seed.toString() : typeof seed} is not a seed: a seed is a bigint from 0 to 2^64 - 1.`);
         }
+        const { timeZone, today }: { readonly timeZone?: unknown; readonly today?: unknown } = options;
+        if (timeZone !== undefined) {
+            if (typeof timeZone !== 'string') throw new TypeError("A Sheet's time zone is an IANA name, such as 'Asia/Tokyo'.");
+            checkTimeZone(timeZone);
+        }
+        if (today !== undefined && !isSheetDay(today)) throw new RangeError("A Sheet Day is a calendar day from 1900 to 9999: { year, month, day }.");
+        // The day is taken as it is now: one the Consumer changes in place afterwards is a new day only when handed over again.
+        const taken = today === undefined ? options : { ...options, today: { year: today.year, month: today.month, day: today.day } };
+        checkToolbar(options.toolbar);
         const handlers: readonly (readonly [string, unknown])[] = [
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
+            ['onShowToolbarChanged', options.onShowToolbarChanged],
         ];
         for (const [name, handler] of handlers) {
             if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
         }
-        return options;
+        return taken;
     }
 }
 
@@ -1686,8 +1877,81 @@ const borderPresets: Readonly<Record<SheetToolbarBorder, BorderChange>> = {
 const align = (alignment: HorizontalAlignment) => (focused: CellFormat): CellFormatChange =>
     new CellFormatChange({ alignment: focused.alignment === alignment ? 'general' : alignment });
 
-// The Toolbar's rows: Excel's Home tab, one row. The grid's height is laid out from it without drawing the rows.
-const toolbarRowCount = 1;
+// The default row: Excel's Home tab's commands in its order (ADR-0100).
+const defaultToolbarRow: readonly (SheetToolbarCommand | 'separator')[] = [
+    'bold', 'italic', 'underline', 'strikethrough', 'separator', 'fontColour', 'fill', 'separator', 'borders', 'separator',
+    'alignLeft', 'alignCenter', 'alignRight', 'separator', 'numberFormat', 'percent', 'comma', 'separator', 'formatCells',
+];
+
+// The Toolbar's rows as the options give them. The grid's height is laid out from their count without drawing them.
+const toolbarRowsOf = (options: SheetOptions): readonly (SheetToolbarRowOptions | 'default')[] => options.toolbar ?? ['default'];
+
+// The Toolbar's rows as an untyped caller may hand them (CONVENTIONS.md): refused by what is wrong, before anything changes.
+function checkToolbar(given: unknown): void {
+    if (given === undefined) return;
+    if (!Array.isArray(given) || given.length === 0) throw new TypeError("A Sheet Toolbar's rows are a list of one row or more; a toolbar of none is not shown: leave showToolbar off.");
+    const rows: readonly unknown[] = given;
+    if (rows.filter(row => row === 'default').length > 1) throw new RangeError("ExSheet's default row stands once on a toolbar (ADR-0100).");
+    for (const row of rows) {
+        if (row === 'default') continue;
+        if (typeof row !== 'object' || row === null) throw new TypeError("A Toolbar Row is 'default' or { label, keyTip?, items }.");
+        const { label, keyTip, items }: { readonly label?: unknown; readonly keyTip?: unknown; readonly items?: unknown } = row;
+        if (typeof label !== 'string' || label === '') throw new TypeError("A Toolbar Row's label, its accessible name, is a string that is not empty.");
+        checkKeyTip(keyTip, `the Toolbar Row '${label}'`);
+        // A row of nothing would take a band off the Sheet's height and show nothing in it.
+        if (!Array.isArray(items) || items.length === 0) throw new TypeError(`The items of the Toolbar Row '${label}' are a list of one item or more.`);
+        const entries: readonly unknown[] = items;
+        for (const entry of entries) {
+            if (entry === 'separator') continue;
+            if (typeof entry === 'string') {
+                if (!Object.hasOwn(toolbarKeyTips, entry)) throw new RangeError(`'${entry}' is not one of ExSheet's toolbar commands: ${Object.keys(toolbarKeyTips).join(', ')}.`);
+                continue;
+            }
+            if (typeof entry !== 'object' || entry === null) throw new TypeError("A Toolbar Row's item is one of ExSheet's commands, 'separator', or a button { text, onPress, keyTip?, disabledReason? }.");
+            const { text, onPress, keyTip: letters, disabledReason }: { readonly text?: unknown; readonly onPress?: unknown; readonly keyTip?: unknown; readonly disabledReason?: unknown } = entry;
+            if (typeof text !== 'string' || text === '') throw new TypeError("A toolbar button's text, its name, is a string that is not empty.");
+            if (typeof onPress !== 'function') throw new TypeError(`The toolbar button '${text}' has an onPress, which is a function.`);
+            checkKeyTip(letters, `the button '${text}'`);
+            if (disabledReason !== undefined && typeof disabledReason !== 'string') throw new TypeError(`The disabledReason of the toolbar button '${text}' is a string, or undefined where it can be pressed.`);
+        }
+    }
+    refuseCollidingKeyTips(given);
+}
+
+// The KeyTips of one level, refused where one begins another.
+function refuseCollidingAtOneLevel(tips: readonly { readonly letters: string; readonly name: string }[]): void {
+    tips.forEach((tip, i) => {
+        for (const other of tips.slice(0, i)) {
+            if (tip.letters.startsWith(other.letters) || other.letters.startsWith(tip.letters)) {
+                throw new RangeError(`The KeyTips '${other.letters}' of ${other.name} and '${tip.letters}' of ${tip.name} collide at one level: typed, one would be taken for the other. Give one of them other letters (ADR-0100).`);
+            }
+        }
+    });
+}
+
+// KeyTip letters are typed: letters or digits, one or more, read without case.
+function checkKeyTip(letters: unknown, name: string): void {
+    if (letters !== undefined && (typeof letters !== 'string' || !/^[\p{L}\p{N}]+$/u.test(letters))) {
+        throw new TypeError(`The KeyTip of ${name} is letters or digits that can be typed, such as 'R'.`);
+    }
+}
+
+// The KeyTip letters of a toolbar's rows, and of each row's items, which may not be taken for one another at one level
+// (ADR-0100): one that begins another would be typed as it. Refused by name.
+function refuseCollidingKeyTips(rows: readonly (SheetToolbarRowOptions | 'default')[]): void {
+    refuseCollidingAtOneLevel(rows.flatMap(row => {
+        if (row === 'default') return [{ letters: 'H', name: "ExSheet's default row" }];
+        return row.keyTip === undefined ? [] : [{ letters: row.keyTip.toUpperCase(), name: `the Toolbar Row '${row.label}'` }];
+    }));
+    for (const row of rows) {
+        if (row === 'default') continue;
+        refuseCollidingAtOneLevel(row.items.flatMap(item => {
+            if (item === 'separator') return [];
+            if (typeof item === 'string') return [{ letters: toolbarKeyTips[item], name: `the item '${item}'` }];
+            return item.keyTip === undefined ? [] : [{ letters: item.keyTip.toUpperCase(), name: `the button '${item.text}'` }];
+        }));
+    }
+}
 
 // The Name Box names the Focus as A1 does (ADR-0051).
 const nameBoxLabel = (focus: CellPosition): string => new CellAddress(focus.row, focus.column).toString();

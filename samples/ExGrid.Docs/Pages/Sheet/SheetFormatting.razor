@@ -224,10 +224,21 @@
             <code>CommaItem</code>, <code>FormatCellsItem</code> and <code>ToolbarSeparator</code>, so a row of
             your own can hold any of them too.
         </p>
+        <p>
+            Under React the rows are data: <code>toolbar={['default', review]}</code>, where <code>'default'</code> is
+            ExSheet's row and a row of your own is <code>{ label, keyTip, items }</code>. Its items are ExSheet's by
+            their commands (<code>'bold'</code>, <code>'fontColour'</code>, <code>'numberFormat'</code>,
+            <code>'formatCells'</code>, …), <code>'separator'</code>, and buttons of your own,
+            <code>{ text, keyTip, onPress, disabledReason }</code>. Without <code>toolbar</code> the default row
+            stands alone. A press from the keys gives the keyboard back to the Sheet before <code>onPress</code> runs,
+            so what it opens may take the keyboard.
+        </p>
         <ul>
             <li>
                 <b>Bind <code>ShowToolbar</code> both ways</b> and the user can hide and show the toolbar with Ctrl+F1,
-                Excel's key for the ribbon. Whether it is shown is yours to keep.
+                Excel's key for the ribbon. Whether it is shown is yours to keep. Under React,
+                <code>onShowToolbarChanged</code> hears the other value, which you hand back as
+                <code>showToolbar</code>; without it Ctrl+F1 stays the browser's.
             </li>
             <li>
                 <b>KeyTips.</b> Release Alt on its own, or press F10, and each row shows its letter: ExSheet's row is H,
@@ -246,7 +257,7 @@
                 Number Format list's More Number Formats… opens Format Cells; Escape typed immediately after
                 choosing it closes Format Cells under either Chrome. Your rows and buttons have a KeyTip where
                 you set <code>KeyTip</code>; two letters that collide at one level
-                are refused when the toolbar renders.
+                are refused when the toolbar renders (under React, when the props are handed over).
             </li>
             <li>
                 <b>The look is the Chrome's.</b> The built-in Chrome draws plain buttons with inline-SVG pictures;

@@ -5,10 +5,13 @@
 // Wrapper draws its own components and decides nothing.
 
 import {
-    useLayoutEffect, useRef, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent,
-    type ReactNode, type SyntheticEvent,
+    useLayoutEffect, useRef, useState, useSyncExternalStore, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent,
+    type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
-import type { GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext, GridMenuSlotContext } from '@ex-grid/core';
+import type {
+    FilterPanelView, FindPanelView, GridCellMessageSlotContext, GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext,
+    GridFilterPanelSlotContext, GridFindPanelSlotContext, GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridSelectionSummarySlotContext,
+} from '@ex-grid/core';
 import type { GridPortals } from './portals';
 
 /**
@@ -22,6 +25,16 @@ export interface ExGridChrome<Row> {
     readonly columnMenu?: (context: GridColumnMenuSlotContext) => ReactNode;
     /** The Context Menu (ADR-0036), drawn with {@link useMenuItems}. */
     readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
+    /** A column's filter panel, under the column menu's commands (ADR-0009, ADR-0044), drawn with {@link useFilterPanel}. */
+    readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
+    /** The find panel and its Replace (ADR-0055, ADR-0332), drawn with {@link useFindPanel}. */
+    readonly findPanel?: (context: GridFindPanelSlotContext) => ReactNode;
+    /** A cell's message (ADR-0034): its text, drawn in the core's box below the cell. */
+    readonly cellMessage?: (context: GridCellMessageSlotContext) => ReactNode;
+    /** The loading indicator (ADR-0010), at the grid's foot: nothing while nothing loads. */
+    readonly loadingIndicator?: (context: GridLoadingIndicatorSlotContext) => ReactNode;
+    /** The Selection Summary's figures (ADR-0130), drawn in the core's box in the status line. */
+    readonly selectionSummary?: (context: GridSelectionSummarySlotContext) => ReactNode;
 }
 
 /** The ExGrid's Chrome as the core takes it: each slot's render function as a mount function that renders it
@@ -129,3 +142,89 @@ export function useMenuItems(context: GridMenuSlotContext): (index: number) => M
 function within(event: SyntheticEvent): boolean {
     return event.target instanceof Node && event.currentTarget instanceof Node && event.currentTarget.contains(event.target);
 }
+
+/** What {@link useFilterPanel} hands a filter panel's contents. */
+export interface FilterPanelHandles {
+    /** What the panel shows now, drawn again at each change the core makes to it. */
+    readonly view: FilterPanelView;
+    /** Takes the panel's first control: Tab on a command focuses it (ADR-0044). */
+    readonly first: (control: HTMLElement | null) => void;
+    /** Takes the panel's last control: Shift+Tab on a command wraps there (ADR-0044). */
+    readonly last: (control: HTMLElement | null) => void;
+    /** Takes the field a search is typed into, Excel's E: the value list's search box, or the first condition's
+     * value where no list stands (ADR-0044). */
+    readonly search: (control: HTMLElement | null) => void;
+    /** The value list's key handler, on the element that holds its checkboxes and "(Select All)", never on a text
+     * field: Excel's letters run their command through the core, and their default is prevented (ADR-0044). */
+    readonly onValueListKeyDown: (event: ReactKeyboardEvent) => void;
+}
+
+/**
+ * Draws a filter panel slot from its context (ADR-0390 section 3): the core's view, read again at each change, and
+ * the control the core asks for the keyboard. Each choice goes to the context's setter, which is what it means; the
+ * hook focuses the control a request names, through the core, once it is drawn, and answers each request once,
+ * whichever component of the contents holds the hook when it comes.
+ */
+export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanelHandles {
+    const view = useSyncExternalStore(context.subscribe, context.view);
+    const controls = useRef<Record<FocusTarget, HTMLElement | null>>({ first: null, last: null, search: null });
+    useLayoutEffect(() => {
+        const target = context.focusTarget;
+        if (target === undefined || answeredRequests.has(context)) return;
+        answeredRequests.add(context);
+        const control = controls.current[target];
+        if (control === null) {
+            throw new Error(`The filter panel's ${target} control is not drawn: hand useFilterPanel's \`${target}\` ref to the control the core asks for.`);
+        }
+        context.takeFocus(control);
+    }, [context]);
+    // Made once, so a render hands React the same refs and it does not take them away and back.
+    const [refs] = useState(() => {
+        const taking = (target: FocusTarget) => (control: HTMLElement | null): void => { controls.current[target] = control; };
+        return { first: taking('first'), last: taking('last'), search: taking('search') };
+    });
+    return {
+        view,
+        ...refs,
+        onValueListKeyDown: event => {
+            if (!within(event) || event.nativeEvent.isComposing) return;
+            if (context.valueListKey(event.key, event.ctrlKey || event.altKey || event.metaKey)) event.preventDefault();
+        },
+    };
+}
+
+type FocusTarget = NonNullable<GridFilterPanelSlotContext['focusTarget']>;
+
+/** The contexts whose focus request has been answered. Each request comes in a context of its own, so one answered is
+ * never answered again: not by a component of the contents mounted after it, nor by an effect run twice. */
+const answeredRequests = new WeakSet<GridFilterPanelSlotContext>();
+
+/** What {@link useFindPanel} hands a find panel's contents. */
+export interface FindPanelHandles {
+    /** What the panel shows now, drawn again at each change the core makes to it. */
+    readonly view: FindPanelView;
+    /** Takes the find field, which each request of the core's puts the keyboard on, its text selected (FD-1). */
+    readonly field: (control: HTMLElement | null) => void;
+}
+
+/**
+ * Draws the find panel slot from its context (ADR-0390 section 3): the core's view, read again at each change, and
+ * the find field, which takes the keyboard at each request of the core's, answered once. Each change and step goes to
+ * the context; Enter in a field is the core's form's, so the contents draw no form and no key handler of their own.
+ */
+export function useFindPanel(context: GridFindPanelSlotContext): FindPanelHandles {
+    const view = useSyncExternalStore(context.subscribe, context.view);
+    const control = useRef<HTMLElement | null>(null);
+    useLayoutEffect(() => {
+        if (answeredFinds.has(context)) return;
+        answeredFinds.add(context);
+        const field = control.current;
+        if (field === null) throw new Error("The find panel's field is not drawn: hand useFindPanel's `field` ref to the find field.");
+        context.takeFocus(field);
+    }, [context]);
+    const [field] = useState(() => (element: HTMLElement | null): void => { control.current = element; });
+    return { view, field };
+}
+
+/** The find panel's contexts whose request has been answered, as {@link answeredRequests} keeps the filter panel's. */
+const answeredFinds = new WeakSet<GridFindPanelSlotContext>();

@@ -358,6 +358,47 @@ export type FilteredColumn = Pick<QueryColumn<never>, 'type' | 'dateType'>;
 export type FilterOperator = 'equals' | 'notEquals' | 'greaterThan' | 'greaterThanOrEqual' | 'lessThan' | 'lessThanOrEqual' | 'contains' | 'doesNotContain' | 'startsWith' | 'endsWith' | 'in' | 'isBlank' | 'isNotBlank';
 
 // @public
+export interface FilterPanelCondition {
+    readonly operand: string;
+    readonly operator: FilterOperator;
+    readonly refusal: string | undefined;
+    readonly takesOperand: boolean;
+}
+
+// @public
+export interface FilterPanelConditions {
+    readonly allowed: readonly FilterOperator[];
+    readonly combinator: FilterCombinator;
+    readonly first: FilterPanelCondition;
+    readonly kind: 'conditions';
+    readonly second: FilterPanelCondition | undefined;
+}
+
+// @public
+export interface FilterPanelEntry {
+    readonly blank: boolean;
+    readonly checked: boolean;
+    readonly text: string;
+    readonly value: unknown;
+}
+
+// @public
+export interface FilterPanelValueList {
+    readonly addOffered: boolean;
+    readonly addToCurrent: boolean;
+    readonly entries: readonly FilterPanelEntry[];
+    readonly kind: 'valueList';
+    readonly search: string;
+    readonly selectAll: SelectAllState;
+}
+
+// @public
+export type FilterPanelView = (FilterPanelValueList | FilterPanelConditions) & {
+    readonly canApply: boolean;
+    readonly fetching: boolean;
+};
+
+// @public
 export interface FilterSpec {
     readonly clauses: readonly FilterClause[];
     readonly combinator?: FilterCombinator;
@@ -368,6 +409,41 @@ export type FilterUi = 'condition' | 'valueList' | 'both';
 
 // @public
 export function findMatches(displayedText: string, pattern: GridFindPattern): boolean;
+
+// @public
+export const findPanelLabelIds: Readonly<{
+    readonly title: 'find';
+    readonly field: 'find-field';
+    readonly matchCase: 'find-match-case';
+    readonly wholeCell: 'find-whole-cell';
+    readonly next: 'find-next';
+    readonly previous: 'find-previous';
+    readonly notFound: 'find-not-found';
+    readonly foundInHeader: 'find-found-in-header';
+    readonly orderChanged: 'find-order-changed';
+    readonly sourceChanged: 'find-source-changed';
+    readonly replaceTitle: 'find-replace-title';
+    readonly replaceField: 'find-replace-field';
+    readonly replace: 'find-replace';
+    readonly replaceAll: 'find-replace-all';
+    readonly replaced: 'find-replaced';
+    readonly replacedOne: 'find-replaced-one';
+    readonly replaceRefused: 'find-replace-refused';
+    readonly replaceRefusedCell: 'find-replace-refused-cell';
+    readonly replaceRefusedMore: 'find-replace-refused-more';
+    readonly notEditable: 'find-not-editable';
+}>;
+
+// @public
+export interface FindPanelView {
+    readonly matchCase: boolean;
+    readonly outcome: string;
+    readonly replaceShown: boolean;
+    readonly replaceText: string;
+    readonly replaceWaiting: boolean;
+    readonly text: string;
+    readonly wholeCell: boolean;
+}
 
 // @public
 export type FindRefusalReason = 'unavailable' | 'notFound' | 'orderChanged' | 'sourceChanged' | 'replaceUnavailable' | 'replaceRefused';
@@ -426,6 +502,14 @@ export interface GridActionEvent<Row> {
 }
 
 // @public
+export interface GridCellMessageSlotContext {
+    readonly close: () => void;
+    readonly column: string;
+    readonly editorError: boolean;
+    readonly message: string;
+}
+
+// @public
 export interface GridChangeBatch<Row> {
     readonly added?: readonly Row[];
     readonly changed?: readonly Row[];
@@ -434,8 +518,13 @@ export interface GridChangeBatch<Row> {
 
 // @public
 export interface GridChrome<Row> {
+    readonly cellMessage?: GridChromeSlot<GridCellMessageSlotContext>;
     readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
+    readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
+    readonly findPanel?: GridChromeSlot<GridFindPanelSlotContext>;
+    readonly loadingIndicator?: GridChromeSlot<GridLoadingIndicatorSlotContext>;
+    readonly selectionSummary?: GridChromeSlot<GridSelectionSummarySlotContext>;
 }
 
 // @public
@@ -610,6 +699,56 @@ export interface GridFilter {
 }
 
 // @public
+export interface GridFilterPanelSlotContext {
+    readonly apply: () => void;
+    readonly cancel: () => void;
+    readonly column: string;
+    readonly columnType: ColumnType;
+    readonly current: FilterSpec | undefined;
+    readonly dateType: DateType;
+    readonly focusRequest: number;
+    readonly focusTarget: 'first' | 'last' | 'search' | undefined;
+    readonly innerPopupChanged: (open: boolean) => void;
+    readonly mode: FilterUi;
+    readonly setAddToCurrent: (on: boolean) => void;
+    readonly setChecked: (value: unknown, checked: boolean) => void;
+    readonly setCombinator: (combinator: FilterCombinator) => void;
+    readonly setOperand: (text: string) => void;
+    readonly setOperator: (operator: FilterOperator) => void;
+    readonly setSearch: (text: string) => void;
+    readonly setSecond: (operator: FilterOperator | undefined) => void;
+    readonly setSecondOperand: (text: string) => void;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly takeFocus: (control: HTMLElement, options?: {
+        readonly preventScroll?: boolean;
+    }) => void;
+    readonly toggleAll: () => void;
+    readonly valueListKey: (key: string, controlAltOrMeta: boolean) => boolean;
+    readonly view: () => FilterPanelView;
+}
+
+// @public
+export interface GridFindPanelSlotContext {
+    readonly close: () => void;
+    readonly focusRequest: number;
+    readonly innerPopupChanged: (open: boolean) => void;
+    readonly label: (id: string) => string;
+    readonly next: () => void;
+    readonly previous: () => void;
+    readonly replace: () => void;
+    readonly replaceAll: () => void;
+    readonly setMatchCase: (on: boolean) => void;
+    readonly setReplaceText: (text: string) => void;
+    readonly setText: (text: string) => void;
+    readonly setWholeCell: (on: boolean) => void;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly takeFocus: (control: HTMLElement, options?: {
+        readonly preventScroll?: boolean;
+    }) => void;
+    readonly view: () => FindPanelView;
+}
+
+// @public
 export interface GridFindPattern {
     readonly matchCase: boolean;
     readonly text: string;
@@ -673,6 +812,12 @@ export const gridLabelIds: Readonly<{
     readonly nameBox: 'name-box';
     readonly formulaBar: 'formula-bar';
 }>;
+
+// @public
+export interface GridLoadingIndicatorSlotContext {
+    readonly loading: boolean;
+    readonly placeholderRows: number;
+}
 
 // @public
 export interface GridMenuSlotContext {
@@ -934,6 +1079,14 @@ export interface GridSelection {
     readonly isEmpty: boolean;
     readonly ranges: readonly SelectionRange[];
     wholeColumns(extent: GridExtent): readonly number[];
+}
+
+// @public
+export interface GridSelectionSummarySlotContext {
+    readonly declineReason: string | undefined;
+    readonly figures: readonly SummaryFigureShown[];
+    readonly label: (id: string) => string;
+    readonly status: SelectionSummaryStatus;
 }
 
 // @public
@@ -1319,6 +1472,9 @@ export function sameGridFilter(a: GridFilter | undefined, b: GridFilter | undefi
 export function sameGridQuery(a: GridQuery, b: GridQuery): boolean;
 
 // @public
+export type SelectAllState = 'checked' | 'unchecked' | 'mixed';
+
+// @public
 export const selectionLabelIds: Readonly<{
     readonly selectedOutsideView: 'selected-outside-view';
     readonly goToSelection: 'go-to-selection';
@@ -1367,6 +1523,13 @@ export type SummaryFigure = 'average' | 'count' | 'numericalCount' | 'min' | 'ma
 
 // @public
 export const summaryFigureOrder: readonly SummaryFigure[];
+
+// @public
+export interface SummaryFigureShown {
+    readonly figure: SummaryFigure;
+    readonly labelId: string;
+    readonly text: string;
+}
 
 // @public
 export const summaryLabelIds: Readonly<{

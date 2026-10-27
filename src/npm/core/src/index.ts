@@ -18,11 +18,19 @@ export type { ActionRefusalReason, FindRefusalReason, GridRefusal, PlacementRefu
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { builtInLabelIds } from './chrome/command-labels';
-export type { GridChrome, GridChromeSlot, GridColumnMenuSlotContext, GridContextMenuSlotContext, GridMenuSlotContext } from './dom/grid-chrome';
+export type {
+    FindPanelView, GridCellMessageSlotContext, GridChrome, GridChromeSlot, GridColumnMenuSlotContext, GridContextMenuSlotContext,
+    GridFilterPanelSlotContext, GridFindPanelSlotContext, GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridSelectionSummarySlotContext,
+} from './dom/grid-chrome';
+export type {
+    FilterPanelCondition, FilterPanelConditions, FilterPanelEntry, FilterPanelValueList, FilterPanelView,
+} from './chrome/filter-panel-model';
+export type { SelectAllState } from './chrome/filter-panel-choices';
 export type { MenuKey, MenuKeyKind } from './chrome/menu-keys';
 export { gridCommandIds, gridLabelIds } from './chrome/command-ids';
 export { markLabelIds } from './chrome/mark-words';
 export { selectionLabelIds } from './chrome/selection-words';
+export { findPanelLabelIds } from './chrome/find-panel-labels';
 export type { CopyOrientation, CopyPlan, CopyRefusalReason, PastePlan, PasteRefusalReason, PasteShape, SourceCell } from './clipboard/clipboard-rules';
 export { assembleCopy, invariantMarker, markAttribute, type CopyFlavours, type CopyValues, type GridCopyAnswer, type GridCopyRequest } from './clipboard/clipboard-data';
 export { parseClipboard } from './clipboard/clipboard-parse';
@@ -50,7 +58,7 @@ export type { GridTextGeometry } from './text-geometry';
 export type { DistinctValues, GridSourceState } from './source/grid-source';
 export { findMatches, type GridFindRequest, type GridFindResult } from './finding/find';
 export { answeredSummary, declinedSummary, summaryOf, type GridSummaryRequest, type GridSummaryResult } from './summary/grid-summary';
-export type { SelectionSummary, SelectionSummaryStatus } from './dom/selection-summary';
+export type { SelectionSummary, SelectionSummaryStatus, SummaryFigureShown } from './dom/selection-summary';
 export { summaryLabelIds } from './chrome/summary-words';
 export type { MarkRefusalReason, RowMarkHeaderState, RowMarks } from './rows/row-marks';
 export type { RowRange } from './viewport/row-range';

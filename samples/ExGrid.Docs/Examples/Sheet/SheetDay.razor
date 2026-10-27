@@ -1,0 +1,31 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<div class="d-flex gap-2 mb-3 align-center flex-wrap">
+    <label>
+        Time zone
+        <select @bind="_zone">
+            <option value="">The browser's</option>
+            @foreach (var zone in Zones)
+            {
+                <option value="@zone">@zone</option>
+            }
+        </select>
+    </label>
+    <label><input type="checkbox" @bind="_fixed" /> Fix the day at 31 March 2026</label>
+</div>
+
+<ExSheet @bind-Document="_document" TimeZone="Zone" Today="@(_fixed ? ReportDay : null)"
+         ViewportHeight="200" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private static readonly string[] Zones = ["Asia/Tokyo", "Europe/London", "America/New_York", "Pacific/Kiritimati"];
+    private static readonly DateOnly ReportDay = new(2026, 3, 31);
+
+    private SheetDocument _document = DayAndTime.Document();
+    private string _zone = "";
+    private bool _fixed;
+
+    // The day is the user's, in the browser's zone, unless you name another; the server's is never used.
+    private TimeZoneInfo? Zone => _zone == "" ? null : TimeZoneInfo.FindSystemTimeZoneById(_zone);
+}

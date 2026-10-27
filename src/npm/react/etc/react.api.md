@@ -4,13 +4,20 @@
 
 ```ts
 
+import type { FilterPanelView } from '@ex-grid/core';
+import type { FindPanelView } from '@ex-grid/core';
 import { FocusEvent as FocusEvent_2 } from 'react';
+import type { GridCellMessageSlotContext } from '@ex-grid/core';
 import type { GridColumn } from '@ex-grid/core';
 import type { GridColumnMenuSlotContext } from '@ex-grid/core';
 import type { GridContextMenuSlotContext } from '@ex-grid/core';
+import type { GridFilterPanelSlotContext } from '@ex-grid/core';
+import type { GridFindPanelSlotContext } from '@ex-grid/core';
 import { GridHandle } from '@ex-grid/core';
+import type { GridLoadingIndicatorSlotContext } from '@ex-grid/core';
 import type { GridMenuSlotContext } from '@ex-grid/core';
 import { GridOptions } from '@ex-grid/core';
+import type { GridSelectionSummarySlotContext } from '@ex-grid/core';
 import type { GridTemplateCell } from '@ex-grid/core';
 import { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { MouseEvent as MouseEvent_2 } from 'react';
@@ -26,8 +33,13 @@ export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
 
 // @public
 export interface ExGridChrome<Row> {
+    readonly cellMessage?: (context: GridCellMessageSlotContext) => ReactNode;
     readonly columnMenu?: (context: GridColumnMenuSlotContext) => ReactNode;
     readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
+    readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
+    readonly findPanel?: (context: GridFindPanelSlotContext) => ReactNode;
+    readonly loadingIndicator?: (context: GridLoadingIndicatorSlotContext) => ReactNode;
+    readonly selectionSummary?: (context: GridSelectionSummarySlotContext) => ReactNode;
 }
 
 // @public
@@ -35,6 +47,21 @@ export type ExGridProps<Row> = Omit<GridOptions<Row>, 'chrome'> & {
     readonly ref?: Ref<ExGridApi<Row>>;
     readonly chrome?: ExGridChrome<Row>;
 };
+
+// @public
+export interface FilterPanelHandles {
+    readonly first: (control: HTMLElement | null) => void;
+    readonly last: (control: HTMLElement | null) => void;
+    readonly onValueListKeyDown: (event: KeyboardEvent_2) => void;
+    readonly search: (control: HTMLElement | null) => void;
+    readonly view: FilterPanelView;
+}
+
+// @public
+export interface FindPanelHandles {
+    readonly field: (control: HTMLElement | null) => void;
+    readonly view: FindPanelView;
+}
 
 // @public
 export interface MenuItemProps {
@@ -54,6 +81,12 @@ export function templateColumn<Row>(column: TemplateColumnOptions<Row>, render: 
 
 // @public
 export type TemplateColumnOptions<Row> = Omit<GridColumn<Row>, 'template' | 'actions'>;
+
+// @public
+export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanelHandles;
+
+// @public
+export function useFindPanel(context: GridFindPanelSlotContext): FindPanelHandles;
 
 // @public
 export function useMenuItems(context: GridMenuSlotContext): (index: number) => MenuItemProps;
