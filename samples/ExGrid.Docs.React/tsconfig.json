@@ -1,0 +1,25 @@
+{
+  // The workspace's settings, so the packages' sources it builds from type as they do there.
+  "extends": "../../src/npm/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "declaration": false,
+    "emitDeclarationOnly": false,
+    "noEmit": true,
+    "types": ["vite/client", "node"],
+    // The Examples and the packages' sources sit outside this folder; their React is this project's.
+    "paths": {
+      "react": ["./node_modules/@types/react/index.d.ts"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "react-dom": ["./node_modules/@types/react-dom/index.d.ts"],
+      "react-dom/*": ["./node_modules/@types/react-dom/*"],
+      "@ex-grid/core": ["../../src/npm/core/src/index.ts"],
+      "@ex-grid/react": ["../../src/npm/react/src/index.ts"],
+      "@ex-grid/data": ["../../src/npm/data/src/index.ts"],
+      "@ex-grid/sheet-engine": ["../../src/npm/sheet-engine/src/index.ts"],
+      "@ex-grid/sheet": ["../../src/npm/sheet/src/index.ts"],
+      "@ex-grid/sheet-react": ["../../src/npm/sheet-react/src/index.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts", "../ExGrid.Docs/Examples/**/*.ts", "../ExGrid.Docs/Examples/**/*.tsx"]
+}

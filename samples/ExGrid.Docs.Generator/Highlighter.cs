@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace ExGrid.Docs.Generator;
 
 /// <summary>
-/// Turns Razor and C# source into HTML with a class on every token (ADR-0110). The classes are
+/// Turns Razor, C# and TypeScript source into HTML with a class on every token (ADR-0110). The classes are
 /// <c>tk-</c> names the site's stylesheet colours through custom properties, so the generated
 /// markup carries no colour. C# is tokenised by Roslyn's lexer; the Razor around it by the state
 /// machine below, which knows the transitions an Example uses: directives, <c>@code</c> blocks,
@@ -48,6 +48,15 @@ internal static class Highlighter
     {
         var html = new StringBuilder(source.Length * 2);
         new RazorScanner(source, html).Run();
+        return html.ToString();
+    }
+
+    /// <summary>The HTML for a TypeScript file, a React Example's (ADR-0350 section 12): a .tsx file's JSX
+    /// included, where a .ts file's '&lt;' never opens an element.</summary>
+    public static string TypeScript(string source, bool jsx)
+    {
+        var html = new StringBuilder(source.Length * 2);
+        new TypeScriptScanner(source, html, jsx).Run();
         return html.ToString();
     }
 

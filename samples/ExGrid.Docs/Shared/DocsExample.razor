@@ -3,8 +3,10 @@
 
 @* An Example (ADR-0110): a live component, and beneath it the code it runs, read from its own
    source. Where the Example has a MudBlazor counterpart, the site's Chrome choice picks which one
-   runs, and the code follows. Read for React, the Example has no React counterpart yet, so it says
-   so where it would run, and neither the Blazor component nor its code is shown (ADR-0350 §12). *@
+   runs, and the code follows. Read for React (ADR-0350 §12), an Example with a React counterpart, the
+   .tsx file beside its .razor, runs it in a frame of its own, built ahead of time into the site's
+   static files, and shows its code; one without says so where it would run, and neither the Blazor
+   component nor its code is shown. *@
 <div class="docs-example">
     @if (Title is not null)
     {
@@ -15,7 +17,25 @@
         <div class="docs-example-text">@ChildContent</div>
     }
     <MudPaper Outlined="true" Class="docs-example-frame">
-        @if (State.Framework == DocsFramework.React)
+        @if (State.Framework == DocsFramework.React && _react is { } react)
+        {
+            @* The frame sets its own height to the Example's, from inside (the frame's page, main.tsx): the site
+               renders no height of its own, so a render never takes it back. *@
+            <iframe class="docs-example-react" src="@FrameAddress(react)" title="@($"{Title ?? react.Name}, running under React")"></iframe>
+            <MudToolBar Dense="true" Class="docs-example-toolbar">
+                <MudText Typo="Typo.caption" Class="docs-muted">Built-in Chrome only</MudText>
+                <MudSpacer />
+                <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Code"
+                           OnClick="@(() => _showCode = !_showCode)" aria-expanded="@(_showCode ? "true" : "false")">
+                    @(_showCode ? "Hide code" : "Show code")
+                </MudButton>
+            </MudToolBar>
+            @if (_showCode)
+            {
+                <CodeView Sources="react.Sources" />
+            }
+        }
+        else if (State.Framework == DocsFramework.React)
         {
             <NotInReact Product="@_product" Example="true" />
         }
@@ -71,6 +91,7 @@
     private bool _showCode;
     private bool _mud;
     private string _product = "";
+    private ReactExample? _react;
 
     private Type Current => _mud ? Mud! : Builtin;
 
@@ -92,7 +113,16 @@
 
     // Read whatever the framework, so that an Example in no product's folder fails the page under
     // Blazor too, where the site is built and read first, not only for a reader on React.
-    protected override void OnParametersSet() => _product = DocsProducts.OfExample(Builtin);
+    protected override void OnParametersSet()
+    {
+        _product = DocsProducts.OfExample(Builtin);
+        _react = ExampleSources.ReactFor(Builtin);
+    }
+
+    // The frame's page, relative to the site's base, with the Example and the site's scheme in its address. A
+    // change of scheme is a new address, so the frame runs the Example again in the other one.
+    private string FrameAddress(ReactExample react) =>
+        $"react/index.html?example={Uri.EscapeDataString(react.Name)}&scheme={(State.Dark ? "dark" : "light")}";
 
     public void Dispose() => State.Changed -= OnChanged;
 }
