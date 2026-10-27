@@ -599,8 +599,10 @@ class SheetView {
         this.#destroyed = true;
         clearTimeout(this.#dayTimer);
         clearTimeout(this.#minuteTimer);
-        this.#grid?.destroy();
+        // Let go of first, so nothing the grid tells as it goes reads it again.
+        const grid = this.#grid;
         this.#grid = undefined;
+        grid?.destroy();
         this.#element.removeEventListener('keydown', this.#onSheetKey, { capture: true });
         this.#element.removeEventListener('keyup', this.#onSheetKeyUp, { capture: true });
         this.#element.removeEventListener('focusout', this.#onSheetFocusOut);
@@ -897,6 +899,7 @@ class SheetView {
     }
 
     readonly #onSelectionChanged = (selection: GridSelection): void => {
+        if (this.#destroyed) return;
         this.#followSelection(selection);
         // Heard last, so a Consumer that reads or formats from here finds the Sheet already following the move.
         this.#options.onSelectionChanged?.(selection);
@@ -949,8 +952,8 @@ class SheetView {
     // The grid tells only a change, so each call is one the Consumer hears. An edit the destroyed grid discards is not
     // told: the Sheet is gone, and a handler that asked it anything would be refused.
     readonly #onEditingChanged = (open: boolean): void => {
-        if (this.#destroyed) return;
         this.#editing = open;
+        if (this.#destroyed) return;
         this.#paintToolbar();
         this.#options.onEditingChanged?.(open);
     };
@@ -1155,12 +1158,15 @@ class SheetView {
 
     // A Consumer's own button (ADR-0100): pressed as ExSheet's items are, and unavailable while an edit is open.
     #consumerItem(button: SheetToolbarButton, key: string): SheetToolbarItem {
-        const onPress = button.onPress;
         return {
             key, kind: 'button', name: button.text, tooltip: button.text, icon: undefined, text: button.text, swatch: undefined,
             moreName: undefined, pressed: false,
             disabledReason: this.#editing ? this.#words.toolbarWhileEditing : button.disabledReason,
-            press: () => { onPress(); },
+            // An edit opened since the last pass refuses the press, as ExSheet's own items do, whatever that pass showed.
+            press: () => {
+                if (this.#editing) this.#tell(this.#words.toolbarWhileEditing);
+                else button.onPress();
+            },
             open: undefined,
             keyTip: button.keyTip?.toUpperCase(),
         };
@@ -1890,9 +1896,10 @@ function checkToolbar(given: unknown): void {
         if (row === 'default') continue;
         if (typeof row !== 'object' || row === null) throw new TypeError("A Toolbar Row is 'default' or { label, keyTip?, items }.");
         const { label, keyTip, items }: { readonly label?: unknown; readonly keyTip?: unknown; readonly items?: unknown } = row;
-        if (typeof label !== 'string') throw new TypeError("A Toolbar Row's label, its accessible name, is a string.");
+        if (typeof label !== 'string' || label === '') throw new TypeError("A Toolbar Row's label, its accessible name, is a string that is not empty.");
         checkKeyTip(keyTip, `the Toolbar Row '${label}'`);
-        if (!Array.isArray(items)) throw new TypeError(`The items of the Toolbar Row '${label}' are a list.`);
+        // A row of nothing would take a band off the Sheet's height and show nothing in it.
+        if (!Array.isArray(items) || items.length === 0) throw new TypeError(`The items of the Toolbar Row '${label}' are a list of one item or more.`);
         const entries: readonly unknown[] = items;
         for (const entry of entries) {
             if (entry === 'separator') continue;

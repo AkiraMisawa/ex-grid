@@ -1000,13 +1000,14 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
     });
 
     it('ADR-0100: KeyTips that would be taken for one another at one level are refused by name, and so is a command ExSheet has not', () => {
-        expect(() => sheetOf({ showToolbar: true, toolbar: ['default', { label: 'Help', keyTip: 'H', items: [] }] }))
+        expect(() => sheetOf({ showToolbar: true, toolbar: ['default', { label: 'Help', keyTip: 'H', items: ['bold'] }] }))
             .toThrow("The KeyTips 'H' of ExSheet's default row and 'H' of the Toolbar Row 'Help' collide at one level");
         expect(() => sheetOf({ showToolbar: true, toolbar: [{ label: 'Mine', items: ['borders', { text: 'Book', keyTip: 'BK', onPress: () => undefined }] }] }))
             .toThrow("The KeyTips 'B' of the item 'borders' and 'BK' of the button 'Book' collide at one level");
         const unknown: unknown = { showToolbar: true, toolbar: [{ label: 'Mine', items: ['wrapText'] }] };
         expect(() => sheetOf(unknown as SheetOptions)).toThrow("'wrapText' is not one of ExSheet's toolbar commands");
         expect(() => sheetOf({ showToolbar: true, toolbar: [] })).toThrow("A Sheet Toolbar's rows are a list of one row or more");
+        expect(() => sheetOf({ showToolbar: true, toolbar: [{ label: 'Later', keyTip: 'L', items: [] }] })).toThrow("The items of the Toolbar Row 'Later' are a list of one item or more");
     });
 
     it('ADR-0100: Ctrl+F1 tells the toolbar\'s other state where the Consumer hears it, and is the browser\'s where it does not', async () => {
