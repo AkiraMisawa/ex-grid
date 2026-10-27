@@ -4,10 +4,16 @@
 
 ```ts
 
+import { FocusEvent as FocusEvent_2 } from 'react';
 import type { GridColumn } from '@ex-grid/core';
+import type { GridColumnMenuSlotContext } from '@ex-grid/core';
+import type { GridContextMenuSlotContext } from '@ex-grid/core';
 import { GridHandle } from '@ex-grid/core';
+import type { GridMenuSlotContext } from '@ex-grid/core';
 import { GridOptions } from '@ex-grid/core';
 import type { GridTemplateCell } from '@ex-grid/core';
+import { KeyboardEvent as KeyboardEvent_2 } from 'react';
+import { MouseEvent as MouseEvent_2 } from 'react';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { Ref } from 'react';
@@ -19,14 +25,37 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement;
 export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
 
 // @public
-export type ExGridProps<Row> = GridOptions<Row> & {
+export interface ExGridChrome<Row> {
+    readonly columnMenu?: (context: GridColumnMenuSlotContext) => ReactNode;
+    readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
+}
+
+// @public
+export type ExGridProps<Row> = Omit<GridOptions<Row>, 'chrome'> & {
     readonly ref?: Ref<ExGridApi<Row>>;
+    readonly chrome?: ExGridChrome<Row>;
 };
+
+// @public
+export interface MenuItemProps {
+    readonly 'aria-disabled': boolean;
+    readonly 'data-ex-claims': 'click keydown' | undefined;
+    readonly disabled: boolean;
+    readonly onClick: (event: MouseEvent_2) => void;
+    readonly onFocus: (event: FocusEvent_2) => void;
+    readonly onKeyDown: (event: KeyboardEvent_2) => void;
+    readonly ref: (control: HTMLElement | null) => void;
+    readonly role: 'menuitem';
+    readonly tabIndex: -1;
+}
 
 // @public
 export function templateColumn<Row>(column: TemplateColumnOptions<Row>, render: (cell: GridTemplateCell<Row>) => ReactNode): GridColumn<Row>;
 
 // @public
 export type TemplateColumnOptions<Row> = Omit<GridColumn<Row>, 'template' | 'actions'>;
+
+// @public
+export function useMenuItems(context: GridMenuSlotContext): (index: number) => MenuItemProps;
 
 ```

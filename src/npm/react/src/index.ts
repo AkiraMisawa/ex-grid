@@ -8,3 +8,5 @@ export { ExGrid } from './ex-grid';
 export type { ExGridApi, ExGridProps } from './ex-grid';
 export { templateColumn } from './template-column';
 export type { TemplateColumnOptions } from './template-column';
+export { useMenuItems } from './chrome';
+export type { ExGridChrome, MenuItemProps } from './chrome';
