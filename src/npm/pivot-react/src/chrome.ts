@@ -6,7 +6,8 @@
 
 import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type {
-    PivotChrome, PivotFieldSettingsSlotContext, PivotItemFilterSlotContext, PivotMenuSlotContext, PivotMenuView, PivotPanelSlotContext, PivotValueFieldSettingsSlotContext,
+    PivotChrome, PivotFieldListSlotContext, PivotFieldSettingsSlotContext, PivotItemFilterSlotContext, PivotMenuSlotContext, PivotMenuView, PivotPanelSlotContext, PivotReportFiltersSlotContext,
+    PivotStaleReportSlotContext, PivotStandingSlotContext, PivotToolbarSlotContext, PivotValueFieldSettingsSlotContext,
 } from '@ex-grid/pivot';
 import { chromeMounts, type ChromeMountsMade, type ExGridChrome, type GridPortals } from '@ex-grid/react';
 
@@ -28,6 +29,14 @@ export interface ExPivotChrome {
     readonly fieldSettings?: (context: PivotFieldSettingsSlotContext) => ReactNode;
     /** Value Field Settings…, drawn with {@link usePivotPanel}. */
     readonly valueFieldSettings?: (context: PivotValueFieldSettingsSlotContext) => ReactNode;
+    /** The Pivot Toolbar, drawn with {@link usePivotPart}. */
+    readonly toolbar?: (context: PivotToolbarSlotContext) => ReactNode;
+    /** The report filter band, drawn with {@link usePivotPart}. */
+    readonly reportFilters?: (context: PivotReportFiltersSlotContext) => ReactNode;
+    /** The Stale Report's notice, drawn with {@link usePivotPart}. */
+    readonly staleReport?: (context: PivotStaleReportSlotContext) => ReactNode;
+    /** The Field List, drawn with {@link usePivotPart}. */
+    readonly fieldList?: (context: PivotFieldListSlotContext) => ReactNode;
 }
 
 /** The mount functions made for an ExPivot's render functions: the pivot's slots', and the grid's. */
@@ -37,7 +46,7 @@ export interface PivotMountsMade {
     gridChrome?: { readonly given: unknown; readonly mounts: PivotChrome['grid'] };
 }
 
-const pivotSlots: readonly string[] = ['menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings'];
+const pivotSlots: readonly string[] = ['menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings', 'toolbar', 'reportFilters', 'staleReport', 'fieldList'];
 
 /** The ExPivot's Chrome as the pivot takes it: each slot's render function as a mount function rendering it through
  * the ExPivot's portals, and `grid`'s as ExGrid for React makes its own. A render function handed again keeps its
@@ -133,6 +142,17 @@ export interface PivotPanelHandles<View> {
 export function usePivotPanel<View>(context: PivotPanelSlotContext & { readonly view: () => View }): PivotPanelHandles<View> {
     const { view, focus } = useViewedPart(context, 'panel\'s first control');
     return { view, first: focus };
+}
+
+/**
+ * Draws one of the pivot's standing parts from its context (ADR-0390 section 3): the Pivot Toolbar, the report filter
+ * band, the Stale Report's notice or the Field List. The view is the pivot's, read again at each change; each press goes to the
+ * context's callback, and each control and anchor is handed in by its `ref`, `context.control(name)` and
+ * `context.anchor(name)`, so the pivot gives the keyboard to the control it means and places a popup's frame in its
+ * anchor itself.
+ */
+export function usePivotPart<View>(context: PivotStandingSlotContext<View>): View {
+    return useSyncExternalStore(context.subscribe, context.view);
 }
 
 /** The props {@link usePivotMenu} hands each command's control: spread them onto it. */

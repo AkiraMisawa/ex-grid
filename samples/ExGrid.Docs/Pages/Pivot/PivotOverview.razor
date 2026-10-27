@@ -146,6 +146,18 @@
             built-in markup's.
         </p>
         <p>
+            The parts that stand rather than open are slots too: the Field List (<code>fieldList</code>), the Pivot
+            Toolbar (<code>toolbar</code>), the report filter band on its left (<code>reportFilters</code>) and the
+            Stale Report's notice (<code>staleReport</code>). Each draws <code>usePivotPart(context)</code>, the view the pivot holds, and
+            hands in its buttons and the positioned elements around them by <code>ref</code>:
+            <code>context.control('layout')</code> for Layout ▾ and <code>context.anchor('layout')</code> around it,
+            and so on. The pivot opens the Layout menu, Filter… and a field's menu in those anchors, and gives the
+            keyboard back to the button that opened them, as it does with its own markup. The Field List's drag and drop
+            is the browser's own: a field or an entry calls <code>context.startDrag</code> on <code>dragstart</code>, each
+            Area and entry calls <code>dragOver</code>, <code>dragEnter</code> and <code>drop</code> with the index its
+            view gives, and what a drop makes is the pivot's, as the built-in pane's is.
+        </p>
+        <p>
             On Blazor Server, input made in the report while the connection is lost never reaches it. Once the
             connection is back, the next input finds it missing: it is refused aloud and never replayed, and the new
             input is handled as usual, as on <MudLink Href="exgrid/selection">the grid</MudLink>.
