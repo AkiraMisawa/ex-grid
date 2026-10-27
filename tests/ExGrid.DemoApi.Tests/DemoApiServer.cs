@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +27,9 @@ public class DemoApiServer : IAsyncLifetime
 
     internal TradeStore Store => Factory.Services.GetRequiredService<TradeStore>();
 
+    /// <summary>When the hub says changes to a connection (<see cref="HubConnections"/>).</summary>
+    internal HubConnections HubConnections { get; } = new();
+
     /// <summary>The data directory the server's trades live in.</summary>
     internal string DataDirectory => _directory.Path;
 
@@ -45,6 +49,9 @@ public class DemoApiServer : IAsyncLifetime
             .ConfigureTestServices(services =>
             {
                 services.AddSingleton(new DemoApiOptions(TradeCount, _directory.Path));
+                // Through AddHubOptions, which marks the hub's own options as set: options configured otherwise are
+                // ignored, and the global ones used.
+                services.AddSignalR().AddHubOptions<TradesHub>(options => options.AddFilter(HubConnections));
                 if (!MakesTradesReady)
                 {
                     services.Remove(services.Single(service =>

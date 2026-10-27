@@ -33,6 +33,8 @@ public sealed class LiveApiTests(DemoApiServer server) : IClassFixture<DemoApiSe
         connection.On<string, string[], string[]>("TradesChanged",
             (version, tradeIds, bookedIds) => changes.Writer.TryWrite((version, tradeIds, bookedIds)));
         await connection.StartAsync(token);
+        // Every change from the version before on is said to this connection only once the hub has added it.
+        await server.HubConnections.AddedAsync(connection.ConnectionId!, token);
 
         using var client = server.Factory.CreateClient();
         var before = server.Store.Version!;
