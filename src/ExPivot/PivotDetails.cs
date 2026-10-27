@@ -20,8 +20,23 @@ public sealed class PivotDetails
         IReadOnlyList<PivotDetailItem> columnItems,
         string? valueField,
         string title)
+        : this(source.Fields, source.DetailsAsync, query, rowItems, columnItems, valueField, title)
     {
-        Source = source;
+    }
+
+    // The records asked of whatever answers them: the report source the Razor component computed the report from, or
+    // the Pivot Source the Script Core's report was computed from (ADR-0370 section 1).
+    internal PivotDetails(
+        IReadOnlyList<PivotField> fields,
+        Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> details,
+        PivotDetailsQuery query,
+        IReadOnlyList<PivotDetailItem> rowItems,
+        IReadOnlyList<PivotDetailItem> columnItems,
+        string? valueField,
+        string title)
+    {
+        Fields = fields;
+        _details = details;
         Query = query;
         RowItems = rowItems;
         ColumnItems = columnItems;
@@ -53,10 +68,10 @@ public sealed class PivotDetails
     public string SourceVersion => Query.SourceVersion;
 
     /// <summary>The fields each record's values are in, in order: the source's.</summary>
-    public IReadOnlyList<PivotField> Fields => Source.Fields;
+    public IReadOnlyList<PivotField> Fields { get; }
 
-    /// <summary>The source the report was computed from — the one its records are asked of.</summary>
-    internal PivotReportSource Source { get; }
+    // The source the report was computed from: the one its records are asked of.
+    private readonly Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> _details;
 
     /// <summary>
     /// One page of the records behind the cell, in the data's order, with how many there are — or
@@ -69,7 +84,7 @@ public sealed class PivotDetails
     /// <param name="count">How many records are wanted.</param>
     /// <param name="cancellationToken">Cancels the question.</param>
     public ValueTask<PivotDetailPage> DetailsAsync(int start, int count, CancellationToken cancellationToken = default)
-        => Source.DetailsAsync(
+        => _details(
             new PivotDetailsQuery(Query.SourceVersion, Query.RowItems, Query.ColumnItems, Query.HiddenItems, start, count),
             cancellationToken);
 }

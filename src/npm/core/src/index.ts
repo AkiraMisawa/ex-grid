@@ -17,6 +17,7 @@ export type { BorderStyle, CellAppearance, CellBorder, CellTextMeasure, EdgeBord
 export type { ActionRefusalReason, FindRefusalReason, GridRefusal, PlacementRefusalReason } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
+export { builtInLabelIds } from './chrome/command-labels';
 export { gridCommandIds, gridLabelIds } from './chrome/command-ids';
 export { markLabelIds } from './chrome/mark-words';
 export { selectionLabelIds } from './chrome/selection-words';

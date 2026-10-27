@@ -2054,6 +2054,20 @@ describe('ExPivot\'s Show Details (ADR-0059, ADR-0063)', () => {
         expect(() => event.records(-1, 10)).toThrow(RangeError);
     });
 
+    it('ADR-0059: records a Consumer heard and hands back open as nobody had heard them', async () => {
+        const handedBack: PivotShowDetailsEvent[] = [];
+        const { view, root, grid } = mount({ source: local(), layout: byRegionAndDesk, onShowDetails: event => handedBack.push(event) });
+        await settled();
+        await doubleClick(grid, 0, 3);
+        expect(root.querySelector('.ex-pivot-tabs')).toBeNull();
+        view.openDetails(defined(handedBack[0], 'the records heard'));
+        expect(tabTitles(root)).toEqual(['PivotTable', 'Details: EU / Rates*']);
+        // Another pivot's records are refused, never shown under this report.
+        const other = mount({ source: local(), layout: byRegionAndDesk });
+        await settled();
+        expect(() => { other.view.openDetails(defined(handedBack[0], 'the records heard')); }).toThrow('another pivot');
+    });
+
     it('ADR-0063: records the source no longer holds under the report\'s Source Version are refused in words, never shown', async () => {
         const { root, grid } = mount({ source: movedOn(), layout: byRegionAndDesk });
         await settled();
