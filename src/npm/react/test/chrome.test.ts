@@ -6,9 +6,13 @@ import { createElement, StrictMode, useState, type ReactElement } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridCellEditorSlotContext, GridColumn, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridMenuSlotContext } from '@ex-grid/core';
+import type {
+    GridCellEditorSlotContext, GridColumn, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridFormulaBarTextSlotContext, GridMenuSlotContext,
+    GridNameBoxSlotContext,
+} from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
-import { useCellEditor, useFilterPanel, useFindPanel, useMenuItems, type ExGridChrome } from '../src/chrome';
+import { useCellEditor, useFilterPanel, useFindPanel, useFormulaBarText, useMenuItems, useNameBox, type ExGridChrome } from '../src/chrome';
+import { formulaBarSlotContract } from './bar-slot-contract';
 import { cellEditorSlotContract } from './editor-slot-contract';
 import { filterPanelSlotContract } from './filter-slot-contract';
 import { findPanelSlotContract } from './find-slot-contract';
@@ -76,6 +80,18 @@ function PlainCellEditor({ context }: { readonly context: GridCellEditorSlotCont
     return createElement('input', { ref: field, defaultValue, className: view.error === undefined ? 'plain-editor' : 'plain-editor plain-editor-error' });
 }
 
+/** The Formula Bar's text field, uncontrolled, dimmed where its text is borrowed. */
+function PlainBarText({ context }: { readonly context: GridFormulaBarTextSlotContext }): ReactElement {
+    const { view, field } = useFormulaBarText(context);
+    return createElement('input', { ref: field, className: view.borrowed ? 'plain-bar plain-bar-borrowed' : 'plain-bar' });
+}
+
+/** The Name Box, one plain field. */
+function PlainNameBox({ context }: { readonly context: GridNameBoxSlotContext }): ReactElement {
+    const { field } = useNameBox(context);
+    return createElement('input', { ref: field, className: 'plain-name-box' });
+}
+
 const plainMenu = (context: GridMenuSlotContext): ReactElement => createElement(PlainMenu, { context });
 const plainFilterPanel = (context: GridFilterPanelSlotContext): ReactElement => createElement(PlainFilterPanel, { context });
 const plainFindPanel = (context: GridFindPanelSlotContext): ReactElement => createElement(PlainFindPanel, { context });
@@ -87,6 +103,8 @@ const plainChrome: ExGridChrome<unknown> = {
     selectionSummary: context => createElement('span', null, context.status === 'pending' ? context.label('summary-pending')
         : context.status === 'declined' ? context.declineReason
         : context.figures.map(figure => createElement('span', { key: figure.figure }, `${context.label(figure.labelId)}: ${figure.text} `))),
+    formulaBarText: context => createElement(PlainBarText, { context }),
+    nameBox: context => createElement(PlainNameBox, { context }),
 };
 
 menuSlotContract('a Chrome of plain buttons', plainChrome);
@@ -94,6 +112,7 @@ filterPanelSlotContract('a Chrome of plain controls', plainChrome);
 findPanelSlotContract('a Chrome of plain controls', plainChrome);
 shownSlotContract('a Chrome of plain elements', plainChrome);
 cellEditorSlotContract('a Chrome of a plain field', plainChrome);
+formulaBarSlotContract('a Chrome of plain fields', plainChrome);
 
 interface Trade {
     readonly book: string;

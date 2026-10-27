@@ -1,0 +1,233 @@
+{
+  "about": "Colours resolved to the RGB Excel paints (ADR-0330 section 8): Office's theme slots in the order styles number them, the tints Excel writes for its palette's shades, the tint as ECMA-376 section 18.8.19 applies it, and the indexed palette and its replacement. Transcribed from ExGrid.Data.Xlsx's ThemeTests.",
+  "kind": "xlsxColor",
+  "cases": [
+    {
+      "name": "ADR-0330 §8: Office's theme slot 0 resolves in the order styles number the slots",
+      "color": {
+        "kind": "theme",
+        "value": 0
+      },
+      "expect": "FFFFFFFF"
+    },
+    {
+      "name": "ADR-0330 §8: Office's theme slot 1 resolves in the order styles number the slots",
+      "color": {
+        "kind": "theme",
+        "value": 1
+      },
+      "expect": "FF000000"
+    },
+    {
+      "name": "ADR-0330 §8: Office's theme slot 2 resolves in the order styles number the slots",
+      "color": {
+        "kind": "theme",
+        "value": 2
+      },
+      "expect": "FFE7E6E6"
+    },
+    {
+      "name": "ADR-0330 §8: Office's theme slot 3 resolves in the order styles number the slots",
+      "color": {
+        "kind": "theme",
+        "value": 3
+      },
+      "expect": "FF44546A"
+    },
+    {
+      "name": "ADR-0330 §8: Office's theme slot 4 resolves in the order styles number the slots",
+      "color": {
+        "kind": "theme",
+        "value": 4
+      },
+      "expect": "FF4472C4"
+    },
+    {
+      "name": "ADR-0330 §8: Office's theme slot 11 resolves in the order styles number the slots",
+      "color": {
+        "kind": "theme",
+        "value": 11
+      },
+      "expect": "FF954F72"
+    },
+    {
+      "name": "ADR-0330 §8: Office's theme slot 12 resolves in the order styles number the slots",
+      "color": {
+        "kind": "theme",
+        "value": 12
+      },
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 0 with tint -0.0499893185216834 resolves to F2F2F2, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 0,
+        "tint": -0.0499893185216834
+      },
+      "expect": "FFF2F2F2"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 0 with tint -0.149998474074526 resolves to D9D9D9, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 0,
+        "tint": -0.149998474074526
+      },
+      "expect": "FFD9D9D9"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 0 with tint -0.249977111117893 resolves to BFBFBF, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 0,
+        "tint": -0.249977111117893
+      },
+      "expect": "FFBFBFBF"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 0 with tint -0.349986266670736 resolves to A6A6A6, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 0,
+        "tint": -0.349986266670736
+      },
+      "expect": "FFA6A6A6"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 0 with tint -0.499984740745262 resolves to 808080, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 0,
+        "tint": -0.499984740745262
+      },
+      "expect": "FF808080"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 1 with tint 0.499984740745262 resolves to 7F7F7F, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 1,
+        "tint": 0.499984740745262
+      },
+      "expect": "FF7F7F7F"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 1 with tint 0.349986266670736 resolves to 595959, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 1,
+        "tint": 0.349986266670736
+      },
+      "expect": "FF595959"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 1 with tint 0.249977111117893 resolves to 404040, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 1,
+        "tint": 0.249977111117893
+      },
+      "expect": "FF404040"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 1 with tint 0.149998474074526 resolves to 262626, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 1,
+        "tint": 0.149998474074526
+      },
+      "expect": "FF262626"
+    },
+    {
+      "name": "ADR-0330 §8: theme slot 1 with tint 0.0499893185216834 resolves to 0D0D0D, as Excel shows that shade",
+      "color": {
+        "kind": "theme",
+        "value": 1,
+        "tint": 0.0499893185216834
+      },
+      "expect": "FF0D0D0D"
+    },
+    {
+      "name": "ADR-0330 §8: no tint keeps the colour (FF4472C4, tint 0)",
+      "argb": "FF4472C4",
+      "tint": 0,
+      "expect": "FF4472C4"
+    },
+    {
+      "name": "ADR-0330 §8: a tint of 1 is white (FF4472C4, tint 1)",
+      "argb": "FF4472C4",
+      "tint": 1,
+      "expect": "FFFFFFFF"
+    },
+    {
+      "name": "ADR-0330 §8: a tint of -1 is black (FF4472C4, tint -1)",
+      "argb": "FF4472C4",
+      "tint": -1,
+      "expect": "FF000000"
+    },
+    {
+      "name": "ADR-0330 §8: darkening by half halves the luminance and keeps the hue (FF4472C4, tint -0.5)",
+      "argb": "FF4472C4",
+      "tint": -0.5,
+      "expect": "FF203864"
+    },
+    {
+      "name": "ADR-0330 §8: alpha is kept (80000000, tint 1)",
+      "argb": "80000000",
+      "tint": 1,
+      "expect": "80FFFFFF"
+    },
+    {
+      "name": "ADR-0330 §8: an indexed colour resolves through the default palette",
+      "color": {
+        "kind": "indexed",
+        "value": 10
+      },
+      "expect": "FFFF0000"
+    },
+    {
+      "name": "ADR-0330 §8: the default palette's last colour is index 63",
+      "color": {
+        "kind": "indexed",
+        "value": 63
+      },
+      "expect": "FF333333"
+    },
+    {
+      "name": "ADR-0330 §8: index 64, the system foreground, resolves to none",
+      "color": {
+        "kind": "indexed",
+        "value": 64
+      },
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §8: an indexed colour resolves through the palette the styles part writes over the default",
+      "color": {
+        "kind": "indexed",
+        "value": 1
+      },
+      "indexedColors": [
+        "FF000000",
+        "FF123456"
+      ],
+      "expect": "FF123456"
+    },
+    {
+      "name": "ADR-0330 §8: automatic resolves to none",
+      "color": {
+        "kind": "automatic"
+      },
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §8: an RGB colour resolves to itself",
+      "color": {
+        "kind": "rgb",
+        "value": "FFC00000"
+      },
+      "expect": "FFC00000"
+    }
+  ]
+}

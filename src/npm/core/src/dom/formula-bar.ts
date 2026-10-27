@@ -7,6 +7,9 @@
 
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import type { CellPosition } from '../selection/cell';
+import {
+    BarField, ViewListeners, type EditorField, type FormulaBarTextView, type GridChromeSlot, type GridFormulaBarTextSlotContext, type GridNameBoxSlotContext,
+} from './grid-chrome';
 import type { GridColumn } from './grid-column';
 
 /** The Formula Bar's declarations of a grid's options. */
@@ -85,12 +88,21 @@ export interface FormulaBarPaint {
     readonly textLabel: string;
 }
 
-/** The band's elements and the listeners on them. */
+/** The Chrome slots the bar's two fields may be drawn by (ADR-0390). */
+export interface FormulaBarSlots {
+    readonly text: GridChromeSlot<GridFormulaBarTextSlotContext> | undefined;
+    readonly nameBox: GridChromeSlot<GridNameBoxSlotContext> | undefined;
+}
+
+/** The band's elements and the listeners on them. Each field is the built-in input or one a Chrome slot draws in the
+ * core's box (ADR-0390): the listeners are on the band, and hear whichever field stands. */
 export class FormulaBar {
     readonly band: HTMLElement;
-    readonly text: HTMLInputElement;
-    readonly nameBox: HTMLInputElement;
+    readonly #doc: Document;
+    #text: BarField<GridFormulaBarTextSlotContext>;
+    #nameBox: BarField<GridNameBoxSlotContext>;
     readonly #form: HTMLFormElement;
+    readonly #listeners = new ViewListeners();
     // What the user has typed into the Name Box and not entered: shown in place of the label while it holds the
     // keyboard.
     #typed: string | undefined;
@@ -98,54 +110,112 @@ export class FormulaBar {
     #label = '';
     // A press into the Name Box selects its text on focus, and the press's own mouseup would put a caret back.
     #pressSelecting = false;
+    // What the last pass showed, which a field handed over anew is made to show.
+    #paint: FormulaBarPaint | undefined;
+    // The text field's text, as the bar last showed it or the user typed it.
+    #shownText = '';
+    #view: FormulaBarTextView = Object.freeze({ readOnly: true, borrowed: false });
 
-    constructor(doc: Document, hooks: FormulaBarHooks) {
+    constructor(doc: Document, hooks: FormulaBarHooks, slots: FormulaBarSlots) {
+        this.#doc = doc;
         this.band = doc.createElement('div');
         this.band.className = 'ex-formula-bar';
         this.band.setAttribute('role', 'presentation');
         // The Name Box's Enter is its form's implicit submission, as the filter panel's is: no key handler, and an
-        // IME's confirming Enter is left alone (ADR-0051).
+        // IME's confirming Enter is left alone (ADR-0051). The form's default button is its first: the core's, which
+        // keeps Enter the form's whatever a Chrome's contents draw in the box after it.
         this.#form = doc.createElement('form');
         this.#form.className = 'ex-name-box-form';
-        this.nameBox = field(doc, 'ex-name-box');
-        this.#form.append(this.nameBox);
-        // The text field wears the Cell Editor's class: it is the editor's second surface (ADR-0051).
-        this.text = field(doc, 'ex-editor ex-formula-bar-text');
-        this.band.append(this.#form, this.text);
+        const submit = doc.createElement('button');
+        submit.type = 'submit';
+        submit.hidden = true;
+        submit.tabIndex = -1;
+        submit.setAttribute('aria-hidden', 'true');
+        this.#nameBox = this.#makeNameBox(slots.nameBox);
+        this.#text = this.#makeText(slots.text);
+        this.#form.append(submit, this.#nameBox.box);
+        this.band.append(this.#form, this.#text.box);
         this.#form.addEventListener('submit', event => {
             event.preventDefault();
+            // Only Enter's implicit submission, by the default button or with none named (a script's requestSubmit(),
+            // which some DOMs name the form for): a button of the contents' that submits is no Enter in the box.
+            const by: unknown = Reflect.get(event, 'submitter');
+            if (by instanceof HTMLElement && by !== submit && by !== this.#form) return;
             const typed = this.#typed;
             this.#typed = undefined;
             // Enter on the label shown, nothing typed, names nothing new: the keyboard goes back, as Escape's does.
             if (typed === undefined) hooks.nameBoxLeft();
             else hooks.nameBoxEntered(typed);
         });
-        this.nameBox.addEventListener('input', () => { this.#typed = this.nameBox.value; });
+        this.#form.addEventListener('input', event => {
+            const typed = this.#nameBox.field();
+            if (typed !== undefined && this.#nameBox.is(event.target)) this.#typed = typed.value;
+        });
         // A press into the Name Box selects its text, so what is typed replaces the address shown (ADR-0051).
-        this.nameBox.addEventListener('mousedown', () => { this.#pressSelecting = doc.activeElement !== this.nameBox; });
-        this.nameBox.addEventListener('mouseup', event => {
-            if (!this.#pressSelecting) return;
+        this.#form.addEventListener('mousedown', event => {
+            if (this.#nameBox.is(event.target)) this.#pressSelecting = doc.activeElement !== event.target;
+        });
+        this.#form.addEventListener('mouseup', event => {
+            if (!this.#pressSelecting || !this.#nameBox.is(event.target)) return;
             this.#pressSelecting = false;
             event.preventDefault();
         });
-        this.nameBox.addEventListener('focus', () => {
-            this.nameBox.select();
+        this.#form.addEventListener('focusin', event => {
+            const taken = this.#nameBox.field();
+            if (taken === undefined || !this.#nameBox.is(event.target)) return;
+            taken.select();
             hooks.nameBoxFocused();
         });
         // Left without Enter: what was typed goes, and the box names the Focus again.
-        this.nameBox.addEventListener('blur', () => {
+        this.#form.addEventListener('focusout', event => {
+            const left = this.#nameBox.field();
+            if (left === undefined || !this.#nameBox.is(event.target)) return;
             this.#typed = undefined;
             this.#pressSelecting = false;
-            if (this.nameBox.value !== this.#label) this.nameBox.value = this.#label;
+            if (left.value !== this.#label) left.value = this.#label;
         });
-        this.nameBox.addEventListener('keydown', event => {
-            if (event.key !== 'Escape' || event.isComposing) return;
+        this.#form.addEventListener('keydown', event => {
+            if (event.key !== 'Escape' || event.isComposing || !this.#nameBox.is(event.target)) return;
             event.preventDefault();
             this.#typed = undefined;
             hooks.nameBoxLeft();
         });
-        this.text.addEventListener('input', () => { hooks.textTyped(this.text.value); });
-        this.text.addEventListener('focus', () => { hooks.textFocused(); });
+        this.band.addEventListener('input', event => {
+            const typed = this.#text.field();
+            if (typed === undefined || !this.#text.is(event.target)) return;
+            this.#shownText = typed.value;
+            hooks.textTyped(typed.value);
+        });
+        this.band.addEventListener('focusin', event => {
+            if (this.#text.is(event.target)) hooks.textFocused();
+        });
+    }
+
+    /** The text field, while it stands: the built-in input, or the one the slot's contents handed over. */
+    get text(): EditorField | undefined {
+        return this.#text.field();
+    }
+
+    /** The core's own text field, where no Chrome's slot draws it: the field the coloured text is measured against
+     * (ADR-0057). */
+    get builtInText(): HTMLInputElement | undefined {
+        const text = this.#text.field();
+        return this.#text.mount === undefined && text instanceof HTMLInputElement ? text : undefined;
+    }
+
+    /** The text field's box: the built-in field itself, or the box a Chrome's slot draws in. */
+    get textBox(): HTMLElement {
+        return this.#text.box;
+    }
+
+    /** The Name Box's field, while it stands. */
+    get nameBox(): EditorField | undefined {
+        return this.#nameBox.field();
+    }
+
+    /** Whether the text field takes typing, as the last pass showed. */
+    get editable(): boolean {
+        return !this.#view.readOnly;
     }
 
     /** Whether the Name Box holds text the user typed and has not entered. */
@@ -153,18 +223,116 @@ export class FormulaBar {
         return this.#typed !== undefined;
     }
 
-    paint(paint: FormulaBarPaint): void {
-        setStyle(this.band, paint.widthPx === undefined ? `height: ${paint.heightPx}px; right: 0` : `height: ${paint.heightPx}px; width: ${paint.widthPx}px`);
-        setStyle(this.nameBox, `width: ${paint.nameBoxWidthPx}px`);
-        setAttr(this.nameBox, 'aria-label', paint.nameBoxLabel);
-        setAttr(this.text, 'aria-label', paint.textLabel);
-        this.#label = paint.nameBox;
-        if (this.#typed === undefined && this.nameBox.value !== paint.nameBox) this.nameBox.value = paint.nameBox;
-        // Written only when it differs: a write moves the caret, and the text the user is typing is already there.
-        if (this.text.value !== paint.text) this.text.value = paint.text;
-        this.text.readOnly = !paint.editable;
-        this.text.classList.toggle('ex-formula-bar-borrowed', paint.borrowed);
+    /**
+     * Draws each field by the slot `slots` names, where another mount function than the one it stands by is named: the
+     * field is made again in its place, its contents taken away, unless `keeps` says the field is in use, which holds
+     * the contents until a pass where it is not (ADR-0390).
+     */
+    adopt(slots: FormulaBarSlots, keeps: (box: HTMLElement) => boolean): void {
+        if (slots.nameBox !== this.#nameBox.mount && !keeps(this.#nameBox.box)) {
+            const old = this.#nameBox;
+            this.#nameBox = this.#makeNameBox(slots.nameBox);
+            this.#typed = undefined;
+            old.box.replaceWith(this.#nameBox.box);
+            old.dispose();
+        }
+        if (slots.text !== this.#text.mount && !keeps(this.#text.box)) {
+            const old = this.#text;
+            this.#text = this.#makeText(slots.text);
+            old.box.replaceWith(this.#text.box);
+            old.dispose();
+        }
     }
+
+    /** Shows `text` in the text field, as the editor's, between passes. */
+    showText(text: string): void {
+        this.#shownText = text;
+        const shown = this.#text.field();
+        if (shown !== undefined && shown.value !== text) shown.value = text;
+    }
+
+    paint(paint: FormulaBarPaint): void {
+        this.#paint = paint;
+        setStyle(this.band, paint.widthPx === undefined ? `height: ${paint.heightPx}px; right: 0` : `height: ${paint.heightPx}px; width: ${paint.widthPx}px`);
+        setStyle(this.#nameBox.box, `width: ${paint.nameBoxWidthPx}px`);
+        this.#label = paint.nameBox;
+        const name = this.#nameBox.field();
+        if (name !== undefined) this.#showName(name);
+        this.#shownText = paint.text;
+        this.#text.box.classList.toggle('ex-formula-bar-borrowed', paint.borrowed);
+        const view = this.#view;
+        if (view.readOnly === paint.editable || view.borrowed !== paint.borrowed) {
+            this.#view = Object.freeze({ readOnly: !paint.editable, borrowed: paint.borrowed });
+            this.#listeners.tell();
+        }
+        const text = this.#text.field();
+        if (text !== undefined) this.#showText(text);
+        // Mounted once the bar has painted: contents that cannot be drawn are thrown with the bar laid out.
+        this.#nameBox.open();
+        this.#text.open();
+    }
+
+    /** The bar's slots' contents are taken away: as the band goes, the fields are drawn again when it shows. */
+    hide(): void {
+        this.adopt({ text: undefined, nameBox: undefined }, () => false);
+    }
+
+    /** The bar is going: the slots' contents are taken away. */
+    dispose(): void {
+        this.#text.dispose();
+        this.#nameBox.dispose();
+        this.#listeners.clear();
+        this.band.remove();
+    }
+
+    #makeNameBox(mount: GridChromeSlot<GridNameBoxSlotContext> | undefined): BarField<GridNameBoxSlotContext> {
+        if (mount === undefined) return BarField.builtIn(field(this.#doc, 'ex-name-box'));
+        const box = this.#doc.createElement('div');
+        box.className = 'ex-name-box';
+        // Enter in a textarea submits nothing: the Name Box takes a text input alone.
+        return BarField.slotted('nameBox', box, mount, true, takeField => Object.freeze({ takeField }), handed => {
+            fieldTraits(handed);
+            this.#showName(handed);
+        });
+    }
+
+    #makeText(mount: GridChromeSlot<GridFormulaBarTextSlotContext> | undefined): BarField<GridFormulaBarTextSlotContext> {
+        // The text field wears the Cell Editor's class: it is the editor's second surface (ADR-0051).
+        if (mount === undefined) return BarField.builtIn(field(this.#doc, 'ex-editor ex-formula-bar-text'));
+        const box = this.#doc.createElement('div');
+        box.className = 'ex-editor ex-formula-bar-text';
+        box.classList.toggle('ex-formula-bar-borrowed', this.#view.borrowed);
+        return BarField.slotted('formulaBarText', box, mount, false, takeField => Object.freeze({
+            view: () => this.#view,
+            subscribe: this.#listeners.subscribe,
+            takeField,
+        }), handed => {
+            fieldTraits(handed);
+            this.#showText(handed);
+        });
+    }
+
+    #showName(name: EditorField): void {
+        const paint = this.#paint;
+        if (paint === undefined) return;
+        setAttr(name, 'aria-label', paint.nameBoxLabel);
+        if (this.#typed === undefined && name.value !== paint.nameBox) name.value = paint.nameBox;
+    }
+
+    #showText(text: EditorField): void {
+        const paint = this.#paint;
+        if (paint === undefined) return;
+        setAttr(text, 'aria-label', paint.textLabel);
+        // Written only when it differs: a write moves the caret, and the text the user is typing is already there.
+        if (text.value !== this.#shownText) text.value = this.#shownText;
+        text.readOnly = !paint.editable;
+    }
+}
+
+// A field of a Chrome's, as the built-in one is: no tab stop (the grid is one, ADR-0020), and nothing the browser
+// would fill in or mark.
+function fieldTraits(handed: EditorField): void {
+    for (const [name, value] of Object.entries({ tabindex: '-1', autocomplete: 'off', spellcheck: 'false' })) setAttr(handed, name, value);
 }
 
 function field(doc: Document, className: string): HTMLInputElement {

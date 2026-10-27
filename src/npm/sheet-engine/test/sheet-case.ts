@@ -168,7 +168,7 @@ function borders(of: CellBorders): JsonObject {
     return { top: line(of.top), bottom: line(of.bottom), left: line(of.left), right: line(of.right) };
 }
 
-function cellFormatJson(of: CellFormat): JsonObject {
+export function cellFormatJson(of: CellFormat): JsonObject {
     return { numberFormat: of.numberFormat.code, alignment: of.alignment, font: font(of.font), fill: fill(of.fill), borders: borders(of.borders) };
 }
 
@@ -418,7 +418,7 @@ export function thrown(e: unknown): JsonObject {
 }
 
 /** One case being run: its Workbook, the steps it has done, and what it remembered. */
-class Run {
+export class Run {
     readonly culture: Culture;
     workbook: Workbook;
     readonly differences: string[] = [];

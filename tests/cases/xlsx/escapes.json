@@ -1,0 +1,31 @@
+{
+  "about": "Excel's _xHHHH_ escapes (ST_Xstring), decoded as ECMA-376 section 22.9.2.19 says and only where they are whole (ADR-0330 section 9). Transcribed from ExGrid.Data.Xlsx's SharedStringTests.",
+  "kind": "xlsxEscape",
+  "cases": [
+    {
+      "name": "ADR-0330 §9: a whole escape is its character (_x000D_)",
+      "written": "_x000D_",
+      "expect": "\r"
+    },
+    {
+      "name": "ADR-0330 §9: an escaped underscore keeps the escape as text (_x005F_x000D_)",
+      "written": "_x005F_x000D_",
+      "expect": "_x000D_"
+    },
+    {
+      "name": "ADR-0330 §9: an escape cut short is text (_x00)",
+      "written": "_x00",
+      "expect": "_x00"
+    },
+    {
+      "name": "ADR-0330 §9: an escape of no hex digits is text (_xZZZZ_)",
+      "written": "_xZZZZ_",
+      "expect": "_xZZZZ_"
+    },
+    {
+      "name": "ADR-0330 §9: escapes among text are each undone (a_x0041_b_x0042_)",
+      "written": "a_x0041_b_x0042_",
+      "expect": "aAbB"
+    }
+  ]
+}

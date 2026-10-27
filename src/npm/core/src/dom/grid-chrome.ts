@@ -338,6 +338,43 @@ export interface GridSelectionSummarySlotContext {
     readonly label: (id: string) => string;
 }
 
+/** What the Formula Bar's text field shows besides its text (ADR-0051). */
+export interface FormulaBarTextView {
+    /** Whether the field takes no typing: the Focus cell does not edit. The core sets the field's own `readOnly`. */
+    readonly readOnly: boolean;
+    /** Whether the text is not the Focus cell's own, an array's Formula over a cell it spills into (ADR-0125): shown
+     * dimmed. */
+    readonly borrowed: boolean;
+}
+
+/**
+ * What the Formula Bar's text field is handed (ADR-0051): the Cell Editor's second surface, holding the one
+ * uncommitted text. The box is the core's, laid out in the band and wearing the editor's class; the contents draw
+ * one text field inside it and hand it over through `takeField`, as they draw it and whenever they draw it anew. The
+ * core reads and writes the field's text, names it, sets its `readOnly`, and gives it the keyboard where the user's
+ * work asks; a press or a key into it opens the edit there, and its keys are the editor's, so the contents draw no
+ * key handler of their own. Mounted once, while the bar shows.
+ */
+export interface GridFormulaBarTextSlotContext {
+    /** What the field shows now besides its text. */
+    readonly view: () => FormulaBarTextView;
+    /** Hears each change to the view; answers the function that stops it. */
+    readonly subscribe: (listener: () => void) => () => void;
+    /** Hands the core the field the contents drew. `control` is the field, or an element holding it. */
+    readonly takeField: (control: HTMLElement) => void;
+}
+
+/**
+ * What the Formula Bar's Name Box is handed (ADR-0051): the box, its width and the form whose submission is Enter are
+ * the core's, and so is what the text means. The contents draw one text field inside the box and hand it over through
+ * `takeField`. The core writes the Focus's name into it, hears what is typed, selects the text when a press takes the
+ * box, and hands what Enter entered to the Consumer; Escape leaves. Mounted once, while the bar shows.
+ */
+export interface GridNameBoxSlotContext {
+    /** Hands the core the field the contents drew. `control` is the field, or an element holding it. */
+    readonly takeField: (control: HTMLElement) => void;
+}
+
 /**
  * The Chrome slots a grid takes (ADR-0390 section 4): the parts a Wrapper draws, each in place of the built-in
  * Chrome's. A slot not given is the built-in Chrome's.
@@ -359,11 +396,16 @@ export interface GridChrome<Row> {
     readonly loadingIndicator?: GridChromeSlot<GridLoadingIndicatorSlotContext>;
     /** The Selection Summary in the status line (ADR-0130). */
     readonly selectionSummary?: GridChromeSlot<GridSelectionSummarySlotContext>;
+    /** The Formula Bar's text field (ADR-0051). */
+    readonly formulaBarText?: GridChromeSlot<GridFormulaBarTextSlotContext>;
+    /** The Formula Bar's Name Box (ADR-0051). */
+    readonly nameBox?: GridChromeSlot<GridNameBoxSlotContext>;
 }
 
 /** The slots a grid's `chrome` names. */
 const slotNames: readonly (keyof GridChrome<unknown>)[] = [
     'columnMenu', 'contextMenu', 'filterPanel', 'findPanel', 'cellEditor', 'cellMessage', 'loadingIndicator', 'selectionSummary',
+    'formulaBarText', 'nameBox',
 ];
 
 /** A grid's `chrome`, checked: an object whose slots are each a mount function, or not given. */
@@ -792,7 +834,7 @@ export class SlottedFindPanel implements FindPlace {
     readonly #slot: SlotMount<GridFindPanelSlotContext>;
     readonly #held: FindHeld;
     readonly #title: () => string;
-    readonly #listeners = new Set<() => void>();
+    readonly #listeners = new ViewListeners();
     readonly #context: Omit<GridFindPanelSlotContext, 'focusRequest'>;
     #focusRequest = 0;
     // Whether the request standing selects the field's text: Ctrl+F's does, a Tab off either end does not (FD-1).
@@ -846,11 +888,7 @@ export class SlottedFindPanel implements FindPlace {
         });
         this.#context = {
             view: () => this.#made(),
-            subscribe: listener => {
-                if (typeof listener !== 'function') throw new TypeError('subscribe is handed the function that hears each change to the view.');
-                this.#listeners.add(listener);
-                return () => { this.#listeners.delete(listener); };
-            },
+            subscribe: this.#listeners.subscribe,
             label,
             setText: text('setText', value => { held.text = value; }),
             setMatchCase: option('setMatchCase', on => { held.matchCase = on; }),
@@ -922,7 +960,7 @@ export class SlottedFindPanel implements FindPlace {
 
     #changed(): void {
         this.#view = undefined;
-        for (const listener of this.#listeners) listener();
+        this.#listeners.tell();
     }
 }
 
@@ -942,7 +980,7 @@ export class SlottedEditor {
     readonly #context: GridCellEditorSlotContext;
     readonly #view: () => CellEditorView;
     readonly #taken: (field: EditorField) => void;
-    readonly #listeners = new Set<() => void>();
+    readonly #listeners = new ViewListeners();
     // The text as the core last knew it: the opening text, what the field held at its last input, or what the core
     // wrote. A field handed over anew is handed it.
     #text: string;
@@ -965,19 +1003,10 @@ export class SlottedEditor {
         this.#context = Object.freeze({
             ...opened,
             view: () => this.#made(),
-            subscribe: (listener: () => void) => {
-                if (typeof listener !== 'function') throw new TypeError('subscribe is handed the function that hears each change to the view.');
-                this.#listeners.add(listener);
-                return () => { this.#listeners.delete(listener); };
-            },
+            subscribe: this.#listeners.subscribe,
             focusRequest: 1,
             takeFocus: (control: HTMLElement, options?: { readonly preventScroll?: boolean }) => {
-                if (!(control instanceof HTMLElement) || !this.box.contains(control) || control === this.box) {
-                    throw new TypeError('takeFocus is handed the field the cell editor drew, or an element holding it, inside the slot.');
-                }
-                const field = control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement ? control
-                    : control.querySelector<EditorField>('input, textarea');
-                if (field === null) throw new Error('The cell editor\'s contents handed over no text field: draw one input or textarea in the slot.');
+                const field = fieldIn('cellEditor', 'takeFocus', this.box, control);
                 if (!this.#slot.live) return;
                 if (field !== this.#field) {
                     this.#field = field;
@@ -1028,7 +1057,7 @@ export class SlottedEditor {
         if (shown !== undefined && shown.mode === view.mode && shown.error === view.error && shown.pending === view.pending) return;
         this.#shown = Object.freeze(view);
         if (shown === undefined) return;
-        for (const listener of this.#listeners) listener();
+        this.#listeners.tell();
     }
 
     /** The editor is going: its contents are taken away. */
@@ -1040,5 +1069,121 @@ export class SlottedEditor {
     #made(): CellEditorView {
         this.#shown ??= Object.freeze(this.#view());
         return this.#shown;
+    }
+}
+
+/** The field `control` names inside `box`, as `method` of `chrome.name` is handed it: the control itself, or the one
+ * text field it holds; a text input where `inputOnly`, since Enter in a textarea submits nothing. */
+export function fieldIn(name: string, method: string, box: HTMLElement, control: unknown, inputOnly = false): EditorField {
+    if (!(control instanceof HTMLElement) || !box.contains(control) || control === box) {
+        throw new TypeError(`${method} is handed the field chrome.${name} drew, or an element holding it, inside the slot.`);
+    }
+    const kinds = inputOnly ? 'input' : 'input, textarea';
+    const field = control instanceof HTMLInputElement || (!inputOnly && control instanceof HTMLTextAreaElement) ? control
+        : control.querySelector<EditorField>(kinds);
+    if (field === null || (inputOnly && !(field instanceof HTMLInputElement))) {
+        throw new Error(`chrome.${name} handed over no text field: draw one ${inputOnly ? 'input' : 'input or textarea'} in the slot.`);
+    }
+    return field;
+}
+
+/** The listeners a slot's view is told each change through, by the context's `subscribe`. */
+export class ViewListeners {
+    readonly #listeners = new Set<() => void>();
+
+    /** The context's `subscribe`: adds `listener`, and answers the function that removes it. */
+    readonly subscribe = (listener: () => void): (() => void) => {
+        if (typeof listener !== 'function') throw new TypeError('subscribe is handed the function that hears each change to the view.');
+        this.#listeners.add(listener);
+        return () => { this.#listeners.delete(listener); };
+    };
+
+    /** Tells every listener the view changed. */
+    tell(): void {
+        for (const listener of this.#listeners) listener();
+    }
+
+    /** The part is gone: nothing is told any more. */
+    clear(): void {
+        this.#listeners.clear();
+    }
+}
+
+/**
+ * One of the Formula Bar's fields (ADR-0051): the built-in input, or the field a Chrome slot draws in the core's box
+ * (ADR-0390). The bar hears the field through the band, which its events reach either way, and reads and writes it
+ * once it is handed over: until then there is none, and the bar shows nothing of it. The slot's contents are mounted as
+ * the bar first shows, and taken away when the bar puts another field in this one's place.
+ */
+export class BarField<Context> {
+    /** The element the bar lays out: the built-in input itself, or the slot's box. */
+    readonly box: HTMLElement;
+    /** The mount function the contents are mounted by; undefined for the built-in field. */
+    readonly mount: GridChromeSlot<Context> | undefined;
+    readonly #name: string | undefined;
+    readonly #context: Context | undefined;
+    #field: EditorField | undefined;
+    #cleanup: (() => void) | undefined;
+    #live = true;
+
+    private constructor(box: HTMLElement, field: EditorField | undefined, slot: {
+        readonly name: string; readonly mount: GridChromeSlot<Context>; readonly inputOnly: boolean;
+        readonly context: (takeField: (control: HTMLElement) => void) => Context; readonly taken: (field: EditorField) => void;
+    } | undefined) {
+        this.box = box;
+        this.#field = field;
+        this.#name = slot?.name;
+        this.mount = slot?.mount;
+        this.#context = slot === undefined ? undefined : slot.context(control => {
+            const handed = fieldIn(slot.name, 'takeField', this.box, control, slot.inputOnly);
+            if (!this.#live || handed === this.#field) return;
+            this.#field = handed;
+            slot.taken(handed);
+        });
+    }
+
+    /** The built-in field, `input`, which is its own box. */
+    static builtIn<Context>(input: HTMLInputElement): BarField<Context> {
+        return new BarField<Context>(input, input, undefined);
+    }
+
+    /** A field `chrome[name]` draws in `box` by `mount`, with the context `context` makes around its `takeField`; a text
+     * input only where `inputOnly`. `taken` hears each field handed over, for the bar to make it show what it shows. */
+    static slotted<Context>(name: string, box: HTMLElement, mount: GridChromeSlot<Context>, inputOnly: boolean,
+        context: (takeField: (control: HTMLElement) => void) => Context, taken: (field: EditorField) => void): BarField<Context> {
+        return new BarField(box, undefined, { name, mount, inputOnly, context, taken });
+    }
+
+    /** The field, while it stands in the box; undefined before the contents hand one over. */
+    field(): EditorField | undefined {
+        const field = this.#field;
+        return field !== undefined && field.isConnected && this.box.contains(field) ? field : undefined;
+    }
+
+    /** Whether `target` is the field. */
+    is(target: EventTarget | null): boolean {
+        return target !== null && target === this.#field;
+    }
+
+    /** Mounts the slot's contents, once. Contents that cannot be drawn are thrown once, and the box stays empty. */
+    open(): void {
+        const mount = this.mount;
+        const name = this.#name;
+        const context = this.#context;
+        if (!this.#live || this.#cleanup !== undefined || mount === undefined || name === undefined || context === undefined) return;
+        try {
+            this.#cleanup = mounted(name, mount, this.box, context);
+        } catch (error) {
+            this.#live = false;
+            throw error;
+        }
+    }
+
+    /** The field is going: the contents are taken away, and nothing they hand over reaches the bar. */
+    dispose(): void {
+        this.#live = false;
+        const cleanup = this.#cleanup;
+        this.#cleanup = undefined;
+        cleanup?.();
     }
 }

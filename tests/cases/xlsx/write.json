@@ -1,0 +1,3337 @@
+{
+  "about": "Workbooks written step by step (ADR-0330 sections 1, 4, 6 and 9): what each step answered, the parts the writer made, byte for byte as text, and what reading them back gives; a cell, a row, a column, a name, a style or a table Excel would not read is refused where it is given. Transcribed from ExGrid.Data.Xlsx's RoundTripTests, SharedStringTests, RowAndColumnFormatTests and TableTests.",
+  "kind": "xlsxWrite",
+  "cases": [
+    {
+      "name": "ADR-0330 §1, §3, §4, §6, §9: a workbook written and read back gives its sheets, names, styles and every cell as written, in the parts Excel reads",
+      "options": {
+        "styles": {
+          "numberFormats": {
+            "164": "#,##0.00;[Red]-#,##0.00",
+            "165": "yyyy-mm-dd"
+          },
+          "fonts": [
+            {
+              "name": "Calibri",
+              "size": 11,
+              "color": {
+                "kind": "theme",
+                "value": 1
+              }
+            },
+            {
+              "name": "Arial",
+              "size": 10,
+              "bold": true,
+              "italic": true,
+              "underline": "double",
+              "strike": true,
+              "color": {
+                "kind": "rgb",
+                "value": "FFC00000"
+              }
+            },
+            {
+              "underline": "singleAccounting",
+              "color": {
+                "kind": "theme",
+                "value": 4,
+                "tint": -0.249977111117893
+              }
+            }
+          ],
+          "fills": [
+            {
+              "pattern": "none"
+            },
+            {
+              "pattern": "gray125"
+            },
+            {
+              "pattern": "solid",
+              "foreground": {
+                "kind": "theme",
+                "value": 0,
+                "tint": -0.149998474074526
+              }
+            },
+            {
+              "pattern": "solid",
+              "foreground": {
+                "kind": "indexed",
+                "value": 13
+              }
+            }
+          ],
+          "borders": [
+            {
+              "left": {
+                "style": "none"
+              },
+              "right": {
+                "style": "none"
+              },
+              "top": {
+                "style": "none"
+              },
+              "bottom": {
+                "style": "none"
+              },
+              "diagonal": {
+                "style": "none"
+              }
+            },
+            {
+              "left": {
+                "style": "thin",
+                "color": {
+                  "kind": "automatic"
+                }
+              },
+              "right": {
+                "style": "mediumDashDotDot",
+                "color": {
+                  "kind": "rgb",
+                  "value": "FF00B050"
+                }
+              },
+              "top": {
+                "style": "double"
+              },
+              "bottom": {
+                "style": "slantDashDot",
+                "color": {
+                  "kind": "theme",
+                  "value": 5,
+                  "tint": 0.399975585192419
+                }
+              },
+              "diagonal": {
+                "style": "hair"
+              },
+              "diagonalUp": true
+            }
+          ],
+          "cellFormats": [
+            {},
+            {
+              "numberFormat": 164,
+              "font": 1,
+              "fill": 2,
+              "border": 1,
+              "alignment": {
+                "horizontal": "right"
+              }
+            },
+            {
+              "numberFormat": 165,
+              "font": 2,
+              "fill": 3,
+              "border": 0,
+              "alignment": {
+                "horizontal": "centerContinuous",
+                "vertical": "top",
+                "wrapText": true,
+                "indent": 2,
+                "textRotation": 45
+              }
+            },
+            {
+              "numberFormat": 10
+            }
+          ]
+        },
+        "activeSheet": 1,
+        "date1904": true,
+        "fullCalculationOnLoad": true,
+        "definedNames": [
+          {
+            "name": "Rate",
+            "text": "Trades!$B$2"
+          },
+          {
+            "name": "_xlnm.Print_Area",
+            "text": "Trades!$A$1:$B$5",
+            "localSheet": 0,
+            "hidden": true
+          }
+        ]
+      },
+      "steps": [
+        {
+          "addSheet": "Trades",
+          "columns": [
+            {
+              "first": 0,
+              "last": 0,
+              "width": 18.5
+            },
+            {
+              "first": 2,
+              "last": 4,
+              "width": 9.140625,
+              "hidden": true,
+              "style": 3
+            }
+          ]
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "sharedString",
+            "text": "Desk"
+          }
+        },
+        {
+          "write": {
+            "at": "B1",
+            "type": "sharedString",
+            "text": "Notional",
+            "style": 1
+          }
+        },
+        {
+          "write": {
+            "at": "A2",
+            "type": "sharedString",
+            "text": "EMEA"
+          }
+        },
+        {
+          "write": {
+            "at": "B2",
+            "type": "number",
+            "value": "1000000.25",
+            "style": 1
+          }
+        },
+        {
+          "write": {
+            "at": "C2",
+            "type": "boolean",
+            "value": "1"
+          }
+        },
+        {
+          "write": {
+            "at": "D2",
+            "type": "error",
+            "value": "#DIV/0!",
+            "formula": {
+              "text": "1/0"
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A3",
+            "type": "sharedString",
+            "text": "EMEA"
+          }
+        },
+        {
+          "write": {
+            "at": "B3",
+            "type": "number",
+            "value": "-0.5",
+            "formula": {
+              "text": "B2*-0.0000005",
+              "kind": "shared",
+              "ref": "B3:B5",
+              "si": 0
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "B4",
+            "type": "number",
+            "value": "2",
+            "formula": {
+              "text": "",
+              "kind": "shared",
+              "si": 0
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "B5",
+            "type": "number",
+            "formula": {
+              "text": "",
+              "kind": "shared",
+              "si": 0
+            },
+            "style": 2
+          }
+        },
+        {
+          "write": {
+            "at": "A6",
+            "type": "number",
+            "value": "1",
+            "formula": {
+              "text": "_xlfn.SEQUENCE(3)",
+              "kind": "array",
+              "ref": "A6:A8",
+              "dynamic": true
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "D6",
+            "type": "number",
+            "value": "6",
+            "formula": {
+              "text": "SUM(A6:A8*1)",
+              "kind": "array",
+              "ref": "D6"
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A7",
+            "type": "number",
+            "value": "2"
+          }
+        },
+        {
+          "write": {
+            "at": "A8",
+            "type": "number",
+            "value": "3"
+          }
+        },
+        {
+          "write": {
+            "at": "E10",
+            "type": "formulaString",
+            "value": "a\rb",
+            "formula": {
+              "text": "CHAR(13)"
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "XFD11",
+            "type": "inlineString",
+            "text": "  far right  "
+          }
+        },
+        {
+          "write": {
+            "at": "A1048576",
+            "type": "number",
+            "value": "1E+308",
+            "style": 3
+          }
+        },
+        {
+          "addSheet": "Données 'é' 2",
+          "visibility": "hidden"
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "number",
+            "value": "45000",
+            "formula": {
+              "text": "Trades!B2+'Données ''é'' 2'!A2"
+            }
+          }
+        },
+        {
+          "addSheet": "Empty"
+        },
+        {
+          "complete": true
+        }
+      ],
+      "parts": true,
+      "read": [
+        "workbook",
+        "sharedStrings",
+        "styles",
+        "sheets"
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "parts": [
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><cols><col min=\"1\" max=\"1\" width=\"18.5\" customWidth=\"1\" /><col min=\"3\" max=\"5\" width=\"9.140625\" customWidth=\"1\" style=\"3\" hidden=\"1\" /></cols><sheetData><row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c><c r=\"B1\" s=\"1\" t=\"s\"><v>1</v></c></row><row r=\"2\"><c r=\"A2\" t=\"s\"><v>2</v></c><c r=\"B2\" s=\"1\"><v>1000000.25</v></c><c r=\"C2\" t=\"b\"><v>1</v></c><c r=\"D2\" t=\"e\"><f>1/0</f><v>#DIV/0!</v></c></row><row r=\"3\"><c r=\"A3\" t=\"s\"><v>2</v></c><c r=\"B3\"><f t=\"shared\" ref=\"B3:B5\" si=\"0\">B2*-0.0000005</f><v>-0.5</v></c></row><row r=\"4\"><c r=\"B4\"><f t=\"shared\" si=\"0\" /><v>2</v></c></row><row r=\"5\"><c r=\"B5\" s=\"2\"><f t=\"shared\" si=\"0\" /></c></row><row r=\"6\"><c r=\"A6\" cm=\"1\"><f t=\"array\" ref=\"A6:A8\">_xlfn.SEQUENCE(3)</f><v>1</v></c><c r=\"D6\"><f t=\"array\" ref=\"D6\">SUM(A6:A8*1)</f><v>6</v></c></row><row r=\"7\"><c r=\"A7\"><v>2</v></c></row><row r=\"8\"><c r=\"A8\"><v>3</v></c></row><row r=\"10\"><c r=\"E10\" t=\"str\"><f>CHAR(13)</f><v>a_x000D_b</v></c></row><row r=\"11\"><c r=\"XFD11\" t=\"inlineStr\"><is><t xml:space=\"preserve\">  far right  </t></is></c></row><row r=\"1048576\"><c r=\"A1048576\" s=\"3\"><v>1E+308</v></c></row></sheetData></worksheet>"
+          ],
+          [
+            "xl/worksheets/sheet2.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\"><f>Trades!B2+'Données ''é'' 2'!A2</f><v>45000</v></c></row></sheetData></worksheet>"
+          ],
+          [
+            "xl/worksheets/sheet3.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData /></worksheet>"
+          ],
+          [
+            "xl/sharedStrings.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><sst count=\"4\" uniqueCount=\"3\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>Desk</t></si><si><t>Notional</t></si><si><t>EMEA</t></si></sst>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><numFmts count=\"2\"><numFmt numFmtId=\"164\" formatCode=\"#,##0.00;[Red]-#,##0.00\" /><numFmt numFmtId=\"165\" formatCode=\"yyyy-mm-dd\" /></numFmts><fonts count=\"3\"><font><sz val=\"11\" /><color theme=\"1\" /><name val=\"Calibri\" /></font><font><b /><i /><strike /><u val=\"double\" /><sz val=\"10\" /><color rgb=\"FFC00000\" /><name val=\"Arial\" /></font><font><u val=\"singleAccounting\" /><color theme=\"4\" tint=\"-0.249977111117893\" /></font></fonts><fills count=\"4\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill><fill><patternFill patternType=\"solid\"><fgColor theme=\"0\" tint=\"-0.149998474074526\" /></patternFill></fill><fill><patternFill patternType=\"solid\"><fgColor indexed=\"13\" /></patternFill></fill></fills><borders count=\"2\"><border><left /><right /><top /><bottom /><diagonal /></border><border diagonalUp=\"1\"><left style=\"thin\"><color auto=\"1\" /></left><right style=\"mediumDashDotDot\"><color rgb=\"FF00B050\" /></right><top style=\"double\" /><bottom style=\"slantDashDot\"><color theme=\"5\" tint=\"0.399975585192419\" /></bottom><diagonal style=\"hair\" /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"4\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /><xf numFmtId=\"164\" fontId=\"1\" fillId=\"2\" borderId=\"1\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\" applyFill=\"1\" applyBorder=\"1\" applyAlignment=\"1\"><alignment horizontal=\"right\" /></xf><xf numFmtId=\"165\" fontId=\"2\" fillId=\"3\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\" applyFill=\"1\" applyAlignment=\"1\"><alignment horizontal=\"centerContinuous\" vertical=\"top\" textRotation=\"45\" wrapText=\"1\" indent=\"2\" /></xf><xf numFmtId=\"10\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+          ],
+          [
+            "xl/metadata.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><metadata xmlns:xda=\"http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><metadataTypes count=\"1\"><metadataType name=\"XLDAPR\" minSupportedVersion=\"120000\" copy=\"1\" pasteAll=\"1\" pasteValues=\"1\" merge=\"1\" splitFirst=\"1\" rowColShift=\"1\" clearFormats=\"1\" clearComments=\"1\" assign=\"1\" coerce=\"1\" cellMeta=\"1\" /></metadataTypes><futureMetadata name=\"XLDAPR\" count=\"1\"><bk><extLst><ext uri=\"{bdbb8cdc-fa1e-496e-a857-3c3f30c029c3}\"><xda:dynamicArrayProperties fDynamic=\"1\" fCollapsed=\"0\" /></ext></extLst></bk></futureMetadata><cellMetadata count=\"1\"><bk><rc t=\"1\" v=\"0\" /></bk></cellMetadata></metadata>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><workbookPr date1904=\"1\" /><bookViews><workbookView activeTab=\"1\" /></bookViews><sheets><sheet name=\"Trades\" sheetId=\"1\" r:id=\"rId1\" /><sheet name=\"Données 'é' 2\" sheetId=\"2\" state=\"hidden\" r:id=\"rId2\" /><sheet name=\"Empty\" sheetId=\"3\" r:id=\"rId3\" /></sheets><definedNames><definedName name=\"Rate\">Trades!$B$2</definedName><definedName name=\"_xlnm.Print_Area\" localSheetId=\"0\" hidden=\"1\">Trades!$A$1:$B$5</definedName></definedNames><calcPr calcId=\"191029\" fullCalcOnLoad=\"1\" /></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet2.xml\" /><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet3.xml\" /><Relationship Id=\"rId4\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /><Relationship Id=\"rId5\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" Target=\"sharedStrings.xml\" /><Relationship Id=\"rId6\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sheetMetadata\" Target=\"metadata.xml\" /></Relationships>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+          ],
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/worksheets/sheet2.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/worksheets/sheet3.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /><Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\" /><Override PartName=\"/xl/metadata.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml\" /></Types>"
+          ]
+        ],
+        "read": {
+          "workbook": {
+            "part": "xl/workbook.xml",
+            "sheets": [
+              {
+                "name": "Trades",
+                "sheetId": 1,
+                "visibility": "visible",
+                "part": "xl/worksheets/sheet1.xml",
+                "kind": "worksheet"
+              },
+              {
+                "name": "Données 'é' 2",
+                "sheetId": 2,
+                "visibility": "hidden",
+                "part": "xl/worksheets/sheet2.xml",
+                "kind": "worksheet"
+              },
+              {
+                "name": "Empty",
+                "sheetId": 3,
+                "visibility": "visible",
+                "part": "xl/worksheets/sheet3.xml",
+                "kind": "worksheet"
+              }
+            ],
+            "activeSheet": 1,
+            "date1904": true,
+            "definedNames": [
+              {
+                "name": "Rate",
+                "text": "Trades!$B$2",
+                "localSheet": null,
+                "hidden": false
+              },
+              {
+                "name": "_xlnm.Print_Area",
+                "text": "Trades!$A$1:$B$5",
+                "localSheet": 0,
+                "hidden": true
+              }
+            ],
+            "hasTheme": false,
+            "parts": [
+              "[Content_Types].xml",
+              "_rels/.rels",
+              "xl/_rels/workbook.xml.rels",
+              "xl/metadata.xml",
+              "xl/sharedStrings.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/worksheets/sheet1.xml",
+              "xl/worksheets/sheet2.xml",
+              "xl/worksheets/sheet3.xml"
+            ]
+          },
+          "sharedStrings": [
+            [
+              "Desk",
+              false
+            ],
+            [
+              "Notional",
+              false
+            ],
+            [
+              "EMEA",
+              false
+            ]
+          ],
+          "styles": {
+            "numberFormats": {
+              "164": "#,##0.00;[Red]-#,##0.00",
+              "165": "yyyy-mm-dd"
+            },
+            "fonts": [
+              {
+                "name": "Calibri",
+                "size": 11,
+                "color": {
+                  "kind": "theme",
+                  "value": 1,
+                  "resolved": "FF000000"
+                }
+              },
+              {
+                "name": "Arial",
+                "size": 10,
+                "bold": true,
+                "italic": true,
+                "underline": "double",
+                "strike": true,
+                "color": {
+                  "kind": "rgb",
+                  "value": "FFC00000",
+                  "resolved": "FFC00000"
+                }
+              },
+              {
+                "underline": "singleAccounting",
+                "color": {
+                  "kind": "theme",
+                  "value": 4,
+                  "tint": -0.249977111117893,
+                  "resolved": "FF2F5597"
+                }
+              }
+            ],
+            "fills": [
+              {
+                "pattern": "none"
+              },
+              {
+                "pattern": "gray125"
+              },
+              {
+                "pattern": "solid",
+                "foreground": {
+                  "kind": "theme",
+                  "value": 0,
+                  "tint": -0.149998474074526,
+                  "resolved": "FFD9D9D9"
+                }
+              },
+              {
+                "pattern": "solid",
+                "foreground": {
+                  "kind": "indexed",
+                  "value": 13,
+                  "resolved": "FFFFFF00"
+                }
+              }
+            ],
+            "borders": [
+              {
+                "left": {
+                  "style": "none"
+                },
+                "right": {
+                  "style": "none"
+                },
+                "top": {
+                  "style": "none"
+                },
+                "bottom": {
+                  "style": "none"
+                },
+                "diagonal": {
+                  "style": "none"
+                }
+              },
+              {
+                "left": {
+                  "style": "thin",
+                  "color": {
+                    "kind": "automatic",
+                    "resolved": null
+                  }
+                },
+                "right": {
+                  "style": "mediumDashDotDot",
+                  "color": {
+                    "kind": "rgb",
+                    "value": "FF00B050",
+                    "resolved": "FF00B050"
+                  }
+                },
+                "top": {
+                  "style": "double"
+                },
+                "bottom": {
+                  "style": "slantDashDot",
+                  "color": {
+                    "kind": "theme",
+                    "value": 5,
+                    "tint": 0.399975585192419,
+                    "resolved": "FFF4B183"
+                  }
+                },
+                "diagonal": {
+                  "style": "hair"
+                },
+                "diagonalUp": true
+              }
+            ],
+            "cellFormats": [
+              {
+                "numberFormat": 0,
+                "font": 0,
+                "fill": 0,
+                "border": 0
+              },
+              {
+                "numberFormat": 164,
+                "font": 1,
+                "fill": 2,
+                "border": 1,
+                "alignment": {
+                  "horizontal": "right"
+                }
+              },
+              {
+                "numberFormat": 165,
+                "font": 2,
+                "fill": 3,
+                "border": 0,
+                "alignment": {
+                  "horizontal": "centerContinuous",
+                  "vertical": "top",
+                  "wrapText": true,
+                  "indent": 2,
+                  "textRotation": 45
+                }
+              },
+              {
+                "numberFormat": 10,
+                "font": 0,
+                "fill": 0,
+                "border": 0
+              }
+            ],
+            "indexedColors": null
+          },
+          "sheets": [
+            {
+              "columns": [
+                {
+                  "first": 0,
+                  "last": 0,
+                  "width": 18.5,
+                  "hidden": false,
+                  "style": 0,
+                  "bestFit": false,
+                  "customWidth": true
+                },
+                {
+                  "first": 2,
+                  "last": 4,
+                  "width": 9.140625,
+                  "hidden": true,
+                  "style": 3,
+                  "bestFit": false,
+                  "customWidth": true
+                }
+              ],
+              "rows": [],
+              "cells": [
+                {
+                  "at": "A1",
+                  "type": "sharedString",
+                  "value": "0",
+                  "text": "Desk"
+                },
+                {
+                  "at": "B1",
+                  "type": "sharedString",
+                  "value": "1",
+                  "text": "Notional",
+                  "style": 1
+                },
+                {
+                  "at": "A2",
+                  "type": "sharedString",
+                  "value": "2",
+                  "text": "EMEA"
+                },
+                {
+                  "at": "B2",
+                  "type": "number",
+                  "value": "1000000.25",
+                  "style": 1
+                },
+                {
+                  "at": "C2",
+                  "type": "boolean",
+                  "value": "1"
+                },
+                {
+                  "at": "D2",
+                  "type": "error",
+                  "value": "#DIV/0!",
+                  "formula": {
+                    "text": "1/0"
+                  }
+                },
+                {
+                  "at": "A3",
+                  "type": "sharedString",
+                  "value": "2",
+                  "text": "EMEA"
+                },
+                {
+                  "at": "B3",
+                  "type": "number",
+                  "value": "-0.5",
+                  "formula": {
+                    "text": "B2*-0.0000005",
+                    "kind": "shared",
+                    "ref": "B3:B5",
+                    "si": 0
+                  }
+                },
+                {
+                  "at": "B4",
+                  "type": "number",
+                  "value": "2",
+                  "formula": {
+                    "text": "",
+                    "kind": "shared",
+                    "si": 0
+                  }
+                },
+                {
+                  "at": "B5",
+                  "type": "number",
+                  "value": null,
+                  "formula": {
+                    "text": "",
+                    "kind": "shared",
+                    "si": 0
+                  },
+                  "style": 2
+                },
+                {
+                  "at": "A6",
+                  "type": "number",
+                  "value": "1",
+                  "formula": {
+                    "text": "_xlfn.SEQUENCE(3)",
+                    "kind": "array",
+                    "ref": "A6:A8",
+                    "dynamic": true
+                  }
+                },
+                {
+                  "at": "D6",
+                  "type": "number",
+                  "value": "6",
+                  "formula": {
+                    "text": "SUM(A6:A8*1)",
+                    "kind": "array",
+                    "ref": "D6"
+                  }
+                },
+                {
+                  "at": "A7",
+                  "type": "number",
+                  "value": "2"
+                },
+                {
+                  "at": "A8",
+                  "type": "number",
+                  "value": "3"
+                },
+                {
+                  "at": "E10",
+                  "type": "formulaString",
+                  "value": "a\rb",
+                  "formula": {
+                    "text": "CHAR(13)"
+                  }
+                },
+                {
+                  "at": "XFD11",
+                  "type": "inlineString",
+                  "value": null,
+                  "text": "  far right  "
+                },
+                {
+                  "at": "A1048576",
+                  "type": "number",
+                  "value": "1E+308",
+                  "style": 3
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            },
+            {
+              "columns": [],
+              "rows": [],
+              "cells": [
+                {
+                  "at": "A1",
+                  "type": "number",
+                  "value": "45000",
+                  "formula": {
+                    "text": "Trades!B2+'Données ''é'' 2'!A2"
+                  }
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "tabSelected": "1",
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            },
+            {
+              "columns": [],
+              "rows": [],
+              "cells": [],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: text XML cannot carry, and text that looks escaped, round-trip through the writer's escapes",
+      "steps": [
+        {
+          "addSheet": "S"
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "sharedString",
+            "text": "a\rb"
+          }
+        },
+        {
+          "write": {
+            "at": "A2",
+            "type": "sharedString",
+            "text": "tab\there"
+          }
+        },
+        {
+          "write": {
+            "at": "A3",
+            "type": "sharedString",
+            "text": "_x0041_"
+          }
+        },
+        {
+          "write": {
+            "at": "A4",
+            "type": "sharedString",
+            "text": {
+              "utf16": "bell\\u0007"
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A5",
+            "type": "sharedString",
+            "text": " lead"
+          }
+        },
+        {
+          "write": {
+            "at": "A6",
+            "type": "sharedString",
+            "text": "trail "
+          }
+        },
+        {
+          "write": {
+            "at": "A7",
+            "type": "sharedString",
+            "text": "multi\nline"
+          }
+        },
+        {
+          "write": {
+            "at": "A8",
+            "type": "sharedString",
+            "text": "plain"
+          }
+        },
+        {
+          "complete": true
+        }
+      ],
+      "parts": true,
+      "read": [
+        "sheets"
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "parts": [
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c></row><row r=\"2\"><c r=\"A2\" t=\"s\"><v>1</v></c></row><row r=\"3\"><c r=\"A3\" t=\"s\"><v>2</v></c></row><row r=\"4\"><c r=\"A4\" t=\"s\"><v>3</v></c></row><row r=\"5\"><c r=\"A5\" t=\"s\"><v>4</v></c></row><row r=\"6\"><c r=\"A6\" t=\"s\"><v>5</v></c></row><row r=\"7\"><c r=\"A7\" t=\"s\"><v>6</v></c></row><row r=\"8\"><c r=\"A8\" t=\"s\"><v>7</v></c></row></sheetData></worksheet>"
+          ],
+          [
+            "xl/sharedStrings.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><sst count=\"8\" uniqueCount=\"8\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>a_x000D_b</t></si><si><t xml:space=\"preserve\">tab\there</t></si><si><t>_x005F_x0041_</t></si><si><t>bell_x0007_</t></si><si><t xml:space=\"preserve\"> lead</t></si><si><t xml:space=\"preserve\">trail </t></si><si><t xml:space=\"preserve\">multi\nline</t></si><si><t>plain</t></si></sst>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"1\"><font><sz val=\"11\" /><color theme=\"1\" /><name val=\"Calibri\" /></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView /></bookViews><sheets><sheet name=\"S\" sheetId=\"1\" r:id=\"rId1\" /></sheets><calcPr calcId=\"191029\" /></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" Target=\"sharedStrings.xml\" /></Relationships>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+          ],
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /><Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\" /></Types>"
+          ]
+        ],
+        "read": {
+          "sheets": [
+            {
+              "columns": [],
+              "rows": [],
+              "cells": [
+                {
+                  "at": "A1",
+                  "type": "sharedString",
+                  "value": "0",
+                  "text": "a\rb"
+                },
+                {
+                  "at": "A2",
+                  "type": "sharedString",
+                  "value": "1",
+                  "text": "tab\there"
+                },
+                {
+                  "at": "A3",
+                  "type": "sharedString",
+                  "value": "2",
+                  "text": "_x0041_"
+                },
+                {
+                  "at": "A4",
+                  "type": "sharedString",
+                  "value": "3",
+                  "text": "bell\u0007"
+                },
+                {
+                  "at": "A5",
+                  "type": "sharedString",
+                  "value": "4",
+                  "text": " lead"
+                },
+                {
+                  "at": "A6",
+                  "type": "sharedString",
+                  "value": "5",
+                  "text": "trail "
+                },
+                {
+                  "at": "A7",
+                  "type": "sharedString",
+                  "value": "6",
+                  "text": "multi\nline"
+                },
+                {
+                  "at": "A8",
+                  "type": "sharedString",
+                  "value": "7",
+                  "text": "plain"
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "tabSelected": "1",
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: the writer shares each text once, however many cells hold it",
+      "steps": [
+        {
+          "addSheet": "S"
+        },
+        {
+          "writeAll": [
+            {
+              "at": "A1",
+              "type": "sharedString",
+              "text": "even"
+            },
+            {
+              "at": "A2",
+              "type": "sharedString",
+              "text": "odd"
+            },
+            {
+              "at": "A3",
+              "type": "sharedString",
+              "text": "even"
+            },
+            {
+              "at": "A4",
+              "type": "sharedString",
+              "text": "odd"
+            },
+            {
+              "at": "A5",
+              "type": "sharedString",
+              "text": "even"
+            },
+            {
+              "at": "A6",
+              "type": "sharedString",
+              "text": "odd"
+            }
+          ]
+        },
+        {
+          "complete": true
+        }
+      ],
+      "read": [
+        "sharedStrings",
+        "sheets"
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          null
+        ],
+        "read": {
+          "sharedStrings": [
+            [
+              "even",
+              false
+            ],
+            [
+              "odd",
+              false
+            ]
+          ],
+          "sheets": [
+            {
+              "columns": [],
+              "rows": [],
+              "cells": [
+                {
+                  "at": "A1",
+                  "type": "sharedString",
+                  "value": "0",
+                  "text": "even"
+                },
+                {
+                  "at": "A2",
+                  "type": "sharedString",
+                  "value": "1",
+                  "text": "odd"
+                },
+                {
+                  "at": "A3",
+                  "type": "sharedString",
+                  "value": "0",
+                  "text": "even"
+                },
+                {
+                  "at": "A4",
+                  "type": "sharedString",
+                  "value": "1",
+                  "text": "odd"
+                },
+                {
+                  "at": "A5",
+                  "type": "sharedString",
+                  "value": "0",
+                  "text": "even"
+                },
+                {
+                  "at": "A6",
+                  "type": "sharedString",
+                  "value": "1",
+                  "text": "odd"
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "tabSelected": "1",
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §1: a sheet's cells are written in the sheet's order, each once, and a name Excel refuses is refused",
+      "steps": [
+        {
+          "addSheet": "One"
+        },
+        {
+          "write": {
+            "at": "B2",
+            "type": "number",
+            "value": "1"
+          }
+        },
+        {
+          "write": {
+            "at": "B2",
+            "type": "number",
+            "value": "2"
+          }
+        },
+        {
+          "write": {
+            "at": "A2",
+            "type": "number",
+            "value": "2"
+          }
+        },
+        {
+          "write": {
+            "at": "F1",
+            "type": "number",
+            "value": "2"
+          }
+        },
+        {
+          "write": {
+            "at": "A3",
+            "type": "number",
+            "value": "2",
+            "style": 1
+          }
+        },
+        {
+          "addSheet": "one"
+        },
+        {
+          "addSheet": "a/b"
+        },
+        {
+          "addSheet": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        {
+          "addSheet": "'quoted'"
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          {
+            "kind": "argument",
+            "message": "The cell B2 is written after B2: a sheet's cells are written row by row, left to right, each once."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell A2 is written after B2: a sheet's cells are written row by row, left to right, each once."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell F1 is written after B2: a sheet's cells are written row by row, left to right, each once."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell A3 names the cell format 1, which the styles do not hold."
+          },
+          {
+            "kind": "argument",
+            "message": "The workbook already has a sheet named 'one', in some case."
+          },
+          {
+            "kind": "argument",
+            "message": "A sheet's name holds none of [ ] : * ? / \\; 'a/b' does."
+          },
+          {
+            "kind": "argument",
+            "message": "A sheet's name is 1 to 31 characters; 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' is 32."
+          },
+          {
+            "kind": "argument",
+            "message": "A sheet's name does not begin or end with an apostrophe; ''quoted'' does."
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §4: styles whose fills leave out Excel's two reserved ones are refused",
+      "options": {
+        "styles": {
+          "numberFormats": {
+            "164": "#,##0.00;[Red]-#,##0.00",
+            "165": "yyyy-mm-dd"
+          },
+          "fonts": [
+            {
+              "name": "Calibri",
+              "size": 11,
+              "color": {
+                "kind": "theme",
+                "value": 1
+              }
+            },
+            {
+              "name": "Arial",
+              "size": 10,
+              "bold": true,
+              "italic": true,
+              "underline": "double",
+              "strike": true,
+              "color": {
+                "kind": "rgb",
+                "value": "FFC00000"
+              }
+            },
+            {
+              "underline": "singleAccounting",
+              "color": {
+                "kind": "theme",
+                "value": 4,
+                "tint": -0.249977111117893
+              }
+            }
+          ],
+          "fills": [
+            {
+              "pattern": "none"
+            }
+          ],
+          "borders": [
+            {
+              "left": {
+                "style": "none"
+              },
+              "right": {
+                "style": "none"
+              },
+              "top": {
+                "style": "none"
+              },
+              "bottom": {
+                "style": "none"
+              },
+              "diagonal": {
+                "style": "none"
+              }
+            },
+            {
+              "left": {
+                "style": "thin",
+                "color": {
+                  "kind": "automatic"
+                }
+              },
+              "right": {
+                "style": "mediumDashDotDot",
+                "color": {
+                  "kind": "rgb",
+                  "value": "FF00B050"
+                }
+              },
+              "top": {
+                "style": "double"
+              },
+              "bottom": {
+                "style": "slantDashDot",
+                "color": {
+                  "kind": "theme",
+                  "value": 5,
+                  "tint": 0.399975585192419
+                }
+              },
+              "diagonal": {
+                "style": "hair"
+              },
+              "diagonalUp": true
+            }
+          ],
+          "cellFormats": [
+            {},
+            {
+              "numberFormat": 164,
+              "font": 1,
+              "fill": 2,
+              "border": 1,
+              "alignment": {
+                "horizontal": "right"
+              }
+            },
+            {
+              "numberFormat": 165,
+              "font": 2,
+              "fill": 3,
+              "border": 0,
+              "alignment": {
+                "horizontal": "centerContinuous",
+                "vertical": "top",
+                "wrapText": true,
+                "indent": 2,
+                "textRotation": 45
+              }
+            },
+            {
+              "numberFormat": 10
+            }
+          ]
+        }
+      },
+      "steps": [],
+      "expect": {
+        "create": {
+          "kind": "argument",
+          "message": "A styles part has at least one font, two fills (none and gray125, which Excel reserves), one border and one cell format."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a size limit of nothing is refused",
+      "options": {
+        "maxUncompressedBytes": 0
+      },
+      "steps": [],
+      "expect": {
+        "create": {
+          "kind": "outOfRange",
+          "message": "MaxUncompressedBytes is 1 to 1,073,741,824."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §1: a cell is checked whole before anything of it is written, so a refused one leaves the sheet writable and the package well-formed",
+      "steps": [
+        {
+          "addSheet": "One"
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "number",
+            "value": "1",
+            "formula": {
+              "text": "A2",
+              "kind": "shared"
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "number",
+            "value": {
+              "utf16": "1\\u0001"
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "sharedString",
+            "text": {
+              "utf16": "half \\uD800 a pair"
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "inlineString",
+            "text": {
+              "utf16": "\\uDC00"
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "number",
+            "value": "1",
+            "formula": {
+              "text": {
+                "utf16": "\\uD800"
+              }
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "number",
+            "value": "1",
+            "formula": {
+              "text": "1",
+              "kind": "array",
+              "ref": {
+                "utf16": "A1\\u0002"
+              }
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "number",
+            "value": "1",
+            "formula": {
+              "text": "A2",
+              "kind": "shared",
+              "ref": "A1:A2",
+              "si": 0
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "B1",
+            "type": "sharedString",
+            "text": {
+              "utf16": "a \\u0001 \\uD83D\\uDE00 pair"
+            }
+          }
+        },
+        {
+          "complete": true
+        }
+      ],
+      "parts": true,
+      "read": [
+        "sheets"
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          {
+            "kind": "argument",
+            "message": "The cell A1's shared formula names no group."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell A1 holds text XML cannot carry: a control character, or half of a surrogate pair."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell A1 holds text XML cannot carry: a control character, or half of a surrogate pair."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell A1 holds text XML cannot carry: a control character, or half of a surrogate pair."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell A1's Formula holds text XML cannot carry."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell A1's Formula holds text XML cannot carry."
+          },
+          null,
+          null,
+          null
+        ],
+        "parts": [
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\"><f t=\"shared\" ref=\"A1:A2\" si=\"0\">A2</f><v>1</v></c><c r=\"B1\" t=\"s\"><v>0</v></c></row></sheetData></worksheet>"
+          ],
+          [
+            "xl/sharedStrings.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><sst count=\"1\" uniqueCount=\"1\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>a _x0001_ \uD83D\uDE00 pair</t></si></sst>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"1\"><font><sz val=\"11\" /><color theme=\"1\" /><name val=\"Calibri\" /></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView /></bookViews><sheets><sheet name=\"One\" sheetId=\"1\" r:id=\"rId1\" /></sheets><calcPr calcId=\"191029\" /></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" Target=\"sharedStrings.xml\" /></Relationships>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+          ],
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /><Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\" /></Types>"
+          ]
+        ],
+        "read": {
+          "sheets": [
+            {
+              "columns": [],
+              "rows": [],
+              "cells": [
+                {
+                  "at": "A1",
+                  "type": "number",
+                  "value": "1",
+                  "formula": {
+                    "text": "A2",
+                    "kind": "shared",
+                    "ref": "A1:A2",
+                    "si": 0
+                  }
+                },
+                {
+                  "at": "B1",
+                  "type": "sharedString",
+                  "value": "0",
+                  "text": "a \u0001 \uD83D\uDE00 pair"
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "tabSelected": "1",
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: column ranges that overlap, or name a cell format the styles do not hold, are refused before the sheet begins",
+      "steps": [
+        {
+          "addSheet": "A",
+          "columns": [
+            {
+              "first": 0,
+              "last": 2,
+              "width": 10
+            },
+            {
+              "first": 2,
+              "last": 4,
+              "width": 12
+            }
+          ]
+        },
+        {
+          "addSheet": "A",
+          "columns": [
+            {
+              "first": 3,
+              "last": 3,
+              "width": 10
+            },
+            {
+              "first": 1,
+              "last": 5,
+              "width": 12
+            }
+          ]
+        },
+        {
+          "addSheet": "A",
+          "columns": [
+            {
+              "first": 1,
+              "last": 1,
+              "width": 10
+            },
+            {
+              "first": 1,
+              "last": 1,
+              "width": 10
+            }
+          ]
+        },
+        {
+          "addSheet": "A",
+          "columns": [
+            {
+              "first": 1,
+              "last": 1,
+              "width": 10,
+              "style": 1
+            }
+          ]
+        },
+        {
+          "addSheet": "A",
+          "columns": [
+            {
+              "first": 2,
+              "last": 3,
+              "width": 12
+            },
+            {
+              "first": 0,
+              "last": 1,
+              "width": 10
+            }
+          ]
+        },
+        {
+          "complete": true
+        }
+      ],
+      "parts": true,
+      "expect": {
+        "create": null,
+        "outcomes": [
+          {
+            "kind": "argument",
+            "message": "The column range 2 to 4 overlaps another, which ends at 2."
+          },
+          {
+            "kind": "argument",
+            "message": "The column range 3 to 3 overlaps another, which ends at 5."
+          },
+          {
+            "kind": "argument",
+            "message": "The column range 1 to 1 overlaps another, which ends at 1."
+          },
+          {
+            "kind": "argument",
+            "message": "The column range 1 to 1 names the cell format 1, which the styles do not hold."
+          },
+          null,
+          null
+        ],
+        "parts": [
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><cols><col min=\"1\" max=\"2\" width=\"10\" customWidth=\"1\" /><col min=\"3\" max=\"4\" width=\"12\" customWidth=\"1\" /></cols><sheetData /></worksheet>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"1\"><font><sz val=\"11\" /><color theme=\"1\" /><name val=\"Calibri\" /></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView /></bookViews><sheets><sheet name=\"A\" sheetId=\"1\" r:id=\"rId1\" /></sheets><calcPr calcId=\"191029\" /></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /></Relationships>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+          ],
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /></Types>"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §1: a sheet name XML cannot carry is refused where it is given",
+      "steps": [
+        {
+          "addSheet": {
+            "utf16": "Tab\\u0001"
+          }
+        },
+        {
+          "addSheet": "Tab\tTwo"
+        },
+        {
+          "addSheet": {
+            "utf16": "Half \\uD800"
+          }
+        },
+        {
+          "addSheet": {
+            "utf16": "Tab \\uD83D\\uDE00"
+          }
+        },
+        {
+          "complete": true
+        }
+      ],
+      "parts": true,
+      "expect": {
+        "create": null,
+        "outcomes": [
+          {
+            "kind": "argument",
+            "message": "A sheet's name holds no control character and no half of a surrogate pair, which XML cannot carry."
+          },
+          {
+            "kind": "argument",
+            "message": "A sheet's name holds no control character and no half of a surrogate pair, which XML cannot carry."
+          },
+          {
+            "kind": "argument",
+            "message": "A sheet's name holds no control character and no half of a surrogate pair, which XML cannot carry."
+          },
+          null,
+          null
+        ],
+        "parts": [
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData /></worksheet>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"1\"><font><sz val=\"11\" /><color theme=\"1\" /><name val=\"Calibri\" /></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView /></bookViews><sheets><sheet name=\"Tab \uD83D\uDE00\" sheetId=\"1\" r:id=\"rId1\" /></sheets><calcPr calcId=\"191029\" /></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /></Relationships>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+          ],
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /></Types>"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §1: a defined name XML cannot carry is refused",
+      "options": {
+        "definedNames": [
+          {
+            "name": {
+              "utf16": "Rate\\u0001"
+            },
+            "text": "1"
+          }
+        ]
+      },
+      "steps": [],
+      "expect": {
+        "create": {
+          "kind": "argument",
+          "message": "The defined name 'Rate\u0001' holds a control character or half of a surrogate pair, which XML cannot carry."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §1: a defined name's text XML cannot carry is refused",
+      "options": {
+        "definedNames": [
+          {
+            "name": "Rate",
+            "text": {
+              "utf16": "\"\\uDC00\""
+            }
+          }
+        ]
+      },
+      "steps": [],
+      "expect": {
+        "create": {
+          "kind": "argument",
+          "message": "The defined name 'Rate' holds a control character or half of a surrogate pair, which XML cannot carry."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §1: a font name XML cannot carry is refused",
+      "options": {
+        "styles": {
+          "fonts": [
+            {
+              "name": {
+                "utf16": "Cal\\u0001ibri"
+              }
+            }
+          ]
+        }
+      },
+      "steps": [],
+      "expect": {
+        "create": {
+          "kind": "argument",
+          "message": "A Number Format, a font's name or a fill's pattern holds text XML cannot carry: a control character, or half of a surrogate pair."
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a formatted row comes back with its format, with or without cells, the last one included",
+      "options": {
+        "styles": {
+          "cellFormats": [
+            {},
+            {
+              "numberFormat": 10
+            },
+            {
+              "numberFormat": 2
+            }
+          ]
+        }
+      },
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "number",
+            "value": "1"
+          }
+        },
+        {
+          "writeRow": [
+            2,
+            1
+          ]
+        },
+        {
+          "write": {
+            "at": "B3",
+            "type": "number",
+            "value": "2",
+            "style": 2
+          }
+        },
+        {
+          "writeRow": [
+            4,
+            0
+          ]
+        },
+        {
+          "writeRow": [
+            1048575,
+            2
+          ]
+        },
+        {
+          "complete": true
+        }
+      ],
+      "parts": true,
+      "read": [
+        "sheets"
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "parts": [
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\"><v>1</v></c></row><row r=\"3\" s=\"1\" customFormat=\"1\"><c r=\"B3\" s=\"2\"><v>2</v></c></row><row r=\"5\" s=\"0\" customFormat=\"1\" /><row r=\"1048576\" s=\"2\" customFormat=\"1\" /></sheetData></worksheet>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"1\"><font><sz val=\"11\" /><color theme=\"1\" /><name val=\"Calibri\" /></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /><xf numFmtId=\"10\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" /><xf numFmtId=\"2\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView /></bookViews><sheets><sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\" /></sheets><calcPr calcId=\"191029\" /></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /></Relationships>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+          ],
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /></Types>"
+          ]
+        ],
+        "read": {
+          "sheets": [
+            {
+              "columns": [],
+              "rows": [
+                [
+                  2,
+                  1
+                ],
+                [
+                  4,
+                  0
+                ],
+                [
+                  1048575,
+                  2
+                ]
+              ],
+              "cells": [
+                {
+                  "at": "A1",
+                  "type": "number",
+                  "value": "1"
+                },
+                {
+                  "at": "B3",
+                  "type": "number",
+                  "value": "2",
+                  "style": 2
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "tabSelected": "1",
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a row is begun in order, before its cells, and with a cell format the styles hold",
+      "options": {
+        "styles": {
+          "cellFormats": [
+            {},
+            {
+              "numberFormat": 10
+            },
+            {
+              "numberFormat": 2
+            }
+          ]
+        }
+      },
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "write": {
+            "at": "A4",
+            "type": "number",
+            "value": "1"
+          }
+        },
+        {
+          "writeRow": [
+            3,
+            1
+          ]
+        },
+        {
+          "writeRow": [
+            2,
+            1
+          ]
+        },
+        {
+          "writeRow": [
+            5,
+            3
+          ]
+        },
+        {
+          "writeRow": [
+            4,
+            1
+          ]
+        },
+        {
+          "write": {
+            "at": "B4",
+            "type": "number",
+            "value": "2"
+          }
+        },
+        {
+          "complete": true
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          {
+            "kind": "argument",
+            "message": "The row 4 is begun after row 4: a sheet's rows are written in order, each once."
+          },
+          {
+            "kind": "argument",
+            "message": "The row 3 is begun after row 4: a sheet's rows are written in order, each once."
+          },
+          {
+            "kind": "argument",
+            "message": "The row 6 names the cell format 3, which the styles do not hold."
+          },
+          null,
+          {
+            "kind": "argument",
+            "message": "The cell B4 is written after row 5: a sheet's cells are written row by row, left to right, each once."
+          },
+          null
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0046: a width fitted to an entry comes back marked so; one set by hand does not; a fit with no width is not written",
+      "options": {
+        "styles": {
+          "cellFormats": [
+            {},
+            {
+              "numberFormat": 10
+            },
+            {
+              "numberFormat": 2
+            }
+          ]
+        }
+      },
+      "steps": [
+        {
+          "addSheet": "Sheet1",
+          "columns": [
+            {
+              "first": 0,
+              "last": 0,
+              "width": 12.7109375,
+              "bestFit": true
+            },
+            {
+              "first": 1,
+              "last": 2,
+              "width": 20.7109375
+            },
+            {
+              "first": 3,
+              "last": 3,
+              "width": null,
+              "style": 1,
+              "bestFit": true
+            }
+          ]
+        },
+        {
+          "complete": true
+        }
+      ],
+      "parts": true,
+      "read": [
+        "sheets"
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null
+        ],
+        "parts": [
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><cols><col min=\"1\" max=\"1\" width=\"12.7109375\" customWidth=\"1\" bestFit=\"1\" /><col min=\"2\" max=\"3\" width=\"20.7109375\" customWidth=\"1\" /><col min=\"4\" max=\"4\" style=\"1\" /></cols><sheetData /></worksheet>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"1\"><font><sz val=\"11\" /><color theme=\"1\" /><name val=\"Calibri\" /></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /><xf numFmtId=\"10\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" /><xf numFmtId=\"2\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView /></bookViews><sheets><sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\" /></sheets><calcPr calcId=\"191029\" /></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /></Relationships>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+          ],
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /></Types>"
+          ]
+        ],
+        "read": {
+          "sheets": [
+            {
+              "columns": [
+                {
+                  "first": 0,
+                  "last": 0,
+                  "width": 12.7109375,
+                  "hidden": false,
+                  "style": 0,
+                  "bestFit": true,
+                  "customWidth": true
+                },
+                {
+                  "first": 1,
+                  "last": 2,
+                  "width": 20.7109375,
+                  "hidden": false,
+                  "style": 0,
+                  "bestFit": false,
+                  "customWidth": true
+                },
+                {
+                  "first": 3,
+                  "last": 3,
+                  "width": null,
+                  "hidden": false,
+                  "style": 1,
+                  "bestFit": false,
+                  "customWidth": true
+                }
+              ],
+              "rows": [],
+              "cells": [],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "tabSelected": "1",
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §6: each table is a part of its own, related from its worksheet, with its range, AutoFilter, columns and Excel's default style, and its cells read back",
+      "steps": [
+        {
+          "addSheet": "Trades"
+        },
+        {
+          "addTable": {
+            "name": "Positions",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "Desk",
+              "PV"
+            ],
+            "dataRows": 2
+          }
+        },
+        {
+          "addTable": {
+            "name": "Rates",
+            "headerRow": 0,
+            "firstColumn": 3,
+            "columns": [
+              "Ccy"
+            ],
+            "dataRows": 1,
+            "autoFilter": false
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "sharedString",
+            "text": "Desk"
+          }
+        },
+        {
+          "write": {
+            "at": "B1",
+            "type": "sharedString",
+            "text": "PV"
+          }
+        },
+        {
+          "write": {
+            "at": "D1",
+            "type": "inlineString",
+            "text": "Ccy"
+          }
+        },
+        {
+          "write": {
+            "at": "A2",
+            "type": "sharedString",
+            "text": "EMEA"
+          }
+        },
+        {
+          "write": {
+            "at": "B2",
+            "type": "number",
+            "value": "1.5"
+          }
+        },
+        {
+          "write": {
+            "at": "D2",
+            "type": "sharedString",
+            "text": "EUR"
+          }
+        },
+        {
+          "write": {
+            "at": "B3",
+            "type": "number",
+            "value": "-2"
+          }
+        },
+        {
+          "addSheet": "Plain"
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "number",
+            "value": "1"
+          }
+        },
+        {
+          "addSheet": "Third"
+        },
+        {
+          "addTable": {
+            "name": "Line_feed.table",
+            "headerRow": 4,
+            "firstColumn": 2,
+            "columns": [
+              "Two\nlines",
+              "x_x0041_"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "write": {
+            "at": "C5",
+            "type": "sharedString",
+            "text": "Two\nlines"
+          }
+        },
+        {
+          "write": {
+            "at": "D5",
+            "type": "sharedString",
+            "text": "x_x0041_"
+          }
+        },
+        {
+          "complete": true
+        }
+      ],
+      "parts": true,
+      "read": [
+        "sheets"
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "parts": [
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c><c r=\"B1\" t=\"s\"><v>1</v></c><c r=\"D1\" t=\"inlineStr\"><is><t>Ccy</t></is></c></row><row r=\"2\"><c r=\"A2\" t=\"s\"><v>2</v></c><c r=\"B2\"><v>1.5</v></c><c r=\"D2\" t=\"s\"><v>3</v></c></row><row r=\"3\"><c r=\"B3\"><v>-2</v></c></row></sheetData><tableParts count=\"2\"><tablePart r:id=\"rId1\" /><tablePart r:id=\"rId2\" /></tableParts></worksheet>"
+          ],
+          [
+            "xl/worksheets/sheet2.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"1\"><c r=\"A1\"><v>1</v></c></row></sheetData></worksheet>"
+          ],
+          [
+            "xl/worksheets/sheet3.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><sheetData><row r=\"5\"><c r=\"C5\" t=\"s\"><v>4</v></c><c r=\"D5\" t=\"s\"><v>5</v></c></row></sheetData><tableParts count=\"1\"><tablePart r:id=\"rId1\" /></tableParts></worksheet>"
+          ],
+          [
+            "xl/sharedStrings.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><sst count=\"6\" uniqueCount=\"6\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><si><t>Desk</t></si><si><t>PV</t></si><si><t>EMEA</t></si><si><t>EUR</t></si><si><t xml:space=\"preserve\">Two\nlines</t></si><si><t>x_x005F_x0041_</t></si></sst>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"1\"><font><sz val=\"11\" /><color theme=\"1\" /><name val=\"Calibri\" /></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\" /></fill><fill><patternFill patternType=\"gray125\" /></fill></fills><borders count=\"1\"><border><left /><right /><top /><bottom /><diagonal /></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" /></cellStyleXfs><cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" /></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\" /></cellStyles></styleSheet>"
+          ],
+          [
+            "xl/tables/table1.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><table id=\"1\" name=\"Positions\" displayName=\"Positions\" ref=\"A1:B3\" totalsRowShown=\"0\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><autoFilter ref=\"A1:B3\" /><tableColumns count=\"2\"><tableColumn id=\"1\" name=\"Desk\" /><tableColumn id=\"2\" name=\"PV\" /></tableColumns><tableStyleInfo name=\"TableStyleMedium2\" showFirstColumn=\"0\" showLastColumn=\"0\" showRowStripes=\"1\" showColumnStripes=\"0\" /></table>"
+          ],
+          [
+            "xl/tables/table2.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><table id=\"2\" name=\"Rates\" displayName=\"Rates\" ref=\"D1:D2\" totalsRowShown=\"0\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><tableColumns count=\"1\"><tableColumn id=\"1\" name=\"Ccy\" /></tableColumns><tableStyleInfo name=\"TableStyleMedium2\" showFirstColumn=\"0\" showLastColumn=\"0\" showRowStripes=\"1\" showColumnStripes=\"0\" /></table>"
+          ],
+          [
+            "xl/tables/table3.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><table id=\"3\" name=\"Line_feed.table\" displayName=\"Line_feed.table\" ref=\"C5:D6\" totalsRowShown=\"0\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><autoFilter ref=\"C5:D6\" /><tableColumns count=\"2\"><tableColumn id=\"1\" name=\"Two&#xA;lines\" /><tableColumn id=\"2\" name=\"x_x005F_x0041_\" /></tableColumns><tableStyleInfo name=\"TableStyleMedium2\" showFirstColumn=\"0\" showLastColumn=\"0\" showRowStripes=\"1\" showColumnStripes=\"0\" /></table>"
+          ],
+          [
+            "xl/worksheets/_rels/sheet1.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/table\" Target=\"../tables/table1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/table\" Target=\"../tables/table2.xml\" /></Relationships>"
+          ],
+          [
+            "xl/worksheets/_rels/sheet3.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/table\" Target=\"../tables/table3.xml\" /></Relationships>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><workbook xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><bookViews><workbookView /></bookViews><sheets><sheet name=\"Trades\" sheetId=\"1\" r:id=\"rId1\" /><sheet name=\"Plain\" sheetId=\"2\" r:id=\"rId2\" /><sheet name=\"Third\" sheetId=\"3\" r:id=\"rId3\" /></sheets><calcPr calcId=\"191029\" /></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" /><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet2.xml\" /><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet3.xml\" /><Relationship Id=\"rId4\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\" /><Relationship Id=\"rId5\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" Target=\"sharedStrings.xml\" /></Relationships>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" /></Relationships>"
+          ],
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" /><Default Extension=\"xml\" ContentType=\"application/xml\" /><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" /><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/worksheets/sheet2.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/worksheets/sheet3.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" /><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\" /><Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\" /><Override PartName=\"/xl/tables/table1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml\" /><Override PartName=\"/xl/tables/table2.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml\" /><Override PartName=\"/xl/tables/table3.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml\" /></Types>"
+          ]
+        ],
+        "read": {
+          "sheets": [
+            {
+              "columns": [],
+              "rows": [],
+              "cells": [
+                {
+                  "at": "A1",
+                  "type": "sharedString",
+                  "value": "0",
+                  "text": "Desk"
+                },
+                {
+                  "at": "B1",
+                  "type": "sharedString",
+                  "value": "1",
+                  "text": "PV"
+                },
+                {
+                  "at": "D1",
+                  "type": "inlineString",
+                  "value": null,
+                  "text": "Ccy"
+                },
+                {
+                  "at": "A2",
+                  "type": "sharedString",
+                  "value": "2",
+                  "text": "EMEA"
+                },
+                {
+                  "at": "B2",
+                  "type": "number",
+                  "value": "1.5"
+                },
+                {
+                  "at": "D2",
+                  "type": "sharedString",
+                  "value": "3",
+                  "text": "EUR"
+                },
+                {
+                  "at": "B3",
+                  "type": "number",
+                  "value": "-2"
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "tabSelected": "1",
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                },
+                {
+                  "name": "tableParts",
+                  "attributes": {
+                    "count": "2"
+                  },
+                  "children": [
+                    {
+                      "name": "tablePart",
+                      "attributes": {
+                        "id": "rId1"
+                      }
+                    },
+                    {
+                      "name": "tablePart",
+                      "attributes": {
+                        "id": "rId2"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            },
+            {
+              "columns": [],
+              "rows": [],
+              "cells": [
+                {
+                  "at": "A1",
+                  "type": "number",
+                  "value": "1"
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            },
+            {
+              "columns": [],
+              "rows": [],
+              "cells": [
+                {
+                  "at": "C5",
+                  "type": "sharedString",
+                  "value": "4",
+                  "text": "Two\nlines"
+                },
+                {
+                  "at": "D5",
+                  "type": "sharedString",
+                  "value": "5",
+                  "text": "x_x0041_"
+                }
+              ],
+              "otherElements": [
+                {
+                  "name": "sheetViews",
+                  "children": [
+                    {
+                      "name": "sheetView",
+                      "attributes": {
+                        "workbookViewId": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "sheetFormatPr",
+                  "attributes": {
+                    "defaultRowHeight": "15"
+                  }
+                },
+                {
+                  "name": "tableParts",
+                  "attributes": {
+                    "count": "1"
+                  },
+                  "children": [
+                    {
+                      "name": "tablePart",
+                      "attributes": {
+                        "id": "rId1"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "customRowHeights": false,
+              "hiddenRows": false,
+              "frozenPanes": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a name Excel does not give a Table is refused",
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "addTable": {
+            "name": "",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "1Table",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "Has space",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "A1",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "A01",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "XFD1048576",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "R",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "r1c1",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "TRUE",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          {
+            "kind": "argument",
+            "message": "'' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          },
+          {
+            "kind": "argument",
+            "message": "'1Table' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          },
+          {
+            "kind": "argument",
+            "message": "'Has space' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          },
+          {
+            "kind": "argument",
+            "message": "'A1' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          },
+          {
+            "kind": "argument",
+            "message": "'A01' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          },
+          {
+            "kind": "argument",
+            "message": "'XFD1048576' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          },
+          {
+            "kind": "argument",
+            "message": "'R' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          },
+          {
+            "kind": "argument",
+            "message": "'r1c1' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          },
+          {
+            "kind": "argument",
+            "message": "'TRUE' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address."
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a table's name is unique among the workbook's tables and defined names, in any case",
+      "options": {
+        "definedNames": [
+          {
+            "name": "Rate",
+            "text": "Sheet1!$A$1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "addTable": {
+            "name": "Positions",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "sharedString",
+            "text": "a"
+          }
+        },
+        {
+          "addSheet": "Sheet2"
+        },
+        {
+          "addTable": {
+            "name": "POSITIONS",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "rate",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          null,
+          null,
+          {
+            "kind": "argument",
+            "message": "The workbook already has a table or a defined name named 'POSITIONS', in some case."
+          },
+          {
+            "kind": "argument",
+            "message": "The workbook already has a table or a defined name named 'rate', in some case."
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §6: columns, rows and ranges a table cannot have are refused, and two tables of a sheet do not overlap",
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a",
+              ""
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a",
+              "A"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              {
+                "utf16": "\\uD800"
+              }
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 0
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 1,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1048575
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 16383,
+            "columns": [
+              "a",
+              "b"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 16383,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1048575
+          }
+        },
+        {
+          "addTable": {
+            "name": "Left",
+            "headerRow": 2,
+            "firstColumn": 0,
+            "columns": [
+              "a",
+              "b"
+            ],
+            "dataRows": 2
+          }
+        },
+        {
+          "addTable": {
+            "name": "Overlapping",
+            "headerRow": 4,
+            "firstColumn": 1,
+            "columns": [
+              "c"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "Below",
+            "headerRow": 5,
+            "firstColumn": 1,
+            "columns": [
+              "c"
+            ],
+            "dataRows": 1
+          }
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          {
+            "kind": "argument",
+            "message": "The table 'T' has at least one column."
+          },
+          {
+            "kind": "argument",
+            "message": "A column of the table 'T' has no name."
+          },
+          {
+            "kind": "argument",
+            "message": "The table 'T' names the column 'A' twice, in some case."
+          },
+          {
+            "kind": "argument",
+            "message": "A column's name in the table 'T' holds half of a surrogate pair, which XML cannot carry."
+          },
+          {
+            "kind": "argument",
+            "message": "The table 'T' has at least one row of data; Excel holds a table of none as one empty row."
+          },
+          {
+            "kind": "argument",
+            "message": "The table 'T' lies outside the sheet."
+          },
+          {
+            "kind": "argument",
+            "message": "The table 'T' lies outside the sheet."
+          },
+          null,
+          null,
+          {
+            "kind": "argument",
+            "message": "The table 'Overlapping' (B5:B6) overlaps the table 'Left' (A3:B5)."
+          },
+          null
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a header's cell holds its column's name as text, and a cell that does not is refused, leaving the sheet as it was",
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 1,
+            "firstColumn": 1,
+            "columns": [
+              "Desk",
+              "PV"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "write": {
+            "at": "B1",
+            "type": "number",
+            "value": "1"
+          }
+        },
+        {
+          "write": {
+            "at": "B2",
+            "type": "sharedString",
+            "text": "desk"
+          }
+        },
+        {
+          "write": {
+            "at": "B2",
+            "type": "number",
+            "value": "1"
+          }
+        },
+        {
+          "write": {
+            "at": "B2",
+            "type": "sharedString",
+            "text": "Desk",
+            "formula": {
+              "text": "\"Desk\""
+            }
+          }
+        },
+        {
+          "write": {
+            "at": "A2",
+            "type": "sharedString",
+            "text": "Not the table's"
+          }
+        },
+        {
+          "write": {
+            "at": "B2",
+            "type": "sharedString",
+            "text": "Desk"
+          }
+        },
+        {
+          "write": {
+            "at": "C2",
+            "type": "sharedString",
+            "text": "PV"
+          }
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          null,
+          {
+            "kind": "argument",
+            "message": "The cell B2 is in the header of the table 'T', and holds its column's name, 'Desk', as text, with no Formula."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell B2 is in the header of the table 'T', and holds its column's name, 'Desk', as text, with no Formula."
+          },
+          {
+            "kind": "argument",
+            "message": "The cell B2 is in the header of the table 'T', and holds its column's name, 'Desk', as text, with no Formula."
+          },
+          null,
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a table is added before its header's row is begun",
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "write": {
+            "at": "A3",
+            "type": "number",
+            "value": "1"
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 2,
+            "firstColumn": 1,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 1,
+            "firstColumn": 1,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          {
+            "kind": "argument",
+            "message": "The table 'T' is added after row 3 was begun: a table is added before its header's row."
+          },
+          {
+            "kind": "argument",
+            "message": "The table 'T' is added after row 3 was begun: a table is added before its header's row."
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a sheet that ends with its table's header unwritten is refused when the next sheet is added",
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a",
+              "b"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "write": {
+            "at": "A1",
+            "type": "sharedString",
+            "text": "a"
+          }
+        },
+        {
+          "addSheet": "Sheet2"
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          null,
+          {
+            "kind": "invalidOperation",
+            "message": "The sheet 'Sheet1' ends with 1 of the 2 cells of the header of the table 'T' written; each holds its column's name."
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a workbook whose last sheet ends with its table's header unwritten is refused when it completes",
+      "steps": [
+        {
+          "addSheet": "Sheet1"
+        },
+        {
+          "addTable": {
+            "name": "T",
+            "headerRow": 0,
+            "firstColumn": 0,
+            "columns": [
+              "a"
+            ],
+            "dataRows": 1
+          }
+        },
+        {
+          "complete": true
+        }
+      ],
+      "expect": {
+        "create": null,
+        "outcomes": [
+          null,
+          null,
+          {
+            "kind": "invalidOperation",
+            "message": "The sheet 'Sheet1' ends with 0 of the 1 cells of the header of the table 'T' written; each holds its column's name."
+          }
+        ]
+      }
+    }
+  ]
+}

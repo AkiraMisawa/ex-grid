@@ -7,6 +7,7 @@
   "type": "module",
   "workspaces": [
     "data",
+    "data-xlsx",
     "core",
     "chart",
     "chart-react",
@@ -19,6 +20,7 @@
     "pivot-blazor",
     "board-react",
     "sheet-engine",
+    "sheet-xlsx",
     "sheet",
     "sheet-react"
   ],

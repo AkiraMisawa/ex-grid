@@ -103,7 +103,7 @@ import { SummaryMenu, toggledFigures } from './summary-menu';
 import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { CellPaint, type CellPaintOptions } from './cell-paint';
-import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type FormulaBarOptions } from './formula-bar';
+import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type FormulaBarHooks, type FormulaBarOptions } from './formula-bar';
 import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
@@ -1845,14 +1845,12 @@ export class GridView<Row> {
         this.#summaryBox = new SummaryBox(doc);
         this.#summaryBox.element.addEventListener('contextmenu', this.#onSummaryContextMenu);
         this.#stops.push(() => { this.#summaryBox.element.removeEventListener('contextmenu', this.#onSummaryContextMenu); });
-        this.#bar = new FormulaBar(doc, {
-            textTyped: this.#onBarTyped, textFocused: this.#onBarFocused, nameBoxEntered: this.#onNameBoxEntered, nameBoxLeft: this.#onNameBoxLeft,
-            nameBoxFocused: this.#onNameBoxFocused,
-        });
-        // A caret moved in the bar's text, as in the editor's (ADR-0051).
-        this.#bar.text.addEventListener('keyup', this.#onEditorCaret);
-        this.#bar.text.addEventListener('mouseup', this.#onEditorCaret);
-        this.#hearSurface(this.#bar.text);
+        this.#bar = new FormulaBar(doc, this.#barHooks, { text: undefined, nameBox: undefined });
+        // A caret moved in the bar's text, as in the editor's (ADR-0051), and the events the coloured text follows,
+        // heard on the band whichever field stands in it.
+        this.#bar.band.addEventListener('keyup', this.#onBarCaret);
+        this.#bar.band.addEventListener('mouseup', this.#onBarCaret);
+        this.#hearSurface(this.#bar.band);
         this.#spacer.append(this.#header, this.#viewport);
         this.#scroller.append(this.#spacer);
         const announce = element('div', { class: 'ex-announce', role: 'status' });
@@ -2091,6 +2089,7 @@ export class GridView<Row> {
         this.#summaryBox.hide();
         this.#messageSlot.hide();
         this.#loadingSlot.hide();
+        this.#bar.dispose();
         // Every Template cell's content is taken away with the grid (ADR-0020).
         for (const byColumn of this.#templates.values()) {
             for (const mounted of byColumn.values()) this.#unmount(mounted);
@@ -5008,7 +5007,7 @@ export class GridView<Row> {
     // event is fired, so it is not typing.
     #writeEditText(edit: OpenEdit<Row>, text: string, start: number, end: number): void {
         this.#writeEditorText(edit, text);
-        if (this.#formulaBarDeclared.shown) this.#bar.text.value = text;
+        if (this.#formulaBarDeclared.shown) this.#bar.showText(text);
         this.#surfaceOf(edit)?.setSelectionRange(start, end);
     }
 
@@ -5067,6 +5066,11 @@ export class GridView<Row> {
     }
 
     // The field's own keys or a press inside its text may have moved its caret.
+    // A caret moved in the bar's text field, heard on its band: the Name Box beside it is no surface of the edit.
+    readonly #onBarCaret = (event: Event): void => {
+        if (event.target === this.#bar.text) this.#onEditorCaret();
+    };
+
     readonly #onEditorCaret = (): void => {
         const edit = this.#edit;
         if (edit === undefined) return;
@@ -5489,7 +5493,8 @@ export class GridView<Row> {
         const typedIn = edit === undefined ? undefined : this.#surfaceOf(edit);
         const autocomplete = this.#completeEditorText === undefined ? undefined : 'list';
         const cellField = edit === undefined ? undefined : this.#editorField(edit);
-        for (const surface of cellField === undefined ? [this.#bar.text] : [cellField, this.#bar.text]) {
+        for (const surface of [cellField, this.#bar.text]) {
+            if (surface === undefined) continue;
             const controls = surface === typedIn ? listed : undefined;
             setAttribute(surface, 'aria-autocomplete', autocomplete);
             setAttribute(surface, 'aria-controls', controls === undefined ? undefined : box.listId);
@@ -5507,7 +5512,7 @@ export class GridView<Row> {
         if (this.#referenceOptions.referencesIn === undefined) {
             if (made !== undefined) {
                 this.#referenceText = undefined;
-                this.#bar.text.classList.remove('ex-reference-text-shown');
+                this.#bar.text?.classList.remove('ex-reference-text-shown');
                 this.#edit?.element.classList.remove('ex-reference-text-shown');
                 made.cell.uncolour();
                 made.bar.uncolour();
@@ -5521,7 +5526,9 @@ export class GridView<Row> {
         const doc = this.#root.ownerDocument;
         const layers = made ?? this.#makeReferenceTextLayers(doc);
         if (layers.style.parentNode !== this.#root) this.#root.prepend(layers.style);
-        if (layers.bar.element.nextSibling !== this.#bar.text) this.#bar.band.insertBefore(layers.bar.element, this.#bar.text);
+        // Before the bar's text box, which a Chrome's field may be drawn in: the gate shows the colours over the core's own only.
+        const textBox = this.#bar.textBox;
+        if (layers.bar.element.nextSibling !== textBox && textBox.parentNode === this.#bar.band) this.#bar.band.insertBefore(layers.bar.element, textBox);
         return layers;
     }
 
@@ -5556,7 +5563,7 @@ export class GridView<Row> {
         this.#gateReferenceText(layers, layers.cell, cellField, text, stretches);
         const barShown = edit !== undefined && this.#formulaBarDeclared.shown;
         setAttribute(layers.bar.element, 'style', `left: ${this.#metrics.nameBoxWidthPx}px`);
-        this.#gateReferenceText(layers, layers.bar, this.#bar.text, barShown ? text : '', barShown ? stretches : []);
+        this.#gateReferenceText(layers, layers.bar, this.#bar.builtInText, barShown ? text : '', barShown ? stretches : []);
     }
 
     #gateReferenceText(layers: ReferenceTextLayers, layer: ReferenceTextLayer, field: HTMLInputElement | undefined, text: string,
@@ -5582,12 +5589,14 @@ export class GridView<Row> {
 
     // An editor surface's own events the coloured text follows: the keyboard leaving it, a composition, and its text
     // scrolled sideways.
-    #hearSurface(field: HTMLInputElement): void {
-        field.addEventListener('blur', this.#onSurfaceChanged);
-        field.addEventListener('focus', this.#onSurfaceChanged);
-        field.addEventListener('compositionstart', this.#onCompositionStarted);
-        field.addEventListener('compositionend', this.#onCompositionEnded);
-        field.addEventListener('scroll', this.#onSurfaceScrolled);
+    // Heard on the field, or on the band that holds whichever field stands: the keyboard's moves and the
+    // compositions rise to it, and its scroll is heard in the capture phase, as a scroll does not rise.
+    #hearSurface(holder: HTMLElement): void {
+        holder.addEventListener('focusout', this.#onSurfaceChanged);
+        holder.addEventListener('focusin', this.#onSurfaceChanged);
+        holder.addEventListener('compositionstart', this.#onCompositionStarted);
+        holder.addEventListener('compositionend', this.#onCompositionEnded);
+        holder.addEventListener('scroll', this.#onSurfaceScrolled, true);
     }
 
     readonly #onSurfaceChanged = (): void => {
@@ -5608,7 +5617,8 @@ export class GridView<Row> {
         const field = event.target;
         const layers = this.#referenceText;
         if (layers === undefined || !(field instanceof HTMLInputElement)) return;
-        (field === this.#bar.text ? layers.bar : layers.cell).scrollTo(field.scrollLeft);
+        if (field === this.#bar.builtInText) layers.bar.scrollTo(field.scrollLeft);
+        else if (field === this.#edit?.element) layers.cell.scrollTo(field.scrollLeft);
     };
 
     // ---- Pointed at from outside (ADR-0058) ---------------------------------------------------------------------
@@ -5939,7 +5949,7 @@ export class GridView<Row> {
             this.#takeKeyboard();
             return;
         }
-        const surface = this.#surfaceOf(edit) ?? edit.element;
+        const surface = this.#editSurface(edit);
         if (surface.isConnected) surface.focus({ preventScroll: true });
     }
 
@@ -5981,6 +5991,22 @@ export class GridView<Row> {
         field?.select();
     }
 
+    // What the bar hears, handed to each bar made.
+    readonly #barHooks: FormulaBarHooks = {
+        textTyped: text => { this.#onBarTyped(text); },
+        textFocused: () => { this.#onBarFocused(); },
+        nameBoxEntered: typed => { this.#onNameBoxEntered(typed); },
+        nameBoxLeft: () => { this.#onNameBoxLeft(); },
+        nameBoxFocused: () => { this.#onNameBoxFocused(); },
+    };
+
+    // The field an open edit is typed in: the bar's text where it was typed there and the field stands, else the
+    // cell's editor.
+    #editSurface(edit: OpenEdit<Row>): HTMLElement {
+        const bar = edit.surface === 'bar' ? this.#bar.text : undefined;
+        return bar?.isConnected === true ? bar : this.#editorField(edit) ?? edit.element;
+    }
+
     // DOM focus on the Formula Bar's text or the Name Box, the fields of the grid's own beside the rows that hold
     // the keyboard while the user types in them: a hand-back leaves it there (ADR-0021, widened 2026-09-28).
     #onOwnField(): boolean {
@@ -6010,7 +6036,7 @@ export class GridView<Row> {
         this.#reconcileSelection();
         if (this.#discardedAim()) return;
         const focus = this.#held.selection.focus;
-        if (focus === undefined || !this.#isEditableCell(focus) || this.#bar.text.readOnly) return;
+        if (focus === undefined || !this.#isEditableCell(focus) || !this.#bar.editable) return;
         this.#startEdit(focus, 'caret', this.#openingTextAt(focus), 'bar');
     };
 
@@ -6035,7 +6061,7 @@ export class GridView<Row> {
     // Typed in the cell: shown in the bar as well (ADR-0051).
     readonly #onEditorTyped = (): void => {
         const edit = this.#edit;
-        if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.text.value = this.#editorText(edit);
+        if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.showText(this.#editorText(edit));
         if (edit === undefined) return;
         this.#typed(edit);
         this.#askReferences();
@@ -6056,7 +6082,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         // A commit pending lands in place too, the keyboard left where the user put it (ADR-0380).
         if (edit === undefined || this.#commitEdit(false) || this.#pending?.edit === edit) return;
-        const surface = this.#surfaceOf(edit) ?? edit.element;
+        const surface = this.#editSurface(edit);
         if (surface.isConnected) surface.focus({ preventScroll: true });
     };
 
@@ -6095,8 +6121,15 @@ export class GridView<Row> {
                 }
             }
             bar.band.remove();
+            // A Chrome's fields go with the band, and are drawn again when it shows.
+            bar.hide();
             return;
         }
+        // A field the Consumer's Chrome now draws by another mount function is made again, though not while it is in
+        // use, holding the keyboard or an edit typed there: its contents stand until a pass where it is not (ADR-0390).
+        const doc = this.#root.ownerDocument;
+        bar.adopt({ text: this.#chrome?.formulaBarText, nameBox: this.#chrome?.nameBox },
+            box => box.contains(doc.activeElement) || (box.classList.contains('ex-formula-bar-text') && this.#edit?.surface === 'bar'));
         if (bar.band.parentNode !== this.#root) this.#scroller.after(bar.band);
         const edit = this.#edit;
         const read = this.#barReading();
@@ -7800,7 +7833,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit !== undefined && (target === this.#root || target === this.#scroller || target === this.#keyField)) {
             // Back into a grid whose edit stands, the keyboard is the edit's (ED-26), on the surface it was typed on.
-            const surface = edit.surface === 'bar' && this.#bar.text.isConnected ? this.#bar.text : this.#editorField(edit) ?? edit.element;
+            const surface = this.#editSurface(edit);
             if (surface.isConnected) surface.focus({ preventScroll: true });
             return;
         }
@@ -10226,8 +10259,9 @@ export class GridView<Row> {
         this.#editorFocusOwed = false;
         if (edit === undefined || !edit.element.isConnected || !this.#keyboardHere(toward)) return;
         // An edit typed in the Formula Bar keeps the keyboard there, its caret where the user put it (ADR-0051).
-        if (edit.surface === 'bar' && this.#bar.text.isConnected) {
-            if (this.#root.ownerDocument.activeElement !== this.#bar.text) this.#bar.text.focus({ preventScroll: true });
+        const bar = edit.surface === 'bar' ? this.#bar.text : undefined;
+        if (bar?.isConnected === true) {
+            if (this.#root.ownerDocument.activeElement !== bar) bar.focus({ preventScroll: true });
             return;
         }
         const element = this.#editorField(edit);

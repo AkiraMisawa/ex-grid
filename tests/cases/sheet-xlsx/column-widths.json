@@ -1,0 +1,892 @@
+{
+  "kind": "sheetXlsx",
+  "note": "Column widths cross both ways in Excel's own unit (ADR-0330 §4, ADR-0046, ADR-0047): the engine's characters of the default font's digit, the file's with the cell's padding, truncated to 1/256 as Excel stores them.",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0330 §4, ADR-0046: widths are read into runs, one a typed entry fitted (bestFit) as widened by entry, any other as the user's",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 0,
+                    "last": 0,
+                    "width": 12.7109375,
+                    "bestFit": true
+                  },
+                  {
+                    "first": 1,
+                    "last": 1,
+                    "width": 20.7109375
+                  },
+                  {
+                    "first": 2,
+                    "last": 3,
+                    "width": 20.7109375
+                  },
+                  {
+                    "first": 5,
+                    "last": 5,
+                    "width": 9.140625
+                  },
+                  {
+                    "first": 6,
+                    "last": 6,
+                    "width": 0,
+                    "hidden": true
+                  },
+                  {
+                    "first": 7,
+                    "last": 7,
+                    "width": 300
+                  },
+                  {
+                    "first": 8,
+                    "last": 8
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 12,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "B:D",
+                      "width": 20,
+                      "kind": "setByUser"
+                    },
+                    {
+                      "at": "H:H",
+                      "width": 255,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "hiddenColumns",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "Columns of 'Trades' are hidden in the file, and open shown."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "columnWidths": {
+              "A": {
+                "width": 12,
+                "kind": "widenedByEntry"
+              },
+              "F": null
+            }
+          },
+          "note": "The default width records nothing; a hidden column of no width opens shown at the default, and is listed."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a width narrower than a hundredth of a character opens at the narrowest the engine holds, not silently at the default: 0.71",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 1,
+                    "last": 1,
+                    "width": 0.71
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columnWidths": [
+                    {
+                      "at": "B:B",
+                      "width": 0.01,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a width narrower than a hundredth of a character opens at the narrowest the engine holds, not silently at the default: 0.5",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 1,
+                    "last": 1,
+                    "width": 0.5
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columnWidths": [
+                    {
+                      "at": "B:B",
+                      "width": 0.01,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a width narrower than a hundredth of a character opens at the narrowest the engine holds, not silently at the default: 0.00390625",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 1,
+                    "last": 1,
+                    "width": 0.00390625
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columnWidths": [
+                    {
+                      "at": "B:B",
+                      "width": 0.01,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a column of width 0 is one Excel shows hidden: it opens at the default, and is listed",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 1,
+                    "last": 1,
+                    "width": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "hiddenColumns",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "Columns of 'Trades' are hidden in the file, and open shown."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: every column written carries a width; one that records only a format is written at the default, not marked as set",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Trades",
+            "sheets": [
+              {
+                "name": "Trades",
+                "columns": [
+                  {
+                    "at": "B:C",
+                    "align": "right"
+                  },
+                  {
+                    "at": "E:E",
+                    "font": {
+                      "bold": true
+                    }
+                  }
+                ],
+                "columnWidths": [
+                  {
+                    "at": "E:F",
+                    "width": 20,
+                    "kind": "setByUser"
+                  }
+                ],
+                "cells": []
+              }
+            ]
+          }
+        },
+        {
+          "save": {},
+          "parts": [
+            "xl/worksheets/sheet1.xml"
+          ],
+          "file": [
+            "sheets"
+          ],
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "parts": [
+              [
+                "xl/worksheets/sheet1.xml",
+                "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><worksheet xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\" /></sheetViews><sheetFormatPr defaultRowHeight=\"15\" /><cols><col min=\"2\" max=\"3\" width=\"9.140625\" style=\"1\" /><col min=\"5\" max=\"5\" width=\"20.7109375\" customWidth=\"1\" style=\"2\" /><col min=\"6\" max=\"6\" width=\"20.7109375\" customWidth=\"1\" /></cols><sheetData /></worksheet>"
+              ]
+            ],
+            "file": {
+              "sheets": [
+                {
+                  "columns": [
+                    {
+                      "first": 1,
+                      "last": 2,
+                      "width": 9.140625,
+                      "hidden": false,
+                      "style": 1,
+                      "bestFit": false,
+                      "customWidth": false
+                    },
+                    {
+                      "first": 4,
+                      "last": 4,
+                      "width": 20.7109375,
+                      "hidden": false,
+                      "style": 2,
+                      "bestFit": false,
+                      "customWidth": true
+                    },
+                    {
+                      "first": 5,
+                      "last": 5,
+                      "width": 20.7109375,
+                      "hidden": false,
+                      "style": 0,
+                      "bestFit": false,
+                      "customWidth": true
+                    }
+                  ],
+                  "rows": [],
+                  "cells": [],
+                  "otherElements": [
+                    {
+                      "name": "sheetViews",
+                      "children": [
+                        {
+                          "name": "sheetView",
+                          "attributes": {
+                            "tabSelected": "1",
+                            "workbookViewId": "0"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "sheetFormatPr",
+                      "attributes": {
+                        "defaultRowHeight": "15"
+                      }
+                    }
+                  ],
+                  "customRowHeights": false,
+                  "hiddenRows": false,
+                  "frozenPanes": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "keep": "before"
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columns": [
+                    {
+                      "at": "B:C",
+                      "align": "right"
+                    },
+                    {
+                      "at": "E:E",
+                      "font": {
+                        "bold": true
+                      }
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "E:F",
+                      "width": 20,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": []
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "columnWidths": {
+              "E": {
+                "width": 20,
+                "kind": "setByUser"
+              },
+              "F": {
+                "width": 20,
+                "kind": "setByUser"
+              },
+              "B": null
+            },
+            "alignments": {
+              "B1": "right",
+              "C9": "right",
+              "D1": "general"
+            }
+          },
+          "note": "The widths and the column formats read back as they were written."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Sheet's own default width is not carried, and is listed; Excel's own base of 8 is not: a default width of its own",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "regex": [
+                  [
+                    "<sheetFormatPr[^>]*/>",
+                    "<sheetFormatPr defaultColWidth=\"12.5\" defaultRowHeight=\"15\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "defaultColumnWidth",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has a default column width of its own, which is not carried; its columns without a width of their own open at the default width."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Sheet's own default width is not carried, and is listed; Excel's own base of 8 is not: a base width of its own",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "regex": [
+                  [
+                    "<sheetFormatPr[^>]*/>",
+                    "<sheetFormatPr baseColWidth=\"10\" defaultRowHeight=\"16\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "defaultColumnWidth",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has a default column width of its own, which is not carried; its columns without a width of their own open at the default width."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Sheet's own default width is not carried, and is listed; Excel's own base of 8 is not: Excel's own base of 8, not listed",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "regex": [
+                  [
+                    "<sheetFormatPr[^>]*/>",
+                    "<sheetFormatPr baseColWidth=\"8\" defaultRowHeight=\"15\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0046: a width is written in the file's unit, fitted where an entry widened it, and reads back with its kind",
+      "steps": [
+        {
+          "workbook": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Trades",
+            "sheets": [
+              {
+                "name": "Trades",
+                "columnWidths": [
+                  {
+                    "at": "A:A",
+                    "width": 12.5,
+                    "kind": "widenedByEntry"
+                  },
+                  {
+                    "at": "B:C",
+                    "width": 3.14,
+                    "kind": "setByUser"
+                  },
+                  {
+                    "at": "XFD:XFD",
+                    "width": 255,
+                    "kind": "setByUser"
+                  }
+                ],
+                "cells": []
+              }
+            ]
+          }
+        },
+        {
+          "save": {},
+          "file": [
+            "sheets"
+          ],
+          "expect": {
+            "partNames": [
+              "xl/worksheets/sheet1.xml",
+              "xl/styles.xml",
+              "xl/workbook.xml",
+              "xl/_rels/workbook.xml.rels",
+              "_rels/.rels",
+              "[Content_Types].xml"
+            ],
+            "file": {
+              "sheets": [
+                {
+                  "columns": [
+                    {
+                      "first": 0,
+                      "last": 0,
+                      "width": 13.2109375,
+                      "hidden": false,
+                      "style": 0,
+                      "bestFit": true,
+                      "customWidth": true
+                    },
+                    {
+                      "first": 1,
+                      "last": 2,
+                      "width": 3.8515625,
+                      "hidden": false,
+                      "style": 0,
+                      "bestFit": false,
+                      "customWidth": true
+                    },
+                    {
+                      "first": 16383,
+                      "last": 16383,
+                      "width": 255.7109375,
+                      "hidden": false,
+                      "style": 0,
+                      "bestFit": false,
+                      "customWidth": true
+                    }
+                  ],
+                  "rows": [],
+                  "cells": [],
+                  "otherElements": [
+                    {
+                      "name": "sheetViews",
+                      "children": [
+                        {
+                          "name": "sheetView",
+                          "attributes": {
+                            "tabSelected": "1",
+                            "workbookViewId": "0"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "sheetFormatPr",
+                      "attributes": {
+                        "defaultRowHeight": "15"
+                      }
+                    }
+                  ],
+                  "customRowHeights": false,
+                  "hiddenRows": false,
+                  "frozenPanes": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "open": "saved",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columnWidths": [
+                    {
+                      "at": "A:A",
+                      "width": 12.5,
+                      "kind": "widenedByEntry"
+                    },
+                    {
+                      "at": "B:C",
+                      "width": 3.14,
+                      "kind": "setByUser"
+                    },
+                    {
+                      "at": "XFD:XFD",
+                      "width": 255,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": []
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "columnWidths": {
+              "A": {
+                "width": 12.5,
+                "kind": "widenedByEntry"
+              },
+              "B": {
+                "width": 3.14,
+                "kind": "setByUser"
+              },
+              "XFD": {
+                "width": 255,
+                "kind": "setByUser"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
