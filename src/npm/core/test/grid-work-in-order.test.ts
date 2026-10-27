@@ -6,6 +6,7 @@
 // "typed after it ended" are the two orders spine rule 6 says must end the same.
 import { afterEach, describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
+import type { EditVerdict } from '../src/cells/edit-intent';
 import type { GridSelection } from '../src/selection/selection';
 import type { GridView } from '../src/dom/grid-view';
 import { mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
@@ -231,6 +232,60 @@ describe('work of the Consumer\'s in the Input Order', () => {
         defined(works[0], 'the first').land();
         expect([await first, await second, works.length]).toEqual([false, false, 1]);
         expect(await view.inOrder(() => { throw new Error('A destroyed grid runs nothing.'); })).toBe(undefined);
+    });
+
+    it('ADR-0240 section 12: behind a commit whose verdict is out, an Escape cancels the work the stamp names, not the commit', async () => {
+        const verdicts: ((verdict: EditVerdict) => void)[] = [];
+        const { root, view } = mount<Trade>({
+            columns: [{
+                name: 'Book', type: 'text', value: trade => trade.book, width: 120, editable: true,
+                validate: () => new Promise<EditVerdict>(resolve => { verdicts.push(resolve); }),
+            }],
+            rows: trades(20), rowHeight: 24, viewportHeight: 480,
+            onEdit: () => undefined,
+        });
+        await painted();
+        view.focus();
+        placeOn(view, 0);
+        key('F2');
+        key('Enter');
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(true);
+        const works: Held[] = [];
+        const tooLate: boolean[] = [];
+        const opening = view.cancellableInOrder(lookingWork(works), landed => { tooLate.push(landed); });
+        await painted();
+        expect(stamp(root).getAttribute('data-ex-work-placed')).toBe('1');
+        key('Escape');
+        // The commit is still out, and the work waits behind it, cancelled before its turn.
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(true);
+        defined(verdicts[0], 'the verdict')({ kind: 'accept' });
+        await settled();
+        const work = defined(works[0], 'the work');
+        expect(work.signal.aborted).toBe(true);
+        work.land();
+        expect([await opening, tooLate]).toEqual([false, []]);
+    });
+
+    it('ADR-0240 section 6: work placed inside another\'s handling runs at once, and the outer work is pending after it', async () => {
+        const { root, view } = grid();
+        await painted();
+        const works: Held[] = [];
+        const order: string[] = [];
+        let inner: Promise<void> | undefined;
+        const outer = view.inOrder(() => {
+            inner = view.inOrder(() => heldWork(works, () => { order.push('inner'); })(new AbortController().signal));
+            return heldWork(works, () => { order.push('outer'); })(new AbortController().signal);
+        });
+        expect(works.length).toBe(2);
+        defined(works[1], 'the outer').land();
+        await outer;
+        // The inner work still holds the grid.
+        expect(root.hasAttribute('data-ex-settled')).toBe(false);
+        defined(works[0], 'the inner').land();
+        await inner;
+        await settled();
+        expect(order).toEqual(['outer', 'inner']);
+        expect(root.hasAttribute('data-ex-settled')).toBe(true);
     });
 
     it('ADR-0240 section 12: cancellable work placed while cancellable work starts is refused by name', async () => {

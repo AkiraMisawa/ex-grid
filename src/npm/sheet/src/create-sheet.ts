@@ -501,6 +501,8 @@ class SheetView {
     readonly #raised = new WeakSet<object>();
     // The seed chosen when the document was opened, which draws while no `seed` is given (ADR-0180).
     #chosenSeed: bigint;
+    // Whether the Workbook shown was opened from a file since the Consumer last handed a document (ADR-0330 §10).
+    #fileOpened = false;
     // The Sheets' names as the Consumer last heard them, so a change says what it was taken from (ADR-0331 §6): at
     // open, the document's own.
     #sheetNames: readonly string[] = [];
@@ -575,7 +577,9 @@ class SheetView {
         this.#gridHeight(next);
         // Judged by the culture the Sheet holds, so a locale naming that culture again changes nothing; with a document,
         // the document's culture is the one, as the option says.
-        if (next.document === undefined && this.#document === undefined && Culture.of(next.locale ?? navigator.language) !== this.#source.sheet.culture) {
+        // A file opened since is a document of its own, whose culture the file's opening declared (ADR-0330 §10).
+        if (next.document === undefined && this.#document === undefined && !this.#fileOpened
+            && Culture.of(next.locale ?? navigator.language) !== this.#source.sheet.culture) {
             throw new Error("A Sheet's culture is recorded in its document, so it is not changed on a live Sheet: Entries typed would not be read again (ADR-0048).");
         }
         if ((next.density ?? 'compact') !== (this.#options.density ?? 'compact')) { // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
@@ -591,11 +595,7 @@ class SheetView {
         if (next.document !== this.#document) {
             this.#document = next.document;
             this.#chosenSeed = chooseSeed();
-            this.#workbook = this.#open(next);
-            this.#history.clear();
-            this.#showSheet(this.#workbook.shown);
-            this.#armTheDay();
-            this.#armTheMinute();
+            this.#replaceWorkbook(this.#open(next), false);
             return;
         }
         // A new seed, or none, which goes back to the one chosen at opening, draws again at the same count of changes:
@@ -739,13 +739,11 @@ class SheetView {
     async open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean> {
         this.#alive();
         if (typeof read !== 'function') throw new TypeError('open takes the read as a function of an AbortSignal (ADR-0330 §10).');
-        // Landing is tracked here, not read from how the work ended: what a handler of the Consumer's throws once the file
-        // has landed is that handler's, and never reads as a cancel.
-        let landed = false;
+        // What a handler of the Consumer's throws once the file has landed is that handler's, held until the opening has
+        // ended as landed: it never reads as a cancel, nor as a failure of the opening.
         let afterLanding: { readonly error: unknown } | undefined;
         const opening = async (signal: AbortSignal): Promise<void> => {
-            if (!await this.#opening(read, signal)) return;
-            landed = true;
+            await this.#opening(read, signal);
             try {
                 this.#raiseDocument();
             // oxlint-disable-next-line ex-grid/no-catch -- held, and rethrown once the opening has ended as landed
@@ -755,7 +753,7 @@ class SheetView {
         };
         const grid = this.#grid;
         if (grid === undefined) throw new Error('This Sheet was destroyed.');
-        await grid.cancellableInOrder(opening, this.#openingCameTooLate);
+        const landed = await grid.cancellableInOrder(opening, this.#openingCameTooLate);
         if (afterLanding !== undefined) throw afterLanding.error;
         return landed;
     }
@@ -766,8 +764,8 @@ class SheetView {
         this.#tell(landed ? this.#words.openingAlreadyLanded : this.#words.openingNothingToCancel, { outlivesMove: true });
     };
 
-    // The opening, in its turn: refused while an edit is open; else said, read, and landed — true — or left as it was.
-    async #opening(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>, signal: AbortSignal): Promise<boolean> {
+    // The opening, in its turn: refused while an edit is open; else said, read, and landed, or left as it was and thrown.
+    async #opening(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>, signal: AbortSignal): Promise<void> {
         // The grid runs it, so the Sheet still stands here. An Escape that came while the opening waited for its turn has cancelled it already: it ends cancelled, whatever
         // its turn finds.
         if (signal.aborted) {
@@ -788,7 +786,7 @@ class SheetView {
             }
             throw error;
         }
-        if (this.#destroyed) return false;
+        // The Sheet still stands here: destroying it destroys the grid, which aborts the signal looked at above.
         let opened: Workbook;
         // A seed of its own, as a new document gets one, and the names the Consumer has heard, which a change to the
         // Sheets is said against once it lands (ADR-0180, ADR-0331 §6).
@@ -804,16 +802,21 @@ class SheetView {
         }
         this.#sheetNames = heard;
         this.#chosenSeed = seed;
-        // The opened Workbook replaces the one shown, as a new document does (ADR-0048): its undo stack and its views go
-        // with it, under a new Row Sequence Version, which drops the Selection and refuses what was aimed at the old
-        // cells (ADR-0011, ADR-0142). The inputs held behind the opening are taken after it.
+        // The inputs held behind the opening are taken after it, on the Workbook opened.
+        this.#replaceWorkbook(opened, true);
+        this.#tell(this.#words.opened, { outlivesMove: true });
+    }
+
+    // A Workbook opened replaces the one shown, from a new document or a file (ADR-0048, ADR-0330 §10): its undo stack
+    // and its views go with it, under a new Row Sequence Version, which drops the Selection and refuses what was aimed
+    // at the old cells (ADR-0011, ADR-0142).
+    #replaceWorkbook(opened: Workbook, fromFile: boolean): void {
+        this.#fileOpened = fromFile;
         this.#workbook = opened;
         this.#history.clear();
         this.#showSheet(opened.shown);
         this.#armTheDay();
         this.#armTheMinute();
-        this.#tell(this.#words.opened, { outlivesMove: true });
-        return true;
     }
 
     async save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void> {
@@ -821,12 +824,14 @@ class SheetView {
         if (typeof write !== 'function') throw new TypeError('save takes the write as a function of the Workbook (ADR-0330 §10).');
         const grid = this.#grid;
         if (grid === undefined) throw new Error('This Sheet was destroyed.');
-        let writing = Promise.resolve();
+        const written: { writing?: PromiseLike<void> } = {};
         await grid.inOrder(() => {
             this.#refuseFileWhileEditing(this.#words.saveWhileEditing);
-            writing = Promise.resolve(write(this.#workbook));
+            written.writing = Promise.resolve(write(this.#workbook));
         });
-        await writing;
+        // A save whose turn never came — the Sheet destroyed while inputs before it were held — wrote nothing, and says so.
+        if (written.writing === undefined) throw new Error('This Sheet was destroyed before the save\'s turn: nothing was written.');
+        await written.writing;
     }
 
     // A file opened or saved while an edit is open is refused by name, and said (ADR-0330 §10, ADR-0048).

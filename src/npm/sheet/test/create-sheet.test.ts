@@ -1624,6 +1624,30 @@ describe('opening and saving a file in the Input Order (ADR-0330 §10)', () => {
         expect([textAt(element, 0, 0), noticeOf(element)]).toEqual(['old', 'Nothing was opened, and the Workbook is as it was. The file is not a workbook.']);
     });
 
+    it('ADR-0330 §10: a file in another culture opened on a Sheet started empty keeps taking its options', async () => {
+        const { element, sheet } = sheetOf();
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        const german = new Workbook(Culture.of('de-DE'));
+        german.do('Sheet1', SheetEdit.enter(CellAddress.parse('A1'), '1,5'));
+        expect(await sheet.open(() => Promise.resolve(german.toDocument()))).toBe(true);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showFormulaBar: false });
+        expect(sheet.workbook.shown.culture).toBe(Culture.of('de-DE'));
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1,5'); });
+    });
+
+    it('ADR-0330 §10: a save whose turn never comes, the Sheet destroyed first, says nothing was written', async () => {
+        const { sheet } = sheetOf();
+        const file = heldRead();
+        const opening = sheet.open(file.read);
+        const saving = sheet.save(() => { throw new Error('No turn should come.'); });
+        sheet.destroy();
+        await expect(saving).rejects.toThrow('nothing was written');
+        // The read looks at its signal, aborted as the Sheet went, and nothing lands.
+        expect(file.signal().aborted).toBe(true);
+        file.answer(documentOf({ A1: 'new' }));
+        expect(await opening).toBe(false);
+    });
+
     it('ADR-0330 §10: a save placed behind an opening writes the Workbook it opened', async () => {
         const { element, sheet } = sheetOf({ document: documentOf({ A1: 'old' }) });
         await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('old'); });

@@ -4661,9 +4661,12 @@ export class GridView<Row> {
         }
         if (event instanceof MouseEvent && event.type === 'mousemove' && event.buttons === 0) return;
         event.stopImmediatePropagation();
-        if (cancelsPending(event) && (pending.phase !== 'work' || this.#works.some(work => work.tooLate !== undefined))) {
+        // Cancellable work placed is what the stamp names, so an Escape cancels it first, behind a commit too (ADR-0240
+        // section 12); with none, a commit's Escape cancels the commit, and work no Escape cancels holds it as a key.
+        const workPlaced = this.#works.some(work => work.tooLate !== undefined);
+        if (cancelsPending(event) && (workPlaced || pending.phase !== 'work')) {
             event.preventDefault();
-            if (pending.phase === 'work') this.#cancelWork(pending, event instanceof KeyboardEvent && event.repeat);
+            if (workPlaced) this.#cancelWork(pending, event instanceof KeyboardEvent && event.repeat);
             else this.#cancelPending(pending);
             return;
         }
@@ -4763,7 +4766,8 @@ export class GridView<Row> {
             else resolve(ended === 'landed');
         };
         let answer: void | PromiseLike<void>;
-        this.#workStarting = cancellable;
+        const starting = this.#workStarting;
+        this.#workStarting = starting || cancellable;
         try {
             answer = handling(work.controller.signal);
         // oxlint-disable-next-line ex-grid/no-catch -- the work's own failure is its caller's, answered through the promise
@@ -4771,26 +4775,37 @@ export class GridView<Row> {
             end(error, true);
             return;
         } finally {
-            this.#workStarting = false;
+            this.#workStarting = starting;
         }
         if (!isThenable(answer)) {
             end(undefined, false);
             return;
         }
-        // The keyboard's field takes no input of its own meanwhile, so no IME starts in it.
-        this.#pendingStamps += 1;
-        const out: PendingCommit<Row> = {
-            stamp: this.#pendingStamps, controller: work.controller, edit: undefined, phase: 'work', trigger: undefined, held: [],
-            cancelled: () => undefined, stilled: typedField(this.#keyboardHolder()),
+        // Pending from here, the keyboard's field taking no input of its own meanwhile, so no IME starts in it. What the
+        // handling itself left pending — work it placed, a commit it made — is taken first, and this work is pending
+        // after it, if it has not ended by then.
+        let out: PendingCommit<Row> | undefined;
+        const pend = (): void => {
+            if (work.ended !== undefined || this.#destroyed) return;
+            this.#pendingStamps += 1;
+            const pending: PendingCommit<Row> = {
+                stamp: this.#pendingStamps, controller: work.controller, edit: undefined, phase: 'work', trigger: undefined, held: [],
+                cancelled: () => undefined, stilled: typedField(this.#keyboardHolder()),
+            };
+            out = pending;
+            this.#pending = pending;
+            this.#markPending(pending, true);
+            this.#showSettled(false);
+            this.#invalidate();
         };
-        this.#pending = out;
-        this.#markPending(out, true);
-        this.#showSettled(false);
-        this.#invalidate();
+        const before = this.#pending;
+        if (before === undefined) pend();
+        else before.held.push({ kind: 'turn', take: pend });
         const settled = (error: unknown, failed: boolean): void => {
-            const unpended = this.#unpend(out);
+            const pending = out;
+            const unpended = pending !== undefined && this.#unpend(pending);
             end(error, failed);
-            if (unpended) this.#afterAnswer(out, false);
+            if (unpended) this.#afterAnswer(pending, false);
         };
         // oxlint-disable-next-line ex-grid/no-catch -- the work's failure is its caller's, rejected through the promise placeWork answers
         answer.then(() => { settled(undefined, false); }, (error: unknown) => { settled(error, true); });
@@ -4825,7 +4840,12 @@ export class GridView<Row> {
                 const { ended } = named;
                 if (ended === undefined) throw new Error('Internal: an Escape is answered after the work it named.');
                 if (named === target && ended === 'cancelled') return;
-                tooLate(ended === 'landed');
+                try {
+                    tooLate(ended === 'landed');
+                // oxlint-disable-next-line ex-grid/no-catch -- rethrown outside the order: the inputs held behind the Escape are still taken in it
+                } catch (error) {
+                    queueMicrotask(() => { throw error; });
+                }
             },
         });
         this.#invalidate();
