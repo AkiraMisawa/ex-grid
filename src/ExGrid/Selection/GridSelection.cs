@@ -35,11 +35,30 @@ public sealed record GridSelection
     /// when the Row Sequence Version or the visible-column set changes (ADR-0011).</summary>
     public static GridSelection Empty { get; } = new([], default, focusRangeIndex: 0);
 
-    /// <summary>A Selection the Script Core made and reported (ADR-0350 section 7): read back for a Consumer
-    /// of ExGrid over the Script Core, which reads it and never transforms it, so each range is taken to be
-    /// made in its own turn.</summary>
-    internal static GridSelection Read(IReadOnlyList<SelectionRange> ranges, CellPosition focus, int focusRangeIndex)
-        => new([.. ranges], focus, focusRangeIndex, [.. Enumerable.Range(0, ranges.Count)]);
+    /// <summary>
+    /// A Selection the Script Core made and reported (ADR-0350 section 7), read back by an adapter over it, as
+    /// Blazor's ExGrid and ExPivot over the Script Core read theirs (ADR-0201's note of 2026-10-27): its ranges in
+    /// the order they were made, its Focus, and which range holds the Focus. No range is empty for a
+    /// Selection that is none. It places nothing on a grid: a Consumer places a Selection through the grid's
+    /// <c>PlaceSelectionAsync</c>. The reading is never transformed, so each range is taken to be made in its own
+    /// turn: the fragments a take-out left are not known to share theirs, and a reported Selection is compared with
+    /// another reported one, not with one this package's grid made.
+    /// </summary>
+    /// <param name="ranges">The ranges, in the order they were made; none for <see cref="Empty"/>.</param>
+    /// <param name="focus">The Focus.</param>
+    /// <param name="focusRangeIndex">Which of <paramref name="ranges"/> holds the Focus.</param>
+    /// <exception cref="ArgumentException">A range covers no cell, or the range named does not hold the Focus.</exception>
+    public static GridSelection Reported(IReadOnlyList<SelectionRange> ranges, CellPosition focus, int focusRangeIndex)
+    {
+        ArgumentNullException.ThrowIfNull(ranges);
+        if (ranges.Count == 0)
+            return Empty;
+        if (ranges.Any(range => range.RowCount < 1 || range.ColumnCount < 1))
+            throw new ArgumentException("A reported range covers at least one cell (ADR-0011).", nameof(ranges));
+        if (focusRangeIndex < 0 || focusRangeIndex >= ranges.Count || !ranges[focusRangeIndex].Contains(focus))
+            throw new ArgumentException("The Focus range index names the range that holds the Focus (ADR-0052).", nameof(focusRangeIndex));
+        return new([.. ranges], focus, focusRangeIndex, [.. Enumerable.Range(0, ranges.Count)]);
+    }
 
     private readonly CellPosition _focus;
 

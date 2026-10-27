@@ -560,6 +560,7 @@ static ExGrid.GridViewSpec.Read(string! json, System.Func<string!, ExGrid.Data.D
 static ExGrid.GridViewSpec.Read(System.Text.Json.JsonElement spec, System.Func<string!, ExGrid.Data.DataShape?>! inputs, string! path) -> ExGrid.GridViewSpecReading!
 static ExGrid.GridViewSpecReading.operator !=(ExGrid.GridViewSpecReading? left, ExGrid.GridViewSpecReading? right) -> bool
 static ExGrid.GridViewSpecReading.operator ==(ExGrid.GridViewSpecReading? left, ExGrid.GridViewSpecReading? right) -> bool
+static ExGrid.Selection.GridSelection.Reported(System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>! ranges, ExGrid.Selection.CellPosition focus, int focusRangeIndex) -> ExGrid.Selection.GridSelection!
 static ExGrid.ShapedColumn.operator !=(ExGrid.ShapedColumn? left, ExGrid.ShapedColumn? right) -> bool
 static ExGrid.ShapedColumn.operator ==(ExGrid.ShapedColumn? left, ExGrid.ShapedColumn? right) -> bool
 static ExGrid.ShapedGrid.Fetch(ExGrid.GridViewSpecReading! spec, System.Func<ExGrid.GridQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.ShapedPage!>>! fetch, System.Globalization.CultureInfo? culture = null, int readAheadRows = 60) -> ExGrid.FetchedShapedGrid!

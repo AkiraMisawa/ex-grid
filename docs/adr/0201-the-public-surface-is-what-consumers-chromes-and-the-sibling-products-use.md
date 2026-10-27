@@ -145,6 +145,22 @@ the rule did not settle:
   - `MudPivotButton` is public and marked, not internal: the Wrapper's Razor parts place it in markup, which
     Razor binds only to a public component, and placing it from code is the rewrite this ADR rejected.
 
+### A Selection read back from the Script Core *(2026-10-27, decided with the user)*
+
+Blazor's ExPivot over the Script Core (ADR-0370 section 1) raises `SelectionChanged` with a `GridSelection`, as
+the Razor component does, and the browser reports the report grid's Selection as ranges, a Focus and the
+range that holds it. Building a `GridSelection` from that report was internal to ExGrid, where its own adapter
+over the Script Core used it; this ADR's premise rules out handing ExPivot the internal.
+
+- **`GridSelection.Reported(ranges, focus, focusRangeIndex)` is public and contract.** It reads back a
+  Selection the Script Core made, for any adapter over it, a third party's Wrapper included, and refuses a
+  Focus range index that does not name the range holding the Focus.
+- **It places nothing.** A Consumer still places a Selection through the grid's `PlaceSelectionAsync`, and the
+  Selection's transitions stay the core's (ADR-0050 item 4); the reading only says what the core reported.
+- *Considered:* a Selection type of ExPivot's own, which would leave ExGrid's surface as it was but give the
+  two Blazor ExPivots different types for the same event; and carrying no `SelectionChanged` until the Razor
+  component goes, which leaves a Consumer moving to the Script Core without it.
+
 ## Considered options
 
 - **Review every type and member, and reshape the poor ones, before `0.1.0`.** The strongest reading, but

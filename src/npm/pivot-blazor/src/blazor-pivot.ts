@@ -4,14 +4,14 @@
 // computes nothing: the report, the Field List and what each input means are the Script Core's, and the data
 // is the Consumer's, in .NET.
 
-import { builtInLabelIds } from '@ex-grid/core';
+import { builtInLabelIds, type GridSelection } from '@ex-grid/core';
 import { createPivot, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import { PivotJson, pivotWordIdList, readPivotLayoutJson, writePivotLayoutJson, type PivotLabel, type PivotLayout } from '@ex-grid/pivot-engine';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from './dotnet-pivot-source';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. The layout is always heard,
  * since the one the pivot raised is the one it is handed back. */
-export type HeardKind = 'layoutChanged' | 'showFieldListChanged' | 'showDetails';
+export type HeardKind = 'layoutChanged' | 'showFieldListChanged' | 'showDetails' | 'selectionChanged';
 
 /** Every id the pivot and the grid it draws through have words for: its own, a date part's, and the grid's. .NET
  * cannot hand a function across, so it answers each of them once and sends the words (ADR-0370 section 10). */
@@ -149,7 +149,7 @@ export function parsed<T>(json: string): T {
     return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExPivot.Script writes; each reader checks what it reads
 }
 
-type Handlers = Required<Pick<PivotViewOptions, 'onLayoutChanged' | 'onShowFieldListChanged' | 'onShowDetails'>>;
+type Handlers = Required<Pick<PivotViewOptions, 'onLayoutChanged' | 'onShowFieldListChanged' | 'onShowDetails' | 'onSelectionChanged'>>;
 
 // One function per event, made once, so the pivot sees the same handler on every update. The layout raised is kept
 // whether or not .NET listens, since it is the layout on screen.
@@ -163,6 +163,9 @@ function handlers(
             void send('layoutChanged', { layout: writePivotLayoutJson(event.layout), layoutsSent: layoutsSent() });
         },
         onShowFieldListChanged: event => { void send('showFieldListChanged', event.shown); },
+        // The report grid's Selection, which .NET reads back as a GridSelection; what its cells stand for is the
+        // report's, in the browser, and is not carried yet.
+        onSelectionChanged: event => { void send('selectionChanged', wireSelection(event.selection)); },
         // The cell and the question for its records: .NET asks them of the source the report was computed from, and
         // answers whether its handler took them.
         onShowDetails: (event: PivotShowDetailsEvent) => {
@@ -180,6 +183,17 @@ function handlers(
             });
         },
     });
+}
+
+/** A Selection as .NET reads it back (`GridSelection.Reported`): its ranges, its Focus, and which range holds the
+ * Focus; no range and no Focus for none. Written as Blazor's ExGrid writes its own. */
+export function wireSelection(selection: Pick<GridSelection, 'ranges' | 'focus' | 'focusRange'>): unknown {
+    const { focus, focusRange } = selection;
+    if (focus === undefined || focusRange === undefined) return { ranges: [], focus: null, focusRangeIndex: 0 };
+    // By identity: the Focus range is one of the ranges, and a rectangle selected twice is two ranges alike.
+    const focusRangeIndex = selection.ranges.indexOf(focusRange);
+    if (focusRangeIndex < 0) throw new Error('Internal: a Selection\'s Focus range is not among its ranges.');
+    return { ranges: selection.ranges, focus, focusRangeIndex };
 }
 
 // The label the Consumer's words make, or none to keep the English.
@@ -204,5 +218,6 @@ function pivotOptions(
         onLayoutChanged: heard.onLayoutChanged,
         ...(hears.has('showFieldListChanged') ? { onShowFieldListChanged: heard.onShowFieldListChanged } : {}),
         ...(hears.has('showDetails') ? { onShowDetails: heard.onShowDetails } : {}),
+        ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
     };
 }

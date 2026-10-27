@@ -1,5 +1,6 @@
 @page "/script-pivot"
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Selection
 @using global::ExPivot
 @using global::ExPivot.Components
 @using global::ExPivot.Engine
@@ -32,7 +33,8 @@
 <p class="demo-status">
     <span id="script-pivot-layout" role="status">Rows: @string.Join(", ", _layout.Rows.Select(row => row.Field))</span><br />
     <span id="script-pivot-field-list" role="status">Field List shown: @_showFieldList</span><br />
-    <span id="script-pivot-details" role="status">@_details</span>
+    <span id="script-pivot-details" role="status">@_details</span><br />
+    <span id="script-pivot-selection" role="status">@_selection</span>
 </p>
 
 <ExPivot.Script.ExPivot Source="_source"
@@ -40,6 +42,7 @@
                         @bind-ShowFieldList="_showFieldList"
                         Label="@(_japanese ? PivotWords.Japanese : null)"
                         OnShowDetails="@(_takeDetails ? _showDetails : default)"
+                        SelectionChanged="ShowSelection"
                         ViewportHeight="420" />
 
 @code {
@@ -72,6 +75,14 @@
         var page = await details.DetailsAsync(0, 1);
         _details = page.IsRefused ? $"{details.Title}: refused" : $"{details.Title}: {page.Total} records";
     }
+
+    // The report's Selection as .NET heard it, in the report grid's rows and columns. Never empty: a line that
+    // appeared with the first report would move the pivot down between the two clicks of a double click.
+    private string _selection = "Nothing selected";
+
+    private void ShowSelection(GridSelection selection) => _selection = selection.IsEmpty
+        ? "Nothing selected"
+        : $"Focus: row {selection.Focus.Row}, column {selection.Focus.Column}; {selection.Ranges.Count} range(s)";
 
     // A layout of the page's own making replaces the one on screen.
     private void Reset() => _layout = First;
