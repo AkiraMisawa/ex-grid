@@ -7,7 +7,9 @@
  *
  * @packageDocumentation
  */
-export { createSheet, type SheetHandle, type SheetOptions, type SheetsChange } from './create-sheet';
+export {
+    createSheet, type SheetHandle, type SheetOptions, type SheetsChange, type SheetToolbarButton, type SheetToolbarEntry, type SheetToolbarRowOptions,
+} from './create-sheet';
 export { FormatCellsDraft } from './format-cells-draft';
 export {
     formatCellsOffer, isDisabledCategory,

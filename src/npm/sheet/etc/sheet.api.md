@@ -384,6 +384,7 @@ export interface SheetOptions {
     readonly onEditingChanged?: (open: boolean) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly onSheetsChanged?: (change: SheetsChange) => void;
+    readonly onShowToolbarChanged?: (shown: boolean) => void;
     readonly onWorkbookChanged?: (document: WorkbookDocument) => void;
     readonly pinnedColumnCount?: number;
     readonly rowHeight?: number;
@@ -395,6 +396,7 @@ export interface SheetOptions {
     readonly showToolbar?: boolean;
     readonly timeZone?: string | undefined;
     readonly today?: SheetDay | undefined;
+    readonly toolbar?: readonly (SheetToolbarRowOptions | 'default')[] | undefined;
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
 }
@@ -457,7 +459,25 @@ export function sheetTabStepOf(key: string): -1 | 1 | undefined;
 export type SheetToolbarBorder = 'bottom' | 'top' | 'left' | 'right' | 'none' | 'all' | 'outside' | 'thickOutside';
 
 // @public
+export interface SheetToolbarButton {
+    readonly disabledReason?: string | undefined;
+    readonly keyTip?: string | undefined;
+    readonly onPress: () => void;
+    readonly text: string;
+}
+
+// @public
 export type SheetToolbarCommand = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'fontColour' | 'fill' | 'borders' | 'alignLeft' | 'alignCenter' | 'alignRight' | 'numberFormat' | 'percent' | 'comma' | 'formatCells';
+
+// @public
+export type SheetToolbarEntry = SheetToolbarCommand | 'separator' | SheetToolbarButton;
+
+// @public
+export interface SheetToolbarRowOptions {
+    readonly items: readonly SheetToolbarEntry[];
+    readonly keyTip?: string | undefined;
+    readonly label: string;
+}
 
 // @public
 export type SheetWordId = 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened' | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded' | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing' | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete' | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete' | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'toolbar.more' | 'toolbar.automatic' | 'toolbar.noFill' | `toolbar.border.${SheetToolbarBorder}` | 'toolbar.moreNumberFormats' | 'sheetTabsName' | 'editSheetGone' | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded' | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied' | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName' | 'onlySheet' | 'sheetGone' | 'sheetNotChanged' | 'firstSheet' | 'lastSheet' | 'commaStyleUnread' | 'editDiscardedByNewDocument' | `editDiscarded.${EditDiscardReason}` | 'pasteReadsDifferently' | 'pasteRefusedFormula' | 'summaryRefused' | 'pasteTooNarrowToShow' | `pasteRefused.${PasteRefusalReason}` | `commitRefused.${CommitRefusalReason}` | `placementRefused.${PlacementRefusalReason}` | 'overwritten' | `copyRefused.${CopyRefusalReason}` | `pointingRefused.${PointingRefusalWordCase}` | 'pointingExtendedByKey' | 'nothingToUndo' | 'nothingToRedo' | 'command.insertRows' | 'command.deleteRows' | 'command.insertColumns' | 'command.deleteColumns' | 'command.formatCells' | 'formatCellsTitle' | `formatCells.tab.${FormatCellsTab}` | `formatCells.category.${NumberFormatCategory}` | `formatCells.disabled.${DisabledNumberFormatCategory}` | 'formatCells.noNumberFormatCode' | 'formatCells.numberFormatNotRead' | 'formatCells.notAColour' | `formatCells.alignment.${HorizontalAlignment}` | `formatCells.fontStyle.${FontStyle}` | `formatCells.edge.${BorderEdge}` | `formatCells.preset.${BorderPreset}` | `formatCells.lineStyle.${BorderLineStyle}` | `formatCells.colour.${ThemeColourName | StandardColourName}` | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep' | `formatCells.label.${FormatCellsLabel}` | 'formatCells.symbol';

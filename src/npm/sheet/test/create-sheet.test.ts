@@ -969,6 +969,65 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect(element.querySelector('.ex-popover .ex-format-cells')).not.toBeNull();
     });
 
+    it('ADR-0100: the Consumer\'s rows stand in its order, each a row of the band, and its own button is pressed from its KeyTip', async () => {
+        const pressed: string[] = [];
+        const { element } = sheetOf({
+            showToolbar: true, showSheetTabs: false,
+            toolbar: ['default', { label: 'Review', keyTip: 'r', items: ['bold', 'separator', { text: 'Mark reviewed', keyTip: 'm', onPress: () => { pressed.push('reviewed'); } }] }],
+        });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        const rows = [...element.querySelectorAll('.ex-sheet-toolbar-row')];
+        expect(rows.map(row => row.getAttribute('aria-label'))).toEqual(['Home', 'Review']);
+        const review = rows[1];
+        if (review === undefined) throw new Error('The Consumer\'s row is not drawn.');
+        expect([...review.querySelectorAll('.ex-sheet-toolbar-item')].map(button => button.getAttribute('aria-label'))).toEqual(['Bold', 'Mark reviewed']);
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        const rowPx = Number.parseFloat((rows[0] as HTMLElement | undefined)?.style.height ?? ''); // oxlint-disable-line ex-grid/no-stand-in-default -- a row without a height reads as NaN, which the expectation names
+        expect(Number.parseFloat(band?.style.height ?? '')).toBe(2 * rowPx); // oxlint-disable-line ex-grid/no-stand-in-default -- as above
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        key('F10');
+        expect([...element.querySelectorAll('.ex-sheet-row-keytip')].map(badge => badge.textContent)).toEqual(['H', 'R']);
+        key('r');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['1', 'M']);
+        key('m');
+        expect(pressed).toEqual(['reviewed']);
+        expect(document.activeElement).toBe(grid);
+        // While an edit is open the Consumer's button is unavailable too, and says why.
+        key('Z');
+        await vi.waitFor(() => { expect(toolbarItem(element, 'Mark reviewed').disabled).toBe(true); });
+        expect(toolbarItem(element, 'Mark reviewed').title).toBe('Mark reviewed: A cell is being edited. Press Enter to commit the edit or Escape to cancel it first.');
+    });
+
+    it('ADR-0100: KeyTips that would be taken for one another at one level are refused by name, and so is a command ExSheet has not', () => {
+        expect(() => sheetOf({ showToolbar: true, toolbar: ['default', { label: 'Help', keyTip: 'H', items: ['bold'] }] }))
+            .toThrow("The KeyTips 'H' of ExSheet's default row and 'H' of the Toolbar Row 'Help' collide at one level");
+        expect(() => sheetOf({ showToolbar: true, toolbar: [{ label: 'Mine', items: ['borders', { text: 'Book', keyTip: 'BK', onPress: () => undefined }] }] }))
+            .toThrow("The KeyTips 'B' of the item 'borders' and 'BK' of the button 'Book' collide at one level");
+        const unknown: unknown = { showToolbar: true, toolbar: [{ label: 'Mine', items: ['wrapText'] }] };
+        expect(() => sheetOf(unknown as SheetOptions)).toThrow("'wrapText' is not one of ExSheet's toolbar commands");
+        expect(() => sheetOf({ showToolbar: true, toolbar: [] })).toThrow("A Sheet Toolbar's rows are a list of one row or more");
+        expect(() => sheetOf({ showToolbar: true, toolbar: [{ label: 'Later', keyTip: 'L', items: [] }] })).toThrow("The items of the Toolbar Row 'Later' are a list of one item or more");
+    });
+
+    it('ADR-0100: Ctrl+F1 tells the toolbar\'s other state where the Consumer hears it, and is the browser\'s where it does not', async () => {
+        const told: boolean[] = [];
+        const { element, sheet } = sheetOf({ showToolbar: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        press(element, 0, 0);
+        const unheard = new KeyboardEvent('keydown', { key: 'F1', ctrlKey: true, bubbles: true, cancelable: true });
+        document.activeElement?.dispatchEvent(unheard);
+        expect(unheard.defaultPrevented).toBe(false);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: true, onShowToolbarChanged: shown => { told.push(shown); } });
+        const heard = new KeyboardEvent('keydown', { key: 'F1', ctrlKey: true, bubbles: true, cancelable: true });
+        document.activeElement?.dispatchEvent(heard);
+        expect(heard.defaultPrevented).toBe(true);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: false, onShowToolbarChanged: shown => { told.push(shown); } });
+        key('F1', { ctrlKey: true });
+        // The Sheet holds nothing: each press tells the other value of what the Consumer handed it.
+        expect(told).toEqual([false, true]);
+    });
+
     it('ADR-0100: while an edit is open every item is unavailable, and says why', async () => {
         const { element } = sheetOf({ showToolbar: true });
         await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
