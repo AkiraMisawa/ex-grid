@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactElement } from 'react';
-import type { WorkbookDocument } from '@ex-grid/sheet-engine';
+import { SheetRefusedError, type WorkbookDocument } from '@ex-grid/sheet-engine';
 import { ExSheet, type ExSheetApi } from '@ex-grid/sheet-react';
 import { expensesWorkbook } from './Expenses';
 
@@ -15,11 +15,17 @@ export default function FindReplace(): ReactElement {
         setSaid(`onWorkbookChanged: ${String(workbook.sheets.reduce((count, s) => count + s.cells.length, 0))} cells hold an Entry.`);
     };
 
-    // A Replace All is one step: one Undo takes it back on every Sheet. With nothing to undo, the Sheet says so.
+    // A Replace All is one step: one Undo takes it back on every Sheet. With nothing to undo, the Sheet says so; while
+    // a cell is being edited, Undo is refused, and the refusal says why.
     const undo = (): void => {
         const api = sheet.current;
         if (api === null) throw new Error('The Sheet is not mounted.');
-        if (api.undo()) setSaid('Undone.');
+        try {
+            if (api.undo()) setSaid('Undone.');
+        } catch (error) {
+            if (!(error instanceof SheetRefusedError)) throw error;
+            setSaid(error.message);
+        }
     };
 
     return (

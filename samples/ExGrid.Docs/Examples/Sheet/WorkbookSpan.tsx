@@ -7,9 +7,11 @@ export default function WorkbookSpan(): ReactElement {
     // Year reads Jan to Mar with References such as Jan:Mar!B1.
     const opened = useMemo(quarters, []);
     const [names, setNames] = useState(() => opened.sheets.map(sheet => sheet.name));
-    // Every change to the Workbook, a Sheet moved, added or renamed among them, hands back the whole document.
+    // Every change to the Workbook, a Sheet moved, added or renamed among them, hands back the whole document: the
+    // names are taken only when they changed, so an Entry typed does not render the Example again.
     const changed = (document: WorkbookDocument): void => {
-        setNames(document.sheets.map(sheet => sheet.name));
+        const next = document.sheets.map(sheet => sheet.name);
+        setNames(shown => (next.length === shown.length && next.every((name, at) => name === shown[at]) ? shown : next));
     };
     return (
         <>

@@ -45,8 +45,8 @@
             never cuts it.
         </p>
         <DocsExample Builtin="typeof(CellFormats)" Mud="typeof(CellFormatsMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
-            Every format here is set in code, with <code>SheetEdit.SetCellFormat</code>, before the document is
-            handed to the Sheet.
+            Every format here is set in code, with <code>SheetEdit.SetCellFormat</code> (<code>SheetEdit.setCellFormat</code>
+            under React), before the document is handed to the Sheet.
         </DocsExample>
     </DocsSection>
 
@@ -112,7 +112,7 @@
             under the operating profit stay black under the shade, on both sides of the pinned column's edge.
             Click A1, then Shift+click B2 to see the Heading Mark meet the range. Click a column letter or row
             number to see the whole-axis shade, then the top-left corner to colour its triangle and select every
-            cell. Switch between Built-in and MudBlazor, and between light and dark mode.
+            cell. Switch between light and dark mode, and under Blazor between Built-in and MudBlazor.
         </DocsExample>
     </DocsSection>
 
