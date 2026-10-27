@@ -23,6 +23,7 @@
       "@mui/material/*": ["./node_modules/@mui/material/*"],
       "@ex-grid/chart": ["../../src/npm/chart/src/index.ts"],
       "@ex-grid/chart-react": ["../../src/npm/chart-react/src/index.ts"],
+      "@ex-grid/chart-mantine": ["../../src/npm/chart-mantine/src/index.ts"],
       "@ex-grid/data": ["../../src/npm/data/src/index.ts"],
       "@ex-grid/pivot-engine": ["../../src/npm/pivot-engine/src/index.ts"],
       "@ex-grid/pivot": ["../../src/npm/pivot/src/index.ts"],
