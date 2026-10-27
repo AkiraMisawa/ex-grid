@@ -115,5 +115,7 @@ public class SavePacingTests
         Assert.Equal(new ExGrid.Data.Xlsx.XlsxReadOptions().SliceBudget, defaults.SliceBudget);
         Assert.Null(defaults.Progress);
         Assert.Null(defaults.Yield);
+        Assert.Equal(ExGrid.Data.Xlsx.XlsxReadOptions.DefaultMaxCells, defaults.MaxCells);
+        Assert.Equal(ExGrid.Data.Xlsx.XlsxReadOptions.DefaultMaxUncompressedBytes, defaults.MaxUncompressedBytes);
     }
 }

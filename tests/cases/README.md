@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -678,6 +678,49 @@ line ends written as `\n` (`null` for a workbook never completed), and `read`.
 `false`. **`xlsxEscape`** gives `written`, answered by the text Excel's `_xHHHH_` escapes decode to. **`xlsxColor`** gives a
 `color`, resolved through Office's theme or the `theme` it names and the default palette or the `indexedColors` it names, and
 answered by its ARGB or `null`; or an `argb` and a `tint`, answered by the tint applied.
+
+## `sheetXlsx` and `sheetXlsxCall`
+
+Opening and saving a Workbook as an `.xlsx` (ADR-0330, ADR-0370 section 3), under `sheet-xlsx/`: xUnit runs them against
+ExSheet.Xlsx (`tests/ExSheet.Xlsx.Tests/Cases/SheetXlsxCaseTests.cs`) and Vitest against `@ex-grid/sheet-xlsx`
+(`src/npm/sheet-xlsx/test/sheet-xlsx-cases.test.ts`). As with the file layer's cases, nothing else holds the two packages together,
+and the C# runner writes the answers of `open`, `save`, `sameAs` and every call, with `EXGRID_WRITE_SHEET_XLSX_CASES=1`; what a
+sheet step expects is written by hand. What a case cannot hold stays with its runner: a culture one engine knows by name and the
+other does not, the snapshot a write takes when it is called, progress, cancellation and pacing, a table of a worksheet's every
+row, and the list of Excel's newer functions against the engine's declared ones.
+
+**`sheetXlsx`.** A file names its `culture` (`en-US` when it names none); a case may name its own, and `sheets`, the Sheets a
+Workbook starts with. A case is a list of steps on a Workbook, each one of these, or any step of a `sheet` case, which the engine's
+runner takes on the Workbook as it stands:
+
+- `{"open": file}` reads a file, under the step's `culture` and with its `options` (`maxCells`, `maxUncompressedBytes`), and opens
+  the document it answers. The file is `"saved"`, the bytes the last `save` wrote; a `file` of the `xlsxRead` cases; or
+  `{"pages": [...], "options": {...}, "edits": [...]}`, a workbook the file layer's writer writes. A page is `{name, cells}` with
+  any of `columns`, `rows` (each `[row, style]`) and `visibility`, its cells and rows written in the sheet's order; a cell is a
+  cell of the `xlsxWrite` cases, or `{"run": "A3:GR3", ...}`, that cell written at every place of the run; `options` are an
+  `xlsxWrite` case's. An edit changes the written parts before they are zipped again in their order: `{part, replace: [[old,
+  new], ...]}` replaces every occurrence, `{part, regex: [[pattern, replacement], ...]}` every match, and `{add: part, text}` adds
+  a part; each must change something. Its answer is `{document, report}`, the Workbook Document's JSON read back as an object
+  (`"document": false` leaves it out) and the report's `isEmpty`, `notCarried` (each `{kind, sheet, detail, description}`) and
+  `unsupportedFunctions` (each `{sheet, cell, functions}`), or `{"refused": {reason, sheet, cell, held, message, fileRefusal}}`.
+- `{"save": options}` writes the Workbook (`maxCells`, `maxUncompressedBytes`); its answer is `{partNames}` with `parts` when the
+  step asks for them (`true`, or a list of names) and `file`, the `xlsxRead` aspects of the bytes read back; or
+  `{"refused": {reason, sheet, cell, held, message}}`, after which nothing reached the stream; or `{"outOfRange": message}`.
+- `{"workbook": document}` opens a Workbook Document written as JSON; `{"entries": {cell: text | {"formula": text}}}` sets
+  Entries (a Formula read in the case's culture) on the Sheet the step is `on`; `{"keep": name}` keeps the Workbook as it stands;
+  and `{"sameAs": {kept, range, currencyWritten}}` answers, for every Sheet, each cell of the `range` and the last cell of the
+  Sheet, its Cell Format and what it shows (`text`, `cannotShow`, `alignment`, `colour`, `isNumber`), and the range's column
+  widths, against the Workbook kept, a built-in currency compared as the file writes it when `currencyWritten` says so.
+
+An answer holding text JSON cannot carry, half of a surrogate pair, is written `{"utf16": "Desk\\uD800"}`.
+
+**`sheetXlsxCall`.** A case is a `call`, its `argument` and what it answers: `storedFormula` (a stored Formula's text, answered by
+the Formula read and its `problem`); `writtenFormula` (`{formula, sheets, tables}`, the Sheets and the Linked Tables' columns
+the Workbook has, answered by what is `stored` and its `problem`, or `{"refused": "formulaSyntax", beyondLimit}` where the engine
+reads no Formula); `isoDate` (a `t="d"` cell's text, answered by its serial or `null`); `codeShowsDate` and `builtInShowsDate`
+(whether a format's code or a built-in id shows a date); `widthToFile` and `widthFromFile` (a column width between the engine's
+unit and the file's); `builtInId` (a Number Format's code, answered by the built-in id it is written as, or `null`); and
+`fileLineStyle` (an engine line style, answered by the file's).
 
 ## `boardInput`
 

@@ -1,0 +1,1786 @@
+{
+  "kind": "sheetXlsx",
+  "note": "The Open Report: what was not carried, and the cells naming functions ExSheet does not support (ADR-0330 §4, §5).",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0330 §5: a workbook carried whole has an empty Open Report",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "A1+1"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "A2",
+                      "formula": "=A1+1"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §5: a Formula naming a function ExSheet does not support is carried, shows #NAME?, and is listed with its Sheet and cell",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "CUBEVALUE(\"x\",A1)+SUM(A1)+_xlfn.FIELDVALUE(A1,\"Price\")"
+                    }
+                  },
+                  {
+                    "at": "C2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "MYADDIN(A1)",
+                      "kind": "shared",
+                      "ref": "C2:C3",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "C3",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "",
+                      "kind": "shared",
+                      "si": 0
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "B2",
+                      "formula": "=CUBEVALUE(\"x\",A1)+SUM(A1)+FIELDVALUE(A1,\"Price\")"
+                    },
+                    {
+                      "at": "C2",
+                      "formula": "=MYADDIN(A1)"
+                    },
+                    {
+                      "at": "C3",
+                      "formula": "=MYADDIN(A2)"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [],
+              "unsupportedFunctions": [
+                {
+                  "sheet": "Trades",
+                  "cell": "B2",
+                  "functions": [
+                    "CUBEVALUE",
+                    "FIELDVALUE"
+                  ]
+                },
+                {
+                  "sheet": "Trades",
+                  "cell": "C2",
+                  "functions": [
+                    "MYADDIN"
+                  ]
+                },
+                {
+                  "sheet": "Trades",
+                  "cell": "C3",
+                  "functions": [
+                    "MYADDIN"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "formulas": {
+              "C3": "=MYADDIN(A2)"
+            },
+            "values": {
+              "C2": {
+                "error": "#NAME?"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a hidden Sheet, a chart sheet, hidden columns, and defined names no Formula reads are listed",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 1,
+                    "last": 2,
+                    "width": 10,
+                    "hidden": true
+                  }
+                ]
+              },
+              {
+                "name": "Back",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "visibility": "hidden"
+              }
+            ],
+            "options": {
+              "definedNames": [
+                {
+                  "name": "Rate",
+                  "text": "Trades!$A$1"
+                },
+                {
+                  "name": "_xlnm.Print_Area",
+                  "text": "Trades!$A$1:$B$2",
+                  "localSheet": 0
+                }
+              ]
+            }
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columnWidths": [
+                    {
+                      "at": "B:C",
+                      "width": 9.29,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Back",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "definedName",
+                  "sheet": null,
+                  "detail": "Rate",
+                  "description": "The defined name 'Rate' (Trades!$A$1) is not carried; no Formula carried reads it."
+                },
+                {
+                  "kind": "hiddenColumns",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "Columns of 'Trades' are hidden in the file, and open shown."
+                },
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                },
+                {
+                  "kind": "hiddenSheet",
+                  "sheet": "Back",
+                  "detail": null,
+                  "description": "The Sheet 'Back' is hidden in the file, and opens shown."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: Excel's built-in names are said as what they are: a print area or titles is its Sheet's print setting, an AutoFilter's range is the AutoFilter's",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "Back",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "definedNames": [
+                {
+                  "name": "_xlnm.Print_Area",
+                  "text": "Trades!$A$1:$B$2",
+                  "localSheet": 0
+                },
+                {
+                  "name": "_xlnm.Print_Titles",
+                  "text": "Back!$1:$1",
+                  "localSheet": 1
+                },
+                {
+                  "name": "_xlnm._FilterDatabase",
+                  "text": "Trades!$A$1:$A$2",
+                  "localSheet": 0,
+                  "hidden": true
+                }
+              ]
+            }
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Back",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                },
+                {
+                  "kind": "printSettings",
+                  "sheet": "Back",
+                  "detail": null,
+                  "description": "'Back' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a name local to a Sheet is said with that Sheet, so two Sheets' own 'Rate' are two entries",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "Back",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "definedNames": [
+                {
+                  "name": "Rate",
+                  "text": "Trades!$A$1",
+                  "localSheet": 0
+                },
+                {
+                  "name": "Rate",
+                  "text": "Back!$A$1",
+                  "localSheet": 1
+                },
+                {
+                  "name": "Fx",
+                  "text": "Back!$B$1"
+                }
+              ]
+            }
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Back",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "definedName",
+                  "sheet": null,
+                  "detail": "Fx",
+                  "description": "The defined name 'Fx' (Back!$B$1) is not carried; no Formula carried reads it."
+                },
+                {
+                  "kind": "definedName",
+                  "sheet": "Trades",
+                  "detail": "Rate",
+                  "description": "The defined name 'Rate' of the sheet 'Trades' (Trades!$A$1) is not carried; no Formula carried reads it."
+                },
+                {
+                  "kind": "definedName",
+                  "sheet": "Back",
+                  "detail": "Rate",
+                  "description": "The defined name 'Rate' of the sheet 'Back' (Back!$A$1) is not carried; no Formula carried reads it."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: margins, a paper or a view that differ from Excel's defaults are said; Letter and A4, Excel's papers by locale, are not: narrow margins",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><pageMargins left=\"0.25\" right=\"0.25\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: margins, a paper or a view that differ from Excel's defaults are said; Letter and A4, Excel's papers by locale, are not: a footer margin of its own",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.5\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: margins, a paper or a view that differ from Excel's defaults are said; Letter and A4, Excel's papers by locale, are not: a paper of its own",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><pageSetup paperSize=\"5\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: margins, a paper or a view that differ from Excel's defaults are said; Letter and A4, Excel's papers by locale, are not: a paper measured",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><pageSetup paperHeight=\"297mm\" paperWidth=\"210mm\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: margins, a paper or a view that differ from Excel's defaults are said; Letter and A4, Excel's papers by locale, are not: Letter, not said",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><pageSetup paperSize=\"1\" orientation=\"portrait\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: margins, a paper or a view that differ from Excel's defaults are said; Letter and A4, Excel's papers by locale, are not: A4, not said",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><pageSetup paperSize=\"9\" horizontalDpi=\"600\" verticalDpi=\"600\"/>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: margins, a paper or a view that differ from Excel's defaults are said; Letter and A4, Excel's papers by locale, are not: a page break",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><rowBreaks count=\"1\"><brk id=\"4\" max=\"16383\" man=\"1\"/></rowBreaks>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a view that hides gridlines or zeros, zooms or runs right to left changes how the Sheet looks, and is said; a selection is not: no gridlines",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "<sheetView ",
+                    "<sheetView showGridLines=\"0\" "
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "view",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has view settings (hidden gridlines, headings or zeros, Formulas shown, right to left, a zoom or a page layout), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a view that hides gridlines or zeros, zooms or runs right to left changes how the Sheet looks, and is said; a selection is not: right to left",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "<sheetView ",
+                    "<sheetView rightToLeft=\"1\" "
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "view",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has view settings (hidden gridlines, headings or zeros, Formulas shown, right to left, a zoom or a page layout), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a view that hides gridlines or zeros, zooms or runs right to left changes how the Sheet looks, and is said; a selection is not: zoomed",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "<sheetView ",
+                    "<sheetView zoomScale=\"85\" "
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "view",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has view settings (hidden gridlines, headings or zeros, Formulas shown, right to left, a zoom or a page layout), which are not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a view that hides gridlines or zeros, zooms or runs right to left changes how the Sheet looks, and is said; a selection is not: Excel's defaults, not said",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "<sheetView ",
+                    "<sheetView zoomScale=\"100\" showGridLines=\"1\" "
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a sheet whose rows are hidden by default (sheetFormatPr zeroHeight) says so",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "<sheetFormatPr ",
+                    "<sheetFormatPr zeroHeight=\"1\" "
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "hiddenRows",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "Rows of 'Trades' are hidden in the file, and open shown."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: what a worksheet holds beside its cells is listed, once per Sheet and kind, in the file's order",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B2",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "A3",
+                    "type": "number",
+                    "value": "3"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><sheetProtection sheet=\"1\"/><autoFilter ref=\"A1:B2\"/><mergeCells count=\"2\"><mergeCell ref=\"A1:B1\"/><mergeCell ref=\"A3:B3\"/></mergeCells><customSheetViews><customSheetView guid=\"{00000000-0000-0000-0000-000000000001}\"/></customSheetViews><conditionalFormatting sqref=\"A1\"><cfRule type=\"expression\" priority=\"1\"><formula>TRUE</formula></cfRule></conditionalFormatting><dataValidations count=\"1\"><dataValidation sqref=\"A1\"/></dataValidations><hyperlinks><hyperlink ref=\"A1\" r:id=\"rId9\"/></hyperlinks><printOptions gridLines=\"1\"/><pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/><pageSetup orientation=\"landscape\"/><drawing r:id=\"rId1\"/><legacyDrawing r:id=\"rId2\"/><tableParts count=\"1\"><tablePart r:id=\"rId3\"/></tableParts>"
+                  ],
+                  [
+                    "workbookViewId=\"0\" />",
+                    "workbookViewId=\"0\"><pane xSplit=\"1\" topLeftCell=\"B1\" activePane=\"topRight\" state=\"frozen\"/></sheetView>"
+                  ],
+                  [
+                    "<row r=\"2\"",
+                    "<row r=\"2\" hidden=\"1\""
+                  ],
+                  [
+                    "<row r=\"3\"",
+                    "<row r=\"3\" ht=\"30\" customHeight=\"1\""
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "B2",
+                      "number": 2
+                    },
+                    {
+                      "at": "A3",
+                      "number": 3
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "rowHeights",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "Rows of 'Trades' have heights of their own, which are not carried."
+                },
+                {
+                  "kind": "hiddenRows",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "Rows of 'Trades' are hidden in the file, and open shown."
+                },
+                {
+                  "kind": "frozenPanes",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has frozen panes, which are not carried."
+                },
+                {
+                  "kind": "protection",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' is protected in the file; the protection is not carried."
+                },
+                {
+                  "kind": "autoFilter",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has an AutoFilter, which is not carried; every row opens shown."
+                },
+                {
+                  "kind": "mergedCells",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has merged cells; each cell is carried on its own."
+                },
+                {
+                  "kind": "other",
+                  "sheet": "Trades",
+                  "detail": "customSheetViews",
+                  "description": "'Trades' holds <customSheetViews>, which is not carried."
+                },
+                {
+                  "kind": "conditionalFormatting",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has conditional formatting, which is not carried."
+                },
+                {
+                  "kind": "dataValidation",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has data validation, which is not carried."
+                },
+                {
+                  "kind": "hyperlinks",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has hyperlinks; their cells' text is carried, the links are not."
+                },
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                },
+                {
+                  "kind": "picturesAndCharts",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has pictures, charts, shapes or controls, which are not carried."
+                },
+                {
+                  "kind": "notesAndComments",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has notes or comments, which are not carried."
+                },
+                {
+                  "kind": "excelTable",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has Excel Tables; their cells are carried, the Tables are not."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §5: what every file Excel writes carries and no Sheet shows is not listed, so a plain file's report is empty",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "sharedString",
+                    "text": "0042"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><phoneticPr fontId=\"1\"/><printOptions gridLinesSet=\"1\"/><pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/><pageSetup paperSize=\"9\" orientation=\"portrait\" horizontalDpi=\"300\" verticalDpi=\"300\"/><headerFooter/><ignoredErrors><ignoredError sqref=\"A2\" numberStoredAsText=\"1\"/></ignoredErrors>"
+                  ],
+                  [
+                    "<sheetData>",
+                    "<sheetFormatPr defaultRowHeight=\"14.5\"/><sheetData>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "A2",
+                      "text": "0042"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a tab colour, a footer and an extension's conditional formatting are listed; each changes how the Sheet looks or prints",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "replace": [
+                  [
+                    "</sheetData>",
+                    "</sheetData><headerFooter><oddFooter>&amp;P</oddFooter></headerFooter><extLst><ext uri=\"{78C0D931-6437-407d-A8EE-F0AAD7539E65}\" xmlns:x14=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/main\"><x14:conditionalFormattings/></ext></extLst>"
+                  ],
+                  [
+                    "<sheetViews>",
+                    "<sheetPr><tabColor rgb=\"FFFF0000\"/></sheetPr><sheetViews>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "sheetProperties",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "The tab colour of 'Trades' is not carried."
+                },
+                {
+                  "kind": "printSettings",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has print settings beyond Excel's defaults (margins, a header or footer, page breaks, a print area, a scale or the like), which are not carried."
+                },
+                {
+                  "kind": "conditionalFormatting",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "'Trades' has conditional formatting, which is not carried."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §5: the workbook's entries come first, its defined names among them, then each Sheet's",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ],
+                "columns": [
+                  {
+                    "first": 1,
+                    "last": 2,
+                    "width": 10,
+                    "hidden": true
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "definedNames": [
+                {
+                  "name": "Rate",
+                  "text": "Trades!$A$1"
+                }
+              ]
+            },
+            "edits": [
+              {
+                "add": "xl/pivotTables/pivotTable1.xml",
+                "text": "<x/>"
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "columnWidths": [
+                    {
+                      "at": "B:C",
+                      "width": 9.29,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "pivotTables",
+                  "sheet": null,
+                  "detail": null,
+                  "description": "The workbook holds PivotTables: the cells they show are carried as constants, the PivotTables are not."
+                },
+                {
+                  "kind": "definedName",
+                  "sheet": null,
+                  "detail": "Rate",
+                  "description": "The defined name 'Rate' (Trades!$A$1) is not carried; no Formula carried reads it."
+                },
+                {
+                  "kind": "hiddenColumns",
+                  "sheet": "Trades",
+                  "detail": null,
+                  "description": "Columns of 'Trades' are hidden in the file, and open shown."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: rich-text runs are listed; their text is carried",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B2",
+                    "type": "inlineString",
+                    "text": "Rich"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/worksheets/sheet1.xml",
+                "regex": [
+                  [
+                    "<is><t[^>]*>Rich</t></is>",
+                    "<is><r><rPr><b/></rPr><t>Ri</t></r><r><t>ch</t></r></is>"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "B2",
+                      "text": "Rich"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "richText",
+                  "sheet": "Trades",
+                  "detail": "B2",
+                  "description": "1 cell(s) of 'Trades', the first B2, hold rich text: the text is carried, the runs' own formatting is not."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "B2": {
+                "constant": "Rich"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: what the workbook holds beside its sheets is listed from its parts",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "add": "xl/pivotTables/pivotTable1.xml",
+                "text": "<x/>"
+              },
+              {
+                "add": "xl/externalLinks/externalLink1.xml",
+                "text": "<x/>"
+              },
+              {
+                "add": "xl/connections.xml",
+                "text": "<x/>"
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "pivotTables",
+                  "sheet": null,
+                  "detail": null,
+                  "description": "The workbook holds PivotTables: the cells they show are carried as constants, the PivotTables are not."
+                },
+                {
+                  "kind": "externalLinks",
+                  "sheet": null,
+                  "detail": null,
+                  "description": "The workbook holds links to other workbooks, which no Formula carried reads; they are not carried."
+                },
+                {
+                  "kind": "dataConnections",
+                  "sheet": null,
+                  "detail": null,
+                  "description": "The workbook holds connections to outside data, which are not carried; the cells they filled are carried as constants."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

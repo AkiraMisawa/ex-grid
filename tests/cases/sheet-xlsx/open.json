@@ -1,0 +1,3801 @@
+{
+  "kind": "sheetXlsx",
+  "note": "What a workbook carries into its Workbook Document, and what is refused by name, naming the Sheet, the cell and what it held (ADR-0330 §3, §4, §6, §7).",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0330 §3: every worksheet is a Sheet, in the file's order, and the one shown is shown",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "Desks",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "name": "Notes",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "sharedString",
+                    "text": "n"
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "activeSheet": 1
+            }
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Desks",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 2
+                    }
+                  ]
+                },
+                {
+                  "name": "Notes",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "n"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "values": {
+              "A1": 2
+            }
+          },
+          "note": "The Sheet shown on opening is Desks."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: numbers, text (shared and inline), booleans and Error Values are carried as constants",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1234.5"
+                  },
+                  {
+                    "at": "B1",
+                    "type": "sharedString",
+                    "text": "Notional"
+                  },
+                  {
+                    "at": "C1",
+                    "type": "inlineString",
+                    "text": "inline text"
+                  },
+                  {
+                    "at": "D1",
+                    "type": "boolean",
+                    "value": "1"
+                  },
+                  {
+                    "at": "E1",
+                    "type": "boolean",
+                    "value": "0"
+                  },
+                  {
+                    "at": "F1",
+                    "type": "error",
+                    "value": "#N/A"
+                  },
+                  {
+                    "at": "G1",
+                    "type": "error",
+                    "value": "#DIV/0!"
+                  },
+                  {
+                    "at": "H1",
+                    "type": "number",
+                    "value": "-0.000125"
+                  },
+                  {
+                    "at": "I1",
+                    "type": "number",
+                    "value": "1E+300"
+                  },
+                  {
+                    "at": "J1",
+                    "type": "sharedString",
+                    "text": "=not a formula"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1234.5
+                    },
+                    {
+                      "at": "B1",
+                      "text": "Notional"
+                    },
+                    {
+                      "at": "C1",
+                      "text": "inline text"
+                    },
+                    {
+                      "at": "D1",
+                      "boolean": true
+                    },
+                    {
+                      "at": "E1",
+                      "boolean": false
+                    },
+                    {
+                      "at": "F1",
+                      "error": "#N/A"
+                    },
+                    {
+                      "at": "G1",
+                      "error": "#DIV/0!"
+                    },
+                    {
+                      "at": "H1",
+                      "number": -0.000125
+                    },
+                    {
+                      "at": "I1",
+                      "number": 1E+300
+                    },
+                    {
+                      "at": "J1",
+                      "text": "=not a formula"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 1234.5
+              },
+              "B1": {
+                "constant": "Notional"
+              },
+              "C1": {
+                "constant": "inline text"
+              },
+              "D1": {
+                "constant": true
+              },
+              "E1": {
+                "constant": false
+              },
+              "F1": {
+                "constant": {
+                  "error": "#N/A"
+                }
+              },
+              "G1": {
+                "constant": {
+                  "error": "#DIV/0!"
+                }
+              },
+              "H1": {
+                "constant": -0.000125
+              },
+              "I1": {
+                "constant": 1e+300
+              },
+              "J1": {
+                "constant": "=not a formula"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a cell that holds only a style holds no Entry",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B1",
+                    "type": "number"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 1
+              },
+              "B1": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §6: a date written in ISO 8601 (t=\"d\") is its 1900 serial, its time a fraction of a day",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "date",
+                    "value": "2023-03-15T12:00:00"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "date",
+                    "value": "1900-01-01"
+                  },
+                  {
+                    "at": "A3",
+                    "type": "date",
+                    "value": "1900-03-01"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 45000.5
+                    },
+                    {
+                      "at": "A2",
+                      "number": 1
+                    },
+                    {
+                      "at": "A3",
+                      "number": 61
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 45000.5
+              },
+              "A2": {
+                "constant": 1
+              },
+              "A3": {
+                "constant": 61
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a date cell is read invariantly: a time alone is its fraction of a day, not today's, and an offset converts nothing",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "date",
+                    "value": "18:00:00"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "date",
+                    "value": "2023-03-15T12:00:00Z"
+                  },
+                  {
+                    "at": "A3",
+                    "type": "date",
+                    "value": "2023-03-15T23:00:00-05:00"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 0.75
+                    },
+                    {
+                      "at": "A2",
+                      "number": 45000.5
+                    },
+                    {
+                      "at": "A3",
+                      "number": 45000.958333333336
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 0.75
+              },
+              "A2": {
+                "constant": 45000.5
+              },
+              "A3": {
+                "constant": 45000.958333333336
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a date cell that is not ISO 8601 is refused by name, not read: another culture's order",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "date",
+                    "value": "15/03/2023"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Sheet1",
+              "cell": "A1",
+              "held": "15/03/2023",
+              "message": "Sheet 'Sheet1', cell A1 (15/03/2023): The cell's date is not an ISO 8601 date or time, or lies outside the dates a serial counts.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a date cell that is not ISO 8601 is refused by name, not read: full-width digits",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "date",
+                    "value": "２０２３-03-15"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Sheet1",
+              "cell": "A1",
+              "held": "２０２３-03-15",
+              "message": "Sheet 'Sheet1', cell A1 (２０２３-03-15): The cell's date is not an ISO 8601 date or time, or lies outside the dates a serial counts.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a date cell that is not ISO 8601 is refused by name, not read: Arabic-Indic digits",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "date",
+                    "value": "٢٠٢٣-٠٣-١٥"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Sheet1",
+              "cell": "A1",
+              "held": "٢٠٢٣-٠٣-١٥",
+              "message": "Sheet 'Sheet1', cell A1 (٢٠٢٣-٠٣-١٥): The cell's date is not an ISO 8601 date or time, or lies outside the dates a serial counts.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0125: Spill Ranges behind the reader are passed, and a constant below or beside one is carried",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1",
+                    "formula": {
+                      "text": "_xlfn.SEQUENCE(2)",
+                      "kind": "array",
+                      "ref": "A1:A2",
+                      "dynamic": true
+                    }
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "A3",
+                    "type": "number",
+                    "value": "30"
+                  },
+                  {
+                    "at": "B3",
+                    "type": "number",
+                    "value": "1",
+                    "formula": {
+                      "text": "_xlfn.SEQUENCE(2)",
+                      "kind": "array",
+                      "ref": "B3:B4",
+                      "dynamic": true
+                    }
+                  },
+                  {
+                    "at": "B4",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "C4",
+                    "type": "number",
+                    "value": "40"
+                  },
+                  {
+                    "at": "B5",
+                    "type": "number",
+                    "value": "50"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "formula": "=SEQUENCE(2)"
+                    },
+                    {
+                      "at": "A3",
+                      "number": 30
+                    },
+                    {
+                      "at": "B3",
+                      "formula": "=SEQUENCE(2)"
+                    },
+                    {
+                      "at": "C4",
+                      "number": 40
+                    },
+                    {
+                      "at": "B5",
+                      "number": 50
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A2": null,
+              "B4": null,
+              "A3": {
+                "constant": 30
+              },
+              "C4": {
+                "constant": 40
+              },
+              "B5": {
+                "constant": 50
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §6: Formulas are carried, never the Value the file stored: opening computes every Value again",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "3"
+                  },
+                  {
+                    "at": "A3",
+                    "type": "number",
+                    "value": "-1",
+                    "formula": {
+                      "text": "SUM(A1:A2)*10"
+                    }
+                  },
+                  {
+                    "at": "B1",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "Desks!A1+1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Desks",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "41"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 2
+                    },
+                    {
+                      "at": "B1",
+                      "formula": "=Desks!A1+1"
+                    },
+                    {
+                      "at": "A2",
+                      "number": 3
+                    },
+                    {
+                      "at": "A3",
+                      "formula": "=SUM(A1:A2)*10"
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 41
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "formulas": {
+              "A3": "=SUM(A1:A2)*10"
+            },
+            "values": {
+              "A3": 50,
+              "B1": 42
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Formula whose result is text (t=\"str\") is carried as its Formula, not its text",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "sharedString",
+                    "text": "a"
+                  },
+                  {
+                    "at": "B1",
+                    "type": "formulaString",
+                    "value": "stale",
+                    "formula": {
+                      "text": "A1&\"b\""
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "text": "a"
+                    },
+                    {
+                      "at": "B1",
+                      "formula": "=A1&\"b\""
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "formulas": {
+              "B1": "=A1&\"b\""
+            },
+            "values": {
+              "B1": "ab"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: Excel's stored _xlfn., _xlws. and _xlpm. prefixes are taken off, outside quotes only",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "3"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "A3",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "B1",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.XLOOKUP(2,A1:A3,A1:A3)"
+                    }
+                  },
+                  {
+                    "at": "B2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.CONCAT(\"_xlfn.\",A1)"
+                    }
+                  },
+                  {
+                    "at": "B3",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.LET(_xlpm.x,A1,_xlpm.x*2)"
+                    }
+                  },
+                  {
+                    "at": "B4",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM(_xlfn._xlws.SORT(A1:A3))"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 3
+                    },
+                    {
+                      "at": "B1",
+                      "formula": "=XLOOKUP(2,A1:A3,A1:A3)"
+                    },
+                    {
+                      "at": "A2",
+                      "number": 1
+                    },
+                    {
+                      "at": "B2",
+                      "formula": "=CONCAT(\"_xlfn.\",A1)"
+                    },
+                    {
+                      "at": "A3",
+                      "number": 2
+                    },
+                    {
+                      "at": "B3",
+                      "formula": "=LET(x,A1,x*2)"
+                    },
+                    {
+                      "at": "B4",
+                      "formula": "=SUM(SORT(A1:A3))"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "formulas": {
+              "B1": "=XLOOKUP(2,A1:A3,A1:A3)",
+              "B2": "=CONCAT(\"_xlfn.\",A1)",
+              "B3": "=LET(x,A1,x*2)",
+              "B4": "=SUM(SORT(A1:A3))"
+            },
+            "values": {
+              "B1": 2,
+              "B2": "_xlfn.3",
+              "B3": 6,
+              "B4": 6
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a shared formula is expanded into each cell's own, its relative references moved as Excel moves them",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B1",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "A1*$A$1+A$1+$A1",
+                      "kind": "shared",
+                      "ref": "B1:C3",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "C1",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "",
+                      "kind": "shared",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "B2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "",
+                      "kind": "shared",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "C2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "",
+                      "kind": "shared",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "A3",
+                    "type": "number",
+                    "value": "3"
+                  },
+                  {
+                    "at": "B3",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "",
+                      "kind": "shared",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "C3",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM(A:A)",
+                      "kind": "shared",
+                      "ref": "C3",
+                      "si": 1
+                    }
+                  },
+                  {
+                    "at": "D3",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "",
+                      "kind": "shared",
+                      "si": 1
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "B1",
+                      "formula": "=A1*$A$1+A$1+$A1"
+                    },
+                    {
+                      "at": "C1",
+                      "formula": "=B1*$A$1+B$1+$A1"
+                    },
+                    {
+                      "at": "A2",
+                      "number": 2
+                    },
+                    {
+                      "at": "B2",
+                      "formula": "=A2*$A$1+A$1+$A2"
+                    },
+                    {
+                      "at": "C2",
+                      "formula": "=B2*$A$1+B$1+$A2"
+                    },
+                    {
+                      "at": "A3",
+                      "number": 3
+                    },
+                    {
+                      "at": "B3",
+                      "formula": "=A3*$A$1+A$1+$A3"
+                    },
+                    {
+                      "at": "C3",
+                      "formula": "=SUM(A:A)"
+                    },
+                    {
+                      "at": "D3",
+                      "formula": "=SUM(B:B)"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "formulas": {
+              "B1": "=A1*$A$1+A$1+$A1",
+              "C1": "=B1*$A$1+B$1+$A1",
+              "B2": "=A2*$A$1+A$1+$A2",
+              "C2": "=B2*$A$1+B$1+$A2",
+              "B3": "=A3*$A$1+A$1+$A3",
+              "C3": "=SUM(A:A)",
+              "D3": "=SUM(B:B)"
+            },
+            "values": {
+              "B3": 7
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0125: a spilled array is its anchor's Formula; the values the file stored for its spill are not carried",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1",
+                    "formula": {
+                      "text": "_xlfn.SEQUENCE(3)",
+                      "kind": "array",
+                      "ref": "A1:A3",
+                      "dynamic": true
+                    }
+                  },
+                  {
+                    "at": "B1",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM(_xlfn.ANCHORARRAY(A1))"
+                    }
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "A3",
+                    "type": "number",
+                    "value": "3"
+                  },
+                  {
+                    "at": "A4",
+                    "type": "number",
+                    "value": "4"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "formula": "=SEQUENCE(3)"
+                    },
+                    {
+                      "at": "B1",
+                      "formula": "=SUM(A1#)"
+                    },
+                    {
+                      "at": "A4",
+                      "number": 4
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "formula": "=SEQUENCE(3)"
+              },
+              "A2": null,
+              "A3": null,
+              "A4": {
+                "constant": 4
+              },
+              "B1": {
+                "formula": "=SUM(A1#)"
+              }
+            },
+            "values": {
+              "A3": 3,
+              "B1": 6
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §7: the culture is the application's, and no Value read depends on it",
+      "culture": "de-DE",
+      "note": "Typing afterwards is read under the declared culture: 1,5 is one and a half in German.",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1234.5"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "A1*2"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "culture": "en-US",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1234.5
+                    },
+                    {
+                      "at": "A2",
+                      "formula": "=A1*2"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 1234.5
+              }
+            }
+          }
+        },
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1234.5"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "A1*2"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "de-DE",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1234.5
+                    },
+                    {
+                      "at": "A2",
+                      "formula": "=A1*2"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 1234.5
+              }
+            },
+            "values": {
+              "A2": 2469
+            }
+          }
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": "1,5"
+            }
+          },
+          "expect": {
+            "values": {
+              "A2": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a hidden worksheet is a Sheet, shown; a chart sheet is not one",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Shown",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "Hidden",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "2"
+                  }
+                ],
+                "visibility": "hidden"
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Shown",
+              "sheets": [
+                {
+                  "name": "Shown",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Hidden",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 2
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "hiddenSheet",
+                  "sheet": "Hidden",
+                  "detail": null,
+                  "description": "The Sheet 'Hidden' is hidden in the file, and opens shown."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §3: a sheet that is not a worksheet is not a Sheet, and is listed; when it was shown, the first Sheet is shown",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "Desks",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "2"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/workbook.xml",
+                "replace": [
+                  [
+                    "<sheets>",
+                    "<sheets><sheet name=\"Chart1\" sheetId=\"9\" r:id=\"rIdChart\" />"
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Desks",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 2
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [
+                {
+                  "kind": "chartSheet",
+                  "sheet": "Chart1",
+                  "detail": null,
+                  "description": "The sheet 'Chart1' is not a worksheet (a chart sheet, or another that holds no cells), and is not opened."
+                }
+              ],
+              "unsupportedFunctions": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §3: a workbook with no worksheet is refused by name",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/workbook.xml",
+                "regex": [
+                  [
+                    "r:id=\"[^\"]+\"",
+                    "r:id=\"rIdChart\""
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "sheets",
+              "sheet": null,
+              "cell": null,
+              "held": null,
+              "message": "The workbook holds no worksheet, so it holds no cells to open.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Formula the engine cannot read is refused by name: SUM({1,2,3})",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM({1,2,3})"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableFormula",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=SUM({1,2,3})",
+              "message": "Sheet 'Trades', cell B7 (=SUM({1,2,3})): The engine cannot read the Formula: The Formula '=SUM({1,2,3})' cannot be read at position 5: '{' is not part of the formula syntax ExSheet reads.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Formula the engine cannot read is refused by name: SUM((A1,A1))",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM((A1,A1))"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableFormula",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=SUM((A1,A1))",
+              "message": "Sheet 'Trades', cell B7 (=SUM((A1,A1))): The engine cannot read the Formula: The Formula '=SUM((A1,A1))' cannot be read at position 8: ',' is not expected here.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Formula the engine cannot read is refused by name: A1:A2 A1:B1",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "A1:A2 A1:B1"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableFormula",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=A1:A2 A1:B1",
+              "message": "Sheet 'Trades', cell B7 (=A1:A2 A1:B1): The engine cannot read the Formula: The Formula '=A1:A2 A1:B1' cannot be read at position 7: the intersection operator (a space between two References) is not implemented.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: the implicit intersection operator (_xlfn.SINGLE, shown as @) is refused, not read as an unknown function",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.SINGLE(A1:A3)*2"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableFormula",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=_xlfn.SINGLE(A1:A3)*2",
+              "message": "Sheet 'Trades', cell B7 (=_xlfn.SINGLE(A1:A3)*2): The Formula uses the implicit intersection operator (@), which the engine does not read.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a What-If data table is refused",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "C3",
+                    "type": "number",
+                    "value": "1",
+                    "formula": {
+                      "text": "TABLE(,A1)",
+                      "kind": "dataTable",
+                      "ref": "C3:C5"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableFormula",
+              "sheet": "Trades",
+              "cell": "C3",
+              "held": "=TABLE(,A1)",
+              "message": "Sheet 'Trades', cell C3 (=TABLE(,A1)): The cell is part of a What-If data table, which the engine does not compute.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a reference to a defined name is refused: ExSheet defines none, and would show #NAME?",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "Rate*A1"
+                    }
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "definedNames": [
+                {
+                  "name": "Rate",
+                  "text": "Trades!$A$1"
+                }
+              ]
+            }
+          },
+          "expect": {
+            "refused": {
+              "reason": "definedName",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=Rate*A1",
+              "message": "Sheet 'Trades', cell B7 (=Rate*A1): The Formula reads the defined name 'Rate', which ExSheet does not define.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a defined name called as a function (a LAMBDA kept in Name Manager) is refused as a defined name",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "Double(A1)"
+                    }
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "definedNames": [
+                {
+                  "name": "Double",
+                  "text": "_xlfn.LAMBDA(_xlpm.x,_xlpm.x*2)"
+                }
+              ]
+            }
+          },
+          "expect": {
+            "refused": {
+              "reason": "definedName",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=Double(A1)",
+              "message": "Sheet 'Trades', cell B7 (=Double(A1)): The Formula calls the defined name 'Double', which ExSheet does not define.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a reference to another workbook is refused, however it is written: [1]Sheet1!A1*2",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "[1]Sheet1!A1*2"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "otherWorkbook",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=[1]Sheet1!A1*2",
+              "message": "Sheet 'Trades', cell B7 (=[1]Sheet1!A1*2): The Formula reads another workbook, which ExSheet cannot reach.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a reference to another workbook is refused, however it is written: SUM('[1]Other Sheet'!A1:A3)",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM('[1]Other Sheet'!A1:A3)"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "otherWorkbook",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=SUM('[1]Other Sheet'!A1:A3)",
+              "message": "Sheet 'Trades', cell B7 (=SUM('[1]Other Sheet'!A1:A3)): The Formula reads another workbook, which ExSheet cannot reach.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a reference to another workbook is refused, however it is written: [1]!Rate",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "[1]!Rate"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "otherWorkbook",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=[1]!Rate",
+              "message": "Sheet 'Trades', cell B7 (=[1]!Rate): The Formula reads another workbook, which ExSheet cannot reach.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §6: a reference to an Excel Table is refused, in every structured form: SUM(Positions[PV])",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM(Positions[PV])"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "excelTable",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=SUM(Positions[PV])",
+              "message": "Sheet 'Trades', cell B7 (=SUM(Positions[PV])): The Formula reads an Excel Table, which ExSheet does not read.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §6: a reference to an Excel Table is refused, in every structured form: Positions[[#This Row],[PV]]*2",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "Positions[[#This Row],[PV]]*2"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "excelTable",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=Positions[[#This Row],[PV]]*2",
+              "message": "Sheet 'Trades', cell B7 (=Positions[[#This Row],[PV]]*2): The Formula reads an Excel Table, which ExSheet does not read.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, §6: a reference to an Excel Table is refused, in every structured form: SUM(Positions[[PV]:[Delta]])",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM(Positions[[PV]:[Delta]])"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "excelTable",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=SUM(Positions[[PV]:[Delta]])",
+              "message": "Sheet 'Trades', cell B7 (=SUM(Positions[[PV]:[Delta]])): The Formula reads an Excel Table, which ExSheet does not read.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a name the workbook does not define is refused where it holds Excel Tables, which a bare name can read",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.LET(_xlpm.x,A1,_xlpm.x*2)"
+                    }
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM(Positions)"
+                    }
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "add": "xl/tables/table1.xml",
+                "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><table xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" id=\"1\" name=\"Positions\" displayName=\"Positions\" ref=\"A1:A2\"/>"
+              }
+            ]
+          },
+          "note": "A2's LET binds its own names, which are no table's: only B7 is refused.",
+          "expect": {
+            "refused": {
+              "reason": "excelTable",
+              "sheet": "Trades",
+              "cell": "B7",
+              "held": "=SUM(Positions)",
+              "message": "Sheet 'Trades', cell B7 (=SUM(Positions)): The Formula reads the name 'Positions', which the workbook does not define; it holds Excel Tables, which a name can read, and ExSheet does not read them.",
+              "fileRefusal": null
+            }
+          }
+        },
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.LET(_xlpm.x,A1,_xlpm.x*2)"
+                    }
+                  },
+                  {
+                    "at": "B7",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "SUM(Positions)"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "note": "With no Excel Table and no defined name, the name is #NAME? in Excel too, and is carried.",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "A2",
+                      "formula": "=LET(x,A1,x*2)"
+                    },
+                    {
+                      "at": "B7",
+                      "formula": "=SUM(Positions)"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "formulas": {
+              "B7": "=SUM(Positions)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a LAMBDA's parameters (stored _xlpm.) are no names, so a workbook holding Excel Tables still opens a MAP over a LAMBDA",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "B1",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "_xlfn.MAP(A1:A2,_xlfn.LAMBDA(_xlpm.v,_xlpm.v*2))"
+                    }
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "add": "xl/tables/table1.xml",
+                "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><table xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" id=\"1\" name=\"v\" displayName=\"v\" ref=\"A1:A2\"/>"
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "B1",
+                      "formula": "=MAP(A1:A2,LAMBDA(v,v*2))"
+                    },
+                    {
+                      "at": "A2",
+                      "number": 2
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": false,
+              "notCarried": [],
+              "unsupportedFunctions": [
+                {
+                  "sheet": "Trades",
+                  "cell": "B1",
+                  "functions": [
+                    "MAP",
+                    "LAMBDA"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "formulas": {
+              "B1": "=MAP(A1:A2,LAMBDA(v,v*2))"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a legacy array formula (Ctrl+Shift+Enter) is refused, its braces shown",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "2"
+                  },
+                  {
+                    "at": "B1",
+                    "type": "number",
+                    "value": "2",
+                    "formula": {
+                      "text": "A1:A2*2",
+                      "kind": "array",
+                      "ref": "B1:B2"
+                    }
+                  },
+                  {
+                    "at": "B2",
+                    "type": "number",
+                    "value": "4"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "legacyArrayFormula",
+              "sheet": "Trades",
+              "cell": "B1",
+              "held": "{=A1:A2*2}",
+              "message": "Sheet 'Trades', cell B1 ({=A1:A2*2}): The cell holds a legacy array formula (entered with Ctrl+Shift+Enter), which Excel computes as one over its cells and ExSheet would spill instead.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a one-cell legacy array formula is refused too: Excel shows its first value, ExSheet would spill",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "B1",
+                    "type": "number",
+                    "value": "2",
+                    "formula": {
+                      "text": "SUM(A1:A2*2)",
+                      "kind": "array",
+                      "ref": "B1"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "legacyArrayFormula",
+              "sheet": "Trades",
+              "cell": "B1",
+              "held": "{=SUM(A1:A2*2)}",
+              "message": "Sheet 'Trades', cell B1 ({=SUM(A1:A2*2)}): The cell holds a legacy array formula (entered with Ctrl+Shift+Enter), which Excel computes as one over its cells and ExSheet would spill instead.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a refusal in a shared formula's master names its first cell",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "C2",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "Positions[PV]",
+                      "kind": "shared",
+                      "ref": "C2:C3",
+                      "si": 0
+                    }
+                  },
+                  {
+                    "at": "C3",
+                    "type": "number",
+                    "value": "999",
+                    "formula": {
+                      "text": "",
+                      "kind": "shared",
+                      "si": 0
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "excelTable",
+              "sheet": "Trades",
+              "cell": "C2",
+              "held": "=Positions[PV]",
+              "message": "Sheet 'Trades', cell C2 (=Positions[PV]): The Formula reads an Excel Table, which ExSheet does not read.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: an error cell holding what is not one of Excel's Error Values as written is refused, not read: #GETTING_DATA",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#GETTING_DATA"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Trades",
+              "cell": "D4",
+              "held": "#GETTING_DATA",
+              "message": "Sheet 'Trades', cell D4 (#GETTING_DATA): The cell holds an Error Value a cell of ExSheet cannot hold.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: an error cell holding what is not one of Excel's Error Values as written is refused, not read: #CIRC!",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#CIRC!"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Trades",
+              "cell": "D4",
+              "held": "#CIRC!",
+              "message": "Sheet 'Trades', cell D4 (#CIRC!): The cell holds an Error Value a cell of ExSheet cannot hold.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: an error cell holding what is not one of Excel's Error Values as written is refused, not read: =SUM(1)",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "=SUM(1)"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Trades",
+              "cell": "D4",
+              "held": "=SUM(1)",
+              "message": "Sheet 'Trades', cell D4 (=SUM(1)): The cell holds an Error Value a cell of ExSheet cannot hold.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: an error cell holding what is not one of Excel's Error Values as written is refused, not read: =SUM(",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "=SUM("
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Trades",
+              "cell": "D4",
+              "held": "=SUM(",
+              "message": "Sheet 'Trades', cell D4 (=SUM(): The cell holds an Error Value a cell of ExSheet cannot hold.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: an error cell holding what is not one of Excel's Error Values as written is refused, not read: 1",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Trades",
+              "cell": "D4",
+              "held": "1",
+              "message": "Sheet 'Trades', cell D4 (1): The cell holds an Error Value a cell of ExSheet cannot hold.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: an error cell holding what is not one of Excel's Error Values as written is refused, not read: #n/a",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#n/a"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "unreadableConstant",
+              "sheet": "Trades",
+              "cell": "D4",
+              "held": "#n/a",
+              "message": "Sheet 'Trades', cell D4 (#n/a): The cell holds an Error Value a cell of ExSheet cannot hold.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: each of Excel's Error Values is carried from an error cell: #NULL!",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#NULL!"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "D4",
+                      "error": "#NULL!"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "D4": {
+                "constant": {
+                  "error": "#NULL!"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: each of Excel's Error Values is carried from an error cell: #REF!",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#REF!"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "D4",
+                      "error": "#REF!"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "D4": {
+                "constant": {
+                  "error": "#REF!"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: each of Excel's Error Values is carried from an error cell: #NAME?",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#NAME?"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "D4",
+                      "error": "#NAME?"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "D4": {
+                "constant": {
+                  "error": "#NAME?"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: each of Excel's Error Values is carried from an error cell: #NUM!",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#NUM!"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "D4",
+                      "error": "#NUM!"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "D4": {
+                "constant": {
+                  "error": "#NUM!"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: each of Excel's Error Values is carried from an error cell: #VALUE!",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#VALUE!"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "D4",
+                      "error": "#VALUE!"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "D4": {
+                "constant": {
+                  "error": "#VALUE!"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: each of Excel's Error Values is carried from an error cell: #SPILL!",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#SPILL!"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "D4",
+                      "error": "#SPILL!"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "D4": {
+                "constant": {
+                  "error": "#SPILL!"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: each of Excel's Error Values is carried from an error cell: #CALC!",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "D4",
+                    "type": "error",
+                    "value": "#CALC!"
+                  }
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Trades",
+              "sheets": [
+                {
+                  "name": "Trades",
+                  "cells": [
+                    {
+                      "at": "D4",
+                      "error": "#CALC!"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "D4": {
+                "constant": {
+                  "error": "#CALC!"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: what the file layer refuses is refused here, its reason kept",
+      "steps": [
+        {
+          "open": {
+            "bytes": [
+              "not a workbook"
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "file",
+              "sheet": null,
+              "cell": null,
+              "held": null,
+              "message": "The file is not a zip package, so it is not an .xlsx.",
+              "fileRefusal": "notAZip"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0331 §4: two worksheets whose names differ only in case are refused by name, both named",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Trades",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "Other",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "2"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/workbook.xml",
+                "replace": [
+                  [
+                    "name=\"Other\"",
+                    "name=\"TRADES\""
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "sheets",
+              "sheet": "TRADES",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'TRADES': The worksheets 'Trades' and 'TRADES' have names that differ only in case, which two Sheets of one Workbook cannot have.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0331 §4: a worksheet named as no Sheet can be is refused by name",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "edits": [
+              {
+                "part": "xl/workbook.xml",
+                "replace": [
+                  [
+                    "name=\"Sheet1\"",
+                    "name=\"History\""
+                  ]
+                ]
+              }
+            ]
+          },
+          "expect": {
+            "refused": {
+              "reason": "sheets",
+              "sheet": "History",
+              "cell": null,
+              "held": null,
+              "message": "Sheet 'History': The worksheet's name is not one a Sheet can have: 'History' is a name Excel reserves.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a date's serial on the 1904 system is moved by 1,462 days, to the same day on 1900's",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "43538",
+                    "style": 1
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "43538.5",
+                    "style": 3
+                  },
+                  {
+                    "at": "A3",
+                    "type": "number",
+                    "value": "0",
+                    "style": 1
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "numberFormats": {
+                  "164": "dd/mm/yyyy hh:mm",
+                  "165": "mm:ss",
+                  "166": "hh:mm:ss",
+                  "167": "0.00E+00",
+                  "168": "[h]:mm",
+                  "169": "[mm]:ss"
+                },
+                "cellFormats": [
+                  {},
+                  {
+                    "numberFormat": 14
+                  },
+                  {
+                    "numberFormat": 21
+                  },
+                  {
+                    "numberFormat": 164
+                  },
+                  {
+                    "numberFormat": 165
+                  },
+                  {
+                    "numberFormat": 166
+                  },
+                  {
+                    "numberFormat": 167
+                  },
+                  {
+                    "numberFormat": 168
+                  },
+                  {
+                    "numberFormat": 169
+                  }
+                ]
+              },
+              "date1904": true
+            }
+          },
+          "note": "Cell formats: 0 General, 1 built-in date (14), 2 built-in time (21), 3 a custom date, 4 minutes and seconds, 5 a custom time, 6 a number, 7 [h]:mm, 8 [mm]:ss.",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 45000,
+                      "format": "m/d/yyyy"
+                    },
+                    {
+                      "at": "A2",
+                      "number": 45000.5,
+                      "format": "dd/mm/yyyy hh:mm"
+                    },
+                    {
+                      "at": "A3",
+                      "number": 1462,
+                      "format": "m/d/yyyy"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 45000
+              },
+              "A2": {
+                "constant": 45000.5
+              },
+              "A3": {
+                "constant": 1462
+              }
+            }
+          },
+          "note": "43,538 on the 1904 system is 15 March 2023, which is 45,000 on 1900's."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a number that is not a date, a time of day and a duration are the same number on both systems",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "43538"
+                  },
+                  {
+                    "at": "A2",
+                    "type": "number",
+                    "value": "0.5",
+                    "style": 2
+                  },
+                  {
+                    "at": "A3",
+                    "type": "number",
+                    "value": "1.25",
+                    "style": 4
+                  },
+                  {
+                    "at": "A4",
+                    "type": "number",
+                    "value": "0.001",
+                    "style": 5
+                  },
+                  {
+                    "at": "A5",
+                    "type": "number",
+                    "value": "12345",
+                    "style": 6
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "numberFormats": {
+                  "164": "dd/mm/yyyy hh:mm",
+                  "165": "mm:ss",
+                  "166": "hh:mm:ss",
+                  "167": "0.00E+00",
+                  "168": "[h]:mm",
+                  "169": "[mm]:ss"
+                },
+                "cellFormats": [
+                  {},
+                  {
+                    "numberFormat": 14
+                  },
+                  {
+                    "numberFormat": 21
+                  },
+                  {
+                    "numberFormat": 164
+                  },
+                  {
+                    "numberFormat": 165
+                  },
+                  {
+                    "numberFormat": 166
+                  },
+                  {
+                    "numberFormat": 167
+                  },
+                  {
+                    "numberFormat": 168
+                  },
+                  {
+                    "numberFormat": 169
+                  }
+                ]
+              },
+              "date1904": true
+            }
+          },
+          "note": "Cell formats: 0 General, 1 built-in date (14), 2 built-in time (21), 3 a custom date, 4 minutes and seconds, 5 a custom time, 6 a number, 7 [h]:mm, 8 [mm]:ss.",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 43538
+                    },
+                    {
+                      "at": "A2",
+                      "number": 0.5,
+                      "format": "h:mm:ss"
+                    },
+                    {
+                      "at": "A3",
+                      "number": 1.25,
+                      "format": "mm:ss"
+                    },
+                    {
+                      "at": "A4",
+                      "number": 0.001,
+                      "format": "hh:mm:ss"
+                    },
+                    {
+                      "at": "A5",
+                      "number": 12345,
+                      "format": "0.00E+00"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 43538
+              },
+              "A2": {
+                "constant": 0.5
+              },
+              "A3": {
+                "constant": 1.25
+              },
+              "A4": {
+                "constant": 0.001
+              },
+              "A5": {
+                "constant": 12345
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: an elapsed time in brackets is a duration, never moved; a Number Format the engine does not read, it refuses the file by name: [h]:mm",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1.5",
+                    "style": 7
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "numberFormats": {
+                  "164": "dd/mm/yyyy hh:mm",
+                  "165": "mm:ss",
+                  "166": "hh:mm:ss",
+                  "167": "0.00E+00",
+                  "168": "[h]:mm",
+                  "169": "[mm]:ss"
+                },
+                "cellFormats": [
+                  {},
+                  {
+                    "numberFormat": 14
+                  },
+                  {
+                    "numberFormat": 21
+                  },
+                  {
+                    "numberFormat": 164
+                  },
+                  {
+                    "numberFormat": 165
+                  },
+                  {
+                    "numberFormat": 166
+                  },
+                  {
+                    "numberFormat": 167
+                  },
+                  {
+                    "numberFormat": 168
+                  },
+                  {
+                    "numberFormat": 169
+                  }
+                ]
+              },
+              "date1904": true
+            }
+          },
+          "note": "Cell formats: 0 General, 1 built-in date (14), 2 built-in time (21), 3 a custom date, 4 minutes and seconds, 5 a custom time, 6 a number, 7 [h]:mm, 8 [mm]:ss.",
+          "expect": {
+            "refused": {
+              "reason": "numberFormat",
+              "sheet": "Sheet1",
+              "cell": "A1",
+              "held": "[h]:mm",
+              "message": "Sheet 'Sheet1', cell A1 ([h]:mm): The Number Format '[h]:mm' is not one the engine reads: conditions, locales and elapsed time in brackets are not supported.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: an elapsed time in brackets is a duration, never moved; a Number Format the engine does not read, it refuses the file by name: [mm]:ss",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "1.5",
+                    "style": 8
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "numberFormats": {
+                  "164": "dd/mm/yyyy hh:mm",
+                  "165": "mm:ss",
+                  "166": "hh:mm:ss",
+                  "167": "0.00E+00",
+                  "168": "[h]:mm",
+                  "169": "[mm]:ss"
+                },
+                "cellFormats": [
+                  {},
+                  {
+                    "numberFormat": 14
+                  },
+                  {
+                    "numberFormat": 21
+                  },
+                  {
+                    "numberFormat": 164
+                  },
+                  {
+                    "numberFormat": 165
+                  },
+                  {
+                    "numberFormat": 166
+                  },
+                  {
+                    "numberFormat": 167
+                  },
+                  {
+                    "numberFormat": 168
+                  },
+                  {
+                    "numberFormat": 169
+                  }
+                ]
+              },
+              "date1904": true
+            }
+          },
+          "note": "Cell formats: 0 General, 1 built-in date (14), 2 built-in time (21), 3 a custom date, 4 minutes and seconds, 5 a custom time, 6 a number, 7 [h]:mm, 8 [mm]:ss.",
+          "expect": {
+            "refused": {
+              "reason": "numberFormat",
+              "sheet": "Sheet1",
+              "cell": "A1",
+              "held": "[mm]:ss",
+              "message": "Sheet 'Sheet1', cell A1 ([mm]:ss): The Number Format '[mm]:ss' is not one the engine reads: conditions, locales and elapsed time in brackets are not supported.",
+              "fileRefusal": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: on the 1900 system nothing is moved",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "45000",
+                    "style": 1
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "numberFormats": {
+                  "164": "dd/mm/yyyy hh:mm",
+                  "165": "mm:ss",
+                  "166": "hh:mm:ss",
+                  "167": "0.00E+00",
+                  "168": "[h]:mm",
+                  "169": "[mm]:ss"
+                },
+                "cellFormats": [
+                  {},
+                  {
+                    "numberFormat": 14
+                  },
+                  {
+                    "numberFormat": 21
+                  },
+                  {
+                    "numberFormat": 164
+                  },
+                  {
+                    "numberFormat": 165
+                  },
+                  {
+                    "numberFormat": 166
+                  },
+                  {
+                    "numberFormat": 167
+                  },
+                  {
+                    "numberFormat": 168
+                  },
+                  {
+                    "numberFormat": 169
+                  }
+                ]
+              },
+              "date1904": false
+            }
+          },
+          "note": "Cell formats: 0 General, 1 built-in date (14), 2 built-in time (21), 3 a custom date, 4 minutes and seconds, 5 a custom time, 6 a number, 7 [h]:mm, 8 [mm]:ss.",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 45000,
+                      "format": "m/d/yyyy"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "entries": {
+              "A1": {
+                "constant": 45000
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0330 §4: a Formula computes its date on 1900's, whatever system the file was on",
+      "steps": [
+        {
+          "open": {
+            "pages": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "type": "number",
+                    "value": "43538",
+                    "formula": {
+                      "text": "DATE(2023,3,15)"
+                    },
+                    "style": 1
+                  }
+                ]
+              }
+            ],
+            "options": {
+              "styles": {
+                "numberFormats": {
+                  "164": "dd/mm/yyyy hh:mm",
+                  "165": "mm:ss",
+                  "166": "hh:mm:ss",
+                  "167": "0.00E+00",
+                  "168": "[h]:mm",
+                  "169": "[mm]:ss"
+                },
+                "cellFormats": [
+                  {},
+                  {
+                    "numberFormat": 14
+                  },
+                  {
+                    "numberFormat": 21
+                  },
+                  {
+                    "numberFormat": 164
+                  },
+                  {
+                    "numberFormat": 165
+                  },
+                  {
+                    "numberFormat": 166
+                  },
+                  {
+                    "numberFormat": 167
+                  },
+                  {
+                    "numberFormat": 168
+                  },
+                  {
+                    "numberFormat": 169
+                  }
+                ]
+              },
+              "date1904": true
+            }
+          },
+          "note": "Cell formats: 0 General, 1 built-in date (14), 2 built-in time (21), 3 a custom date, 4 minutes and seconds, 5 a custom time, 6 a number, 7 [h]:mm, 8 [mm]:ss.",
+          "expect": {
+            "document": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "formula": "=DATE(2023,3,15)",
+                      "format": "m/d/yyyy"
+                    }
+                  ]
+                }
+              ]
+            },
+            "report": {
+              "isEmpty": true,
+              "notCarried": [],
+              "unsupportedFunctions": []
+            }
+          }
+        },
+        {
+          "read": true,
+          "expect": {
+            "formulas": {
+              "A1": "=DATE(2023,3,15)"
+            },
+            "values": {
+              "A1": 45000
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

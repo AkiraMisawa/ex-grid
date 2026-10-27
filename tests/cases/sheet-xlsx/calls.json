@@ -1,0 +1,1823 @@
+{
+  "kind": "sheetXlsxCall",
+  "note": "The internal pieces both cores share, called one by one: a stored Formula read, a Formula written as Excel stores it, ISO 8601 dates, which formats show a date, the width unit, the built-in ids and the line styles (ADR-0330 §4, §6, ADR-0331 §7).",
+  "cases": [
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlws. and _xlpm. are taken off outside quotes; quoted text and Sheet names are kept: _xlfn.XLOOKUP(A1,B:B,C:C)",
+      "call": "storedFormula",
+      "argument": "_xlfn.XLOOKUP(A1,B:B,C:C)",
+      "expect": {
+        "read": "=XLOOKUP(A1,B:B,C:C)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlws. and _xlpm. are taken off outside quotes; quoted text and Sheet names are kept: _xlfn._xlws.FILTER(A1:A9,A1:A9>0)",
+      "call": "storedFormula",
+      "argument": "_xlfn._xlws.FILTER(A1:A9,A1:A9>0)",
+      "expect": {
+        "read": "=FILTER(A1:A9,A1:A9>0)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlws. and _xlpm. are taken off outside quotes; quoted text and Sheet names are kept: _XLFN.CONCAT(\"_xlfn.\",'_xlfn. Sheet'!A1)",
+      "call": "storedFormula",
+      "argument": "_XLFN.CONCAT(\"_xlfn.\",'_xlfn. Sheet'!A1)",
+      "expect": {
+        "read": "=CONCAT(\"_xlfn.\",'_xlfn. Sheet'!A1)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlws. and _xlpm. are taken off outside quotes; quoted text and Sheet names are kept: _xlfn.LET(_xlpm.rate,0.1,_xlpm.rate*2)",
+      "call": "storedFormula",
+      "argument": "_xlfn.LET(_xlpm.rate,0.1,_xlpm.rate*2)",
+      "expect": {
+        "read": "=LET(rate,0.1,rate*2)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlws. and _xlpm. are taken off outside quotes; quoted text and Sheet names are kept: my_xlfn.X(1)",
+      "call": "storedFormula",
+      "argument": "my_xlfn.X(1)",
+      "expect": {
+        "read": "=my_xlfn.X(1)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlws. and _xlpm. are taken off outside quotes; quoted text and Sheet names are kept: SUM(_xlfn.ANCHORARRAY(A1))",
+      "call": "storedFormula",
+      "argument": "SUM(_xlfn.ANCHORARRAY(A1))",
+      "expect": {
+        "read": "=SUM(A1#)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlws. and _xlpm. are taken off outside quotes; quoted text and Sheet names are kept: _xlfn.ANCHORARRAY('My Sheet'!$B$2)*2",
+      "call": "storedFormula",
+      "argument": "_xlfn.ANCHORARRAY('My Sheet'!$B$2)*2",
+      "expect": {
+        "read": "='My Sheet'!$B$2#*2",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlws. and _xlpm. are taken off outside quotes; quoted text and Sheet names are kept: \"don''t\"&\"[1]\"",
+      "call": "storedFormula",
+      "argument": "\"don''t\"&\"[1]\"",
+      "expect": {
+        "read": "=\"don''t\"&\"[1]\"",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: [1]Sheet1!A1",
+      "call": "storedFormula",
+      "argument": "[1]Sheet1!A1",
+      "expect": {
+        "read": "=[1]Sheet1!A1",
+        "problem": "otherWorkbook"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: '[2]My Sheet'!A1",
+      "call": "storedFormula",
+      "argument": "'[2]My Sheet'!A1",
+      "expect": {
+        "read": "='[2]My Sheet'!A1",
+        "problem": "otherWorkbook"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: [3]!Rate",
+      "call": "storedFormula",
+      "argument": "[3]!Rate",
+      "expect": {
+        "read": "=[3]!Rate",
+        "problem": "otherWorkbook"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: Table1[Amount]",
+      "call": "storedFormula",
+      "argument": "Table1[Amount]",
+      "expect": {
+        "read": "=Table1[Amount]",
+        "problem": "excelTable"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: SUM(Table1[[#Totals],[Amount]])",
+      "call": "storedFormula",
+      "argument": "SUM(Table1[[#Totals],[Amount]])",
+      "expect": {
+        "read": "=SUM(Table1[[#Totals],[Amount]])",
+        "problem": "excelTable"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: [@Amount]*2",
+      "call": "storedFormula",
+      "argument": "[@Amount]*2",
+      "expect": {
+        "read": "=[@Amount]*2",
+        "problem": "excelTable"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: _xlfn.SINGLE(A:A)",
+      "call": "storedFormula",
+      "argument": "_xlfn.SINGLE(A:A)",
+      "expect": {
+        "read": "=_xlfn.SINGLE(A:A)",
+        "problem": "implicitIntersection"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: _xlfn.ANCHORARRAY(A1:B2)",
+      "call": "storedFormula",
+      "argument": "_xlfn.ANCHORARRAY(A1:B2)",
+      "expect": {
+        "read": "=ANCHORARRAY(A1:B2)",
+        "problem": "spillRange"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what the engine cannot reach is told apart before it reads: _xlfn.ANCHORARRAY(OFFSET(A1,1,1))",
+      "call": "storedFormula",
+      "argument": "_xlfn.ANCHORARRAY(OFFSET(A1,1,1))",
+      "expect": {
+        "read": "=ANCHORARRAY(OFFSET(A1,1,1))",
+        "problem": "spillRange"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 2023-03-15",
+      "call": "isoDate",
+      "argument": "2023-03-15",
+      "expect": 45000
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 2023-03-15T12:00:00",
+      "call": "isoDate",
+      "argument": "2023-03-15T12:00:00",
+      "expect": 45000.5
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 2023-03-15T12:00",
+      "call": "isoDate",
+      "argument": "2023-03-15T12:00",
+      "expect": 45000.5
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 2023-03-15T12:00:00Z",
+      "call": "isoDate",
+      "argument": "2023-03-15T12:00:00Z",
+      "expect": 45000.5
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 2023-03-15T12:00:00+09:00",
+      "call": "isoDate",
+      "argument": "2023-03-15T12:00:00+09:00",
+      "expect": 45000.5
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 2023-03-15T00:00:00.5",
+      "call": "isoDate",
+      "argument": "2023-03-15T00:00:00.5",
+      "expect": 45000.000005787035
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 06:00:00",
+      "call": "isoDate",
+      "argument": "06:00:00",
+      "expect": 0.25
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 1900-02-28",
+      "call": "isoDate",
+      "argument": "1900-02-28",
+      "expect": 59
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 1900-03-01",
+      "call": "isoDate",
+      "argument": "1900-03-01",
+      "expect": 61
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 1900-02-29",
+      "call": "isoDate",
+      "argument": "1900-02-29",
+      "expect": 60
+    },
+    {
+      "name": "ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing: 9999-12-31",
+      "call": "isoDate",
+      "argument": "9999-12-31",
+      "expect": 2958465
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: ''",
+      "call": "isoDate",
+      "argument": "",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '15/03/2023'",
+      "call": "isoDate",
+      "argument": "15/03/2023",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '2023-03-15 12:00:00'",
+      "call": "isoDate",
+      "argument": "2023-03-15 12:00:00",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '2023-02-29'",
+      "call": "isoDate",
+      "argument": "2023-02-29",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '2023-13-01'",
+      "call": "isoDate",
+      "argument": "2023-13-01",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '1899-12-31'",
+      "call": "isoDate",
+      "argument": "1899-12-31",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '24:00:00'",
+      "call": "isoDate",
+      "argument": "24:00:00",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '12:60'",
+      "call": "isoDate",
+      "argument": "12:60",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: 'Z'",
+      "call": "isoDate",
+      "argument": "Z",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: 'March 15, 2023'",
+      "call": "isoDate",
+      "argument": "March 15, 2023",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '２０２３-03-15'",
+      "call": "isoDate",
+      "argument": "２０２３-03-15",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '٢٠٢٣-03-15'",
+      "call": "isoDate",
+      "argument": "٢٠٢٣-03-15",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial: '2023-03-15\\n'",
+      "call": "isoDate",
+      "argument": "2023-03-15\n",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: yyyy-mm-dd",
+      "call": "codeShowsDate",
+      "argument": "yyyy-mm-dd",
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: mmm",
+      "call": "codeShowsDate",
+      "argument": "mmm",
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [$-F800]dddd, mmmm dd, yyyy",
+      "call": "codeShowsDate",
+      "argument": "[$-F800]dddd, mmmm dd, yyyy",
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: m/d/yy h:mm AM/PM",
+      "call": "codeShowsDate",
+      "argument": "m/d/yy h:mm AM/PM",
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: ge.m.d",
+      "call": "codeShowsDate",
+      "argument": "ge.m.d",
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: h:mm",
+      "call": "codeShowsDate",
+      "argument": "h:mm",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: mm:ss",
+      "call": "codeShowsDate",
+      "argument": "mm:ss",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [h]:mm:ss",
+      "call": "codeShowsDate",
+      "argument": "[h]:mm:ss",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [h]:mm",
+      "call": "codeShowsDate",
+      "argument": "[h]:mm",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [mm]:ss",
+      "call": "codeShowsDate",
+      "argument": "[mm]:ss",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [m]",
+      "call": "codeShowsDate",
+      "argument": "[m]",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [hh]",
+      "call": "codeShowsDate",
+      "argument": "[hh]",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [Red][h]:mm",
+      "call": "codeShowsDate",
+      "argument": "[Red][h]:mm",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [Red]mmm",
+      "call": "codeShowsDate",
+      "argument": "[Red]mmm",
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: h:mm AM/PM",
+      "call": "codeShowsDate",
+      "argument": "h:mm AM/PM",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: 0.00E+00",
+      "call": "codeShowsDate",
+      "argument": "0.00E+00",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: General",
+      "call": "codeShowsDate",
+      "argument": "General",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: #,##0.00 \"days\"",
+      "call": "codeShowsDate",
+      "argument": "#,##0.00 \"days\"",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: [Red]#,##0;[Blue]-#,##0",
+      "call": "codeShowsDate",
+      "argument": "[Red]#,##0;[Blue]-#,##0",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: 0 \\d",
+      "call": "codeShowsDate",
+      "argument": "0 \\d",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: which Number Formats show a date, and so move on the 1904 system: 0;yyyy",
+      "call": "codeShowsDate",
+      "argument": "0;yyyy",
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: the built-in formats that show a date, and those that show only a time: 14",
+      "call": "builtInShowsDate",
+      "argument": 14,
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: the built-in formats that show a date, and those that show only a time: 17",
+      "call": "builtInShowsDate",
+      "argument": 17,
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: the built-in formats that show a date, and those that show only a time: 22",
+      "call": "builtInShowsDate",
+      "argument": 22,
+      "expect": true
+    },
+    {
+      "name": "ADR-0330 §4: the built-in formats that show a date, and those that show only a time: 18",
+      "call": "builtInShowsDate",
+      "argument": 18,
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: the built-in formats that show a date, and those that show only a time: 21",
+      "call": "builtInShowsDate",
+      "argument": 21,
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: the built-in formats that show a date, and those that show only a time: 46",
+      "call": "builtInShowsDate",
+      "argument": 46,
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: the built-in formats that show a date, and those that show only a time: 0",
+      "call": "builtInShowsDate",
+      "argument": 0,
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: the built-in formats that show a date, and those that show only a time: 4",
+      "call": "builtInShowsDate",
+      "argument": 4,
+      "expect": false
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel writes for the width it shows (Calibri 11: 7 px a digit, 5 px of padding): 8.43 characters",
+      "call": "widthToFile",
+      "argument": 8.43,
+      "expect": 9.140625
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel shows for the width it writes (Calibri 11: 7 px a digit, 5 px of padding): 9.14062",
+      "call": "widthFromFile",
+      "argument": 9.140625,
+      "expect": 8.43
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel writes for the width it shows (Calibri 11: 7 px a digit, 5 px of padding): 12 characters",
+      "call": "widthToFile",
+      "argument": 12,
+      "expect": 12.7109375
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel shows for the width it writes (Calibri 11: 7 px a digit, 5 px of padding): 12.7109",
+      "call": "widthFromFile",
+      "argument": 12.7109375,
+      "expect": 12
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel writes for the width it shows (Calibri 11: 7 px a digit, 5 px of padding): 20 characters",
+      "call": "widthToFile",
+      "argument": 20,
+      "expect": 20.7109375
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel shows for the width it writes (Calibri 11: 7 px a digit, 5 px of padding): 20.7109",
+      "call": "widthFromFile",
+      "argument": 20.7109375,
+      "expect": 20
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel writes for the width it shows (Calibri 11: 7 px a digit, 5 px of padding): 1 characters",
+      "call": "widthToFile",
+      "argument": 1,
+      "expect": 1.7109375
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel shows for the width it writes (Calibri 11: 7 px a digit, 5 px of padding): 1.71094",
+      "call": "widthFromFile",
+      "argument": 1.7109375,
+      "expect": 1
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel writes for the width it shows (Calibri 11: 7 px a digit, 5 px of padding): 0.71 characters",
+      "call": "widthToFile",
+      "argument": 0.71,
+      "expect": 1.421875
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel shows for the width it writes (Calibri 11: 7 px a digit, 5 px of padding): 1.42188",
+      "call": "widthFromFile",
+      "argument": 1.421875,
+      "expect": 0.71
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel writes for the width it shows (Calibri 11: 7 px a digit, 5 px of padding): 255 characters",
+      "call": "widthToFile",
+      "argument": 255,
+      "expect": 255.7109375
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel shows for the width it writes (Calibri 11: 7 px a digit, 5 px of padding): 255.711",
+      "call": "widthFromFile",
+      "argument": 255.7109375,
+      "expect": 255
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel writes for the width it shows (Calibri 11: 7 px a digit, 5 px of padding): 10.57 characters",
+      "call": "widthToFile",
+      "argument": 10.57,
+      "expect": 11.28125
+    },
+    {
+      "name": "ADR-0330 §4: the width Excel shows for the width it writes (Calibri 11: 7 px a digit, 5 px of padding): 11.2812",
+      "call": "widthFromFile",
+      "argument": 11.28125,
+      "expect": 10.57
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 0",
+      "call": "builtInId",
+      "argument": "General",
+      "expect": 0
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 1",
+      "call": "builtInId",
+      "argument": "0",
+      "expect": 1
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 2",
+      "call": "builtInId",
+      "argument": "0.00",
+      "expect": 2
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 3",
+      "call": "builtInId",
+      "argument": "#,##0",
+      "expect": 3
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 4",
+      "call": "builtInId",
+      "argument": "#,##0.00",
+      "expect": 4
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 9",
+      "call": "builtInId",
+      "argument": "0%",
+      "expect": 9
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 10",
+      "call": "builtInId",
+      "argument": "0.00%",
+      "expect": 10
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 11",
+      "call": "builtInId",
+      "argument": "0.00E+00",
+      "expect": 11
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 14",
+      "call": "builtInId",
+      "argument": "m/d/yyyy",
+      "expect": 14
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 15",
+      "call": "builtInId",
+      "argument": "d-mmm-yy",
+      "expect": 15
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 16",
+      "call": "builtInId",
+      "argument": "d-mmm",
+      "expect": 16
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 17",
+      "call": "builtInId",
+      "argument": "mmm-yy",
+      "expect": 17
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 18",
+      "call": "builtInId",
+      "argument": "h:mm AM/PM",
+      "expect": 18
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 19",
+      "call": "builtInId",
+      "argument": "h:mm:ss AM/PM",
+      "expect": 19
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 20",
+      "call": "builtInId",
+      "argument": "h:mm",
+      "expect": 20
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 21",
+      "call": "builtInId",
+      "argument": "h:mm:ss",
+      "expect": 21
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 22",
+      "call": "builtInId",
+      "argument": "m/d/yyyy h:mm",
+      "expect": 22
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 37",
+      "call": "builtInId",
+      "argument": "#,##0 ;(#,##0)",
+      "expect": 37
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 38",
+      "call": "builtInId",
+      "argument": "#,##0 ;[Red](#,##0)",
+      "expect": 38
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 39",
+      "call": "builtInId",
+      "argument": "#,##0.00;(#,##0.00)",
+      "expect": 39
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 40",
+      "call": "builtInId",
+      "argument": "#,##0.00;[Red](#,##0.00)",
+      "expect": 40
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 45",
+      "call": "builtInId",
+      "argument": "mm:ss",
+      "expect": 45
+    },
+    {
+      "name": "ADR-0330 §4: every built-in the engine reads is written as its own id: 49",
+      "call": "builtInId",
+      "argument": "@",
+      "expect": 49
+    },
+    {
+      "name": "ADR-0330 §4: a built-in the engine shows in the culture's form is it in any case; it is written as its id, not as the file's own: M/D/YYYY",
+      "call": "builtInId",
+      "argument": "M/D/YYYY",
+      "expect": 14
+    },
+    {
+      "name": "ADR-0330 §4: a built-in the engine shows in the culture's form is it in any case; it is written as its id, not as the file's own: D-MMM-YY",
+      "call": "builtInId",
+      "argument": "D-MMM-YY",
+      "expect": 15
+    },
+    {
+      "name": "ADR-0330 §4: a built-in the engine shows in the culture's form is it in any case; it is written as its id, not as the file's own: H:MM",
+      "call": "builtInId",
+      "argument": "H:MM",
+      "expect": 20
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: #,##0.00;[Red]-#,##0.00",
+      "call": "builtInId",
+      "argument": "#,##0.00;[Red]-#,##0.00",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: yyyy-mm-dd",
+      "call": "builtInId",
+      "argument": "yyyy-mm-dd",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: 0.000%",
+      "call": "builtInId",
+      "argument": "0.000%",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: \"USD\" #,##0",
+      "call": "builtInId",
+      "argument": "\"USD\" #,##0",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: [Blue]0;[Red]-0;0;@",
+      "call": "builtInId",
+      "argument": "[Blue]0;[Red]-0;0;@",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: m\\/d\\/yyyy",
+      "call": "builtInId",
+      "argument": "m\\/d\\/yyyy",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: d\\-mmm\\-yy",
+      "call": "builtInId",
+      "argument": "d\\-mmm\\-yy",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: 0.00e+00",
+      "call": "builtInId",
+      "argument": "0.00e+00",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: dd. mmm",
+      "call": "builtInId",
+      "argument": "dd. mmm",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: hh:mm",
+      "call": "builtInId",
+      "argument": "hh:mm",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4: any other format the engine holds is no built-in, and is written as the file's own: 0;[Red]@",
+      "call": "builtInId",
+      "argument": "0;[Red]@",
+      "expect": null
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: hair",
+      "call": "fileLineStyle",
+      "argument": "hair",
+      "expect": "hair"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: thin",
+      "call": "fileLineStyle",
+      "argument": "thin",
+      "expect": "thin"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: medium",
+      "call": "fileLineStyle",
+      "argument": "medium",
+      "expect": "medium"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: thick",
+      "call": "fileLineStyle",
+      "argument": "thick",
+      "expect": "thick"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: double",
+      "call": "fileLineStyle",
+      "argument": "double",
+      "expect": "double"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: dotted",
+      "call": "fileLineStyle",
+      "argument": "dotted",
+      "expect": "dotted"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: dashed",
+      "call": "fileLineStyle",
+      "argument": "dashed",
+      "expect": "dashed"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: dashDot",
+      "call": "fileLineStyle",
+      "argument": "dashDot",
+      "expect": "dashDot"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: dashDotDot",
+      "call": "fileLineStyle",
+      "argument": "dashDotDot",
+      "expect": "dashDotDot"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: mediumDashed",
+      "call": "fileLineStyle",
+      "argument": "mediumDashed",
+      "expect": "mediumDashed"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: mediumDashDot",
+      "call": "fileLineStyle",
+      "argument": "mediumDashDot",
+      "expect": "mediumDashDot"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: mediumDashDotDot",
+      "call": "fileLineStyle",
+      "argument": "mediumDashDotDot",
+      "expect": "mediumDashDotDot"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: slantedDashDot",
+      "call": "fileLineStyle",
+      "argument": "slantedDashDot",
+      "expect": "slantDashDot"
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0071: each line style is written as the file's style of the same name: none",
+      "call": "fileLineStyle",
+      "argument": "none",
+      "expect": "none"
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =SUM(A1:B2)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(A1:B2)"
+      },
+      "expect": {
+        "stored": "SUM(A1:B2)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =XLOOKUP(A1,B:B,C:C)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=XLOOKUP(A1,B:B,C:C)"
+      },
+      "expect": {
+        "stored": "_xlfn.XLOOKUP(A1,B:B,C:C)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =STDEV.S(A1:A9)+VAR.P(A1:A9)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=STDEV.S(A1:A9)+VAR.P(A1:A9)"
+      },
+      "expect": {
+        "stored": "_xlfn.STDEV.S(A1:A9)+_xlfn.VAR.P(A1:A9)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =FILTER(A1:A9,B1:B9>0)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=FILTER(A1:A9,B1:B9>0)"
+      },
+      "expect": {
+        "stored": "_xlfn._xlws.FILTER(A1:A9,B1:B9>0)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =SORT(UNIQUE(A1:A9))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SORT(UNIQUE(A1:A9))"
+      },
+      "expect": {
+        "stored": "_xlfn._xlws.SORT(_xlfn.UNIQUE(A1:A9))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =SUM(A1#)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(A1#)"
+      },
+      "expect": {
+        "stored": "SUM(_xlfn.ANCHORARRAY(A1))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =COUNT(Sheet2!$B$3#)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=COUNT(Sheet2!$B$3#)"
+      },
+      "expect": {
+        "stored": "COUNT(_xlfn.ANCHORARRAY(Sheet2!$B$3))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =SUM('My Sheet'!A1#)*2",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM('My Sheet'!A1#)*2"
+      },
+      "expect": {
+        "stored": "SUM(_xlfn.ANCHORARRAY('My Sheet'!A1))*2",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =LET(x,1,x+1)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(x,1,x+1)"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.x,1,_xlpm.x+1)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =LET(rate,0.05,amount,A1,amount*(1+rate))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(rate,0.05,amount,A1,amount*(1+rate))"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.rate,0.05,_xlpm.amount,A1,_xlpm.amount*(1+_xlpm.rate))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =LET(x,1,LET(y,x+1,x*y))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(x,1,LET(y,x+1,x*y))"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.x,1,_xlfn.LET(_xlpm.y,_xlpm.x+1,_xlpm.x*_xlpm.y))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =LET(x,SEQUENCE(3),SUM(x))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(x,SEQUENCE(3),SUM(x))"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.x,_xlfn.SEQUENCE(3),SUM(_xlpm.x))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =\"_xlfn.SEQUENCE(1) and LET(x,1,x)\"&SEQUENCE(1)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=\"_xlfn.SEQUENCE(1) and LET(x,1,x)\"&SEQUENCE(1)"
+      },
+      "expect": {
+        "stored": "\"_xlfn.SEQUENCE(1) and LET(x,1,x)\"&_xlfn.SEQUENCE(1)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =IFS(A1>1E+5,\"big\",TRUE,\"small\")",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=IFS(A1>1E+5,\"big\",TRUE,\"small\")"
+      },
+      "expect": {
+        "stored": "_xlfn.IFS(A1>100000,\"big\",TRUE,\"small\")",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =SUM(1:3)+SUM($A:$C)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(1:3)+SUM($A:$C)"
+      },
+      "expect": {
+        "stored": "SUM(1:3)+SUM($A:$C)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =Sheet2!#REF!+#N/A",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=Sheet2!#REF!+#N/A"
+      },
+      "expect": {
+        "stored": "Sheet2!#REF!+#N/A",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =LOG10(100)+XOR(TRUE,FALSE)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LOG10(100)+XOR(TRUE,FALSE)"
+      },
+      "expect": {
+        "stored": "LOG10(100)+_xlfn.XOR(TRUE,FALSE)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: _xlfn., _xlfn._xlws., _xlpm. and ANCHORARRAY are put back where Excel stores them, and nowhere else: =CONCAT(\"a\",\"\"\"b\"\"\")",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=CONCAT(\"a\",\"\"\"b\"\"\")"
+      },
+      "expect": {
+        "stored": "_xlfn.CONCAT(\"a\",\"\"\"b\"\"\")",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a function the engine does not declare is written with its prefix too, so Excel computes it: =TEXTSPLIT(A1,\",\")",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=TEXTSPLIT(A1,\",\")"
+      },
+      "expect": {
+        "stored": "_xlfn.TEXTSPLIT(A1,\",\")",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a function the engine does not declare is written with its prefix too, so Excel computes it: =MAP(A1:A3,LAMBDA(v,v*2))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=MAP(A1:A3,LAMBDA(v,v*2))"
+      },
+      "expect": {
+        "stored": "_xlfn.MAP(A1:A3,_xlfn.LAMBDA(_xlpm.v,_xlpm.v*2))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a LAMBDA called where it is written never reaches the writer: the engine refuses it as it is typed",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LAMBDA(x,y,x+y)(1,2)"
+      },
+      "expect": {
+        "refused": "formulaSyntax",
+        "beyondLimit": false
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula: =XLOOKUP(A1,B:B,C:C,\"none\")",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=XLOOKUP(A1,B:B,C:C,\"none\")"
+      },
+      "expect": {
+        "stored": "_xlfn.XLOOKUP(A1,B:B,C:C,\"none\")",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula: =LET(x,SEQUENCE(3),y,x*2,SUM(x,y))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(x,SEQUENCE(3),y,x*2,SUM(x,y))"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.x,_xlfn.SEQUENCE(3),_xlpm.y,_xlpm.x*2,SUM(_xlpm.x,_xlpm.y))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula: =SUM(Sheet2!A1#)+SORTBY(A1:A3,B1:B3,-1)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Sheet2!A1#)+SORTBY(A1:A3,B1:B3,-1)"
+      },
+      "expect": {
+        "stored": "SUM(_xlfn.ANCHORARRAY(Sheet2!A1))+_xlfn.SORTBY(A1:A3,B1:B3,-1)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula: =FILTER(A1:B9,(B1:B9>0)*(A1:A9<>\"\"),\"none\")",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=FILTER(A1:B9,(B1:B9>0)*(A1:A9<>\"\"),\"none\")"
+      },
+      "expect": {
+        "stored": "_xlfn._xlws.FILTER(A1:B9,(B1:B9>0)*(A1:A9<>\"\"),\"none\")",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula: =IFERROR(1/0,NA())&TEXTJOIN(\",\",TRUE,A1:A3)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=IFERROR(1/0,NA())&TEXTJOIN(\",\",TRUE,A1:A3)"
+      },
+      "expect": {
+        "stored": "IFERROR(1/0,NA())&_xlfn.TEXTJOIN(\",\",TRUE,A1:A3)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula: =SUM(Sheet1:Sheet3!B2)+STDEV.S('Q1 Sales:Sheet3'!$B$2:C9)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Sheet1:Sheet3!B2)+STDEV.S('Q1 Sales:Sheet3'!$B$2:C9)"
+      },
+      "expect": {
+        "stored": "SUM(Sheet1:Sheet3!B2)+_xlfn.STDEV.S('Q1 Sales:Sheet3'!$B$2:C9)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula, read back: =XLOOKUP(A1,B:B,C:C,\"none\")",
+      "call": "storedFormula",
+      "argument": "_xlfn.XLOOKUP(A1,B:B,C:C,\"none\")",
+      "expect": {
+        "read": "=XLOOKUP(A1,B:B,C:C,\"none\")",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula, read back: =LET(x,SEQUENCE(3),y,x*2,SUM(x,y))",
+      "call": "storedFormula",
+      "argument": "_xlfn.LET(_xlpm.x,_xlfn.SEQUENCE(3),_xlpm.y,_xlpm.x*2,SUM(_xlpm.x,_xlpm.y))",
+      "expect": {
+        "read": "=LET(x,SEQUENCE(3),y,x*2,SUM(x,y))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula, read back: =SUM(Sheet2!A1#)+SORTBY(A1:A3,B1:B3,-1)",
+      "call": "storedFormula",
+      "argument": "SUM(_xlfn.ANCHORARRAY(Sheet2!A1))+_xlfn.SORTBY(A1:A3,B1:B3,-1)",
+      "expect": {
+        "read": "=SUM(Sheet2!A1#)+SORTBY(A1:A3,B1:B3,-1)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula, read back: =FILTER(A1:B9,(B1:B9>0)*(A1:A9<>\"\"),\"none\")",
+      "call": "storedFormula",
+      "argument": "_xlfn._xlws.FILTER(A1:B9,(B1:B9>0)*(A1:A9<>\"\"),\"none\")",
+      "expect": {
+        "read": "=FILTER(A1:B9,(B1:B9>0)*(A1:A9<>\"\"),\"none\")",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula, read back: =IFERROR(1/0,NA())&TEXTJOIN(\",\",TRUE,A1:A3)",
+      "call": "storedFormula",
+      "argument": "IFERROR(1/0,NA())&_xlfn.TEXTJOIN(\",\",TRUE,A1:A3)",
+      "expect": {
+        "read": "=IFERROR(1/0,NA())&TEXTJOIN(\",\",TRUE,A1:A3)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: what is written reads back as the same Formula, read back: =SUM(Sheet1:Sheet3!B2)+STDEV.S('Q1 Sales:Sheet3'!$B$2:C9)",
+      "call": "storedFormula",
+      "argument": "SUM(Sheet1:Sheet3!B2)+_xlfn.STDEV.S('Q1 Sales:Sheet3'!$B$2:C9)",
+      "expect": {
+        "read": "=SUM(Sheet1:Sheet3!B2)+STDEV.S('Q1 Sales:Sheet3'!$B$2:C9)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0331 §7, ADR-0330 §4: a 3D Reference is stored as the engine writes it, and refused when the Workbook lacks a Sheet of either end: =SUM(Sheet1:Sheet3!B2)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Sheet1:Sheet3!B2)",
+        "sheets": [
+          "Sheet1",
+          "Q1 Sales",
+          "Sheet3"
+        ]
+      },
+      "expect": {
+        "stored": "SUM(Sheet1:Sheet3!B2)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0331 §7, ADR-0330 §4: a 3D Reference is stored as the engine writes it, and refused when the Workbook lacks a Sheet of either end: =AVERAGE('Q1 Sales:Sheet3'!B2:C3)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=AVERAGE('Q1 Sales:Sheet3'!B2:C3)",
+        "sheets": [
+          "Sheet1",
+          "Q1 Sales",
+          "Sheet3"
+        ]
+      },
+      "expect": {
+        "stored": "AVERAGE('Q1 Sales:Sheet3'!B2:C3)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0331 §7, ADR-0330 §4: a 3D Reference is stored as the engine writes it, and refused when the Workbook lacks a Sheet of either end: =SUM(Sheet1:Sheet9!B2)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Sheet1:Sheet9!B2)",
+        "sheets": [
+          "Sheet1",
+          "Q1 Sales",
+          "Sheet3"
+        ]
+      },
+      "expect": {
+        "stored": null,
+        "problem": "missingSheet"
+      }
+    },
+    {
+      "name": "ADR-0331 §7, ADR-0330 §4: a 3D Reference is stored as the engine writes it, and refused when the Workbook lacks a Sheet of either end: =SUM(Sheet9:Sheet3!B2)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Sheet9:Sheet3!B2)",
+        "sheets": [
+          "Sheet1",
+          "Q1 Sales",
+          "Sheet3"
+        ]
+      },
+      "expect": {
+        "stored": null,
+        "problem": "missingSheet"
+      }
+    },
+    {
+      "name": "ADR-0331 §7, ADR-0330 §4: a 3D Reference is stored as the engine writes it, and refused when the Workbook lacks a Sheet of either end: =SUM(Sheet1:Sheet3!B2#)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Sheet1:Sheet3!B2#)",
+        "sheets": [
+          "Sheet1",
+          "Q1 Sales",
+          "Sheet3"
+        ]
+      },
+      "expect": {
+        "stored": "SUM(_xlfn.ANCHORARRAY(Sheet1:Sheet3!B2))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a structured reference to no declared Linked Table has no Excel Table to read in the file written, and is not written",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[PV])"
+      },
+      "expect": {
+        "stored": null,
+        "problem": "structuredReference"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a structured reference to a column the Linked Table does not declare has no Excel Table column to read, and is not written",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[Delta])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": null,
+        "problem": "structuredReference"
+      }
+    },
+    {
+      "name": "ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form, single brackets with ' before [ ] # ', and the rest of the Formula as before: =SUM(Positions[PV])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[PV])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "SUM(Positions[PV])",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form, single brackets with ' before [ ] # ', and the rest of the Formula as before: =SUM(positions[[pv]])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(positions[[pv]])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "SUM(positions[pv])",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form, single brackets with ' before [ ] # ', and the rest of the Formula as before: =XLOOKUP(1,Positions[Market value],Positions[PV])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=XLOOKUP(1,Positions[Market value],Positions[PV])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "_xlfn.XLOOKUP(1,Positions[Market value],Positions[PV])",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form, single brackets with ' before [ ] # ', and the rest of the Formula as before: =SUM(Positions[[a'#b]])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[[a'#b]])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "SUM(Positions[a'#b])",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form, single brackets with ' before [ ] # ', and the rest of the Formula as before: =SUM(Positions[[it''s]])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[[it''s]])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "SUM(Positions[it''s])",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form, single brackets with ' before [ ] # ', and the rest of the Formula as before: =SUM(Positions[['[x']]])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[['[x']]])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "SUM(Positions['[x']])",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form, single brackets with ' before [ ] # ', and the rest of the Formula as before: =SUM(Positions[Δ_2])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[Δ_2])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "SUM(Positions[Δ_2])",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form, single brackets with ' before [ ] # ', and the rest of the Formula as before: =LET(x,Positions[PV],SUM(x))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(x,Positions[PV],SUM(x))",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.x,Positions[PV],SUM(_xlpm.x))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a column whose name begins or ends with a space, or holds @ or a character Excel has not been seen to write there, is refused: =SUM(Positions[PV ])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[PV ])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": null,
+        "problem": "columnName"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a column whose name begins or ends with a space, or holds @ or a character Excel has not been seen to write there, is refused: =SUM(Positions[['@PV]])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[['@PV]])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": null,
+        "problem": "columnName"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a column whose name begins or ends with a space, or holds @ or a character Excel has not been seen to write there, is refused: =SUM(Positions[[Total $]])",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions[[Total $]])",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": null,
+        "problem": "columnName"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a Linked Table's name read as a name of its own is #NAME? in ExSheet and the table in Excel, and is refused; one a LET binds is the LET's: =SUM(Positions)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=SUM(Positions)",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": null,
+        "problem": "tableName"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a Linked Table's name read as a name of its own is #NAME? in ExSheet and the table in Excel, and is refused; one a LET binds is the LET's: =ROWS(positions)+1",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=ROWS(positions)+1",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": null,
+        "problem": "tableName"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a Linked Table's name read as a name of its own is #NAME? in ExSheet and the table in Excel, and is refused; one a LET binds is the LET's: =LET(Positions,1,Positions+1)",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(Positions,1,Positions+1)",
+        "tables": {
+          "Positions": [
+            "PV",
+            "Market value",
+            "Total $",
+            "a#b",
+            "it's",
+            "[x]",
+            "@PV",
+            "Δ_2",
+            "PV "
+          ]
+        }
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.Positions,1,_xlpm.Positions+1)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a name a LET binds is prefixed only where it is bound; read outside the LET it is a name of its own, unprefixed",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(x,1,x)+x"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.x,1,_xlpm.x)+x",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: where the names this writer finds bound are not the ones the engine bound, the Formula is refused rather than written with a prefix in the wrong place",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(x,x+1,x)"
+      },
+      "expect": {
+        "stored": null,
+        "problem": "unreadable"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a call of a function the engine declares is the function's, though a LET binds a name of the same spelling: =LET(sum,1,SUM(sum,2))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(sum,1,SUM(sum,2))"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.sum,1,SUM(_xlpm.sum,2))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a call of a function the engine declares is the function's, though a LET binds a name of the same spelling: =LET(xor,TRUE,XOR(xor,FALSE))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(xor,TRUE,XOR(xor,FALSE))"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.xor,TRUE,_xlfn.XOR(_xlpm.xor,FALSE))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a call of a function the engine declares is the function's, though a LET binds a name of the same spelling: =LET(max,5,MAX(max,1))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(max,5,MAX(max,1))"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.max,5,MAX(_xlpm.max,1))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a call of a function the engine declares is the function's, though a LET binds a name of the same spelling: =LET(seq,2,SEQUENCE(seq))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(seq,2,SEQUENCE(seq))"
+      },
+      "expect": {
+        "stored": "_xlfn.LET(_xlpm.seq,2,_xlfn.SEQUENCE(_xlpm.seq))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a bound name called is a call of an unknown function to the engine and of the binding to Excel: refused: =LET(f,LAMBDA(x,x+1),f(2))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LET(f,LAMBDA(x,x+1),f(2))"
+      },
+      "expect": {
+        "stored": null,
+        "problem": "boundCall"
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a bound name called is a call of an unknown function to the engine and of the binding to Excel: refused: =MAP(A1:A3,LAMBDA(g,g(1)))",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=MAP(A1:A3,LAMBDA(g,g(1)))"
+      },
+      "expect": {
+        "stored": null,
+        "problem": "boundCall"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a text constant in a Formula of 255 characters, a doubled quote counting as one, is written",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LEN(\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\"\")"
+      },
+      "expect": {
+        "stored": "LEN(\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\"\")",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a text constant in a Formula longer than Excel's 255 characters is refused",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=LEN(\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\")"
+      },
+      "expect": {
+        "stored": null,
+        "problem": "longText"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: Excel nests calls 64 levels deep at most; parentheses that call nothing are no level",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))"
+      },
+      "expect": {
+        "stored": "ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6, ADR-0047: a call nested one level deeper than Excel takes never reaches the writer: the engine refuses it as it is typed",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(ABS(((1)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))"
+      },
+      "expect": {
+        "refused": "formulaSyntax",
+        "beyondLimit": true
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a call of 255 arguments, the most Excel takes, is written",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=HSTACK(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)"
+      },
+      "expect": {
+        "stored": "_xlfn.HSTACK(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)",
+        "problem": "none"
+      }
+    },
+    {
+      "name": "ADR-0330 §6: a call of more than the 255 arguments Excel takes is refused",
+      "call": "writtenFormula",
+      "argument": {
+        "formula": "=HSTACK(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)"
+      },
+      "expect": {
+        "stored": null,
+        "problem": "tooManyArguments"
+      }
+    }
+  ]
+}
