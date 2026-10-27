@@ -18,7 +18,13 @@ export type { ActionRefusalReason, FindRefusalReason, GridRefusal, PlacementRefu
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { builtInLabelIds } from './chrome/command-labels';
-export type { GridChrome, GridChromeSlot, GridColumnMenuSlotContext, GridContextMenuSlotContext, GridMenuSlotContext } from './dom/grid-chrome';
+export type {
+    GridChrome, GridChromeSlot, GridColumnMenuSlotContext, GridContextMenuSlotContext, GridFilterPanelSlotContext, GridMenuSlotContext,
+} from './dom/grid-chrome';
+export type {
+    FilterPanelCondition, FilterPanelConditions, FilterPanelEntry, FilterPanelValueList, FilterPanelView,
+} from './chrome/filter-panel-model';
+export type { SelectAllState } from './chrome/filter-panel-choices';
 export type { MenuKey, MenuKeyKind } from './chrome/menu-keys';
 export { gridCommandIds, gridLabelIds } from './chrome/command-ids';
 export { markLabelIds } from './chrome/mark-words';

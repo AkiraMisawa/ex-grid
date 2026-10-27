@@ -24,6 +24,7 @@ import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '..
 import { gridCommandIds, gridLabelIds } from '../chrome/command-ids';
 import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
 import { canApply } from '../chrome/filter-panel-choices';
+import { FilterPanelModel } from '../chrome/filter-panel-model';
 import { gridCulture, invariantLocale, type GridCulture } from '../chrome/grid-culture';
 import type { TemporalLike } from '../chrome/operand-reading';
 import { filterOperatorsFor, type FilterSpec } from '../query/filter';
@@ -81,8 +82,8 @@ import {
 import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
 import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, popoverMinWidthPx, type MenuKeyTable, type MenuPlace } from './menu-popover';
-import { checkedChrome, columnMenuExtra, SlottedMenu, type GridChrome, type GridChromeSlot, type GridMenuSlotContext } from './grid-chrome';
-import { FilterPanel } from './filter-panel';
+import { checkedChrome, columnMenuExtra, SlottedFilterPanel, SlottedMenu, type GridChrome, type GridChromeSlot, type GridMenuSlotContext } from './grid-chrome';
+import { FilterPanel, type FilterPlace, type FilterUi } from './filter-panel';
 import { FindPanel, type FindHeld } from './find-panel';
 import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
@@ -799,7 +800,7 @@ type MenuPopover = {
     readonly kind: 'column';
     readonly column: string;
     /** The column's filter, below its commands, where the column can be filtered (ADR-0044). */
-    readonly panel: FilterPanel | undefined;
+    readonly panel: FilterPlace | undefined;
 });
 
 /** A popover about to stand: everything but the items #standMenu makes. */
@@ -5197,12 +5198,25 @@ export class GridView<Row> {
         const popover = this.#popover;
         if (popover === undefined) return;
         this.#popover = undefined;
-        if (popover.kind === 'column') popover.panel?.close();
         const doc = this.#root.ownerDocument;
         // Read before the contents go: a slot's cleanup that empties it moves DOM focus off what it held.
         const held = popover.element.contains(doc.activeElement);
-        // A Chrome slot's contents are taken away before their slot goes (ADR-0390).
-        if (popover.kind === 'column' || popover.kind === 'context') popover.items.dispose();
+        // A Chrome slot's contents are taken away before their slot goes (ADR-0390). A cleanup of the Consumer's that
+        // throws still leaves no part of the popover standing, and the failure is said once it is gone.
+        try {
+            if (popover.kind === 'column') popover.panel?.close();
+        } finally {
+            try {
+                if (popover.kind === 'column' || popover.kind === 'context') popover.items.dispose();
+            } finally {
+                this.#popoverGone(popover, held, giveBack);
+            }
+        }
+    }
+
+    // The rest of a popover's closing, once its contents are gone.
+    #popoverGone(popover: OpenPopover, held: boolean, giveBack: boolean): void {
+        const doc = this.#root.ownerDocument;
         // A step still out is nobody's once the panel is gone (ADR-0055).
         if (popover.kind === 'find') {
             this.#findStepping?.abort();
@@ -5366,25 +5380,44 @@ export class GridView<Row> {
         menu.setAttribute('data-ex-letters', commands.filter(command => command.enabled).map(command => letterOf(command.id) ?? '').join('')); // oxlint-disable-line ex-grid/no-stand-in-default -- a command Excel gives no letter adds none
         element.append(menu);
         const name = declared.name;
-        const panel = filterable ? new FilterPanel(doc, {
-            name, type: declared.type, dateType: declared.dateType ?? 'dateTime', filterUi, // oxlint-disable-line ex-grid/no-stand-in-default -- a Date column's dates are dateTime unless declared
-            textOf: value => textFor(declared, value),
-        }, this.#filterOf(name), this.#culture, this.#temporal, signal => this.#source.distinctValues(name, signal), {
-            apply: spec => { this.#applyFilter(name, spec); },
-            cancel: () => { this.#closePopover(true); },
-            letter: key => this.#valueListLetter(key),
-            returnToCommands: () => {
-                const standing = this.#popover;
-                if (standing?.kind === 'column') standing.items.focusFirst();
-            },
-            answered: this.#answer,
-            fetched: () => { this.#invalidate(); },
-        }) : undefined;
+        const panel = filterable ? this.#filterPanel(doc, declared, filterUi) : undefined;
         if (panel !== undefined) element.append(panel.lead, panel.body, panel.trail);
         const slot = this.#chrome?.columnMenu;
         this.#standMenu({ kind: 'column', element, commands, column: name, panel }, menu,
             (pressed, shift, chord, held, current) => resolveColumnMenuKey(pressed, shift, chord, held, current, filterable), true,
             slot === undefined ? undefined : { name: 'columnMenu', mount: slot, extra: columnMenuExtra(name, declared.type) });
+        if (panel === undefined || this.#popover?.kind !== 'column' || this.#popover.panel !== panel) return;
+        try {
+            panel.open();
+        } catch (error) {
+            // A slot whose contents could not be drawn leaves no empty panel standing.
+            this.#closePopover(true);
+            throw error;
+        }
+    }
+
+    // A column's filter for one opening (ADR-0009): its state and what each choice means, drawn by the built-in panel
+    // or by the Chrome's filterPanel slot (ADR-0390).
+    #filterPanel(doc: Document, declared: GridColumn<Row>, filterUi: FilterUi): FilterPlace {
+        const name = declared.name;
+        const model = new FilterPanelModel({
+            name, type: declared.type, dateType: declared.dateType ?? 'dateTime', filterUi, // oxlint-disable-line ex-grid/no-stand-in-default -- a Date column's dates are dateTime unless declared
+            textOf: value => textFor(declared, value),
+        }, this.#filterOf(name), this.#culture, this.#temporal, signal => this.#source.distinctValues(name, signal), () => { this.#invalidate(); });
+        const answers = {
+            apply: (spec: FilterSpec | undefined) => { this.#applyFilter(name, spec); },
+            cancel: () => { this.#closePopover(true); },
+            letter: (key: string) => this.#valueListLetter(key),
+            returnToCommands: () => {
+                const standing = this.#popover;
+                if (standing?.kind === 'column') standing.items.focusFirst();
+            },
+            answered: this.#answer,
+        };
+        const slot = this.#chrome?.filterPanel;
+        if (slot === undefined) return new FilterPanel(doc, model, answers);
+        return new SlottedFilterPanel(doc, slot, model, { ...answers, answered: this.#answerInput },
+            (control, preventScroll, owed) => { this.#takeChromeFocus(control, preventScroll, owed); });
     }
 
     // Tab, Shift+Tab and E on a command (ADR-0044): the keyboard goes into the filter below.
@@ -9107,7 +9140,8 @@ function keyboardTargetIn(control: HTMLElement, asker: string): { readonly targe
 /** Whether a popup the popover's contents opened of their own is open: Escape is then the popup's (ADR-0039). */
 function innerPopupOpen(popover: OpenPopover): boolean {
     if (popover.kind === 'consumer') return popover.frame.innerPopupOpen;
-    return popover.kind !== 'find' && popover.items.innerPopupOpen;
+    if (popover.kind === 'find') return false;
+    return popover.items.innerPopupOpen || (popover.kind === 'column' && popover.panel?.innerPopupOpen === true);
 }
 
 /** A painted cell's Match Mark as a row's record of its marks writes it: nothing for none. */

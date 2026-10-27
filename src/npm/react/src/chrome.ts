@@ -5,10 +5,12 @@
 // Wrapper draws its own components and decides nothing.
 
 import {
-    useLayoutEffect, useRef, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent,
-    type ReactNode, type SyntheticEvent,
+    useLayoutEffect, useRef, useState, useSyncExternalStore, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent,
+    type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
-import type { GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext, GridMenuSlotContext } from '@ex-grid/core';
+import type {
+    FilterPanelView, GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext, GridFilterPanelSlotContext, GridMenuSlotContext,
+} from '@ex-grid/core';
 import type { GridPortals } from './portals';
 
 /**
@@ -22,6 +24,8 @@ export interface ExGridChrome<Row> {
     readonly columnMenu?: (context: GridColumnMenuSlotContext) => ReactNode;
     /** The Context Menu (ADR-0036), drawn with {@link useMenuItems}. */
     readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
+    /** A column's filter panel, under the column menu's commands (ADR-0009, ADR-0044), drawn with {@link useFilterPanel}. */
+    readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
 }
 
 /** The ExGrid's Chrome as the core takes it: each slot's render function as a mount function that renders it
@@ -129,3 +133,59 @@ export function useMenuItems(context: GridMenuSlotContext): (index: number) => M
 function within(event: SyntheticEvent): boolean {
     return event.target instanceof Node && event.currentTarget instanceof Node && event.currentTarget.contains(event.target);
 }
+
+/** What {@link useFilterPanel} hands a filter panel's contents. */
+export interface FilterPanelHandles {
+    /** What the panel shows now, drawn again at each change the core makes to it. */
+    readonly view: FilterPanelView;
+    /** Takes the panel's first control: Tab on a command focuses it (ADR-0044). */
+    readonly first: (control: HTMLElement | null) => void;
+    /** Takes the panel's last control: Shift+Tab on a command wraps there (ADR-0044). */
+    readonly last: (control: HTMLElement | null) => void;
+    /** Takes the field a search is typed into, Excel's E: the value list's search box, or the first condition's
+     * value where no list stands (ADR-0044). */
+    readonly search: (control: HTMLElement | null) => void;
+    /** The value list's key handler, on the element that holds its checkboxes and "(Select All)", never on a text
+     * field: Excel's letters run their command through the core, and their default is prevented (ADR-0044). */
+    readonly onValueListKeyDown: (event: ReactKeyboardEvent) => void;
+}
+
+/**
+ * Draws a filter panel slot from its context (ADR-0390 section 3): the core's view, read again at each change, and
+ * the control the core asks for the keyboard. Each choice goes to the context's setter, which is what it means; the
+ * hook focuses the control a request names, through the core, once it is drawn, and answers each request once,
+ * whichever component of the contents holds the hook when it comes.
+ */
+export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanelHandles {
+    const view = useSyncExternalStore(context.subscribe, context.view);
+    const controls = useRef<Record<FocusTarget, HTMLElement | null>>({ first: null, last: null, search: null });
+    useLayoutEffect(() => {
+        const target = context.focusTarget;
+        if (target === undefined || answeredRequests.has(context)) return;
+        answeredRequests.add(context);
+        const control = controls.current[target];
+        if (control === null) {
+            throw new Error(`The filter panel's ${target} control is not drawn: hand useFilterPanel's \`${target}\` ref to the control the core asks for.`);
+        }
+        context.takeFocus(control);
+    }, [context]);
+    // Made once, so a render hands React the same refs and it does not take them away and back.
+    const [refs] = useState(() => {
+        const taking = (target: FocusTarget) => (control: HTMLElement | null): void => { controls.current[target] = control; };
+        return { first: taking('first'), last: taking('last'), search: taking('search') };
+    });
+    return {
+        view,
+        ...refs,
+        onValueListKeyDown: event => {
+            if (!within(event) || event.nativeEvent.isComposing) return;
+            if (context.valueListKey(event.key, event.ctrlKey || event.altKey || event.metaKey)) event.preventDefault();
+        },
+    };
+}
+
+type FocusTarget = NonNullable<GridFilterPanelSlotContext['focusTarget']>;
+
+/** The contexts whose focus request has been answered. Each request comes in a context of its own, so one answered is
+ * never answered again: not by a component of the contents mounted after it, nor by an effect run twice. */
+const answeredRequests = new WeakSet<GridFilterPanelSlotContext>();
