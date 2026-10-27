@@ -921,11 +921,20 @@ _Avoid_: frozen, sticky, locked (those name the mechanism or Excel's wording, no
 A labelled rectangle over adjacent leaf columns in the tiers above the header row, declared by
 **member column names** — `colspan`/`rowspan` expressiveness without a column tree. It paints, and
 it is the **drag unit** for reordering (a leaf drag clamps at its group's edge); it carries no
-data behaviour — no collapse, no group sort, no aggregate — the line Row Kind draws for rows, on
-the other axis. A column no tier covers has its leaf header stretch the full band; members no
+data behaviour — no group sort, no aggregate, and the grid collapses nothing — the line Row Kind
+draws for rows, on the other axis. A group the Consumer declares `expanded` draws a toggle whose press
+the grid notifies; the Consumer pushes the columns that open or close
+([ADR-0400](./docs/adr/0400-a-header-group-draws-a-toggle-and-notifies-and-the-consumer-holds-its-columns.md)). A column no tier covers has its leaf header stretch the full band; members no
 longer adjacent, an unknown member, or a rectangle straddling the pinned boundary are refused by
 name ([ADR-0032](./docs/adr/0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)).
 _Avoid_: column group (no data behaviour is grouped), banded header, merged cells
+
+**Hidden Mark**:
+The mark a collapsed Header Group wears when a column it hides holds a Cell State, such as a value the
+user set: painted as a cell in that state is, with the Consumer's reason as its description. It covers
+the group, not a row, and the Consumer decides it; the grid does not look into a column it was not
+given ([ADR-0400](./docs/adr/0400-a-header-group-draws-a-toggle-and-notifies-and-the-consumer-holds-its-columns.md)).
+_Avoid_: badge, indicator, dirty flag
 
 **Row Kind**:
 What a row represents — detail / group / total. **Distinct from Cell State**: that names the

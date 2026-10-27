@@ -134,7 +134,9 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   How its TypeScript is written, and what the lint refuses, is `src/npm/CONVENTIONS.md`. A package's public surface is its `etc/<name>.api.md`, which API Extractor holds the build to, as
   RS0016 holds a NuGet package to `PublicAPI.Unshipped.txt`: `npm run api` writes it, and you read
   the diff. Layer 1's cases are JSON under `tests/cases/`, run by Vitest there and by xUnit against
-  the C# core; a case goes in green on the C# core first (`src/npm/README.md`)
+  the C# core; a case of behaviour the C# core has goes in green there first, and a case of behaviour
+  new to the Script Core goes in on the Script Core alone (`src/npm/README.md`, ADR-0350 section 5's
+  note of 2026-10-27)
 - **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
   a `v*` tag runs `release.yml`, which publishes a prerelease, and refuses a version without a
   suffix unless its Release Notes name a sign-off, made against a release candidate, that the

@@ -7,7 +7,10 @@ Script Core (`src/npm/core/test/`); the `chart` area is ExChart's layout, run ag
 (`tests/ExChart.Engine.Tests/Cases/`) and `@ex-grid/chart` (`src/npm/chart/test/`)
 ([ADR-0370](../../docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md), section 2). A case is green on the C# core before the Script Core takes it, so
 the cases are the oracle of the move; when the C# logic is removed, its runner goes with it and the data
-stays.
+stays. That holds for behaviour the C# core has. A case of behaviour new to the Script Core, which the
+C# core will not take before it is removed, goes in on the Script Core alone: its file's `kind` is one
+no C# runner reads, and its `about` says the case is the Script Core's alone (ADR-0350 section 5's note
+of 2026-10-27).
 
 A runner never fills in a key a case leaves out: every key a gesture's table row names is written, and
 a missing one fails the case, where a default would let a misspelt key pass on a value nobody chose.

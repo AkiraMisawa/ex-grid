@@ -490,3 +490,28 @@ these tokens to its text-primary/surface and primary/surface at the same proport
 the text colour's RGB channels without its alpha so the label ground is opaque. These are
 theme defaults, not Excel measurements; a Consumer's tokens win. The Sheet's light defaults are
 the D1 readings above, while its dark frame uses the same system-colour mixes.
+
+## Added by ADR-0400 *(2026-10-27, decided with the user)*
+
+A Header Group's toggle and its Hidden Mark
+([ADR-0400](./0400-a-header-group-draws-a-toggle-and-notifies-and-the-consumer-holds-its-columns.md)). The
+user asked that both match each framework's design and theme, so their look is classes and tokens a
+Wrapper's stylesheet sets, and nothing a Wrapper renders.
+
+- **Stable classes.** `ex-header-group-toggle`, the button at the left of a Header Group a Consumer
+  declared `expanded` on; whether the group is open is its `aria-expanded`, never a class.
+  `ex-hidden-mark` with `ex-hidden-mark-stale / -missing / -error / -modified`, the Hidden Mark on a
+  collapsed group, by the Cell State it says the hidden columns hold.
+- **Visual Tokens.** `--ex-header-group-collapsed-icon` and `--ex-header-group-expanded-icon`, each a CSS
+  image (an SVG `url(…)`) painted as a mask, so its colour is `--ex-header-group-toggle-color`, which
+  defaults to the header's colour. The bare grid's defaults are a right-pointing and a down-pointing
+  chevron. The Hidden Mark takes its state's existing token (`--ex-state-modified-mark`,
+  `--ex-state-error-color`, `--ex-state-stale-color`, `--ex-state-missing-background`) and no token of
+  its own; its default shape is the modified cell's corner triangle (the fourth correction above), in the
+  group's top right corner.
+- **Geometry Token.** `--ex-header-group-toggle-width`, from Grid Metrics, emitted inline with the others:
+  the toggle's box, which the label's room is the rectangle less. The toggle is as tall as the tier.
+- **The Wrappers** set the two icons from their design system (Mantine's Accordion chevron for
+  `@ex-grid/mantine`; Material's chevrons for `@ex-grid/mui` and `ExGrid.MudBlazor`) and the toggle's
+  colour from their theme's variables. Under forced colours the icons are painted in `ButtonText` and
+  the mark keeps its shape in `Highlight`, so neither disappears.

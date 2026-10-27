@@ -44,6 +44,8 @@ nix develop .#browser -c bash -c 'cd src/npm && npm test'            # Vitest: l
   core uses inside itself is not exported there, however public its own `export` looks.
 - **Layer 1's cases are shared with the C# core.** They live as JSON under
   [`tests/cases/`](../../tests/cases/README.md), run by xUnit against the C# core and by Vitest here.
-  A case is green on the C# core before the Script Core takes it.
+  A case of behaviour the C# core has is green there before the Script Core takes it; a case of
+  behaviour new to the Script Core, which the C# core will not take before it is removed, goes in on
+  the Script Core alone, read by a kind no C# runner reads (ADR-0350 section 5's note of 2026-10-27).
 - **`dist/` and `temp/` are written by the build and not committed.** A package is built when it is
   published.
