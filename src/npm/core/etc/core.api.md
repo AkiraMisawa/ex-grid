@@ -131,7 +131,70 @@ export interface CellTextMeasure {
 export function cellTextMeasure(density: GridDensity): CellTextMeasure;
 
 // @public
+export class CellTextMetrics {
+    constructor(options: CellTextMetricsOptions);
+    get bold(): CellTextMetrics;
+    get boldDigitWidthPx(): number;
+    get boldNarrowWidthPx(): number;
+    get boldOtherWidthPx(): number;
+    get boldWideWidthPx(): number;
+    static readonly boldWidthAllowance = 1.04;
+    get cellHorizontalPaddingPx(): number;
+    contentWidthPx(columnWidthPx: number): number;
+    get digitWidthPx(): number;
+    equals(other: CellTextMetrics): boolean;
+    estimatePx(text: string): number;
+    exportGlyphWidths(): Readonly<Record<number, number>>;
+    for(type: ColumnType): CellTextMetrics;
+    get fullWidthPx(): number;
+    get glyphWidths(): GlyphWidthTable | undefined;
+    get narrowWidthPx(): number;
+    static readonly otherWidthAllowance = 2;
+    get otherWidthPx(): number;
+    textWidthPx(text: string): number;
+    get wideWidthPx(): number;
+    // @internal
+    withBoldWidths(boldWideWidthPx: number, boldDigitWidthPx: number, boldNarrowWidthPx: number): CellTextMetrics;
+    // @internal
+    withFullWidthAtLeast(emPx: number): CellTextMetrics;
+    withGlyphWidths(table: GlyphWidthTable | undefined, fontSizePx: number): CellTextMetrics;
+}
+
+// @public
+export type CellTextMetricsOptions = CellWidthsUniform | CellWidthsThreeClasses | CellWidthsFourClasses | CellWidthsWithBold | CellWidthsEveryClass;
+
+// @public
 export type CellTone = 'none' | 'positive' | 'negative';
+
+// @public
+export interface CellWidthsEveryClass extends CellWidthsWithBold {
+    readonly boldOtherWidthPx: number;
+    readonly otherWidthPx: number;
+}
+
+// @public
+export interface CellWidthsFourClasses extends CellWidthsThreeClasses {
+    readonly fullWidthPx: number;
+}
+
+// @public
+export interface CellWidthsThreeClasses extends CellWidthsUniform {
+    readonly narrowWidthPx: number;
+    readonly wideWidthPx: number;
+}
+
+// @public
+export interface CellWidthsUniform {
+    readonly cellHorizontalPaddingPx: number;
+    readonly digitWidthPx: number;
+}
+
+// @public
+export interface CellWidthsWithBold extends CellWidthsFourClasses {
+    readonly boldDigitWidthPx: number;
+    readonly boldNarrowWidthPx: number;
+    readonly boldWideWidthPx: number;
+}
 
 // @public
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
@@ -558,6 +621,15 @@ export interface FormulaBarTextView {
 }
 
 // @public
+export class GlyphWidthTable {
+    constructor(measuredAtPx: number, glyphs: Iterable<readonly [glyph: string, regularPx: number, boldPx: number]>);
+    get codePoints(): Iterable<number>;
+    get count(): number;
+    readonly measuredAtPx: number;
+    widthPxOf(codePoint: number, bold: boolean): number | undefined;
+}
+
+// @public
 export interface GridAction {
     readonly className?: string;
     readonly label: string;
@@ -956,6 +1028,7 @@ export function gridNumberOf(value: SnapshotDecimal): number;
 // @public
 export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptions<Row> {
     readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>;
+    readonly cellMetrics?: CellTextMetrics;
     readonly chrome?: GridChrome<Row>;
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
@@ -1014,6 +1087,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly pinnedColumnCount?: number;
     readonly pointAt?: (text: string, caret: number) => boolean;
     readonly pointedAt?: GridPointedAt<Row>;
+    readonly presentationDefaults?: GridPresentationDefaults;
     readonly referencesIn?: (text: string) => readonly GridEditorReference[] | undefined;
     readonly referenceText?: (range: SelectionRange) => string;
     readonly rowHeadings?: (row: number) => string;
@@ -1136,6 +1210,43 @@ export type GridPointState = 'none' | 'inPoint' | 'writtenFromOutside';
 export interface GridPopoverContext {
     readonly close: () => void;
     readonly innerPopupChanged: (open: boolean) => void;
+}
+
+// @public
+export class GridPresentationDefaults {
+    constructor(options: GridPresentationDefaultsOptions);
+    readonly boldDigitWidthPx: number;
+    readonly boldNarrowWidthPx: number;
+    readonly boldOtherWidthPx: number;
+    readonly boldWideWidthPx: number;
+    // @internal
+    cellMetricsAt(fontSizePx: number, cellHorizontalPaddingPx: number): CellTextMetrics;
+    readonly density: GridDensity | undefined;
+    readonly digitWidthPx: number;
+    readonly fontSizePx: number;
+    readonly glyphWidths: GlyphWidthTable | undefined;
+    readonly highlightHoverRow: boolean | undefined;
+    readonly narrowWidthPx: number;
+    readonly otherWidthPx: number;
+    readonly stripeRows: boolean | undefined;
+    readonly wideWidthPx: number;
+}
+
+// @public
+export interface GridPresentationDefaultsOptions {
+    readonly boldDigitWidthPx?: number;
+    readonly boldNarrowWidthPx?: number;
+    readonly boldOtherWidthPx?: number;
+    readonly boldWideWidthPx?: number;
+    readonly density?: GridDensity;
+    readonly digitWidthPx: number;
+    readonly fontSizePx: number;
+    readonly glyphWidths?: GlyphWidthTable;
+    readonly highlightHoverRow?: boolean;
+    readonly narrowWidthPx: number;
+    readonly otherWidthPx?: number;
+    readonly stripeRows?: boolean;
+    readonly wideWidthPx: number;
 }
 
 // @public

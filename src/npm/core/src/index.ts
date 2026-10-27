@@ -63,6 +63,12 @@ export type { ColumnType, DateType, QueryColumn } from './query/columns';
 export { foldCase } from './query/text-casing';
 export type { CellAlign, CellState, CellTone } from './paint/cell-classes';
 export type { GridDensity } from './grid-metrics';
+export {
+    CellTextMetrics, type CellTextMetricsOptions, type CellWidthsEveryClass, type CellWidthsFourClasses, type CellWidthsThreeClasses, type CellWidthsUniform,
+    type CellWidthsWithBold,
+} from './columns/cell-text-metrics';
+export { GlyphWidthTable } from './columns/glyph-width-table';
+export { GridPresentationDefaults, type GridPresentationDefaultsOptions } from './grid-presentation-defaults';
 export { densityText } from './density-text';
 export type { DensityText } from './density-text';
 export { gridHeaderRequiredPx, gridTextGeometry } from './text-geometry';
