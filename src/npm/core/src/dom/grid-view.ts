@@ -819,7 +819,6 @@ interface HeaderMatches<Row> {
     readonly groups: ReadonlyMap<string, MatchMark>;
 }
 
-/** The options as `update` takes them: checked and resolved, and not yet the grid's. */
 // The Focus a Header Group's toggle remembers (ADR-0011's section "A Header Group's toggle keeps the Focus"): what was
 // notified, and the row by its key, or by its position under the order it was taken in. Let go when anything else
 // placed or dropped the Focus first, which the Selection and the source it was taken under tell.
@@ -832,6 +831,7 @@ interface ToggleFocus {
     readonly key: RowKey | undefined;
 }
 
+/** The options as `update` takes them: checked and resolved, and not yet the grid's. */
 interface Taken<Row> {
     readonly source: GridSource<Row>;
     /** The source when the grid made it over `rows`. */
@@ -1604,6 +1604,8 @@ export class GridView<Row> {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined;
         readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number; readonly grips: boolean;
         readonly menus: boolean; readonly headingStyle: string | undefined;
+        /** The commandLabel the header's controls were named through: a ▾ and a group's toggle (ADR-0370 section 10). */
+        readonly labels: ((id: string) => string | undefined) | undefined;
     } | undefined;
     // The tiers of Header Groups as painted, and the leaf row beneath them: the rectangles stand on the
     // column geometry, the layout and the tier height alone, so a scroll or a Sort that rebuilds the leaves
@@ -1612,6 +1614,8 @@ export class GridView<Row> {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly layout: HeaderGroupLayout;
         readonly tierPx: number; readonly rows: readonly HTMLElement[]; readonly leaves: HTMLElement;
         readonly groups: readonly { readonly element: HTMLElement; readonly id: string }[];
+        /** The commandLabel the toggles' names were worded through (ADR-0400 section 8). */
+        readonly labels: ((id: string) => string | undefined) | undefined;
     } | undefined;
     // The header cells as painted, each with its class before the Heading Mark's, and the mark's runs and
     // rectangles (ADR-0008, 2026-10-13): made once per Selection and extent, and the rectangles once per
@@ -2585,9 +2589,10 @@ export class GridView<Row> {
             return new HeaderGroup(group);
         });
         if (headerGroups.length === 0) return { headerGroups, headerLayout: HeaderGroupLayout.empty };
-        // A toggle stops being heard with no change to the groups: its refusal is asked whatever is kept (ADR-0400).
-        HeaderGroupLayout.refuseToggles(headerGroups, toggleHeard);
         if (!columnsChanged && pinnedCount === this.#pinnedCount && sameGroups(headerGroups, this.#headerGroups)) {
+            // A toggle stops being heard with no change to the groups: its refusal is asked whatever is kept (ADR-0400).
+            // A layout resolved afresh asks it in resolve.
+            HeaderGroupLayout.refuseToggles(headerGroups, toggleHeard);
             return { headerGroups: this.#headerGroups, headerLayout: this.#headerLayout };
         }
         const headerLayout = HeaderGroupLayout.resolve({
@@ -3222,9 +3227,10 @@ export class GridView<Row> {
     #focusAfterToggle(toggled: ToggleFocus, names: readonly string[]): CellPosition | undefined {
         const column = this.#headerLayout.focusColumnAfter(toggled.toggle, names);
         if (column === undefined) return undefined;
-        const row = toggled.key === undefined
-            ? (this.#source.rowKey === undefined && this.#sequence() === toggled.sequence ? toggled.row : undefined)
-            : this.#positionOfKey(toggled.key, toggled.row);
+        // A row the Window did not hold when the toggle was taken has no key, and one whose key the Window no longer
+        // holds is not found by it: either is still its position while the order it was taken in holds.
+        const byKey = toggled.key === undefined ? undefined : this.#positionOfKey(toggled.key, toggled.row);
+        const row = byKey !== undefined ? byKey : this.#sequence() === toggled.sequence ? toggled.row : undefined;
         return row === undefined || row >= this.#totalRows ? undefined : cellPosition(row, column);
     }
 
@@ -9972,13 +9978,14 @@ export class GridView<Row> {
         const menus = !this.#hideColumnMenu;
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
             && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts && painted.layout === layout
-            && painted.tierPx === tierPx && painted.grips === grips && painted.menus === menus && painted.headingStyle === this.#rowHeadingStyle) {
+            && painted.tierPx === tierPx && painted.grips === grips && painted.menus === menus && painted.headingStyle === this.#rowHeadingStyle
+            && painted.labels === this.#commandLabel) {
             this.#paintHeadingMarks(false);
             return;
         }
         this.#paintedHeader = {
             styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx, grips, menus,
-            headingStyle: this.#rowHeadingStyle,
+            headingStyle: this.#rowHeadingStyle, labels: this.#commandLabel,
         };
         // Where the two Headings meet (ADR-0050): held at the left edge as the Row Headings are, and a click there
         // selects all. Paint only: the header's own click reads the offsets.
@@ -10060,12 +10067,21 @@ export class GridView<Row> {
                 leaves.setAttribute('role', 'row');
                 leaves.setAttribute('aria-rowindex', String(layout.tierCount + 1));
                 leaves.setAttribute('style', 'display: contents');
-                tiers = { styles: this.#styles, columns: this.#columns, layout, tierPx, rows, leaves, groups };
+                tiers = { styles: this.#styles, columns: this.#columns, layout, tierPx, rows, leaves, groups, labels: this.#commandLabel };
                 this.#paintedTiers = tiers;
                 // Only where the tiers themselves are new: a horizontal scroll paints the leaves alone, and
                 // detaching the tier rows every step would move the band's whole structure (PF-3). The corner comes
                 // and goes with the lead width, which is a new ColumnStyles, so the tiers are new with it.
                 header.replaceChildren(...corner, ...rows, leaves);
+            } else if (tiers.labels !== this.#commandLabel) {
+                // The toggles' names are worded through commandLabel, which can change while the tiers stand: they are
+                // worded again in place, and the tiers stay (ADR-0400 section 8).
+                for (const [toggle, id] of this.#groupToggles) {
+                    const shown = defined(layout.groups.find(candidate => candidate.group.id === id), `the Header Group '${id}' a toggle names`);
+                    toggle.setAttribute('aria-label', this.#toggleLabel(shown.group));
+                }
+                tiers = { ...tiers, labels: this.#commandLabel };
+                this.#paintedTiers = tiers;
             }
             tiers.leaves.replaceChildren(...cells);
         } else {
@@ -10110,6 +10126,12 @@ export class GridView<Row> {
         return row;
     }
 
+    // A Header Group's toggle's name, "Expand {label}" or "Collapse {label}" as the word tables say it (ADR-0400 section 8).
+    #toggleLabel(group: HeaderGroup): string {
+        const id = group.expanded === true ? gridLabelIds.headerGroupCollapse : gridLabelIds.headerGroupExpand;
+        return filledWords(this.#labelOf(id), { label: group.label });
+    }
+
     #groupElement(group: ResolvedHeaderGroup): HTMLElement {
         const geometry = this.#styles.geometry;
         const tierPx = this.#metrics.headerHeightPx;
@@ -10137,11 +10159,13 @@ export class GridView<Row> {
             toggle.className = 'ex-header-group-toggle';
             toggle.tabIndex = -1;
             toggle.setAttribute('aria-expanded', String(expanded));
-            toggle.setAttribute('aria-label', filledWords(this.#labelOf(expanded ? gridLabelIds.headerGroupCollapse : gridLabelIds.headerGroupExpand),
-                { label: group.label }));
+            toggle.setAttribute('aria-label', this.#toggleLabel(group.group));
             toggle.setAttribute('data-ex-claims', 'mousedown click');
             element.prepend(toggle);
             this.#groupToggles.set(toggle, id);
+            // The group's own name is its label: named from its contents it would take the toggle's words in too,
+            // "Collapse Leg 1 Leg 1" (ADR-0400 section 8).
+            element.setAttribute('aria-label', group.label);
         }
         if (hiddenMark !== undefined) {
             // The Hidden Mark (ADR-0400 section 6): its state's look, and its reason as the group's description.

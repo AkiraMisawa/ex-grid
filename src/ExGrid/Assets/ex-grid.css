@@ -304,7 +304,10 @@
 .ex-hidden-mark-modified { background: var(--ex-state-modified-mark, rgba(106, 68, 166, 0.9)); }
 .ex-hidden-mark-error { background: var(--ex-state-error-color, #b3261e); }
 .ex-hidden-mark-stale { background: var(--ex-state-stale-color, #8a6d1f); }
-.ex-hidden-mark-missing { background: var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)); }
+/* A missing cell's token is a faint tint, which on a 6px corner of the header cannot be seen: the
+   mark takes the token's colour at full strength, so a closed group never looks like one hiding
+   nothing (principle 1). */
+.ex-hidden-mark-missing { background: rgb(from var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)) r g b); }
 /* The seam an Action or Template cell crosses (ADR-0020). Everything under .ex-row is
    pointer-events: none so the Viewport can hit-test by arithmetic; a control that wants
    its own click turns them back on for itself alone. The inert parts of the cell stay

@@ -83,6 +83,8 @@ describe('a Header Group\'s toggle', () => {
             .toEqual([[true, 'true', 'Collapse Leg 1', '-1', 'mousedown click']]);
         // The group's own text stays its label, and the toggle's box is a Geometry Token the stylesheet reads.
         expect(toggles[0]?.parentElement?.textContent).toBe('Leg 1');
+        // Named by its label alone, not by the toggle's words beside it (ADR-0400 section 8).
+        expect(toggles[0]?.parentElement?.getAttribute('aria-label')).toBe('Leg 1');
         expect(root.getAttribute('style')).toContain('--ex-header-group-toggle-width: 20px');
     });
 
@@ -91,6 +93,16 @@ describe('a Header Group\'s toggle', () => {
             ...base, rows: trades(5), columns: closed, onHeaderGroupToggled: () => undefined, headerGroups: [groupOf(false)],
             commandLabel: id => (id === 'header-group-expand' ? '{label} を展開' : undefined),
         });
+        await painted();
+        expect(q(root, '.ex-header-group-toggle').getAttribute('aria-label')).toBe('Leg 1 を展開');
+    });
+
+    it('ADR-0400 section 8: a commandLabel handed over later words the toggle again, the groups unchanged', async () => {
+        const options: GridOptions<Trade> = { ...base, rows: trades(5), columns: closed, onHeaderGroupToggled: () => undefined, headerGroups: [groupOf(false)] };
+        const { root, view } = mount(options);
+        await painted();
+        expect(q(root, '.ex-header-group-toggle').getAttribute('aria-label')).toBe('Expand Leg 1');
+        view.update({ ...options, commandLabel: id => (id === 'header-group-expand' ? '{label} を展開' : undefined) });
         await painted();
         expect(q(root, '.ex-header-group-toggle').getAttribute('aria-label')).toBe('Leg 1 を展開');
     });
@@ -224,6 +236,38 @@ describe('the Focus across a toggle (ADR-0011, ADR-0400 section 9)', () => {
         answer(heard[0] as HeaderGroupToggle);
         await painted();
         expect(view.readView().selection.focus).toEqual(cell(7, 1));
+    });
+
+    it('ADR-0400 / HG-23: with a Row Key, a Focus row the Window no longer holds comes back by position while the order holds', async () => {
+        const rows = trades(200);
+        const inner = GridSource.from(rows);
+        const listeners = new Set<() => void>();
+        let windowStart = 0;
+        // A source that holds a Window of 20 rows, as a fetching one does, moved by hand.
+        const source: GridSource<Trade> = {
+            subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; },
+            snapshot: () => ({ ...inner.snapshot(), window: rows.slice(windowStart, windowStart + 20), windowStart, totalCount: rows.length }),
+            setColumns: columns => { inner.setColumns(columns); },
+            setSorts: sorts => { inner.setSorts(sorts); },
+            setFilter: filter => { inner.setFilter(filter); },
+            needRange: () => Promise.resolve(),
+            rows: range => Promise.resolve(rows.slice(range.start, range.start + range.count)),
+            distinctValues: () => Promise.resolve({ kind: 'tooMany' }),
+            rowKey: trade => trade.book,
+        };
+        const { root, view, heard, answer } = consumer({ source });
+        await painted();
+        const version = source.snapshot().rowSequenceVersion;
+        view.placeSelection(selectionRange(2, 2, 1, 1), cell(2, 2), version);
+        await painted();
+        windowStart = 150;
+        for (const listener of listeners) listener();
+        await painted();
+        groupKey(root, 'ArrowUp');
+        await painted();
+        answer(heard[0] as HeaderGroupToggle);
+        await painted();
+        expect(view.readView().selection.focus).toEqual(cell(2, 1));
     });
 
     it('ADR-0400 / HG-23: without a Row Key, an order that moved before the push leaves no Focus', async () => {
