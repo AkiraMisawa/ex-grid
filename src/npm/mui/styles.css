@@ -52,6 +52,11 @@
     --ex-state-modified-mark: var(--mui-palette-primary-main);
     --ex-state-stale-color: var(--mui-palette-text-secondary);
     --ex-state-missing-background: var(--mui-palette-action-hover);
+    /* A Header Group's toggle (ADR-0400 section 7): Material's ChevronRight while the group is collapsed and its
+       ExpandMore while it is open, the icons MUI's Accordion and TreeView draw, in an icon button's colour. */
+    --ex-header-group-collapsed-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z'/%3E%3C/svg%3E");
+    --ex-header-group-expanded-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z'/%3E%3C/svg%3E");
+    --ex-header-group-toggle-color: var(--mui-palette-action-active);
     /* The Change Highlight (ADR-0068): the theme's warning, translucent beneath the text. */
     --ex-change-highlight-background: color-mix(in srgb, var(--mui-palette-warning-main) 25%, transparent);
     /* The Match Mark (ADR-0332 §4): the matches in view in the theme's secondary, the current one in its warning,

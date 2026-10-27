@@ -88,6 +88,47 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="Groups that open and close">
+        <p>
+            A group given an <code>id</code> and <code>expanded</code> draws a toggle at its left, a chevron
+            pointing down while it is open and right while it is closed. A press on it, or
+            <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> from a cell under the group (<kbd>Option</kbd> on a Mac),
+            raises <code>onHeaderGroupToggled</code> (<code>OnHeaderGroupToggled</code> in Blazor) with the group's
+            <code>id</code> and the state asked for; <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↓</kbd> opens the lowest
+            closed group over the cell. The grid adds and removes no column: answer by handing back the columns you
+            want and the group's new <code>expanded</code>, as you answer a hide or a reorder. Whether a group is
+            open is the user's View State, yours to keep. A press anywhere else on the group is still its drag.
+        </p>
+        <p>
+            The notification asks for the opposite of what the group showed when the input was taken, so two quick
+            presses before your answer arrives ask for the same state twice, and applying both lands where one
+            would. The Selection is dropped when the columns change, but the Focus survives the toggle: it comes
+            back on the same row, in its own column when that is still shown and otherwise in the group's first
+            member. A closed group keeps at least one column shown, a summary column say, so its toggle has
+            somewhere to stand.
+        </p>
+        <p>
+            A closed group can wear a <strong>Hidden Mark</strong>: give it <code>hiddenMark</code> with a Cell
+            State and a reason, and it carries that state's corner mark, the reason as its tooltip and its
+            accessible description. Use it when a hidden column holds something the reader must not lose sight of,
+            such as a value the user set. The grid refuses, naming the group, <code>expanded</code> without an
+            <code>id</code>, two groups with one <code>id</code>, <code>expanded</code> on a grid with no handler or
+            on a spacer, and a Hidden Mark on a group that is not closed or whose reason is empty. Given the
+            handler, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↓</kbd> and <kbd>↑</kbd> are the grid's and cannot be
+            declared keys; without it they stay the page's.
+        </p>
+        <p>
+            The toggle's picture and the mark's colour are the stylesheet's: <code>--ex-header-group-collapsed-icon</code>
+            and <code>--ex-header-group-expanded-icon</code> are CSS images painted in
+            <code>--ex-header-group-toggle-color</code>, and the mark takes its state's own token. The Mantine and
+            MUI Wrappers, and ExGrid.MudBlazor, set them from their design system's chevrons and theme. In Blazor the
+            toggle is drawn by the grid on the TypeScript core, <code>ExGrid.Script.ExGrid</code>; the C# core's grid
+            refuses a group that declares one rather than draw it without.
+        </p>
+        <DocsExample Title="A group that opens and closes, with a Hidden Mark" Builtin="typeof(ExpandableGroups)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="Resizing, reordering and hiding">
         <p>
             Column layout is your application's state, and the grid only reports the gestures:

@@ -1,0 +1,60 @@
+@using System.Globalization
+@using ExGrid.Cells
+@using ExGrid.Columns
+
+@* Press the chevron at Valuation's left, or Alt+Shift+Up from a cell under it, to collapse it; again, or
+   Alt+Shift+Down, opens it. The grid draws the toggle and tells you; the columns are yours. *@
+<ExGrid.Script.ExGrid TRow="Position" Source="_source" Columns="@(_expanded ? All : Collapsed)" HeaderGroups="GroupsFor(_expanded)"
+                      CellState="StateOf" OnHeaderGroupToggled="Toggled" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly Position[] Positions = Position.Sample();
+
+    // Every seventh position's price was set by hand: its cell says so, and so does the group while the price is hidden.
+    private static bool SetByHand(Position position) => position.Id % 7 == 0;
+    private static readonly int HandSetPrices = Positions.Count(SetByHand);
+
+    private static readonly GridColumn<Position>[] All =
+    [
+        new("Id", ColumnType.Number, p => p.Id, width: Fixed(70), align: CellAlign.Left),
+        new("Instrument", ColumnType.Text, p => p.Instrument, width: Fixed(120)),
+        new("Quantity", ColumnType.Number, p => p.Quantity, width: Fixed(110), format: v => ((int)v).ToString("N0", Invariant)),
+        new("Cost", ColumnType.Number, p => p.Cost, width: Fixed(90), format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("Price", ColumnType.Number, p => p.Price, width: Fixed(90), format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", width: Fixed(132), format: v => ((decimal)v).ToString("N2", Invariant)),
+    ];
+
+    // Collapsed, the group keeps one column shown: its press opens the group again.
+    private static readonly GridColumn<Position>[] Collapsed = [.. All.Where(c => c.Name is not ("Quantity" or "Cost" or "Price"))];
+
+    private static readonly HeaderGroup[] Open =
+    [
+        new("Position", ["Id", "Instrument"]),
+        new("Valuation", ["Quantity", "Cost", "Price", "Pnl"]) { Id = "valuation", Expanded = true },
+    ];
+
+    private static readonly HeaderGroup[] Closed =
+    [
+        new("Position", ["Id", "Instrument"]),
+        new("Valuation", ["Pnl"])
+        {
+            Id = "valuation", Expanded = false,
+            HiddenMark = new(CellState.Modified, $"{HandSetPrices} prices set by hand in hidden columns"),
+        },
+    ];
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Positions);
+
+    // Whether the group is open is yours to hold, as the column order is.
+    private bool _expanded = true;
+
+    private static IReadOnlyList<HeaderGroup> GroupsFor(bool expanded) => expanded ? Open : Closed;
+
+    private static CellState StateOf(Position position, GridColumn<Position> column)
+        => column.Name == "Price" && SetByHand(position) ? CellState.Modified : CellState.Normal;
+
+    private void Toggled(HeaderGroupToggle toggle) => _expanded = toggle.Expanded;
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+}

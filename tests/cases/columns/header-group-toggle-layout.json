@@ -1,0 +1,95 @@
+{
+  "about": "Header Group toggles across a declaration (ADR-0400 sections 2, 4 and 9): the refusals that look at more than one group, the group Alt+Shift+Down or Up acts on from a cell, and where the Focus stands after the columns push that answers a toggle. The columns are a trade's two legs: Leg 1 shows its rate and day count and hides its calendar, Leg 2 shows all three; the Legs group stands over both on tier 2. The Script Core's alone: the C# core never takes a toggle (ADR-0400 section 10; ADR-0350 section 5's note of 2026-10-27), so no C# runner reads this kind.",
+  "kind": "scriptCalls",
+  "subject": "HeaderGroupLayout",
+  "cases": [
+    {
+      "name": "ADR-0400 / HG-19: two groups under one id are refused, naming both",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Leg 1", "columns": ["Leg1Rate"], "id": "leg", "expanded": true}}, {"new": "HeaderGroup", "with": {"label": "Leg 2", "columns": ["Leg2Rate"], "id": "leg", "expanded": true}}], "columnNames": ["Leg1Rate", "Leg2Rate"], "pinnedCount": 0, "toggleHeard": true},
+      "throws": "argument", "saying": "Header Groups 'Leg 1' and 'Leg 2' are both named 'leg'"
+    },
+    {
+      "name": "ADR-0400 / HG-19: an id alone, with no toggle, is still the group's own",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Leg 1", "columns": ["Leg1Rate"], "id": "leg"}}, {"new": "HeaderGroup", "with": {"label": "Leg 2", "columns": ["Leg2Rate"], "id": "leg"}}], "columnNames": ["Leg1Rate", "Leg2Rate"], "pinnedCount": 0},
+      "throws": "argument", "saying": "both named 'leg'"
+    },
+    {
+      "name": "ADR-0400 / HG-19: a group declared expanded where no onHeaderGroupToggled hears it is refused, naming the group",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Leg 1", "columns": ["Leg1Rate"], "id": "leg1", "expanded": true}}], "columnNames": ["Leg1Rate"], "pinnedCount": 0, "toggleHeard": false},
+      "throws": "argument", "saying": "Header Group 'Leg 1' is declared expanded or collapsed, but no onHeaderGroupToggled hears its toggle"
+    },
+    {
+      "name": "ADR-0400: groups with no toggle need nobody to hear one",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Leg 1", "columns": ["Leg1Rate"], "id": "leg1"}}], "columnNames": ["Leg1Rate"], "pinnedCount": 0, "toggleHeard": false},
+      "expect": [{"get": "tierCount", "is": 1}]
+    },
+    {
+      "name": "ADR-0400 / HG-21: Alt+Shift+Down expands the lowest-tier collapsed group over the Focus's column",
+      "via": "resolve",
+      "create": {"groups": [
+        {"new": "HeaderGroup", "with": {"label": "Legs", "columns": ["Leg1Rate", "Leg1DayCount", "Leg2Rate", "Leg2DayCount", "Leg2Calendar"], "tier": 2, "id": "legs", "expanded": true}},
+        {"new": "HeaderGroup", "with": {"label": "Leg 1", "columns": ["Leg1Rate", "Leg1DayCount"], "id": "leg1", "expanded": false}},
+        {"new": "HeaderGroup", "with": {"label": "Leg 2", "columns": ["Leg2Rate", "Leg2DayCount", "Leg2Calendar"], "id": "leg2", "expanded": true}}
+      ], "columnNames": ["TradeId", "Leg1Rate", "Leg1DayCount", "Leg2Rate", "Leg2DayCount", "Leg2Calendar"], "pinnedCount": 0, "toggleHeard": true},
+      "expect": [
+        {"call": "toggleOver", "args": [2, true], "then": [{"get": "label", "is": "Leg 1"}]},
+        {"call": "toggleOver", "args": [4, true], "is": null},
+        {"call": "toggleOver", "args": [0, true], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-21: Alt+Shift+Up collapses the lowest-tier expanded group, passing over a collapsed one beneath it",
+      "via": "resolve",
+      "create": {"groups": [
+        {"new": "HeaderGroup", "with": {"label": "Legs", "columns": ["Leg1Rate", "Leg1DayCount", "Leg2Rate", "Leg2DayCount", "Leg2Calendar"], "tier": 2, "id": "legs", "expanded": true}},
+        {"new": "HeaderGroup", "with": {"label": "Leg 1", "columns": ["Leg1Rate", "Leg1DayCount"], "id": "leg1", "expanded": false}},
+        {"new": "HeaderGroup", "with": {"label": "Leg 2", "columns": ["Leg2Rate", "Leg2DayCount", "Leg2Calendar"], "id": "leg2", "expanded": true}}
+      ], "columnNames": ["TradeId", "Leg1Rate", "Leg1DayCount", "Leg2Rate", "Leg2DayCount", "Leg2Calendar"], "pinnedCount": 0, "toggleHeard": true},
+      "expect": [
+        {"call": "toggleOver", "args": [4, false], "then": [{"get": "label", "is": "Leg 2"}]},
+        {"call": "toggleOver", "args": [1, false], "then": [{"get": "label", "is": "Legs"}]},
+        {"call": "toggleOver", "args": [0, false], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-21: a group with no toggle answers neither key, and the key is the page's",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Leg 1", "columns": ["Leg1Rate", "Leg1DayCount"]}}], "columnNames": ["Leg1Rate", "Leg1DayCount"], "pinnedCount": 0, "toggleHeard": true},
+      "expect": [
+        {"call": "toggleOver", "args": [0, true], "is": null},
+        {"call": "toggleOver", "args": [0, false], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-23: after a collapse that hides the Focus's column, the Focus goes to the group's first member as pushed",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Leg 2", "columns": ["Leg2Rate"], "id": "leg2", "expanded": false}}], "columnNames": ["TradeId", "Leg2Rate"], "pinnedCount": 0, "toggleHeard": true},
+      "expect": [
+        {"call": "focusColumnAfter", "args": [{"id": "leg2", "expanded": false, "focusColumn": "Leg2Calendar"}, ["TradeId", "Leg2Rate"]], "is": 1}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-23: after an expand, the Focus stays in its column by name, wherever the push put it",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Leg 2", "columns": ["Leg2DayCount", "Leg2Rate", "Leg2Calendar"], "id": "leg2", "expanded": true}}], "columnNames": ["TradeId", "Leg2DayCount", "Leg2Rate", "Leg2Calendar"], "pinnedCount": 0, "toggleHeard": true},
+      "expect": [
+        {"call": "focusColumnAfter", "args": [{"id": "leg2", "expanded": true, "focusColumn": "Leg2Rate"}, ["TradeId", "Leg2DayCount", "Leg2Rate", "Leg2Calendar"]], "is": 2},
+        {"call": "focusColumnAfter", "args": [{"id": "leg2", "expanded": true, "focusColumn": "TradeId"}, ["TradeId", "Leg2DayCount", "Leg2Rate", "Leg2Calendar"]], "is": 0},
+        {"call": "focusColumnAfter", "args": [{"id": "leg2", "expanded": true}, ["TradeId", "Leg2DayCount", "Leg2Rate", "Leg2Calendar"]], "is": 1}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-23: a push that does not show the group as the toggle asked, or drops the group, keeps no Focus",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Leg 2", "columns": ["Leg2Rate"], "id": "leg2", "expanded": false}}], "columnNames": ["TradeId", "Leg2Rate"], "pinnedCount": 0, "toggleHeard": true},
+      "expect": [
+        {"call": "focusColumnAfter", "args": [{"id": "leg2", "expanded": true, "focusColumn": "Leg2Rate"}, ["TradeId", "Leg2Rate"]], "is": null},
+        {"call": "focusColumnAfter", "args": [{"id": "leg1", "expanded": false, "focusColumn": "Leg2Rate"}, ["TradeId", "Leg2Rate"]], "is": null}
+      ]
+    }
+  ]
+}

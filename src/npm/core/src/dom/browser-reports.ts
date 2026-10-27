@@ -108,7 +108,11 @@ export const browserReports: BrowserReports = Object.freeze({
         const told = toldAfterTheObservation(() => { tell(ceiling); });
         const observer = new ResizeObserver(entries => {
             const size = entries.at(-1)?.borderBoxSize[0];
-            if (size === undefined || size.blockSize === ceiling) return;
+            // A probe laid out at nothing is not laid out at all: taken out of the document, as a host's own
+            // renderer does on navigation before the grid's dispose reaches it, or under display: none. The
+            // browser's ceiling has not moved, so nothing is told; read as a ceiling it would leave no room for
+            // a single row, and the grid would refuse its own Viewport (ADR-0053).
+            if (size === undefined || size.blockSize === 0 || size.blockSize === ceiling) return;
             ceiling = size.blockSize;
             told();
         });

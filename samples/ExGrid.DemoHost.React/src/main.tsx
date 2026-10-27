@@ -16,6 +16,7 @@ import { ChartCandles } from './pages/chart-candles';
 import { ChartSpecPage } from './pages/chart-spec';
 import { Density } from './pages/density';
 import { Features } from './pages/features';
+import { GroupToggle } from './pages/group-toggle';
 import { Fetch } from './pages/fetch';
 import { GridLiveLocal } from './pages/grid-live-local';
 import { FilterPanel } from './pages/filter-panel';
@@ -59,7 +60,7 @@ declare global {
 
 window.exDemo = Object.freeze({ navigateTo });
 
-const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live-local': GridLiveLocal, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-bridge': ChartBridge, 'chart-candles': ChartCandles, scatter: Scatter, 'chart-spec': ChartSpecPage, surface: Surface,
+const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live-local': GridLiveLocal, features: Features, 'group-toggle': GroupToggle, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-bridge': ChartBridge, 'chart-candles': ChartCandles, scatter: Scatter, 'chart-spec': ChartSpecPage, surface: Surface,
     'chart-showcase/exposure': ExposureShowcase, 'chart-showcase/cds-spread': CdsSpreadShowcase,
     'chart-showcase/fx-volatility': FxVolatilityShowcase, 'chart-showcase/equity-index': EquityIndexShowcase,
     'chart-showcase/binomial-lattice': BinomialLatticeShowcase, 'chart-showcase/curves': CurvesShowcase,

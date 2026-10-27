@@ -16,7 +16,8 @@ import { WriteGate } from './write-gate';
  * handler can behave otherwise than one without (a grid without `onEdit` edits nothing). */
 export type HeardKind =
     | 'selectionChanged' | 'edit' | 'paste' | 'fill' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
-    | 'columnHidden' | 'pinnedCountChanged' | 'editingChanged' | 'editDiscarded' | 'cellDoubleClick' | 'leave' | 'overwriteNotice' | 'action';
+    | 'columnHidden' | 'pinnedCountChanged' | 'headerGroupToggled' | 'editingChanged' | 'editDiscarded' | 'cellDoubleClick' | 'leave' | 'overwriteNotice'
+    | 'action';
 
 /** The component's parameters, as the core's options are spelt. .NET sends only what the Consumer set, and the
  * core's own default stands for the rest, so a default is written once, in the core. */
@@ -192,8 +193,8 @@ export function parsed<T>(json: string): T {
 
 type Handlers = Required<Pick<GridOptions<BlazorRow>,
     | 'onSelectionChanged' | 'onEdit' | 'onPaste' | 'onFill' | 'onClear' | 'onUndo' | 'onRedo' | 'onRefused' | 'onColumnWidthChanged' | 'onColumnOrderChanged'
-    | 'onColumnHidden' | 'onPinnedCountChanged' | 'onEditingChanged' | 'onEditDiscarded' | 'onCellDoubleClick' | 'onLeave' | 'onOverwriteNotice'
-    | 'onAction'>>;
+    | 'onColumnHidden' | 'onPinnedCountChanged' | 'onHeaderGroupToggled' | 'onEditingChanged' | 'onEditDiscarded' | 'onCellDoubleClick' | 'onLeave'
+    | 'onOverwriteNotice' | 'onAction'>>;
 
 type Asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>) => Promise<T>;
 
@@ -238,6 +239,7 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
         onColumnOrderChanged: order => { send('columnOrderChanged', order); },
         onColumnHidden: column => { send('columnHidden', column); },
         onPinnedCountChanged: count => { send('pinnedCountChanged', count); },
+        onHeaderGroupToggled: toggle => { send('headerGroupToggled', toggle); },
         onEditingChanged: open => { send('editingChanged', open); },
         onEditDiscarded: reason => { send('editDiscarded', reason); },
         onCellDoubleClick: cell => { send('cellDoubleClick', cell); },
@@ -342,6 +344,7 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
         ...(hears.has('columnOrderChanged') ? { onColumnOrderChanged: heard.onColumnOrderChanged } : {}),
         ...(hears.has('columnHidden') ? { onColumnHidden: heard.onColumnHidden } : {}),
         ...(hears.has('pinnedCountChanged') ? { onPinnedCountChanged: heard.onPinnedCountChanged } : {}),
+        ...(hears.has('headerGroupToggled') ? { onHeaderGroupToggled: heard.onHeaderGroupToggled } : {}),
         ...(hears.has('editingChanged') ? { onEditingChanged: heard.onEditingChanged } : {}),
         ...(hears.has('editDiscarded') ? { onEditDiscarded: heard.onEditDiscarded } : {}),
         ...(hears.has('cellDoubleClick') ? { onCellDoubleClick: heard.onCellDoubleClick } : {}),

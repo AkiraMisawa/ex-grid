@@ -63,4 +63,20 @@ public sealed record HeaderGroup
     /// <summary>How many tiers the rectangle spans downward from <see cref="Tier"/> — the
     /// rowspan (ADR-0032).</summary>
     public int TierSpan { get; }
+
+    /// <summary>What names the group in <c>OnHeaderGroupToggled</c> (ADR-0400): required with
+    /// <see cref="Expanded"/>, and unique among the groups. Taken by the Script Core's grid,
+    /// <c>ExGrid.Script.ExGrid</c>, which refuses a repeated one by name.</summary>
+    public string? Id { get; init; }
+
+    /// <summary>Whether the group shows open (ADR-0400): given, the group draws a toggle whose
+    /// press notifies <c>OnHeaderGroupToggled</c>; <see langword="null"/>, it draws none, which is
+    /// not the same declaration as <see langword="false"/>, collapsed. The grid adds and removes no
+    /// column. Drawn by the Script Core's grid alone: the C# core's refuses it.</summary>
+    public bool? Expanded { get; init; }
+
+    /// <summary>The Hidden Mark a collapsed group wears (ADR-0400 section 6), only beside
+    /// <see cref="Expanded"/> = <see langword="false"/>. Drawn by the Script Core's grid alone:
+    /// the C# core's refuses it.</summary>
+    public HiddenMark? HiddenMark { get; init; }
 }

@@ -157,6 +157,12 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>Hears Hide from the column menu: the Consumer leaves the column out.</summary>
     [Parameter] public EventCallback<string> OnColumnHidden { get; set; }
 
+    /// <summary>Hears a Header Group's toggle (ADR-0400): a press on it, or Alt+Shift+Down or Up from a cell under
+    /// the group. The Consumer answers by setting <see cref="Columns"/> and the group's new
+    /// <see cref="HeaderGroup.Expanded"/>; the grid adds and removes no column. Required for any group declared
+    /// expanded or collapsed.</summary>
+    [Parameter] public EventCallback<HeaderGroupToggle> OnHeaderGroupToggled { get; set; }
+
     /// <summary>Hears Pin or Unpin from the column menu: the Consumer sets <see cref="PinnedColumnCount"/>.</summary>
     [Parameter] public EventCallback<int> OnPinnedCountChanged { get; set; }
 
@@ -710,6 +716,17 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 json.WriteEndArray();
                 json.WriteNumber("tier", group.Tier);
                 json.WriteNumber("tierSpan", group.TierSpan);
+                if (group.Id is { } id)
+                    json.WriteString("id", id);
+                if (group.Expanded is { } expanded)
+                    json.WriteBoolean("expanded", expanded);
+                if (group.HiddenMark is { } mark)
+                {
+                    json.WriteStartObject("hiddenMark");
+                    json.WriteString("state", ScriptJson.Camel(mark.State));
+                    json.WriteString("reason", mark.Reason);
+                    json.WriteEndObject();
+                }
                 json.WriteEndObject();
             }
             json.WriteEndArray();
@@ -744,6 +761,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         yield return ("columnOrderChanged", OnColumnOrderChanged.HasDelegate);
         yield return ("columnHidden", OnColumnHidden.HasDelegate);
         yield return ("pinnedCountChanged", OnPinnedCountChanged.HasDelegate);
+        yield return ("headerGroupToggled", OnHeaderGroupToggled.HasDelegate);
         yield return ("editingChanged", OnEditingChanged.HasDelegate);
         yield return ("editDiscarded", OnEditDiscarded.HasDelegate);
         yield return ("cellDoubleClick", OnCellDoubleClick.HasDelegate);
@@ -1256,6 +1274,12 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             {
                 var count = payload.GetInt32();
                 return () => OnPinnedCountChanged.InvokeAsync(count);
+            }
+            case "headerGroupToggled":
+            {
+                var focusColumn = payload.TryGetProperty("focusColumn", out var named) ? named.GetString() : null;
+                var toggle = new HeaderGroupToggle(Text(payload, "id"), payload.GetProperty("expanded").GetBoolean(), focusColumn);
+                return () => OnHeaderGroupToggled.InvokeAsync(toggle);
             }
             case "editingChanged":
             {

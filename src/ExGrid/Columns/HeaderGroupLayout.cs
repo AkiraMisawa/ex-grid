@@ -99,6 +99,13 @@ internal sealed class HeaderGroupLayout
         for (var g = 0; g < groups.Count; g++)
         {
             var group = groups[g];
+            // A toggle and a Hidden Mark are the Script Core's alone (ADR-0400 section 10): a group that asks
+            // for either here would be drawn without it, which is quietly wrong.
+            if (group.Expanded is not null || group.HiddenMark is not null)
+            {
+                throw new NotSupportedException($"Header Group '{group.Label}' declares a toggle or a Hidden Mark, which only "
+                    + "ExGrid.Script.ExGrid draws: this grid would draw the group without it (ADR-0400 section 10).");
+            }
             var first = int.MaxValue;
             var last = int.MinValue;
             foreach (var member in group.Columns)

@@ -35,7 +35,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, ExPivot's (`pivot/`), and `scriptCalls`, read as `calls` by the Script Core's runner alone (a behaviour new to the Script Core) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 

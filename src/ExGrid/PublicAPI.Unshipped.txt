@@ -26,6 +26,32 @@ ExGrid.Chrome.FindContext.FindContext(string! Text, bool MatchCase, bool WholeCe
 ExGrid.Chrome.FindContext.MatchCaseChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
 ExGrid.Chrome.FindContext.WholeCellChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
 ExGrid.Clipboard.GridPasteIntent.CancellationToken.get -> System.Threading.CancellationToken
+ExGrid.Columns.HeaderGroup.Expanded.get -> bool?
+ExGrid.Columns.HeaderGroup.Expanded.init -> void
+ExGrid.Columns.HeaderGroup.HiddenMark.get -> ExGrid.Columns.HiddenMark?
+ExGrid.Columns.HeaderGroup.HiddenMark.init -> void
+ExGrid.Columns.HeaderGroup.Id.get -> string?
+ExGrid.Columns.HeaderGroup.Id.init -> void
+ExGrid.Columns.HeaderGroupToggle
+ExGrid.Columns.HeaderGroupToggle.<Clone>$() -> ExGrid.Columns.HeaderGroupToggle!
+ExGrid.Columns.HeaderGroupToggle.Deconstruct(out string! Id, out bool Expanded, out string? FocusColumn) -> void
+ExGrid.Columns.HeaderGroupToggle.Equals(ExGrid.Columns.HeaderGroupToggle? other) -> bool
+ExGrid.Columns.HeaderGroupToggle.Expanded.get -> bool
+ExGrid.Columns.HeaderGroupToggle.Expanded.init -> void
+ExGrid.Columns.HeaderGroupToggle.FocusColumn.get -> string?
+ExGrid.Columns.HeaderGroupToggle.FocusColumn.init -> void
+ExGrid.Columns.HeaderGroupToggle.HeaderGroupToggle(string! Id, bool Expanded, string? FocusColumn) -> void
+ExGrid.Columns.HeaderGroupToggle.Id.get -> string!
+ExGrid.Columns.HeaderGroupToggle.Id.init -> void
+ExGrid.Columns.HiddenMark
+ExGrid.Columns.HiddenMark.<Clone>$() -> ExGrid.Columns.HiddenMark!
+ExGrid.Columns.HiddenMark.Deconstruct(out ExGrid.Cells.CellState State, out string! Reason) -> void
+ExGrid.Columns.HiddenMark.Equals(ExGrid.Columns.HiddenMark? other) -> bool
+ExGrid.Columns.HiddenMark.HiddenMark(ExGrid.Cells.CellState State, string! Reason) -> void
+ExGrid.Columns.HiddenMark.Reason.get -> string!
+ExGrid.Columns.HiddenMark.Reason.init -> void
+ExGrid.Columns.HiddenMark.State.get -> ExGrid.Cells.CellState
+ExGrid.Columns.HiddenMark.State.init -> void
 ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.BeginRowClick(int ticket, int input, ExGrid.Components.GridInputText? fieldText = null) -> void
 ExGrid.Components.ExGrid<TRow>.BuildCopyPayloadAsync(bool withHeaders = false, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task<ExGrid.Clipboard.ClipboardPayload?>!
@@ -313,6 +339,8 @@ ExGrid.Script.ExGrid<TRow>.OnFill.get -> Microsoft.AspNetCore.Components.EventCa
 ExGrid.Script.ExGrid<TRow>.OnFill.set -> void
 ExGrid.Script.ExGrid<TRow>.OnFindError.get -> System.Func<ExGrid.Validation.GridErrorStepRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Finding.GridFindResult!>!>?
 ExGrid.Script.ExGrid<TRow>.OnFindError.set -> void
+ExGrid.Script.ExGrid<TRow>.OnHeaderGroupToggled.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Columns.HeaderGroupToggle!>
+ExGrid.Script.ExGrid<TRow>.OnHeaderGroupToggled.set -> void
 ExGrid.Script.ExGrid<TRow>.OnLeave.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Script.ExGrid<TRow>.OnLeave.set -> void
 ExGrid.Script.ExGrid<TRow>.OnOverwriteNotice.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridOverwriteNotice>
@@ -475,6 +503,12 @@ ExGrid.Validation.GridRuleset<TRow>.Set(System.Func<System.Collections.Generic.I
 override ExGrid.Chrome.FindPanelRefusedCell.Equals(object? obj) -> bool
 override ExGrid.Chrome.FindPanelRefusedCell.GetHashCode() -> int
 override ExGrid.Chrome.FindPanelRefusedCell.ToString() -> string!
+override ExGrid.Columns.HeaderGroupToggle.Equals(object? obj) -> bool
+override ExGrid.Columns.HeaderGroupToggle.GetHashCode() -> int
+override ExGrid.Columns.HeaderGroupToggle.ToString() -> string!
+override ExGrid.Columns.HiddenMark.Equals(object? obj) -> bool
+override ExGrid.Columns.HiddenMark.GetHashCode() -> int
+override ExGrid.Columns.HiddenMark.ToString() -> string!
 override ExGrid.Components.GridView.GetHashCode() -> int
 override ExGrid.Finding.GridFindPattern.Equals(object? obj) -> bool
 override ExGrid.Finding.GridFindPattern.GetHashCode() -> int
@@ -537,6 +571,10 @@ override sealed ExGrid.Script.GridRefusal<TRow>.Placement.Equals(ExGrid.Script.G
 static ExGrid.Chrome.FindPanelLabelIds.OutcomeText(ExGrid.Chrome.FindContext! context, System.Func<string!, string!>! words) -> string!
 static ExGrid.Chrome.FindPanelRefusedCell.operator !=(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
 static ExGrid.Chrome.FindPanelRefusedCell.operator ==(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
+static ExGrid.Columns.HeaderGroupToggle.operator !=(ExGrid.Columns.HeaderGroupToggle? left, ExGrid.Columns.HeaderGroupToggle? right) -> bool
+static ExGrid.Columns.HeaderGroupToggle.operator ==(ExGrid.Columns.HeaderGroupToggle? left, ExGrid.Columns.HeaderGroupToggle? right) -> bool
+static ExGrid.Columns.HiddenMark.operator !=(ExGrid.Columns.HiddenMark? left, ExGrid.Columns.HiddenMark? right) -> bool
+static ExGrid.Columns.HiddenMark.operator ==(ExGrid.Columns.HiddenMark? left, ExGrid.Columns.HiddenMark? right) -> bool
 static ExGrid.Components.GridView.operator !=(ExGrid.Components.GridView left, ExGrid.Components.GridView right) -> bool
 static ExGrid.Components.GridView.operator ==(ExGrid.Components.GridView left, ExGrid.Components.GridView right) -> bool
 static ExGrid.Finding.GridFind.Matches(string! displayedText, ExGrid.Finding.GridFindPattern! pattern) -> bool

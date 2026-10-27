@@ -994,6 +994,9 @@ export interface GridHandle<Row> {
 // @public
 export interface GridHeaderGroup {
     readonly columns: readonly string[];
+    readonly expanded?: boolean;
+    readonly hiddenMark?: HiddenMark;
+    readonly id?: string;
     readonly label: string;
     readonly tier?: number;
     readonly tierSpan?: number;
@@ -1011,6 +1014,8 @@ export const gridLabelIds: Readonly<{
     readonly nameBox: 'name-box';
     readonly formulaBar: 'formula-bar';
     readonly columnMenu: 'column-menu';
+    readonly headerGroupExpand: 'header-group-expand';
+    readonly headerGroupCollapse: 'header-group-collapse';
 }>;
 
 // @public
@@ -1081,6 +1086,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
     readonly onFill?: (intent: GridFillIntent) => void | PromiseLike<void>;
+    readonly onHeaderGroupToggled?: (toggle: HeaderGroupToggle) => void;
     readonly onLeave?: () => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
@@ -1526,6 +1532,19 @@ export interface GridViewStateOptions {
     readonly columns: readonly ColumnViewState[];
     readonly filter?: GridFilter | undefined;
     readonly sorts: readonly SortSpec[];
+}
+
+// @public
+export interface HeaderGroupToggle {
+    readonly expanded: boolean;
+    readonly focusColumn?: string;
+    readonly id: string;
+}
+
+// @public
+export interface HiddenMark {
+    readonly reason: string;
+    readonly state: Exclude<CellState, 'normal'>;
 }
 
 // @public

@@ -49,6 +49,11 @@
     --ex-state-modified-mark: var(--mantine-primary-color-filled);
     --ex-state-stale-color: var(--mantine-color-dimmed);
     --ex-state-missing-background: var(--mantine-color-default-hover);
+    /* A Header Group's toggle (ADR-0400 section 7): the chevron Mantine's own Accordion draws, pointing right while
+       the group is collapsed and down while it is open, in the text's colour. */
+    --ex-header-group-collapsed-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 15'%3E%3Cpath transform='rotate(-90 7.5 7.5)' d='M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z'/%3E%3C/svg%3E");
+    --ex-header-group-expanded-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 15'%3E%3Cpath d='M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z'/%3E%3C/svg%3E");
+    --ex-header-group-toggle-color: var(--mantine-color-text);
     /* The Change Highlight (ADR-0068): a highlighter's amber, none of the colours above, translucent beneath the
        text. */
     --ex-change-highlight-background: color-mix(in srgb, var(--mantine-color-yellow-filled) 25%, transparent);

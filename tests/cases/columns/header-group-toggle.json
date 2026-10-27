@@ -1,0 +1,84 @@
+{
+  "about": "A Header Group's toggle and its Hidden Mark as declared (ADR-0400 sections 2, 5 and 6): what is refused when given, and what an input on the toggle notifies. The Script Core's alone: the C# core never takes a toggle (ADR-0400 section 10; ADR-0350 section 5's note of 2026-10-27), so no C# runner reads this kind.",
+  "kind": "scriptCalls",
+  "subject": "HeaderGroup",
+  "defaults": {"label": "Leg 1", "columns": ["Leg1Rate", "Leg1DayCount"]},
+  "cases": [
+    {
+      "name": "ADR-0400: a group declares no toggle unless told, and keeps an id, an expanded and a Hidden Mark as given",
+      "create": {"id": "leg1", "expanded": false, "hiddenMark": {"state": "modified", "reason": "2 user-set fields in hidden columns"}},
+      "expect": [
+        {"get": "id", "is": "leg1"},
+        {"get": "expanded", "is": false},
+        {"get": "hiddenMark", "is": {"state": "modified", "reason": "2 user-set fields in hidden columns"}}
+      ]
+    },
+    {
+      "name": "ADR-0400: a group given none of the three draws no toggle and wears no mark",
+      "create": {},
+      "expect": [
+        {"get": "id", "is": null},
+        {"get": "expanded", "is": null},
+        {"get": "hiddenMark", "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-19: expanded without an id is refused, naming the group",
+      "create": {"expanded": true},
+      "throws": "argument", "saying": "Header Group 'Leg 1' is declared expanded or collapsed without an id"
+    },
+    {
+      "name": "ADR-0400 / HG-19: expanded on a spacer is refused",
+      "create": {"label": "", "id": "spacer", "expanded": true},
+      "throws": "argument", "saying": "spacer"
+    },
+    {
+      "name": "ADR-0400 / HG-19: a Hidden Mark on an expanded group is refused, naming the group",
+      "create": {"id": "leg1", "expanded": true, "hiddenMark": {"state": "modified", "reason": "set by the user"}},
+      "throws": "argument", "saying": "Header Group 'Leg 1' wears a Hidden Mark while it is not collapsed"
+    },
+    {
+      "name": "ADR-0400 / HG-19: a Hidden Mark on a group with no toggle is refused",
+      "create": {"hiddenMark": {"state": "modified", "reason": "set by the user"}},
+      "throws": "argument", "saying": "while it is not collapsed"
+    },
+    {
+      "name": "ADR-0400 / HG-19: a Hidden Mark with an empty reason is refused, naming the group",
+      "create": {"id": "leg1", "expanded": false, "hiddenMark": {"state": "modified", "reason": ""}},
+      "throws": "argument", "saying": "Header Group 'Leg 1' wears a Hidden Mark with no reason"
+    },
+    {
+      "name": "ADR-0400: a Hidden Mark says a Cell State, and normal is none",
+      "create": {"id": "leg1", "expanded": false, "hiddenMark": {"state": "normal", "reason": "nothing"}},
+      "throws": "argument", "saying": "no Cell State a mark says"
+    },
+    {
+      "name": "ADR-0400: an empty id is refused",
+      "create": {"id": "", "expanded": true},
+      "throws": "argument", "saying": "empty"
+    },
+    {
+      "name": "ADR-0400 / HG-18: an input on a collapsed group asks to expand it, naming the group and the Focus's column",
+      "create": {"id": "leg1", "expanded": false},
+      "expect": [
+        {"call": "toggled", "args": ["Leg1Rate"], "is": {"id": "leg1", "expanded": true, "focusColumn": "Leg1Rate"}},
+        {"call": "toggled", "args": [], "is": {"id": "leg1", "expanded": true}}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-22: an input asks for the opposite of what the group shows, so two before an answer ask the same",
+      "create": {"id": "leg1", "expanded": true},
+      "expect": [
+        {"call": "toggled", "args": ["Leg1DayCount"], "is": {"id": "leg1", "expanded": false, "focusColumn": "Leg1DayCount"}},
+        {"call": "toggled", "args": ["Leg1DayCount"], "is": {"id": "leg1", "expanded": false, "focusColumn": "Leg1DayCount"}}
+      ]
+    },
+    {
+      "name": "ADR-0400: a group with no toggle has nothing to notify",
+      "create": {"id": "leg1"},
+      "expect": [
+        {"call": "toggled", "args": [], "throws": "invalidOperation", "saying": "draws no toggle"}
+      ]
+    }
+  ]
+}

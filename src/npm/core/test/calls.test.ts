@@ -1,6 +1,7 @@
 // Runs the shared cases of kind `calls` (tests/cases/README.md): a subject made from named arguments, and
 // what its members answer. The C# runner (tests/ExGrid.Tests/Cases/CallCaseTests.cs) finds the same
-// members by name.
+// members by name. The kind `scriptCalls` is read the same way, here alone: the cases of behaviour new to the
+// Script Core, which the C# core will not take (ADR-0350 section 5's note of 2026-10-27).
 import { describe, expect, it } from 'vitest';
 import { AutoWidth } from '../src/columns/auto-width';
 import { CellTextMetrics } from '../src/columns/cell-text-metrics';
@@ -14,7 +15,7 @@ import { HeaderGroup, HeaderGroupLayout } from '../src/columns/header-groups';
 import { allowedBoundaries, reorderColumns } from '../src/columns/header-reorder';
 import { firstEnabled, lastEnabled, letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey, splitAtLetter } from '../src/chrome/menu-keys';
 import { editingKeysByMode } from '../src/keys/editing-keys';
-import { canonicalKey, clipboardKeys, declareKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
+import { canonicalKey, clipboardKeys, declareKeys, headerGroupKeyOf, headerGroupKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { GridMetrics } from '../src/grid-metrics';
 import { findMatches } from '../src/finding/find';
@@ -154,7 +155,7 @@ const subjects: Readonly<Record<string, Subject>> = {
         create: (_, via) => noFactory('GridKeys', via),
         statics: {
             resolve: resolveKey, canonical: canonicalKey, taken: takenOnEveryGrid, takenFor: keysTakenFor,
-            declare: declareKeys, clipboardKeys,
+            declare: declareKeys, clipboardKeys, headerGroupKey: headerGroupKeyOf, headerGroupKeys,
         },
     },
     HeaderGroup: {
@@ -406,7 +407,7 @@ interface CallFile {
 }
 
 for (const area of areas()) {
-    for (const file of caseFiles<CallCase>(area, 'calls')) {
+    for (const file of [...caseFiles<CallCase>(area, 'calls'), ...caseFiles<CallCase>(area, 'scriptCalls')]) {
         const { subject: subjectName, defaults } = file as unknown as CallFile;
         const subject = subjects[subjectName];
         if (subject === undefined) throw new Error(`"${subjectName}" is not a subject this runner knows.`);

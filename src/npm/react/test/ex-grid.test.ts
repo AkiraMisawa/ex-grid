@@ -88,6 +88,34 @@ describe('ExGrid', () => {
         unmount();
         expect(root?.childElementCount).toBe(0);
     });
+
+    it('ADR-0400: a Header Group\'s toggle reaches the Consumer\'s handler, whose state hands the grid its new columns', async () => {
+        interface Leg { readonly rate: number }
+        const legColumns: readonly GridColumn<Leg>[] = [
+            { name: 'Rate', type: 'number', value: leg => leg.rate, width: 80 },
+            { name: 'Calendar', type: 'text', value: () => 'TARGET', width: 100 },
+        ];
+        const heard: unknown[] = [];
+        function Legs(): ReactElement {
+            const [expanded, setExpanded] = useState(true);
+            return createElement(ExGrid<Leg>, {
+                rows: [{ rate: 1.25 }],
+                columns: expanded ? legColumns : legColumns.slice(0, 1),
+                headerGroups: [{ label: 'Leg 1', columns: expanded ? ['Rate', 'Calendar'] : ['Rate'], id: 'leg1', expanded }],
+                onHeaderGroupToggled: toggle => { heard.push(toggle); setExpanded(toggle.expanded); },
+            });
+        }
+        const { container } = render(createElement(Legs));
+        const toggle = container.querySelector('.ex-header-group-toggle');
+        if (toggle === null) throw new Error('The group draws its toggle.');
+        await act(async () => {
+            for (const type of ['mousedown', 'mouseup', 'click']) toggle.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0 }));
+            await Promise.resolve();
+        });
+        expect(heard).toEqual([{ id: 'leg1', expanded: false }]);
+        expect([...container.querySelectorAll('.ex-header-cell')].map(header => header.textContent)).toEqual(['Rate']);
+        expect(container.querySelector('.ex-header-group-toggle')?.getAttribute('aria-expanded')).toBe('false');
+    });
 });
 
 interface Position {

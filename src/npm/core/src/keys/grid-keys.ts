@@ -265,6 +265,20 @@ export function errorStepOf(press: KeyPress): 'next' | 'previous' | undefined {
     return canonical === 'F8' ? 'next' : canonical === 'Shift+F8' ? 'previous' : undefined;
 }
 
+/**
+ * The Header Group keys (ADR-0400 section 4, decided with the user 2026-10-27): Alt+Shift+↓ expands and Alt+Shift+↑
+ * collapses, Google Sheets' keys, since Excel's own route is ribbon key tips a browser takes for its menu. Outside the
+ * table: they are the core's only on a grid given `onHeaderGroupToggled`, and a grid without it leaves them to the page
+ * or to a Consumer that declares them.
+ */
+export const headerGroupKeys: readonly string[] = Object.freeze(['Shift+Alt+ArrowDown', 'Shift+Alt+ArrowUp']);
+
+/** What a key asks of a Header Group (ADR-0400 section 4): `'expand'`, `'collapse'`, or `undefined` for any other key. */
+export function headerGroupKeyOf(press: KeyPress): 'expand' | 'collapse' | undefined {
+    const canonical = canonicalKey(press);
+    return canonical === 'Shift+Alt+ArrowDown' ? 'expand' : canonical === 'Shift+Alt+ArrowUp' ? 'collapse' : undefined;
+}
+
 /** The clipboard's keys (ADR-0005, ADR-0014): answered through the browser's copy and paste events, with
  * cut and paste as plain text. Never taken, or the events would not fire. */
 export const clipboardKeys: readonly string[] = Object.freeze([

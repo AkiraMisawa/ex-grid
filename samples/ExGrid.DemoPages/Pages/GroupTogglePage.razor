@@ -1,0 +1,81 @@
+@page "/group-toggle"
+@using global::ExGrid.Script
+
+<DemoNav />
+
+<h1>Header Groups that open and close</h1>
+
+<p>
+    Trade is declared with an id and whether it is open, so the grid draws a toggle at its left (ADR-0400). A press
+    on it, or Alt+Shift+↑ and Alt+Shift+↓ from a cell under it, asks this page to close or open the group; the page
+    pushes the columns it then shows, and the grid adds and removes none itself. Closed, the group keeps Notional.
+    Each notification is written out below, as the page heard it.
+</p>
+
+<div id="group-toggle">
+    <ExGrid.Script.ExGrid TRow="DemoTrade" Source="_source" Columns="@(_open ? All : Closed)"
+                         HeaderGroups="@(_open ? OpenGroups : ClosedGroups)" OnHeaderGroupToggled="Toggled"
+                         ViewportHeight="240" ViewportWidth="640" />
+</div>
+
+<p><span id="group-toggled" role="status">Toggled: @(_heard.Count == 0 ? "none" : string.Join("; ", _heard))</span></p>
+
+<p>
+    Below, four closed groups each carry a Hidden Mark in the colour of a Cell State, the reason its tooltip: what
+    the hidden columns hold that the reader must not lose sight of. Their toggles are heard and change nothing.
+</p>
+
+<div id="hidden-marks">
+    <ExGrid.Script.ExGrid TRow="DemoTrade" Source="_source" Columns="Marked" HeaderGroups="MarkGroups"
+                         OnHeaderGroupToggled="Ignored" ViewportHeight="160" ViewportWidth="640" />
+</div>
+
+@code {
+    private static readonly GridColumn<DemoTrade>[] All =
+    [
+        new("Book", ColumnType.Text, r => r.Book),
+        new("Trader", ColumnType.Text, r => r.Trader),
+        new("Notional", ColumnType.Number, r => r.Notional),
+        new("TradeDate", ColumnType.Date, r => r.TradeDate, header: "Trade date"),
+        new("Confirmed", ColumnType.Boolean, r => r.Confirmed),
+    ];
+
+    private static readonly GridColumn<DemoTrade>[] Closed = [.. All.Where(c => c.Name is not ("TradeDate" or "Confirmed"))];
+
+    private static readonly HeaderGroup[] OpenGroups =
+    [
+        new("Desk", ["Book", "Trader"]),
+        new("Trade", ["Notional", "TradeDate", "Confirmed"]) { Id = "trade", Expanded = true },
+    ];
+
+    private static readonly HeaderGroup[] ClosedGroups =
+    [
+        new("Desk", ["Book", "Trader"]),
+        new("Trade", ["Notional"]) { Id = "trade", Expanded = false },
+    ];
+
+    private static readonly GridColumn<DemoTrade>[] Marked = [.. All.Take(4)];
+
+    private static readonly HeaderGroup[] MarkGroups =
+    [
+        Marking("Book", CellState.Stale, "1 price older than the market's close"),
+        Marking("Trader", CellState.Missing, "2 values the source could not give"),
+        Marking("Notional", CellState.Error, "3 values that broke a rule"),
+        Marking("TradeDate", CellState.Modified, "4 values set by hand"),
+    ];
+
+    private static HeaderGroup Marking(string column, CellState state, string reason)
+        => new(state.ToString(), [column]) { Id = state.ToString().ToLowerInvariant(), Expanded = false, HiddenMark = new(state, reason) };
+
+    private readonly InMemoryGridSource<DemoTrade> _source = GridSource.From(DemoData.Window(1_000, 7));
+    private readonly List<string> _heard = [];
+    private bool _open = true;
+
+    private void Toggled(HeaderGroupToggle toggle)
+    {
+        _heard.Add($"{toggle.Id} {(toggle.Expanded ? "open" : "closed")}{(toggle.FocusColumn is null ? "" : $" at {toggle.FocusColumn}")}");
+        _open = toggle.Expanded;
+    }
+
+    private static void Ignored(HeaderGroupToggle toggle) { }
+}
