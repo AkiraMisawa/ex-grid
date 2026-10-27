@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { classed } from './classes.mjs';
+import { classed, digit, isFullWidth, narrow, wide } from './classes.mjs';
 
 // fileURLToPath, not the URL's pathname: on Windows the pathname is /C:/…, which is no path there.
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -165,8 +165,59 @@ export function defaultGlyphWidthsAt(sizePx: 14 | 12): GlyphWidthTable {
     return table;
 }
 `);
+// @ex-grid/mantine's (ADR-0390): Mantine's default stack, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+// Helvetica, Arial, sans-serif, resolves to macOS's system face, Segoe UI on every Windows (it is named ahead of
+// any display language's face), and on Linux to Roboto where it is installed, Liberation Sans for Helvetica and
+// Arial, or DejaVu Sans. A glyph joins its table where each Linux candidate draws it itself; every width, class or
+// glyph, is the widest any of those records shows, at 14px and at 12px scaled to 14.
+const mantine = [...records('system-ui').filter((r) => r.named !== 'windows-ja'), ...roboto, ...dejavu, ...records('liberation-sans')];
+const linux = [[roboto, 'Roboto'], [dejavu, 'DejaVu Sans'], [records('liberation-sans'), 'Liberation Sans']];
+if (linux.some(([rs]) => rs.length === 0)) throw new Error('Measure liberation-sans first.');
+const mantineGlyphs = glyphsOf(mantine).filter((g) => linux.every(([rs, family]) => rs.every((r) => drawsItself(r, g, family))));
+const widest = (gs, ws) => shade(Math.max(...mantine.flatMap((r) => gs.flatMap((g) => [width(r, g, '14', ws), width(r, g, '12', ws) * 14 / 12]))));
+const mantineAt14 = mantineGlyphs.map((g) => [g, widest([g], regular), widest([g], bold)]);
+// The other class is what a glyph outside the classes and the table costs: the widest glyph any record paints,
+// fallbacks included, short of the full-width blocks the em is charged for.
+const unclassed = [...new Set(mantine.flatMap((r) => r.glyphs))]
+  .filter((g) => !classed.includes(g) && !isFullWidth(g.codePointAt(0)) && !mantineGlyphs.includes(g));
+const mantineClasses = {
+  wide: widest(wide, regular), digit: widest(digit, regular), narrow: widest(narrow, regular), other: widest(unclassed, regular),
+  boldWide: widest(wide, bold), boldDigit: widest(digit, bold), boldNarrow: widest(narrow, bold), boldOther: widest(unclassed, bold),
+};
+put('src/npm/mantine/src/mantine-glyph-widths.ts', `${header(mantine)}
+import { GlyphWidthTable } from '@ex-grid/core';
+
+type Row = readonly [glyph: string, regularPx: number, boldPx: number];
+
+/** The class widths of Mantine's default stack at 14px, which the core scales to the resolved size: each the
+ * widest any record shows at 400, 500 and 600 (regular) or 700 (bold), at 14px or at 12px scaled, a shade over. */
+export const mantineClassWidths = Object.freeze({
+    fontSizePx: 14,
+    wideWidthPx: ${mantineClasses.wide.toFixed(2)},
+    digitWidthPx: ${mantineClasses.digit.toFixed(2)},
+    narrowWidthPx: ${mantineClasses.narrow.toFixed(2)},
+    otherWidthPx: ${mantineClasses.other.toFixed(2)},
+    boldWideWidthPx: ${mantineClasses.boldWide.toFixed(2)},
+    boldDigitWidthPx: ${mantineClasses.boldDigit.toFixed(2)},
+    boldNarrowWidthPx: ${mantineClasses.boldNarrow.toFixed(2)},
+    boldOtherWidthPx: ${mantineClasses.boldOther.toFixed(2)},
+} as const);
+
+const at14: readonly Row[] = [
+${tsEntries(mantineAt14)}
+];
+
+let built: GlyphWidthTable | undefined;
+
+/** The letters and currency signs every Linux face of Mantine's stack draws itself, at 14px. Built on first
+ * asking, so loading the module does no work. */
+export function mantineGlyphWidths(): GlyphWidthTable {
+    built ??= new GlyphWidthTable(14, at14);
+    return built;
+}
+`);
 if (stale.length > 0) {
   console.error(`Not what tests/GlyphWidths/tables.mjs writes from the records: ${stale.join(', ')}. Run it without --check.`);
   process.exit(1);
 }
-console.log(`core: ${coreGlyphs.length} glyphs; Roboto: ${robotoGlyphs.length} glyphs${checking ? ', every table as written' : ''}`);
+console.log(`core: ${coreGlyphs.length} glyphs; Roboto: ${robotoGlyphs.length} glyphs; Mantine: ${mantineGlyphs.length} glyphs${checking ? ', every table as written' : ''}`);

@@ -21,6 +21,7 @@ import { GridLiveLocal } from './pages/grid-live-local';
 import { FilterPanel } from './pages/filter-panel';
 import { Home } from './pages/home';
 import { Lifecycle } from './pages/lifecycle';
+import { MantineDemo } from './pages/mantine';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
@@ -72,6 +73,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     stretch: Stretch,
     sizing: Sizing,
     board: Board,
+    mantine: MantineDemo,
 };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */

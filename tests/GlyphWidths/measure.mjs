@@ -59,6 +59,18 @@ const faces = {
       + `src: ${fontData(fs.realpathSync(path.join(dir, file)), 'font/ttf')}; }`;
     return { css: rule(400, 'DejaVuSans.ttf') + '\n' + rule(700, 'DejaVuSans-Bold.ttf'), family: '"DejaVu Sans Measured", sans-serif' };
   },
+  // What Linux paints for Helvetica and Arial, which @ex-grid/mantine's stack names after Roboto (ADR-0390):
+  // Liberation Sans, loaded as a web font as DejaVu Sans is. Regular and Bold only, as a Linux system has them.
+  'liberation-sans': () => {
+    const dir = option('--liberation');
+    if (!dir) throw new Error('liberation-sans needs --liberation <directory holding LiberationSans-Regular.ttf and LiberationSans-Bold.ttf>');
+    const rule = (weight, file) => `@font-face { font-family: 'Liberation Sans Measured'; font-weight: ${weight}; `
+      + `src: ${fontData(fs.realpathSync(path.join(dir, file)), 'font/ttf')}; }`;
+    return {
+      css: rule(400, 'LiberationSans-Regular.ttf') + '\n' + rule(700, 'LiberationSans-Bold.ttf'),
+      family: '"Liberation Sans Measured", sans-serif',
+    };
+  },
 };
 if (!faces[face]) throw new Error(`Unknown face '${face}'. One of: ${Object.keys(faces).join(', ')}.`);
 const { css, family } = faces[face]();
@@ -108,7 +120,9 @@ body { margin: 0; }
 
 const profile = path.join(work, 'profile');
 const browser = spawn(chrome, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
-  '--no-first-run', '--no-default-browser-check', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore' });
+  '--no-first-run', '--no-default-browser-check', '--force-device-scale-factor=1',
+  // Chrome refuses to start its sandbox as root, which a container's shell often is.
+  ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []), 'about:blank'], { stdio: 'ignore' });
 
 try {
   const portFile = path.join(profile, 'DevToolsActivePort');
