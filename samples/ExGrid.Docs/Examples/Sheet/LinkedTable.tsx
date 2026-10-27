@@ -25,8 +25,11 @@ export default function LinkedTable(): ReactElement {
 
     // The Sheet and the grid that shows the table: while a Formula is typed, a press on the grid writes what reads
     // the pressed cell by its row's key.
-    const scope = useMemo(() => new PointingScope(), []);
-    const pointedAt = useMemo(() => scope.registerGrid<CostCentre>(costCentresTable, costCentreRow), [scope]);
+    // Made together, so that a memo React makes twice and drops leaves no grid registered in the Scope it keeps.
+    const [scope, pointedAt] = useMemo(() => {
+        const made = new PointingScope();
+        return [made, made.registerGrid<CostCentre>(costCentresTable, costCentreRow)] as const;
+    }, []);
 
     const api = (): ExSheetApi => {
         const current = sheet.current;

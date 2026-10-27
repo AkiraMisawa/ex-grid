@@ -90,16 +90,11 @@ export function pointStep(canonical: string): Step | undefined {
 /** An arrow key as a Consumer pointing from outside hears it (ADR-0058, "The keyboard"), with Shift or the Primary
  * Modifier or both; `undefined` for any other key. */
 export function pointArrowOf(canonical: string): GridPointArrow | undefined {
-    const toEdge = canonical.startsWith('Control+');
-    const rest = toEdge ? canonical.slice('Control+'.length) : canonical;
-    const extending = rest.startsWith('Shift+');
-    const direction = arrowDirections.get(extending ? rest.slice('Shift+'.length) : rest);
-    return direction === undefined ? undefined : { direction, extends: extending, toEdge };
+    const step = pointSteps.get(canonical);
+    if (step === undefined || step.move === 'edge' || step.move === 'extendToEdge') return undefined;
+    const { direction, move } = step;
+    return { direction, extends: move === 'extend' || move === 'extendToDataEdge', toEdge: move === 'dataEdge' || move === 'extendToDataEdge' };
 }
-
-const arrowDirections: ReadonlyMap<string, GridDirection> = new Map([
-    ['ArrowUp', 'up'], ['ArrowDown', 'down'], ['ArrowLeft', 'left'], ['ArrowRight', 'right'],
-]);
 
 type Step = { readonly direction: GridDirection; readonly move: PointMove };
 

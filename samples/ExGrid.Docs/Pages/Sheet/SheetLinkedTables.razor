@@ -105,8 +105,9 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
             Under React it is the same Scope, from <code>@@ex-grid/sheet</code>: make one <code>new PointingScope()</code>
             per group, pass <code>scope.registerGrid('CostCentres', toRow)</code> to the ExGrid's <code>pointedAt</code>,
             and the Scope itself to the ExSheet's <code>pointingScope</code>, with <code>onPointingRefused</code> to hear
-            why a press wrote nothing. Make the Scope and each registration once, in a <code>useMemo</code>, as the
-            Example does: a new one on every render is a new Scope that has forgotten what was pressed. Switch the
+            why a press wrote nothing. Make the Scope and its registrations together, once, in one <code>useMemo</code>,
+            as the Example does: a new one on every render is a new Scope that has forgotten what was pressed, and a
+            registration made apart from its Scope stays in it when React makes a memo twice and drops one. Switch the
             Example above to React to run it.
         </p>
     </DocsSection>

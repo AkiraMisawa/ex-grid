@@ -5,7 +5,7 @@
 // answers the steps and reveals a Consumer pointing from elsewhere asks for (DC-55). The arrows pressed in an edit
 // whose text was written from outside are handed to the Consumer that wrote it.
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridColumn } from '../src/dom/grid-column';
+import { actionColumn, type GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
 import { GridPointedAt, type GridPointArrow, type GridPointedPress } from '../src/dom/pointed-at';
 import type { GridSelection } from '../src/selection/selection';
@@ -37,10 +37,12 @@ function pressOwn(root: HTMLElement, row: number, column: number): void {
     mouse(q(root, '.ex-viewport'), 'mouseup', columnX(column), rowY(row));
 }
 
-function key(root: HTMLElement, name: string, init: KeyboardEventInit = {}): void {
+function key(root: HTMLElement, name: string, init: KeyboardEventInit = {}): KeyboardEvent {
     const target = root.ownerDocument.activeElement;
     if (target === null) throw new Error('Nothing holds the keyboard.');
-    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init }));
+    const event = new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init });
+    target.dispatchEvent(event);
+    return event;
 }
 
 const all = (): boolean => true;
@@ -162,6 +164,24 @@ describe('Pointed at from outside (ADR-0058)', () => {
         expect(await declaration.step(isBook('Book-1'), 'Book', 'down', all)).toEqual({ kind: 'notHeld' });
     });
 
+    it('a row\'s action button and the column menu do nothing of their own, pressed or clicked by a script', async () => {
+        const acted: string[] = [];
+        const { root, presses } = await pointed({
+            columns: [...columns, actionColumn<Trade>('Do', [{ name: 'open', label: 'Open' }])],
+            onAction: ({ action }) => { acted.push(action); },
+        });
+        const button = q(root, 'button.ex-action');
+        mouse(button, 'mousedown', 0, 0);
+        mouse(button, 'mouseup', 0, 0);
+        mouse(button, 'click', 0, 0);
+        mouse(button, 'click', 0, 0, { detail: 0 });
+        mouse(q(root, '.ex-menu-button'), 'click', 0, 0, { detail: 0 });
+        await painted();
+        expect(acted).toEqual([]);
+        expect(root.querySelector('.ex-popover')).toBeNull();
+        expect(presses).toEqual([]);
+    });
+
     it('a grid destroyed answers its declaration no more', async () => {
         const { view, declaration } = await pointed();
         view.destroy();
@@ -191,6 +211,23 @@ describe('Arrows over text written from outside (ADR-0058, "The keyboard")', () 
         key(root, 'ArrowLeft', { shiftKey: true, ctrlKey: true });
         await painted();
         expect(arrows).toEqual([{ direction: 'down', extends: false, toEdge: false }, { direction: 'left', extends: true, toEdge: true }]);
+        const editor = q(root, 'input.ex-editor');
+        expect(editor instanceof HTMLInputElement ? editor.value : undefined).toBe('=Positions[PV]');
+    });
+    it('with no Consumer hearing them, are taken and move nothing, the Primary Modifier\'s too', async () => {
+        const { root, view } = await pointed({
+            pointAt: (text, caret) => text.startsWith('=') && caret === text.length && text.endsWith('='),
+            referenceText: range => `R${String(range.topRow)}`,
+        }, false);
+        pressOwn(root, 1, 0);
+        await painted();
+        key(root, '=');
+        await painted();
+        expect(view.writePointedText('Positions[PV]')).toBe(true);
+        expect(key(root, 'ArrowDown').defaultPrevented).toBe(true);
+        expect(key(root, 'ArrowLeft', { shiftKey: true }).defaultPrevented).toBe(true);
+        expect(key(root, 'ArrowLeft', { ctrlKey: true }).defaultPrevented).toBe(true);
+        expect(key(root, 'End').defaultPrevented).toBe(true);
         const editor = q(root, 'input.ex-editor');
         expect(editor instanceof HTMLInputElement ? editor.value : undefined).toBe('=Positions[PV]');
     });
