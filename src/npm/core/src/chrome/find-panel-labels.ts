@@ -4,6 +4,7 @@
 // one a step's outcome calls for is `findOutcomeText`'s.
 
 import { unreachable } from '../must';
+import { filledWords } from './filled-words';
 
 /** The find panel's label ids. */
 export const findPanelLabelIds = Object.freeze({
@@ -113,19 +114,20 @@ export function findOutcomeText(outcome: FindOutcome, words: (id: string) => str
         case 'sourceChanged':
             return words(findPanelLabelIds.sourceChanged);
         case 'foundInHeader':
-            return words(findPanelLabelIds.foundInHeader).replaceAll('{column}', outcome.header);
+            return filledWords(words(findPanelLabelIds.foundInHeader), { column: outcome.header });
         case 'replaced':
             return outcome.count === 1
                 ? words(findPanelLabelIds.replacedOne)
-                : words(findPanelLabelIds.replaced).replaceAll('{count}', String(outcome.count));
+                : filledWords(words(findPanelLabelIds.replaced), { count: String(outcome.count) });
         case 'replaceRefused': {
             const { cells } = outcome;
-            const named = cells.slice(0, refusedCellsNamed).map(cell => words(findPanelLabelIds.replaceRefusedCell)
-                .replaceAll('{row}', String(cell.rowNumber))
-                .replaceAll('{column}', cell.column)
-                .replaceAll('{reason}', trimmedReason(cell.reason === undefined ? words(findPanelLabelIds.notEditable) : cell.reason)));
+            const named = cells.slice(0, refusedCellsNamed).map(cell => filledWords(words(findPanelLabelIds.replaceRefusedCell), {
+                row: String(cell.rowNumber),
+                column: cell.column,
+                reason: trimmedReason(cell.reason === undefined ? words(findPanelLabelIds.notEditable) : cell.reason),
+            }));
             const more = cells.length > refusedCellsNamed
-                ? [words(findPanelLabelIds.replaceRefusedMore).replaceAll('{count}', String(cells.length - refusedCellsNamed))]
+                ? [filledWords(words(findPanelLabelIds.replaceRefusedMore), { count: String(cells.length - refusedCellsNamed) })]
                 : [];
             return [words(findPanelLabelIds.replaceRefused), ...named, ...more].join(' ');
         }

@@ -6722,7 +6722,8 @@ export class GridView<Row> {
         const model = new FilterPanelModel({
             name, type: declared.type, dateType: declared.dateType ?? 'dateTime', filterUi, // oxlint-disable-line ex-grid/no-stand-in-default -- a Date column's dates are dateTime unless declared
             textOf: value => textFor(declared, value),
-        }, this.#filterOf(name), this.#culture, this.#temporal, signal => this.#source.distinctValues(name, signal), () => { this.#invalidate(); });
+        }, this.#filterOf(name), this.#culture, this.#temporal, signal => this.#source.distinctValues(name, signal), () => { this.#invalidate(); },
+        id => this.#labelOf(id));
         const answers = {
             apply: (spec: FilterSpec | undefined) => { this.#applyFilter(name, spec); },
             cancel: () => { this.#closePopover(true); },
@@ -9620,7 +9621,7 @@ export class GridView<Row> {
                 button.type = 'button';
                 button.className = 'ex-menu-button';
                 button.tabIndex = -1;
-                button.setAttribute('aria-label', 'Column menu');
+                button.setAttribute('aria-label', this.#labelOf(gridLabelIds.columnMenu));
                 button.setAttribute('data-ex-claims', 'click');
                 cell.append(button);
                 this.#menuButtons.set(button, column.name);

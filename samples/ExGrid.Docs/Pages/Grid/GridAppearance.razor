@@ -205,6 +205,9 @@
             and E on a command put the keyboard on, and <code>onValueListKeyDown</code> on the value list lets
             Excel's letters run their command there too. The part is a form the grid made: Enter in a text field
             submits it as the browser does, and that applies as OK does, so draw no form of your own inside it.
+            The words are <code>context.label(id)</code>, by the ids of <code>filterPanelLabelIds</code>, and an
+            operator's name by <code>operatorLabelId(operator)</code>; the Blank's words in the view and why a typed
+            value does not read come resolved the same way.
         </p>
         <p>
             The find panel (<code>findPanel</code>) draws <code>useFindPanel(context).view</code>: the text, the two
@@ -250,6 +253,16 @@
             <code>loadingIndicator</code> stands at the grid's foot and is handed whether rows are on their way and how
             many painted rows are Placeholders; it draws nothing while nothing loads, and the Placeholder rows stay the
             grid's. Each is drawn again when what it shows changes.
+        </p>
+        <p>
+            <strong>Words in another language.</strong> Every word the built-in Chrome shows in ExGrid for React — a
+            command, a panel's buttons and list, an operator, a refusal, the Mark Column, the status line — has an id,
+            and the grid asks your <code>commandLabel</code> for it first, keeping the built-in English where you answer
+            <code>undefined</code>. <code>builtInLabelIds()</code> lists the ids. Japanese for all of them, Excel's where Excel has the word, ships
+            as <code>japaneseGridWords</code>: hand it as <code>commandLabel=&#123;japaneseGridWords&#125;</code>, or answer
+            your own words first, <code>id =&gt; mine(id) ?? japaneseGridWords(id)</code>. The words never follow the
+            <code>locale</code>, which reads and writes values only: a Japanese reader of a ledger kept in
+            <code>en-US</code> chooses the words, and the grid does not guess them.
         </p>
         <p>
             <strong>Your own control in the grid's order.</strong> A handler that changes what the keys after it act on —
