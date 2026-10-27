@@ -63,6 +63,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'ExGrid inside @ex-grid/mantine\'s Paper under a MantineProvider: Mantine\'s components in the Chrome slots, the theme\'s colours in both schemes, and the Density picking the components\' size (ADR-0390).',
     },
     {
+        route: 'mui', title: 'MUI Wrapper', group: 'Layout',
+        description: 'ExGrid inside @ex-grid/mui\'s Paper under a ThemeProvider whose theme has CSS variables: MUI\'s components in the Chrome slots, the theme\'s colours in both schemes, and the Density picking the components\' size (ADR-0390).',
+    },
+    {
         route: 'lifecycle', title: 'Lifecycle', group: 'Layout',
         description: 'Mount and dispose a grid repeatedly; nothing it attached stays behind (ADR-0018, ADR-0021).',
     },
