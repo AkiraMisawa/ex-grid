@@ -118,6 +118,24 @@ describe('the Cell Editor\'s slot', () => {
         expect(edits.map(intent => intent.value)).toEqual(['7']);
     });
 
+    it('ADR-0051 / ADR-0390: Point writes its Reference into the Chrome\'s field, the contents hear Point as the mode, and typing ends it', async () => {
+        const drawn = fresh();
+        const { root } = grid(drawn, undefined, {
+            pointAt: (text, caret) => text.startsWith('=') && '=+('.includes(text.charAt(caret - 1)),
+            referenceText: range => `R${String(range.topRow + 1)}C${String(range.leftColumn + 1)}`,
+        });
+        await painted();
+        key('=');
+        const context = defined(drawn.contexts[0], 'the editor drawn');
+        key('ArrowDown');
+        await painted();
+        expect([field(root).value, field(root).selectionStart, context.view().mode, document.activeElement]).toEqual(['=R2C2', 5, 'point', field(root)]);
+        expect(drawn.views.at(-1)?.mode).toBe('point');
+        typeInto(field(root), '+');
+        await painted();
+        expect([field(root).value, context.view().mode]).toEqual(['=R2C2+', 'overwrite']);
+    });
+
     it('ADR-0034: a Reject marks the field and describes it by the message, and the contents hear the error; F2 is heard as the mode', async () => {
         const drawn = fresh();
         const { root } = grid(drawn);

@@ -67,6 +67,21 @@ export interface GridHandle<Row> {
      * outside the Window or a recalculation (ADR-0130): the figures clear at once and the question is asked
      * again. Nothing happens while no figure stands or is being asked for. */
     refreshSummary(): void;
+    /**
+     * Writes `text` into the open edit as Point writes a Reference, for a press a Consumer took outside the grid
+     * (ADR-0058): a Pointing Scope's `Positions[PV]`, or `XLOOKUP("R-4471", Positions[Id], Positions[PV])`. It goes in
+     * place of what this Point wrote, from this grid's cells or from outside, or else at the caret where `pointAt` says
+     * a Reference can go, and the caret stands after it. The edit is then in Point, written from outside: no outline
+     * stands over this grid's cells, F4 changes nothing and the arrows move nothing. A further press, on this grid or
+     * outside it, replaces the text, and anything typed or a caret moved ends Point over it. The grid reads nothing of
+     * the text. False, and nothing changed, when no edit is open, pointing is not declared, or the edit is not in Point.
+     * An empty text throws a TypeError.
+     */
+    writePointedText(text: string): boolean;
+    /** Takes back the text `writePointedText` wrote last, while it still stands (ADR-0058): the edit returns to what it
+     * was before that write, its text, caret and editing state, and what Point had written before it stands again.
+     * False, and nothing changed, when no edit is open or that text no longer stands. */
+    takeBackPointedText(): boolean;
     /** Stops the grid: it hears nothing more and empties its element. A source it was handed stays the
      * Consumer's. */
     destroy(): void;
@@ -83,6 +98,8 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         update: (next: GridOptions<Row>) => { view.update(next); },
         placeSelection: (range: SelectionRange, focus: CellPosition, rowSequenceVersion: number) => view.placeSelection(range, focus, rowSequenceVersion),
         readView: () => view.readView(),
+        writePointedText: (text: string) => view.writePointedText(text),
+        takeBackPointedText: () => view.takeBackPointedText(),
         showViewWith: (state: GridViewRead, rowSequenceVersion: number) => { view.showViewWith(state, rowSequenceVersion); },
         focus: () => { view.focus(); },
         returnKeyboard: (from?: Element) => { view.returnKeyboard(from); },

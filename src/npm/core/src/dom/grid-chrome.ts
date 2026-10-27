@@ -253,9 +253,10 @@ export interface GridFindPanelSlotContext {
 
 /** What the Cell Editor shows besides its text (ADR-0010, ADR-0034, ADR-0380). */
 export interface CellEditorView {
-    /** Overwrite, Excel's Enter mode, where the arrows commit and move; or Caret, where they are the field's. F2
-     * switches them. */
-    readonly mode: 'overwrite' | 'caret';
+    /** Overwrite, Excel's Enter mode, where the arrows commit and move; Caret, where they are the field's; or Point,
+     * only where the Consumer declares it, where the arrows and the mouse point at cells and the Reference is written
+     * at the caret (ADR-0051). F2 switches Overwrite and Caret, and from Point to Caret; typing ends Point. */
+    readonly mode: 'overwrite' | 'caret' | 'point';
     /** The sentence a Reject or a refusal holds the editor with, while one does: the core has marked the field
      * `aria-invalid` and described it by the message, and the contents may paint their own error state. */
     readonly error: string | undefined;

@@ -91,7 +91,7 @@ export type CellChangedAt<Row> = (row: Row, column: string) => number | undefine
 // @public
 export interface CellEditorView {
     readonly error: string | undefined;
-    readonly mode: 'overwrite' | 'caret';
+    readonly mode: 'overwrite' | 'caret' | 'point';
     readonly pending: boolean;
 }
 
@@ -161,6 +161,17 @@ export type CommitRefusalReason =
 /** Escape was typed while the commit was pending, its verdict or its `onEdit` not yet answered (ADR-0380
 * section 3): the signal they were handed is aborted, and nothing is written. */
 | 'cancelled';
+
+// @public
+export type CompleteEditorText = (text: string, caret: number) => EditorCompletion | undefined | PromiseLike<EditorCompletion | undefined>;
+
+// @public
+export interface CompletionCandidate {
+    readonly insert: string;
+    readonly label: string;
+    readonly length: number;
+    readonly start: number;
+}
 
 // @public
 export interface CopyFlavours {
@@ -244,6 +255,31 @@ export type EditDiscardReason =
 /** The grid's source was replaced by another, so the row the editor was opened on, or the Selection typing
 * was aimed at, belongs to rows the grid no longer shows (ADR-0011, ADR-0142). */
 | 'sourceChanged';
+
+// @public
+export class EditorCompletion {
+    constructor(options: {
+        readonly candidates: readonly CompletionCandidate[];
+        readonly hint?: EditorHint;
+    });
+    readonly candidates: readonly CompletionCandidate[];
+    readonly hint: EditorHint | undefined;
+    get isEmpty(): boolean;
+    static readonly none: EditorCompletion;
+}
+
+// @public
+export class EditorHint {
+    constructor(options: {
+        readonly text: string;
+        readonly emphasisStart?: number;
+        readonly emphasisLength?: number;
+    });
+    readonly emphasisLength: number;
+    readonly emphasisStart: number;
+    parts(): readonly [before: string, emphasis: string, after: string];
+    readonly text: string;
+}
 
 // @public
 export type EditVerdict = {
@@ -714,6 +750,21 @@ export class GridEditIntent<Row> {
 }
 
 // @public
+export interface GridEditorReference {
+    readonly key?: string | undefined;
+    readonly length: number;
+    readonly range?: SelectionRange | undefined;
+    readonly start: number;
+}
+
+// @public
+export interface GridEditorRewrite {
+    readonly selectionEnd: number;
+    readonly selectionStart: number;
+    readonly text: string;
+}
+
+// @public
 export interface GridErrorStepRequest {
     readonly backward: boolean;
     readonly columns: readonly string[];
@@ -847,7 +898,9 @@ export interface GridHandle<Row> {
     refreshSummary(): void;
     returnKeyboard(from?: Element): void;
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
+    takeBackPointedText(): boolean;
     update(options: GridOptions<Row>): void;
+    writePointedText(text: string): boolean;
 }
 
 // @public
@@ -906,10 +959,12 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly chrome?: GridChrome<Row>;
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
+    readonly completeEditorText?: CompleteEditorText;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
     readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     readonly copyCellCap?: number;
+    readonly cycleReference?: (text: string, start: number, end: number) => GridEditorRewrite | undefined;
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly declaredKeys?: readonly string[];
     readonly density?: GridDensity;
@@ -941,7 +996,10 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
     readonly onPinnedCountChanged?: (count: number) => void;
+    readonly onPointArrowFromOutside?: (arrow: GridPointArrow) => void;
+    readonly onPointStateChanged?: (state: GridPointState) => void;
     readonly onRedo?: () => void;
+    readonly onReferenceKeyColoursChanged?: (keys: readonly ReferenceKeyColour[]) => void;
     readonly onRefused?: (refusal: GridRefusal<Row>) => void;
     readonly onReplace?: (request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
@@ -949,10 +1007,15 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onSummarize?: (request: GridSummaryRequest, signal: AbortSignal) => GridSummaryResult | Promise<GridSummaryResult>;
     readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
     readonly onUndo?: () => void;
+    readonly outlinedColumns?: readonly GridOutlinedColumn[];
     readonly pageSize?: number;
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
+    readonly pointAt?: (text: string, caret: number) => boolean;
+    readonly pointedAt?: GridPointedAt<Row>;
+    readonly referencesIn?: (text: string) => readonly GridEditorReference[] | undefined;
+    readonly referenceText?: (range: SelectionRange) => string;
     readonly rowHeadings?: (row: number) => string;
     readonly rowHeadingWidth?: number;
     readonly rowHeight?: number;
@@ -967,6 +1030,12 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
     readonly virtualiseColumns?: boolean;
+}
+
+// @public
+export interface GridOutlinedColumn {
+    readonly colour: ReferenceColour;
+    readonly column: string;
 }
 
 // @public
@@ -1005,6 +1074,63 @@ export class GridPasteIntent {
     valueFor(target: CellPosition): string;
     readonly values: readonly (readonly string[])[];
 }
+
+// @public
+export interface GridPointArrow {
+    readonly direction: GridDirection;
+    readonly extends?: boolean;
+    readonly toEdge?: boolean;
+}
+
+// @public
+export interface GridPointDashes<TRow> {
+    readonly column: string;
+    readonly row: ((row: TRow) => boolean) | undefined;
+}
+
+// @public
+export class GridPointedAt<TRow> {
+    constructor(onPress: (press: GridPointedPress<TRow>) => Promise<void>);
+    attach(grid: PointedAtGrid<TRow>): () => void;
+    get dashes(): GridPointDashes<TRow> | undefined;
+    set dashes(value: GridPointDashes<TRow> | undefined);
+    get isPointedAt(): boolean;
+    set isPointedAt(value: boolean);
+    onChanged(listener: () => void): () => void;
+    readonly onPress: (press: GridPointedPress<TRow>) => Promise<void>;
+    get outlinedColumns(): readonly GridOutlinedColumn[] | undefined;
+    set outlinedColumns(value: readonly GridOutlinedColumn[] | undefined);
+    get pointingRootId(): string | undefined;
+    set pointingRootId(value: string | undefined);
+    reveal(isRow: (row: TRow) => boolean, column: string): Promise<boolean>;
+    revealColumn(column: string): Promise<boolean>;
+    step(isRow: (row: TRow) => boolean, column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
+    stepFromColumn(column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
+}
+
+// @public
+export interface GridPointedPress<TRow> {
+    readonly column?: string;
+    readonly dragged?: boolean;
+    readonly kind: GridPointedPressKind;
+    readonly row?: TRow | undefined;
+}
+
+// @public
+export type GridPointedPressKind = 'cell' | 'columnHeader' | 'severalCells' | 'severalColumns' | 'headerGroup';
+
+// @public
+export interface GridPointedStep<TRow> {
+    readonly column?: string;
+    readonly kind: GridPointedStepKind;
+    readonly row?: TRow | undefined;
+}
+
+// @public
+export type GridPointedStepKind = 'cell' | 'edge' | 'rowNotArrived' | 'notHeld' | 'column';
+
+// @public
+export type GridPointState = 'none' | 'inPoint' | 'writtenFromOutside';
 
 // @public
 export interface GridPopoverContext {
@@ -1413,6 +1539,14 @@ export function plainDateOf(ticks: bigint): object;
 export function plainDateTimeOf(ticks: bigint): object;
 
 // @public
+export interface PointedAtGrid<TRow> {
+    reveal(isRow: (row: TRow) => boolean, column: string): Promise<boolean>;
+    revealColumn(column: string): Promise<boolean>;
+    step(isRow: (row: TRow) => boolean, column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
+    stepFromColumn(column: string, direction: GridDirection, isColumn: (column: string) => boolean): Promise<GridPointedStep<TRow>>;
+}
+
+// @public
 export interface QueryColumn<Row> {
     readonly dateType?: DateType;
     readonly format?: (value: unknown) => string;
@@ -1430,6 +1564,21 @@ export function readGridQueryJson(json: string): GridQuery;
 
 // @public
 export function readGridViewStateJson(json: string, columns: Iterable<string>): GridViewState;
+
+// @public
+export type ReferenceColour = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+// @public
+export function referenceColour(place: number): ReferenceColour;
+
+// @public
+export interface ReferenceKeyColour {
+    readonly colour: ReferenceColour;
+    readonly key: string;
+}
+
+// @public
+export const referencePaletteLength = 7;
 
 // @public
 export function refusedCells(cells: readonly GridReplaceRefusedCell[], rowSequenceVersion: number): GridReplaceResult;

@@ -47,14 +47,25 @@ export type EditorReference =
     | { readonly start: number; readonly length: number; readonly range: SelectionRange; readonly key: undefined }
     | { readonly start: number; readonly length: number; readonly range: undefined; readonly key: string };
 
+/** One Reference in the editor's text as the Consumer answers it (ADR-0057): the span it occupies, and either the
+ * cells it names on this grid (`range`) or a `key` naming something the grid does not hold, one and not both. */
+export interface GridEditorReference {
+    /** Where the Reference starts in the text, from 0. */
+    readonly start: number;
+    /** How many characters it covers, at least one. */
+    readonly length: number;
+    /** The cells it names on this grid. */
+    readonly range?: SelectionRange | undefined;
+    /** What it names that this grid does not hold, such as a Linked Table's column, compared as written. */
+    readonly key?: string | undefined;
+}
+
 /**
  * A Reference, checked: a span covers at least one character from a place in the text, and it names cells
  * (`range`: `A1` and `$A$1` name one range, and so share a colour and an outline) or a key, compared as
  * written, never both and never neither.
  */
-export function editorReference(
-    given: { readonly start: number; readonly length: number; readonly range?: SelectionRange | undefined; readonly key?: string | undefined },
-): EditorReference {
+export function editorReference(given: GridEditorReference): EditorReference {
     const { start, length, range, key } = given;
     if (!Number.isSafeInteger(start) || start < 0) {
         throw new RangeError(`A Reference starts at a place in the text, from 0. (start: ${start})`);
@@ -121,7 +132,7 @@ export class ReferenceColouring {
 
     /** Colours `references`, the Consumer's answer for `text`. The answer may list them in any order: first
      * appearance is where each stands in the text. `undefined` or empty colours nothing. */
-    static of(text: string, references: readonly EditorReference[] | undefined): ReferenceColouring {
+    static of(text: string, references: readonly GridEditorReference[] | undefined): ReferenceColouring {
         if (references === undefined || references.length === 0) return ReferenceColouring.none;
         // The References function is a Consumer's: each answer is made a Reference again, which checks its
         // place and that it names cells or a key, one and not both.

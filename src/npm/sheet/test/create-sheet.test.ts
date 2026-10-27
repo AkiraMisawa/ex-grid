@@ -5,7 +5,10 @@
 // what it refuses (ADR-0370 section 10).
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellAddress, CellFormatChange, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
+import { createGrid, type GridHandle } from '@ex-grid/core';
 import { createSheet, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
+import { PointingScope } from '../src/pointing-scope';
+import type { PointingRefusal } from '../src/pointing-refusal';
 
 const mounted: SheetHandle[] = [];
 
@@ -189,6 +192,145 @@ describe('Linked Tables (ADR-0049)', () => {
         await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('3'); });
         expect(() => { sheet.pushLinkedTable('Positions', rowsOf(['R-1', 1], ['r-1', 2])); }).toThrow(RepeatedKeyError);
         await vi.waitFor(() => { expect(textAt(element, 0, 1)).toBe('#GETTING_DATA'); });
+    });
+});
+
+describe('The formula entry aids (ADR-0051, ADR-0057)', () => {
+    it('DC-49: a Formula being edited outlines the cells it names, and tells each Linked Table column it reads in its colour, once per change', async () => {
+        const told: (readonly { readonly table: string; readonly column: string; readonly colour: number }[])[] = [];
+        const { element, sheet } = sheetOf({
+            onLinkedColumnColoursChanged: columns => { told.push(columns.map(({ column, colour }) => ({ table: column.table, column: column.column, colour }))); },
+        });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 3, 3);
+        key('F2');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        if (editor === null) throw new Error('The editor opened.');
+        // The table and column are matched ignoring case, and told under the names declared.
+        editor.value = '=A1+B2:C3+a1+SUM(positions[pv])';
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        await vi.waitFor(() => {
+            expect([...element.querySelectorAll('.ex-selection .ex-reference-outline')].map(piece => piece.className)).toEqual([
+                'ex-reference-outline ex-reference-1', 'ex-reference-outline ex-reference-2', 'ex-reference-outline ex-reference-1',
+            ]);
+        });
+        expect(told).toEqual([[{ table: 'Positions', column: 'PV', colour: 3 }]]);
+        key('Escape');
+        await vi.waitFor(() => { expect(element.querySelector('.ex-reference-outline')).toBeNull(); });
+        expect(told).toEqual([[{ table: 'Positions', column: 'PV', colour: 3 }], []]);
+    });
+
+    it('DC-49: a table declared while its column\'s Formula is edited is told at once', async () => {
+        const told: (readonly string[])[] = [];
+        const { element, sheet } = sheetOf({ onLinkedColumnColoursChanged: columns => { told.push(columns.map(({ column }) => `${column.table}[${column.column}]`)); } });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('F2');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        if (editor === null) throw new Error('The editor opened.');
+        editor.value = '=SUM(Costs[Amount])';
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        sheet.declareLinkedTable('Costs', ['Id', 'Amount'], 'Id');
+        await vi.waitFor(() => { expect(told).toEqual([['Costs[Amount]']]); });
+    });
+
+    it('ADR-0051, ADR-0058: the declared functions and the Linked Tables are listed as a name is typed, and Tab writes the name and shows its argument hint', async () => {
+        const { element, sheet } = sheetOf();
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('=');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        if (editor === null) throw new Error('The editor opened.');
+        const type = (text: string): void => {
+            editor.setRangeText(text, editor.value.length, editor.value.length, 'end');
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        const listed = (): (string | null)[] => [...element.querySelectorAll('.ex-completion-item')].map(item => item.textContent);
+        type('PO');
+        await vi.waitFor(() => { expect(listed()).toContain('Positions'); });
+        type('X');
+        await vi.waitFor(() => { expect(element.querySelector('.ex-completion')).toBeNull(); });
+        editor.value = '=';
+        type('SUMI');
+        await vi.waitFor(() => { expect(listed()).toEqual(['SUMIF', 'SUMIFS']); });
+        key('Tab');
+        expect(editor.value).toBe('=SUMIF(');
+        await vi.waitFor(() => { expect(element.querySelector('.ex-completion-hint strong')?.textContent).toBe('range'); });
+        expect(listed()).toEqual([]);
+        expect(element.querySelector('.ex-completion-hint')?.textContent).toMatch(/^SUMIF\(range, criteria/u);
+    });
+
+    it('ADR-0051: = and ↓ point at the cell below, F4 cycles it to $A$3, and Enter commits the Formula', async () => {
+        const { element } = sheetOf({ document: documentOf({ A3: '7' }) });
+        await vi.waitFor(() => { expect(textAt(element, 2, 0)).toBe('7'); });
+        press(element, 1, 0);
+        key('=');
+        key('ArrowDown');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        expect(editor?.value).toBe('=A3');
+        key('F4');
+        expect(editor?.value).toBe('=$A$3');
+        key('Enter');
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('7'); });
+    });
+});
+
+// A press on a cell of the registered grid, its default prevented or not, where the keyboard then is.
+function pressGrid(element: HTMLElement, row: number, column: number, init: MouseEventInit = {}): MouseEvent {
+    const viewport = element.querySelector<HTMLElement>('.ex-viewport');
+    if (viewport === null) throw new Error('The grid has no viewport.');
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, buttons: 1, ...init });
+    Object.defineProperty(event, 'offsetX', { value: (column * 100) + 10 });
+    Object.defineProperty(event, 'offsetY', { value: (row * 24) + 5 });
+    viewport.dispatchEvent(event);
+    return event;
+}
+
+describe('The Pointing Scope (ADR-0058)', () => {
+    interface Position { readonly id: string; readonly pv: number }
+    const positions: readonly Position[] = [{ id: 'R-1', pv: 110 }, { id: 'R-2', pv: 250 }, { id: 'R-3', pv: 75 }];
+    const grids: GridHandle<Position>[] = [];
+    afterEach(() => { for (const grid of grids.splice(0)) grid.destroy(); });
+
+    it('a press on a registered grid writes the cell\'s lookup where the Sheet points, the arrows move it there, and a range is refused', async () => {
+        const scope = new PointingScope();
+        const refusals: PointingRefusal[] = [];
+        const { element, sheet } = sheetOf({ pointingScope: scope, onPointingRefused: refusal => { refusals.push(refusal); } });
+        sheet.declareLinkedTable('Positions', ['Id', 'PV'], 'Id');
+        const gridElement = document.createElement('div');
+        document.body.append(gridElement);
+        grids.push(createGrid<Position>(gridElement, {
+            columns: [
+                { name: 'Id', type: 'text', value: row => row.id, width: 100 },
+                { name: 'PV', type: 'number', value: row => row.pv, width: 100 },
+            ],
+            rows: positions, rowHeight: 24, viewportHeight: 200,
+            pointedAt: scope.registerGrid<Position>('Positions', row => [Value.fromText(row.id), Value.fromNumber(row.pv)]),
+        }));
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        await vi.waitFor(() => { expect(gridElement.querySelector('[role="row"] [role="gridcell"]')).not.toBeNull(); });
+        press(element, 1, 0);
+        key('=');
+        await vi.waitFor(() => { expect(gridElement.classList.contains('ex-pointed-at')).toBe(true); });
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        expect(pressGrid(gridElement, 1, 1).defaultPrevented).toBe(true);
+        await vi.waitFor(() => { expect(editor?.value).toBe('=XLOOKUP("R-2", Positions[Id], Positions[PV])'); });
+        expect(document.activeElement).toBe(editor);
+        await vi.waitFor(() => { expect(gridElement.querySelectorAll('.ex-point-dashes')).toHaveLength(1); });
+        key('ArrowDown');
+        await vi.waitFor(() => { expect(editor?.value).toBe('=XLOOKUP("R-3", Positions[Id], Positions[PV])'); });
+        pressGrid(gridElement, 0, 1, { shiftKey: true });
+        await vi.waitFor(() => { expect(refusals.map(refusal => refusal.reason)).toEqual(['severalCells']); });
+        expect(editor?.value).toBe('=XLOOKUP("R-3", Positions[Id], Positions[PV])');
+        // Typing ends Point over what the press wrote: the dashes go, and the grid is still pointed at while a
+        // Reference can go at the caret.
+        editor?.setRangeText('+', editor.value.length, editor.value.length, 'end');
+        editor?.dispatchEvent(new Event('input', { bubbles: true }));
+        await vi.waitFor(() => { expect(gridElement.querySelectorAll('.ex-point-dashes')).toHaveLength(0); });
+        key('Escape');
+        await vi.waitFor(() => { expect(gridElement.classList.contains('ex-pointed-at')).toBe(false); });
     });
 });
 

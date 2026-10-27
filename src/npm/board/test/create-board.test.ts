@@ -69,6 +69,8 @@ class StandIns implements BoardMounts {
             ...made.handle(),
             placeSelection: unused('place a selection'),
             readView: unused('read a grid\'s view'),
+            writePointedText: unused('write a grid\'s pointed text'),
+            takeBackPointedText: unused('take back a grid\'s pointed text'),
             showViewWith: unused('hand a grid a view'),
             focus: unused('hand a grid the keyboard'),
             keyName: unused('name a grid\'s keys'),

@@ -196,6 +196,18 @@ export class FormulaBar {
         return this.#text.field();
     }
 
+    /** The core's own text field, where no Chrome's slot draws it: the field the coloured text is measured against
+     * (ADR-0057). */
+    get builtInText(): HTMLInputElement | undefined {
+        const text = this.#text.field();
+        return this.#text.mount === undefined && text instanceof HTMLInputElement ? text : undefined;
+    }
+
+    /** The text field's box: the built-in field itself, or the box a Chrome's slot draws in. */
+    get textBox(): HTMLElement {
+        return this.#text.box;
+    }
+
     /** The Name Box's field, while it stands. */
     get nameBox(): EditorField | undefined {
         return this.#nameBox.field();

@@ -26,6 +26,10 @@ export default defineConfig({
     server: { fs: { allow: [at('../..')] } },
     build: {
         target: 'es2022',
+        // The shipped stylesheet as written: its defaults are light-dark() pairs, which a lower CSS target rewrites into
+        // variables that only an ancestor's color-scheme of light or dark sets, so under the page's own scheme the
+        // colours would resolve to nothing. light-dark() is in Chrome and Edge from 123.
+        cssTarget: ['chrome123', 'edge123', 'firefox120', 'safari17.5'],
         // Into the site's own static files, where the Docs project's build puts them (ExGrid.Docs.csproj).
         outDir: at('../ExGrid.Docs/wwwroot/react'),
         emptyOutDir: true,
