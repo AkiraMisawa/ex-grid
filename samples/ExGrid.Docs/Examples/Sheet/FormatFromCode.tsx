@@ -16,12 +16,13 @@ export default function FormatFromCode(): ReactElement {
     const [editing, setEditing] = useState(false);
     const [focus, setFocus] = useState('');
 
-    // What the Focus cell shows: from the cell, its row or its column.
+    // What the Focus cell shows: from the cell, its row or its column. The Focus is on the Sheet shown, which the read
+    // names: with several Sheets, a read naming none is refused.
     const readFocus = (): void => {
         const at = selection.current?.focus;
         const api = sheet.current;
         if (at === undefined || api === null) return;
-        const format = api.cellFormatAt(new CellAddress(at.row, at.column));
+        const format = api.cellFormatAt(api.workbook.shown.name, new CellAddress(at.row, at.column));
         setFocus(`${format.numberFormat.code}${format.font.bold ? ', bold' : ''}${format.fill.isNone ? '' : ', filled'}`);
     };
 

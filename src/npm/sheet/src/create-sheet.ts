@@ -217,6 +217,9 @@ export interface SheetHandle {
     destroy(): void;
 }
 
+// The largest seed: a seed is an unsigned 64-bit integer, as the engine and C#'s ulong hold it (ADR-0180).
+const maxSeed = (1n << 64n) - 1n;
+
 // A seed drawn from the browser's generator, as the C# Sheet draws one from Random.Shared (ADR-0180).
 function chooseSeed(): bigint {
     return elementAt(crypto.getRandomValues(new BigUint64Array(1)), 0);
@@ -306,7 +309,7 @@ class SheetView {
     // back, is the Sheet's own state, and is not opened again over its undo stack.
     readonly #raised = new WeakSet<object>();
     // The seed chosen when the document was opened, which draws while no `seed` is given (ADR-0180).
-    #chosenSeed = chooseSeed();
+    #chosenSeed: bigint;
     // The Sheets' names as the Consumer last heard them, so a change says what it was taken from (ADR-0331 §6): at
     // open, the document's own.
     #sheetNames: readonly string[] = [];
@@ -316,6 +319,7 @@ class SheetView {
         this.#options = SheetView.#checked(options);
         this.#words = new SheetWords({ japanese: this.#options.japanese, label: this.#options.label });
         this.#document = this.#options.document;
+        this.#chosenSeed = chooseSeed();
         this.#workbook = this.#open(this.#options);
         this.#source = new SheetSource(this.#workbook.shown);
         this.#columns = new SheetColumns(this.#options.density ?? 'compact', error => this.#words.formulaUnreadable(error)); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
@@ -374,6 +378,7 @@ class SheetView {
         if (next.document !== undefined && this.#raised.has(next.document)) this.#document = next.document;
         if (next.document !== this.#document) {
             this.#document = next.document;
+            this.#chosenSeed = chooseSeed();
             this.#workbook = this.#open(next);
             this.#history.clear();
             this.#showSheet(this.#workbook.shown);
@@ -397,10 +402,7 @@ class SheetView {
         if (edit === undefined) throw new TypeError('A command that names its Sheet names its edit too.');
         const target = this.#named(sheetOrEdit);
         this.#refuseWhileEditing();
-        this.#resizing = undefined;
-        const step = this.#workbook.do(target.name, edit);
-        this.#history.record([step], target);
-        this.#changed([step.change]);
+        this.#perform(edit, undefined, undefined, target);
     }
 
     setCellFormat(change: CellFormatChange): boolean {
@@ -853,11 +855,11 @@ class SheetView {
         }
     };
 
+    // The grid tells only a change, so each call is one the Consumer hears.
     readonly #onEditingChanged = (open: boolean): void => {
-        const was = this.#editing;
         this.#editing = open;
         this.#paintToolbar();
-        if (open !== was) this.#options.onEditingChanged?.(open);
+        this.#options.onEditingChanged?.(open);
     };
 
     readonly #onEditDiscarded = (reason: EditDiscardReason): void => {
@@ -1446,12 +1448,11 @@ class SheetView {
 
     // ---- Operations ------------------------------------------------------------------------------------------
 
-    /** `edit` on the Sheet shown, as one operation on the undo stack; its undo selects `selects` where given. The
-     * columns a number entered over `widenOver` no longer fits are widened in the same operation, so one undo puts
-     * back both (ADR-0048; ADR-0071, case 17). */
-    #perform(edit: SheetEdit, selects?: readonly CellRange[], widenOver?: readonly CellRange[]): void {
+    /** `edit` on `sheet`, the Sheet shown unless named, as one operation on the undo stack; its undo selects `selects`
+     * where given. The columns a number entered over `widenOver` no longer fits are widened in the same operation, so
+     * one undo puts back both (ADR-0048; ADR-0071, case 17). */
+    #perform(edit: SheetEdit, selects?: readonly CellRange[], widenOver?: readonly CellRange[], sheet: Sheet = this.#source.sheet): void {
         this.#resizing = undefined;
-        const sheet = this.#source.sheet;
         const steps: WorkbookStep[] = [this.#workbook.do(sheet.name, edit)];
         if (widenOver !== undefined) {
             for (const [column, characters] of this.#columns.widenedBy(sheet, widenOver)) {
@@ -1576,25 +1577,27 @@ class SheetView {
         if (view === undefined) this.#select(new CellRange(new CellAddress(0, 0)));
     }
 
+    // The document, then a change to the Sheets where the names moved. The names are taken as heard before either
+    // handler runs, so one that throws or acts on the Sheet again leaves the next change said against these.
     #raiseDocument(): void {
-        const { onWorkbookChanged, onSheetsChanged } = this.#options;
+        const before = this.#sheetNames;
+        const after = this.#workbook.sheets.map(sheet => sheet.name);
+        const sheetsChanged = after.length !== before.length || after.some((name, at) => name !== before[at]);
+        this.#sheetNames = after;
+        const change: SheetsChange = { before, after, shown: this.#workbook.shown.name };
+        const { onWorkbookChanged } = this.#options;
         if (onWorkbookChanged !== undefined) {
             const raised = this.#workbook.toDocument();
             this.#raised.add(raised);
             onWorkbookChanged(raised);
         }
-        const before = this.#sheetNames;
-        const after = this.#workbook.sheets.map(sheet => sheet.name);
-        if (after.length === before.length && after.every((name, at) => name === before[at])) return;
-        this.#sheetNames = after;
-        onSheetsChanged?.({ before, after, shown: this.#workbook.shown.name });
+        if (sheetsChanged) this.#options.onSheetsChanged?.(change);
     }
 
-    // A document opened, with its seed: the Consumer's, or one chosen now, at a count of 0 changes (ADR-0180). Its
+    // A document opened, with its seed: the Consumer's, or the one just chosen, at a count of 0 changes (ADR-0180). Its
     // Sheets' names are the ones the Consumer has heard.
     #open(options: SheetOptions): Workbook {
         const workbook = options.document === undefined ? new Workbook(Culture.of(options.locale ?? navigator.language)) : Workbook.open(options.document);
-        this.#chosenSeed = chooseSeed();
         workbook.setSeed(options.seed ?? this.#chosenSeed, 0);
         this.#sheetNames = workbook.sheets.map(sheet => sheet.name);
         return workbook;
@@ -1629,9 +1632,19 @@ class SheetView {
         // Checked as an untyped caller may hand them, where they arrive (CONVENTIONS.md).
         const given: unknown = options;
         if (typeof given !== 'object' || given === null) throw new TypeError("A Sheet's options are an object.");
-        const { locale, onWorkbookChanged }: { readonly locale?: unknown; readonly onWorkbookChanged?: unknown } = options;
+        const { locale, seed }: { readonly locale?: unknown; readonly seed?: unknown } = options;
         if (locale !== undefined && typeof locale !== 'string') throw new TypeError("A Sheet's locale is a language tag, such as 'en-US'.");
-        if (onWorkbookChanged !== undefined && typeof onWorkbookChanged !== 'function') throw new TypeError('onWorkbookChanged is a function.');
+        // Refused here, before anything changes, where the engine would refuse it only once the Sheet had taken it.
+        if (seed !== undefined && (typeof seed !== 'bigint' || seed < 0n || seed > maxSeed)) {
+            throw new RangeError(`${typeof seed === 'bigint' ? seed.toString() : typeof seed} is not a seed: a seed is a bigint from 0 to 2^64 - 1.`);
+        }
+        const handlers: readonly (readonly [string, unknown])[] = [
+            ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
+            ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
+        ];
+        for (const [name, handler] of handlers) {
+            if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
+        }
         return options;
     }
 }

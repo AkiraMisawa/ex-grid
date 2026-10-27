@@ -10,17 +10,20 @@ export default function WorkbookTabs(): ReactElement {
     const sheet = useRef<ExSheetApi>(null);
     // The document the Sheet opens: a new one replaces the Workbook and clears its undo stack.
     const [opened, setOpened] = useState(first);
-    // The document as it stands after each change, and the saved copy: where your application would write to a
-    // database or a file.
-    const current = useRef(first);
+    // The saved copy: where your application would write to a database or a file.
     const [saved, setSaved] = useState<string | undefined>(undefined);
     const [said, setSaid] = useState('');
 
     // A command names the Sheet it acts on: with several Sheets, one naming none is refused. A Sheet operation is one
     // step on the undo stack, as an edit is.
-    const addSheet = (): void => {
+    const mounted = (): ExSheetApi => {
         const api = sheet.current;
         if (api === null) throw new Error('The Sheet is not mounted.');
+        return api;
+    };
+
+    const addSheet = (): void => {
+        const api = mounted();
         const sheets = api.workbook.sheets;
         const last = sheets[sheets.length - 1];
         if (last === undefined) throw new Error('A Workbook holds at least one Sheet.');
@@ -31,15 +34,14 @@ export default function WorkbookTabs(): ReactElement {
     const sheetsChanged = (change: SheetsChange): void => { setSaid(`Sheets: ${change.after.join(', ')}.`); };
 
     const save = (): void => {
-        setSaved(current.current.toJson());
-        setSaid(`Saved ${String(current.current.sheets.length)} sheets, '${current.current.shown}' shown.`);
+        const document = mounted().workbook.toDocument();
+        setSaved(document.toJson());
+        setSaid(`Saved ${String(document.sheets.length)} sheets, '${document.shown}' shown.`);
     };
 
     const load = (): void => {
         if (saved === undefined) return;
-        const loaded = WorkbookDocument.fromJson(saved);
-        current.current = loaded;
-        setOpened(loaded);
+        setOpened(WorkbookDocument.fromJson(saved));
         setSaid('Loaded the saved copy.');
     };
 
@@ -51,8 +53,7 @@ export default function WorkbookTabs(): ReactElement {
                 <button type="button" disabled={saved === undefined} onClick={load}>Load the saved copy</button>
                 <span>{said}</span>
             </div>
-            <ExSheet ref={sheet} document={opened} onWorkbookChanged={document => { current.current = document; }} onSheetsChanged={sheetsChanged}
-                viewportHeight={280} viewportWidth="stretch" />
+            <ExSheet ref={sheet} document={opened} onSheetsChanged={sheetsChanged} viewportHeight={280} viewportWidth="stretch" />
         </>
     );
 }

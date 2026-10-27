@@ -1100,7 +1100,7 @@ describe("the Consumer's commands (ADR-0048, ADR-0331 §6, ADR-0071)", () => {
 });
 
 describe('the Sheet Seed (ADR-0180)', () => {
-    it('ADR-0180: a fixed seed draws the same whenever the document is opened, and a new one draws again without a step or a document', async () => {
+    it('ADR-0180: a fixed seed draws the same whenever the document is opened; one out of range is refused, and a new one draws again without a step or a document', async () => {
         const document = documentOf({ A1: '=RANDBETWEEN(1, 1000000)' });
         const documents: unknown[] = [];
         const first = sheetOf({ document, seed: 20261011n, onWorkbookChanged: raised => { documents.push(raised); } });
@@ -1108,6 +1108,9 @@ describe('the Sheet Seed (ADR-0180)', () => {
         await vi.waitFor(() => { expect(textAt(first.element, 0, 0)).toMatch(/^\d+$/u); });
         const drawn = textAt(first.element, 0, 0);
         expect(textAt(second.element, 0, 0)).toBe(drawn);
+        // A seed out of range is refused before the Sheet takes anything of the options.
+        expect(() => { first.sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, document: documentOf({}), seed: -1n }); }).toThrow(RangeError);
+        expect(textAt(first.element, 0, 0)).toBe(drawn);
         first.sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, document, seed: 7n, onWorkbookChanged: raised => { documents.push(raised); } });
         await vi.waitFor(() => { expect(textAt(first.element, 0, 0)).not.toBe(drawn); });
         expect([first.sheet.canUndo, documents.length]).toEqual([false, 0]);
