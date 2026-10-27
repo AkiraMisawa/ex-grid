@@ -28,6 +28,7 @@
       "@ex-grid/pivot": ["../../src/npm/pivot/src/index.ts"],
       "@ex-grid/pivot-react": ["../../src/npm/pivot-react/src/index.ts"],
       "@ex-grid/pivot-mantine": ["../../src/npm/pivot-mantine/src/index.ts"],
+      "@ex-grid/pivot-mui": ["../../src/npm/pivot-mui/src/index.ts"],
       "@mantine/core": ["./node_modules/@mantine/core/lib/index.d.mts"],
       "@mantine/hooks": ["./node_modules/@mantine/hooks/lib/index.d.mts"],
       "@ex-grid/mui": ["../../src/npm/mui/src/index.ts"],

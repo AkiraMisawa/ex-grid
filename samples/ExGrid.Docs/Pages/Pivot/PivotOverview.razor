@@ -177,6 +177,16 @@
             shows and does is still the pivot's.
         </p>
         <p>
+            <strong>For a MUI application</strong>, <code>@@ex-grid/pivot-mui</code> does the same in MUI's components:
+            <code>MuiPivot</code> stands the pivot in MUI's outlined Paper, its parts drawn by <code>muiPivotChrome</code>
+            and its report grid's Chrome by <code>@@ex-grid/mui</code>. Load <code>@@ex-grid/mui/styles.css</code> and
+            <code>@@ex-grid/pivot-mui/styles.css</code>, under a <code>ThemeProvider</code> whose theme was made with
+            <code>createTheme(&#123; cssVariables: true &#125;)</code>: the stylesheets read the theme's colours as the
+            variables MUI writes, so a theme without them is refused by name rather than drawn in colours that are not
+            its own. A Compact or Excel Density draws the components <code>small</code> with dense menus, Standard and
+            Comfortable at MUI's default size. The panels' selects are MUI's native ones, whose list is the browser's.
+        </p>
+        <p>
             On Blazor Server, input made in the report while the connection is lost never reaches it. Once the
             connection is back, the next input finds it missing: it is refused aloud and never replayed, and the new
             input is handled as usual, as on <MudLink Href="exgrid/selection">the grid</MudLink>.

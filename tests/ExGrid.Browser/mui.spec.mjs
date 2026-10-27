@@ -169,3 +169,42 @@ test('ADR-0258, ADR-0390: the MUI Chart Dock opens a chart beside the grid, neve
     const dark = await colours();
     expect([dark.first, dark.second, dark.ground], JSON.stringify(dark)).toEqual([dark.primary, dark.secondary, dark.paper]);
 });
+
+// @ex-grid/pivot-mui on /pivot-mui: what only a browser shows of ExPivot under MUI. What each slot draws and calls
+// back is the contract layer 2 runs against muiPivotChrome; here, the pane's layout under MUI's styles, the mark the
+// stylesheet draws on the current choice, and the theme's colours in both schemes.
+test('ADR-0061, ADR-0390: under MUI the Field List keeps its Areas whole at the pane\'s foot, the current layout choice is marked, and the theme paints the pivot in light and dark', async ({ page }) => {
+    await page.goto('/pivot-mui');
+    const pivot = page.locator('.mui-ex-pivot');
+    const pane = pivot.locator('.ex-pivot-field-list');
+    await expect(pivot.locator('.ex-pivot-sheet [role=grid] .ex-row').first()).toBeVisible();
+    await expect(pane.locator('.mui-ex-pivot-areas')).toBeVisible();
+
+    // The four Areas stand whole inside the pane, under the list of fields, which scrolls on its own.
+    const [paneBox, areasBox, fieldsBox] = await Promise.all([pane, pane.locator('.mui-ex-pivot-areas'), pane.locator('.mui-ex-pivot-fields')].map(at => at.boundingBox()));
+    expect(areasBox.y + areasBox.height, JSON.stringify({ paneBox, areasBox })).toBeLessThanOrEqual(paneBox.y + paneBox.height);
+    expect(areasBox.y, JSON.stringify({ fieldsBox, areasBox })).toBeGreaterThanOrEqual(fieldsBox.y + fieldsBox.height);
+
+    // The mark is the stylesheet's, off aria-checked: the current form carries it, the others none.
+    await pivot.getByRole('button', { name: /^Layout/ }).click();
+    const mark = (words) => pivot.locator('[role=menuitemradio]').filter({ hasText: new RegExp(`^${words}$`) })
+        .evaluate((item) => getComputedStyle(item.querySelector('.mui-ex-pivot-menu-mark'), '::before').content);
+    expect([await mark('Show in Compact Form'), await mark('Show in Outline Form')]).toEqual(['"✓"', 'none']);
+    await page.keyboard.press('Escape');
+    await expect(pivot.locator('.ex-pivot-popup')).toHaveCount(0);
+
+    const colours = async () => {
+        const css = await pane.evaluate((element) => {
+            const theme = getComputedStyle(element.closest('.mui-ex-pivot'));
+            return { pane: getComputedStyle(element).backgroundColor, paper: theme.getPropertyValue('--mui-palette-background-paper') };
+        });
+        return Object.fromEntries(await Promise.all(Object.entries(css).map(async ([name, colour]) => [name, await resolvedColour(page, colour)])));
+    };
+    const light = await colours();
+    expect(light.pane, JSON.stringify(light)).toEqual(light.paper);
+    await page.locator('#toggle-dark').click();
+    await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+    await expect.poll(async () => (await colours()).pane).not.toEqual(light.pane);
+    const dark = await colours();
+    expect(dark.pane, JSON.stringify(dark)).toEqual(dark.paper);
+});

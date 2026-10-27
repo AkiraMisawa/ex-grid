@@ -229,8 +229,8 @@ recommendations, as sections 9 to 11 were; a different answer from the user rewr
   the list, so a press made at once after the opening closes it too (the spine's sixth rule), and Mantine's own
   dismissal is off. Format Cells' OK over a form whose field is left invalid moves into `useFormatCells`, and a
   palette's colour for its target into the Sheet's draft (`colourOf`, `setColour`), which the built-in Format Cells
-  uses too. The theme check is `@ex-grid/mui`'s `refuseThemeWithoutVariables`, which ExChart's MUI Wrapper takes in
-  place of its own copy. A Consumer's own Chrome takes the same hooks.
+  uses too. The theme check is `@ex-grid/mui`'s `refuseThemeWithoutVariables`, as every MUI
+  Wrapper's is. A Consumer's own Chrome takes the same hooks.
 - **The Docs Site.** ExSheet's React Examples are written for both Wrappers.
 
 ## Open

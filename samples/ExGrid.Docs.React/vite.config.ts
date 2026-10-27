@@ -27,6 +27,7 @@ export default defineConfig({
             '@ex-grid/pivot': at('../../src/npm/pivot/src/index.ts'),
             '@ex-grid/pivot-react': at('../../src/npm/pivot-react/src/index.ts'),
             '@ex-grid/pivot-mantine': at('../../src/npm/pivot-mantine/src/index.ts'),
+            '@ex-grid/pivot-mui': at('../../src/npm/pivot-mui/src/index.ts'),
             '@ex-grid/mui': at('../../src/npm/mui/src/index.ts'),
             '@ex-grid/chart': at('../../src/npm/chart/src/index.ts'),
             '@ex-grid/chart-react': at('../../src/npm/chart-react/src/index.ts'),
