@@ -54,6 +54,26 @@ untenable** and will collide with the host application's CSS. Prefix them, as `.
 CSS variables (`--ex-*`) are **defined on the root element**. Put them on `:root` and there is one
 theme per page, with no way to give instances different appearances.
 
+*(Exception, 2026-10-27, decided with the user.)* One rule of `ex-grid.css` stands outside an
+instance: `:where(html) { --lightningcss-light: initial; --lightningcss-dark: ; }`. A bundler that
+lowers `light-dark()` for older browsers (Vite's default build target, through lightningcss) writes
+each one as `var(--lightningcss-light, A) var(--lightningcss-dark, B)`. It defines the two variables
+only in the lowered rules that declare `color-scheme`. A page whose bundled CSS declares none
+therefore loses every `light-dark()` colour of the grid without a sign: the reference colours and
+the Formula Bar's ground fall back to the inherited text colour and to no ground.
+
+The rule says light, which is what the browser does when nothing is declared. It holds no colour and
+no theme, so instances still differ only by their own `--ex-*`. `:where()` gives it no specificity,
+so any lowered declaration of the page's wins. The core still declares no `color-scheme` of its own
+(UX-8).
+
+A page whose scheme is set where the bundler cannot see it gets light colours under a dark scheme,
+instead of none. That covers a `<meta name="color-scheme">`, an inline style, or a stylesheet left
+unbundled. Such a page sets the build target to keep `light-dark()` (Vite's `build.cssTarget`), as
+the Docs Site's appearance page says. Dropping `light-dark()` was rejected: the reference colours
+would no longer follow a dark scheme. A Docs note alone was rejected too: a Consumer who never read
+it would still see the colours vanish.
+
 ## 3. Make the JavaScript a module returning per-instance handles
 
 The spike's `window.bench = { _fps: null, ... }` is a single global, and a second grid calling it
