@@ -22,6 +22,7 @@ import { markLabelIds } from '../chrome/mark-words';
 import { selectionLabelIds } from '../chrome/selection-words';
 import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
 import { gridCommandIds, gridLabelIds } from '../chrome/command-ids';
+import { filledWords } from '../chrome/filled-words';
 import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
 import { canApply } from '../chrome/filter-panel-choices';
 import { FilterPanelModel } from '../chrome/filter-panel-model';
@@ -31,7 +32,7 @@ import { filterOperatorsFor, type FilterSpec } from '../query/filter';
 import { parseClipboardBlock, type ClipboardBlock } from '../clipboard/clipboard-parse';
 import { GridPasteIntent } from '../clipboard/paste-intent';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
-import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
+import { HeaderGroup, HeaderGroupLayout, type HeaderGroupToggle, type HiddenMark, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { reorderColumns } from '../columns/header-reorder';
 import { decideOverflow } from '../columns/overflow-rules';
 import { changeHighlightShowingUntil } from '../cells/change-highlight';
@@ -50,7 +51,7 @@ import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-wa
 import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '../finding/replace';
 import { defined, elementAt, itemAt, unreachable } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
-import { canonicalKey, declareKeys, errorStepOf, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
+import { canonicalKey, declareKeys, errorStepOf, headerGroupKeyOf, headerGroupKeys, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
 import type { GridErrorStepRequest } from '../cells/grid-ruleset';
 import { cellClasses, type CellTone, type MatchMark } from '../paint/cell-classes';
 import { columnMark, rowMark } from '../paint/heading-mark-styles';
@@ -168,6 +169,14 @@ export interface GridHeaderGroup {
     readonly tier?: number;
     /** How many tiers the rectangle spans downward from its top tier; 1 unless given. */
     readonly tierSpan?: number;
+    /** What names the group in `onHeaderGroupToggled` (ADR-0400). Required with `expanded`, and unique. */
+    readonly id?: string;
+    /** Whether the group shows open (ADR-0400): given, it draws a toggle, ▾ when true and ▸ when false, whose press
+     * notifies `onHeaderGroupToggled`; the grid adds and removes no column, and shows the `expanded` it was last given. */
+    readonly expanded?: boolean;
+    /** The Hidden Mark a collapsed group wears (ADR-0400 section 6): the Cell State a column it hides holds, and the
+     * reason, its accessible description. Only on a group declared `expanded: false`. */
+    readonly hiddenMark?: HiddenMark;
 }
 
 /** What a grid is drawn from. Rows reach it only through a Grid Source; `rows` is `GridSource.from(rows)`. */
@@ -424,6 +433,14 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * nothing: the column goes when the Consumer hands back the columns without it. Without it the command is
      * shown disabled. */
     readonly onColumnHidden?: (column: string) => void;
+    /**
+     * Hears a Header Group's toggle (ADR-0400): a press on it, or Alt+Shift+↓ or ↑ from a cell under the group, with
+     * the group's `id`, the state asked for, which is the opposite of the `expanded` shown when the input was taken,
+     * and the Focus's column. The grid adds and removes no column: the Consumer answers by handing back the columns
+     * and the group's new `expanded`. Required for any group declared `expanded`; given, Alt+Shift+↓ and ↑ cannot be
+     * among `declaredKeys`.
+     */
+    readonly onHeaderGroupToggled?: (toggle: HeaderGroupToggle) => void;
     /** Hears the Pinned Columns' count the column menu asks for (ADR-0004, ADR-0010): "Pin up to this column"
      * and "Unpin all columns". The grid changes nothing until the Consumer hands back `pinnedColumnCount`.
      * Without it both commands are shown disabled. */
@@ -803,6 +820,18 @@ interface HeaderMatches<Row> {
 }
 
 /** The options as `update` takes them: checked and resolved, and not yet the grid's. */
+// The Focus a Header Group's toggle remembers (ADR-0011's section "A Header Group's toggle keeps the Focus"): what was
+// notified, and the row by its key, or by its position under the order it was taken in. Let go when anything else
+// placed or dropped the Focus first, which the Selection and the source it was taken under tell.
+interface ToggleFocus {
+    readonly toggle: HeaderGroupToggle;
+    readonly selection: Selection;
+    readonly source: object;
+    readonly sequence: number;
+    readonly row: number;
+    readonly key: RowKey | undefined;
+}
+
 interface Taken<Row> {
     readonly source: GridSource<Row>;
     /** The source when the grid made it over `rows`. */
@@ -858,6 +887,7 @@ interface Taken<Row> {
     readonly hideColumnMenu: boolean;
     readonly onColumnHidden: ((column: string) => void) | undefined;
     readonly onPinnedCountChanged: ((count: number) => void) | undefined;
+    readonly onHeaderGroupToggled: ((toggle: HeaderGroupToggle) => void) | undefined;
     readonly culture: GridCulture;
     readonly temporal: TemporalLike | undefined;
     readonly onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
@@ -1219,7 +1249,8 @@ function sameGroups(a: readonly HeaderGroup[], b: readonly HeaderGroup[]): boole
     return a === b || (a.length === b.length && a.every((group, i) => {
         const other = itemAt(b, i);
         return group.label === other.label && group.tier === other.tier && group.tierSpan === other.tierSpan
-            && sameItems(group.columns, other.columns);
+            && sameItems(group.columns, other.columns) && group.id === other.id && group.expanded === other.expanded
+            && group.hiddenMark?.state === other.hiddenMark?.state && group.hiddenMark?.reason === other.hiddenMark?.reason;
     }));
 }
 
@@ -1625,6 +1656,11 @@ export class GridView<Row> {
     #hideColumnMenu = false;
     #menuButtons = new Map<Element, string>();
     #onColumnHidden: ((column: string) => void) | undefined;
+    // A Header Group's toggle (ADR-0400): who hears it, the toggles painted by the group each names, and the Focus a
+    // toggle remembers for the columns push that answers it (ADR-0011's section on the toggle).
+    #onHeaderGroupToggled: ((toggle: HeaderGroupToggle) => void) | undefined;
+    #groupToggles = new Map<Element, string>();
+    #toggleFocus: ToggleFocus | undefined;
     #onPinnedCountChanged: ((count: number) => void) | undefined;
     // The culture typed text is read in, and the Temporal a typed date is made with (ADR-0370 section 10).
     #culture: GridCulture = gridCulture(invariantLocale);
@@ -2294,6 +2330,15 @@ export class GridView<Row> {
             throw new TypeError(`declaredKeys names ${stepKey}, which is the error step on a grid given findError: the key would mean two things `
                 + '(ADR-0381, ADR-0050 item 14).');
         }
+        const { onHeaderGroupToggled }: { readonly onHeaderGroupToggled?: unknown } = options;
+        if (onHeaderGroupToggled !== undefined && typeof onHeaderGroupToggled !== 'function') {
+            throw new TypeError('onHeaderGroupToggled is a function of the toggle (ADR-0400).');
+        }
+        const groupKey = onHeaderGroupToggled === undefined ? undefined : headerGroupKeys.find(key => declaredKeys.has(key));
+        if (groupKey !== undefined) {
+            throw new TypeError(`declaredKeys names ${groupKey}, which opens or closes a Header Group on a grid given onHeaderGroupToggled: the `
+                + 'key would mean two things (ADR-0400 section 4, ADR-0050 item 14).');
+        }
         if (declaredKeys.size > 0 && onDeclaredKey === undefined) {
             throw new TypeError('declaredKeys names keys, but no onDeclaredKey hears them: the keys would be taken from the page and nobody told '
                 + '(ADR-0050, item 14).');
@@ -2409,7 +2454,8 @@ export class GridView<Row> {
             throw new RangeError(`pasteByteCap is a whole number of at least one byte, not ${pasteByteCap}: the cap may be raised, `
                 + 'not used to switch pasting off (ADR-0005).');
         }
-        const { headerGroups, headerLayout } = this.#layoutOf(options.headerGroups, columns, pinnedColumnCount, columnsChanged);
+        const { headerGroups, headerLayout } = this.#layoutOf(options.headerGroups, columns, pinnedColumnCount, columnsChanged,
+            options.onHeaderGroupToggled !== undefined);
         // The band comes off the scroll budget, and the refusal names the band (ADR-0032): a Viewport that
         // cannot hold it and one row shows headers and no data, which reads as an empty result.
         // A hidden header takes no band (ADR-0050, item 1).
@@ -2442,7 +2488,7 @@ export class GridView<Row> {
             onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
             chrome: checkedChrome<Row>(options.chrome), hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
-            onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
+            onPinnedCountChanged: options.onPinnedCountChanged, onHeaderGroupToggled: options.onHeaderGroupToggled, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findError: options.findError, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
             rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
@@ -2527,7 +2573,7 @@ export class GridView<Row> {
     // The Header Groups taken and resolved against the columns' order and the pinned count (ADR-0032): the
     // layout in force kept while none of the three changed, so the header is not built again.
     #layoutOf(groups: readonly GridHeaderGroup[] | undefined, columns: readonly ResolvedColumn<Row>[], pinnedCount: number,
-        columnsChanged: boolean): { readonly headerGroups: readonly HeaderGroup[]; readonly headerLayout: HeaderGroupLayout } {
+        columnsChanged: boolean, toggleHeard: boolean): { readonly headerGroups: readonly HeaderGroup[]; readonly headerLayout: HeaderGroupLayout } {
         if (groups === undefined) return { headerGroups: [], headerLayout: HeaderGroupLayout.empty };
         const given: unknown = groups;
         if (!Array.isArray(given)) throw new TypeError(`headerGroups is a list of Header Groups, not ${String(given)} (ADR-0032).`);
@@ -2539,6 +2585,8 @@ export class GridView<Row> {
             return new HeaderGroup(group);
         });
         if (headerGroups.length === 0) return { headerGroups, headerLayout: HeaderGroupLayout.empty };
+        // A toggle stops being heard with no change to the groups: its refusal is asked whatever is kept (ADR-0400).
+        HeaderGroupLayout.refuseToggles(headerGroups, toggleHeard);
         if (!columnsChanged && pinnedCount === this.#pinnedCount && sameGroups(headerGroups, this.#headerGroups)) {
             return { headerGroups: this.#headerGroups, headerLayout: this.#headerLayout };
         }
@@ -2546,6 +2594,7 @@ export class GridView<Row> {
             groups: headerGroups,
             columnNames: columns.map(({ column }) => column.name),
             pinnedCount,
+            toggleHeard,
         });
         return { headerGroups, headerLayout };
     }
@@ -2704,6 +2753,9 @@ export class GridView<Row> {
         this.#hideColumnMenu = taken.hideColumnMenu;
         this.#onColumnHidden = taken.onColumnHidden;
         this.#onPinnedCountChanged = taken.onPinnedCountChanged;
+        this.#onHeaderGroupToggled = taken.onHeaderGroupToggled;
+        // A toggle no longer heard remembers no Focus for an answer that will not come.
+        if (taken.onHeaderGroupToggled === undefined) this.#toggleFocus = undefined;
         this.#culture = taken.culture;
         this.#temporal = taken.temporal;
         this.#onReplace = taken.onReplace;
@@ -3096,7 +3148,24 @@ export class GridView<Row> {
         const names = this.#columns.map(({ column }) => column.name);
         const columnsMoved = !sameItems(names, this.#columnNames);
         const was = this.#held.selection;
+        // A toggle's Focus is let go once anything else has placed or dropped the Focus, or the source is another.
+        let toggled = this.#toggleFocus;
+        if (toggled !== undefined && (toggled.selection !== was || toggled.source !== this.#source)) {
+            toggled = undefined;
+            this.#toggleFocus = undefined;
+        }
         this.#held = columnsMoved ? HeldSelection.empty(version) : this.#held.under(version);
+        if (columnsMoved && toggled !== undefined) {
+            // The first columns push after a toggle answers it, whatever it shows: only the Focus it remembered comes
+            // back, by name, never the Selection (ADR-0011, ADR-0400 section 9).
+            this.#toggleFocus = undefined;
+            const kept = this.#focusAfterToggle(toggled, names);
+            if (kept !== undefined) {
+                this.#held = HeldSelection.of(version, Selection.empty.click(kept, this.#extent));
+                this.#revealOwed = { target: kept, extending: undefined, rowStart: false, stepRows: 0 };
+                this.#revealHeaderOwed = undefined;
+            }
+        }
         // A view handed ahead is taken with the version it names, so the Selection and the version arrive together
         // and nothing between them meets an empty one (ADR-0331). One that does not fit the rows shown is not.
         const ahead = this.#viewAhead;
@@ -3146,6 +3215,38 @@ export class GridView<Row> {
             || !copied.holds(this.#columns, this.#state.window, this.#state.windowStart))) {
             this.#copied = undefined;
         }
+    }
+
+    // Where a toggle's Focus stands in the columns that answered it (ADR-0011, ADR-0400 section 9): in its column by
+    // name, or the group's first member, on its row by Row Key, or by position while the order it was taken in holds.
+    #focusAfterToggle(toggled: ToggleFocus, names: readonly string[]): CellPosition | undefined {
+        const column = this.#headerLayout.focusColumnAfter(toggled.toggle, names);
+        if (column === undefined) return undefined;
+        const row = toggled.key === undefined
+            ? (this.#source.rowKey === undefined && this.#sequence() === toggled.sequence ? toggled.row : undefined)
+            : this.#positionOfKey(toggled.key, toggled.row);
+        return row === undefined || row >= this.#totalRows ? undefined : cellPosition(row, column);
+    }
+
+    // A Header Group's toggle pressed, or its key typed, in its turn (ADR-0400 sections 1 and 5): the opposite of what
+    // the group shows now is notified, and the Focus remembered for the push that answers it. Nothing on screen changes.
+    #toggleGroup(group: HeaderGroup): void {
+        const heard = defined(this.#onHeaderGroupToggled, 'the toggle\'s onHeaderGroupToggled');
+        this.#reconcileSelection();
+        const selection = this.#held.selection;
+        const { focus } = selection;
+        const toggle = group.toggled(focus === undefined ? undefined : itemAt(this.#columns, focus.column).column.name);
+        if (focus === undefined) {
+            this.#toggleFocus = undefined;
+        } else {
+            const rowKey = this.#source.rowKey;
+            const held = this.#rowAt(focus.row);
+            this.#toggleFocus = {
+                toggle, selection, source: this.#source, sequence: this.#sequence(), row: focus.row,
+                key: rowKey === undefined || held === undefined ? undefined : keyOf(rowKey, held.row, 'The row a toggle kept the Focus on'),
+            };
+        }
+        heard(toggle);
     }
 
     // Takes a gesture's Selection; whether it changed anything.
@@ -3430,6 +3531,18 @@ export class GridView<Row> {
         if (errorStep !== undefined) {
             this.#taken(event);
             this.#stepToError(errorStep === 'previous');
+            return;
+        }
+        // Alt+Shift+↓ and ↑ open and close the lowest Header Group over the Focus's column that answers, on a grid
+        // given onHeaderGroupToggled (ADR-0400 section 4); where none answers, the key is the page's. Not past an
+        // edit left open (ED-26), whose keys they are.
+        const groupKey = this.#onHeaderGroupToggled === undefined || this.#edit !== undefined ? undefined : headerGroupKeyOf(press);
+        if (groupKey !== undefined) {
+            const focus = this.#held.selection.focus;
+            const group = focus === undefined ? undefined : this.#headerLayout.toggleOver(focus.column, groupKey === 'expand');
+            if (group === undefined) return;
+            this.#taken(event);
+            this.#toggleGroup(group.group);
             return;
         }
         if (action.kind !== 'leave' && !movingKinds.has(action.kind)) return;
@@ -8510,7 +8623,7 @@ export class GridView<Row> {
         // A press on a ▾ is the button's: its click opens the menu, and it neither sorts nor drags. It never takes
         // the keyboard itself: an edit the click cannot commit keeps it in the editor (ADR-0034), and a menu the
         // click opens takes it from where it is.
-        if (event.target instanceof Element && this.#menuButtons.has(event.target)) {
+        if (event.target instanceof Element && (this.#menuButtons.has(event.target) || this.#groupToggles.has(event.target))) {
             event.preventDefault();
             return;
         }
@@ -8588,6 +8701,16 @@ export class GridView<Row> {
         const menu = event.target instanceof Element ? this.#menuButtons.get(event.target) : undefined;
         if (menu !== undefined && event.button === 0) {
             this.#toggleColumnMenu(menu);
+            return;
+        }
+        // A toggle carries its group's id, so a click that lands after the groups changed acts on the group as it
+        // shows now, or on nothing once the group draws no toggle (ADR-0400 section 5). An open edit is settled first,
+        // as by a press on a header.
+        const toggled = event.target instanceof Element ? this.#groupToggles.get(event.target) : undefined;
+        if (toggled !== undefined) {
+            if (event.button !== 0 || !this.#commitEdit()) return;
+            const group = this.#headerGroups.find(candidate => candidate.id === toggled);
+            if (group?.expanded !== undefined) this.#toggleGroup(group);
             return;
         }
         if (event.button !== 0 || event.target !== this.#header) return;
@@ -9426,7 +9549,8 @@ export class GridView<Row> {
             + `--ex-action-padding-x: ${metrics.actionPaddingXPx}px; --ex-action-border-width: ${metrics.actionBorderPx}px; `
             + `--ex-action-gap: ${metrics.actionGapPx}px; --ex-menu-button-width: ${metrics.menuButtonWidthPx}px; `
             + `--ex-menu-button-inset: ${metrics.menuButtonInsetPx}px; --ex-sort-mark-width: ${metrics.sortMarkWidthPx}px; `
-            + `--ex-resize-grip-width: ${metrics.resizeGripWidthPx}px; --ex-column-guide-width: ${metrics.columnGuideWidthPx}px`
+            + `--ex-resize-grip-width: ${metrics.resizeGripWidthPx}px; --ex-column-guide-width: ${metrics.columnGuideWidthPx}px; `
+            + `--ex-header-group-toggle-width: ${metrics.headerGroupToggleWidthPx}px`
             + stretchRootStyle(this.#width, this.#height)
             // The room at the root's top the Formula Bar stands in: the scroller starts below it (ADR-0051).
             + (this.#barPx === 0 ? '' : `; padding-top: ${this.#barPx}px; box-sizing: border-box`)
@@ -9930,6 +10054,7 @@ export class GridView<Row> {
             if (tiers === undefined || tiers.styles !== this.#styles || tiers.columns !== this.#columns || tiers.layout !== layout
                 || tiers.tierPx !== tierPx) {
                 const groups: { readonly element: HTMLElement; readonly id: string }[] = [];
+                this.#groupToggles = new Map();
                 const rows = Array.from({ length: layout.tierCount }, (_, headerRow) => this.#tierRow(headerRow, groups));
                 const leaves = doc.createElement('div');
                 leaves.setAttribute('role', 'row');
@@ -9945,6 +10070,7 @@ export class GridView<Row> {
             tiers.leaves.replaceChildren(...cells);
         } else {
             this.#paintedTiers = undefined;
+            this.#groupToggles = new Map();
             header.replaceChildren(...corner, ...cells);
         }
         this.#headerCells = headerCells;
@@ -10001,6 +10127,31 @@ export class GridView<Row> {
         // A cell spans one row unless it says otherwise (ADR-0033).
         if (group.tierSpan > 1) element.setAttribute('aria-rowspan', String(group.tierSpan));
         element.textContent = group.label;
+        const { id, expanded, hiddenMark } = group.group;
+        if (id !== undefined && expanded !== undefined) {
+            // The toggle (ADR-0400 sections 3, 7 and 8): a button of the grid's own at the rectangle's left, pressed and
+            // never reached by Tab, named from the word tables; its look is the stylesheet's, by aria-expanded.
+            const doc = this.#root.ownerDocument;
+            const toggle = doc.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'ex-header-group-toggle';
+            toggle.tabIndex = -1;
+            toggle.setAttribute('aria-expanded', String(expanded));
+            toggle.setAttribute('aria-label', filledWords(this.#labelOf(expanded ? gridLabelIds.headerGroupCollapse : gridLabelIds.headerGroupExpand),
+                { label: group.label }));
+            toggle.setAttribute('data-ex-claims', 'mousedown click');
+            element.prepend(toggle);
+            this.#groupToggles.set(toggle, id);
+        }
+        if (hiddenMark !== undefined) {
+            // The Hidden Mark (ADR-0400 section 6): its state's look, and its reason as the group's description.
+            const mark = this.#root.ownerDocument.createElement('span');
+            mark.className = `ex-hidden-mark ex-hidden-mark-${hiddenMark.state}`;
+            mark.title = hiddenMark.reason;
+            mark.setAttribute('aria-hidden', 'true');
+            element.append(mark);
+            element.setAttribute('aria-description', hiddenMark.reason);
+        }
         return element;
     }
 

@@ -35,4 +35,8 @@ export const gridLabelIds = Object.freeze({
     formulaBar: 'formula-bar',
     /** A header's ▾, which opens the column menu (ADR-0044). */
     columnMenu: 'column-menu',
+    /** A collapsed Header Group's toggle, its group's label at `{label}` (ADR-0400 section 8). */
+    headerGroupExpand: 'header-group-expand',
+    /** An expanded Header Group's toggle, its group's label at `{label}` (ADR-0400 section 8). */
+    headerGroupCollapse: 'header-group-collapse',
 } as const);

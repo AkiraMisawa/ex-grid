@@ -251,6 +251,60 @@
    one tier up: a group is entirely pinned or entirely scrollable (ADR-0032). */
 .ex-header-groups-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 6; }
 .ex-header-groups-pinned .ex-header-group { pointer-events: none; }
+/* A Header Group's toggle (ADR-0400 section 7): a button of the grid's own at the rectangle's
+   left, as tall as the tier, its box the --ex-header-group-toggle-width Geometry Token the core
+   emits, so the label's room is the rectangle less it. Its picture is a token: a CSS image
+   painted as a mask in --ex-header-group-toggle-color, the collapsed icon while aria-expanded
+   is false and the expanded one while it is true, so a Wrapper draws its design system's
+   chevron by setting two tokens and renders nothing. It takes its own press: the rectangle
+   around it stays transparent to the mouse, where a press is the group's drag. */
+.ex-header-group:has(> .ex-header-group-toggle) { padding-left: var(--ex-header-group-toggle-width, 20px); }
+.ex-header-group-toggle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--ex-header-group-toggle-width, 20px);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+}
+.ex-header-group-toggle::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 1em;
+    height: 1em;
+    background-color: var(--ex-header-group-toggle-color, currentColor);
+    -webkit-mask: var(--ex-header-group-collapsed-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M6 3.5 10.5 8 6 12.5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E")) center / contain no-repeat;
+    mask: var(--ex-header-group-collapsed-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M6 3.5 10.5 8 6 12.5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E")) center / contain no-repeat;
+}
+.ex-header-group-toggle[aria-expanded="true"]::before {
+    -webkit-mask-image: var(--ex-header-group-expanded-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 6 8 10.5 12.5 6' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E"));
+    mask-image: var(--ex-header-group-expanded-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 6 8 10.5 12.5 6' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E"));
+}
+/* The Hidden Mark (ADR-0400 section 6): the corner a modified cell wears, in the group's top
+   right corner, painted with the token of the Cell State the hidden columns hold, so a reader
+   who knows what a modified cell looks like knows what the mark says. It takes the pointer
+   for itself alone, so its reason shows as its tooltip. */
+.ex-hidden-mark {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 6px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+    pointer-events: auto;
+}
+.ex-hidden-mark-modified { background: var(--ex-state-modified-mark, rgba(106, 68, 166, 0.9)); }
+.ex-hidden-mark-error { background: var(--ex-state-error-color, #b3261e); }
+.ex-hidden-mark-stale { background: var(--ex-state-stale-color, #8a6d1f); }
+.ex-hidden-mark-missing { background: var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)); }
 /* The seam an Action or Template cell crosses (ADR-0020). Everything under .ex-row is
    pointer-events: none so the Viewport can hit-test by arithmetic; a control that wants
    its own click turns them back on for itself alone. The inert parts of the cell stay
@@ -831,7 +885,7 @@
    Template's control — let the press through to the rows or the header, which hand it on as the
    cell or the column it landed on. Nothing else marks the grid. */
 .ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) { cursor: cell; }
-.ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) :is(.ex-menu-button, .ex-resize-grip, .ex-mark, .ex-action, .ex-interactive) { pointer-events: none; }
+.ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) :is(.ex-menu-button, .ex-resize-grip, .ex-mark, .ex-action, .ex-interactive, .ex-header-group-toggle, .ex-hidden-mark) { pointer-events: none; }
 .ex-reference-1 { color: var(--ex-reference-1, light-dark(#326ac7, color-mix(in srgb, #326ac7 67%, white))); }
 .ex-reference-2 { color: var(--ex-reference-2, light-dark(#c0353e, color-mix(in srgb, #c0353e 67%, white))); }
 .ex-reference-3 { color: var(--ex-reference-3, light-dark(#8157b7, color-mix(in srgb, #8157b7 67%, white))); }
@@ -1319,6 +1373,10 @@
     .ex-cell.ex-state-missing { outline: 1px dotted GrayText; outline-offset: -2px; }
     .ex-cell.ex-state-error { color: LinkText; }
     .ex-cell.ex-state-modified { outline: 1px solid Highlight; outline-offset: -2px; }
+    /* A Header Group's toggle and its Hidden Mark keep their pictures (ADR-0400 section 7): the
+       toggle's icon in ButtonText and the mark's shape in Highlight, so neither disappears. */
+    .ex-header-group-toggle::before { forced-color-adjust: none; background-color: ButtonText; }
+    .ex-hidden-mark { forced-color-adjust: none; background: Highlight; }
     /* A group row keeps its weight; a total row's rule becomes an overline — a text
        decoration survives where the gradient does not. */
     .ex-row-total .ex-cell { text-decoration: overline; }

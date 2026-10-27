@@ -31,6 +31,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'Sorting, the Selection, copying and Header Groups on one page; editing, paste and filtering, with the status lines that report them, join as the Script Core comes to them.',
     },
     {
+        route: 'group-toggle', title: 'Header Groups that open and close', group: 'Interaction',
+        description: 'A Header Group\'s toggle and Alt+Shift+Up/Down ask the page to show or hide its columns, and a closed group\'s Hidden Mark says what they hold (ADR-0400).',
+    },
+    {
         route: 'cells', title: 'Cells and rows', group: 'Cells and rows',
         description: 'Cell State, Row Kind, Template Columns and Action Columns — what the value alone cannot say (ADR-0006, ADR-0020, ADR-0024).',
     },

@@ -1,0 +1,30 @@
+{
+  "about": "The Header Group keys (ADR-0400 section 4): Alt+Shift+Down expands and Alt+Shift+Up collapses, outside the key table, so that a grid not given onHeaderGroupToggled leaves both to the page and lets a Consumer declare them. The Script Core's alone: the C# core never takes a toggle (ADR-0400 section 10; ADR-0350 section 5's note of 2026-10-27), so no C# runner reads this kind.",
+  "kind": "scriptCalls",
+  "subject": "GridKeys",
+  "cases": [
+    {
+      "name": "ADR-0400 / HG-21: Alt+Shift+Down expands and Alt+Shift+Up collapses, in Option+Shift on a Mac too",
+      "expect": [
+        {"static": "headerGroupKey", "args": {"key": "ArrowDown", "ctrl": false, "shift": true, "alt": true, "meta": false, "metaIsPrimary": false}, "is": "expand"},
+        {"static": "headerGroupKey", "args": {"key": "ArrowUp", "ctrl": false, "shift": true, "alt": true, "meta": false, "metaIsPrimary": true}, "is": "collapse"},
+        {"static": "headerGroupKey", "args": {"key": "ArrowDown", "ctrl": false, "shift": false, "alt": true, "meta": false, "metaIsPrimary": false}, "is": null},
+        {"static": "headerGroupKey", "args": {"key": "ArrowRight", "ctrl": false, "shift": true, "alt": true, "meta": false, "metaIsPrimary": false}, "is": null},
+        {"static": "headerGroupKey", "args": {"key": "ArrowDown", "ctrl": true, "shift": true, "alt": true, "meta": false, "metaIsPrimary": false}, "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-21: neither key is in the table, so neither is taken on a grid that toggles nothing",
+      "expect": [
+        {"static": "taken", "lacks": ["Shift+Alt+ArrowDown", "Shift+Alt+ArrowUp"]},
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": false, "shift": true, "alt": true, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0400 / HG-21: on a grid without onHeaderGroupToggled, a Consumer may declare either key",
+      "expect": [
+        {"static": "declare", "args": [["Shift+Alt+ArrowDown", "Shift+Alt+ArrowUp"]], "has": ["Shift+Alt+ArrowDown", "Shift+Alt+ArrowUp"]}
+      ]
+    }
+  ]
+}

@@ -119,6 +119,10 @@ public class StylesheetLengthTests : GridTestContext
         [(".ex-mark", "width", "1em")] = Em,
         [(".ex-mark", "height", "1em")] = Em,
 
+        [(".ex-header-group-toggle::before", "width", "1em")] = Em,
+        [(".ex-header-group-toggle::before", "height", "1em")] = Em,
+        [(".ex-hidden-mark", "width", "6px")] = Mark,
+        [(".ex-hidden-mark", "height", "6px")] = Mark,
         [(".ex-cell.ex-state-modified::after", "width", "6px")] = Mark,
         [(".ex-cell.ex-state-modified::after", "height", "6px")] = Mark,
         [(".ex-placeholder::after", "border-radius", "2px")] = Mark,
@@ -130,6 +134,14 @@ public class StylesheetLengthTests : GridTestContext
         [(".ex-scroller::-webkit-scrollbar-thumb", "border", "2px")] = Scrollbar,
 
         [(".ex-reference-outline", "padding", "3px")] = ReferenceInset,
+    };
+
+    /// <summary>The Geometry Tokens only the Script Core emits, by Compact's value there, for what the C# core
+    /// never draws: this test reads the C# core's root, which does not write them.</summary>
+    private static readonly Dictionary<string, string> ScriptCoreGeometryTokens = new()
+    {
+        // A Header Group's toggle (ADR-0400 section 10): GridMetrics.headerGroupToggleWidthPx under Compact.
+        ["--ex-header-group-toggle-width"] = "20px",
     };
 
     private sealed record Found(string Selectors, string Property, string Literal, string? FallbackOf)
@@ -199,6 +211,8 @@ public class StylesheetLengthTests : GridTestContext
         var (css, _) = ShippedStylesheetTests.CoreStylesheet();
         var lengths = Lengths(css);
         var emitted = EmittedGeometryTokens();
+        foreach (var (token, value) in ScriptCoreGeometryTokens)
+            Assert.True(emitted.TryAdd(token, value), $"{token} is emitted by the C# core too: it is no longer the Script Core's alone");
 
         // Nothing escapes the reading: a length outside a declaration — in a selector, or an
         // at-rule's prelude — would be counted here and not above.

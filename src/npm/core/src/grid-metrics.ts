@@ -52,6 +52,7 @@ interface Preset {
     readonly menuWidth: number;
     readonly menuInset: number;
     readonly sortMark: number;
+    readonly groupToggle: number;
     readonly boldWide: number;
     readonly boldDigit: number;
     readonly boldNarrow: number;
@@ -64,7 +65,7 @@ interface Preset {
 // 2026-10-01 (ticket 83, tests/GlyphWidths); Excel's 12px set is measured at 12px, not scaled, because SF
 // is optically sized. The C# core's GridMetrics.Resolve holds the same table and says each number's origin.
 const fourteen = { font: 14, wide: 14.04, digit: 9.75, narrow: 6.41, other: 15.46, boldWide: 14.36, boldDigit: 9.75, boldNarrow: 6.41, boldOther: 15.46 } as const;
-const chrome = { actionPad: 6, actionBorder: 1, actionGap: 4, menuWidth: 16, menuInset: 6, sortMark: 20 } as const;
+const chrome = { actionPad: 6, actionBorder: 1, actionGap: 4, menuWidth: 16, menuInset: 6, sortMark: 20, groupToggle: 20 } as const;
 
 const densities: ReadonlySet<string> = new Set<GridDensity>(['compact', 'comfortable', 'standard', 'excel']);
 
@@ -75,7 +76,7 @@ function presetOf(density: GridDensity): Preset {
         case 'compact': return { row: 28, header: 28, padding: 8, ...fourteen, ...chrome };
         case 'excel': return {
             row: 20, header: 20, font: 12, wide: 12.04, digit: 8.36, narrow: 5.49, other: 13.26, padding: 4,
-            actionPad: 4, actionBorder: 1, actionGap: 2, menuWidth: 14, menuInset: 4, sortMark: 16,
+            actionPad: 4, actionBorder: 1, actionGap: 2, menuWidth: 14, menuInset: 4, sortMark: 16, groupToggle: 16,
             boldWide: 12.44, boldDigit: 8.36, boldNarrow: 5.49, boldOther: 13.26,
         };
         default: return unreachable(density);
@@ -111,6 +112,9 @@ export class GridMetrics {
     readonly menuButtonInsetPx: number;
     /** The box the sort mark stands in at the end of a sorted header: an em and a gap (ADR-0016/0029). */
     readonly sortMarkWidthPx: number;
+    /** A Header Group's toggle's box at the rectangle's left, which the label's room is the rectangle less (ADR-0400
+     * section 7). As tall as the tier. */
+    readonly headerGroupToggleWidthPx: number;
     /** The resize grip's hit width in a header cell's right edge (ADR-0016; UX-1). */
     readonly resizeGripWidthPx: number;
     /** The painted width of the resize line and the reorder drop indicator (ADR-0016, ADR-0011; UX-1). */
@@ -127,6 +131,7 @@ export class GridMetrics {
         this.menuButtonWidthPx = preset.menuWidth;
         this.menuButtonInsetPx = preset.menuInset;
         this.sortMarkWidthPx = preset.sortMark;
+        this.headerGroupToggleWidthPx = preset.groupToggle;
         // Neither is read by any arithmetic, but no pixel is only a stylesheet value (ADR-0027).
         this.resizeGripWidthPx = 5;
         this.columnGuideWidthPx = 2;
@@ -195,6 +200,7 @@ export class GridMetrics {
             && this.menuButtonWidthPx === other.menuButtonWidthPx
             && this.menuButtonInsetPx === other.menuButtonInsetPx
             && this.sortMarkWidthPx === other.sortMarkWidthPx
+            && this.headerGroupToggleWidthPx === other.headerGroupToggleWidthPx
             && this.resizeGripWidthPx === other.resizeGripWidthPx
             && this.columnGuideWidthPx === other.columnGuideWidthPx);
     }

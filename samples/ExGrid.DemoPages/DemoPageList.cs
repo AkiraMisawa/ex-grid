@@ -46,6 +46,8 @@ public static class DemoPageList
             "A per-cell Font, Fill and Borders as Excel paints them; bold judged by bold widths, italic never cut (ADR-0050, ADR-0071)."),
         new("features", "Features", "Interaction",
             "Editing, the clipboard, sorting, filtering and Header Groups on one page, with every notification written out."),
+        new("group-toggle", "Header Groups that open and close", "Interaction",
+            "A Header Group's toggle and Alt+Shift+Up/Down ask the page to show or hide its columns, and a closed group's Hidden Mark says what they hold (ADR-0400)."),
         new("filter-panel", "Filter panel", "Interaction",
             "The filter panel's value list, Blank entry, search, condition form and TooMany under either Chrome, with the Filter it applied written out (ADR-0009, WR-1)."),
         new("row-command-order", "Queued row commands", "Interaction",

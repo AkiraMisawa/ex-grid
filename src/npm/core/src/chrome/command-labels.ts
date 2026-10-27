@@ -24,6 +24,8 @@ const words: ReadonlyMap<string, string> = new Map([
     [gridLabelIds.nameBox, 'Name Box'],
     [gridLabelIds.formulaBar, 'Formula Bar'],
     [gridLabelIds.columnMenu, 'Column menu'],
+    [gridLabelIds.headerGroupExpand, 'Expand {label}'],
+    [gridLabelIds.headerGroupCollapse, 'Collapse {label}'],
     ...findPanelWords,
     ...filterPanelWords,
     ...rowCommandRefusalWords,

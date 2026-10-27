@@ -19,7 +19,8 @@ describe('createGrid', () => {
         expect(root.getAttribute('style')).toBe('--ex-row-height: 24px; --ex-header-height: 24px; --ex-font-size: 14px; '
             + '--ex-cell-padding-x: 8px; --ex-action-padding-x: 6px; --ex-action-border-width: 1px; --ex-action-gap: 4px; '
             + '--ex-menu-button-width: 16px; --ex-menu-button-inset: 6px; --ex-sort-mark-width: 20px; --ex-resize-grip-width: 5px; '
-            + '--ex-column-guide-width: 2px; --ex-dp: 1px');
+            // A Header Group's toggle's box is the Script Core's alone: the C# core never draws a toggle (ADR-0400 section 10).
+            + '--ex-column-guide-width: 2px; --ex-header-group-toggle-width: 20px; --ex-dp: 1px');
         expect(Object.fromEntries(['dir', 'role', 'aria-multiselectable', 'aria-rowcount', 'aria-colcount', 'tabindex']
             .map(name => [name, root.getAttribute(name)]))).toEqual({
             dir: 'ltr', role: 'grid', 'aria-multiselectable': 'true', 'aria-rowcount': '1001', 'aria-colcount': '2', tabindex: '0',
