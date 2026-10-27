@@ -16,6 +16,7 @@ import { letterOf, menuKeyNothing, type MenuKey } from '../chrome/menu-keys';
 import type { ColumnType, DateType } from '../query/columns';
 import type { FilterCombinator, FilterOperator, FilterSpec } from '../query/filter';
 import type { SelectionRange } from '../selection/range';
+import type { SelectionSummaryStatus, SummaryFigureShown } from './selection-summary';
 import { filterSentinel, type FilterPanelAnswers, type FilterPlace } from './filter-panel';
 import { findElement, findForm, findSentinel, type FindHeld, type FindPanelAnswers, type FindPlace } from './find-panel';
 import type { GridCommand } from './grid-command';
@@ -235,8 +236,9 @@ export interface GridFindPanelSlotContext {
     readonly close: () => void;
     /** The count of the core's requests for the find field to take the keyboard: the opening, Ctrl+F or Ctrl+H again,
      * and Tab off either end of the panel. Each request mounts the contents again; whenever the count differs from the
-     * one they last answered, they focus the find field through {@link GridFindPanelSlotContext.takeFocus}, which
-     * selects its text so what is typed next replaces it (FD-1). */
+     * one they last answered, they focus the find field through {@link GridFindPanelSlotContext.takeFocus}. Its text
+     * is then selected, so what is typed next replaces it (FD-1), except after a Tab, which brings the field back as
+     * it was. */
     readonly focusRequest: number;
     /** The contents report a popup of their own opening (`true`) and closing (`false`): while one is open, Escape is
      * the popup's, and the next closes the panel (ADR-0039). */
@@ -244,6 +246,56 @@ export interface GridFindPanelSlotContext {
     /** Gives `control` DOM focus while the keyboard is still this grid's: DOM focus inside its root, or on nothing
      * (ADR-0204). An element that cannot take focus hands it to the first control inside it. */
     readonly takeFocus: (control: HTMLElement, options?: { readonly preventScroll?: boolean }) => void;
+}
+
+/**
+ * What a cell's message is handed while it shows (ADR-0034): the Consumer's sentence for a flagged cell, or the
+ * standing Reject's while an editor holds. The core decides when it shows and where, and supplies the text; the
+ * contents draw it inside the slot, the core's `ex-message` box below the cell, which the editor names with
+ * `aria-describedby`. A tooltip, not a live region: the root's one region has already said a Reject (ADR-0033). A
+ * new message mounts the contents again.
+ */
+export interface GridCellMessageSlotContext {
+    /** The name of the column the cell is in. */
+    readonly column: string;
+    /** What the cell's message says, as the Consumer or the Reject worded it. */
+    readonly message: string;
+    /** Whether it is the Reject an editor holds with, rather than a flagged cell's message. */
+    readonly editorError: boolean;
+    /** Takes a flagged cell's message away, as the pointer leaving does. A Reject stays while its editor holds. */
+    readonly close: () => void;
+}
+
+/**
+ * What the loading indicator is handed (ADR-0010): whether rows are on their way, and how many painted rows are
+ * Placeholders. The Placeholder rows and the root's `ex-loading` class stay the core's (ADR-0004); the contents draw
+ * what they add, a bar say, inside the slot, which stands at the root's foot, and draw nothing while nothing loads.
+ * A change of either mounts the contents again.
+ */
+export interface GridLoadingIndicatorSlotContext {
+    /** Whether rows are on their way. */
+    readonly loading: boolean;
+    /** How many of the painted rows are Placeholders. */
+    readonly placeholderRows: number;
+}
+
+/**
+ * What the Selection Summary is handed (ADR-0130): where it stands and the figures to show. The core decides when
+ * the question is asked, which answer stands and how each figure reads; the contents paint them inside the slot, the
+ * core's `ex-summary` box in the status line, which keeps the right-click that opens the figures menu. A change
+ * mounts the contents again.
+ */
+export interface GridSelectionSummarySlotContext {
+    /** Where the summary stands: while it is `pending`, the line says the words of `summaryLabelIds.pending`. */
+    readonly status: SelectionSummaryStatus;
+    /** The figures to show, in Excel's order, each with the id of its name and its text as the core formatted it;
+     * empty unless the summary is answered. */
+    readonly figures: readonly SummaryFigureShown[];
+    /** The answerer's reason, shown in place of the figures while the summary is declined. */
+    readonly declineReason: string | undefined;
+    /** The summary's words, by the ids `summaryLabelIds` names: the Consumer's `commandLabel`, else the built-in
+     * English. */
+    readonly label: (id: string) => string;
 }
 
 /**
@@ -259,10 +311,18 @@ export interface GridChrome<Row> {
     readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
     /** The find panel, and its Replace (ADR-0055, ADR-0332). */
     readonly findPanel?: GridChromeSlot<GridFindPanelSlotContext>;
+    /** A cell's message (ADR-0034). */
+    readonly cellMessage?: GridChromeSlot<GridCellMessageSlotContext>;
+    /** The loading indicator (ADR-0010). */
+    readonly loadingIndicator?: GridChromeSlot<GridLoadingIndicatorSlotContext>;
+    /** The Selection Summary in the status line (ADR-0130). */
+    readonly selectionSummary?: GridChromeSlot<GridSelectionSummarySlotContext>;
 }
 
 /** The slots a grid's `chrome` names. */
-const slotNames: readonly (keyof GridChrome<unknown>)[] = ['columnMenu', 'contextMenu', 'filterPanel', 'findPanel'];
+const slotNames: readonly (keyof GridChrome<unknown>)[] = [
+    'columnMenu', 'contextMenu', 'filterPanel', 'findPanel', 'cellMessage', 'loadingIndicator', 'selectionSummary',
+];
 
 /** A grid's `chrome`, checked: an object whose slots are each a mount function, or not given. */
 export function checkedChrome<Row>(chrome: unknown): GridChrome<Row> | undefined {
@@ -288,6 +348,61 @@ function mounted<Context>(name: string, mount: GridChromeSlot<Context>, slot: HT
         throw new TypeError(`chrome.${name} answered ${typeof cleanup}: a mount function answers the function that takes its contents away.`);
     }
     return () => { Reflect.apply(cleanup, undefined, []); };
+}
+
+/**
+ * A part a Chrome slot draws and the grid only shows (ADR-0390): it takes no keyboard, so asks for no focus. Its
+ * contents are mounted with what it shows, mounted again on the same slot when that changes, which `key` tells, and
+ * taken away when it hides. Contents standing keep the mount function they were mounted by, as an open menu keeps
+ * its render: another one, the Consumer having handed another `chrome`, draws from the next change. The slot is an
+ * element of its own, which the grid stands in the part's box in place of the built-in Chrome's text, and never
+ * empties: the contents' framework may still be taking away what it drew there.
+ */
+export class ShownSlot<Context> {
+    readonly #name: string;
+    /** The slot, which the grid stands in the part's box while the contents draw it. */
+    readonly element: HTMLElement;
+    #key: string | undefined;
+    #cleanup: (() => void) | undefined;
+    // Counts the mounts, so a callback handed to one reaches nothing once another stands.
+    #mounts = 0;
+    // What failed to mount, which is not tried again on every pass: it is thrown once.
+    #failed: { readonly mount: GridChromeSlot<Context>; readonly key: string } | undefined;
+
+    constructor(name: string, element: HTMLElement) {
+        this.#name = name;
+        this.element = element;
+    }
+
+    /** Whether contents stand, mounted for `key`. */
+    shows(key: string): boolean {
+        return this.#cleanup !== undefined && this.#key === key;
+    }
+
+    /** Shows what `key` names by `mount`: the contents are mounted with `context`, unless they already stand for it.
+     * `context` is handed whether the mount it is made for still stands, for a callback of its own to ask. */
+    show(mount: GridChromeSlot<Context>, key: string, context: (standing: () => boolean) => Context): void {
+        if (this.shows(key) || (this.#failed?.mount === mount && this.#failed.key === key)) return;
+        this.hide();
+        this.#mounts += 1;
+        const made = this.#mounts;
+        try {
+            this.#cleanup = mounted(this.#name, mount, this.element, context(() => this.#cleanup !== undefined && this.#mounts === made));
+        } catch (error) {
+            this.#failed = { mount, key };
+            throw error;
+        }
+        this.#key = key;
+    }
+
+    /** The part shows nothing of the contents: they are taken away. */
+    hide(): void {
+        const cleanup = this.#cleanup;
+        this.#cleanup = undefined;
+        this.#key = undefined;
+        this.#failed = undefined;
+        cleanup?.();
+    }
 }
 
 /** The grid's focus function, as a slot's part is handed it: wherever DOM focus stands where `owed`, the grid's own
