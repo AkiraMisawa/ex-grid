@@ -10,6 +10,7 @@
 // the same slot, as it does a Template cell's (ADR-0020): a framework that keys its rendering by the slot,
 // as `@ex-grid/react`'s portals do, keeps its component and that component's state across the two.
 
+import type { CompletionCandidate, EditorHint } from '../cells/editor-text';
 import type { FilterPanelModel, FilterPanelView, FilterUi } from '../chrome/filter-panel-model';
 import { findPanelLabelIds } from '../chrome/find-panel-labels';
 import { letterOf, menuKeyNothing, type MenuKey } from '../chrome/menu-keys';
@@ -379,6 +380,31 @@ export interface GridNameBoxSlotContext {
 }
 
 /**
+ * What the completion list and argument hint are handed (ADR-0051): the Consumer's answer for the text being typed,
+ * and the chosen candidate. The box is the core's, beneath the surface typed in and bounded inside the grid's box
+ * (ADR-0040), and so is every key: ↑ and ↓ choose, Tab accepts and Escape closes while the editor keeps the keyboard,
+ * so the contents never see them. The contents draw the candidates, then the hint, inside the slot. They put `listId`
+ * on their list and `optionId(index)` on each candidate, which the editor names with `aria-controls` and
+ * `aria-activedescendant`, and call `accept` on a click on a candidate: the box takes the press itself, keeping the
+ * keyboard in the editor. A new answer, or another candidate chosen, mounts the contents again.
+ */
+export interface GridEditorCompletionSlotContext {
+    /** The candidates, in the Consumer's order; may be empty, an answer with only a hint. */
+    readonly candidates: readonly CompletionCandidate[];
+    /** The index of the chosen candidate, or -1 when there are none. */
+    readonly selected: number;
+    /** The argument hint, drawn beneath the candidates, with `parts()` setting off the argument the caret is in. */
+    readonly hint: EditorHint | undefined;
+    /** The id the list carries. */
+    readonly listId: string;
+    /** The id the candidate at `index` carries. */
+    readonly optionId: (index: number) => string;
+    /** Accepts the candidate at `index`, as Tab accepts the chosen one. Nothing once the contents are taken away, or
+     * once the answer they drew is no longer the grid's. */
+    readonly accept: (index: number) => void;
+}
+
+/**
  * The Chrome slots a grid takes (ADR-0390 section 4): the parts a Wrapper draws, each in place of the built-in
  * Chrome's. A slot not given is the built-in Chrome's.
  */
@@ -403,12 +429,14 @@ export interface GridChrome<Row> {
     readonly formulaBarText?: GridChromeSlot<GridFormulaBarTextSlotContext>;
     /** The Formula Bar's Name Box (ADR-0051). */
     readonly nameBox?: GridChromeSlot<GridNameBoxSlotContext>;
+    /** The completion list and argument hint beneath the editor (ADR-0051). */
+    readonly editorCompletion?: GridChromeSlot<GridEditorCompletionSlotContext>;
 }
 
 /** The slots a grid's `chrome` names. */
 const slotNames: readonly (keyof GridChrome<unknown>)[] = [
     'columnMenu', 'contextMenu', 'filterPanel', 'findPanel', 'cellEditor', 'cellMessage', 'loadingIndicator', 'selectionSummary',
-    'formulaBarText', 'nameBox',
+    'formulaBarText', 'nameBox', 'editorCompletion',
 ];
 
 /** A grid's `chrome`, checked: an object whose slots are each a mount function, or not given. */

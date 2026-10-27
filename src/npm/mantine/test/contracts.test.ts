@@ -5,6 +5,7 @@
 import { createElement, type ReactNode } from 'react';
 import { MantineProvider } from '@mantine/core';
 import { formulaBarSlotContract } from '../../react/test/bar-slot-contract';
+import { completionSlotContract } from '../../react/test/completion-slot-contract';
 import { cellEditorSlotContract } from '../../react/test/editor-slot-contract';
 import { filterPanelSlotContract } from '../../react/test/filter-slot-contract';
 import { findPanelSlotContract } from '../../react/test/find-slot-contract';
@@ -21,3 +22,4 @@ findPanelSlotContract('the Mantine Chrome', mantineChrome, 'Replace All', host);
 shownSlotContract('the Mantine Chrome', mantineChrome, host);
 cellEditorSlotContract('the Mantine Chrome', mantineChrome, host);
 formulaBarSlotContract('the Mantine Chrome', mantineChrome, host);
+completionSlotContract('the Mantine Chrome', mantineChrome, host);

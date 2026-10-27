@@ -258,6 +258,15 @@
             once the keyboard has left them.
         </p>
         <p>
+            The completion list (<code>editorCompletion</code>) draws what <code>completeEditorText</code> answered,
+            in the grid's box beneath the editor: <code>context.candidates</code>, the chosen one at
+            <code>context.selected</code>, then <code>context.hint</code>, whose <code>parts()</code> set off the
+            argument the caret is in. <code>useEditorCompletion(context)</code> hands the list its props and each
+            candidate its own: the ids the editor names for assistive technology, and a press that accepts it. The box,
+            its place and its scrolling are the grid's, and so are ↑, ↓, Tab and Escape, which stay with the editor, so
+            the list takes no focus and draws no key handler.
+        </p>
+        <p>
             Three slots only show what the grid decides. <code>cellMessage</code> draws a cell's message in the grid's
             tooltip below the cell: <code>context.message</code> is the Consumer's sentence or the Reject's, and
             <code>editorError</code> says which. <code>selectionSummary</code> draws <code>context.figures</code> in the

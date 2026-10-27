@@ -677,6 +677,7 @@ export interface GridChrome<Row> {
     readonly cellMessage?: GridChromeSlot<GridCellMessageSlotContext>;
     readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
     readonly contextMenu?: GridChromeSlot<GridContextMenuSlotContext<Row>>;
+    readonly editorCompletion?: GridChromeSlot<GridEditorCompletionSlotContext>;
     readonly filterPanel?: GridChromeSlot<GridFilterPanelSlotContext>;
     readonly findPanel?: GridChromeSlot<GridFindPanelSlotContext>;
     readonly formulaBarText?: GridChromeSlot<GridFormulaBarTextSlotContext>;
@@ -819,6 +820,16 @@ export class GridEditIntent<Row> {
     readonly seenText: string;
     readonly signal: AbortSignal;
     readonly value: string;
+}
+
+// @public
+export interface GridEditorCompletionSlotContext {
+    readonly accept: (index: number) => void;
+    readonly candidates: readonly CompletionCandidate[];
+    readonly hint: EditorHint | undefined;
+    readonly listId: string;
+    readonly optionId: (index: number) => string;
+    readonly selected: number;
 }
 
 // @public

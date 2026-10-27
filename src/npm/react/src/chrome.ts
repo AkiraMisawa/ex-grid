@@ -10,8 +10,8 @@ import {
 } from 'react';
 import type {
     CellEditorView, FilterPanelView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome,
-    GridColumnMenuSlotContext, GridContextMenuSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridFormulaBarTextSlotContext,
-    GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridNameBoxSlotContext, GridSelectionSummarySlotContext,
+    GridColumnMenuSlotContext, GridContextMenuSlotContext, GridEditorCompletionSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext,
+    GridFormulaBarTextSlotContext, GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridNameBoxSlotContext, GridSelectionSummarySlotContext,
 } from '@ex-grid/core';
 import type { GridPortals } from './portals';
 
@@ -43,6 +43,8 @@ export interface ExGridChrome<Row> {
     readonly formulaBarText?: (context: GridFormulaBarTextSlotContext) => ReactNode;
     /** The Formula Bar's Name Box (ADR-0051), drawn with {@link useNameBox}. */
     readonly nameBox?: (context: GridNameBoxSlotContext) => ReactNode;
+    /** The completion list and argument hint beneath the editor (ADR-0051), drawn with {@link useEditorCompletion}. */
+    readonly editorCompletion?: (context: GridEditorCompletionSlotContext) => ReactNode;
 }
 
 /** The mount functions made for an ExGrid's render functions, by slot: one handed again is mounted by the same. */
@@ -343,4 +345,41 @@ export interface NameBoxHandles {
  */
 export function useNameBox(context: GridNameBoxSlotContext): NameBoxHandles {
     return { field: useHandedField(context.takeField, 'Name Box') };
+}
+
+/** The props {@link useEditorCompletion} hands a candidate: spread them onto the element that draws it. */
+export interface CompletionOptionProps {
+    /** The id the editor names while the candidate is chosen. */
+    readonly id: string;
+    /** A candidate is an option of the list. */
+    readonly role: 'option';
+    /** Whether the candidate is the chosen one. */
+    readonly 'aria-selected': boolean;
+    /** A click accepts the candidate; the core's box takes the press, keeping the keyboard in the editor. */
+    readonly onClick: () => void;
+}
+
+/** What {@link useEditorCompletion} hands the completion list. */
+export interface EditorCompletionHandles {
+    /** The props of the list: spread them onto the element holding the candidates. */
+    readonly list: { readonly id: string; readonly role: 'listbox' };
+    /** The props of the candidate at an index. */
+    readonly option: (index: number) => CompletionOptionProps;
+}
+
+/**
+ * Draws the completion slot from its context (ADR-0390 section 3): the ids the editor names, and a click on a
+ * candidate accepting it. The core's box keeps the keyboard in the editor, and ↑, ↓, Tab and Escape are the
+ * editor's, so the contents draw no key handler and take no focus.
+ */
+export function useEditorCompletion(context: GridEditorCompletionSlotContext): EditorCompletionHandles {
+    return {
+        list: { id: context.listId, role: 'listbox' },
+        option: index => ({
+            id: context.optionId(index),
+            role: 'option',
+            'aria-selected': index === context.selected,
+            onClick: () => { context.accept(index); },
+        }),
+    };
 }

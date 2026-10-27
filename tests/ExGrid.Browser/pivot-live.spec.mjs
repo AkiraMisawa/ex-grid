@@ -206,7 +206,17 @@ for (const chrome of ['builtin', 'mud']) {
                 const values = rows(page, 'server').first().locator('.ex-cell-numeric');
                 const label = rows(page, 'server').first().locator('[role=gridcell]').first();
                 await expect(values.first()).toBeVisible();
-                const colourOf = (cell) => cell.evaluate((element) => getComputedStyle(element).color);
+                // A cell a render replaced between its lookup and the read has left the document, and a detached
+                // element has no computed colour (""): the server's report still renders here, so the read is
+                // taken again until the cell found is the one in the document.
+                const colourOf = async (cell) => {
+                    let colour = '';
+                    await expect.poll(async () => {
+                        colour = await cell.evaluate((element) => (element.isConnected ? getComputedStyle(element).color : ''));
+                        return colour;
+                    }).not.toBe('');
+                    return colour;
+                };
                 const ink = await colourOf(values.first());
                 await expect(shell).not.toHaveClass(/ex-pivot-report-stale/);
 
