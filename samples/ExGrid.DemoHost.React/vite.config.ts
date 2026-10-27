@@ -10,6 +10,7 @@ export default defineConfig({
         alias: {
             '@ex-grid/core': at('../../src/npm/core/src/index.ts'),
             '@ex-grid/react': at('../../src/npm/react/src/index.ts'),
+            '@ex-grid/mantine': at('../../src/npm/mantine/src/index.ts'),
             '@ex-grid/chart': at('../../src/npm/chart/src/index.ts'),
             '@ex-grid/chart-react': at('../../src/npm/chart-react/src/index.ts'),
             '@ex-grid/data': at('../../src/npm/data/src/index.ts'),
@@ -22,8 +23,9 @@ export default defineConfig({
             '@ex-grid/board': at('../../src/npm/board/src/index.ts'),
             '@ex-grid/board-react': at('../../src/npm/board-react/src/index.ts'),
         },
-        // The adapter's source sits outside this folder; one React for both, or its hooks see two.
-        dedupe: ['react', 'react-dom'],
+        // The adapter's source sits outside this folder; one React for both, or its hooks see two, and one
+        // Mantine for the Wrapper and the page, or the Wrapper's components see no MantineProvider.
+        dedupe: ['react', 'react-dom', '@mantine/core', '@mantine/hooks'],
     },
     oxc: { jsx: { runtime: 'automatic' } },
     server: { fs: { allow: [at('../..')] } },

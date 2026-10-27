@@ -269,6 +269,25 @@
             <code>en-US</code> chooses the words, and the grid does not guess them.
         </p>
         <p>
+            <strong>With Mantine.</strong> <code>@@ex-grid/mantine</code> (published with 0.3.0) draws every part above in
+            Mantine's components: <code>MantineExGrid</code> takes an ExGrid's props, stands the grid in Mantine's
+            <code>Paper</code> (<code>withBorder</code>, <code>radius</code>, <code>shadow</code>; a <code>radius</code> of
+            <code>0</code> sets the grid square), and needs a <code>MantineProvider</code> above it and
+            <code>@@ex-grid/mantine/styles.css</code> loaded after Mantine's styles. The stylesheet maps the grid's colours
+            onto the theme's variables, so a palette edit or a change of scheme recolours the grid with no render. Mantine
+            has no word like Dense, so the Density picks the components' size: <code>xs</code> for Compact and Excel,
+            <code>sm</code> for Standard, <code>md</code> for Comfortable. Mantine's Table words <code>striped</code> and
+            <code>highlightOnHover</code> turn on Row Stripes and the hover band where the grid is given neither, and
+            <code>withColumnBorders</code> draws a rule between columns. The cells are drawn in Mantine's default font
+            stack, with the widest widths any face it resolves to was measured at, and not in the theme's font, whose
+            widths the grid would not know: to put the theme's font in the cells, hand <code>MantineExGrid</code> a
+            <code>font</code> with its family and the widths measured for it. A part you give in <code>chrome</code>
+            beats Mantine's. <code>mantineChrome</code> is the Wrapper's parts alone, for a frame of your own: spread it
+            into an ExGrid's <code>chrome</code> inside an element of the class <code>mantine-ex-grid</code> and a
+            <code>MantineSizeContext</code>, as <code>MantineExGrid</code> draws them. Mantine's components carry no words of their own, so the words are your
+            <code>commandLabel</code>'s, as above. A date is typed, as in the built-in Chrome.
+        </p>
+        <p>
             <strong>Your own control in the grid's order.</strong> A handler that changes what the keys after it act on —
             a button of your Chrome, a control in your popover, a command beside the grid — can run in its place among
             the keys and presses through <code>InOrderAsync(kind, handling)</code> on the grid, or the

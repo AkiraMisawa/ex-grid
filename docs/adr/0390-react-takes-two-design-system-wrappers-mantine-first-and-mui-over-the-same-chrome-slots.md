@@ -131,17 +131,33 @@ Under React the Chrome switch reads Built-in / Mantine / MUI (amending ADR-0350 
 [ADR-0110](./0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)'s
 framework switch). It changes when step 2 of section 4 gives an Example a Wrapper to run under.
 
+### 9. `@ex-grid/mantine`'s three answers
+
+*Decided 2026-10-27 with `@ex-grid/mantine`, on the recommendation put to the user, under the user's standing
+approval of recommendations ("推奨で"). These were this ADR's open questions for Mantine; a different answer from
+the user rewrites this section.*
+
+- **Density.** The Density preset picks the size Mantine's components are drawn at in the grid's Chrome: Compact
+  and Excel `xs`, Standard `sm` (Mantine's own default), Comfortable `md`. The size travels from `MantineExGrid`
+  through React's context, which a portal keeps; the grid's geometry stays the preset's (ADR-0027/0028). Mantine's
+  Table words `striped` and `highlightOnHover` map onto Row Stripes and the hover band as presentation defaults,
+  which a value the grid is given beats (ADR-0030).
+- **Cell Metrics.** The cells are drawn in Mantine's default stack written out literally (`-apple-system`,
+  `BlinkMacSystemFont`, `Segoe UI`, `Roboto`, `Helvetica`, `Arial`, `sans-serif`), not in `--mantine-font-family`,
+  because a theme's font is one the grid has no widths for and `####` would be judged by the wrong face. The
+  widths handed with it are the widest any face of the stack was measured at: macOS's system face, Segoe UI under
+  an English Windows display, Roboto, Liberation Sans for Helvetica and Arial on Linux, and DejaVu Sans
+  (`tests/GlyphWidths`, which writes `@ex-grid/mantine`'s table). A Consumer who wants the theme's font hands
+  `MantineExGrid` a `font` with its family and its measured widths.
+- **Dates.** No `@mantine/dates`, and no dayjs: a date is typed, and read by the core's operand reading, as the
+  built-in Chrome reads it.
+
 ## Open
 
-- **Density under Mantine.** Mantine has no word like MudBlazor's `Dense`; its components take a `size`
-  from `xs` to `xl`. Which of them maps onto which Density preset is decided with `@ex-grid/mantine`.
-- **Cell Metrics under Mantine.** Mantine's default font is the system's stack (`-apple-system`, Segoe UI,
-  Roboto, …), which resolves to a different face on each platform. How the Wrapper states the three
-  widths for it is decided with `@ex-grid/mantine`. MUI's Roboto takes `RobotoGlyphTable`'s widths.
-- **Dates.** `ExGrid.MudBlazor`'s filter panel and ExChart's take a `MudDatePicker`. Mantine's date
-  inputs are `@mantine/dates`, which brings dayjs; MUI's are `@mui/x-date-pickers`, which needs a date
-  library's adapter. Whether a Wrapper takes that dependency, or a typed date read by the core's operand
-  reading, is decided with each Wrapper.
+- **Dates under MUI.** MUI's date inputs are `@mui/x-date-pickers`, which needs a date library's adapter.
+  Whether `@ex-grid/mui` takes that dependency, or a typed date read by the core's operand reading as
+  `@ex-grid/mantine` does (section 9), is decided with it. `ExGrid.MudBlazor`'s filter panel and ExChart's take
+  a `MudDatePicker`. MUI's Roboto takes `RobotoGlyphTable`'s widths.
 
 ## Consequences
 

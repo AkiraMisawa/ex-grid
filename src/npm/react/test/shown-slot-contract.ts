@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { GridSource, type GridColumn, type GridPage } from '@ex-grid/core';
 import { ExGrid } from '../src/ex-grid';
 import type { ExGridChrome } from '../src/chrome';
+import type { ContractHost } from './contract-host';
 
 interface Trade {
     readonly book: string;
@@ -36,7 +37,7 @@ function key(name: string, init: KeyboardEventInit = {}): void {
 }
 
 function rootOf(container: HTMLElement): HTMLElement {
-    const root = container.firstElementChild;
+    const root = container.querySelector('[role=grid]'); // a provider may draw beside it
     if (!(root instanceof HTMLElement)) throw new Error('The grid drew no root.');
     return root;
 }
@@ -61,14 +62,14 @@ function press(root: HTMLElement, x: number, y: number): void {
  * Registers the contract's tests against a Wrapper's Chrome: `chrome` names it, and must fill the cellMessage,
  * selectionSummary and loadingIndicator slots.
  */
-export function shownSlotContract(name: string, chrome: ExGridChrome<unknown>): void {
+export function shownSlotContract(name: string, chrome: ExGridChrome<unknown>, host: ContractHost = {}): void {
     describe(`${name}: the contract of the slots for what the grid shows (ADR-0390 section 7)`, () => {
         afterEach(() => { cleanup(); });
 
         it('ADR-0034: a Reject\'s message says the core\'s sentence in the core\'s box, which describes the editor', async () => {
             const { container } = render(createElement(ExGrid<Trade>, {
                 columns, rows: trades(20), rowHeight: 24, viewportHeight: 320, viewportWidth: 720, onEdit: () => undefined, chrome,
-            }));
+            }), host);
             const root = rootOf(container);
             await settled();
             press(root, 130, 5);
@@ -84,7 +85,7 @@ export function shownSlotContract(name: string, chrome: ExGridChrome<unknown>): 
         it('ADR-0130: the Selection Summary shows the core\'s figures, each as the core formatted it, in Excel\'s order', async () => {
             const { container } = render(createElement(ExGrid<Trade>, {
                 columns, source: GridSource.from(trades(10)), rowHeight: 24, viewportHeight: 320, viewportWidth: 720, chrome,
-            }));
+            }), host);
             const root = rootOf(container);
             await settled();
             press(root, 130, 29);
@@ -100,7 +101,7 @@ export function shownSlotContract(name: string, chrome: ExGridChrome<unknown>): 
         it('ADR-0010 / ADR-0004: the loading indicator draws something while rows are on their way, at the grid\'s foot, and nothing once they are in', async () => {
             const answers: ((page: GridPage<Trade>) => void)[] = [];
             const source = GridSource.fetch<Trade>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
-            const { container } = render(createElement(ExGrid<Trade>, { columns, source, rowHeight: 24, viewportHeight: 240, viewportWidth: 720, chrome }));
+            const { container } = render(createElement(ExGrid<Trade>, { columns, source, rowHeight: 24, viewportHeight: 240, viewportWidth: 720, chrome }), host);
             const root = rootOf(container);
             await settled();
             const box = boxOf(root, ':scope > .ex-loading-indicator');
