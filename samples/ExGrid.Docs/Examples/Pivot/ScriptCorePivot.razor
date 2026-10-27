@@ -1,6 +1,25 @@
+@using ExPivot
 @using ExPivot.Engine
 
-<ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="360" />
+<p>
+    <label>
+        <input type="checkbox" @bind="_japanese" />
+        Excel's Japanese words
+    </label>
+    <label>
+        <input type="checkbox" @bind="_takeRecords" />
+        Take the records of a double-clicked cell here
+    </label>
+</p>
+
+<ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="360"
+                        Label="@(_japanese ? PivotWords.Japanese : null)"
+                        OnShowDetails="@(_takeRecords ? _showDetails : default)" />
+
+@if (_records is not null)
+{
+    <p role="status">@_records</p>
+}
 
 @code {
     // The same source as ExPivot.Components.ExPivot's: it answers in .NET, and the report is built in the browser.
@@ -12,4 +31,18 @@
         Columns = [new PivotFieldPlacement("Year")],
         Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
     };
+
+    private bool _japanese;
+    private bool _takeRecords;
+    private string? _records;
+    private EventCallback<PivotDetails> _showDetails;
+
+    protected override void OnInitialized() => _showDetails = EventCallback.Factory.Create<PivotDetails>(this, TakeAsync);
+
+    // The records behind the cell, asked of the source in .NET under the report's Source Version.
+    private async Task TakeAsync(PivotDetails details)
+    {
+        var page = await details.DetailsAsync(0, 100);
+        _records = page.IsRefused ? $"{details.Title}: the data has changed." : $"{details.Title}: {page.Total} records";
+    }
 }

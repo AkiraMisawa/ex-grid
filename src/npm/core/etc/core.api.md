@@ -60,6 +60,9 @@ export interface BreachCell {
 }
 
 // @public
+export function builtInLabelIds(): readonly string[];
+
+// @public
 export type CellAlign = 'auto' | 'left' | 'center' | 'right';
 
 // @public

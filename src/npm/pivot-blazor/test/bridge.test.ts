@@ -4,9 +4,11 @@
 // abandoned is cancelled in .NET, that a Refresh is answered before the question after it, and that a field and a
 // notice arrive as .NET declared them.
 import { describe, expect, it } from 'vitest';
+import { gridCommandIds } from '@ex-grid/core';
 import {
-    PivotJson, PivotSourceFeatures, RecordPivotSource, pivotQuery, pivotRecordField, type PivotSourceChanged,
+    PivotJson, PivotSourceFeatures, RecordPivotSource, pivotQuery, pivotRecordField, pivotWordIdList, type PivotSourceChanged,
 } from '@ex-grid/pivot-engine';
+import { labelIds } from '../src/blazor-pivot';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from '../src/dotnet-pivot-source';
 
 interface Trade {
@@ -153,5 +155,13 @@ describe('a C# Pivot Source seen from the browser (ADR-0370 sections 1 and 3)', 
         stop();
         source.hear(PivotJson.writeSourceChanged({ sourceVersion: 'v3' }));
         expect(heard.map(changed => changed.sourceVersion)).toEqual(['v2']);
+    });
+});
+
+describe('the words .NET answers for the pivot (ADR-0370 section 10)', () => {
+    it('asks every id the pivot paints, its grid\'s commands included, once each', () => {
+        const ids = labelIds();
+        expect(ids).toEqual(expect.arrayContaining([...pivotWordIdList(), gridCommandIds.copy, gridCommandIds.sortAscending]));
+        expect(new Set(ids).size).toBe(ids.length);
     });
 });

@@ -35,6 +35,8 @@ export interface PivotShowDetailsEvent {
     /** The question for the records, plain data a Consumer may send elsewhere, as the Razor component's
      * `PivotDetails.Query` (ADR-0151): the cell's Items, the Hidden Items and the Source Version it is answered under. */
     readonly query: PivotDetailsQuery;
+    /** The Pivot Source the report was computed from, which the records are asked of. */
+    readonly source: PivotSource;
     /** The source's fields, which each record holds a value of, in order. */
     readonly fields: readonly PivotField[];
     /** A page of the records, from `start`, at most `count` of them, under the Source Version the report was computed
@@ -48,10 +50,11 @@ export type PivotDetailsView = 'tab' | 'dialog';
 /** The records behind `query`'s cell, asked of the Pivot Source the report was computed from, which stays the
  * Consumer's however long the records are shown. */
 export function detailsEvent(
-    source: PivotSource, query: PivotDetailsQuery, described: Omit<PivotShowDetailsEvent, 'query' | 'fields' | 'records'>,
+    source: PivotSource, query: PivotDetailsQuery, described: Omit<PivotShowDetailsEvent, 'source' | 'query' | 'fields' | 'records'>,
 ): PivotShowDetailsEvent {
     return Object.freeze({
         ...described,
+        source,
         query,
         fields: source.fields,
         // Checked as the question is: a page from a negative or broken start is refused by name, never asked.

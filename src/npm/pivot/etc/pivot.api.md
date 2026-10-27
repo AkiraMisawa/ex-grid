@@ -51,6 +51,7 @@ export interface PivotFieldListShownEvent {
 // @public
 export interface PivotHandle {
     destroy(): void;
+    openDetails(event: PivotShowDetailsEvent): void;
     update(options: PivotViewOptions): void;
 }
 
@@ -78,6 +79,7 @@ export interface PivotShowDetailsEvent {
     readonly query: PivotDetailsQuery;
     readonly records: (start: number, count: number, signal?: AbortSignal) => Promise<PivotDetailPage>;
     readonly rowItems: readonly PivotDetailItem[];
+    readonly source: PivotSource;
     readonly title: string;
     readonly valueField: string | undefined;
 }

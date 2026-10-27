@@ -55,3 +55,15 @@ test('ADR-0059, ADR-0370 section 1: a field ticked reaches the Consumer\'s layou
     await expect(tick(page, 'Book')).not.toBeChecked();
     await expect(page.locator('#script-pivot-layout')).toHaveText('Rows: Region, Desk');
 });
+
+test('ADR-0060, ADR-0063, ADR-0370 section 10: the Consumer\'s words and its Show Details handler, both in .NET, reach the pivot in the browser', async ({ page }) => {
+    await open(page, '/script-pivot?details=dotnet');
+    await expect(report(page).getByText('Row Labels', { exact: true })).toBeVisible();
+
+    await page.locator('#script-pivot-japanese').click();
+    await expect(report(page).getByText('行ラベル', { exact: true })).toBeVisible();
+
+    await firstValue(page).dblclick({ force: true });
+    await expect(page.locator('#script-pivot-details')).toHaveText(/^詳細: .+: [1-9]\d* records$/);
+    await expect(pivot(page).locator('.ex-pivot-details-panel')).toHaveCount(0);
+});

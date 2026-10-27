@@ -11,7 +11,7 @@ namespace ExPivot.Script;
 internal sealed class ScriptBridge(ExPivot pivot)
 {
     [JSInvokable]
-    public Task Heard(string kind, JsonElement payload) => pivot.HeardAsync(kind, payload);
+    public Task<bool> Heard(string kind, JsonElement payload) => pivot.HeardAsync(kind, payload);
 
     [JSInvokable]
     public Task<string> Aggregate(int generation, long call, string query) => pivot.AskAsync("aggregate", generation, call, query);

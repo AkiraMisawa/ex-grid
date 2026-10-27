@@ -380,6 +380,8 @@ export class PivotView {
     readonly #fieldList: FieldListView;
     // Show Details' sheets, when the Consumer does not take the records: tabs at the report's foot, or a dialog.
     readonly #details: DetailsSheets;
+    // The Show Details events this pivot handed a Consumer: the only ones it opens when they are handed back.
+    readonly #detailsRaised = new WeakSet<PivotShowDetailsEvent>();
     readonly #userWidths = new Map<string, number>();
     // Read once, when the pivot is made: every report source it makes shares the thread the same way.
     readonly #slicing: PivotSlicing | undefined;
@@ -690,6 +692,15 @@ export class PivotView {
         }
         if (settingsMoved || options.rowHeight !== before.rowHeight) this.#details.draw();
         this.#draw();
+    }
+
+    /** Opens the records of a Show Details event this pivot raised, as `detailsView` says, as when nobody hears
+     * `onShowDetails`: a Consumer that heard it and does not take it hands it back. An event another pivot raised is
+     * refused, rather than shown under this pivot's report; a stopped pivot opens nothing. */
+    openDetails(event: PivotShowDetailsEvent): void {
+        if (!this.#detailsRaised.has(event)) throw new Error('These records are another pivot\'s: a pivot opens only the Show Details it raised.');
+        if (this.#destroyed) return;
+        this.#details.open(event, this.#options.detailsView ?? 'tab', this.#locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
     }
 
     /** Stops the pivot: it asks and hears nothing more, and empties its element. The source stays the
@@ -1521,6 +1532,7 @@ export class PivotView {
         });
         const heard = this.#options.onShowDetails;
         if (heard !== undefined) {
+            this.#detailsRaised.add(details);
             heard(details);
             return;
         }
