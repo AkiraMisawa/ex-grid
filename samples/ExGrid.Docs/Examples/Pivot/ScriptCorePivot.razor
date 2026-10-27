@@ -1,3 +1,4 @@
+@using ExGrid.Selection
 @using ExPivot
 @using ExPivot.Engine
 
@@ -14,7 +15,11 @@
 
 <ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="360"
                         Label="@(_japanese ? PivotWords.Japanese : null)"
-                        OnShowDetails="@(_takeRecords ? _showDetails : default)" />
+                        OnShowDetails="@(_takeRecords ? _showDetails : default)"
+                        SelectionChanged="ShowSelection" />
+
+@* Never empty, so the line is there before the first report and the pivot does not move under a double click. *@
+<p role="status">@_selection</p>
 
 @if (_records is not null)
 {
@@ -35,7 +40,13 @@
     private bool _japanese;
     private bool _takeRecords;
     private string? _records;
+    private string _selection = "Nothing selected";
     private EventCallback<PivotDetails> _showDetails;
+
+    // The report grid's Selection, read in .NET as the pivot drawn in .NET reports it.
+    private void ShowSelection(GridSelection selection) => _selection = selection.IsEmpty
+        ? "Nothing selected"
+        : $"Focus: row {selection.Focus.Row}, column {selection.Focus.Column}; {selection.CellCount} cell(s) selected";
 
     protected override void OnInitialized() => _showDetails = EventCallback.Factory.Create<PivotDetails>(this, TakeAsync);
 

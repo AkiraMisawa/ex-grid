@@ -61,6 +61,14 @@
             <code>await grid.SelectionAfterInputsAsync()</code> gives the selection once the grid has answered every
             input it received before the press, so the button acts on what the user selected at any speed.
         </p>
+        <p>
+            A <code>GridSelection</code> is read, never built: a grid makes it, and you place one through the grid's
+            <code>PlaceSelectionAsync</code>. <code>GridSelection.Reported</code> is not for an application: it is for
+            an adapter over the TypeScript core, Blazor's own or a Wrapper of yours, which reads back the ranges, Focus
+            and Focus range the core reported, and it refuses a range of no cell and a Focus range that does not hold
+            the Focus. It takes each range as made in its own turn, so compare a reported Selection with another
+            reported one, not with one an <code>ExGrid.Components.ExGrid</code> made.
+        </p>
     </DocsSection>
 
     <DocsSection Title="The keyboard">

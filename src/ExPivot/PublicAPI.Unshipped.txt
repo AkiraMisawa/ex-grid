@@ -66,6 +66,8 @@ ExPivot.Script.ExPivot.RedrawInterval.get -> System.TimeSpan?
 ExPivot.Script.ExPivot.RedrawInterval.set -> void
 ExPivot.Script.ExPivot.RowHeight.get -> double?
 ExPivot.Script.ExPivot.RowHeight.set -> void
+ExPivot.Script.ExPivot.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
+ExPivot.Script.ExPivot.SelectionChanged.set -> void
 ExPivot.Script.ExPivot.ShowFieldList.get -> bool
 ExPivot.Script.ExPivot.ShowFieldList.set -> void
 ExPivot.Script.ExPivot.ShowFieldListChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
