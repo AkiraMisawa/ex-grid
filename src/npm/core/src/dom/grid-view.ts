@@ -4895,6 +4895,8 @@ export class GridView<Row> {
         if (doc.activeElement === element || doc.activeElement === this.#bar.text) this.#takeKeyboard();
         element.remove();
         this.#referenceText?.cell.element.remove();
+        // A composition the editor took with it is over, whether or not the browser says so.
+        this.#composingIn = undefined;
         this.#gateReferenceTexts();
         this.#invalidate();
         if (endedIn !== undefined) endedIn();
@@ -5248,10 +5250,12 @@ export class GridView<Row> {
         const made = this.#referenceText;
         if (this.#referenceOptions.referencesIn === undefined) {
             if (made !== undefined) {
+                this.#referenceText = undefined;
                 this.#bar.text.classList.remove('ex-reference-text-shown');
                 this.#edit?.element.classList.remove('ex-reference-text-shown');
                 made.cell.uncolour();
                 made.bar.uncolour();
+                made.highlights.unregister();
                 made.cell.element.remove();
                 made.bar.element.remove();
                 made.style.remove();
@@ -5281,12 +5285,16 @@ export class GridView<Row> {
     // The coloured text shown in the surface the edit is in, the field holding DOM focus, as Excel colours only that
     // one, while the layer's text is the field's value and no IME composes there; the other surface keeps its plain
     // text. Both layers carry the text, so the colours follow a press from one surface into the other.
+    // The References are not asked here: they were asked of the text in the input or the pass that changed it, where a
+    // refused answer is refused. A text not yet asked about is not coloured.
     #gateReferenceTexts(): void {
+        if (this.#destroyed) return;
         const layers = this.#referenceTextLayers();
         if (layers === undefined) return;
         const edit = this.#edit;
+        const outlines = this.#referenceOutlines;
         const text = edit === undefined ? '' : edit.element.value;
-        const stretches = edit === undefined ? [] : layers.highlights.coloursOf(this.#colouring(), this.#pointedSpan(edit));
+        const stretches = edit === undefined || outlines.askedFor !== text ? [] : layers.highlights.coloursOf(outlines.asked, this.#pointedSpan(edit));
         this.#gateReferenceText(layers, layers.cell, edit?.element, text, stretches);
         const barShown = edit !== undefined && this.#formulaBarDeclared.shown;
         setAttribute(layers.bar.element, 'style', `left: ${this.#metrics.nameBoxWidthPx}px`);
@@ -5295,12 +5303,14 @@ export class GridView<Row> {
 
     #gateReferenceText(layers: ReferenceTextLayers, layer: ReferenceTextLayer, field: HTMLInputElement | undefined, text: string,
         stretches: readonly ColouredStretch[]): void {
-        layer.write(text, stretches);
+        const written = layer.write(text, stretches);
         const shown = field !== undefined && this.#edit !== undefined && field.ownerDocument.activeElement === field
             && this.#composingIn !== field && field.value === text;
         if (field !== undefined) {
-            field.classList.toggle('ex-reference-text-shown', shown);
-            layer.scrollTo(field.scrollLeft);
+            const was = field.classList.contains('ex-reference-text-shown');
+            if (shown !== was) field.classList.toggle('ex-reference-text-shown', shown);
+            // Read only when the text or the look changed: the field's own scroll is heard as it happens.
+            if (shown && (written || !was)) layer.scrollTo(field.scrollLeft);
         }
         if (shown) layer.colour(layers.highlights);
         else layer.uncolour();
@@ -9843,8 +9853,10 @@ export class GridView<Row> {
             const at = away ? cellPosition(visible.start, edit.cell.column) : edit.cell;
             const box = defined(cellBox(at, this.#styles.geometry, this.#metrics.rowHeightPx, visible), 'the box of a cell among the painted rows');
             const look = this.#editorLook(edit.cell, edit.openedOn);
+            // The coloured text's mark is the gate's (#gateReferenceTexts), and is kept here.
+            const shown = element.classList.contains('ex-reference-text-shown') ? ' ex-reference-text-shown' : '';
             const base = away ? 'ex-editor ex-editor-away' : 'ex-editor';
-            setAttribute(element, 'class', look === undefined ? base : `${base} ${look}`);
+            setAttribute(element, 'class', `${look === undefined ? base : `${base} ${look}`}${shown}`);
             setAttribute(element, 'style', box.style);
             setAttribute(element, 'data-ex-cell', `${at.row} ${at.column}`);
             if (layer !== undefined) {

@@ -88,6 +88,11 @@ export class ReferenceOutlines {
         return this.#colouring;
     }
 
+    /** The text the colouring was last asked for, or none since an edit ended. */
+    get askedFor(): string | undefined {
+        return this.#colouredText;
+    }
+
     /**
      * The colours of the References in `text`, the open edit's, or none while no edit is open or no function is
      * declared. An edit that ends forgets it: the next one asks afresh, whatever its text. An answer whose spans
