@@ -1,17 +1,21 @@
 # A Header Group draws a toggle and notifies, and the Consumer holds its columns
 
-*Decided with the user on 2026-10-27 in the project thread "展開できる Header Group を計画に入れる", from
-the user's specification of the same day ("ExGrid: expandable Header Groups spec"). The user asked for
-a group that expands when pressed and collapses when pressed again, and for a value the user set to stay
-the user's while it is hidden. Asked about the specification's open points, the user put it into 0.3.0
-("入れる"), asked for the toggle's and the mark's look to be changeable and to match each framework's
-design and theme ("切り替えのスタイルは変更可能にしたい。各フレームワークのデザイン・テーマに合うような
-マークを使うのがいいでしょ。隠されマークしかり"), asked for Excel's keys ("エクセルと同じ方がいいかな"), and
-agreed that a case of behaviour new to the Script Core need not go in on the C# core first ("OK。というか
-その指示は見直しが必要そうだね"). Section 4's keys are the reading put to the user beside that answer:
-Excel has no key of its own for the step, see section 4. The specification's other open points (the
-toggle alone takes the press, the mark covers the whole group, ExSheet and ExPivot later) are taken as it
-recommended them.*
+*Decided with the user on 2026-10-27 in the project thread "展開できる Header Group を計画に入れる" ("Put
+expandable Header Groups into the plan"), from the user's specification of the same day ("ExGrid:
+expandable Header Groups spec"). The user asked for a group that expands when pressed and collapses when
+pressed again, and for a value the user set to stay the user's while it is hidden. Asked about the
+specification's open points, the user put it into 0.3.0 ("入れる", "put it in"), asked for the toggle's
+and the mark's look to be changeable and to match each framework's design and theme
+("切り替えのスタイルは変更可能にしたい。各フレームワークのデザイン・テーマに合うようなマークを使うのがいいでしょ。隠されマークしかり",
+"I want the toggle's style to be changeable. A mark that fits each framework's design and theme is best,
+and the same goes for the hidden mark"), asked for Excel's keys ("エクセルと同じ方がいいかな", "the same as
+Excel would be better"), and agreed that a case of behaviour new to the Script Core need not go in on the
+C# core first ("OK。というかその指示は見直しが必要そうだね", "OK. That instruction looks like it needs
+revisiting anyway"). Excel has no key of its own for the step (section 4). Offered Alt+Shift+↓ and ↑,
+Excel's key tips, or both, the user chose Alt+Shift+↓ and ↑; asked why Alt+Shift+→ and ← are not used,
+the user accepted section 4's answer ("OK"). The specification's other open points (the toggle alone
+takes the press, the mark covers the whole group, ExSheet and ExPivot later) are taken as it recommended
+them.*
 
 This amends [ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md) ("no
 collapse"), [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md) (the
@@ -82,8 +86,9 @@ Whether a group is open is View State, the Consumer's as the column order and th
 whatever `expanded` it was last given, and a press the Consumer does not answer changes nothing on
 screen.
 
-Blazor's `HeaderGroup` record gains `Id`, `Expanded` and `HiddenMark`, and Blazor's ExGrid
-`OnHeaderGroupToggled`, the same shapes. Blazor's ExGrid only carries them to the Script Core
+Blazor's `HeaderGroup` record gains `string? Id`, `bool? Expanded` and `HiddenMark? HiddenMark`, and Blazor's
+ExGrid `OnHeaderGroupToggled`, the same shapes. `Expanded` is nullable because "not given" (no toggle) and
+`false` (collapsed) are different declarations, and a `bool` would declare every group collapsed. Blazor's ExGrid only carries them to the Script Core
 ([ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)); the C# core does
 not take them (section 10).
 
@@ -98,6 +103,13 @@ group:
 - `hiddenMark` on a group whose `expanded` is not `false`. An open group's cells show their own Cell
   State, so the mark is for a closed group alone.
 - A `hiddenMark` whose `reason` is empty. The mark must say what it hides.
+- `expanded` on a group whose `label` is empty, a spacer. Its toggle would be named "Expand" with no
+  group named (section 8), and a spacer is no group a reader opens.
+
+**A collapsed group keeps at least one member shown.** The toggle stands on the group's rectangle, and a
+group with no member is already refused (ADR-0032). A Consumer whose group would hide every column keeps
+one shown, a summary column say; a Consumer that drops the group instead drops its toggle with it, and
+nothing then reopens the group.
 
 ### 3. The toggle alone takes the press
 
@@ -110,7 +122,8 @@ drag would make the misfire ADR-0032 refused for an overshoot.
 - **Touch**: a tap on the toggle is a press. A swipe over the header scrolls, as ADR-0032's note of
   2026-10-19 has it.
 - **Pointed At** ([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md)): while the grid is pointed at, a press on the
-  toggle is a press on the group's rectangle, handed to the Consumer as today, and toggles nothing.
+  toggle is a press on the group's rectangle, which hands over nothing and tells the reason, as
+  ADR-0058's table has it, and toggles nothing.
 - **The Input Order** ([ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md)): the
   toggle is a control of the grid's own (`data-ex-claims`), so its press is numbered and taken in its
   turn by the click path that already exists. An open edit is settled by it as by a press on a column
@@ -137,12 +150,13 @@ Alt+Shift+←, expands with Alt+Shift+↓ and collapses with Alt+Shift+↑ (Opti
   column of the group, since a collapsed group's hidden columns have no cell to stand on.
 - Neither key types a character on any platform, so neither takes a keystroke from Overwrite. The
   specification's first proposal, Alt+Shift+= and Alt+Shift+-, types ± and — on a Mac.
-- Where no group over the Focus's column answers the key, the grid does nothing with it and lets it
-  reach the page.
-- Both join the keys the core answers itself, so neither can be a declared key
-  ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), item 14): a Consumer that declared one is
-  refused at declaration, naming this ADR. That is the change a Consumer can break on, and its Change
-  Note says so.
+- The keys are the grid's only on a grid given `onHeaderGroupToggled`, as F8 is the grid's only on a
+  grid given `findError` ([ADR-0381](./0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)).
+  A grid without it leaves both to the page, and a Consumer that declares either on such a grid keeps it
+  ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), item 14). On a grid given it, either among
+  the declared keys is refused at declaration, naming this ADR. No Consumer that does not toggle breaks.
+- On a grid given it, where no group over the Focus's column answers the key, the grid does nothing with
+  it and lets it reach the page.
 - While an editor is open the keys are the editor's, as every key is.
 - Alt+Shift+→ and Alt+Shift+← are left unused. In Excel they make and undo a group, which in ExGrid is
   the Consumer's declaration, so the grid has nothing for them to do; to open and close with them would
@@ -235,7 +249,8 @@ C# runner reads (ADR-0350's note of 2026-10-27).
 - No per-row Hidden Mark, and no gathering of hidden cells' states into a shown cell.
 - ExSheet and ExPivot do not take it yet. ExPivot's column Items collapse by their own rule; using this
   toggle for them is a decision of its own.
-- No Consumer rebinding of the two keys, as no key the core answers can be rebound (ADR-0050, item 14).
+- No Consumer rebinding of the two keys on a grid that toggles, as no key the core answers can be rebound
+  (ADR-0050, item 14).
 
 ## Considered options
 

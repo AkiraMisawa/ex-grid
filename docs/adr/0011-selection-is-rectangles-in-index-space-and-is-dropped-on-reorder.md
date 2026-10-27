@@ -306,11 +306,13 @@ their place again.)*
   cannot point at a stranger when columns come and go beside them. When neither finds the row, or the
   group is gone from the push, the Focus is dropped as before.
 - **The remembered Focus is let go** when anything else places or drops the Focus first: a press on a
-  cell, a key that moves it, a Consumer's placement, a replaced Source. Only the latest toggle is
-  remembered; a second toggle before the push replaces the first.
-- **It holds whatever the answer's timing** (principle 6): a push that arrives before, between or after
-  two quick toggles lands the Focus by name in each case, and a push that shows the group in the other
-  state puts nothing back.
+  cell, a key that moves it, a Consumer's placement, a replaced Source, and a columns push that does not
+  show the group as the notification asked, which drops the Focus by the rule above. Only the latest
+  toggle is remembered; a second toggle before the push replaces the first. A Focus once lost is never
+  brought back by a later push.
+- **It holds whatever the answer's timing** (principle 6): the Consumer's answers to two quick presses
+  on one group show it in the state both asked for, and the first of them lands the Focus by name
+  whenever it arrives.
 - **An open editor** is discarded by a change of columns as above; the Focus kept is the Focus, not the
   edit.
 
