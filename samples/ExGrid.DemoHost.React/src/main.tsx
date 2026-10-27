@@ -22,6 +22,7 @@ import { FilterPanel } from './pages/filter-panel';
 import { Home } from './pages/home';
 import { Lifecycle } from './pages/lifecycle';
 import { MantineDemo } from './pages/mantine';
+import { MantineChartDemo } from './pages/mantine-chart';
 import { MuiDemo } from './pages/mui';
 import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
@@ -75,6 +76,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     sizing: Sizing,
     board: Board,
     mantine: MantineDemo,
+    'mantine-chart': MantineChartDemo,
     mui: MuiDemo,
 };
 

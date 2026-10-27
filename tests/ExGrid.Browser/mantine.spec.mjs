@@ -121,3 +121,48 @@ test('KB-30 / ADR-0390: a column menu drawn in Mantine\'s buttons is crossed by 
     await expect(grid(page).locator('.ex-header-cell[aria-sort=descending]')).toHaveCount(1);
     await expectKeyboardOn(grid(page));
 });
+
+// @ex-grid/chart-mantine on /mantine-chart: what only a browser shows of the Chart Dock under Mantine. The tabs, the
+// targets, the refusals and the slots' commands are the contracts layer 2 runs against MantineChartDock.
+test('ADR-0258, ADR-0390: the Mantine Chart Dock opens a chart beside the grid, never over it, and the theme\'s primary leads its series in light and dark', async ({ page }) => {
+    await page.goto('/mantine-chart');
+    const curves = page.locator('.mantine-ex-grid [role=grid]');
+    const at = (row, column) => curves.locator(`[id$='r${row}c${column}']`);
+    await expect(at(7, 0)).toBeVisible();
+    await at(0, 0).click({ force: true });
+    await at(3, 2).click({ force: true, modifiers: ['Shift'] });
+    await at(0, 0).click({ button: 'right', force: true });
+    // Dates and tenors both: the menu offers the two orientations, and Series in columns charts 1Y and 2Y along the dates.
+    await curves.locator('[role=menu] [role=menuitem]').filter({ hasText: /^Series in columns$/ }).click();
+    const panel = page.locator('.mantine-ex-chart-dock-panel');
+    await expect(panel.locator('[role=tab]')).toHaveText(['Chart 1']);
+    const chart = panel.locator('.ex-chart');
+    await expect(chart.locator('g.ex-chart-series')).toHaveCount(2);
+    await expect(chart.locator('[role=toolbar]')).toHaveAccessibleName('Chart 1');
+
+    // Beside the grid, never over it, and the chart whole inside the panel.
+    const [gridBox, panelBox, plotBox] = await Promise.all([curves.boundingBox(), panel.boundingBox(), chart.locator('svg.ex-chart-svg').boundingBox()]);
+    expect(panelBox.x, JSON.stringify({ gridBox, panelBox })).toBeGreaterThanOrEqual(gridBox.x + gridBox.width);
+    expect(plotBox.x + plotBox.width, JSON.stringify({ panelBox, plotBox })).toBeLessThanOrEqual(panelBox.x + panelBox.width);
+
+    const colours = async () => {
+        const css = await chart.evaluate((root) => {
+            const theme = getComputedStyle(root.closest('.mantine-ex-chart'));
+            return {
+                series: getComputedStyle(root.querySelector('g.ex-chart-series.ex-chart-colour-0')).color,
+                ground: getComputedStyle(root).backgroundColor,
+                primary: theme.getPropertyValue('--mantine-primary-color-filled'),
+                body: theme.getPropertyValue('--mantine-color-body'),
+            };
+        });
+        return Object.fromEntries(await Promise.all(Object.entries(css).map(async ([name, colour]) => [name, await resolvedColour(page, colour)])));
+    };
+    const light = await colours();
+    expect([light.series, light.ground], JSON.stringify(light)).toEqual([light.primary, light.body]);
+    await page.locator('#toggle-dark').click();
+    await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+    // The scheme reaches the chart: its ground is Mantine's dark body.
+    await expect.poll(async () => (await colours()).ground).not.toEqual(light.ground);
+    const dark = await colours();
+    expect([dark.series, dark.ground], JSON.stringify(dark)).toEqual([dark.primary, dark.body]);
+});

@@ -87,6 +87,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'A curve history charted from the grid\'s context menu: series in columns along the dates or in rows across the tenors, Add to chart, a refusal by name, a chart that keeps its rows through a recalculation and a deleted row, and a click that moves the grid\'s Focus (ADR-0258).',
     },
     {
+        route: 'mantine-chart', title: 'Charts under Mantine', group: 'ExChart',
+        description: '@ex-grid/chart-mantine: the Chart Dock beside a grid in @ex-grid/mantine\'s paper, opening each chart made from the selection as a Mantine tab, its toolbar and context menu in Mantine\'s components, and the theme\'s primary leading its series in both schemes (ADR-0258, ADR-0281, ADR-0390).',
+    },
+    {
         route: 'scatter', title: 'Scatter and fitted lines', group: 'ExChart',
         description: 'CDS spreads against leverage beside their grid, with the least-squares and the Theil–Sen line; Old Faithful; and PRML\'s polynomial curve fitting of degree 0, 1, 3 and 9. The nearest point\'s tooltip, a click to the row, a rectangle that narrows both axes, a logarithmic spread axis (ADR-0290, ADR-0291).',
     },

@@ -9,3 +9,7 @@ export { ExChart } from './ex-chart';
 export type { ExChartApi, ExChartChrome, ExChartProps } from './ex-chart';
 export { ExSurface } from './ex-surface';
 export type { ExSurfaceApi, ExSurfaceProps } from './ex-surface';
+export { DockedChart, useChartDock } from './chart-dock';
+export type { ChartDockBridgeOptions, ChartDockPlacement, ChartDockState, DockedChartProps } from './chart-dock';
+export { useChartFilterText } from './chart-filter-text';
+export type { ChartFilterText } from './chart-filter-text';

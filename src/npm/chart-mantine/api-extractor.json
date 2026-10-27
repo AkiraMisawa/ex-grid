@@ -1,0 +1,35 @@
+// The public surface of @ex-grid/chart-mantine (ADR-0390; ADR-0201). scripts/build.mjs runs it.
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+  "mainEntryPointFilePath": "<projectFolder>/temp/types/index.d.ts",
+  // The build's settings, which read the core as it is published; tsconfig.json reads its sources.
+  "compiler": { "tsconfigFilePath": "<projectFolder>/tsconfig.build.json" },
+  // The core's and the adapter's declarations stay imports of their own, as their JavaScript does.
+  "bundledPackages": [],
+  "apiReport": {
+    "enabled": true,
+    "reportFolder": "<projectFolder>/etc/",
+    "reportTempFolder": "<projectFolder>/temp/"
+  },
+  "docModel": { "enabled": false },
+  "dtsRollup": {
+    "enabled": true,
+    "untrimmedFilePath": "<projectFolder>/dist/index.d.ts"
+  },
+  "tsdocMetadata": { "enabled": false },
+  "messages": {
+    "compilerMessageReporting": {
+      "default": { "logLevel": "error" }
+    },
+    "extractorMessageReporting": {
+      "default": { "logLevel": "error" },
+      // The surface carries no release tags: what is exported is public, and nothing else is.
+      "ae-missing-release-tag": { "logLevel": "none" },
+      // Every exported member says what it is, as every public C# member does.
+      "ae-undocumented": { "logLevel": "error", "addToApiReportFile": false }
+    },
+    "tsdocMessageReporting": {
+      "default": { "logLevel": "error" }
+    }
+  }
+}
