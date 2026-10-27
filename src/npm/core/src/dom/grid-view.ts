@@ -42,6 +42,8 @@ import {
     type HeldInput,
 } from './pending-commit';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
+import { GridPresentationDefaults } from '../grid-presentation-defaults';
+import { CellTextMetrics } from '../columns/cell-text-metrics';
 import { matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type GridFindResult } from '../finding/find';
 import { columnHeaderId, findHeaders, groupHeaderId, matchingHeaders, sameHeaders, type FindHeader } from '../finding/header-find';
 import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-walk';
@@ -176,8 +178,15 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly source?: GridSource<Row>;
     /** The rows, held by a source the grid makes over them. Exactly one of `source` and `rows` is given. */
     readonly rows?: readonly Row[];
-    /** The preset every geometry not given comes from; `compact` unless given (ADR-0028). */
+    /** The preset every geometry not given comes from: the Wrapper's, then `compact`, unless given (ADR-0028). */
     readonly density?: GridDensity;
+    /** The widths the width and overflow estimates read (ADR-0016), beating a Wrapper's and the preset's. Whoever
+     * sets `--ex-font-family` owes them (ADR-0027). */
+    readonly cellMetrics?: CellTextMetrics;
+    /** What a design-system Wrapper hands every grid inside it (ADR-0030): the widths of the font its stylesheet
+     * sets, and the Density, hover band and Row Stripes its own words map onto. A value given on the grid beats
+     * it, and it beats the preset (ADR-0028). */
+    readonly presentationDefaults?: GridPresentationDefaults;
     /** The height of every row in pixels, beating the preset's (ADR-0013). */
     readonly rowHeight?: number;
     /** The header's height in pixels; the row height's when only that is given (ADR-0028). */
@@ -2119,9 +2128,21 @@ export class GridView<Row> {
             source = options.source;
         }
 
-        const { density = 'compact', pinnedColumnCount = 0, virtualiseColumns = true } = options;
+        const { pinnedColumnCount = 0, virtualiseColumns = true } = options;
+        const { cellMetrics, presentationDefaults: defaults }: { readonly cellMetrics?: unknown; readonly presentationDefaults?: unknown } = options;
+        if (cellMetrics !== undefined && !(cellMetrics instanceof CellTextMetrics)) {
+            throw new TypeError('cellMetrics is a CellTextMetrics: the widths the grid charges each glyph (ADR-0016).');
+        }
+        if (defaults !== undefined && !(defaults instanceof GridPresentationDefaults)) {
+            throw new TypeError('presentationDefaults is a GridPresentationDefaults, as a Wrapper makes one (ADR-0030).');
+        }
+        // ADR-0028's precedence, one rung for the Wrapper: the grid's own value, then the Wrapper's, then the preset.
+        // oxlint-disable-next-line ex-grid/no-stand-in-default -- ADR-0028: an untouched grid is compact
+        const density = options.density ?? defaults?.density ?? 'compact';
         const resolved = GridMetrics.resolve({
             density,
+            ...(cellMetrics === undefined ? {} : { cellMetrics }),
+            ...(defaults === undefined ? {} : { defaults }),
             ...(options.rowHeight === undefined ? {} : { rowHeightPx: options.rowHeight }),
             ...(options.headerHeight === undefined ? {} : { headerHeightPx: options.headerHeight }),
         });
@@ -2361,9 +2382,10 @@ export class GridView<Row> {
             marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             showFillHandle: options.showFillHandle === true, onFill: options.onFill,
-            highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
+            highlightFocusRow: options.highlightFocusRow === true,
+            highlightHoverRow: (options.highlightHoverRow ?? options.presentationDefaults?.highlightHoverRow) === true,
             cellMessage: options.cellMessage, declaredKeys, onDeclaredKey: options.onDeclaredKey,
-            stripeRows: options.stripeRows === true, pageSize: options.pageSize, rowKind: options.rowKind,
+            stripeRows: (options.stripeRows ?? options.presentationDefaults?.stripeRows) === true, pageSize: options.pageSize, rowKind: options.rowKind,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick, onLeave: options.onLeave,

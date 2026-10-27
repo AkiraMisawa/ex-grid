@@ -16,34 +16,49 @@ import { type ColumnType, hashesWhenOverflowing } from './overflow-rules';
  * {@link CellTextMetrics.otherWidthAllowance}, each erring toward an early `####`.
  */
 export type CellTextMetricsOptions =
-    | Uniform
-    | ThreeClasses
-    | FourClasses
-    | WithBold
-    | EveryClass;
+    | CellWidthsUniform
+    | CellWidthsThreeClasses
+    | CellWidthsFourClasses
+    | CellWidthsWithBold
+    | CellWidthsEveryClass;
 
-interface Uniform {
+/** The uniform form of {@link CellTextMetricsOptions}: every character is charged the digit. */
+export interface CellWidthsUniform {
+    /** A tabular digit's width, which every character is charged. */
     readonly digitWidthPx: number;
+    /** The cell's own horizontal padding, per side. */
     readonly cellHorizontalPaddingPx: number;
 }
 
-interface ThreeClasses extends Uniform {
+/** The three-class form of {@link CellTextMetricsOptions}. */
+export interface CellWidthsThreeClasses extends CellWidthsUniform {
+    /** What `%` costs: the widest glyph of the wide class. */
     readonly wideWidthPx: number;
+    /** The widest separator. */
     readonly narrowWidthPx: number;
 }
 
-interface FourClasses extends ThreeClasses {
+/** The four-class form of {@link CellTextMetricsOptions}. */
+export interface CellWidthsFourClasses extends CellWidthsThreeClasses {
+    /** A full-width character: the em. */
     readonly fullWidthPx: number;
 }
 
-interface WithBold extends FourClasses {
+/** The form of {@link CellTextMetricsOptions} with the bold widths (ADR-0050, item 15). */
+export interface CellWidthsWithBold extends CellWidthsFourClasses {
+    /** The wide class at the bold weight. */
     readonly boldWideWidthPx: number;
+    /** A tabular digit at the bold weight. */
     readonly boldDigitWidthPx: number;
+    /** The widest separator at the bold weight. */
     readonly boldNarrowWidthPx: number;
 }
 
-interface EveryClass extends WithBold {
+/** The form of {@link CellTextMetricsOptions} with every class (ticket 83). */
+export interface CellWidthsEveryClass extends CellWidthsWithBold {
+    /** The widest glyph outside the measured classes. */
     readonly otherWidthPx: number;
+    /** The other class at the bold weight. */
     readonly boldOtherWidthPx: number;
 }
 
@@ -59,7 +74,7 @@ const boldWidthAllowance = 1.04;
 const otherWidthAllowance = 2;
 
 /** Every width resolved: what the metrics hold, whichever form gave them. */
-type Widths = Readonly<Required<EveryClass>>;
+type Widths = Readonly<Required<CellWidthsEveryClass>>;
 
 // Every width, for comparing two metrics whole.
 const widthNames = [
@@ -221,8 +236,8 @@ export class CellTextMetrics {
     /** What `%` costs, and `€ − + #`, each measured past the digit on some platform. One `#` of an
      * overflowing cell is charged at it too, so the run fits the cell it stands in. */
     get wideWidthPx(): number { return this.#widths.wideWidthPx; }
-    /** What a tabular digit costs, and the glyphs measured at a digit's width or under in every face: `$ £ ¥
-     * ₹ ₺ ₫`, the exponent's `E`, the hyphen-minus, the apostrophes and spaces that group digits, and the
+    /** What a tabular digit costs, and the glyphs measured at a digit's width or under in every face:
+     * `$ £ ¥ ₹ ₺ ₫`, the exponent's `E`, the hyphen-minus, the apostrophes and spaces that group digits, and the
      * direction marks (ticket 83). */
     get digitWidthPx(): number { return this.#widths.digitWidthPx; }
     /** What the separators cost: `. , ( ) / :` and the space. */
