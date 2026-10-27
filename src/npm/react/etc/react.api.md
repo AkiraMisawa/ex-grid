@@ -4,9 +4,11 @@
 
 ```ts
 
+import type { CellEditorView } from '@ex-grid/core';
 import type { FilterPanelView } from '@ex-grid/core';
 import type { FindPanelView } from '@ex-grid/core';
 import { FocusEvent as FocusEvent_2 } from 'react';
+import type { GridCellEditorSlotContext } from '@ex-grid/core';
 import type { GridCellMessageSlotContext } from '@ex-grid/core';
 import type { GridColumn } from '@ex-grid/core';
 import type { GridColumnMenuSlotContext } from '@ex-grid/core';
@@ -26,6 +28,13 @@ import { ReactNode } from 'react';
 import { Ref } from 'react';
 
 // @public
+export interface CellEditorHandles {
+    readonly defaultValue: string;
+    readonly field: (control: HTMLInputElement | HTMLTextAreaElement | null) => void;
+    readonly view: CellEditorView;
+}
+
+// @public
 export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement;
 
 // @public
@@ -33,6 +42,7 @@ export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
 
 // @public
 export interface ExGridChrome<Row> {
+    readonly cellEditor?: (context: GridCellEditorSlotContext) => ReactNode;
     readonly cellMessage?: (context: GridCellMessageSlotContext) => ReactNode;
     readonly columnMenu?: (context: GridColumnMenuSlotContext) => ReactNode;
     readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
@@ -81,6 +91,9 @@ export function templateColumn<Row>(column: TemplateColumnOptions<Row>, render: 
 
 // @public
 export type TemplateColumnOptions<Row> = Omit<GridColumn<Row>, 'template' | 'actions'>;
+
+// @public
+export function useCellEditor(context: GridCellEditorSlotContext): CellEditorHandles;
 
 // @public
 export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanelHandles;
