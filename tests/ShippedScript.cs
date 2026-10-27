@@ -41,7 +41,10 @@ internal static class ShippedFiles
 
     /// <summary>The version the address of <paramref name="minified"/> carries.</summary>
     internal static string Version(string package, string minified)
-        => Hash(File.ReadAllText(Path.Combine(Repository, "src", package, "wwwroot", minified)))[..12];
+        => Hash(File.ReadAllText(PathOf(package, minified)))[..12];
+
+    /// <summary>Where <paramref name="minified"/> is served from in the checkout.</summary>
+    internal static string PathOf(string package, string minified) => Path.Combine(Repository, "src", package, "wwwroot", minified);
 
     /// <summary>The stamp of <paramref name="source"/>: the SHA-256 of the file as written.</summary>
     internal static string Stamp(string package, string source)

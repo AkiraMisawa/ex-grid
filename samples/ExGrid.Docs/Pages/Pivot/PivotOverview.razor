@@ -27,6 +27,29 @@
         <DocsExample Builtin="typeof(FirstPivot)" Mud="typeof(FirstPivotMud)" Files="@(["Examples/Pivot/Sales.cs"])" CodeOpen="true" />
     </DocsSection>
 
+    <DocsSection Title="A pivot drawn in the browser">
+        <p>
+            Blazor's ExPivot is moving onto the same TypeScript core as React's, as ExGrid is.
+            <code>ExPivot.Script.ExPivot</code> is that pivot, beside the one above while the move is under way: the
+            report, the PivotTable Fields pane and the Pivot Toolbar run in the browser on both hosting models, so on
+            Blazor Server a field dragged or a region collapsed no longer crosses the circuit. It takes the same
+            <code>PivotSource</code> and <code>PivotLayout</code>. Your source still answers in .NET: each question the
+            report asks crosses to it as PivotJson, it answers with the Leaf Aggregates, and the report and its totals
+            are built in the browser from them, as from a server. A source that says it changed is asked again.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCorePivot)" Files="@(["Examples/Pivot/Sales.cs"])" />
+        <p>
+            It carries <code>Layout</code>, <code>ShowFieldList</code>, the sizes, <code>Density</code>,
+            <code>Culture</code>, <code>Caps</code>, <code>RedrawInterval</code>, <code>ChangeHighlightDuration</code>
+            and <code>DetailsView</code>. Not carried yet: <code>Label</code>, the Chromes, <code>OnShowDetails</code>,
+            <code>SelectionChanged</code>, the Selection Summary's parameters, <code>OrderKeyPolicies</code>,
+            <code>Clock</code>, <code>Slicing</code>, <code>CellMetrics</code> and <code>ReportSource</code>; use the pivot above for those until they arrive. A field with an
+            <code>OrderKey</code>, a .NET function the browser cannot call, is refused by name; declare its order with
+            <code>ItemOrder</code> instead. The script it runs is bundled into the package, at an address that changes
+            with its content.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="The parts of a pivot">
         <p>
             These pages and the API name the parts of a pivot as the list under the figure does. A field stands in

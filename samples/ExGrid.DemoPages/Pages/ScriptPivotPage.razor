@@ -1,0 +1,56 @@
+@page "/script-pivot"
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+
+<DemoChromeAssets Name="builtin">
+    <Head>
+        <ExPivotStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<DemoNav />
+
+<h1>ExPivot over the Script Core</h1>
+
+<p>
+    The pivot below is <code>ExPivot.Script.ExPivot</code>: Blazor's Framework Adapter over
+    <code>@@ex-grid/pivot</code> (ADR-0370 section 1). The report, the PivotTable Fields pane and the
+    Pivot Toolbar are the Script Core's, in the browser, on both hosting models. The 2,000 trades stay in
+    .NET behind <code>PivotSource.From</code>, which answers each question the report asks with its Leaf
+    Aggregates, as PivotJson; the engine in the browser builds the report and its totals from them.
+</p>
+
+<div class="demo-toolbar">
+    <button id="script-pivot-reset" @onclick="Reset">Reset the layout</button>
+    <button id="script-pivot-revalue" @onclick="Revalue">Revalue the trades by +1%</button>
+</div>
+
+<p class="demo-status">
+    <span id="script-pivot-layout" role="status">Rows: @string.Join(", ", _layout.Rows.Select(row => row.Field))</span><br />
+    <span id="script-pivot-field-list" role="status">Field List shown: @_showFieldList</span>
+</p>
+
+<ExPivot.Script.ExPivot Source="_source"
+                        @bind-Layout="_layout"
+                        @bind-ShowFieldList="_showFieldList"
+                        ViewportHeight="420" />
+
+@code {
+    private PivotSource _source = PivotSource.From(DemoPivotData.Trades(), DemoPivotData.Fields);
+    // Held, and handed in again by Reset: the same layout the pivot started from replaces the user's changes.
+    private static readonly PivotLayout First = DemoPivotData.FirstLayout();
+    private PivotLayout _layout = First;
+    private bool _showFieldList = true;
+    private decimal _revaluation = 1m;
+
+    // A layout of the page's own making replaces the one on screen.
+    private void Reset() => _layout = First;
+
+    // A new source is a refresh: the report asks it again, and the values it changed are marked.
+    private void Revalue()
+    {
+        _revaluation *= 1.01m;
+        _source = PivotSource.From(DemoPivotData.Trades(_revaluation), DemoPivotData.Fields);
+    }
+}
