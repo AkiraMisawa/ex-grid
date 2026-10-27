@@ -16,6 +16,17 @@
    instance root, outside the scroll container (ADR-0017/0018). The ground defaults to
    system colours, so the bare grid follows the host's colour scheme and forced-colors
    settings (ADR-0027/0029). */
+/* The one rule outside an instance (ADR-0018's exception of 2026-10-27). A bundler that
+   lowers light-dark() for older browsers (Vite's default target, through lightningcss)
+   writes var(--lightningcss-light, A) var(--lightningcss-dark, B), and defines the two
+   only in rules it lowered that declare color-scheme. On a page whose bundled CSS
+   declares none, both stay undefined and every light-dark() colour here (the reference
+   colours, the Formula Bar's ground) is silently lost: a text falls back to the inherited
+   colour, a ground to none. This says light, as the
+   browser does when nothing is declared; it holds no colour and no theme, and :where()
+   gives it no specificity, so any declaration of the page's wins. The core declares no
+   color-scheme of its own (UX-8). */
+:where(html) { --lightningcss-light: initial; --lightningcss-dark: ; }
 .ex-grid {
     position: relative;
     font-family: var(--ex-font-family, system-ui, sans-serif);
