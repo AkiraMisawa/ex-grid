@@ -126,6 +126,13 @@
         <p>
             The DOM does not grow with the row count — a million rows paint the same few dozen elements as a hundred.
         </p>
+        <p>
+            ExGrid for React takes its rows from a source, so there the same million come through
+            <code>GridSource.fetch</code>, whose fetch answers a page of rows and the result's count, with the Row Key as
+            <code>rowKey</code> and the read-ahead as <code>readAheadRows</code>. The source itself drops an answer a newer
+            request overtook, and aborts the <code>AbortSignal</code> it handed that fetch so the call can stop early. This Example's server neither
+            sorts nor filters, so its columns say <code>queryable: false</code>, and the grid offers neither.
+        </p>
         <DocsExample Title="A million rows, made on demand" Builtin="typeof(MillionRows)" Mud="typeof(MillionRowsMud)"
                      Files="@(["Examples/Grid/MillionTrades.cs", "Examples/Data/Trade.cs"])">
             Press <kbd>Ctrl</kbd>+<kbd>End</kbd>, or drag the scrollbar to the bottom.
