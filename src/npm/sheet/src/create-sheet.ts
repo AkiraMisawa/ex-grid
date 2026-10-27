@@ -45,6 +45,37 @@ import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
 
+/**
+ * A Consumer's own action on the Sheet Toolbar (ADR-0100), a Toolbar Item like ExSheet's: it stands in a row of its own
+ * or among the formatting items, and while an edit is open it cannot be pressed. It carries a KeyTip only where one is
+ * given.
+ */
+export interface SheetToolbarButton {
+    /** Its name: the text it shows, its accessible name and its tooltip. */
+    readonly text: string;
+    /** What pressing it does. A press from the keys gives the keyboard back to the Sheet first, so what the press opens
+     * may take it. */
+    readonly onPress: () => void;
+    /** Its KeyTip letters among its row's items. */
+    readonly keyTip?: string | undefined;
+    /** Why it cannot be pressed now, shown in its tooltip; `undefined` where it can. */
+    readonly disabledReason?: string | undefined;
+}
+
+/** One element of a Toolbar Row: one of ExSheet's own items, named by its command and carrying Excel's KeyTip; a
+ * separator between groups; or the Consumer's own button. */
+export type SheetToolbarEntry = SheetToolbarCommand | 'separator' | SheetToolbarButton;
+
+/** A Toolbar Row of the Consumer's (ADR-0100): one band of the Sheet Toolbar, as tall as the Formula Bar. */
+export interface SheetToolbarRowOptions {
+    /** The row's accessible name. */
+    readonly label: string;
+    /** The row's KeyTip letters, as a ribbon tab's; a row without one is reached by Tab and the arrows only. */
+    readonly keyTip?: string | undefined;
+    /** What the row holds, in order. */
+    readonly items: readonly SheetToolbarEntry[];
+}
+
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
     /** The Workbook or Sheet to open; a new Workbook of one empty Sheet unless given. A new document object opens
@@ -71,6 +102,14 @@ export interface SheetOptions {
     /** Shows the Sheet Toolbar above the Formula Bar (ADR-0100): Excel's Home tab formatting commands, acting on this
      * Sheet's Selection. Off unless `true`. Its band, a row as tall as the Formula Bar, comes off `viewportHeight`. */
     readonly showToolbar?: boolean;
+    /**
+     * The Sheet Toolbar's rows, top to bottom (ADR-0100). `'default'` is ExSheet's own row, Excel's Home tab's commands,
+     * whose KeyTip is H; a row of the Consumer's holds ExSheet's items by their commands, separators and the Consumer's
+     * own buttons, in the order given. Without it the toolbar is the default row alone. Every row is as tall as the
+     * Formula Bar and comes off `viewportHeight`; what a row holds is fitted to it and clipped. KeyTips that would be
+     * taken for one another at one level, two rows' or two items' of one row, are refused.
+     */
+    readonly toolbar?: readonly (SheetToolbarRowOptions | 'default')[] | undefined;
     /**
      * Hears the other value of `showToolbar` when the user asks to hide or show the Sheet Toolbar with Ctrl+F1, Excel's
      * key for the ribbon (ADR-0100). The Sheet holds nothing: whether the toolbar is shown is View State, the
@@ -907,8 +946,10 @@ class SheetView {
         }
     };
 
-    // The grid tells only a change, so each call is one the Consumer hears.
+    // The grid tells only a change, so each call is one the Consumer hears. An edit the destroyed grid discards is not
+    // told: the Sheet is gone, and a handler that asked it anything would be refused.
     readonly #onEditingChanged = (open: boolean): void => {
+        if (this.#destroyed) return;
         this.#editing = open;
         this.#paintToolbar();
         this.#options.onEditingChanged?.(open);
@@ -1003,7 +1044,7 @@ class SheetView {
         const height = options.viewportHeight;
         if (typeof height !== 'number') return height;
         const tabs = SheetView.#tabsHeightOf(options);
-        const toolbar = options.showToolbar === true ? SheetToolbar.heightPx(toolbarRowCount, SheetView.#bandRowPxOf(options)) : 0;
+        const toolbar = options.showToolbar === true ? SheetToolbar.heightPx(toolbarRowsOf(options).length, SheetView.#bandRowPxOf(options)) : 0;
         if (height <= tabs + toolbar) {
             const bands = [
                 ...(toolbar > 0 ? [`its Sheet Toolbar's ${String(toolbar)}px band (ADR-0100)`] : []),
@@ -1019,12 +1060,12 @@ class SheetView {
     #paintToolbar(): void {
         if (this.#options.showToolbar !== true) return;
         const rows = this.#toolbarRows();
-        if (rows.length !== toolbarRowCount) throw new Error(`Internal: the Toolbar draws ${String(rows.length)} rows, and its band is laid out for ${String(toolbarRowCount)}.`);
         this.#toolbar.paint({ name: this.#words.toolbarName, rowHeightPx: this.#bandRowPx, rows });
     }
 
-    // The default row, Excel's Home tab's commands in its order (ADR-0100), each item's state the Focus cell's as the
-    // grid holds it now. While an edit is open every item is unavailable, and says why.
+    // The rows the options give, the default one Excel's Home tab's commands in its order (ADR-0100), each item's state
+    // the Focus cell's as the grid holds it now. While an edit is open every item is unavailable, the Consumer's
+    // included, and says why.
     #toolbarRows(): SheetToolbarPaint['rows'] {
         const focus = this.#grid?.readView().selection.focus;
         const format = focus === undefined ? undefined : this.#source.sheet.getCellFormat(new CellAddress(focus.row, focus.column));
@@ -1055,57 +1096,74 @@ class SheetView {
         const fontColour = this.#faceFontColour;
         const fill = this.#faceFill;
         const border = this.#faceBorder;
-        return [{
-            label: words.toolbarHomeRow,
-            keyTip: 'H',
-            items: [
-                item('bold', 'bold', key('bold'), { pressed: format?.font.bold === true, shortcut: 'Ctrl+B' }),
-                item('italic', 'italic', key('italic'), { pressed: format?.font.italic === true, shortcut: 'Ctrl+I' }),
-                item('underline', 'underline', key('underline'), { pressed: format?.font.underline === true, shortcut: 'Ctrl+U' }),
-                item('strikethrough', 'strikethrough', key('strikethrough'), { pressed: format?.font.strikethrough === true, shortcut: 'Ctrl+5' }),
-                'separator',
-                item('fontColour', 'fontColour', () => new CellFormatChange({ fontColour }), {
-                    swatch: fontColour,
-                    list: () => this.#colourChoices(words.toolbarAutomatic,
-                        format === undefined || format.font.colour.isAutomatic ? undefined : format.font.colour,
-                        chosen => {
-                            // Taking the colour away is not kept: the face goes on setting the last colour chosen.
-                            if (!chosen.isAutomatic) this.#faceFontColour = chosen;
-                            return new CellFormatChange({ fontColour: chosen });
-                        }),
-                }),
-                item('fill', 'fill', () => new CellFormatChange({ fill: CellFill.solid(fill) }), {
-                    swatch: fill,
-                    list: () => this.#colourChoices(words.toolbarNoFill, format?.fill.colour, chosen => {
-                        if (chosen.isAutomatic) return new CellFormatChange({ fill: CellFill.none });
-                        this.#faceFill = chosen;
-                        return new CellFormatChange({ fill: CellFill.solid(chosen) });
+        const commands: Readonly<Record<SheetToolbarCommand, SheetToolbarItem>> = {
+            bold: item('bold', 'bold', key('bold'), { pressed: format?.font.bold === true, shortcut: 'Ctrl+B' }),
+            italic: item('italic', 'italic', key('italic'), { pressed: format?.font.italic === true, shortcut: 'Ctrl+I' }),
+            underline: item('underline', 'underline', key('underline'), { pressed: format?.font.underline === true, shortcut: 'Ctrl+U' }),
+            strikethrough: item('strikethrough', 'strikethrough', key('strikethrough'), { pressed: format?.font.strikethrough === true, shortcut: 'Ctrl+5' }),
+            fontColour: item('fontColour', 'fontColour', () => new CellFormatChange({ fontColour }), {
+                swatch: fontColour,
+                list: () => this.#colourChoices(words.toolbarAutomatic,
+                    format === undefined || format.font.colour.isAutomatic ? undefined : format.font.colour,
+                    chosen => {
+                        // Taking the colour away is not kept: the face goes on setting the last colour chosen.
+                        if (!chosen.isAutomatic) this.#faceFontColour = chosen;
+                        return new CellFormatChange({ fontColour: chosen });
                     }),
+            }),
+            fill: item('fill', 'fill', () => new CellFormatChange({ fill: CellFill.solid(fill) }), {
+                swatch: fill,
+                list: () => this.#colourChoices(words.toolbarNoFill, format?.fill.colour, chosen => {
+                    if (chosen.isAutomatic) return new CellFormatChange({ fill: CellFill.none });
+                    this.#faceFill = chosen;
+                    return new CellFormatChange({ fill: CellFill.solid(chosen) });
                 }),
-                'separator',
-                item('borders', 'borders', () => new CellFormatChange({ borders: borderPresets[border] }), {
-                    list: () => toolbarBorders.map(preset => this.#choice(words.toolbarBorder(preset), () => {
-                        this.#faceBorder = preset;
-                        this.#formatFromFocus(() => new CellFormatChange({ borders: borderPresets[preset] }), widensAsAHomeTabButtonDoes);
-                    })),
+            }),
+            borders: item('borders', 'borders', () => new CellFormatChange({ borders: borderPresets[border] }), {
+                list: () => toolbarBorders.map(preset => this.#choice(words.toolbarBorder(preset), () => {
+                    this.#faceBorder = preset;
+                    this.#formatFromFocus(() => new CellFormatChange({ borders: borderPresets[preset] }), widensAsAHomeTabButtonDoes);
+                })),
+            }),
+            alignLeft: item('alignLeft', 'alignLeft', align('left'), { pressed: format?.alignment === 'left' }),
+            alignCenter: item('alignCenter', 'alignCenter', align('center'), { pressed: format?.alignment === 'center' }),
+            alignRight: item('alignRight', 'alignRight', align('right'), { pressed: format?.alignment === 'right' }),
+            numberFormat: item('numberFormat', undefined, undefined, {
+                text: words.categoryName(shown),
+                list: () => this.#numberFormatChoices(shown),
+            }),
+            percent: item('percent', 'percent', key('percent'), { shortcut: 'Ctrl+Shift+%' }),
+            // Excel's Comma Style pads with `*`, as Accounting does, which ExSheet does not read: shown, and disabled
+            // with the reason, rather than set as something else under Excel's name.
+            comma: item('comma', 'comma', undefined, { disabledReason: words.commaStyleUnread }),
+            formatCells: item('formatCells', 'formatCells', 'formatCells', { shortcut: 'Ctrl+1' }),
+        };
+        return toolbarRowsOf(this.#options).map((row, r) => {
+            const { label, keyTip, items }: SheetToolbarRowOptions = row === 'default' ? { label: words.toolbarHomeRow, keyTip: 'H', items: defaultToolbarRow } : row;
+            return {
+                label,
+                keyTip: keyTip?.toUpperCase(),
+                // Each item's key is its place, so the item the keyboard is on stays named while the rows stay as they are.
+                items: items.map((entry, i): SheetToolbarItem | 'separator' => {
+                    if (entry === 'separator') return entry;
+                    if (typeof entry === 'string') return { ...commands[entry], key: `${String(r)}-${entry}` };
+                    return this.#consumerItem(entry, `${String(r)}-${String(i)}`);
                 }),
-                'separator',
-                item('alignLeft', 'alignLeft', align('left'), { pressed: format?.alignment === 'left' }),
-                item('alignCenter', 'alignCenter', align('center'), { pressed: format?.alignment === 'center' }),
-                item('alignRight', 'alignRight', align('right'), { pressed: format?.alignment === 'right' }),
-                'separator',
-                item('numberFormat', undefined, undefined, {
-                    text: words.categoryName(shown),
-                    list: () => this.#numberFormatChoices(shown),
-                }),
-                item('percent', 'percent', key('percent'), { shortcut: 'Ctrl+Shift+%' }),
-                // Excel's Comma Style pads with `*`, as Accounting does, which ExSheet does not read: shown, and disabled
-                // with the reason, rather than set as something else under Excel's name.
-                item('comma', 'comma', undefined, { disabledReason: words.commaStyleUnread }),
-                'separator',
-                item('formatCells', 'formatCells', 'formatCells', { shortcut: 'Ctrl+1' }),
-            ],
-        }];
+            };
+        });
+    }
+
+    // A Consumer's own button (ADR-0100): pressed as ExSheet's items are, and unavailable while an edit is open.
+    #consumerItem(button: SheetToolbarButton, key: string): SheetToolbarItem {
+        const onPress = button.onPress;
+        return {
+            key, kind: 'button', name: button.text, tooltip: button.text, icon: undefined, text: button.text, swatch: undefined,
+            moreName: undefined, pressed: false,
+            disabledReason: this.#editing ? this.#words.toolbarWhileEditing : button.disabledReason,
+            press: () => { onPress(); },
+            open: undefined,
+            keyTip: button.keyTip?.toUpperCase(),
+        };
     }
 
     #categoryOf(format: NumberFormat, culture: Culture): NumberFormatCategory {
@@ -1763,6 +1821,7 @@ class SheetView {
         if (today !== undefined && !isSheetDay(today)) throw new RangeError("A Sheet Day is a calendar day from 1900 to 9999: { year, month, day }.");
         // The day is taken as it is now: one the Consumer changes in place afterwards is a new day only when handed over again.
         const taken = today === undefined ? options : { ...options, today: { year: today.year, month: today.month, day: today.day } };
+        checkToolbar(options.toolbar);
         const handlers: readonly (readonly [string, unknown])[] = [
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
@@ -1812,8 +1871,80 @@ const borderPresets: Readonly<Record<SheetToolbarBorder, BorderChange>> = {
 const align = (alignment: HorizontalAlignment) => (focused: CellFormat): CellFormatChange =>
     new CellFormatChange({ alignment: focused.alignment === alignment ? 'general' : alignment });
 
-// The Toolbar's rows: Excel's Home tab, one row. The grid's height is laid out from it without drawing the rows.
-const toolbarRowCount = 1;
+// The default row: Excel's Home tab's commands in its order (ADR-0100).
+const defaultToolbarRow: readonly (SheetToolbarCommand | 'separator')[] = [
+    'bold', 'italic', 'underline', 'strikethrough', 'separator', 'fontColour', 'fill', 'separator', 'borders', 'separator',
+    'alignLeft', 'alignCenter', 'alignRight', 'separator', 'numberFormat', 'percent', 'comma', 'separator', 'formatCells',
+];
+
+// The Toolbar's rows as the options give them. The grid's height is laid out from their count without drawing them.
+const toolbarRowsOf = (options: SheetOptions): readonly (SheetToolbarRowOptions | 'default')[] => options.toolbar ?? ['default'];
+
+// The Toolbar's rows as an untyped caller may hand them (CONVENTIONS.md): refused by what is wrong, before anything changes.
+function checkToolbar(given: unknown): void {
+    if (given === undefined) return;
+    if (!Array.isArray(given) || given.length === 0) throw new TypeError("A Sheet Toolbar's rows are a list of one row or more; a toolbar of none is not shown: leave showToolbar off.");
+    const rows: readonly unknown[] = given;
+    if (rows.filter(row => row === 'default').length > 1) throw new RangeError("ExSheet's default row stands once on a toolbar (ADR-0100).");
+    for (const row of rows) {
+        if (row === 'default') continue;
+        if (typeof row !== 'object' || row === null) throw new TypeError("A Toolbar Row is 'default' or { label, keyTip?, items }.");
+        const { label, keyTip, items }: { readonly label?: unknown; readonly keyTip?: unknown; readonly items?: unknown } = row;
+        if (typeof label !== 'string') throw new TypeError("A Toolbar Row's label, its accessible name, is a string.");
+        checkKeyTip(keyTip, `the Toolbar Row '${label}'`);
+        if (!Array.isArray(items)) throw new TypeError(`The items of the Toolbar Row '${label}' are a list.`);
+        const entries: readonly unknown[] = items;
+        for (const entry of entries) {
+            if (entry === 'separator') continue;
+            if (typeof entry === 'string') {
+                if (!Object.hasOwn(toolbarKeyTips, entry)) throw new RangeError(`'${entry}' is not one of ExSheet's toolbar commands: ${Object.keys(toolbarKeyTips).join(', ')}.`);
+                continue;
+            }
+            if (typeof entry !== 'object' || entry === null) throw new TypeError("A Toolbar Row's item is one of ExSheet's commands, 'separator', or a button { text, onPress, keyTip?, disabledReason? }.");
+            const { text, onPress, keyTip: letters, disabledReason }: { readonly text?: unknown; readonly onPress?: unknown; readonly keyTip?: unknown; readonly disabledReason?: unknown } = entry;
+            if (typeof text !== 'string' || text === '') throw new TypeError("A toolbar button's text, its name, is a string that is not empty.");
+            if (typeof onPress !== 'function') throw new TypeError(`The toolbar button '${text}' has an onPress, which is a function.`);
+            checkKeyTip(letters, `the button '${text}'`);
+            if (disabledReason !== undefined && typeof disabledReason !== 'string') throw new TypeError(`The disabledReason of the toolbar button '${text}' is a string, or undefined where it can be pressed.`);
+        }
+    }
+    refuseCollidingKeyTips(given);
+}
+
+// The KeyTips of one level, refused where one begins another.
+function refuseCollidingAtOneLevel(tips: readonly { readonly letters: string; readonly name: string }[]): void {
+    tips.forEach((tip, i) => {
+        for (const other of tips.slice(0, i)) {
+            if (tip.letters.startsWith(other.letters) || other.letters.startsWith(tip.letters)) {
+                throw new RangeError(`The KeyTips '${other.letters}' of ${other.name} and '${tip.letters}' of ${tip.name} collide at one level: typed, one would be taken for the other. Give one of them other letters (ADR-0100).`);
+            }
+        }
+    });
+}
+
+// KeyTip letters are typed: letters or digits, one or more, read without case.
+function checkKeyTip(letters: unknown, name: string): void {
+    if (letters !== undefined && (typeof letters !== 'string' || !/^[\p{L}\p{N}]+$/u.test(letters))) {
+        throw new TypeError(`The KeyTip of ${name} is letters or digits that can be typed, such as 'R'.`);
+    }
+}
+
+// The KeyTip letters of a toolbar's rows, and of each row's items, which may not be taken for one another at one level
+// (ADR-0100): one that begins another would be typed as it. Refused by name.
+function refuseCollidingKeyTips(rows: readonly (SheetToolbarRowOptions | 'default')[]): void {
+    refuseCollidingAtOneLevel(rows.flatMap(row => {
+        if (row === 'default') return [{ letters: 'H', name: "ExSheet's default row" }];
+        return row.keyTip === undefined ? [] : [{ letters: row.keyTip.toUpperCase(), name: `the Toolbar Row '${row.label}'` }];
+    }));
+    for (const row of rows) {
+        if (row === 'default') continue;
+        refuseCollidingAtOneLevel(row.items.flatMap(item => {
+            if (item === 'separator') return [];
+            if (typeof item === 'string') return [{ letters: toolbarKeyTips[item], name: `the item '${item}'` }];
+            return item.keyTip === undefined ? [] : [{ letters: item.keyTip.toUpperCase(), name: `the button '${item.text}'` }];
+        }));
+    }
+}
 
 // The Name Box names the Focus as A1 does (ADR-0051).
 const nameBoxLabel = (focus: CellPosition): string => new CellAddress(focus.row, focus.column).toString();
