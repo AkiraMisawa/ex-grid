@@ -119,6 +119,8 @@ class GridStandIn {
                 return true;
             },
             readView: () => { throw new Error('The pivot reads no view.'); },
+            writePointedText: () => { throw new Error('The pivot writes no pointed text.'); },
+            takeBackPointedText: () => { throw new Error('The pivot takes back no pointed text.'); },
             showViewWith: () => { throw new Error('The pivot shows no view.'); },
             focus: () => { throw new Error('The pivot focuses no grid.'); },
             keyName: () => { throw new Error('The pivot names no key.'); },

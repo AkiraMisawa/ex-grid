@@ -44,7 +44,7 @@ import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes
 import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
-import { linkedColumnsOf, sameLinkedColumns, sheetReferences } from './sheet-formula-aids';
+import { linkedColumnsOf, sameLinkedColumns, sheetCycleReference, sheetPointAt, sheetReferences, sheetReferenceText } from './sheet-formula-aids';
 import type { LinkedColumnColour } from './pointing-scope';
 
 /**
@@ -678,6 +678,10 @@ class SheetView {
             // no other Sheet is shown, so they are the shown Sheet's.
             referencesIn: this.#referencesIn,
             onReferenceKeyColoursChanged: this.#onKeyColoursChanged,
+            // Point: the arrows and a press write a Reference where one can go, and F4 cycles its forms (ADR-0051).
+            pointAt: sheetPointAt,
+            referenceText: sheetReferenceText,
+            cycleReference: sheetCycleReference,
             onRefused: this.#onRefused,
             onEditDiscarded: this.#onEditDiscarded,
             onOverwriteNotice: this.#onOverwriteNotice,

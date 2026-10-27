@@ -46,7 +46,7 @@ import { matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type 
 import { columnHeaderId, findHeaders, groupHeaderId, matchingHeaders, sameHeaders, type FindHeader } from '../finding/header-find';
 import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-walk';
 import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '../finding/replace';
-import { defined, itemAt } from '../must';
+import { defined, elementAt, itemAt, unreachable } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
 import { canonicalKey, declareKeys, errorStepOf, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
 import type { GridErrorStepRequest } from '../cells/grid-ruleset';
@@ -96,7 +96,7 @@ import {
     resolveColumns, type GridAction, type GridActionEvent, type GridColumn, type GridTemplate, type GridTemplateCell, type ResolvedColumn,
 } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
-import { selectionLayers, type FillPaint, type LayerPiece } from './selection-layers';
+import { selectionLayers, type FillPaint, type LayerPiece, type PointPaint } from './selection-layers';
 import { handle as paintedHandle, handleCell, handleCentrePx, type ReadableEdge } from '../paint/selection-styles';
 import { SummaryMenu, toggledFigures } from './summary-menu';
 import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
@@ -107,6 +107,8 @@ import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
 import { ConsumerPopoverFrame, type GridPopoverContext } from './consumer-popover';
+import { checkedRewrite, pointOptions, pointStep, type GridEditorRewrite, type GridPointState, type PointOptions } from './point-mode';
+import { replaceSpan } from '../cells/editor-text';
 import { ReferenceOutlines, referenceOutlineOptions, withinExtent, type GridOutlinedColumn, type ReferenceOutlineOptions } from './reference-outlines';
 import type { GridEditorReference, ReferenceColouring, ReferenceKeyColour } from '../cells/reference-colouring';
 
@@ -536,6 +538,34 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * earlier. None, and nothing is outlined.
      */
     readonly outlinedColumns?: readonly GridOutlinedColumn[];
+    /**
+     * Whether, in this text with the caret here, a Reference can go at the caret (ADR-0051): after `=`, an operator,
+     * `(` or `,` in a Formula. Asked synchronously on the editor's text and caret as each key or press finds them,
+     * never on an earlier answer, so a fast typist is never pointed where the text no longer allows it. While it
+     * answers true in Overwrite, an arrow points instead of committing (`=` ↓ ↓ writes the Reference two rows down),
+     * Home points at the row's first column, End commits nothing and writes nothing (ADR-0058), and a press on a cell
+     * points in any editing state. Where it answers false, Overwrite and Caret keep the meanings ADR-0012 gives the
+     * arrows. Needs `referenceText`. None, and nothing is pointed.
+     */
+    readonly pointAt?: (text: string, caret: number) => boolean;
+    /** The Reference text for a pointed range, written at the caret while pointing (ADR-0051): `A3`, `B7:C9` on a
+     * Sheet. The grid knows positions; what they are called is the Consumer's. Required with `pointAt`. */
+    readonly referenceText?: (range: SelectionRange) => string;
+    /**
+     * What F4 makes of the editor's text (ADR-0051): on a Sheet, the Reference at the caret cycled through its forms,
+     * `=B2` → `=$B$2` → `=B$2` → `=$B2` → `=B2`. Asked with the text and the selection in the surface typed in, it
+     * answers the whole new text and the selection in it, or nothing to change. The answer is written to both editor
+     * surfaces, and its selection placed as a selection where the key found one or a caret before the text's end, and
+     * as a caret at the selection's end where the caret stood at the text's end. While pointing it is asked over the
+     * whole Reference the outline wrote, so both ends of a pointed range cycle together, and pointing goes on over the
+     * rewritten Reference. Given, F4 is taken while an edit is open, and only then.
+     */
+    readonly cycleReference?: (text: string, start: number, end: number) => GridEditorRewrite | undefined;
+    /** Hears where the open edit stands with respect to Point (ADR-0058), when that changes and never when it does not,
+     * as the key, the typing or the press that changed it is answered, and `'none'` when the edit ends. A Consumer that
+     * points from other instances on the page declares them pointed at while it is not `'none'`. Never heard where
+     * `pointAt` is not given. */
+    readonly onPointStateChanged?: (state: GridPointState) => void;
     /** Hears a change of figures made on the status line (ADR-0130): given, a right-click there opens Excel's menu
      * of the six figures, each ticked while shown, and a press on one reports the figures with it ticked or
      * unticked, in Excel's order. The grid holds no choice: the figures stay as `summaryFigures` says until the
@@ -803,6 +833,7 @@ interface Taken<Row> {
     readonly onSummaryFiguresChanged: ((figures: readonly SummaryFigure[]) => void) | undefined;
     readonly formulaBar: FormulaBarDeclarations<Row>;
     readonly referenceOutlines: ReferenceOutlineOptions;
+    readonly point: PointOptions;
 }
 
 // The popover standing (ADR-0039, ADR-0040): its element and the commands it shows, and where it stands. The
@@ -960,8 +991,9 @@ interface OpenEdit<Row> {
     /** Where the editor stands: the cell it opened on, followed through an order move where a Row Key is in
      * force (ADR-0011's note of 2026-10-07). */
     cell: CellPosition;
-    /** Overwrite, Excel's Enter mode, where the arrows commit and move; or Caret, where they are the field's. */
-    mode: 'overwrite' | 'caret';
+    /** Overwrite, Excel's Enter mode, where the arrows commit and move; Caret, where they are the field's; or Point,
+     * where they move the pointing outline (ADR-0051). */
+    mode: 'overwrite' | 'caret' | 'point';
     readonly element: HTMLInputElement;
     /** The source, the columns and the Row Sequence Version it opened under. */
     readonly source: GridSource<Row>;
@@ -984,6 +1016,18 @@ interface OpenEdit<Row> {
     error: string | undefined;
     /** Where the text is typed: the Cell Editor over the cell, or the Formula Bar, its second surface (ADR-0051). */
     surface: 'cell' | 'bar';
+}
+
+/** An open edit's Point as it stood before a write from outside: what taking the write back returns it to. */
+interface PointBefore {
+    readonly text: string;
+    readonly caret: number;
+    readonly mode: 'overwrite' | 'caret' | 'point';
+    readonly pointer: Selection | undefined;
+    readonly start: number;
+    readonly length: number;
+    readonly written: string | undefined;
+    readonly fromOutside: boolean;
 }
 
 /** A commit whose answer is out (ADR-0380 section 3): a verdict, or the Consumer's to an intent, answered as a
@@ -1551,6 +1595,21 @@ export class GridView<Row> {
     // The Reference Outline options (ADR-0057), and the colouring, columns and key colours they make.
     #referenceOptions: ReferenceOutlineOptions = { referencesIn: undefined, onReferenceKeyColoursChanged: undefined, outlinedColumns: undefined };
     readonly #referenceOutlines = new ReferenceOutlines();
+    // Point (ADR-0051): the options, and the pointing outline as a Focus and an Extent of its own, a one-range
+    // selection moved by the transitions the Selection's own use; the span of the text its Reference occupies, and
+    // the text as the core last wrote it. Pointing stands only while the editor's text is still that text and its
+    // caret stands after it: anything typed ends it, as a caret moved does.
+    #point: PointOptions = { pointAt: undefined, referenceText: undefined, cycleReference: undefined, onPointStateChanged: undefined };
+    #pointer: Selection | undefined;
+    #pointStart = 0;
+    #pointLength = 0;
+    #pointWritten: string | undefined;
+    #pointDragging = false;
+    // Whether what Point wrote was handed in from outside (ADR-0058): no outline stands over this grid's cells for
+    // it, and F4 and the arrows change nothing while it stands. With it, the edit as it was before that write.
+    #pointedFromOutside = false;
+    #pointBefore: PointBefore | undefined;
+    #pointStateTold: GridPointState = 'none';
     #shadeHolds = false;
 
     // The Settled Mark (ADR-0220).
@@ -1672,6 +1731,9 @@ export class GridView<Row> {
             textTyped: this.#onBarTyped, textFocused: this.#onBarFocused, nameBoxEntered: this.#onNameBoxEntered, nameBoxLeft: this.#onNameBoxLeft,
             nameBoxFocused: this.#onNameBoxFocused,
         });
+        // A caret moved in the bar's text, as in the editor's (ADR-0051).
+        this.#bar.text.addEventListener('keyup', this.#onEditorCaret);
+        this.#bar.text.addEventListener('mouseup', this.#onEditorCaret);
         this.#spacer.append(this.#header, this.#viewport);
         this.#scroller.append(this.#spacer);
         const announce = element('div', { class: 'ex-announce', role: 'status' });
@@ -1889,6 +1951,8 @@ export class GridView<Row> {
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
         this.#edit = undefined;
         this.#tellEditing();
+        this.#endPointing();
+        this.#tellPointState();
         // The keys go with the edit: a Consumer outlining a table's column for them hears that none is read (ADR-0057).
         this.#referenceOutlines.tellKeys(this.#colouring(), this.#referenceOptions.onReferenceKeyColoursChanged);
         // A Chrome slot's contents are taken away with the grid, as a Template cell's are.
@@ -2188,6 +2252,7 @@ export class GridView<Row> {
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
             rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
             dataEdge: options.dataEdge, ...summary, referenceOutlines: referenceOutlineOptions(options),
+            point: pointOptions(options),
         };
     }
 
@@ -2467,6 +2532,7 @@ export class GridView<Row> {
         this.#onSelectionSummaryChanged = taken.onSelectionSummaryChanged;
         this.#onSummaryFiguresChanged = taken.onSummaryFiguresChanged;
         this.#referenceOptions = taken.referenceOutlines;
+        this.#point = taken.point;
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -3558,6 +3624,12 @@ export class GridView<Row> {
             return;
         }
         this.#answered += 1;
+        // A press on a cell while editing may point, and then commits nothing: the keyboard stays in the editor
+        // (ADR-0051).
+        if (this.#pointPress(event, at)) {
+            event.preventDefault();
+            return;
+        }
         // A press past an open editor commits it, as Excel's click-away does; a Reject or a refusal holds it,
         // and the press keeps no meaning of its own: the keyboard stays in the editor (ADR-0034).
         if (!this.#commitEdit()) {
@@ -3596,6 +3668,10 @@ export class GridView<Row> {
         if (event.target !== this.#viewport) return;
         const at = this.#cellUnder(event);
         if (at === undefined) return;
+        if (this.#pointDragging) {
+            this.#pointDrag(at);
+            return;
+        }
         if (this.#handleDrag !== undefined ? this.#moveHandlePointer(at) : this.#apply(this.#held.selection.extendTo(at, this.#extent))) this.#invalidate();
         const y = this.#viewportYOf(event);
         if (y !== undefined) this.#updateEdgeBand(event.offsetX - this.#scrollLeftPx, y);
@@ -3895,6 +3971,9 @@ export class GridView<Row> {
         // press back into the cell types there again.
         element.addEventListener('input', this.#onEditorTyped);
         element.addEventListener('focus', this.#onEditorFocused);
+        // A caret moved by the field's own keys or a press inside its text (ADR-0051).
+        element.addEventListener('keyup', this.#onEditorCaret);
+        element.addEventListener('mouseup', this.#onEditorCaret);
         const rowKey = this.#source.rowKey;
         const held = defined(this.#rowAt(at.row), 'the row an edit opens on');
         this.#edit = {
@@ -3916,6 +3995,7 @@ export class GridView<Row> {
         this.#invalidate();
         // Its References are asked of the opening text now, where an answer refused is refused (ADR-0057).
         this.#colouring();
+        this.#tellPointState();
     }
 
     // Raises the key when it is declared (ADR-0050, item 14), and answers whether it was: the key then means nothing
@@ -3937,7 +4017,21 @@ export class GridView<Row> {
     // they do with no edit open: Enter and Tab cycle, and Overwrite's arrows move or extend (ED-2).
     #onEditorKey(event: KeyboardEvent, press: KeyPress, edit: OpenEdit<Row>): void {
         const canonical = canonicalKey(press);
-        if (!editingKeysByMode[edit.mode === 'caret' ? 'editing' : 'overwrite'].includes(canonical)) return;
+        // A caret the field moved since Point wrote ends pointing before the key is decided (ADR-0051).
+        this.#settlePointCaret(edit);
+        // F4 is taken while an edit is open where the Consumer rewrites References, and only then (ADR-0051).
+        if (canonical === 'F4' && this.#point.cycleReference !== undefined) {
+            this.#taken(event);
+            this.#cycleReferenceKey(edit, this.#point.cycleReference);
+            return;
+        }
+        const keys = edit.mode === 'caret' ? 'editing' : edit.mode === 'overwrite' ? 'overwrite' : this.#pointedFromOutside ? 'pointed' : 'point';
+        if (!editingKeysByMode[keys].includes(canonical)) return;
+        if (this.#pointKey(canonical, edit)) {
+            this.#taken(event);
+            this.#invalidate();
+            return;
+        }
         this.#taken(event);
         switch (canonical) {
             case 'Escape':
@@ -3945,7 +4039,7 @@ export class GridView<Row> {
                 this.#endEdit(undefined);
                 return;
             case 'F2':
-                edit.mode = edit.mode === 'caret' ? 'overwrite' : 'caret';
+                this.#f2(edit);
                 return;
             case 'Control+Enter':
                 this.#commitFill(edit);
@@ -4652,6 +4746,8 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit === undefined) return;
         this.#edit = undefined;
+        if (this.#endPointing()) this.#setDragging(false);
+        this.#tellPointState();
         // An editor taken away under its verdict's answer, its rows or columns gone (ADR-0011): nothing is to be
         // written, the answer is not taken, and the inputs held behind it are taken once the end has been told, the
         // gesture with them, as a discard at once lets it keep its meaning.
@@ -4673,6 +4769,311 @@ export class GridView<Row> {
         if (endedIn !== undefined) endedIn();
         if (discarded !== undefined) this.#onEditDiscarded?.(discarded);
         this.#tellEditing();
+    }
+
+
+    // ---- Point (ADR-0051) -------------------------------------------------------------------------------------
+
+    // The caret in the surface the edit is typed in, or -1 where the field holds none.
+    #caretOf(edit: OpenEdit<Row>): number {
+        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
+        return surface.selectionStart ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0051: a caret not known is never guessed at, and -1 points nowhere
+    }
+
+    // Writes the edit's text into both surfaces and places the selection in the one typed in (ADR-0051): no input
+    // event is fired, so it is not typing.
+    #writeEditText(edit: OpenEdit<Row>, text: string, start: number, end: number): void {
+        edit.element.value = text;
+        if (this.#formulaBarDeclared.shown) this.#bar.text.value = text;
+        (edit.surface === 'bar' ? this.#bar.text : edit.element).setSelectionRange(start, end);
+    }
+
+    // Whether what Point wrote stands, its outline over this grid's cells or text written from outside, the
+    // editor's text is still the text it was written into, and the caret still stands after it.
+    #pointingContinues(edit: OpenEdit<Row>): boolean {
+        return (this.#pointer !== undefined || this.#pointedFromOutside) && edit.element.value === this.#pointWritten
+            && this.#caretOf(edit) === this.#pointStart + this.#pointLength;
+    }
+
+    // The outline goes; the text written stays. Whether anything stood.
+    #endPointing(): boolean {
+        const stood = this.#pointer !== undefined || this.#pointedFromOutside || this.#pointWritten !== undefined;
+        this.#pointer = undefined;
+        this.#pointWritten = undefined;
+        this.#pointDragging = false;
+        this.#pointedFromOutside = false;
+        this.#pointBefore = undefined;
+        return stood;
+    }
+
+    // Typing ends pointing: the outline goes, and Point gives way to Overwrite, whose arrows point again wherever
+    // the Consumer says a Reference can go, or to Caret in the Formula Bar, which is never in Overwrite (ADR-0051,
+    // 2026-09-30; ED-29).
+    #typed(edit: OpenEdit<Row>): void {
+        const stood = this.#endPointing();
+        if (edit.mode === 'point') edit.mode = edit.surface === 'bar' ? 'caret' : 'overwrite';
+        if (stood) this.#invalidate();
+        this.#tellPointState();
+    }
+
+    // A caret moved away from what Point wrote ends pointing, as typing ends it, and the edit is in Caret: the user
+    // has taken the caret into the text (ADR-0051's third round).
+    #settlePointCaret(edit: OpenEdit<Row>): void {
+        if (this.#pointWritten === undefined || this.#pointingContinues(edit)) return;
+        if (edit.element.value !== this.#pointWritten) {
+            this.#typed(edit);
+            return;
+        }
+        this.#endPointing();
+        if (edit.mode === 'point') edit.mode = 'caret';
+        this.#invalidate();
+    }
+
+    // The field's own keys or a press inside its text may have moved its caret.
+    readonly #onEditorCaret = (): void => {
+        const edit = this.#edit;
+        if (edit === undefined) return;
+        this.#settlePointCaret(edit);
+        this.#tellPointState();
+    };
+
+    // Where the open edit stands with respect to Point (ADR-0058).
+    #currentPointState(): GridPointState {
+        const edit = this.#edit;
+        const { pointAt } = this.#point;
+        if (edit === undefined || pointAt === undefined) return 'none';
+        if (this.#pointingContinues(edit)) return this.#pointedFromOutside ? 'writtenFromOutside' : 'inPoint';
+        const text = edit.element.value;
+        const caret = this.#caretOf(edit);
+        return caret >= 0 && caret <= text.length && pointAt(text, caret) ? 'inPoint' : 'none';
+    }
+
+    // Tells the Consumer the Point state when it is not what the Consumer last heard.
+    #tellPointState(): void {
+        const told = this.#point.onPointStateChanged;
+        if (told === undefined) return;
+        const state = this.#currentPointState();
+        if (state === this.#pointStateTold) return;
+        this.#pointStateTold = state;
+        told(state);
+    }
+
+    /**
+     * A key Point may take while editing (ADR-0051): while an outline stands over unchanged text it moves or extends
+     * it, the Primary Modifier's to the data edge the Consumer answers, and Shift+Home extends it to the row's first
+     * column. Otherwise, in Overwrite or Point, it starts pointing from the edited cell where the Consumer says a
+     * Reference can go at the caret, and End there is taken and does nothing (ADR-0058, Q53). What a press outside the
+     * grid wrote has no cell here to move from: its keys are taken and move nothing. Whether the key was Point's.
+     */
+    #pointKey(canonical: string, edit: OpenEdit<Row>): boolean {
+        const { pointAt, referenceText } = this.#point;
+        const step = pointStep(canonical);
+        if (pointAt === undefined || referenceText === undefined || step === undefined) return false;
+        const continues = this.#pointingContinues(edit);
+        if (continues && this.#pointedFromOutside) return true;
+        const extent = this.#extent;
+        if (extent.rowCount <= 0 || extent.columnCount <= 0) return false;
+        let pointer = continues ? this.#pointer : undefined;
+        if (pointer === undefined) {
+            this.#endPointing();
+            const caret = this.#caretOf(edit);
+            // Caret's arrows are the field's.
+            if (edit.mode === 'caret' || caret < 0 || !pointAt(edit.element.value, caret)) return false;
+            // End turns on an End Mode in Excel, which the grid does not have: it writes nothing and commits nothing.
+            if (canonical === 'End') return true;
+            pointer = Selection.empty.click(edit.cell, extent);
+            this.#pointStart = caret;
+            this.#pointLength = 0;
+        }
+        const { direction, move } = step;
+        const edge = this.#dataEdge;
+        switch (move) {
+            case 'move': this.#pointer = pointer.move(direction, extent); break;
+            case 'extend': this.#pointer = pointer.extend(direction, extent); break;
+            case 'edge': this.#pointer = pointer.moveToEdge(direction, extent); break;
+            case 'extendToEdge': this.#pointer = pointer.extendToEdge(direction, extent); break;
+            case 'dataEdge': this.#pointer = pointer.moveToEdge(direction, extent, edge); break;
+            case 'extendToDataEdge': this.#pointer = pointer.extendToEdge(direction, extent, edge); break;
+            default: return unreachable(move);
+        }
+        this.#writePointedReference(edit, true);
+        return true;
+    }
+
+    /**
+     * A press on a cell while editing (ADR-0051): it points, at that cell, or with Shift from the outline's Focus or
+     * the edited cell, where an outline stands over unchanged text or the Consumer says a Reference can go at the
+     * caret. The press does not commit, and the drag it starts extends the outline. Whether it pointed.
+     */
+    #pointPress(event: MouseEvent, at: CellPosition): boolean {
+        const edit = this.#edit;
+        const { pointAt, referenceText } = this.#point;
+        if (edit === undefined || pointAt === undefined || referenceText === undefined) return false;
+        const extent = this.#extent;
+        const continues = this.#pointingContinues(edit);
+        // What a press outside the grid wrote is replaced by this cell's Reference, in the same place (ADR-0058):
+        // there is no outline here to move, so Shift reaches from the edited cell.
+        const from = continues ? this.#pointer : undefined;
+        if (!continues) {
+            this.#endPointing();
+            const caret = this.#caretOf(edit);
+            // A caret not known is not guessed at: the Reference would land somewhere else.
+            if (caret < 0 || !pointAt(edit.element.value, caret)) return false;
+            this.#pointStart = caret;
+            this.#pointLength = 0;
+        }
+        this.#pointer = event.shiftKey ? (from ?? Selection.empty.click(edit.cell, extent)).extendTo(at, extent) : Selection.empty.click(at, extent);
+        this.#writePointedReference(edit, false);
+        this.#setDragging(true);
+        this.#pointDragging = true;
+        return true;
+    }
+
+    // The pointing drag moved onto `at`: the outline extends to it.
+    #pointDrag(at: CellPosition): void {
+        const edit = this.#edit;
+        const pointer = this.#pointer;
+        if (edit === undefined || pointer === undefined || !this.#pointingContinues(edit)) return;
+        const reached = pointer.extent;
+        if (reached !== undefined && sameCell(reached, at)) return;
+        this.#pointer = pointer.extendTo(at, this.#extent);
+        this.#writePointedReference(edit, false);
+    }
+
+    // F2 moves between the states (ADR-0010), and where pointing is declared between Caret and Point: from Caret it
+    // points where the Consumer says a Reference can go at the caret, and from Point it moves the caret again, the
+    // outline gone and its Reference left written (ADR-0051).
+    #f2(edit: OpenEdit<Row>): void {
+        const { pointAt, referenceText } = this.#point;
+        const caret = this.#caretOf(edit);
+        const points = pointAt !== undefined && referenceText !== undefined && caret >= 0 && pointAt(edit.element.value, caret);
+        edit.mode = edit.mode === 'point' ? 'caret' : edit.mode === 'caret' ? (points ? 'point' : 'overwrite') : 'caret';
+        if (this.#endPointing()) this.#invalidate();
+        this.#tellPointState();
+    }
+
+    /**
+     * Writes the Consumer's Reference text for the outline in place of the one written for it before, or the first
+     * time at the caret, and leaves the caret after it (ADR-0051). The edit is now in Point. Its moving end is kept on
+     * screen as the Extent is (ADR-0052): the pointed cell when the outline moves, the far end when Shift extends it.
+     */
+    #writePointedReference(edit: OpenEdit<Row>, reveal: boolean): void {
+        const pointer = defined(this.#pointer, 'the outline a Reference is written for');
+        const referenceText = defined(this.#point.referenceText, 'the Reference text pointing writes');
+        const range = elementAt(pointer.ranges, 0);
+        const reference: unknown = referenceText(range);
+        if (typeof reference !== 'string' || reference === '') {
+            throw new TypeError('referenceText answered no text for a pointed range: a Reference is a non-empty string (ADR-0051).');
+        }
+        const [text, caret] = replaceSpan(edit.element.value, this.#pointStart, this.#pointLength, reference);
+        this.#pointLength = reference.length;
+        this.#writeEditText(edit, text, caret, caret);
+        this.#pointWritten = text;
+        edit.mode = 'point';
+        // This grid's own cell replaces whatever a press outside it wrote.
+        this.#pointedFromOutside = false;
+        this.#pointBefore = undefined;
+        if (reveal) {
+            const target = defined(pointer.extent, 'the outline\'s moving end');
+            this.#revealOwed = { target, extending: pointer.focusRange, rowStart: false, stepRows: 0 };
+        }
+        this.#tellPointState();
+        this.#askReferences();
+        this.#invalidate();
+    }
+
+    /**
+     * F4 while an edit is open (ADR-0051, 2026-09-29): the Consumer's rewrite of the text at the selection in the
+     * surface typed in, written back and its selection placed: as a selection where the key found one or a caret
+     * before the text's end, and as a caret at the selection's end where the caret stood at the text's end (the
+     * seventeenth Windows run, Part C; R1 (iv) and (v); run 18a). While pointing it is the whole Reference the outline
+     * wrote, so both ends of a pointed range cycle together (R1 (vi)), and pointing goes on over what it became, the
+     * caret at its end. After a press outside the grid, F4 changes nothing (ADR-0058).
+     */
+    #cycleReferenceKey(edit: OpenEdit<Row>, cycle: NonNullable<PointOptions['cycleReference']>): void {
+        const pointing = this.#pointingContinues(edit);
+        if (pointing && this.#pointedFromOutside) return;
+        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
+        const text = edit.element.value;
+        const start = pointing ? this.#pointStart : surface.selectionStart ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0051: a selection not known is not guessed at
+        let end = pointing ? this.#pointStart + this.#pointLength : surface.selectionEnd ?? start;
+        if (start < 0 || start > text.length) return;
+        if (end < start || end > text.length) end = start;
+        const answer: unknown = cycle(text, start, end);
+        if (answer === undefined) return;
+        const { text: rewritten, selectionStart, selectionEnd } = checkedRewrite(answer);
+        // The outline's Reference is what lies between the text before it and the text after it, both unchanged; a
+        // rewrite that touched either has rewritten more than the outline's Reference, and pointing ends as typing ends it.
+        const before = this.#pointStart;
+        const after = text.length - this.#pointStart - this.#pointLength;
+        const keeps = pointing && rewritten.length >= before + after && rewritten.startsWith(text.slice(0, before))
+            && rewritten.endsWith(text.slice(text.length - after));
+        const selects = !keeps && (start !== end || start < text.length);
+        if (keeps) {
+            this.#pointLength = rewritten.length - before - after;
+            this.#pointWritten = rewritten;
+        } else if (this.#endPointing() && edit.mode === 'point') {
+            edit.mode = edit.surface === 'bar' ? 'caret' : 'overwrite';
+        }
+        this.#writeEditText(edit, rewritten, selects ? selectionStart : selectionEnd, selectionEnd);
+        this.#tellPointState();
+        this.#askReferences();
+        this.#invalidate();
+    }
+
+    /**
+     * Writes `text` into the open edit as Point writes a Reference, for a press a Consumer took outside the grid
+     * (ADR-0058). See the handle's `writePointedText`.
+     */
+    writePointedText(text: string): boolean {
+        const given: unknown = text;
+        if (typeof given !== 'string' || given === '') throw new TypeError('A text written from outside is a non-empty string (ADR-0058).');
+        const edit = this.#edit;
+        if (this.#destroyed || edit === undefined || this.#currentPointState() === 'none') return false;
+        if (!this.#pointingContinues(edit)) {
+            // Nothing this Point wrote stands: the text goes in at the caret.
+            this.#endPointing();
+            this.#pointStart = this.#caretOf(edit);
+            this.#pointLength = 0;
+        }
+        const before: PointBefore = {
+            text: edit.element.value, caret: this.#caretOf(edit), mode: edit.mode, pointer: this.#pointer, start: this.#pointStart,
+            length: this.#pointLength, written: this.#pointWritten, fromOutside: this.#pointedFromOutside,
+        };
+        const [written, caret] = replaceSpan(edit.element.value, this.#pointStart, this.#pointLength, text);
+        this.#pointer = undefined;
+        this.#setDragging(false);
+        this.#pointLength = text.length;
+        this.#writeEditText(edit, written, caret, caret);
+        this.#pointWritten = written;
+        this.#pointedFromOutside = true;
+        this.#pointBefore = before;
+        edit.mode = 'point';
+        this.#tellPointState();
+        this.#askReferences();
+        this.#invalidate();
+        return true;
+    }
+
+    /** Takes back the text `writePointedText` wrote last, while it still stands (ADR-0058). See the handle's. */
+    takeBackPointedText(): boolean {
+        const edit = this.#edit;
+        const before = this.#pointBefore;
+        if (this.#destroyed || edit === undefined || before === undefined || !this.#pointedFromOutside || !this.#pointingContinues(edit)) return false;
+        this.#pointBefore = undefined;
+        this.#setDragging(false);
+        const caret = before.caret < 0 ? before.text.length : before.caret;
+        this.#writeEditText(edit, before.text, caret, caret);
+        edit.mode = before.mode;
+        this.#pointer = before.pointer;
+        this.#pointStart = before.start;
+        this.#pointLength = before.length;
+        this.#pointWritten = before.written;
+        this.#pointedFromOutside = before.fromOutside;
+        this.#tellPointState();
+        this.#askReferences();
+        this.#invalidate();
+        return true;
     }
 
     // ---- The Formula Bar (ADR-0051) ---------------------------------------------------------------------------
@@ -4782,6 +5183,9 @@ export class GridView<Row> {
             if (edit.surface !== 'bar') {
                 edit.surface = 'bar';
                 edit.mode = 'caret';
+                // The outline goes with the move, and its Reference stays written (ADR-0051).
+                if (this.#endPointing()) this.#invalidate();
+                this.#tellPointState();
             }
             return;
         }
@@ -4805,6 +5209,7 @@ export class GridView<Row> {
             return;
         }
         edit.element.value = text;
+        this.#typed(edit);
         this.#askReferences();
     };
 
@@ -4812,7 +5217,9 @@ export class GridView<Row> {
     readonly #onEditorTyped = (): void => {
         const edit = this.#edit;
         if (edit !== undefined && this.#formulaBarDeclared.shown) this.#bar.text.value = edit.element.value;
-        if (edit !== undefined) this.#askReferences();
+        if (edit === undefined) return;
+        this.#typed(edit);
+        this.#askReferences();
     };
 
     // A press back into the cell's editor: the edit is typed there again.
@@ -6744,6 +7151,7 @@ export class GridView<Row> {
         if (!dragging) {
             this.#forgetHeadingDrag();
             this.#endHandleDrag();
+            this.#pointDragging = false;
         }
         if (dragging === this.#dragging) return;
         this.#dragging = dragging;
@@ -7715,6 +8123,15 @@ export class GridView<Row> {
         }
     }
 
+    // Point's outline (ADR-0051, ADR-0057): dashes in the Focus outline's colour. Where the text names the range it
+    // points at, that range has its Reference Outline, and the dashes lie just inside its line; where it does not, or
+    // where no References function is given, the dashes are Point's own look.
+    #pointPaint(pointer: Selection | undefined, colouring: ReferenceColouring): PointPaint | undefined {
+        const range = pointer?.ranges[0];
+        if (range === undefined) return undefined;
+        return { range, className: colouring.colourOf(range) === undefined ? 'ex-point' : 'ex-point ex-point-on-reference' };
+    }
+
     // The selection layers' rectangles over the painted rows, written only when they changed. The layers
     // the Viewport holds first, in order.
     #paintLayers(): readonly HTMLElement[] {
@@ -7737,6 +8154,7 @@ export class GridView<Row> {
             focusRow: this.#highlightFocusRow,
             // Each held, so a pass that changed neither text nor columns finds them the same.
             colouring: this.#colouring(), extentRows: this.#totalRows, extentColumns: this.#columns.length,
+            pointer: this.#edit === undefined ? undefined : this.#pointer,
             outlinedColumns: this.#referenceOutlines.columns(this.#referenceOptions.outlinedColumns, this.#columnNames, this.#totalRows),
         };
         const was = this.#layerInputs;
@@ -7753,6 +8171,7 @@ export class GridView<Row> {
                             return drawn === undefined ? [] : [[drawn, colour] as const];
                         }),
                         columns: inputs.outlinedColumns,
+                        point: this.#pointPaint(inputs.pointer, inputs.colouring),
                     });
             const signature = JSON.stringify(pieces);
             if (signature !== this.#paintedLayers) {

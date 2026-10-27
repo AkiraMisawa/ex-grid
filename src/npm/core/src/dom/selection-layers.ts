@@ -56,14 +56,21 @@ export interface FillPaint {
 
 const noFill: FillPaint = Object.freeze({ outline: undefined, handle: undefined });
 
+/** Point's outline (ADR-0051): the range pointed at, and its look. */
+export interface PointPaint {
+    readonly range: SelectionRange;
+    readonly className: string;
+}
+
 /** The Reference Outlines (ADR-0057): one per range the open edit's text names, cut to the grid, in the order they
- * stand in the text, and one per column a Consumer asks for, over its body. */
+ * stand in the text, and one per column a Consumer asks for, over its body; and Point's outline over them. */
 export interface OutlinePaint {
     readonly references: readonly OutlinedRange[];
     readonly columns: readonly OutlinedRange[];
+    readonly point: PointPaint | undefined;
 }
 
-const noOutlines: OutlinePaint = Object.freeze({ references: Object.freeze([]), columns: Object.freeze([]) });
+const noOutlines: OutlinePaint = Object.freeze({ references: Object.freeze([]), columns: Object.freeze([]), point: undefined });
 
 const outlineClass = ([, colour]: OutlinedRange): string => `ex-reference-outline ex-reference-${String(colour)}`;
 
@@ -94,6 +101,9 @@ export function selectionLayers(
         ...(withReferences ? outlines.references : []).flatMap(named => pieceOf(outlineClass(named), whole(named[0], columns, rowHeightPx, painted, pinnedLayer))),
         ...outlines.columns.flatMap(named => pieceOf(outlineClass(named),
             pinnedLayer ? pinnedPart(named[0], columns, rowHeightPx, painted) : scrollablePart(named[0], columns, rowHeightPx, painted))),
+        // Point's outline is one more rectangle over them; the Selection and the Focus beneath it do not move.
+        ...(withReferences && outlines.point !== undefined ? pieceOf(outlines.point.className, pinnedLayer
+            ? pinnedPart(outlines.point.range, columns, rowHeightPx, painted) : scrollablePart(outlines.point.range, columns, rowHeightPx, painted)) : []),
     ];
     const focus = selection.focus;
     // With no column there is no row to band.

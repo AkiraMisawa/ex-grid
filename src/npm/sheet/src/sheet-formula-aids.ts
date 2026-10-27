@@ -1,10 +1,30 @@
 // What the Sheet tells its grid about the Formula being edited (ADR-0057), as the C# Sheet's SheetFormulaAids: the
 // References in the editor's text, and the Linked Table columns behind the keys the grid coloured.
 
-import type { GridEditorReference, ReferenceKeyColour } from '@ex-grid/core';
-import { LinkedTableColumn, type Sheet } from '@ex-grid/sheet-engine';
+import type { GridEditorReference, GridEditorRewrite, ReferenceKeyColour, SelectionRange } from '@ex-grid/core';
+import { CellAddress, CellRange, cycleReference, formulaPointAt, LinkedTableColumn, referenceText, type Sheet } from '@ex-grid/sheet-engine';
 import { defined } from './must';
 import type { LinkedColumnColour } from './pointing-scope';
+
+/** Whether a Reference can go at the caret (ADR-0051): after `=`, an operator, `(` or `,` in a Formula. */
+export function sheetPointAt(text: string, caret: number): boolean {
+    return caret >= 0 && caret <= text.length && formulaPointAt(text, caret) !== undefined;
+}
+
+/** The Reference Point mode writes for a pointed range (ADR-0051): `A3`, or `B7:C9` from its top-left. */
+export function sheetReferenceText(range: SelectionRange): string {
+    return referenceText(new CellRange(new CellAddress(range.topRow, range.leftColumn),
+        new CellAddress(range.topRow + range.rowCount - 1, range.leftColumn + range.columnCount - 1)));
+}
+
+/**
+ * F4 (ADR-0051, 2026-09-29): the Reference at the caret, the end of a range the caret touches, or every one the
+ * selection covers, overlaps or touches, cycled to its next form by the engine, with the selection over what was
+ * rewritten. Nothing where nothing changes: no Reference there, or text that is not a Formula.
+ */
+export function sheetCycleReference(text: string, selectionStart: number, selectionEnd: number): GridEditorRewrite | undefined {
+    return cycleReference(text, selectionStart, selectionEnd);
+}
 
 /**
  * The References function (ADR-0057): each Reference in the text being edited, with its span and the cells it names

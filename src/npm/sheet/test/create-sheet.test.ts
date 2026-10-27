@@ -192,7 +192,7 @@ describe('Linked Tables (ADR-0049)', () => {
     });
 });
 
-describe('Reference Outlines (ADR-0057)', () => {
+describe('The formula entry aids (ADR-0051, ADR-0057)', () => {
     it('DC-49: a Formula being edited outlines the cells it names, and tells each Linked Table column it reads in its colour, once per change', async () => {
         const told: (readonly { readonly table: string; readonly column: string; readonly colour: number }[])[] = [];
         const { element, sheet } = sheetOf({
@@ -230,6 +230,20 @@ describe('Reference Outlines (ADR-0057)', () => {
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         sheet.declareLinkedTable('Costs', ['Id', 'Amount'], 'Id');
         await vi.waitFor(() => { expect(told).toEqual([['Costs[Amount]']]); });
+    });
+
+    it('ADR-0051: = and ↓ point at the cell below, F4 cycles it to $A$3, and Enter commits the Formula', async () => {
+        const { element } = sheetOf({ document: documentOf({ A3: '7' }) });
+        await vi.waitFor(() => { expect(textAt(element, 2, 0)).toBe('7'); });
+        press(element, 1, 0);
+        key('=');
+        key('ArrowDown');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        expect(editor?.value).toBe('=A3');
+        key('F4');
+        expect(editor?.value).toBe('=$A$3');
+        key('Enter');
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('7'); });
     });
 });
 

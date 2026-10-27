@@ -672,6 +672,13 @@ export interface GridEditorReference {
 }
 
 // @public
+export interface GridEditorRewrite {
+    readonly selectionEnd: number;
+    readonly selectionStart: number;
+    readonly text: string;
+}
+
+// @public
 export interface GridErrorStepRequest {
     readonly backward: boolean;
     readonly columns: readonly string[];
@@ -797,7 +804,9 @@ export interface GridHandle<Row> {
     refreshSummary(): void;
     returnKeyboard(from?: Element): void;
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
+    takeBackPointedText(): boolean;
     update(options: GridOptions<Row>): void;
+    writePointedText(text: string): boolean;
 }
 
 // @public
@@ -854,6 +863,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
     readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     readonly copyCellCap?: number;
+    readonly cycleReference?: (text: string, start: number, end: number) => GridEditorRewrite | undefined;
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly declaredKeys?: readonly string[];
     readonly density?: GridDensity;
@@ -885,6 +895,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
     readonly onPinnedCountChanged?: (count: number) => void;
+    readonly onPointStateChanged?: (state: GridPointState) => void;
     readonly onRedo?: () => void;
     readonly onReferenceKeyColoursChanged?: (keys: readonly ReferenceKeyColour[]) => void;
     readonly onRefused?: (refusal: GridRefusal<Row>) => void;
@@ -899,7 +910,9 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
+    readonly pointAt?: (text: string, caret: number) => boolean;
     readonly referencesIn?: (text: string) => readonly GridEditorReference[] | undefined;
+    readonly referenceText?: (range: SelectionRange) => string;
     readonly rowHeadings?: (row: number) => string;
     readonly rowHeadingWidth?: number;
     readonly rowHeight?: number;
@@ -958,6 +971,9 @@ export class GridPasteIntent {
     valueFor(target: CellPosition): string;
     readonly values: readonly (readonly string[])[];
 }
+
+// @public
+export type GridPointState = 'none' | 'inPoint' | 'writtenFromOutside';
 
 // @public
 export interface GridPopoverContext {

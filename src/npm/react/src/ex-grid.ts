@@ -65,6 +65,8 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
     useImperativeHandle(ref, () => ({
         placeSelection: (range, focus, rowSequenceVersion) => mounted(grid.current).placeSelection(range, focus, rowSequenceVersion),
         readView: () => mounted(grid.current).readView(),
+        writePointedText: (text) => mounted(grid.current).writePointedText(text),
+        takeBackPointedText: () => mounted(grid.current).takeBackPointedText(),
         showViewWith: (view, rowSequenceVersion) => { mounted(grid.current).showViewWith(view, rowSequenceVersion); },
         focus: () => { mounted(grid.current).focus(); },
         // Before the grid is drawn there is no keyboard of its own to give back, and the control takes it by its
