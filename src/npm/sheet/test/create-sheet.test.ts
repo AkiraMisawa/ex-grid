@@ -969,6 +969,24 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect(element.querySelector('.ex-popover .ex-format-cells')).not.toBeNull();
     });
 
+    it('ADR-0100: Ctrl+F1 tells the toolbar\'s other state where the Consumer hears it, and is the browser\'s where it does not', async () => {
+        const told: boolean[] = [];
+        const { element, sheet } = sheetOf({ showToolbar: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        press(element, 0, 0);
+        const unheard = new KeyboardEvent('keydown', { key: 'F1', ctrlKey: true, bubbles: true, cancelable: true });
+        document.activeElement?.dispatchEvent(unheard);
+        expect(unheard.defaultPrevented).toBe(false);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: true, onShowToolbarChanged: shown => { told.push(shown); } });
+        const heard = new KeyboardEvent('keydown', { key: 'F1', ctrlKey: true, bubbles: true, cancelable: true });
+        document.activeElement?.dispatchEvent(heard);
+        expect(heard.defaultPrevented).toBe(true);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, showToolbar: false, onShowToolbarChanged: shown => { told.push(shown); } });
+        key('F1', { ctrlKey: true });
+        // The Sheet holds nothing: each press tells the other value of what the Consumer handed it.
+        expect(told).toEqual([false, true]);
+    });
+
     it('ADR-0100: while an edit is open every item is unavailable, and says why', async () => {
         const { element } = sheetOf({ showToolbar: true });
         await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });

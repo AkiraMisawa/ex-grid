@@ -71,6 +71,13 @@ export interface SheetOptions {
     /** Shows the Sheet Toolbar above the Formula Bar (ADR-0100): Excel's Home tab formatting commands, acting on this
      * Sheet's Selection. Off unless `true`. Its band, a row as tall as the Formula Bar, comes off `viewportHeight`. */
     readonly showToolbar?: boolean;
+    /**
+     * Hears the other value of `showToolbar` when the user asks to hide or show the Sheet Toolbar with Ctrl+F1, Excel's
+     * key for the ribbon (ADR-0100). The Sheet holds nothing: whether the toolbar is shown is View State, the
+     * Consumer's, so handing the value back as `showToolbar` is what lets the key work. Without it, Ctrl+F1 is not
+     * claimed and stays the browser's.
+     */
+    readonly onShowToolbarChanged?: (shown: boolean) => void;
     /** ExSheet's Japanese words in place of its English (ADR-0370, section 10), chosen in one line, never by the
      * locale. */
     readonly japanese?: boolean;
@@ -240,6 +247,9 @@ function isSheetDay(day: unknown): day is SheetDay {
     const read = new Date(Date.UTC(year, month - 1, date));
     return read.getUTCFullYear() === year && read.getUTCMonth() === month - 1 && read.getUTCDate() === date;
 }
+
+// Excel's key for the ribbon, which hides and shows the Sheet Toolbar (ADR-0100).
+const toolbarToggleKey = 'Control+F1';
 
 // The largest seed: a seed is an unsigned 64-bit integer, as the engine and C#'s ulong hold it (ADR-0180).
 const maxSeed = (1n << 64n) - 1n;
@@ -1342,6 +1352,10 @@ class SheetView {
     // "Keys"; ADR-0050 item 14), where the grid takes keys: not in the Name Box or a panel the grid opened, whose
     // fields keep their own. Ctrl+1 waits on Format Cells.
     #onCellKey(event: KeyboardEvent, key: string): void {
+        if (key === toolbarToggleKey) {
+            this.#toolbarToggleKey(event);
+            return;
+        }
         const format = sheetFormatKeyOf(key);
         const structure = format === undefined ? sheetStructureKeyOf(key) : undefined;
         if (format === undefined && structure === undefined) return;
@@ -1358,6 +1372,16 @@ class SheetView {
         event.stopPropagation();
         if (format !== undefined) this.#formatKey(format);
         else if (structure !== undefined) this.#structureKey(structure);
+    }
+
+    // Ctrl+F1, claimed only where the Consumer hears it: the toolbar's other state is told, and the Consumer shows it.
+    #toolbarToggleKey(event: KeyboardEvent): void {
+        const changed = this.#options.onShowToolbarChanged;
+        const target = event.target;
+        if (changed === undefined || (target !== this.#toolbar.band && !this.#takesGridKeys(target))) return;
+        event.preventDefault();
+        event.stopPropagation();
+        changed(this.#options.showToolbar !== true);
     }
 
     // A formatting key sets its change on every range of the Selection as one step, its toggle's direction the Focus
@@ -1742,6 +1766,7 @@ class SheetView {
         const handlers: readonly (readonly [string, unknown])[] = [
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
+            ['onShowToolbarChanged', options.onShowToolbarChanged],
         ];
         for (const [name, handler] of handlers) {
             if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
