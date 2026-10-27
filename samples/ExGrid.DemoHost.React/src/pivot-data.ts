@@ -36,7 +36,7 @@ const start = Temporal.PlainDate.from('2026-01-02');
 export const demoPivotTradeCount = 2000;
 
 /** C#'s `(decimal)double`: the double's fifteen significant digits, as an exact decimal. */
-function decimalOfDouble(value: number): SnapshotDecimal {
+export function decimalOfDouble(value: number): SnapshotDecimal {
     const [digits, exponentText] = value.toExponential(14).split('e');
     if (digits === undefined || exponentText === undefined) throw new Error(`Internal: ${value} has no exponential text.`);
     const negative = digits.startsWith('-');
@@ -47,7 +47,7 @@ function decimalOfDouble(value: number): SnapshotDecimal {
 }
 
 /** C#'s `Math.Round(decimal, 2)`: to two places, a half to the even digit. */
-function roundToCents(value: SnapshotDecimal): SnapshotDecimal {
+export function roundToCents(value: SnapshotDecimal): SnapshotDecimal {
     if (value.scale <= 2) return value;
     const divisor = 10n ** BigInt(value.scale - 2);
     const magnitude = value.mantissa < 0n ? -value.mantissa : value.mantissa;

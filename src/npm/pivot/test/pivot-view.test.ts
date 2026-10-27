@@ -3,6 +3,7 @@
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { systemClock } from '@ex-grid/core';
 import type { CellPosition, CopyPlan, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
@@ -180,6 +181,19 @@ class GridStandIn {
             };
         };
         return into(focusRequest);
+    }
+
+    /** Which cells of the rows the grid would show first the Change Highlight marks at `now` (ADR-0068): `row:column`. */
+    async changed(now: number, count = 20): Promise<readonly string[]> {
+        const { source, columns, cellChangedAt, changeHighlightDuration } = this.current;
+        if (source === undefined) throw new Error('The grid was handed no source.');
+        if (cellChangedAt === undefined) return [];
+        const rows = await source.rows({ start: 0, count }, new AbortController().signal);
+        const duration = defined(changeHighlightDuration, 'the highlight\'s duration');
+        return rows.flatMap((row, r) => columns.flatMap((column, c) => {
+            const at = cellChangedAt(row, column.name);
+            return at !== undefined && now < at + duration ? [`${r}:${c}`] : [];
+        }));
     }
 
     /** The painted text of the rows the grid would show first, label and value columns alike. */
@@ -710,6 +724,24 @@ describe('ExPivot\'s live data (ADR-0067)', () => {
         await settled();
         expect(root.querySelector('.ex-pivot-stale-notice')).toBeNull();
         expect(root.getAttribute('aria-busy')).toBeNull();
+    });
+
+    it('ADR-0068: newer data marks the values it changed, for the highlight\'s duration on the grid\'s clock; a move of the user\'s marks nothing', async () => {
+        const live = liveServer();
+        const { root, grid } = mount({ source: live.source, layout: byRegion, redrawInterval: 0, changeHighlightDuration: 5000 });
+        await settled();
+        expect(await grid.changed(systemClock.now())).toEqual([]);
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+        await settled();
+        // US and the Grand Total moved; EU did not.
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '112'], ['Grand Total', '142']]);
+        const shown = systemClock.now();
+        expect([await grid.changed(shown), await grid.changed(shown + 5000)]).toEqual([['1:1', '2:1'], []]);
+        expect(grid.current.changeHighlightDuration).toBe(5000);
+        tick(root, 'Desk');
+        await settled();
+        expect(await grid.changed(systemClock.now())).toEqual([]);
+        expect(() => mount({ source: local(), changeHighlightDuration: -1 })).toThrow(/changeHighlightDuration/u);
     });
 
     it('ADR-0067: a source handed over is no longer heard, and a destroyed pivot hears nothing', async () => {

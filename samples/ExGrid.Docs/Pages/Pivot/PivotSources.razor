@@ -393,7 +393,10 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
             when the interval ends. A notice of the version already on screen asks nothing (unless the report is stale,
             below), and a question out is never
             cancelled by one: its answer is shown, and the changes that came meanwhile are asked for after it. Such a
-            question is asked quietly: the pivot is not marked busy for it, so a ticking report does not flicker.
+            question is asked quietly: the pivot is not marked busy for it, so a ticking report does not flicker. The
+            values it changed wear the Change Highlight for <code>changeHighlightDuration</code> milliseconds (one second
+            unless given), as the Blazor component's <code>ChangeHighlightDuration</code> marks them; a move of the
+            user's marks nothing.
         </p>
         <p>
             Newer data the report cannot show leaves a Stale Report, as on the
@@ -407,6 +410,7 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
     source,                       // a SnapshotPivotSource, or a FetchingPivotSource with a transport
     layout,
     redrawInterval: 1000,         // a ticking source redraws the report at most once a second
+    changeHighlightDuration: 2000, // and a value it changed stays marked for two
 });</code></pre>
         <p>
             The cube and the report run in slices too. <code>pivotCubeAsync</code> and <code>pivotReportAsync</code> take
