@@ -5,6 +5,7 @@
 // out both. What a press or a key means is the Sheet's: this draws, and reports what was pressed.
 
 import type { Sheet } from '@ex-grid/sheet-engine';
+import { mountedSlot, type SheetTabAddSlot, type SheetTabSlot } from './sheet-chrome-slots';
 import { preventDefault, setAttr } from './dom-attributes';
 
 /** What the tabs tell the Sheet they hear. */
@@ -24,6 +25,19 @@ export interface SheetTabsPaint {
     readonly heightPx: number;
     readonly listName: string;
     readonly addName: string;
+    /** A Chrome's face for each tab, or none for the built-in one, the name (ADR-0390). */
+    readonly tabFace: SheetTabSlot | undefined;
+    /** A Chrome's face for the + button, or none for the built-in one. */
+    readonly addFace: SheetTabAddSlot | undefined;
+}
+
+// A face a Chrome drew inside a tab or the + button: its slot, the mount it was drawn by, what it was drawn for, and
+// what takes it away.
+interface DrawnFace {
+    readonly slot: HTMLElement;
+    readonly mount: unknown;
+    readonly shown: string;
+    readonly cleanup: () => void;
 }
 
 /** The tab area's elements, one button per Sheet, each made for its Sheet and never handed to another. */
@@ -34,6 +48,9 @@ export class SheetTabs {
     readonly #tabs = new Map<Sheet, HTMLButtonElement>();
     readonly #hooks: SheetTabsHooks;
     readonly #doc: Document;
+    readonly #faces = new Map<HTMLButtonElement, DrawnFace>();
+    // The + button's built-in face, the glyph.
+    readonly #plus: HTMLElement;
 
     constructor(doc: Document, hooks: SheetTabsHooks) {
         this.#doc = doc;
@@ -51,10 +68,10 @@ export class SheetTabs {
         this.#add.type = 'button';
         this.#add.className = 'ex-sheet-tab-add';
         this.#add.tabIndex = -1;
-        const plus = doc.createElement('span');
-        plus.setAttribute('aria-hidden', 'true');
-        plus.textContent = '+';
-        this.#add.append(plus);
+        this.#plus = doc.createElement('span');
+        this.#plus.setAttribute('aria-hidden', 'true');
+        this.#plus.textContent = '+';
+        this.#add.append(this.#plus);
         // A press keeps the keyboard where it is: in the grid, where the next key acts on the Sheet it showed.
         this.#add.addEventListener('mousedown', preventDefault);
         this.#add.addEventListener('click', () => { hooks.added(); });
@@ -70,15 +87,17 @@ export class SheetTabs {
         setAttr(this.#list, 'aria-label', paint.listName);
         setAttr(this.#add, 'aria-label', paint.addName);
         setAttr(this.#add, 'title', paint.addName);
+        this.#drawAddFace(paint.addFace);
         for (const [sheet, tab] of this.#tabs) {
             if (paint.sheets.includes(sheet)) continue;
             this.#tabs.delete(sheet);
+            this.#takeFace(tab);
             tab.remove();
         }
         const tabs = paint.sheets.map(sheet => {
             const tab = this.#tabOf(sheet);
-            if (tab.textContent !== sheet.name) tab.textContent = sheet.name;
             const selected = sheet === paint.shown;
+            this.#drawTabFace(tab, paint.tabFace, sheet.name, selected);
             setAttr(tab, 'aria-selected', selected ? 'true' : 'false');
             setAttr(tab, 'tabindex', selected ? '0' : '-1');
             return tab;
@@ -86,6 +105,58 @@ export class SheetTabs {
         // Moved only when the order differs: a tab moved loses the keyboard it holds.
         const children = [...this.#list.children];
         if (children.length !== tabs.length || tabs.some((tab, i) => children[i] !== tab)) this.#list.replaceChildren(...tabs);
+    }
+
+    /** Takes away every face a Chrome drew, as the Sheet goes. */
+    dispose(): void {
+        for (const button of this.#faces.keys()) this.#takeFace(button);
+    }
+
+    // A tab's face: the Chrome's, mounted again on the same slot when what it shows changes, or the name.
+    #drawTabFace(tab: HTMLButtonElement, mount: SheetTabSlot | undefined, name: string, selected: boolean): void {
+        if (mount === undefined) {
+            this.#takeFace(tab);
+            if (tab.textContent !== name) tab.textContent = name;
+            return;
+        }
+        const shown = JSON.stringify([name, selected]);
+        this.#drawFace(tab, mount, shown, slot => mount(slot, Object.freeze({ name, selected })), 'sheetTab');
+    }
+
+    // The + button's face: the Chrome's, mounted once for each mount function, or the glyph.
+    #drawAddFace(mount: SheetTabAddSlot | undefined): void {
+        if (mount === undefined) {
+            this.#takeFace(this.#add);
+            if (this.#plus.parentElement !== this.#add) this.#add.replaceChildren(this.#plus);
+            return;
+        }
+        this.#drawFace(this.#add, mount, '', slot => mount(slot), 'sheetTabAdd');
+    }
+
+    #drawFace(button: HTMLButtonElement, mount: unknown, shown: string, draw: (slot: HTMLElement) => unknown, name: string): void {
+        const standing = this.#faces.get(button);
+        if (standing !== undefined && standing.mount === mount && standing.shown === shown) return;
+        let slot = standing?.slot;
+        if (standing !== undefined) {
+            this.#faces.delete(button);
+            standing.cleanup();
+        }
+        if (slot === undefined) {
+            slot = this.#doc.createElement('span');
+            slot.className = 'ex-sheet-tab-face';
+            button.replaceChildren(slot);
+        }
+        const at = slot;
+        this.#faces.set(button, { slot: at, mount, shown, cleanup: mountedSlot(name, () => draw(at)) });
+    }
+
+    // Takes a Chrome's face away from a tab or the + button, where one stands.
+    #takeFace(button: HTMLButtonElement): void {
+        const standing = this.#faces.get(button);
+        if (standing === undefined) return;
+        this.#faces.delete(button);
+        standing.cleanup();
+        standing.slot.remove();
     }
 
     /** Gives the keyboard to the tab of `sheet`, where it stands: nothing scrolls. */

@@ -27,4 +27,14 @@ internal static class DocsProducts
                 nameof(example)),
         };
     }
+
+    /// <summary>Whether a product ships a React Wrapper of a design system (ADR-0390), so that its React Examples
+    /// are written for it. A new Wrapper package is added here with its Examples.</summary>
+    public static bool HasWrapper(string product, ReactChrome chrome) => (product, chrome) switch
+    {
+        (_, ReactChrome.Builtin) => true,
+        ("ExGrid", ReactChrome.Mantine or ReactChrome.Mui) => true,
+        ("ExSheet", ReactChrome.Mantine) => true,
+        _ => false,
+    };
 }

@@ -8,7 +8,7 @@
 // carry none (ADR-0050 item 12).
 
 import {
-    createGrid, formulaBarHeight, refusedCells, replacedCells, type CellPosition, type GridDirection,
+    createGrid, formulaBarHeight, gridChromeSlotNames, refusedCells, replacedCells, type CellPosition, type GridChrome, type GridDirection,
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
@@ -33,6 +33,7 @@ import { SheetWords, type SheetLabel, type SheetToolbarBorder, type SheetToolbar
 import { SheetTabs } from './sheet-tabs';
 import { SheetToolbar, type SheetToolbarIcon, type SheetToolbarItem, type SheetToolbarPaint } from './sheet-toolbar';
 import type { SheetToolbarContent, SheetToolbarItemSlot } from './sheet-toolbar-slot';
+import { mountedSlot, type SheetFormatCellsSlot, type SheetFormatCellsSlotContext, type SheetTabAddSlot, type SheetTabSlot } from './sheet-chrome-slots';
 import { SheetChoicesPanel, type SheetToolbarChoice } from './sheet-choices';
 import { automaticColour, colourFromRgb, paintOf } from './cell-colour';
 import {
@@ -84,14 +85,26 @@ export interface SheetToolbarRowOptions {
 }
 
 /**
- * The Sheet's own Chrome slots (ADR-0390), the C# `ISheetChrome`'s, each a mount function the Sheet calls with the
- * slot's element and what the slot is handed. A slot not given is drawn by the built-in Chrome.
+ * The Sheet's Chrome slots (ADR-0390), the C# `ISheetChrome`'s, each a mount function the Sheet calls with the slot's
+ * element and what the slot is handed. A slot not given is drawn by the built-in Chrome. As `ISheetChrome` extends
+ * `IGridChrome`, the grid's own slots are among them, and the Sheet hands those to its grid: the Cell Editor, the
+ * Formula Bar's fields, the completion list, the find panel, the Context Menu, a cell's message and the Selection
+ * Summary. The column menu and the filter panel are taken too, and never shown, since a Sheet's columns have no menu.
  */
-export interface SheetChrome {
+export interface SheetChrome extends GridChrome<unknown> {
     /** Each Toolbar Item of the Sheet Toolbar (ADR-0100): a mount that answers `undefined` leaves the item to the
      * built-in Chrome, as the C# Chrome's `ToolbarItem` answering null does. */
     readonly toolbarItem?: SheetToolbarItemSlot;
+    /** Format Cells' contents (ADR-0071), in the grid's popover frame. */
+    readonly formatCells?: SheetFormatCellsSlot;
+    /** Each Sheet Tab's face (ADR-0331 §4). */
+    readonly sheetTab?: SheetTabSlot;
+    /** The face of the button that adds a Sheet (ADR-0331 §4). */
+    readonly sheetTabAdd?: SheetTabAddSlot;
 }
+
+/** The Sheet's own slots, beside the grid's. */
+const sheetSlotNames: readonly string[] = ['toolbarItem', 'formatCells', 'sheetTab', 'sheetTabAdd'];
 
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
@@ -468,7 +481,7 @@ class SheetView {
     // itself, by Escape or a press elsewhere, tells the Sheet nothing: the record stands, its frame gone, until the
     // next opening or move drops it, and nothing reads it as open meanwhile, as only the frame's OK sets anything.
     #formatCells: {
-        readonly panel: FormatCellsPanel; readonly draft: FormatCellsDraft; readonly sheet: Sheet; readonly selection: GridSelection;
+        readonly panel: FormatCellsPanel | SlottedFormatCells; readonly draft: FormatCellsDraft; readonly sheet: Sheet; readonly selection: GridSelection;
         readonly ranges: readonly CellRange[];
     } | undefined;
     #formatCellsTab: FormatCellsTab = 'number';
@@ -480,6 +493,8 @@ class SheetView {
     #faceBorder: SheetToolbarBorder = 'bottom';
     // The Selection a toolbar list a Chrome draws stands over: one moved from it ends the list.
     #chromeListsOver: GridSelection | undefined;
+    // The grid's slots made from the chrome last given.
+    #gridChromeOf: { readonly given: SheetChrome; readonly made: GridChrome<SheetRow> } | undefined;
     // A Toolbar Item's list while it stands in the grid's popover frame, and the Selection it was opened over.
     #choices: { readonly panel: SheetChoicesPanel; readonly selection: GridSelection; readonly keyTipRow: number | undefined } | undefined;
     // The Alt key went down alone where the toolbar's keys are heard, and its release has not been heard: the release
@@ -853,8 +868,9 @@ class SheetView {
         const grid = this.#grid;
         this.#grid = undefined;
         grid?.destroy();
-        // A Chrome's toolbar contents go with the Sheet.
+        // A Chrome's toolbar contents and tab faces go with the Sheet.
         this.#toolbar.dispose();
+        this.#tabs.dispose();
         // A destroyed Sheet points at nothing.
         this.#joinedScope?.leave(this.#pointingSheet);
         this.#joinedScope = undefined;
@@ -927,7 +943,25 @@ class SheetView {
             onRefused: this.#onRefused,
             onEditDiscarded: this.#onEditDiscarded,
             onOverwriteNotice: this.#onOverwriteNotice,
+            ...this.#gridChrome(),
         };
+    }
+
+    // The grid's slots of the Sheet's chrome, handed to its grid as they were given: the same object while the chrome
+    // is, so the grid keeps the parts it has drawn (ADR-0390).
+    #gridChrome(): { readonly chrome?: GridChrome<SheetRow> } {
+        const chrome = this.#options.chrome;
+        if (chrome === undefined) return {};
+        if (this.#gridChromeOf?.given !== chrome) {
+            const slots: Record<string, unknown> = {};
+            for (const name of gridChromeSlotNames) {
+                const slot = chrome[name];
+                if (slot !== undefined) slots[name] = slot;
+            }
+            // The grid's slots, each checked a function by #checked.
+            this.#gridChromeOf = { given: chrome, made: slots };
+        }
+        return { chrome: this.#gridChromeOf.made };
     }
 
     readonly #onEdit = (intent: GridEditIntent<SheetRow>): void => {
@@ -1373,6 +1407,7 @@ class SheetView {
             this.#tabs.paint({
                 sheets: this.#workbook.sheets, shown: this.#source.sheet, heightPx: this.#tabsHeightPx,
                 listName: this.#words.sheetTabsName, addName: this.#words.newSheetName,
+                tabFace: this.#options.chrome?.sheetTab, addFace: this.#options.chrome?.sheetTabAdd,
             });
         }
     }
@@ -1842,15 +1877,31 @@ class SheetView {
         if (grid === undefined || selection === undefined || focus === undefined) return;
         const ranges = selection.ranges.map(rangeOf);
         const draft = FormatCellsDraft.open(this.#source.sheet, new CellAddress(focus.row, focus.column), ranges);
-        const panel = new FormatCellsPanel(this.#element.ownerDocument, draft, this.#words, this.#formatCellsTab, {
+        const callbacks = {
             ok: () => this.#formatCellsOk(panel),
             cancel: () => { if (this.#formatCells?.panel === panel) this.#endFormatCells(); },
-            tabShown: tab => { this.#formatCellsTab = tab; },
-        });
+            tabShown: (tab: FormatCellsTab) => { this.#formatCellsTab = tab; },
+        };
+        const mount = this.#options.chrome?.formatCells;
+        const panel: FormatCellsPanel | SlottedFormatCells = mount === undefined
+            ? new FormatCellsPanel(this.#element.ownerDocument, draft, this.#words, this.#formatCellsTab, callbacks)
+            : new SlottedFormatCells(this.#element.ownerDocument, mount);
         this.#endFormatCells();
         this.#clearNotice();
         const sheet = this.#source.sheet;
-        if (grid.openPopover(() => panel.element, this.#words.formatCellsTitle)) this.#formatCells = { panel, draft, sheet, selection, ranges };
+        const tab = this.#formatCellsTab;
+        const words = this.#words;
+        const opened = grid.openPopover(context => {
+            if (panel instanceof SlottedFormatCells) {
+                panel.mount(Object.freeze({
+                    draft, tab, tabShown: callbacks.tabShown, ok: callbacks.ok, cancel: callbacks.cancel, words,
+                    takeKeyboard: (control: HTMLElement) => { if (panel.live) this.#grid?.handKeyboardTo(control, { preventScroll: true }); },
+                    innerPopupChanged: (open: boolean) => { if (panel.live) context.innerPopupChanged(open); },
+                }));
+            }
+            return panel.element;
+        }, words.formatCellsTitle, panel instanceof SlottedFormatCells ? () => { panel.dispose(); } : undefined);
+        if (opened) this.#formatCells = { panel, draft, sheet, selection, ranges };
     }
 
     // Format Cells' OK (ADR-0071, SH-45): the parts the user touched, set on the ranges it was opened over as one undo
@@ -1858,7 +1909,7 @@ class SheetView {
     // them; with nothing touched nothing is set and no step recorded. A draft holding a refusal sets nothing and
     // stays open, for the panel to show why. It is taken against the Sheet it was opened over: shown another, which
     // ends it, an OK that still arrives sets nothing (the spine's sixth rule).
-    #formatCellsOk(panel: FormatCellsPanel): boolean {
+    #formatCellsOk(panel: FormatCellsPanel | SlottedFormatCells): boolean {
         const standing = this.#formatCells;
         if (standing?.panel !== panel) return true;
         if (standing.draft.refusal !== undefined) return false;
@@ -2189,8 +2240,11 @@ class SheetView {
         const chrome: unknown = options.chrome;
         if (chrome !== undefined) {
             if (typeof chrome !== 'object' || chrome === null) throw new TypeError("A Sheet's chrome is an object of Chrome slots, each a mount function (ADR-0390).");
-            const { toolbarItem }: { readonly toolbarItem?: unknown } = chrome;
-            if (toolbarItem !== undefined && typeof toolbarItem !== 'function') throw new TypeError('chrome.toolbarItem is a mount function (ADR-0390).');
+            const names: readonly string[] = [...sheetSlotNames, ...gridChromeSlotNames];
+            for (const [name, slot] of Object.entries(chrome)) {
+                if (!names.includes(name)) throw new TypeError(`A Sheet's chrome has no slot '${name}': its slots are ${names.join(', ')} (ADR-0390).`);
+                if (slot !== undefined && typeof slot !== 'function') throw new TypeError(`chrome.${name} is a mount function (ADR-0390).`);
+            }
         }
         const handlers: readonly (readonly [string, unknown])[] = [
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
@@ -2367,4 +2421,37 @@ function firstTarget(intent: GridPasteIntent): SelectionRange {
 function contains(range: SelectionRange, address: CellAddress): boolean {
     return address.row >= range.topRow && address.row < range.topRow + range.rowCount
         && address.column >= range.leftColumn && address.column < range.leftColumn + range.columnCount;
+}
+
+// Format Cells drawn by a Chrome (ADR-0390): the slot it stands in, in the grid's popover frame, and its contents,
+// taken away however the frame closes. Its calls reach nothing once they are.
+class SlottedFormatCells {
+    readonly element: HTMLElement;
+    readonly #mount: SheetFormatCellsSlot;
+    #cleanup: (() => void) | undefined;
+    #live = false;
+
+    constructor(doc: Document, mount: SheetFormatCellsSlot) {
+        this.#mount = mount;
+        this.element = doc.createElement('div');
+        // The built-in Format Cells' class, by which Ctrl+1 inside it opens nothing more.
+        this.element.className = 'ex-format-cells ex-format-cells-slot';
+    }
+
+    get live(): boolean {
+        return this.#live;
+    }
+
+    mount(context: SheetFormatCellsSlotContext): void {
+        this.#live = true;
+        this.#cleanup = mountedSlot('formatCells', () => this.#mount(this.element, context));
+    }
+
+    dispose(): void {
+        if (!this.#live) return;
+        this.#live = false;
+        const cleanup = this.#cleanup;
+        this.#cleanup = undefined;
+        cleanup?.();
+    }
 }

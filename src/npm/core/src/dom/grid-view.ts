@@ -893,6 +893,8 @@ type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTML
         readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object;
         // The grid's own contents in the frame, the figures menu, which the Consumer's closePopover leaves alone.
         readonly own: boolean;
+        // What the Consumer hears as its contents go, however the frame closes, before the frame leaves the page.
+        readonly closed: (() => void) | undefined;
     };
 
 type MenuPopover = {
@@ -2120,7 +2122,8 @@ export class GridView<Row> {
         const popover = this.#popover;
         this.#popover = undefined;
         if (popover?.kind === 'find') popover.panel.dispose();
-        else if (popover !== undefined && popover.kind !== 'consumer') popover.items.dispose();
+        else if (popover?.kind === 'consumer') popover.closed?.();
+        else if (popover !== undefined) popover.items.dispose();
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#rowMarks.destroy();
@@ -6753,6 +6756,7 @@ export class GridView<Row> {
             try {
                 if (popover.kind === 'column' || popover.kind === 'context') popover.items.dispose();
                 else if (popover.kind === 'find') popover.panel.dispose();
+                else popover.closed?.();
             } finally {
                 this.#popoverGone(popover, held, giveBack);
             }
@@ -6785,17 +6789,20 @@ export class GridView<Row> {
      * to assistive technology (ADR-0033). The opening, a wrap and a close by the handle are each an input answered
      * (ADR-0220); a popover that stood before is closed only once the new contents are made.
      */
-    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean {
+    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean {
         if (this.#destroyed) throw new Error('This grid was destroyed.');
         if (typeof content !== 'function') throw new TypeError("A Consumer's popover's content is a function that makes its element (ADR-0050, item 16).");
         if (typeof label !== 'string' || label.trim() === '') throw new TypeError("A Consumer's popover is named in the Consumer's words: its label is not empty (ADR-0033).");
+        // Checked as a script may hand it, whatever its type says.
+        const hears: unknown = closed;
+        if (hears !== undefined && typeof hears !== 'function') throw new TypeError("A Consumer's popover's closed is the function that hears it close.");
         if (this.#edit !== undefined) return false;
-        this.#standFrame(content, label, false);
+        this.#standFrame(content, label, false, closed);
         return true;
     }
 
     // Stands contents in the popover frame, the Consumer's or the grid's own, in place of any popover that stands.
-    #standFrame(content: (context: GridPopoverContext) => HTMLElement, label: string, own: boolean): void {
+    #standFrame(content: (context: GridPopoverContext) => HTMLElement, label: string, own: boolean, closed?: () => void): void {
         // The context speaks for this opening only: once another popover stands, its close closes nothing.
         const opening = {};
         const standing = (): ConsumerPopoverFrame | undefined => {
@@ -6814,7 +6821,7 @@ export class GridView<Row> {
         // The contents may have opened another popover as they were made: this one takes its place.
         this.#closePopover(false);
         const frame = new ConsumerPopoverFrame(this.#root.ownerDocument, label, contents, this.#answer);
-        this.#popover = { kind: 'consumer', element: frame.element, frame, opening, own };
+        this.#popover = { kind: 'consumer', element: frame.element, frame, opening, own, closed };
         this.#placePopover();
         this.#scroller.after(frame.element);
         frame.focusFirst();

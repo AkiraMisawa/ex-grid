@@ -7,7 +7,8 @@
    .tsx file beside its .razor, runs it in a frame of its own, built ahead of time into the site's
    static files, and shows its code; one without says so where it would run, and neither the Blazor
    component nor its code is shown. A React Example written for the Wrappers too, Mantine's and MUI's
-   beside it (ADR-0390 section 8), runs the one the site's Chrome choice names. *@
+   beside it (ADR-0390 section 8), runs the one the site's Chrome choice names; where a product has no
+   Wrapper of that design system yet, the built-in Chrome runs and the toolbar says so. *@
 <div class="docs-example">
     @if (Title is not null)
     {
@@ -27,6 +28,10 @@
                 @if (_reactWrappers)
                 {
                     <ChromeSwitch />
+                    @if (ReactRunsUnder != State.ReactChrome)
+                    {
+                        <MudText Typo="Typo.caption" Class="docs-muted docs-example-unwrapped">No @State.ReactChrome.DisplayName() Wrapper for this product yet: the built-in Chrome runs</MudText>
+                    }
                 }
                 else
                 {
@@ -104,8 +109,9 @@
 
     private Type Current => _mud ? Mud! : Builtin;
 
-    // The Chrome the site's choice names, or the built-in one where the Example has no Wrapper's, and its file.
-    private ReactChrome ReactRunsUnder => _reactWrappers ? State.ReactChrome : ReactChrome.Builtin;
+    // The Chrome the site's choice names, or the built-in one where the Example has none of that Wrapper's, and its
+    // file.
+    private ReactChrome ReactRunsUnder => _reactWrappers && ExampleSources.ReactFor(Builtin, State.ReactChrome) is not null ? State.ReactChrome : ReactChrome.Builtin;
 
     private ReactExample? CurrentReact => ExampleSources.ReactFor(Builtin, ReactRunsUnder);
 
@@ -131,12 +137,15 @@
     {
         _product = DocsProducts.OfExample(Builtin);
         _react = ExampleSources.ReactFor(Builtin);
-        // Written for the built-in Chrome and both Wrappers, or for the built-in Chrome alone: an Example that ran the
-        // built-in Chrome under a Wrapper's name would show the reader a Chrome they did not choose.
+        // Written for the built-in Chrome and the Wrappers its product has, or for the built-in Chrome alone. Where the
+        // product has a Wrapper the Example was not written for, the Example would run the built-in Chrome under that
+        // Wrapper's name, showing the reader a Chrome they did not choose; where it has none yet, the toolbar says the
+        // built-in Chrome runs.
         ReactChrome[] wrappers = [ReactChrome.Mantine, ReactChrome.Mui];
         var written = wrappers.Where(chrome => ExampleSources.ReactFor(Builtin, chrome) is not null).ToArray();
-        if (written.Length > 0 && (_react is null || written.Length < wrappers.Length))
-            throw new InvalidOperationException($"{Builtin.Name}'s React Example is written for {(_react is null ? "" : "the built-in Chrome and ")}{string.Join(" and ", written)} alone: write {string.Join(", ", ((ReactChrome[])[ReactChrome.Builtin, .. wrappers]).Select(chrome => $"{Builtin.Name}{chrome.FileSuffix()}.tsx"))} together.");
+        var owed = wrappers.Where(chrome => DocsProducts.HasWrapper(_product, chrome) && !written.Contains(chrome)).ToArray();
+        if (written.Length > 0 && (_react is null || owed.Length > 0))
+            throw new InvalidOperationException($"{Builtin.Name}'s React Example is written for {(_react is null ? "" : "the built-in Chrome and ")}{string.Join(" and ", written)} alone: write {string.Join(", ", ((ReactChrome[])[ReactChrome.Builtin, .. written, .. owed]).Select(chrome => $"{Builtin.Name}{chrome.FileSuffix()}.tsx"))} together.");
         _reactWrappers = written.Length > 0;
     }
 

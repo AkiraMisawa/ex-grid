@@ -1,0 +1,182 @@
+/* @ex-grid/sheet-mantine — the Sheet Wrapper's stylesheet (ADR-0390 section 5, ADR-0030), loaded after Mantine's and
+   @ex-grid/mantine's. The grid's tokens are @ex-grid/mantine's, under the Paper's .mantine-ex-grid; these rules dress
+   the Sheet's own Chrome, the Sheet Toolbar, the Sheet Tabs and Format Cells, in Mantine's variables, and lay out the
+   Wrapper's own elements. They set no geometry the Sheet or the grid computes with: the toolbar's rows and the tabs'
+   band keep the heights the Sheet writes inline (ADR-0028). The Paper and the Ink, what the cells lie on, stay the
+   Sheet's in every scheme, never Mantine's body (ADR-0071). Every rule is scoped under .mantine-ex-sheet, so it
+   outranks ex-sheet.css's bare-class defaults whatever order the two load in. */
+
+/* The Sheet's Chrome is set in Mantine's font: only the cells keep the Sheet's own, whose widths its columns are
+   counted in (ADR-0027). */
+.mantine-ex-sheet .ex-sheet-toolbar,
+.mantine-ex-sheet .ex-sheet-tab-area {
+    font-family: var(--mantine-font-family);
+    font-size: var(--mantine-font-size-sm);
+}
+
+/* The Sheet Toolbar (ADR-0100): Mantine's controls inside the Sheet's band, whose rows stay the Sheet's. The item the
+   band's keyboard stands on is outlined in the theme's primary, as Mantine outlines a focused control. */
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    border-radius: var(--mantine-radius-sm);
+}
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-active {
+    outline: 2px solid var(--mantine-ex-strong, var(--mantine-primary-color-filled));
+    outline-offset: -1px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-icon,
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-caret {
+    width: 16px;
+    height: 16px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-split {
+    display: inline-flex;
+    align-items: center;
+}
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-arrow {
+    min-width: 0;
+    width: auto;
+    padding: 0 1px;
+}
+/* A colour control's face shows the colour it sets beneath its picture, as Excel's does: the colour is the user's,
+   written inline. */
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-face {
+    box-shadow: inset 0 -3px 0 var(--mantine-ex-sheet-swatch, transparent);
+}
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-menu .mantine-Button-label {
+    font-weight: 400;
+}
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-content {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* A Toolbar Item's list, Mantine's Popover dropdown: the choices one to a row and the swatches ten across, as Excel's
+   palette lays them out. */
+.mantine-ex-sheet .mantine-ex-sheet-toolbar-list {
+    padding: 4px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 10em;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.mantine-ex-sheet .mantine-ex-sheet-choice {
+    font-weight: 400;
+}
+.mantine-ex-sheet .mantine-ex-sheet-choice[data-disabled] {
+    color: var(--mantine-color-dimmed);
+    cursor: default;
+}
+.mantine-ex-sheet .mantine-ex-sheet-swatches {
+    display: grid;
+    grid-template-columns: repeat(10, 18px);
+    gap: 4px;
+    padding: 4px 6px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-swatch {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--mantine-ex-rule, var(--mantine-color-default-border));
+    border-radius: var(--mantine-radius-xs);
+    cursor: pointer;
+}
+.mantine-ex-sheet .mantine-ex-sheet-swatch[aria-checked="true"],
+.mantine-ex-sheet .mantine-ex-sheet-swatch:checked {
+    outline: 2px solid var(--mantine-ex-strong, var(--mantine-primary-color-filled));
+    outline-offset: 1px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-swatch:focus-visible {
+    outline: 2px solid var(--mantine-ex-strong, var(--mantine-primary-color-filled));
+    outline-offset: 3px;
+}
+
+/* The Sheet Tabs (ADR-0331 §4): the selected tab's rule in the theme's primary, its face in Mantine's text. The tabs
+   themselves, their band and their keyboard, are the Sheet's. */
+.mantine-ex-sheet .ex-sheet-tab[aria-selected="true"] {
+    border-bottom-color: var(--mantine-ex-strong, var(--mantine-primary-color-filled));
+}
+.mantine-ex-sheet .ex-sheet-tab-face {
+    display: inline-flex;
+    align-items: center;
+}
+.mantine-ex-sheet .mantine-ex-sheet-tab-add-face {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+}
+
+/* Format Cells (ADR-0071) inside the grid's popover frame, whose place and bound stay the grid's (ADR-0040). */
+.mantine-ex-sheet .mantine-ex-sheet-format-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    min-width: 28em;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-panel {
+    min-height: 18em;
+    padding-top: 8px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-columns {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-list .mantine-Fieldset-legend + *,
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-list,
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-line-column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-reason {
+    margin: 0 0 4px 2em;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-types {
+    max-height: 12em;
+    overflow-y: auto;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-dropdown,
+.mantine-ex-sheet .mantine-ex-sheet-more-colours {
+    max-width: 16em;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-preview {
+    border: 1px solid var(--mantine-color-default-border);
+    color: var(--mantine-color-text);
+}
+.mantine-ex-sheet .mantine-ex-sheet-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+.mantine-ex-sheet .mantine-ex-sheet-palette .mantine-ex-sheet-swatches {
+    padding: 0;
+}
+.mantine-ex-sheet .mantine-ex-sheet-format-cells-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}

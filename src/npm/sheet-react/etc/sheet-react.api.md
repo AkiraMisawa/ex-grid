@@ -4,11 +4,16 @@
 
 ```ts
 
+import { ExGridChrome } from '@ex-grid/react';
+import type { FormatCellsDraft } from '@ex-grid/sheet';
+import type { FormatCellsTab } from '@ex-grid/sheet';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { Ref } from 'react';
+import { SheetFormatCellsSlotContext } from '@ex-grid/sheet';
 import { SheetHandle } from '@ex-grid/sheet';
 import { SheetOptions } from '@ex-grid/sheet';
+import { SheetTabSlotContext } from '@ex-grid/sheet';
 import { SheetToolbarButton } from '@ex-grid/sheet';
 import { SheetToolbarCommand } from '@ex-grid/sheet';
 import { SheetToolbarContent } from '@ex-grid/sheet';
@@ -22,7 +27,10 @@ export function ExSheet(props: ExSheetProps): ReactElement;
 export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy'>;
 
 // @public
-export interface ExSheetChrome {
+export interface ExSheetChrome extends ExGridChrome<unknown> {
+    readonly formatCells?: (context: SheetFormatCellsSlotContext) => ReactNode;
+    readonly sheetTab?: (context: SheetTabSlotContext) => ReactNode;
+    readonly sheetTabAdd?: () => ReactNode;
     readonly toolbarItem?: (context: SheetToolbarItemSlotContext) => ReactNode;
 }
 
@@ -45,5 +53,19 @@ export type ExSheetToolbarEntry = SheetToolbarCommand | 'separator' | ExSheetToo
 export interface ExSheetToolbarRow extends Omit<SheetToolbarRowOptions, 'items'> {
     readonly items: readonly ExSheetToolbarEntry[];
 }
+
+// @public
+export interface FormatCellsHandles {
+    readonly cancel: () => void;
+    readonly ok: () => void;
+    readonly refusal: string | undefined;
+    readonly set: (choose: (draft: FormatCellsDraft) => void) => void;
+    readonly showTab: (tab: FormatCellsTab) => void;
+    readonly tab: FormatCellsTab;
+    readonly tabControl: (control: HTMLElement | null) => void;
+}
+
+// @public
+export function useFormatCells(context: SheetFormatCellsSlotContext): FormatCellsHandles;
 
 ```

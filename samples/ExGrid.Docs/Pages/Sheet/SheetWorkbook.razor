@@ -52,6 +52,13 @@
             <kbd>Z</kbd>: Claim is shown again with that cell selected. Under React the tabs show, select and add
             Sheets; pressing another tab while a Formula is typed, and a tab's rename, menu and drag, are not there yet.
         </DocsExample>
+        <p>
+            Under React a Chrome draws each tab's face through <code>chrome=&#123;&#123; sheetTab, sheetTabAdd &#125;&#125;</code>:
+            <code>sheetTab</code> is a render function of the tab's <code>name</code> and whether it is
+            <code>selected</code>, and <code>sheetTabAdd</code> draws the face of the <code>+</code> button. The tab
+            itself, its keys, its press and its name for a screen reader, stays the Sheet's. <code>MantineExSheet</code>
+            draws the faces in Mantine's text, the selected Sheet's in the theme's primary colour.
+        </p>
     </DocsSection>
 
     <DocsSection Title="3D References">

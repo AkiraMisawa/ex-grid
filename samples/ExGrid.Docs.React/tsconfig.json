@@ -22,6 +22,7 @@
       "@ex-grid/data-xlsx": ["../../src/npm/data-xlsx/src/index.ts"],
       "@ex-grid/sheet-xlsx": ["../../src/npm/sheet-xlsx/src/index.ts"],
       "@ex-grid/mantine": ["../../src/npm/mantine/src/index.ts"],
+      "@ex-grid/sheet-mantine": ["../../src/npm/sheet-mantine/src/index.ts"],
       "@mantine/core": ["./node_modules/@mantine/core/lib/index.d.mts"],
       "@mantine/hooks": ["./node_modules/@mantine/hooks/lib/index.d.mts"],
       "@ex-grid/mui": ["../../src/npm/mui/src/index.ts"],

@@ -24,7 +24,8 @@
     "sheet-engine",
     "sheet-xlsx",
     "sheet",
-    "sheet-react"
+    "sheet-react",
+    "sheet-mantine"
   ],
   "scripts": {
     "build": "npm run build --workspaces",

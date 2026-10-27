@@ -3,24 +3,32 @@
 // and decides nothing: the Workbook, the undo stack and every word are the Sheet's.
 
 import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useRef, useSyncExternalStore, type ReactElement, type ReactNode, type Ref } from 'react';
-import { GridPortals, useGridPortals } from '@ex-grid/react';
+import { chromeMounts, GridPortals, useGridPortals, type ChromeMountsMade, type ExGridChrome } from '@ex-grid/react';
 import {
-    createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetToolbarButton, type SheetToolbarCommand, type SheetToolbarContent,
-    type SheetToolbarItemSlot, type SheetToolbarItemSlotContext, type SheetToolbarRowOptions,
+    createSheet, type SheetChrome, type SheetFormatCellsSlotContext, type SheetHandle, type SheetOptions, type SheetTabSlotContext, type SheetToolbarButton,
+    type SheetToolbarCommand, type SheetToolbarContent, type SheetToolbarItemSlot, type SheetToolbarItemSlotContext, type SheetToolbarRowOptions,
 } from '@ex-grid/sheet';
 import type { CellAddress, SheetEdit } from '@ex-grid/sheet-engine';
 
 /**
- * The Sheet's own Chrome slots for React (ADR-0390 section 3), each a render function of what the Sheet hands that
- * slot, rendered through a portal into the slot the Sheet made. A slot not given is drawn by the built-in Chrome. A
- * render function is read when its part is drawn, and its answer is rendered as a component of its own: a hook
- * belongs in a component it renders. Hand the same function on every render, declared outside the component or
- * memoised: a new one draws its parts again.
+ * The Sheet's Chrome slots for React (ADR-0390 section 3), each a render function of what the Sheet hands that slot,
+ * rendered through a portal into the slot the Sheet made. A slot not given is drawn by the built-in Chrome. As the
+ * Sheet's `chrome` holds its grid's slots, so does this: ExGrid for React's render functions, which the Sheet hands
+ * its grid, beside the Sheet's own. A render function is read when its part is drawn, and its answer is rendered as
+ * a component of its own: a hook belongs in a component it renders. Hand the same function on every render, declared
+ * outside the component or memoised: a new one draws its parts again.
  */
-export interface ExSheetChrome {
+export interface ExSheetChrome extends ExGridChrome<unknown> {
     /** Each Toolbar Item of the Sheet Toolbar (ADR-0100): `null` leaves the item to the built-in Chrome, as the C#
      * Chrome's `ToolbarItem` answering null does. The view changes through the context's `subscribe`. */
     readonly toolbarItem?: (context: SheetToolbarItemSlotContext) => ReactNode;
+    /** Format Cells' contents (ADR-0071), in the grid's popover frame, drawn with {@link useFormatCells}. */
+    readonly formatCells?: (context: SheetFormatCellsSlotContext) => ReactNode;
+    /** Each Sheet Tab's face (ADR-0331 §4): the Sheet's name as its only text, taking no keyboard and hearing
+     * nothing. */
+    readonly sheetTab?: (context: SheetTabSlotContext) => ReactNode;
+    /** The face of the button that adds a Sheet (ADR-0331 §4), taking no keyboard and hearing nothing. */
+    readonly sheetTabAdd?: () => ReactNode;
 }
 
 /** A Consumer's own action on the Sheet Toolbar (ADR-0100), the Sheet's button with its content as a React node. */
@@ -74,7 +82,7 @@ export function ExSheet(props: ExSheetProps): ReactElement {
     const { ref, chrome, toolbar, ...given } = props;
     const element = useRef<HTMLDivElement>(null);
     const portals = useGridPortals();
-    const made = useRef<MadeMounts>({});
+    const made = useRef<MadeMounts>({ grid: new Map() });
     const contents = useRef<MadeToolbar>({ given: undefined, made: undefined, held: new Map() });
     const sheetChrome = sheetChromeOf(chrome, portals, made.current);
     const sheetToolbar = sheetToolbarOf(toolbar, portals, contents.current);
@@ -142,34 +150,69 @@ export function ExSheet(props: ExSheetProps): ReactElement {
 }
 
 // The mount functions made for the render functions handed, by slot: one handed again keeps its mount, so the
-// Sheet does not draw its parts again on every render.
+// Sheet does not draw its parts again on every render. The grid's are made as ExGrid for React makes its own.
 interface MadeMounts {
-    toolbarItem?: { readonly render: (context: SheetToolbarItemSlotContext) => ReactNode; readonly mount: SheetToolbarItemSlot };
+    readonly grid: ChromeMountsMade;
+    toolbarItem?: { readonly render: unknown; readonly mount: SheetToolbarItemSlot };
+    own?: Map<string, { readonly render: unknown; readonly mount: (slot: HTMLElement, context?: unknown) => () => void }>;
+    // The Sheet's chrome made last, and what it was made from: the same chrome handed again is the same to the Sheet.
+    given?: ExSheetChrome | undefined;
+    chrome?: SheetChrome;
 }
 
+// The Sheet's own slots that always draw what they are rendered: Format Cells and the tabs' faces. Every other slot
+// but the Toolbar Item's is the grid's, made as ExGrid for React makes it, and the Sheet refuses a name it has not.
+const ownSlotNames: readonly string[] = ['formatCells', 'sheetTab', 'sheetTabAdd'];
+const isGridSlot = (name: string): boolean => name !== 'toolbarItem' && !ownSlotNames.includes(name);
+
 // The Sheet's Chrome as the Sheet takes it: each render function as a mount function rendering through the portals.
+// Which slots there are is the Sheet's to check; a render function that is not a function is named here.
 function sheetChromeOf(given: ExSheetChrome | undefined, portals: GridPortals, made: MadeMounts): SheetChrome | undefined {
     // Checked as a script may hand it, whatever its type says.
     const chrome: unknown = given;
     if (chrome === undefined) return undefined;
     if (typeof chrome !== 'object' || chrome === null) throw new TypeError('chrome is an object of Chrome slots, each a render function of its context (ADR-0390).');
-    const { toolbarItem }: { readonly toolbarItem?: unknown } = chrome;
-    if (toolbarItem === undefined) return {};
-    if (typeof toolbarItem !== 'function') throw new TypeError('chrome.toolbarItem is a render function of the slot\'s context (ADR-0390).');
-    if (made.toolbarItem?.render !== toolbarItem) {
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- checked a function just above, the render the slot's type takes
-        const render = toolbarItem as (context: SheetToolbarItemSlotContext) => ReactNode;
-        made.toolbarItem = {
-            render,
-            mount: (slot, context) => {
-                // Read as the part is drawn, as the C# Chrome's ToolbarItem is: nothing drawn leaves it to the built-in.
-                const node = render(context);
-                if (node === null || node === undefined || node === false) return undefined;
-                return portals.mount(slot, () => node);
-            },
-        };
+    if (made.chrome !== undefined && made.given === given) return made.chrome;
+    const entries: [string, unknown][] = Object.entries(chrome);
+    const gridSlots = Object.fromEntries(entries.filter(([name]) => isGridSlot(name)));
+    const sheetChrome: Record<string, unknown> = { ...chromeMounts<unknown>(gridSlots, portals, made.grid) };
+    const own = new Map<string, { readonly render: unknown; readonly mount: (slot: HTMLElement, context?: unknown) => () => void }>();
+    for (const [name, render] of entries) {
+        if (render === undefined || isGridSlot(name)) continue;
+        if (typeof render !== 'function') throw new TypeError(`chrome.${name} is a render function of the slot's context (ADR-0390).`);
+        if (name === 'toolbarItem') {
+            sheetChrome[name] = toolbarItemMount(render, portals, made);
+        } else {
+            const before = made.own?.get(name);
+            const mount = before !== undefined && before.render === render ? before.mount : (slot: HTMLElement, context?: unknown) => portals.mount(slot, () => {
+                // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the Sheet hands each slot's mount that slot's context, the one its render function takes
+                const node = Reflect.apply(render, undefined, context === undefined ? [] : [context]) as ReactNode;
+                return node;
+            });
+            own.set(name, { render, mount });
+            sheetChrome[name] = mount;
+        }
     }
-    return { toolbarItem: made.toolbarItem.mount };
+    made.own = own;
+    made.given = given;
+    // Each slot a mount function made above; the Sheet checks their names.
+    made.chrome = sheetChrome;
+    return made.chrome;
+}
+
+// A Toolbar Item's mount: the render read as the part is drawn, as the C# Chrome's ToolbarItem is, so nothing drawn
+// leaves it to the built-in.
+function toolbarItemMount(render: unknown, portals: GridPortals, made: MadeMounts): SheetToolbarItemSlot {
+    const before = made.toolbarItem;
+    if (before !== undefined && before.render === render) return before.mount;
+    const mount: SheetToolbarItemSlot = (slot, context) => {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- checked a function by the caller, the render the slot's type takes
+        const node: ReactNode = Reflect.apply(render as (context: SheetToolbarItemSlotContext) => ReactNode, undefined, [context]);
+        if (node === null || node === undefined || node === false) return undefined;
+        return portals.mount(slot, () => node);
+    };
+    made.toolbarItem = { render, mount };
+    return mount;
 }
 
 // A button's content as the Sheet takes it: one mount function for the button's place, kept across renders, so the
