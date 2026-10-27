@@ -131,6 +131,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'Change Batches folded into the bundled source by the page\'s own timer, and a server whose data its live updates keep moving; changed values are marked in both, and a server cut off leaves a Stale Report (ADR-0067, ADR-0068).',
     },
     {
+        route: 'pivot-mantine', title: 'Pivot under Mantine', group: 'ExPivot',
+        description: '@ex-grid/pivot-mantine: the trades pivoted in Mantine\'s Paper, the Field List, the Pivot Toolbar, its menus and panels and Show Details\' tabs and dialog in Mantine\'s components, and the theme\'s colours in both schemes (ADR-0390).',
+    },
+    {
         route: 'sheet', title: 'Sheet', group: 'ExSheet',
         description: 'ExSheet drawn by ExGrid: Formulas, editing, paste, Delete, the fill keys and undo, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0370).',
     },

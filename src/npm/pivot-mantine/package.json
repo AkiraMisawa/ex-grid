@@ -1,0 +1,46 @@
+{
+  "name": "@ex-grid/pivot-mantine",
+  "version": "0.0.0-dev",
+  "description": "ExPivot for Mantine: the design-system Wrapper that draws ExPivot for React's Chrome — the Field List, the Pivot Toolbar, its menus and panels, the report filters, the Stale Report's notice and Show Details' tabs and dialog — with Mantine's components, and maps the pivot's Visual Tokens onto a Mantine theme.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "src/npm/pivot-mantine"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./styles.css"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts",
+    "styles.css"
+  ],
+  "scripts": {
+    "build": "node ../scripts/build.mjs",
+    "api": "node ../scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ex-grid/mantine": "0.0.0-dev",
+    "@ex-grid/pivot": "0.0.0-dev",
+    "@ex-grid/pivot-react": "0.0.0-dev"
+  },
+  "peerDependencies": {
+    "@mantine/core": "^9.7.0",
+    "@mantine/hooks": "^9.7.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

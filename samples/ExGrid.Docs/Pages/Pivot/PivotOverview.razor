@@ -163,6 +163,17 @@
             the backdrop and Escape stay the pivot's.
         </p>
         <p>
+            <strong>For a Mantine application</strong>, <code>@@ex-grid/pivot-mantine</code> draws every one of those
+            parts in Mantine's components: <code>MantinePivot</code> takes ExPivot's props and stands the pivot in
+            Mantine's Paper, its Field List, Pivot Toolbar, menus, panels, report filters, Stale Report notice and Show
+            Details' tabs and dialog drawn by <code>mantinePivotChrome</code>, and its report grid's Chrome by
+            <code>@@ex-grid/mantine</code>. Load <code>@@ex-grid/mantine/styles.css</code> and
+            <code>@@ex-grid/pivot-mantine/styles.css</code> after Mantine's styles, under a <code>MantineProvider</code>;
+            the pivot's colours then follow the theme and its scheme with no render. The Density picks the components'
+            size, a slot the <code>chrome</code> prop names is the Consumer's over the Wrapper's, and what each part
+            shows and does is still the pivot's.
+        </p>
+        <p>
             On Blazor Server, input made in the report while the connection is lost never reaches it. Once the
             connection is back, the next input finds it missing: it is refused aloud and never replayed, and the new
             input is handled as usual, as on <MudLink Href="exgrid/selection">the grid</MudLink>.

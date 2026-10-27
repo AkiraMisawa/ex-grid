@@ -20,6 +20,7 @@ export default defineConfig({
             '@ex-grid/pivot-engine': at('../../src/npm/pivot-engine/src/index.ts'),
             '@ex-grid/pivot': at('../../src/npm/pivot/src/index.ts'),
             '@ex-grid/pivot-react': at('../../src/npm/pivot-react/src/index.ts'),
+            '@ex-grid/pivot-mantine': at('../../src/npm/pivot-mantine/src/index.ts'),
             '@ex-grid/sheet-engine': at('../../src/npm/sheet-engine/src/index.ts'),
             '@ex-grid/sheet': at('../../src/npm/sheet/src/index.ts'),
             '@ex-grid/sheet-react': at('../../src/npm/sheet-react/src/index.ts'),
