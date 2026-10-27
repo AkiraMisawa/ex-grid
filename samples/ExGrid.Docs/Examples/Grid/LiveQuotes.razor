@@ -23,7 +23,9 @@
         new("Last", ColumnType.Number, q => q.Last, format: Price),
         new("Change", ColumnType.Number, q => q.Change, header: "Chg %",
             format: v => ((decimal)v).ToString("+0.00%;-0.00%;0.00%", Invariant),
-            tone: v => (decimal)v switch { > 0 => CellTone.Positive, < 0 => CellTone.Negative, _ => CellTone.None }),
+            // The tone of the change as shown: a move that rounds to 0.00% is no gain or loss.
+            // The format rounds half away from zero, so the tone does too.
+            tone: v => Math.Round((decimal)v, 4, MidpointRounding.AwayFromZero) switch { > 0 => CellTone.Positive, < 0 => CellTone.Negative, _ => CellTone.None }),
         new("Volume", ColumnType.Number, q => q.Volume, format: v => ((long)v).ToString("N0", Invariant)),
         new("Time", ColumnType.Text, q => q.Time.ToString("HH:mm:ss", Invariant)),
     ];

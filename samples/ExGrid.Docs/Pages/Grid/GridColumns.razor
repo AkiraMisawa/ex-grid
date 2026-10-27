@@ -187,7 +187,10 @@
             Widen a column, drag a header, pin from a column's ▾ menu, sort, and filter <em>P&amp;L</em> to values
             above 0. Save the view, press Reset, and restore it: the stored JSON below the grid is what comes back.
             Save or restore again without changing anything, and the Example says so: it compares the view read
-            back with the one on screen.
+            back with the one on screen. In React the same are <code>GridViewState.of</code>,
+            <code>GridViewStateJson.write</code> and <code>read</code> from <code>@@ex-grid/core</code>, with the sort
+            and the filter from the source's <code>snapshot()</code>; a stored view that cannot be read throws a
+            <code>GridViewStateJsonError</code>, and two views compare with <code>equals</code>.
         </DocsExample>
     </DocsSection>
 

@@ -30,10 +30,13 @@
         GridColumn<Position>.ActionColumn("Actions", [new GridAction("approve", "Approve")], width: Fixed(110)),
     ];
 
+    private static readonly Position[] Opening = [.. Position.Sample(3).Select((row, index) => row with { Price = 100m + index * 10m })];
+
     // Keyed by Id, so the feed hands over new versions of the same positions.
-    private readonly InMemoryGridSource<Position> _source = GridSource.From(
-        Position.Sample(3).Select((row, index) => row with { Price = 100m + index * 10m }).ToArray(),
-        row => row.Id);
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Opening, row => row.Id);
+
+    // Every position as the source holds it now, by Id, filtered out of view or not: the feed moves them all.
+    private readonly Dictionary<int, Position> _book = Opening.ToDictionary(row => row.Id);
 
     private string _feed = "Prices start at 100, 110 and 120.";
     private string _result = "Type a Price, press F9 while the editor is open, then Enter.";
@@ -65,13 +68,19 @@
                 return;
             }
             // edit.Row is the row as the source holds it now, so a field the feed changed meanwhile stays.
-            _source.ReplaceRow(edit.Row, edit.Row with { Price = price });
+            Write(edit.Row, edit.Row with { Price = price });
         }
         else
         {
-            _source.ReplaceRow(edit.Row, edit.Row with { Trader = edit.Value });
+            Write(edit.Row, edit.Row with { Trader = edit.Value });
         }
         _result = $"Written: {edit.Column} {edit.Value} on position {edit.Row.Id}.";
+    }
+
+    private void Write(Position row, Position written)
+    {
+        _source.ReplaceRow(row, written);
+        _book[written.Id] = written;
     }
 
     // The commit landed over a value the feed changed under the editor. The grid holds no sentence
@@ -84,7 +93,10 @@
     // Stands in for a live feed: a Change Batch with a new version of every position, each price up by 10.
     private void AdvancePrices()
     {
-        _source.Apply(new GridChangeBatch<Position>(changed: [.. _source.Window.Select(row => row with { Price = row.Price + 10m })]));
+        Position[] changed = [.. _book.Values.Select(row => row with { Price = row.Price + 10m })];
+        foreach (var row in changed)
+            _book[row.Id] = row;
+        _source.Apply(new GridChangeBatch<Position>(changed: changed));
         _feed = $"Feed update {++_feeds}: every price up by 10.";
     }
 

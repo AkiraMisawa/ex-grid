@@ -202,6 +202,9 @@
             since the epoch on the page's monotonic clock (<code>performance.timeOrigin + performance.now()</code>), or
             <code>undefined</code>; and the duration as <code>changeHighlightDuration</code>, in milliseconds. An <code>InMemoryGridSource</code> with a Row Key
             offers one as its own <code>cellChangedAt</code>. As in C#, hand over a new function when the times change.
+            That source marks what reaches it through <code>apply</code>, a Change Batch as a feed sends it; a row
+            replaced through <code>replaceRow</code> is the user's own edit there, and marks nothing. The React Example
+            below hands its ticks to <code>apply</code> and shows the source's own <code>cellChangedAt</code>.
         </p>
         <DocsExample Title="A live price board" Builtin="typeof(LiveQuotes)" Mud="typeof(LiveQuotesMud)"
                      Files="@(["Examples/Grid/Quote.cs"])" />
