@@ -7,3 +7,6 @@
 export { ExSheet } from './ex-sheet';
 export type { ExSheetApi, ExSheetChrome, ExSheetProps, ExSheetToolbarButton, ExSheetToolbarEntry, ExSheetToolbarRow } from './ex-sheet';
 export { useFormatCells, type FormatCellsHandles } from './format-cells';
+export {
+    useToolbarItem, type ToolbarChoiceListProps, type ToolbarChoiceProps, type ToolbarChoiceRow, type ToolbarControlProps, type ToolbarItemHandles,
+} from './toolbar-item';

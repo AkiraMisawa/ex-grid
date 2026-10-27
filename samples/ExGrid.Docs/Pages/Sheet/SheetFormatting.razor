@@ -188,6 +188,12 @@
                 closes, scrolls and gives the keyboard back as that one does. More Colours is a field for a hex value. An OK
                 Format Cells refuses, such as an empty code under Custom, leaves it open and says why above the buttons.
             </li>
+            <li>
+                <b>Under <code>MuiExSheet</code></b> (<code>@@ex-grid/sheet-mui</code>) it is MUI's Tabs, radios,
+                checkboxes, native selects, text fields and buttons, in the same popover, so it closes, scrolls and gives
+                the keyboard back as the others do. More Colours is a field for a hex value, and a refused OK says why
+                above the buttons in the theme's error colour.
+            </li>
         </ul>
         <p>
             What the dialog offers and what OK sets do not change with the Chrome: the same choices set the same Cell
@@ -208,9 +214,12 @@
             Sheet's. <code>useFormatCells(context)</code> holds what the contents show: the tab shown and
             <code>showTab</code>, a <code>tabControl</code> ref for the control of that tab, which takes the keyboard as
             Format Cells opens, <code>set</code> to make a choice through the context's <code>draft</code> and draw again,
-            and <code>ok</code>, <code>cancel</code> and the <code>refusal</code> an OK met, in the Sheet's words. Read every
-            control's state from the draft and draw the tabs and choices from <code>formatCellsOffer</code>; the Sheet's
-            <code>words</code> name them.
+            and <code>ok</code>, <code>cancel</code> and the <code>refusal</code> an OK met, in the Sheet's words.
+            <code>submit</code> is OK as the submit of a <code>noValidate</code> form holding every tab, each tab's fields
+            inside an element whose <code>data-ex-tab</code> names it: a field left invalid is shown on its tab and nothing
+            is set. Read every control's state from the draft, a palette's from <code>draft.colourOf(target)</code> and set
+            through <code>draft.setColour(target, colour)</code>, and draw the tabs and choices from
+            <code>formatCellsOffer</code>; the Sheet's <code>words</code> name them.
         </p>
     </DocsSection>
 
@@ -296,6 +305,18 @@
                 built this way, and so are <code>MantineExSheet</code>'s: a toggle is Mantine's <code>ActionIcon</code>,
                 filled while it is pressed, a menu a subtle <code>Button</code>, and each list Mantine's
                 <code>Popover</code>, drawn inside the Sheet so the Sheet hears its keys, with the colours ten across.
+                <code>MuiExSheet</code>'s are too: a toggle is MUI's <code>ToggleButton</code>, selected while it is
+                pressed, a menu a text <code>Button</code>, and each list MUI's <code>Popper</code> on a
+                <code>Paper</code>, its choices <code>ListItemButton</code>s, drawn inside the Sheet; MUI's
+                <code>Popover</code> and <code>Menu</code> are not used, because both hold the keyboard themselves.
+                Under React a Chrome's item is <code>chrome=&#123;&#123; toolbarItem &#125;&#125;</code>, a render function of
+                its context, and <code>useToolbarItem(context)</code> holds everything but the look: the item's
+                <code>view</code>, an <code>item</code> ref for the element holding the item and its list, outside which
+                a press closes the list, a <code>control</code> to spread on each control it draws (out of the Tab order,
+                keeping the keyboard on a press, its click claimed), <code>toggleList</code> and <code>open</code> for its
+                list, and <code>list</code>, <code>rows</code> and <code>choice(index)</code> for the list's element, its
+                rows (the swatches ten across) and each choice, which carry the list's keys. Both Wrappers draw their items
+                with it, so the same keys do the same thing under either.
             </li>
         </ul>
         <DocsExample Builtin="typeof(Toolbar)" Mud="typeof(ToolbarMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])" CodeOpen="true">

@@ -29,7 +29,8 @@
     "sheet-xlsx",
     "sheet",
     "sheet-react",
-    "sheet-mantine"
+    "sheet-mantine",
+    "sheet-mui"
   ],
   "scripts": {
     "build": "npm run build --workspaces",

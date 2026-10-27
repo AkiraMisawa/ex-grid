@@ -5,8 +5,11 @@
 ```ts
 
 import { ExGridChrome } from '@ex-grid/react';
-import type { FormatCellsDraft } from '@ex-grid/sheet';
-import type { FormatCellsTab } from '@ex-grid/sheet';
+import { FormatCellsDraft } from '@ex-grid/sheet';
+import { FormatCellsTab } from '@ex-grid/sheet';
+import { FormEvent } from 'react';
+import { KeyboardEvent as KeyboardEvent_2 } from 'react';
+import { MouseEvent as MouseEvent_2 } from 'react';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { Ref } from 'react';
@@ -18,6 +21,7 @@ import { SheetToolbarButton } from '@ex-grid/sheet';
 import { SheetToolbarCommand } from '@ex-grid/sheet';
 import { SheetToolbarContent } from '@ex-grid/sheet';
 import { SheetToolbarItemSlotContext } from '@ex-grid/sheet';
+import type { SheetToolbarItemView } from '@ex-grid/sheet';
 import { SheetToolbarRowOptions } from '@ex-grid/sheet';
 
 // @public
@@ -61,11 +65,60 @@ export interface FormatCellsHandles {
     readonly refusal: string | undefined;
     readonly set: (choose: (draft: FormatCellsDraft) => void) => void;
     readonly showTab: (tab: FormatCellsTab) => void;
+    readonly submit: (event: FormEvent<HTMLFormElement>) => void;
     readonly tab: FormatCellsTab;
     readonly tabControl: (control: HTMLElement | null) => void;
 }
 
 // @public
+export interface ToolbarChoiceListProps {
+    readonly 'aria-label': string;
+    readonly onKeyDown: (event: KeyboardEvent_2) => void;
+    readonly ref: (element: HTMLElement | null) => void;
+    readonly role: 'menu';
+}
+
+// @public
+export interface ToolbarChoiceProps {
+    readonly 'aria-checked': boolean;
+    readonly 'aria-disabled'?: true;
+    readonly 'data-ex-claims': 'click keydown';
+    readonly onClick: () => void;
+    readonly ref: (element: HTMLElement | null) => void;
+    readonly role: 'menuitemradio';
+    readonly tabIndex: -1;
+    readonly title: string;
+}
+
+// @public
+export type ToolbarChoiceRow = number | readonly number[];
+
+// @public
+export interface ToolbarControlProps {
+    readonly 'data-ex-claims': 'click';
+    readonly disabled: boolean;
+    readonly onMouseDown: (event: MouseEvent_2) => void;
+    readonly tabIndex: -1;
+    readonly title: string;
+}
+
+// @public
+export interface ToolbarItemHandles {
+    readonly choice: (index: number) => ToolbarChoiceProps;
+    readonly control: ToolbarControlProps;
+    readonly hasList: boolean;
+    readonly item: (element: HTMLElement | null) => void;
+    readonly list: ToolbarChoiceListProps;
+    readonly open: boolean;
+    readonly rows: readonly ToolbarChoiceRow[];
+    readonly toggleList: () => void;
+    readonly view: SheetToolbarItemView;
+}
+
+// @public
 export function useFormatCells(context: SheetFormatCellsSlotContext): FormatCellsHandles;
+
+// @public
+export function useToolbarItem(context: SheetToolbarItemSlotContext): ToolbarItemHandles;
 
 ```

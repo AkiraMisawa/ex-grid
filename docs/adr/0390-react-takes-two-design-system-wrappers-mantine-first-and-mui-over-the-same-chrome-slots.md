@@ -205,8 +205,33 @@ recommendations, as sections 9 and 10 were; a different answer from the user rew
   counted in its characters (ADR-0027), and the Workbook's Paper and Ink, which no scheme maps (ADR-0071). The Density
   picks the components' size as section 9 says.
 - **The Docs Site.** An Example is written for the Wrappers its product has: ExSheet's for Mantine alone, until it
-  has a MUI Wrapper. Where the reader's Chrome has no Wrapper for the product, the built-in Chrome runs and the
-  Example's toolbar says so, rather than run the built-in Chrome under that Wrapper's name (section 8).
+  has a MUI Wrapper (section 12 gives it one). Where the reader's Chrome has no Wrapper for the product, the built-in
+  Chrome runs and the Example's toolbar says so, rather than run the built-in Chrome under that Wrapper's name
+  (section 8).
+
+### 12. `@ex-grid/sheet-mui`'s answers
+
+*Decided 2026-10-27 with `@ex-grid/sheet-mui`, on the recommendation, under the user's standing approval of
+recommendations, as sections 9 to 11 were; a different answer from the user rewrites this section.*
+
+- **Section 11 holds under MUI.** Format Cells' contents stand in the grid's popover, the cells keep the Sheet's
+  font, Paper and Ink, and the Density picks the components' size as section 10 says. A theme without CSS variables
+  is refused by name, as `MuiExGrid` refuses it, since the Sheet's Chrome would otherwise be drawn in colours that are
+  not the theme's.
+- **The lists.** A Toolbar Item's list is MUI's `Popper` on a `Paper`, inside the Sheet, not in a portal, and fixed
+  to the viewport, for section 11's reasons. MUI's `Popover` and `Menu` are not used: both are modal, holding the
+  keyboard and laying a backdrop over the page, and `Menu`'s `MenuList` answers the arrows itself. A choice is MUI's
+  `ListItemButton`, as section 10 draws a menu's item.
+- **What is kit-neutral is shared, not copied.** The list's keys, its rows, its opening and closing on the toolbar's
+  requests and on a press outside the item, and the props every control takes were written into
+  `@ex-grid/sheet-mantine`; they move into ExSheet for React as `useToolbarItem`, as the grid's menu keys live in
+  `useMenuItems` (section 3), and both Wrappers draw with it. The outside press is heard from the commit that opens
+  the list, so a press made at once after the opening closes it too (the spine's sixth rule), and Mantine's own
+  dismissal is off. Format Cells' OK over a form whose field is left invalid moves into `useFormatCells`, and a
+  palette's colour for its target into the Sheet's draft (`colourOf`, `setColour`), which the built-in Format Cells
+  uses too. The theme check is `@ex-grid/mui`'s `refuseThemeWithoutVariables`, as every MUI
+  Wrapper's is. A Consumer's own Chrome takes the same hooks.
+- **The Docs Site.** ExSheet's React Examples are written for both Wrappers.
 
 ## Open
 

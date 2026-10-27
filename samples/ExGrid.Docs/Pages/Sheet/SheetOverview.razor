@@ -61,8 +61,19 @@
             <code>@@ex-grid/sheet-mantine/styles.css</code> loaded after Mantine's styles. The Chrome follows the theme
             and its scheme; the cells keep the document's own font, Paper and Ink, which are the Workbook's, not the
             theme's, and the column widths counted in its characters. A part you give in <code>chrome</code> beats
-            Mantine's, and <code>mantineSheetChrome</code> is the Wrapper's parts alone. Switch the Example below to
-            Mantine to see it; ExSheet has no MUI Wrapper yet.
+            Mantine's, and <code>mantineSheetChrome</code> is the Wrapper's parts alone.
+        </p>
+        <p>
+            <code>@@ex-grid/sheet-mui</code> (published with 0.3.0) draws it with MUI the same way:
+            <code>MuiExSheet</code> takes an ExSheet's props and stands the Sheet in MUI's <code>Paper</code>
+            (<code>variant</code>, outlined unless you say <code>elevation</code>, <code>elevation</code> and
+            <code>square</code>). It needs a <code>ThemeProvider</code> above it whose theme is made with
+            <code>createTheme(&#123; cssVariables: true &#125;)</code>, and <code>@@ex-grid/mui/styles.css</code> and
+            <code>@@ex-grid/sheet-mui/styles.css</code> loaded; a theme without CSS variables, or with a
+            <code>cssVarPrefix</code> of its own, is refused by name, because the Chrome would otherwise be drawn in
+            colours that are not the theme's. As under Mantine, the cells keep the document's font, Paper and Ink, a part
+            you give in <code>chrome</code> beats MUI's, and <code>muiSheetChrome</code> is the Wrapper's parts alone.
+            Switch the Example below to Mantine or MUI to see either.
         </p>
     </DocsSection>
 

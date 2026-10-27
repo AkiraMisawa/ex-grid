@@ -2,8 +2,9 @@
 // through the Sheet's draft and drawn again, the refusal an OK met, and the keyboard taken by the tab shown at the
 // opening. What a choice means and what OK sets are the Sheet's; this holds only what the contents show.
 
-import { useCallback, useLayoutEffect, useReducer, useRef, useState } from 'react';
-import type { FormatCellsDraft, FormatCellsTab, SheetFormatCellsSlotContext } from '@ex-grid/sheet';
+import { useCallback, useLayoutEffect, useReducer, useRef, useState, type FormEvent } from 'react';
+import { flushSync } from 'react-dom';
+import { formatCellsOffer, type FormatCellsDraft, type FormatCellsTab, type SheetFormatCellsSlotContext } from '@ex-grid/sheet';
 
 /** What {@link useFormatCells} hands Format Cells' contents. */
 export interface FormatCellsHandles {
@@ -22,6 +23,10 @@ export interface FormatCellsHandles {
     readonly ok: () => void;
     /** Cancel: sets nothing, and closes Format Cells. */
     readonly cancel: () => void;
+    /** OK as the submit of a `noValidate` form holding every tab, each tab's fields inside an element whose
+     * `data-ex-tab` names it: a field the browser holds invalid, such as a number of places out of range, is shown on
+     * its tab and reported there, and nothing is set, whichever tab OK was pressed from; otherwise `ok`. */
+    readonly submit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
 /**
@@ -54,10 +59,24 @@ export function useFormatCells(context: SheetFormatCellsSlotContext): FormatCell
     const ok = useCallback(() => {
         if (!context.ok()) setRefused(true);
     }, [context]);
+    const submit = useCallback((event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const invalid = [...event.currentTarget.querySelectorAll('input, select, textarea')]
+            .find((field): field is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
+                (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) && !field.checkValidity());
+        if (invalid === undefined) {
+            ok();
+            return;
+        }
+        const holding = formatCellsOffer.tabs.find(each => each === invalid.closest<HTMLElement>('[data-ex-tab]')?.dataset['exTab']);
+        if (holding === undefined) throw new Error('A field of Format Cells the browser holds invalid stands in no element marked data-ex-tab with its tab.');
+        flushSync(() => { showTab(holding); });
+        invalid.reportValidity();
+    }, [ok, showTab]);
     const tabControl = useCallback((element: HTMLElement | null) => { control.current = element; }, []);
     const standing = context.draft.refusal;
     return {
-        tab, showTab, tabControl, set, ok, cancel: context.cancel,
+        tab, showTab, tabControl, set, ok, submit, cancel: context.cancel,
         refusal: refused && standing !== undefined ? context.words.formatCellsRefusal(standing) : undefined,
     };
 }

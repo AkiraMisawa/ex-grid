@@ -7,8 +7,7 @@
 // A field typed into shows what is typed while it holds the keyboard, and the draft's text once it is left, so a
 // choice never writes over typing (ADR-0240 section 1); one the draft did not take stays as typed, and OK refuses it.
 
-import { createElement, useContext, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
-import { flushSync } from 'react-dom';
+import { createElement, useContext, useState, type ReactElement, type ReactNode } from 'react';
 import { Button, Checkbox, Fieldset, NativeSelect, Radio, Tabs, Text, TextInput, type MantineSize } from '@mantine/core';
 import { MantineSizeContext } from '@ex-grid/mantine';
 import {
@@ -16,7 +15,7 @@ import {
     type SheetFormatCellsSlotContext, type SheetWords,
 } from '@ex-grid/sheet';
 import { useFormatCells } from '@ex-grid/sheet-react';
-import { CellColour, CellFill, type BorderLineStyle } from '@ex-grid/sheet-engine';
+import type { BorderLineStyle, CellColour } from '@ex-grid/sheet-engine';
 
 /** What every tab is drawn with. */
 interface TabProps {
@@ -127,32 +126,12 @@ function AlignmentTab({ draft, words, size, set }: TabProps): ReactElement {
     });
 }
 
-/** The colour a target holds now, `undefined` for No Colour on the Fill. */
-function chosenColour(draft: FormatCellsDraft, target: ColourTarget): CellColour | undefined {
-    switch (target) {
-        case 'font': return draft.fontColour;
-        case 'fill': return draft.fill.colour;
-        case 'border': return draft.lineColour;
-        default: throw new RangeError(`Unknown colour target '${String(target satisfies never)}' (ADR-0071).`);
-    }
-}
-
-/** Chooses a colour for a target: `undefined` is Automatic for the Font and the Border, and No Colour for the Fill. */
-function chooseColour(draft: FormatCellsDraft, target: ColourTarget, colour: CellColour | undefined): void {
-    switch (target) {
-        case 'font': draft.setFontColour(colour === undefined ? CellColour.automatic : colour); break;
-        case 'fill': draft.setFill(colour === undefined ? CellFill.none : CellFill.solid(colour)); break;
-        case 'border': draft.setLineColour(colour === undefined ? CellColour.automatic : colour); break;
-        default: throw new RangeError(`Unknown colour target '${String(target satisfies never)}' (ADR-0071).`);
-    }
-}
-
 /** Case 23's palette as one group of radio buttons: Automatic or No Colour first, the theme's sixty and the ten
  * standard colours, each named as Excel names it, and More Colours, which takes a hex value. */
 function Palette({ draft, words, size, set, target, id }: TabProps & { readonly target: ColourTarget; readonly id: string }): ReactElement {
     const name = `${id}-palette-${target}`;
     const isFill = target === 'fill';
-    const chosen = chosenColour(draft, target);
+    const chosen = draft.colourOf(target);
     const swatches = (row: readonly PaletteSwatch[], key: string): ReactElement => createElement('div', { key, className: 'mantine-ex-sheet-swatches' },
         ...row.map((swatch, index) => {
             const swatchName = words.swatchName(swatch);
@@ -160,7 +139,7 @@ function Palette({ draft, words, size, set, target, id }: TabProps & { readonly 
             return createElement('input', {
                 key: index, type: 'radio', name, className: 'mantine-ex-sheet-swatch', 'aria-label': swatchName, title: swatchName, 'data-rgb': paint,
                 style: { backgroundColor: paint }, checked: chosen !== undefined && !chosen.isAutomatic && chosen.equals(swatch.colour),
-                onChange: () => { set(each => { chooseColour(each, target, swatch.colour); }); },
+                onChange: () => { set(each => { each.setColour(target, swatch.colour); }); },
             });
         }));
     return createElement('div', {
@@ -168,7 +147,7 @@ function Palette({ draft, words, size, set, target, id }: TabProps & { readonly 
     },
     createElement(Radio, {
         key: 'first', name, size, label: words.formatCellsLabel(isFill ? 'noColour' : 'automatic'),
-        checked: isFill ? chosen === undefined : chosen?.isAutomatic === true, onChange: () => { set(each => { chooseColour(each, target, undefined); }); },
+        checked: isFill ? chosen === undefined : chosen?.isAutomatic === true, onChange: () => { set(each => { each.setColour(target, undefined); }); },
     }),
     swatches(formatCellsOffer.themeColours.flat(), 'theme'),
     swatches(formatCellsOffer.standardColours, 'standard'),
@@ -292,25 +271,12 @@ let openings = 0;
 
 /** Format Cells in Mantine's components, over the Sheet's draft. */
 export function MantineFormatCells({ context }: { readonly context: SheetFormatCellsSlotContext }): ReactElement {
-    const { tab, showTab, tabControl, set, refusal, ok, cancel } = useFormatCells(context);
+    const { tab, showTab, tabControl, set, refusal, submit, cancel } = useFormatCells(context);
     const size = useContext(MantineSizeContext);
     const [id] = useState(() => { openings += 1; return `mantine-ex-sheet-format-cells-${String(openings)}`; });
     const { draft, words } = context;
-    // OK checks its fields first, on every tab, since each tab stays drawn while another is shown: one the browser
-    // holds invalid, a number of places out of range, is shown on its tab and reported there, and nothing is set.
-    const submitted = (event: FormEvent<HTMLFormElement>): void => {
-        event.preventDefault();
-        const invalid = [...event.currentTarget.querySelectorAll('input')].find(field => !field.checkValidity());
-        if (invalid !== undefined) {
-            const holding = formatCellsOffer.tabs.find(each => each === invalid.closest<HTMLElement>('[data-ex-tab]')?.dataset['exTab']);
-            if (holding === undefined) throw new Error('Internal: an invalid field of Format Cells stands on no tab.');
-            flushSync(() => { showTab(holding); });
-            invalid.reportValidity();
-            return;
-        }
-        ok();
-    };
-    return createElement('form', { className: 'mantine-ex-sheet-format-cells', onSubmit: submitted, noValidate: true },
+    // OK checks its fields first, on every tab, since each tab stays drawn while another is shown (useFormatCells).
+    return createElement('form', { className: 'mantine-ex-sheet-format-cells', onSubmit: submit, noValidate: true },
         createElement(Tabs, {
             value: tab, keepMounted: true,
             onChange: (value: string | null) => {
