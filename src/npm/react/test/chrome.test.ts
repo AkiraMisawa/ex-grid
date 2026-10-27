@@ -12,6 +12,7 @@ import { useFilterPanel, useFindPanel, useMenuItems, type ExGridChrome } from '.
 import { filterPanelSlotContract } from './filter-slot-contract';
 import { findPanelSlotContract } from './find-slot-contract';
 import { menuSlotContract } from './menu-slot-contract';
+import { shownSlotContract } from './shown-slot-contract';
 
 /** A menu of plain buttons, as a Wrapper draws its design system's: it counts its mounts, to show it keeps state. */
 function PlainMenu({ context }: { readonly context: GridMenuSlotContext }): ReactElement {
@@ -71,11 +72,19 @@ function PlainFindPanel({ context }: { readonly context: GridFindPanelSlotContex
 const plainMenu = (context: GridMenuSlotContext): ReactElement => createElement(PlainMenu, { context });
 const plainFilterPanel = (context: GridFilterPanelSlotContext): ReactElement => createElement(PlainFilterPanel, { context });
 const plainFindPanel = (context: GridFindPanelSlotContext): ReactElement => createElement(PlainFindPanel, { context });
-const plainChrome: ExGridChrome<unknown> = { columnMenu: plainMenu, contextMenu: plainMenu, filterPanel: plainFilterPanel, findPanel: plainFindPanel };
+const plainChrome: ExGridChrome<unknown> = {
+    columnMenu: plainMenu, contextMenu: plainMenu, filterPanel: plainFilterPanel, findPanel: plainFindPanel,
+    cellMessage: context => createElement('span', null, context.message),
+    loadingIndicator: context => (context.loading ? createElement('progress', { 'aria-label': 'Loading' }) : null),
+    selectionSummary: context => createElement('span', null, context.status === 'pending' ? context.label('summary-pending')
+        : context.status === 'declined' ? context.declineReason
+        : context.figures.map(figure => createElement('span', { key: figure.figure }, `${context.label(figure.labelId)}: ${figure.text} `))),
+};
 
 menuSlotContract('a Chrome of plain buttons', plainChrome);
 filterPanelSlotContract('a Chrome of plain controls', plainChrome);
 findPanelSlotContract('a Chrome of plain controls', plainChrome);
+shownSlotContract('a Chrome of plain elements', plainChrome);
 
 interface Trade {
     readonly book: string;

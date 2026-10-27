@@ -9,8 +9,8 @@ import {
     type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
 import type {
-    FilterPanelView, FindPanelView, GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext, GridFilterPanelSlotContext,
-    GridFindPanelSlotContext, GridMenuSlotContext,
+    FilterPanelView, FindPanelView, GridCellMessageSlotContext, GridChrome, GridColumnMenuSlotContext, GridContextMenuSlotContext,
+    GridFilterPanelSlotContext, GridFindPanelSlotContext, GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridSelectionSummarySlotContext,
 } from '@ex-grid/core';
 import type { GridPortals } from './portals';
 
@@ -29,6 +29,12 @@ export interface ExGridChrome<Row> {
     readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
     /** The find panel and its Replace (ADR-0055, ADR-0332), drawn with {@link useFindPanel}. */
     readonly findPanel?: (context: GridFindPanelSlotContext) => ReactNode;
+    /** A cell's message (ADR-0034): its text, drawn in the core's box below the cell. */
+    readonly cellMessage?: (context: GridCellMessageSlotContext) => ReactNode;
+    /** The loading indicator (ADR-0010), at the grid's foot: nothing while nothing loads. */
+    readonly loadingIndicator?: (context: GridLoadingIndicatorSlotContext) => ReactNode;
+    /** The Selection Summary's figures (ADR-0130), drawn in the core's box in the status line. */
+    readonly selectionSummary?: (context: GridSelectionSummarySlotContext) => ReactNode;
 }
 
 /** The ExGrid's Chrome as the core takes it: each slot's render function as a mount function that renders it

@@ -82,7 +82,10 @@ import {
 import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
 import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, popoverMinWidthPx, type MenuKeyTable, type MenuPlace } from './menu-popover';
-import { checkedChrome, columnMenuExtra, SlottedFilterPanel, SlottedFindPanel, SlottedMenu, type GridChrome, type GridChromeSlot, type GridMenuSlotContext } from './grid-chrome';
+import {
+    checkedChrome, columnMenuExtra, ShownSlot, SlottedFilterPanel, SlottedFindPanel, SlottedMenu, type GridCellMessageSlotContext, type GridChrome,
+    type GridChromeSlot, type GridLoadingIndicatorSlotContext, type GridMenuSlotContext,
+} from './grid-chrome';
 import { FilterPanel, type FilterPlace, type FilterUi } from './filter-panel';
 import { FindPanel, type FindHeld, type FindPlace } from './find-panel';
 import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
@@ -1310,6 +1313,10 @@ export class GridView<Row> {
     #imeKeyTold = false;
     readonly #editorPinned: HTMLElement;
     readonly #message: HTMLElement;
+    // The Chrome's cellMessage slot, standing in the message while it draws it (ADR-0390).
+    readonly #messageSlot: ShownSlot<GridCellMessageSlotContext>;
+    // The Chrome's loadingIndicator slot, at the root's foot while the Chrome has one (ADR-0390).
+    readonly #loadingSlot: ShownSlot<GridLoadingIndicatorSlotContext>;
     // Whether the keyboard last came to the grid by a press, which a text field's :focus-visible cannot tell
     // (KB-12, ADR-0080).
     #keyboardByPress = false;
@@ -1593,6 +1600,8 @@ export class GridView<Row> {
         // The message a Reject or a refusal holds the editor with (ADR-0034): a tooltip outside the scroller,
         // which the editor is described by. Not a live region: the root's says it once.
         this.#message = element('div', { class: 'ex-message', id: `${this.#ids}message`, role: 'tooltip' });
+        this.#messageSlot = new ShownSlot('cellMessage', element('span', {}));
+        this.#loadingSlot = new ShownSlot('loadingIndicator', element('div', { class: 'ex-loading-indicator' }));
         this.#rowMarks = new GridMarks(doc, () => {
             this.#marksStamp += 1;
             this.#invalidate();
@@ -1857,6 +1866,9 @@ export class GridView<Row> {
         this.#unsubscribe?.();
         this.#rowMarks.destroy();
         this.#summary.destroy();
+        this.#summaryBox.hide();
+        this.#messageSlot.hide();
+        this.#loadingSlot.hide();
         // Every Template cell's content is taken away with the grid (ADR-0020).
         for (const byColumn of this.#templates.values()) {
             for (const mounted of byColumn.values()) this.#unmount(mounted);
@@ -7811,8 +7823,40 @@ export class GridView<Row> {
         this.#paintViewport();
         this.#paintStatus();
         this.#paintMessage();
+        this.#paintLoading();
         this.#paintFormulaBar();
         this.#placePopover();
+    }
+
+    // The Chrome's loading indicator (ADR-0010), at the root's foot before the pager and the status line, as the C#
+    // core renders it: handed whether rows are on their way and how many painted rows are Placeholders, which stay
+    // the core's (ADR-0004).
+    #paintLoading(): void {
+        const mount = this.#chrome?.loadingIndicator;
+        const box = this.#loadingSlot.element;
+        if (mount === undefined) {
+            this.#loadingSlot.hide();
+            box.remove();
+            return;
+        }
+        const loading = this.#state.loading;
+        const placeholderRows = this.#placeholderCount();
+        this.#loadingSlot.show(mount, `${loading} ${placeholderRows}`, () => Object.freeze({ loading, placeholderRows }));
+        const before = this.#pager.parentNode === this.#root ? this.#pager : this.#status.parentNode === this.#root ? this.#status : this.#announce;
+        if (box.nextSibling !== before) this.#root.insertBefore(box, before);
+    }
+
+    // How many of the painted rows are Placeholders: every one while a fling paints them, and otherwise those the
+    // Window does not hold.
+    #placeholderCount(): number {
+        const visible = this.#visible;
+        if (visible === undefined) return 0;
+        if (this.#placeholderMode) return visible.count;
+        let count = 0;
+        for (let row = visible.start; row < visible.start + visible.count; row++) {
+            if (this.#rowAt(row) === undefined) count += 1;
+        }
+        return count;
     }
 
     // A right-click on the status line opens the figures menu where a Consumer hears the choice (ADR-0130), and is
@@ -7871,9 +7915,11 @@ export class GridView<Row> {
             const summary = this.#summary.summary;
             const focus = this.#held.selection.focus;
             const column = focus === undefined ? undefined : this.#columns[focus.column]?.column;
-            this.#summaryBox.paint(summary, summaryFiguresShown(summary.result, column), id => this.#labelOf(id));
+            this.#summaryBox.paint(summary, summaryFiguresShown(summary.result, column), id => this.#labelOf(id), this.#chrome?.selectionSummary);
             this.#summaryBox.claimMenu(this.#onSummaryFiguresChanged !== undefined);
             shown.push(this.#summaryBox.element);
+        } else {
+            this.#summaryBox.hide();
         }
         // The menu's ticks are the figures handed back, which a press on it does not change by itself. It goes with
         // the line it was opened on, or with the Consumer that heard it, rather than stand with presses that do nothing.
@@ -8778,6 +8824,7 @@ export class GridView<Row> {
         }
         const said = edit === undefined ? this.#shownMessage : edit.error === undefined ? undefined : { cell: edit.cell, text: edit.error };
         if (said === undefined || geometry === undefined || visible === undefined || this.#editorAway(said.cell, visible)) {
+            this.#messageSlot.hide();
             this.#message.remove();
             return;
         }
@@ -8785,8 +8832,33 @@ export class GridView<Row> {
         const left = Math.min(Math.max(0, this.#cellLeftPx(said.cell.column)), Math.max(0, this.#visibleWidthPx - width));
         const top = this.#bandHeightPx + geometry.viewportTopPxOf(said.cell.row, this.#scrollTopPx) + this.#metrics.rowHeightPx;
         setAttribute(this.#message, 'style', this.#underBar(`left: ${left}px; top: ${top}px; max-width: ${width}px`));
-        if (this.#message.textContent !== said.text) this.#message.textContent = said.text;
+        this.#sayMessage(said.cell, said.text, edit !== undefined);
         if (this.#message.parentNode !== this.#root) this.#scroller.after(this.#message);
+    }
+
+    // Writes the message's text, or has the Chrome's cellMessage slot draw it (ADR-0390). The slot's close takes away
+    // the flagged cell's message it was mounted for, and nothing after another has taken its place.
+    #sayMessage(cell: CellPosition, text: string, editorError: boolean): void {
+        const mount = this.#chrome?.cellMessage;
+        if (mount === undefined) {
+            // The slot's element goes with its contents, whatever text it was left showing.
+            const slotted = this.#message.firstChild === this.#messageSlot.element;
+            this.#messageSlot.hide();
+            if (slotted || this.#message.textContent !== text) this.#message.textContent = text;
+            return;
+        }
+        const column = itemAt(this.#columns, cell.column).column.name;
+        const key = JSON.stringify([cell.row, column, text, editorError]);
+        this.#messageSlot.show(mount, key, standing => Object.freeze({
+            column, message: text, editorError,
+            close: () => {
+                if (this.#destroyed || !standing() || editorError) return;
+                if (this.#closeMessage()) this.#invalidate();
+            },
+        }));
+        if (this.#message.firstChild !== this.#messageSlot.element || this.#message.childNodes.length !== 1) {
+            this.#message.replaceChildren(this.#messageSlot.element);
+        }
     }
 
     // The editor takes the keyboard once it is painted, while the keyboard is this grid's: on opening, with
