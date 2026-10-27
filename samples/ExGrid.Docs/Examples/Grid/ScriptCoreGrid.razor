@@ -66,11 +66,15 @@
 
     // Each target cell takes the text of the source cell it repeats. Only Book is editable, so every target cell is a
     // Book, whichever way the drag went. A fill raised under an order that has since moved names other rows: it is
-    // dropped. Every row is resolved before one is written, since a write could reorder them.
+    // refused, so the grid neither selects nor counts cells nothing wrote. Every row is resolved before one is written,
+    // since a write could reorder them.
     private void Fill(GridFillIntent fill)
     {
         if (fill.RowSequenceVersion != _source.RowSequenceVersion)
+        {
+            fill.Refuse();
             return;
+        }
         var rows = _source.Window;
         var (source, target) = (fill.Source, fill.Target);
         var writes = Enumerable.Range(target.TopRow, target.RowCount).Select(at =>

@@ -122,8 +122,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
 
     /// <summary>
-    /// Whether the fill handle is painted at the bottom-right of a single-range Selection while no edit is open
-    /// (ADR-0050, item 5). Dragged along one axis and released, it raises one <see cref="OnFill"/> intent; a target over
+    /// Whether the fill handle is painted on a single-range Selection while no edit is open (ADR-0050, item 5): at its
+    /// bottom-right, at the top-right of whole columns and at the bottom-left of whole rows. Dragged along one axis and released, it raises one <see cref="OnFill"/> intent; a target over
     /// a column that is not Editable is refused first, through <see cref="OnRefused"/>. Off unless set.
     /// </summary>
     [Parameter] public bool ShowFillHandle { get; set; }

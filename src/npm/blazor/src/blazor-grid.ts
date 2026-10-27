@@ -248,7 +248,7 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
 }
 
 /** What .NET answered a write of the user's own: `null` where it took it, and where it refused it, the Consumer's
- * sentence, empty for a paste, which carries none. */
+ * sentence, empty for a paste or a fill, which carry none. */
 function refusalOf(answer: unknown): string | undefined {
     if (answer === null) return undefined;
     if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a write with something other than a refusal.');

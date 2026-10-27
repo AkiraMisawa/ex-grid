@@ -26,6 +26,9 @@ public class ScriptGridFillTests : BunitContext
     }
 
     private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(Action<GridFillIntent> onFill) =>
+        Grid(intent => { onFill(intent); return Task.CompletedTask; });
+
+    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(Func<GridFillIntent, Task> onFill) =>
         Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Many(10))
             .Add(g => g.Columns, TestRows.Columns())
@@ -76,6 +79,25 @@ public class ScriptGridFillTests : BunitContext
         var answer = await cut.InvokeAsync(() => Bridge().Heard("fill", Fill));
 
         Assert.Equal("", answer);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
+    [Fact] // ED-34 / ADR-0380: the user's Escape reaches a fill answered later on its token, and the fill is not taken
+    public async Task ADR0380_a_fill_answered_later_is_called_off_by_the_users_cancel()
+    {
+        var asked = new TaskCompletionSource<CancellationToken>();
+        var cut = Grid(async intent =>
+        {
+            asked.SetResult(intent.CancellationToken);
+            await Task.Delay(Timeout.Infinite, intent.CancellationToken);
+        });
+
+        var answer = cut.InvokeAsync(() => Bridge().Heard("fill", Fill));
+        var token = await asked.Task;
+        await cut.InvokeAsync(() => Bridge().CancelAnswer(1));
+
+        Assert.True(token.IsCancellationRequested);
+        Assert.Null(await answer);
         Assert.False(Renderer.UnhandledException.IsCompleted);
     }
 }

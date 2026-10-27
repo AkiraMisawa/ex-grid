@@ -4008,7 +4008,7 @@ export class GridView<Row> {
         return isThenable(answer) ? answer : undefined;
     }
 
-    // The Consumer has answered an Edit Intent or a paste intent: the time to refuse in ends, what the source gathered
+    // The Consumer has answered an Edit Intent, a paste intent or a fill intent: the time to refuse in ends, what the source gathered
     // while it wrote is put out (D5), and the user's write is taken back where it was refused, cancelled or its handler
     // failed.
     #intentAnswered(intent: { seal(): void; readonly refused: boolean }, written: UserWrite, failed: boolean): void {
@@ -4558,12 +4558,12 @@ export class GridView<Row> {
             if (this.#outlivedBy(edit) === undefined && !intent.refused) this.#raiseOverwriteNotice(edit.cell, name, seen, replaced);
         };
         if (answer === undefined) landed();
-        else this.#pastePending(answer, intent, controller, written, landed);
+        else this.#intentPending(answer, intent, controller, written, landed);
     }
 
     // A paste's or a fill's intent answered later (ADR-0380 section 2): it is pending with no editor, and an Escape
     // cancels it aloud. `landed` runs once the Consumer has answered, refused or not.
-    #pastePending(
+    #intentPending(
         answer: PromiseLike<unknown>, intent: GridPasteIntent | GridFillIntent, controller: AbortController, written: UserWrite, landed: () => void,
     ): void {
         this.#pend(answer, {
@@ -5004,7 +5004,7 @@ export class GridView<Row> {
             this.#handedVersion(), undefined, controller.signal, undefined, source);
         const written = this.#noteUserWrite(plan.paste.targets);
         const answer = this.#heardNow(() => heard(intent), failed => { this.#intentAnswered(intent, written, failed); });
-        if (answer !== undefined) this.#pastePending(answer, intent, controller, written, () => undefined);
+        if (answer !== undefined) this.#intentPending(answer, intent, controller, written, () => undefined);
         this.#invalidate();
     }
 
@@ -6367,7 +6367,7 @@ export class GridView<Row> {
         const hear = defined(this.#pasteHeard, 'the paste\'s listener');
         const answer = this.#heardNow(() => hear(intent), failed => { this.#intentAnswered(intent, noted, failed); });
         if (answer === undefined) this.#pasted(intent, target, version);
-        else this.#pastePending(answer, intent, controller, noted, () => { this.#pasted(intent, target, version); });
+        else this.#intentPending(answer, intent, controller, noted, () => { this.#pasted(intent, target, version); });
     }
 
     // A paste the Consumer answered: written, the Selection collapses to it or takes the block it spilled.
@@ -6760,7 +6760,7 @@ export class GridView<Row> {
         const answer = this.#heardNow(() => listener(intent), failed => { this.#intentAnswered(intent, written, failed); });
         // Answered later, the fill is pending as a paste is, and the Selection is placed once it lands (ADR-0380).
         if (answer === undefined) landed();
-        else this.#pastePending(answer, intent, controller, written, landed);
+        else this.#intentPending(answer, intent, controller, written, landed);
     }
 
     // After a fill the Consumer accepted, the Selection is the source and the target together, as in Excel
