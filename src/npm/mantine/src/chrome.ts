@@ -8,12 +8,13 @@ import { createContext, createElement, useCallback, useContext, type ReactElemen
 import { Button, Checkbox, Loader, NativeSelect, Radio, Text, TextInput, type MantineSize } from '@mantine/core';
 import {
     filterPanelLabelIds, findPanelLabelIds, operatorLabelId, summaryLabelIds, type FilterOperator, type FilterPanelCondition,
-    type GridCellEditorSlotContext, type GridCellMessageSlotContext, type GridFilterPanelSlotContext, type GridFindPanelSlotContext,
-    type GridFormulaBarTextSlotContext, type GridLoadingIndicatorSlotContext, type GridMenuSlotContext, type GridNameBoxSlotContext,
+    type GridCellEditorSlotContext, type GridCellMessageSlotContext, type GridEditorCompletionSlotContext, type GridFilterPanelSlotContext,
+    type GridFindPanelSlotContext, type GridFormulaBarTextSlotContext, type GridLoadingIndicatorSlotContext, type GridMenuSlotContext, type GridNameBoxSlotContext,
     type GridSelectionSummarySlotContext,
 } from '@ex-grid/core';
 import {
-    useCellEditor, useFilterPanel, useFindPanel, useFormulaBarText, useMenuItems, useNameBox, type ExGridChrome, type FilterPanelHandles,
+    useCellEditor, useEditorCompletion, useFilterPanel, useFindPanel, useFormulaBarText, useMenuItems, useNameBox, type ExGridChrome,
+    type FilterPanelHandles,
 } from '@ex-grid/react';
 
 /** The size Mantine's components are drawn at inside a grid: the one its density maps onto, handed down from
@@ -199,6 +200,22 @@ function MantineSelectionSummary({ context }: { readonly context: GridSelectionS
     return createElement(Text<'span'>, { size, span: true }, said);
 }
 
+/** The completion list and the argument hint (ADR-0051): the chosen candidate in the theme's primary as Mantine's
+ * Combobox marks its selected option, and the hint beneath in Mantine's dimmed colour with the argument the caret is
+ * in set off. Both are in the cell's font, as the text typed above them is. The box, its place and every key are the
+ * core's, so Mantine's Combobox, which keeps its own store and keys, is not used. */
+function MantineCompletion({ context }: { readonly context: GridEditorCompletionSlotContext }): ReactElement {
+    const { list, option } = useEditorCompletion(context);
+    const hint = context.hint?.parts();
+    return createElement('div', { className: 'mantine-ex-grid-completion' },
+        context.candidates.length === 0 ? null : createElement('div', { ...list, className: 'mantine-ex-grid-completion-list' },
+            ...context.candidates.map((candidate, index) => createElement('div', {
+                ...option(index), key: index, className: 'mantine-ex-grid-completion-item',
+            }, candidate.label))),
+        hint === undefined ? null : createElement('div', { className: 'mantine-ex-grid-completion-hint' },
+            hint[0], hint[1].length === 0 ? null : createElement('strong', null, hint[1]), hint[2]));
+}
+
 const menu = (context: GridMenuSlotContext): ReactElement => createElement(MantineMenu, { context });
 
 /** Every Chrome slot drawn in Mantine's components: what {@link MantineExGrid} hands its grid. A Consumer that frames
@@ -215,4 +232,5 @@ export const mantineChrome: ExGridChrome<unknown> = Object.freeze({
     selectionSummary: (context: GridSelectionSummarySlotContext) => createElement(MantineSelectionSummary, { context }),
     formulaBarText: (context: GridFormulaBarTextSlotContext) => createElement(MantineBarText, { context }),
     nameBox: (context: GridNameBoxSlotContext) => createElement(MantineNameBox, { context }),
+    editorCompletion: (context: GridEditorCompletionSlotContext) => createElement(MantineCompletion, { context }),
 });

@@ -6,8 +6,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { EditorCompletion, EditorHint } from '../src/cells/editor-text';
 import { checkedCompletion, completionPlace } from '../src/dom/completion';
+import type { GridEditorCompletionSlotContext } from '../src/dom/grid-chrome';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
+import { defined } from '../src/must';
 import type { SelectionRange } from '../src/selection/range';
 import { mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
 
@@ -298,5 +300,114 @@ describe('The answer and the box (ADR-0051, ADR-0040)', () => {
         const geometry = { inBar: false, barPx: 0, nameBoxWidthPx: 0, bandHeightPx: 24, rowHeightPx: 30, visibleHeightPx: 40, cellLeftPx: 0, cellTopPx: 0 };
         expect(completionPlace(geometry)).toBeUndefined();
         expect(completionPlace({ ...geometry, visibleHeightPx: 84 })).toEqual({ leftPx: 0, topPx: 54, roomPx: 30, above: false });
+    });
+});
+
+// A Chrome's list: each candidate a <li> carrying the ids it is handed, its click accepting it; mounts and cleanups
+// counted.
+function slotted(): {
+    readonly contexts: GridEditorCompletionSlotContext[];
+    readonly cleanups: () => number;
+    readonly chrome: NonNullable<GridOptions<Trade>['chrome']>;
+} {
+    const contexts: GridEditorCompletionSlotContext[] = [];
+    let cleanups = 0;
+    return {
+        contexts,
+        cleanups: () => cleanups,
+        chrome: {
+            editorCompletion: (slot, context) => {
+                contexts.push(context);
+                const list = document.createElement('ul');
+                list.id = context.listId;
+                list.className = 'drawn';
+                context.candidates.forEach((candidate, index) => {
+                    const item = document.createElement('li');
+                    item.id = context.optionId(index);
+                    item.textContent = candidate.label;
+                    item.addEventListener('click', () => { context.accept(index); });
+                    list.append(item);
+                });
+                slot.append(list);
+                return () => {
+                    cleanups += 1;
+                    list.remove();
+                };
+            },
+        },
+    };
+}
+
+describe('The editorCompletion slot (ADR-0390, ADR-0051)', () => {
+    it('ADR-0390: the contents draw the answer in the core\'s box, named by the editor, and are mounted again for another chosen candidate', async () => {
+        const drawn = slotted();
+        const { root } = await grid({ chrome: drawn.chrome });
+        await typeFormula(root, 'SU');
+        const first = defined(drawn.contexts.at(-1), 'a mount');
+        expect([first.candidates.map(candidate => candidate.label), first.selected, first.hint]).toEqual([['SUM', 'SUMIF'], 0, undefined]);
+        expect(root.querySelector('.ex-completion-item')).toBeNull();
+        expect(q(root, '.ex-completion .drawn').id).toBe(first.listId);
+        expect([editor(root).getAttribute('aria-controls'), editor(root).getAttribute('aria-activedescendant')])
+            .toEqual([first.listId, first.optionId(0)]);
+        key('ArrowDown');
+        await painted();
+        expect(drawn.contexts.at(-1)?.selected).toBe(1);
+        expect(drawn.cleanups()).toBe(drawn.contexts.length - 1);
+        expect(editor(root).getAttribute('aria-activedescendant')).toBe(first.optionId(1));
+        // Escape closes the list: the contents go.
+        key('Escape');
+        await painted();
+        expect(box(root)).toBeNull();
+        expect(drawn.cleanups()).toBe(drawn.contexts.length);
+    });
+
+    it('ADR-0051: the box takes the press on a drawn candidate, keeping the keyboard in the editor, and its click accepts it', async () => {
+        const drawn = slotted();
+        const { root } = await grid({ chrome: drawn.chrome });
+        await typeFormula(root, 'SU');
+        const standing = defined(drawn.contexts.at(-1), 'a mount');
+        const heard: string[] = [];
+        const hear = (event: Event): void => { heard.push(event.type); };
+        document.addEventListener('mousedown', hear);
+        try {
+            const item = defined(root.querySelectorAll('.drawn li')[1], 'SUMIF');
+            const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 });
+            item.dispatchEvent(down);
+            expect([down.defaultPrevented, heard]).toEqual([true, []]);
+            item.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+            await painted();
+        } finally {
+            document.removeEventListener('mousedown', hear);
+        }
+        expect(editor(root).value).toBe('=SUMIF(');
+        expect(document.activeElement).toBe(editor(root));
+        // The list closed with the accept: an accept from contents taken away reaches nothing.
+        expect(drawn.cleanups()).toBe(drawn.contexts.length);
+        standing.accept(0);
+        await painted();
+        expect(editor(root).value).toBe('=SUMIF(');
+    });
+
+    it('Spine rule 6: an accept made on an answer another has replaced is refused, before the box is painted again', async () => {
+        const drawn = slotted();
+        const { root } = await grid({ chrome: drawn.chrome });
+        await typeFormula(root, 'S');
+        const drawnOn = defined(drawn.contexts.at(-1), 'a mount');
+        expect(drawnOn.candidates.map(candidate => candidate.label)).toEqual(['SUM', 'SUMIF']);
+        // The next letter answers at once; the contents drawn for the last answer still stand until the pass.
+        type(editor(root), 'U');
+        drawnOn.accept(1);
+        await painted();
+        expect(editor(root).value).toBe('=SU');
+        expect(drawn.contexts.at(-1)?.candidates.map(candidate => candidate.label)).toEqual(['SUM', 'SUMIF']);
+    });
+
+    it('ADR-0390: an answer with only a hint hands no candidate chosen, and the contents go with the grid', async () => {
+        const drawn = slotted();
+        const { root } = await grid({ chrome: drawn.chrome });
+        await typeFormula(root, 'SUM(');
+        expect([drawn.contexts.at(-1)?.selected, drawn.contexts.at(-1)?.hint?.text]).toEqual([-1, 'SUM(number1, [number2], ...)']);
+        unmountAll();
+        expect(drawn.cleanups()).toBe(drawn.contexts.length);
     });
 });

@@ -14,6 +14,7 @@ import type { GridCellMessageSlotContext } from '@ex-grid/core';
 import type { GridColumn } from '@ex-grid/core';
 import type { GridColumnMenuSlotContext } from '@ex-grid/core';
 import type { GridContextMenuSlotContext } from '@ex-grid/core';
+import type { GridEditorCompletionSlotContext } from '@ex-grid/core';
 import type { GridFilterPanelSlotContext } from '@ex-grid/core';
 import type { GridFindPanelSlotContext } from '@ex-grid/core';
 import type { GridFormulaBarTextSlotContext } from '@ex-grid/core';
@@ -38,6 +39,23 @@ export interface CellEditorHandles {
 }
 
 // @public
+export interface CompletionOptionProps {
+    readonly 'aria-selected': boolean;
+    readonly id: string;
+    readonly onClick: () => void;
+    readonly role: 'option';
+}
+
+// @public
+export interface EditorCompletionHandles {
+    readonly list: {
+        readonly id: string;
+        readonly role: 'listbox';
+    };
+    readonly option: (index: number) => CompletionOptionProps;
+}
+
+// @public
 export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement;
 
 // @public
@@ -49,6 +67,7 @@ export interface ExGridChrome<Row> {
     readonly cellMessage?: (context: GridCellMessageSlotContext) => ReactNode;
     readonly columnMenu?: (context: GridColumnMenuSlotContext) => ReactNode;
     readonly contextMenu?: (context: GridContextMenuSlotContext<Row>) => ReactNode;
+    readonly editorCompletion?: (context: GridEditorCompletionSlotContext) => ReactNode;
     readonly filterPanel?: (context: GridFilterPanelSlotContext) => ReactNode;
     readonly findPanel?: (context: GridFindPanelSlotContext) => ReactNode;
     readonly formulaBarText?: (context: GridFormulaBarTextSlotContext) => ReactNode;
@@ -121,6 +140,9 @@ export type TemplateColumnOptions<Row> = Omit<GridColumn<Row>, 'template' | 'act
 
 // @public
 export function useCellEditor(context: GridCellEditorSlotContext): CellEditorHandles;
+
+// @public
+export function useEditorCompletion(context: GridEditorCompletionSlotContext): EditorCompletionHandles;
 
 // @public
 export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanelHandles;
