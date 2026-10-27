@@ -216,11 +216,18 @@ rules.evaluate(trades, columns);   // after each apply, over the whole collectio
                 editor is open, <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes the typing instead.
             </li>
         </ul>
+        <p>
+            In ExGrid for React the same are <code>showFillHandle</code>, <code>onPaste</code>, <code>onFill</code>,
+            <code>onClear</code>, <code>onUndo</code> and <code>onRedo</code>, and a refused gesture reaches
+            <code>onRefused</code> as <code>{ kind: 'paste', reason }</code>. A column's <code>validate</code> answers
+            <code>{ kind: 'accept' }</code>, or <code>'reject'</code> or <code>'flag'</code> with a message.
+        </p>
         <DocsExample Title="An editable blotter with validation and undo" Builtin="typeof(EditingGrid)" Mud="typeof(EditingGridMud)"
                      Files="@(["Examples/Grid/Position.cs"])">
             Type <code>200000</code> into a quantity to see a flag, or <code>abc</code> to see a rejection. Select a
             few cells and press <kbd>Ctrl</kbd>+<kbd>D</kbd>, drag the fill handle, press <kbd>Delete</kbd> on
-            traders, then undo each step.
+            traders, then undo each step. A paste that holds text a quantity or a price cannot hold is refused whole
+            with <code>Refuse()</code>, and the Example names the text, rather than writing the cells around it.
         </DocsExample>
     </DocsSection>
 
@@ -325,7 +332,10 @@ rules.evaluate(trades, columns);   // after each apply, over the whole collectio
             open, then <kbd>Enter</kbd>: 125 is written, and the page says what it replaced. Type <code>175</code>:
             this Consumer refuses prices above 150 with <code>Refuse(message)</code>, and the editor keeps your
             typing; <kbd>Escape</kbd> leaves it. Press <kbd>F9</kbd> until a price passes 150 and press its
-            Approve: the grid delivers the Action, and this page declines it, saying why.
+            Approve: the grid delivers the Action, and this page declines it, saying why. In React the refusal is
+            <code>edit.refuse(message)</code>, the notice <code>onOverwriteNotice</code>, and <kbd>F9</kbd> is declared
+            with <code>declaredKeys</code> and heard by <code>onDeclaredKey</code>; the feed is a Change Batch handed to
+            the keyed source's <code>apply</code>.
         </DocsExample>
     </DocsSection>
 

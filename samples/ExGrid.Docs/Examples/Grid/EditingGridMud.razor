@@ -24,7 +24,11 @@
     private static readonly MudGridChrome _chrome = new();
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
-    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+    private readonly InMemoryGridSource<Position> _source;
+
+    // Every position as the source holds it now, by Id, filtered out of view or not: the rules judge them all,
+    // since a judgement replaces every mark it held before.
+    private readonly Dictionary<int, Position> _book;
     private readonly GridRuleset<Position> _rules = new();
     private readonly GridColumn<Position>[] _columns;
 
@@ -35,6 +39,9 @@
 
     public EditingGridMud()
     {
+        var positions = Position.Sample();
+        _source = GridSource.From(positions);
+        _book = positions.ToDictionary(p => p.Id);
         // Text that is not a number is rejected and the editor stays open; a number the desk
         // would query is accepted and flagged.
         _rules
@@ -62,7 +69,7 @@
 
     // Ctrl+V, Ctrl+D, Ctrl+R and Ctrl+Enter all arrive here: one value per target cell.
     private void OnPaste(GridPasteIntent paste)
-        => Apply(Cells(paste.Plan.Targets).Select(cell => (Row(cell), _columns[cell.Column].Name, paste.ValueFor(cell))).ToList());
+        => Apply(Cells(paste.Plan.Targets).Select(cell => (Row(cell), _columns[cell.Column].Name, paste.ValueFor(cell))).ToList(), paste.Refuse);
 
     // The fill handle repeats the source range into the target beside it.
     private void OnFill(GridFillIntent fill)
@@ -72,7 +79,7 @@
                 fill.Source.TopRow + Mod(cell.Row - fill.Source.TopRow, fill.Source.RowCount),
                 fill.Source.LeftColumn + Mod(cell.Column - fill.Source.LeftColumn, fill.Source.ColumnCount));
             return (Row(cell), _columns[cell.Column].Name, _columns[from.Column].Info.TextOf(Row(from)));
-        }).ToList());
+        }).ToList(), fill.Refuse);
 
     // Delete asks for no value at all. A trader can be blank; a quantity or a price cannot, so those are left alone.
     private void OnClear(GridClearIntent clear)
@@ -88,27 +95,34 @@
     };
 
     // Every cell is resolved to its row before anything is written: writing first could reorder the rows.
-    private void Apply(IReadOnlyList<(Position Row, string Column, string Text)> cells)
+    // A text a cell cannot hold refuses the whole gesture, named, rather than writing the cells around it.
+    // An edit and a clear pass no refusal: the column's rule has read the edit's text, and a trader can be blank.
+    private void Apply(IReadOnlyList<(Position Row, string Column, string Text)> cells, Action? refuse = null)
     {
         var latest = new Dictionary<Position, Position>(ReferenceEqualityComparer.Instance);
         var step = new List<(Position, Position)>();
         foreach (var (row, column, text) in cells)
         {
             var current = latest.GetValueOrDefault(row, row);
-            if (Edited(current, column, text) is { } replacement)
+            if (Edited(current, column, text) is not { } replacement)
             {
-                step.Add((current, replacement));
-                latest[row] = replacement;
+                if (refuse is null)
+                    throw new InvalidOperationException($"'{text}' passed the rule for {column}, which cannot hold it.");
+                refuse();
+                _message = $"Nothing written: '{text}' is not a {(column == "Quantity" ? "whole number" : "price")}.";
+                return;
             }
+            step.Add((current, replacement));
+            latest[row] = replacement;
         }
         foreach (var (before, after) in step)
-            _source.ReplaceRow(before, after);
+            Replace(before, after);
         if (step.Count > 0)
         {
             _undo.Push(step);
             _redo.Clear();
         }
-        _rules.Evaluate(_source.Window, _columns);
+        _rules.Evaluate(_book.Values, _columns);
         _message = $"{step.Count} cell(s) written.";
     }
 
@@ -132,21 +146,28 @@
         var reversed = new List<(Position, Position)>();
         for (var i = step.Count - 1; i >= 0; i--)
         {
-            _source.ReplaceRow(step[i].After, step[i].Before);
+            Replace(step[i].After, step[i].Before);
             reversed.Add((step[i].After, step[i].Before));
         }
         to.Push(reversed);
-        _rules.Evaluate(_source.Window, _columns);
+        _rules.Evaluate(_book.Values, _columns);
         _message = $"{verb}: {step.Count} cell(s).";
+    }
+
+    private void Replace(Position before, Position after)
+    {
+        _source.ReplaceRow(before, after);
+        _book[after.Id] = after;
     }
 
     private Position Row(CellPosition cell) => _source.Window[cell.Row];
 
+    // Each cell once: the ranges of a selection may overlap, and a cell covered twice is written once.
     private static IEnumerable<CellPosition> Cells(IEnumerable<SelectionRange> ranges) =>
-        from range in ranges
-        from row in Enumerable.Range(range.TopRow, range.RowCount)
-        from column in Enumerable.Range(range.LeftColumn, range.ColumnCount)
-        select new CellPosition(row, column);
+        (from range in ranges
+         from row in Enumerable.Range(range.TopRow, range.RowCount)
+         from column in Enumerable.Range(range.LeftColumn, range.ColumnCount)
+         select new CellPosition(row, column)).Distinct();
 
     private static int Mod(int value, int by) => ((value % by) + by) % by;
 
