@@ -23,6 +23,8 @@ export async function chromeFrame(chrome: FrameChrome, scheme: 'light' | 'dark')
             await import('../../../src/npm/chart-mantine/styles.css');
             // The Sheet's, scoped under its own Paper: a grid's Example is untouched by it.
             await import('../../../src/npm/sheet-mantine/styles.css');
+            // The Pivot's, scoped under its own Paper the same way.
+            await import('../../../src/npm/pivot-mantine/styles.css');
             const { MantineProvider } = await import('@mantine/core');
             return example => <MantineProvider forceColorScheme={scheme}>{example}</MantineProvider>;
         }

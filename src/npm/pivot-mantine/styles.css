@@ -89,8 +89,7 @@
    the anchor around it (ADR-0061). */
 .mantine-ex-pivot-filters { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .mantine-ex-pivot-filter { display: flex; align-items: center; gap: 8px; }
-.mantine-ex-pivot-filter-anchor { min-width: 160px; }
-.mantine-ex-pivot-filter-anchor .mantine-Button-label { overflow: hidden; text-overflow: ellipsis; }
+.mantine-ex-pivot-filter-anchor { min-width: 160px; max-width: 320px; }
 
 /* The Stale Report's notice under the Pivot Toolbar (ADR-0067): the sentence and Retry share a line while they fit,
    Retry wrapping under the sentence when they do not. */
@@ -104,8 +103,8 @@
 .mantine-ex-pivot-pane {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px 0;
+    gap: 6px;
+    padding: 8px 0;
     box-sizing: border-box;
     height: 100%;
     color: var(--mantine-color-text);
@@ -131,7 +130,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-height: 84px;
+    min-height: 4.5em;
     overflow-y: auto;
     padding: 4px 8px;
     border: 1px solid var(--mantine-color-default-border);
@@ -143,13 +142,17 @@
 .mantine-ex-pivot-dragging { opacity: 0.5; }
 
 /* The four Areas, two by two as Excel's pane has them, one above another when narrow. */
-.mantine-ex-pivot-areas { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
-.mantine-ex-pivot-area { display: flex; flex-direction: column; min-height: 80px; background: var(--mantine-color-default-hover); }
+.mantine-ex-pivot-areas { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+.mantine-ex-pivot-area { display: flex; flex-direction: column; min-height: 64px; background: var(--mantine-color-default-hover); }
 .mantine-ex-pivot-area.mantine-ex-pivot-drop-target { outline: 2px solid var(--mantine-primary-color-filled); outline-offset: -2px; }
-.mantine-ex-pivot-area-title { padding: 4px 8px; border-bottom: 1px solid var(--mantine-color-default-border); }
+.mantine-ex-pivot-area-title { padding: 2px 8px; border-bottom: 1px solid var(--mantine-color-default-border); }
 .mantine-ex-pivot-entries { display: flex; flex-direction: column; gap: 4px; padding: 4px; flex: 1 1 auto; }
 .mantine-ex-pivot-entry.mantine-ex-pivot-drop-before { box-shadow: 0 -2px 0 var(--mantine-primary-color-filled); }
-.mantine-ex-pivot-entry .mantine-Button-label { overflow: hidden; text-overflow: ellipsis; }
+/* A caption longer than its entry or its filter's button ends in an ellipsis: Mantine's label is a flex box, which
+   text-overflow skips, and trims its text to the capitals, which would clip a descender once the label hides what
+   overflows. */
+.mantine-ex-pivot-entry .mantine-Button-label,
+.mantine-ex-pivot-filter-anchor .mantine-Button-label { display: block; height: auto; text-box-trim: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Defer Layout Update and Update at the pane's foot (ADR-0061). */
 .mantine-ex-pivot-defer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 12px; }

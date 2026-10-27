@@ -19,7 +19,10 @@
     <DocsSection Title="A first pivot">
         <p>
             Declare each field once with <code>PivotFields.Of&lt;T&gt;()</code>, hand ExPivot a source and
-            a layout, and bind the layout. Tick a field in the PivotTable Fields pane, drag it between
+            a layout, and bind the layout. Under React the fields are <code>pivotRecordField</code>s over a
+            <code>RecordPivotSource</code>, and the layout is held in state and set again from
+            <code>onLayoutChanged</code>; the React Example pivots invented sales of its own, so its figures are
+            not the Blazor Example's. Tick a field in the PivotTable Fields pane, drag it between
             Filters, Columns, Rows and Values, or open its menu with the ▾ beside it. The report is one
             ExGrid, with ExGrid's keys: drag across it, copy it into Excel, and press the <code>−</code> beside
             a region to collapse it.

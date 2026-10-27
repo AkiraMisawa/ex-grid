@@ -116,6 +116,7 @@
     <ReactExampleSource Include="$(ReactExamplesPackages)chart/src/**/*.ts;$(ReactExamplesPackages)chart-react/src/**/*.ts;$(ReactExamplesPackages)chart-mantine/src/**/*.ts;$(ReactExamplesPackages)chart-mantine/styles.css;$(ReactExamplesPackages)chart-mui/src/**/*.ts;$(ReactExamplesPackages)chart-mui/styles.css" />
     <ReactExampleSource Include="..\..\src\ExGrid\wwwroot\ex-grid.min.css;..\..\src\ExSheet\wwwroot\ex-sheet.min.css;..\..\src\ExChart\wwwroot\ex-chart.min.css" />
     <ReactExampleSource Include="$(ReactExamplesPackages)sheet-mantine/src/**/*.ts;$(ReactExamplesPackages)sheet-mantine/styles.css" />
+    <ReactExampleSource Include="$(ReactExamplesPackages)pivot-engine/src/**/*.ts;$(ReactExamplesPackages)pivot/src/**/*.ts;$(ReactExamplesPackages)pivot-react/src/**/*.ts;$(ReactExamplesPackages)pivot-mantine/src/**/*.ts;$(ReactExamplesPackages)pivot-mantine/styles.css;..\..\src\ExPivot\wwwroot\ex-pivot.min.css" />
     <Content Remove="wwwroot/react/**" />
   </ItemGroup>
 
