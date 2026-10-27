@@ -49,7 +49,8 @@
             again. The tabs do the same themselves: press <code>+</code>, double-click Claim and type a new name, or
             right-click a tab for Delete, Move Left, Move Right and Copy, or drag a tab onto another, and watch
             Summary's Formulas follow. Change a quantity on Claim, select Summary and press <kbd>Ctrl</kbd> +
-            <kbd>Z</kbd>: Claim is shown again with that cell selected.
+            <kbd>Z</kbd>: Claim is shown again with that cell selected. Under React the tabs show, select and add
+            Sheets; pressing another tab while a Formula is typed, and a tab's rename, menu and drag, are not there yet.
         </DocsExample>
     </DocsSection>
 
@@ -113,7 +114,10 @@
             While the Workbook holds one Sheet, <code>DoAsync(edit)</code> and <code>CellFormatAt(address)</code> act on
             it as they always have. Once it holds several they are refused with
             <code>SheetRefusalReason.SheetNotNamed</code> and change nothing: taken against the Sheet shown, what they
-            did would depend on whether the user's press on a tab reached the component first.
+            did would depend on whether the user's press on a tab reached the component first. Under React the ref's
+            <code>do("Claim", edit)</code> and <code>cellFormatAt("Claim", address)</code> are the same, refused with a
+            <code>SheetRefusedError</code> whose reason is <code>sheetNotNamed</code>, and a name the Workbook does not
+            have throws a <code>RangeError</code>.
         </p>
         <pre class="docs-code"><code>await sheet.DoAsync("Claim", SheetEdit.Enter(CellAddress.Parse("B2"), "120"));
 await sheet.DoAsync("Summary", SheetEdit.Rename("Totals"));
@@ -129,7 +133,8 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             <li>
                 <b><code>SheetsChanged</code> hears every change to the Sheets</b> — yours, the user's, and an undo or redo
                 of either — with the names in order before and after, and the Sheet shown. It is raised after
-                <code>WorkbookChanged</code>. Showing another Sheet changes no Sheet, and is not raised.
+                <code>WorkbookChanged</code>. Showing another Sheet changes no Sheet, and is not raised. Under React it
+                is <code>onSheetsChanged</code>, after <code>onWorkbookChanged</code>.
             </li>
             <li>
                 <b>A command that acts on the Selection acts on the Sheet shown</b>, where the Selection is:

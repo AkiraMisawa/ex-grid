@@ -4,8 +4,8 @@
 // stack (ADR-0048), hands back new instances only for the rows a change names (ADR-0003), and says in its own words
 // what it refuses (ADR-0370 section 10).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CellAddress, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
-import { createSheet, type SheetHandle, type SheetOptions } from '../src/create-sheet';
+import { CellAddress, CellFormatChange, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
+import { createSheet, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
 
 const mounted: SheetHandle[] = [];
 
@@ -1012,5 +1012,110 @@ describe('the fill handle (ADR-0050, item 5)', () => {
         expect(sheet.undo()).toBe(true);
         await vi.waitFor(() => { expect(textAt(element, 2, 0)).toBe(''); });
         expect(textAt(element, 4, 0)).toBe('');
+    });
+});
+
+/** The refusal's reason a command throws, or none where it does not throw one. */
+function refusalOf(command: () => unknown): string | undefined {
+    try {
+        command();
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the refusal is what the test reads; anything else is rethrown
+        if (error instanceof SheetRefusedError) return error.refusal.reason;
+        throw error;
+    }
+    return undefined;
+}
+
+describe("the Consumer's commands (ADR-0048, ADR-0331 §6, ADR-0071)", () => {
+    it('ADR-0048: a command is one step on the user\'s undo stack, which canUndo and canRedo follow', async () => {
+        const documents: unknown[] = [];
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'first' }), onWorkbookChanged: document => { documents.push(document); } });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('first'); });
+        expect([sheet.canUndo, sheet.canRedo]).toEqual([false, false]);
+        sheet.do(SheetEdit.insertRows(0));
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('first'); });
+        expect([sheet.canUndo, sheet.canRedo, documents.length]).toEqual([true, false, 1]);
+        expect(sheet.undo()).toBe(true);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('first'); });
+        expect([sheet.canUndo, sheet.canRedo]).toEqual([false, true]);
+    });
+
+    it('ADR-0331 §6: with several Sheets a command or a read naming none is refused; one naming its Sheet acts there, shown or not, and Sheet operations are heard', async () => {
+        const changes: SheetsChange[] = [];
+        const { element, sheet } = sheetOf({ document: twoSheets(), onSheetsChanged: change => { changes.push(change); } });
+        await vi.waitFor(() => { expect(element.querySelectorAll('.ex-sheet-tab')).toHaveLength(2); });
+        expect(refusalOf(() => { sheet.do(SheetEdit.insertRows(0)); })).toBe('sheetNotNamed');
+        expect(refusalOf(() => sheet.cellFormatAt(CellAddress.parse('A1')))).toBe('sheetNotNamed');
+        expect(() => { sheet.do('Third', SheetEdit.insertRows(0)); }).toThrow(RangeError);
+        sheet.do('Second', SheetEdit.enter(CellAddress.parse('A2'), 'below'));
+        expect(sheet.workbook.shown.name).toBe('Sheet1');
+        expect(sheet.workbook.find('Second')?.getEntryText(CellAddress.parse('A2'))).toBe('below');
+        expect(changes).toEqual([]);
+        sheet.do('Second', SheetEdit.rename('Rates'));
+        expect(changes).toEqual([{ before: ['Sheet1', 'Second'], after: ['Sheet1', 'Rates'], shown: 'Sheet1' }]);
+        // An undo shows the Sheet its step was taken on (ADR-0331 §3).
+        expect(sheet.undo()).toBe(true);
+        expect(changes.at(-1)).toEqual({ before: ['Sheet1', 'Rates'], after: ['Sheet1', 'Second'], shown: 'Second' });
+    });
+
+    it('ADR-0071: setCellFormat sets what it names on the Selection the grid holds, as one step, and cellFormatAt reads it back', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1', A2: '2' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        expect(() => sheet.setCellFormat(new CellFormatChange({}))).toThrow(RangeError);
+        press(element, 0, 0);
+        key('ArrowDown', { shiftKey: true });
+        expect(sheet.setCellFormat(new CellFormatChange({ bold: true }))).toBe(true);
+        expect([sheet.cellFormatAt(CellAddress.parse('A1')).font.bold, sheet.cellFormatAt(CellAddress.parse('A2')).font.bold]).toEqual([true, true]);
+        expect(sheet.cellFormatAt(CellAddress.parse('A3')).font.bold).toBe(false);
+        expect(sheet.undo()).toBe(true);
+        expect(sheet.cellFormatAt(CellAddress.parse('A2')).font.bold).toBe(false);
+    });
+
+    it('ADR-0048: while a cell is edited every command is refused by name and the reads answer; onEditingChanged hears the edit open and end', async () => {
+        const heard: boolean[] = [];
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1' }), onEditingChanged: open => { heard.push(open); } });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key('F2');
+        expect([sheet.isEditing, heard]).toEqual([true, [true]]);
+        expect(refusalOf(() => { sheet.do(SheetEdit.insertRows(0)); })).toBe('editIsOpen');
+        expect(refusalOf(() => sheet.setCellFormat(new CellFormatChange({ bold: true })))).toBe('editIsOpen');
+        expect(refusalOf(() => sheet.openFormatCells())).toBe('editIsOpen');
+        expect(sheet.cellFormatAt(CellAddress.parse('A1')).font.bold).toBe(false);
+        key('Escape');
+        expect([sheet.isEditing, heard]).toEqual([false, [true, false]]);
+    });
+
+    it('ADR-0071: openFormatCells opens Format Cells over the Selection the grid holds, and answers false over none', async () => {
+        const selections: number[] = [];
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1' }), onSelectionChanged: selection => { selections.push(selection.ranges.length); } });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        expect(sheet.openFormatCells()).toBe(false);
+        expect(element.querySelector('.ex-format-cells')).toBeNull();
+        press(element, 0, 0);
+        await vi.waitFor(() => { expect(selections.at(-1)).toBe(1); });
+        expect(sheet.openFormatCells()).toBe(true);
+        expect(element.querySelector('.ex-format-cells')).not.toBeNull();
+    });
+});
+
+describe('the Sheet Seed (ADR-0180)', () => {
+    it('ADR-0180: a fixed seed draws the same whenever the document is opened, and a new one draws again without a step or a document', async () => {
+        const document = documentOf({ A1: '=RANDBETWEEN(1, 1000000)' });
+        const documents: unknown[] = [];
+        const first = sheetOf({ document, seed: 20261011n, onWorkbookChanged: raised => { documents.push(raised); } });
+        const second = sheetOf({ document, seed: 20261011n });
+        await vi.waitFor(() => { expect(textAt(first.element, 0, 0)).toMatch(/^\d+$/u); });
+        const drawn = textAt(first.element, 0, 0);
+        expect(textAt(second.element, 0, 0)).toBe(drawn);
+        first.sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, document, seed: 7n, onWorkbookChanged: raised => { documents.push(raised); } });
+        await vi.waitFor(() => { expect(textAt(first.element, 0, 0)).not.toBe(drawn); });
+        expect([first.sheet.canUndo, documents.length]).toEqual([false, 0]);
+    });
+
+    it('ADR-0180: without a seed the Sheet chooses one as it opens the document, so its draws show at once', async () => {
+        const { element } = sheetOf({ document: documentOf({ A1: '=RAND()' }) });
+        await vi.waitFor(() => { expect(Number(textAt(element, 0, 0))).toBeGreaterThanOrEqual(0); });
+        expect(textAt(element, 0, 0)).not.toBe('#GETTING_DATA');
     });
 });

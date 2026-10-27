@@ -129,7 +129,10 @@
             Format. Its borders are relative to each range, so each range gets its own outline.
             <code>CellFormatAt(address)</code> reads back what a cell shows; in a Workbook of several Sheets it names
             the Sheet, <code>CellFormatAt("Claim", address)</code> (<a href="exsheet/workbook#commands-name-their-sheet">Commands name their Sheet</a>).
-            Like every command, these are refused while an edit is open.
+            Like every command, these are refused while an edit is open. Under React they are on the component's ref:
+            <code>setCellFormat(new CellFormatChange({ bold: true }))</code>, <code>cellFormatAt(address)</code>,
+            <code>cellFormatAt("Claim", address)</code> and <code>openFormatCells()</code>, and
+            <code>onSelectionChanged</code> hears the Selection move.
         </p>
         <DocsExample Builtin="typeof(FormatFromCode)" Mud="typeof(FormatFromCodeMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
             Select a range, then press a button. Ctrl+Z undoes each press.

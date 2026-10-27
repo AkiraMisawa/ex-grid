@@ -315,7 +315,7 @@
             </li>
         </ul>
         <DocsExample Title="A seeded simulation" Builtin="typeof(SeededDraws)" Mud="typeof(SeededDrawsMud)" Files="@(["Examples/Sheet/DiceRolls.cs"])">
-            <code>Seed</code> fixes the Sheet Seed, so the same draws show whenever the document is opened: reload the
+            <code>Seed</code> (<code>seed</code>, a <code>bigint</code>, under React) fixes the Sheet Seed, so the same draws show whenever the document is opened: reload the
             page and they are back. Type into any cell and every draw changes, together with everything that reads it;
             undo, and they change again. Without <code>Seed</code>, ExSheet chooses a seed each time it opens a document;
             a prerendered page chooses none, and its drawing cells show <code>#GETTING_DATA</code> until the page is
@@ -370,7 +370,9 @@
             <code>new Workbook(culture)</code> starts one with a single Sheet, <code>Sheet1</code>, and
             <code>workbook.Do("Sheet1", SheetEdit.Enter(address, text))</code> reads text exactly as a user's typing is
             read. A <code>Sheet</code> is read: <code>GetDisplay</code> gives what a cell shows, formatted under the
-            Sheet's culture.
+            Sheet's culture. Under React the engine is <code>@@ex-grid/sheet-engine</code>, the same engine in
+            TypeScript: <code>workbook.do("Sheet1", SheetEdit.enter(address, text))</code>, <code>getDisplay</code>,
+            and <code>toSheetDocument(sheet)</code> where C# writes <code>ToDocument(sheet)</code>.
         </p>
         <DocsExample Builtin="typeof(EngineOnly)" CodeOpen="true" />
         <p>

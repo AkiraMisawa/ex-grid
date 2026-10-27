@@ -5,6 +5,7 @@
 import { createElement, createRef, StrictMode } from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { CellAddress, SheetEdit } from '@ex-grid/sheet-engine';
 import { ExSheet, type ExSheetApi } from '../src/ex-sheet';
 
 afterEach(() => { cleanup(); });
@@ -31,7 +32,7 @@ describe('ExSheet', () => {
         }
     });
 
-    it('ADR-0049: a ref reaches the mounted Sheet under StrictMode, and asks nothing of one unmounted', () => {
+    it('ADR-0049, ADR-0331 §6: a ref reaches the mounted Sheet under StrictMode, both forms of its commands included, and asks nothing of one unmounted', () => {
         const sheet = createRef<ExSheetApi>();
         const { unmount } = render(createElement(StrictMode, null, createElement(ExSheet, { locale: 'en-US', ref: sheet })));
         const api = sheet.current;
@@ -40,6 +41,12 @@ describe('ExSheet', () => {
         api.pushLinkedTable('Positions', []);
         expect(api.workbook.linkedTables.map(table => table.name)).toEqual(['Positions']);
         expect(api.undo()).toBe(false);
+        // Both forms of a command and of a read reach the Sheet: one naming no Sheet, and one naming it.
+        api.do(SheetEdit.enter(CellAddress.parse('A1'), 'one'));
+        api.do('Sheet1', SheetEdit.enter(CellAddress.parse('A2'), 'two'));
+        expect([api.canUndo, api.canRedo, api.isEditing]).toEqual([true, false, false]);
+        expect(api.workbook.shown.getEntryText(CellAddress.parse('A2'))).toBe('two');
+        expect([api.cellFormatAt(CellAddress.parse('A1')).font.bold, api.cellFormatAt('Sheet1', CellAddress.parse('A2')).font.bold]).toEqual([false, false]);
         unmount();
         expect(() => api.workbook).toThrow(/not mounted/u);
     });
