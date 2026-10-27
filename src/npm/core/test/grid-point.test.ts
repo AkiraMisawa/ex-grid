@@ -75,19 +75,27 @@ interface Heard {
     readonly edits: string[];
 }
 
-async function grid(options: Partial<GridOptions<Trade>> = {}): Promise<{ readonly root: HTMLElement; readonly heard: Heard; readonly view: ReturnType<typeof mount<Trade>>['view'] }> {
+interface Mounted {
+    readonly root: HTMLElement;
+    readonly heard: Heard;
+    readonly view: ReturnType<typeof mount<Trade>>['view'];
+    readonly options: GridOptions<Trade>;
+}
+
+async function grid(given: Partial<GridOptions<Trade>> = {}): Promise<Mounted> {
     const heard: Heard = { states: [], selections: [], edits: [] };
-    const { root, view } = mount<Trade>({
+    const options: GridOptions<Trade> = {
         columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, pointAt, referenceText,
         onPointStateChanged: state => { heard.states.push(state); },
         onSelectionChanged: selection => { heard.selections.push(selection); },
         onEdit: intent => { heard.edits.push(intent.value); },
-        ...options,
-    });
+        ...given,
+    };
+    const { root, view } = mount<Trade>(options);
     await painted();
     press(root, 1, 1);
     await painted();
-    return { root, heard, view };
+    return { root, heard, view, options };
 }
 
 afterEach(unmountAll);
@@ -158,6 +166,34 @@ describe('Point (ADR-0051)', () => {
         expect(pointOutline(root)).toEqual([]);
         expect(key('ArrowDown').defaultPrevented).toBe(false);
         expect(editor(root).value).toBe('=B3');
+    });
+
+    it('ADR-0051: in Point that F2 gave and nothing written, a caret moved into the text is Caret, whose arrows are the field\'s', async () => {
+        const { root, heard } = await grid();
+        key('=');
+        type(root, 'A1+');
+        key('F2');
+        key('F2');
+        const field = editor(root);
+        field.setSelectionRange(1, 1);
+        field.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+        expect(key('ArrowLeft').defaultPrevented).toBe(false);
+        await painted();
+        expect([field.value, heard.edits]).toEqual(['=A1+', []]);
+    });
+
+    it('ADR-0051: pointing taken away mid-edit takes the outline, tells none, and the arrows commit as Overwrite\'s do', async () => {
+        const { root, heard, view, options } = await grid();
+        key('=');
+        key('ArrowDown');
+        await painted();
+        const { pointAt: _pointAt, referenceText: _referenceText, ...withoutPointing } = options;
+        view.update(withoutPointing);
+        await painted();
+        expect([pointOutline(root), heard.states.at(-1)]).toEqual([[], 'none']);
+        key('ArrowDown');
+        await painted();
+        expect(heard.edits).toEqual(['=B3']);
     });
 
     it('ADR-0051: a press on a cell points without committing, Shift extends from the outline, and a drag extends it', async () => {

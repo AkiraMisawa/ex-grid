@@ -1610,6 +1610,9 @@ export class GridView<Row> {
     #pointedFromOutside = false;
     #pointBefore: PointBefore | undefined;
     #pointStateTold: GridPointState = 'none';
+    // Options handed over while an edit is open: the next pass tells the Point state as they left it, when it is not
+    // what the Consumer last heard, through whichever handler it now hands.
+    #pointStateOwed = false;
     #shadeHolds = false;
 
     // The Settled Mark (ADR-0220).
@@ -2532,7 +2535,16 @@ export class GridView<Row> {
         this.#onSelectionSummaryChanged = taken.onSelectionSummaryChanged;
         this.#onSummaryFiguresChanged = taken.onSummaryFiguresChanged;
         this.#referenceOptions = taken.referenceOutlines;
+        const pointWithdrawn = taken.point.pointAt === undefined || taken.point.referenceText === undefined;
         this.#point = taken.point;
+        const pointed = this.#edit;
+        if (pointed !== undefined && pointWithdrawn && pointed.mode === 'point') {
+            // Pointing taken away mid-edit: what it wrote stays, and the edit goes on as typing leaves it.
+            this.#endPointing();
+            this.#setDragging(false);
+            pointed.mode = this.#modeAfterPointing(pointed);
+        }
+        this.#pointStateOwed = pointed !== undefined;
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -2654,6 +2666,10 @@ export class GridView<Row> {
         this.#raiseRangeIfUncovered();
         this.#raiseSelection();
         this.#referenceOutlines.tellKeys(this.#colouring(), this.#referenceOptions.onReferenceKeyColoursChanged);
+        if (this.#pointStateOwed) {
+            this.#pointStateOwed = false;
+            this.#tellPointState();
+        }
         void this.#summary.settle(() => this.#summaryAnswerer, this.#onSelectionSummaryChanged);
         this.#lookSettled();
     }
@@ -4774,10 +4790,14 @@ export class GridView<Row> {
 
     // ---- Point (ADR-0051) -------------------------------------------------------------------------------------
 
+    // The field the edit is typed in: the cell's editor, or the Formula Bar's text.
+    #surfaceOf(edit: OpenEdit<Row>): HTMLInputElement {
+        return edit.surface === 'bar' ? this.#bar.text : edit.element;
+    }
+
     // The caret in the surface the edit is typed in, or -1 where the field holds none.
     #caretOf(edit: OpenEdit<Row>): number {
-        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
-        return surface.selectionStart ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0051: a caret not known is never guessed at, and -1 points nowhere
+        return this.#surfaceOf(edit).selectionStart ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0051: a caret not known is never guessed at, and -1 points nowhere
     }
 
     // Writes the edit's text into both surfaces and places the selection in the one typed in (ADR-0051): no input
@@ -4785,7 +4805,7 @@ export class GridView<Row> {
     #writeEditText(edit: OpenEdit<Row>, text: string, start: number, end: number): void {
         edit.element.value = text;
         if (this.#formulaBarDeclared.shown) this.#bar.text.value = text;
-        (edit.surface === 'bar' ? this.#bar.text : edit.element).setSelectionRange(start, end);
+        this.#surfaceOf(edit).setSelectionRange(start, end);
     }
 
     // Whether what Point wrote stands, its outline over this grid's cells or text written from outside, the
@@ -4811,15 +4831,28 @@ export class GridView<Row> {
     // 2026-09-30; ED-29).
     #typed(edit: OpenEdit<Row>): void {
         const stood = this.#endPointing();
-        if (edit.mode === 'point') edit.mode = edit.surface === 'bar' ? 'caret' : 'overwrite';
+        if (edit.mode === 'point') edit.mode = this.#modeAfterPointing(edit);
         if (stood) this.#invalidate();
         this.#tellPointState();
     }
 
+    // What Point gives way to when typing or a rewrite ends it: Overwrite, or Caret in the Formula Bar.
+    #modeAfterPointing(edit: OpenEdit<Row>): 'caret' | 'overwrite' {
+        return edit.surface === 'bar' ? 'caret' : 'overwrite';
+    }
+
     // A caret moved away from what Point wrote ends pointing, as typing ends it, and the edit is in Caret: the user
     // has taken the caret into the text (ADR-0051's third round).
+    // In Point that has written nothing yet, as F2 leaves it, the caret moved from where it stood ends Point so too.
     #settlePointCaret(edit: OpenEdit<Row>): void {
-        if (this.#pointWritten === undefined || this.#pointingContinues(edit)) return;
+        if (this.#pointWritten === undefined) {
+            if (edit.mode === 'point' && this.#caretOf(edit) !== this.#pointStart) {
+                edit.mode = 'caret';
+                this.#invalidate();
+            }
+            return;
+        }
+        if (this.#pointingContinues(edit)) return;
         if (edit.element.value !== this.#pointWritten) {
             this.#typed(edit);
             return;
@@ -4949,6 +4982,11 @@ export class GridView<Row> {
         const points = pointAt !== undefined && referenceText !== undefined && caret >= 0 && pointAt(edit.element.value, caret);
         edit.mode = edit.mode === 'point' ? 'caret' : edit.mode === 'caret' ? (points ? 'point' : 'overwrite') : 'caret';
         if (this.#endPointing()) this.#invalidate();
+        // Point here has written nothing: it stands at this caret until the caret moves.
+        if (edit.mode === 'point') {
+            this.#pointStart = caret;
+            this.#pointLength = 0;
+        }
         this.#tellPointState();
     }
 
@@ -4993,10 +5031,9 @@ export class GridView<Row> {
     #cycleReferenceKey(edit: OpenEdit<Row>, cycle: NonNullable<PointOptions['cycleReference']>): void {
         const pointing = this.#pointingContinues(edit);
         if (pointing && this.#pointedFromOutside) return;
-        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
         const text = edit.element.value;
-        const start = pointing ? this.#pointStart : surface.selectionStart ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0051: a selection not known is not guessed at
-        let end = pointing ? this.#pointStart + this.#pointLength : surface.selectionEnd ?? start;
+        const start = pointing ? this.#pointStart : this.#caretOf(edit);
+        let end = pointing ? this.#pointStart + this.#pointLength : this.#surfaceOf(edit).selectionEnd ?? start;
         if (start < 0 || start > text.length) return;
         if (end < start || end > text.length) end = start;
         const answer: unknown = cycle(text, start, end);
@@ -5012,8 +5049,9 @@ export class GridView<Row> {
         if (keeps) {
             this.#pointLength = rewritten.length - before - after;
             this.#pointWritten = rewritten;
-        } else if (this.#endPointing() && edit.mode === 'point') {
-            edit.mode = edit.surface === 'bar' ? 'caret' : 'overwrite';
+        } else {
+            this.#endPointing();
+            if (edit.mode === 'point') edit.mode = this.#modeAfterPointing(edit);
         }
         this.#writeEditText(edit, rewritten, selects ? selectionStart : selectionEnd, selectionEnd);
         this.#tellPointState();
@@ -5029,7 +5067,8 @@ export class GridView<Row> {
         const given: unknown = text;
         if (typeof given !== 'string' || given === '') throw new TypeError('A text written from outside is a non-empty string (ADR-0058).');
         const edit = this.#edit;
-        if (this.#destroyed || edit === undefined || this.#currentPointState() === 'none') return false;
+        // A commit waiting on its verdict keeps the text that verdict judges (ADR-0380).
+        if (this.#destroyed || edit === undefined || this.#pending !== undefined || this.#currentPointState() === 'none') return false;
         if (!this.#pointingContinues(edit)) {
             // Nothing this Point wrote stands: the text goes in at the caret.
             this.#endPointing();
@@ -5059,11 +5098,13 @@ export class GridView<Row> {
     takeBackPointedText(): boolean {
         const edit = this.#edit;
         const before = this.#pointBefore;
-        if (this.#destroyed || edit === undefined || before === undefined || !this.#pointedFromOutside || !this.#pointingContinues(edit)) return false;
+        if (this.#destroyed || edit === undefined || this.#pending !== undefined || before === undefined || !this.#pointedFromOutside
+            || !this.#pointingContinues(edit)) return false;
         this.#pointBefore = undefined;
         this.#setDragging(false);
-        const caret = before.caret < 0 ? before.text.length : before.caret;
-        this.#writeEditText(edit, before.text, caret, caret);
+        // A write is taken only where a caret stood (#currentPointState), so the one before it is known.
+        if (before.caret < 0) throw new Error('A text written from outside was taken where no caret stood (ADR-0058).');
+        this.#writeEditText(edit, before.text, before.caret, before.caret);
         edit.mode = before.mode;
         this.#pointer = before.pointer;
         this.#pointStart = before.start;
@@ -5124,7 +5165,7 @@ export class GridView<Row> {
             this.#takeKeyboard();
             return;
         }
-        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
+        const surface = this.#surfaceOf(edit);
         if (surface.isConnected) surface.focus({ preventScroll: true });
     }
 
@@ -5234,7 +5275,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         // A commit pending lands in place too, the keyboard left where the user put it (ADR-0380).
         if (edit === undefined || this.#commitEdit(false) || this.#pending?.edit === edit) return;
-        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
+        const surface = this.#surfaceOf(edit);
         if (surface.isConnected) surface.focus({ preventScroll: true });
     };
 

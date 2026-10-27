@@ -39,8 +39,9 @@ export function pointOptions(given: {
 }): PointOptions {
     // Read as unknown first: a Consumer in plain JavaScript hands whatever it hands.
     const loose: { readonly pointAt?: unknown; readonly referenceText?: unknown; readonly cycleReference?: unknown; readonly onPointStateChanged?: unknown } = given;
-    for (const [name, value] of Object.entries(loose)) {
-        if (name in pointOptionNames && value !== undefined && typeof value !== 'function') throw new TypeError(`${name} is a function (ADR-0051).`);
+    for (const name of pointOptionNames) {
+        const value = loose[name];
+        if (value !== undefined && typeof value !== 'function') throw new TypeError(`${name} is a function (ADR-0051).`);
     }
     if (given.pointAt !== undefined && given.referenceText === undefined) {
         throw new TypeError('pointAt needs referenceText: pointing writes the Consumer\'s Reference text for the pointed range, and the grid has '
@@ -61,7 +62,7 @@ export function checkedRewrite(answer: unknown): GridEditorRewrite {
     return { text, selectionStart, selectionEnd };
 }
 
-const pointOptionNames = Object.freeze({ pointAt: true, referenceText: true, cycleReference: true, onPointStateChanged: true });
+const pointOptionNames = ['pointAt', 'referenceText', 'cycleReference', 'onPointStateChanged'] as const;
 
 /** How a key moves the outline: a step, a Shift step, to the grid's edge, Shift to the grid's edge, to the data
  * edge, or Shift to the data edge. */
