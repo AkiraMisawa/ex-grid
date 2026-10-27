@@ -128,6 +128,10 @@ drag would make the misfire ADR-0032 refused for an overshoot.
   toggle is a control of the grid's own (`data-ex-claims`), so its press is numbered and taken in its
   turn by the click path that already exists. An open edit is settled by it as by a press on a column
   header.
+- **The Hidden Mark's corner** (section 6) is the mark's own, as the toggle's box is the toggle's: it takes
+  the pointer so that its reason shows as its tooltip, so a press on those few pixels neither drags nor
+  toggles. *(Decided with the user, 2026-10-27, after the implementation's review found the corner outside
+  the rule above: the tooltip stays where the eye goes, and the drag is lost from a 6px corner only.)*
 
 ### 4. The keys are Alt+Shift+↓ and Alt+Shift+↑
 
@@ -177,6 +181,8 @@ A collapsed group the Consumer gives a `hiddenMark` draws a **Hidden Mark** on i
 cell in that Cell State wears, painted with that state's token, so a reader who knows what a modified
 cell looks like knows what the mark says. Its `reason` is the mark's accessible description and its
 tooltip (`title`, as an action button's label is, ADR-0020).
+*(2026-10-27: `missing`'s token is a cell's faint tint, which cannot be seen on a corner of the header, so the
+mark paints that token's colour at full strength; the others are opaque already.)*
 
 - **It covers the group, not a row.** It says that something in the hidden columns, in some row, holds
   that state. A Consumer that wants each row to say so marks the group's first shown column's cell with
