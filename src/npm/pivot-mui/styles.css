@@ -1,0 +1,184 @@
+/* @ex-grid/pivot-mui — the Wrapper's stylesheet (ADR-0390 section 5, ADR-0062). It does two things and nothing else.
+   It maps ExPivot's Visual Tokens onto the variables a MUI theme made with cssVariables writes on the page, under the
+   pivot's Paper, .mui-ex-pivot, so it outranks ExPivot's defaults whatever order the stylesheets load in, and a change
+   of scheme or a palette edit recolours the pivot with no render anywhere (ADR-0027/0030). Every variable it reads is
+   one MUI writes again per colour scheme, so it names no scheme selector of its own. The report grid's own tokens are
+   @ex-grid/mui's, under the same Paper, which also carries .mui-ex-grid. And it lays out this package's own elements,
+   each rule scoped to its own mui-ex-pivot- class. It writes no geometry ExPivot computes (the Field List's width and
+   a level's indent are the pivot's, written inline), no font for the report (it is metrics-bearing and the grid's,
+   ADR-0027), and no rule against a class of ExPivot's or ExGrid's own (ADR-0029/0030). */
+.mui-ex-pivot {
+    --ex-pivot-color: var(--mui-palette-text-primary);
+    --ex-pivot-muted-color: var(--mui-palette-text-secondary);
+    --ex-pivot-rule-color: var(--mui-palette-divider);
+    --ex-pivot-accent-color: var(--mui-palette-primary-main);
+    --ex-pivot-drop-color: var(--mui-palette-primary-main);
+    --ex-pivot-refusal-color: var(--mui-palette-error-main);
+    --ex-pivot-pane-background: var(--mui-palette-background-paper);
+    --ex-pivot-pane-color: var(--mui-palette-text-primary);
+    --ex-pivot-area-background: var(--mui-palette-action-hover);
+    --ex-pivot-empty-background: var(--mui-palette-background-paper);
+    /* A menu or a panel is ExPivot's frame (ADR-0061), painted as MUI paints its Popover's paper: the paper's ground
+       and the eighth shadow. */
+    --ex-pivot-popup-background: var(--mui-palette-background-paper);
+    --ex-pivot-popup-color: var(--mui-palette-text-primary);
+    --ex-pivot-popup-shadow: var(--mui-shadows-8);
+    --ex-pivot-hover-background: var(--mui-palette-action-hover);
+    --ex-pivot-input-background: var(--mui-palette-background-paper);
+    --ex-pivot-entry-background: var(--mui-palette-background-paper);
+    --ex-pivot-entry-color: var(--mui-palette-text-primary);
+    --ex-pivot-entry-border-color: var(--mui-palette-divider);
+    /* The ± button in a label cell stays ExPivot's plain markup (ADR-0062): a component there would be one in every
+       painted row. Only its colours are the theme's. */
+    --ex-pivot-toggle-color: var(--mui-palette-text-secondary);
+    --ex-pivot-toggle-background: transparent;
+    --ex-pivot-toggle-border-color: var(--mui-palette-divider);
+    /* An Area a drop would take past the cap (ADR-0370 section 3): the theme's error, as a refusal is painted. */
+    --ex-pivot-over-cap-color: var(--mui-palette-error-main);
+    /* Show Details (ADR-0059): a tab's records over the report, and the dialog's frame and backdrop, ExPivot's,
+       painted as MUI paints a Dialog: the paper, no edge, the theme's corners, the largest shadow and its Backdrop. */
+    --ex-pivot-details-background: var(--mui-palette-background-paper);
+    --ex-pivot-tab-background: var(--mui-palette-action-hover);
+    --ex-pivot-tab-selected-background: var(--mui-palette-background-paper);
+    --ex-pivot-dialog-backdrop: rgba(0, 0, 0, 0.5);
+    --ex-pivot-dialog-border-color: transparent;
+    --ex-pivot-dialog-radius: var(--mui-shape-borderRadius);
+    --ex-pivot-dialog-shadow: var(--mui-shadows-24);
+    /* The Stale Report (ADR-0067): the built-in notice's colours where a Consumer keeps it, and the value cells while
+       the report is stale, the text mixed 82% into the paper they stand on, muted and still body text (UX-8), as the
+       MudBlazor Wrapper mixes its own. */
+    --ex-pivot-stale-color: var(--mui-palette-text-primary);
+    --ex-pivot-stale-background: var(--mui-palette-background-paper);
+    --ex-pivot-stale-border-color: var(--mui-palette-warning-main);
+    --ex-pivot-stale-value-color: color-mix(in srgb, var(--mui-palette-text-primary) 82%, var(--mui-palette-background-paper));
+    /* No --ex-pivot-font-size: ExPivot's 14px is MUI's body2, and MUI writes no size of its own apart from the whole
+       font shorthand, which the pane below takes. */
+}
+
+/* A heading's weight, MUI's medium: under the Paper, so it outranks the weight of the Typography's variant, which
+   Emotion writes after this stylesheet. */
+.mui-ex-pivot .mui-ex-pivot-strong { font-weight: 500; }
+
+/* An anchor a menu or a panel opens in: positioned, so the pivot's frame opens under its button. */
+.mui-ex-pivot-anchor { position: relative; display: inline-flex; }
+
+/* The Pivot's own buttons say a field's caption or a part's name, so they keep the words as written rather than
+   MUI's capitals. The panels' OK and Cancel keep MUI's, as the grid's filter panel beside them does. */
+.mui-ex-pivot-button.MuiButton-root { text-transform: none; }
+
+/* A placed field's menu, and the Layout menu: MUI's list item buttons laid out as its Menu's items, each label at the
+   start, the current choice marked. The mark is drawn here off aria-checked, so the command's words are only the
+   pivot's. */
+.mui-ex-pivot-menu { display: flex; flex-direction: column; padding: 4px 0; }
+/* Only the width and the text: ButtonBase already takes the button's own border and ground away, and a background set
+   here would tie with MUI's hover and keyboard-focus shades and hide which item Enter runs. */
+.mui-ex-pivot-menu .mui-ex-pivot-menu-item { width: 100%; gap: 4px; font: var(--mui-font-body1); text-align: start; }
+.mui-ex-pivot-menu .mui-ex-pivot-menu-item.MuiListItemButton-dense { font: var(--mui-font-body2); }
+.mui-ex-pivot-menu-mark { display: inline-block; flex: none; width: 1em; text-align: center; }
+.mui-ex-pivot-menu-item[aria-checked='true'] .mui-ex-pivot-menu-mark::before { content: '✓'; }
+/* A group's heading in the Layout menu: Subtotals, Grand Totals, Report Layout. */
+.mui-ex-pivot-menu .mui-ex-pivot-menu-heading { padding: 6px 16px 2px; font-weight: 500; }
+
+/* The panels: MUI's controls in a column, the Item list scrolling on its own and the actions at the end. No width of
+   their own: the pivot's frame sets it. */
+.mui-ex-pivot-panel { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+.mui-ex-pivot-items { display: flex; flex-direction: column; max-height: 240px; min-height: 48px; overflow-y: auto; }
+.mui-ex-pivot-loading { display: flex; align-items: center; gap: 8px; }
+.mui-ex-pivot-actions { display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+
+/* The Pivot Toolbar above the report (ADR-0061): the report filter band on its left; Layout ▾, Refresh and the Field
+   List's toggle on its right. */
+.mui-ex-pivot-toolbar-frame { display: flex; flex-direction: column; gap: 8px; padding: 0 0 8px; }
+.mui-ex-pivot-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; }
+.mui-ex-pivot-toolbar-start { flex: 1 1 auto; min-width: 0; }
+.mui-ex-pivot-toolbar-end { display: flex; flex: none; align-items: center; gap: 4px; }
+
+/* The report filter band, on the Pivot Toolbar's left: each field's caption beside the button that opens Filter… in
+   the anchor around it (ADR-0061). */
+.mui-ex-pivot-filters { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.mui-ex-pivot-filter { display: flex; align-items: center; gap: 8px; }
+.mui-ex-pivot-filter-anchor { min-width: 160px; max-width: 320px; }
+
+/* A button that says a caption, a placed field's or a report filter's: the caption at the start, ending in an
+   ellipsis when it is longer than the button, and the ▾ at the end. */
+.mui-ex-pivot-caption-button.MuiButton-root { justify-content: space-between; min-width: 0; }
+.mui-ex-pivot-caption { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The Stale Report's notice under the Pivot Toolbar (ADR-0067). */
+.mui-ex-pivot-stale { margin: 0 0 8px; }
+
+/* The Field List (ADR-0061): MUI's controls in a column as tall as the pane, the Areas always in view at its foot and
+   the list of fields taking what is left, scrolling on its own, as Excel's pane does, so a field is dragged to an Area
+   without either scrolling away. */
+.mui-ex-pivot-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+    box-sizing: border-box;
+    height: 100%;
+    color: var(--mui-palette-text-primary);
+    font: var(--mui-font-body2);
+}
+.mui-ex-pivot-pane > * { flex: none; }
+.mui-ex-pivot-pane > .mui-ex-pivot-pane-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: inherit;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 12px;
+}
+.mui-ex-pivot-pane-body > * { flex: none; }
+.mui-ex-pivot-pane-heading { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0 8px 0 12px; }
+.mui-ex-pivot-pane-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mui-ex-pivot-pane-body > .mui-ex-pivot-fields {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 4.5em;
+    overflow-y: auto;
+    padding: 0 8px;
+    border: 1px solid var(--mui-palette-divider);
+    border-radius: var(--mui-shape-borderRadius);
+}
+.mui-ex-pivot-field { display: flex; align-items: center; gap: 4px; cursor: grab; }
+.mui-ex-pivot-field .mui-ex-pivot-label { flex: 1 1 auto; min-width: 0; margin-right: 0; }
+.mui-ex-pivot-fields.mui-ex-pivot-drop-remove { outline: 2px dashed var(--mui-palette-primary-main); outline-offset: -2px; }
+.mui-ex-pivot-dragging { opacity: 0.5; }
+
+/* The four Areas, two by two as Excel's pane has them, one above another when narrow. */
+.mui-ex-pivot-areas { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
+.mui-ex-pivot-area.MuiPaper-root { display: flex; flex-direction: column; min-height: 64px; background: var(--mui-palette-action-hover); }
+.mui-ex-pivot-area.mui-ex-pivot-drop-target { outline: 2px solid var(--mui-palette-primary-main); outline-offset: -2px; }
+.mui-ex-pivot-area-title { padding: 2px 8px; border-bottom: 1px solid var(--mui-palette-divider); }
+.mui-ex-pivot-entries { display: flex; flex-direction: column; gap: 4px; padding: 4px; flex: 1 1 auto; }
+/* A placed field's ground is the paper's, on the entry rather than its button, so the button's hover and keyboard-focus
+   shades still fall on it. */
+.mui-ex-pivot-entry { border-radius: var(--mui-shape-borderRadius); background: var(--mui-palette-background-paper); }
+.mui-ex-pivot-entry.mui-ex-pivot-drop-before { box-shadow: 0 -2px 0 var(--mui-palette-primary-main); }
+
+/* Defer Layout Update and Update at the pane's foot (ADR-0061). */
+.mui-ex-pivot-defer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 12px; }
+
+/* Show Details' tabs at the report's foot (ADR-0059): MUI's tabs where Excel's sheet tabs are, a tab keeping the width
+   of its title, cut with an ellipsis past a sheet tab's width, its close mark after it. MUI's own panels are not
+   drawn: ExPivot places the records over the report. */
+.mui-ex-pivot-tabs .mui-ex-pivot-tab { text-transform: none; max-width: 320px; }
+.mui-ex-pivot-tab-label { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; }
+.mui-ex-pivot-tab-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mui-ex-pivot-tab-close { flex: none; }
+/* A compact pivot's tabs, as low as its small buttons: MUI's tabs take no size of their own. */
+.mui-ex-pivot-tabs.mui-ex-pivot-tabs-dense,
+.mui-ex-pivot-tabs-dense .mui-ex-pivot-tab { min-height: 32px; }
+.mui-ex-pivot-tabs-dense .mui-ex-pivot-tab { padding-top: 4px; padding-bottom: 4px; }
+
+/* Show Details' dialog, inside ExPivot's frame (ADR-0059): laid out as a Dialog's content, the title, the records
+   taking what is left, and Close at the end. */
+.mui-ex-pivot-dialog { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0; padding: 16px; }
+.mui-ex-pivot-dialog-records { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+/* The ▾ after a button's words at the words' size: MUI sets an end icon's child at an icon's. */
+.mui-ex-pivot .MuiButton-endIcon > .mui-ex-pivot-opens { font-size: inherit; }

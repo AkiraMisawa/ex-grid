@@ -8,8 +8,8 @@ import { useTheme } from '@mui/material/styles';
 import type { GridDensity } from '@ex-grid/core';
 import type { GridChartBridge } from '@ex-grid/chart';
 import { DockedChart, useChartDockKeyboard, type ChartDockPlacement, type ChartDockState, type ExChartChrome } from '@ex-grid/chart-react';
-import { MuiSizeContext, muiSizeOf } from '@ex-grid/mui';
-import { muiChartChrome, refuseThemeWithoutVariables } from './chart-chrome';
+import { MuiSizeContext, muiSizeOf, refuseThemeWithoutVariables } from '@ex-grid/mui';
+import { muiChartChrome } from './chart-chrome';
 
 // Why a tab's chart can no longer be drawn, in MUI's alert.
 const refused = (why: string): ReactElement => createElement(Alert, { severity: 'warning', className: 'mui-ex-chart-dock-refusal' }, why);

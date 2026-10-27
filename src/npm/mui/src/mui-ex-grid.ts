@@ -10,6 +10,7 @@ import { useTheme } from '@mui/material/styles';
 import { ExGrid, type ExGridProps } from '@ex-grid/react';
 import { MuiSizeContext, muiChrome } from './chrome';
 import { muiDefaultFont, muiPresentationDefaults, muiSizeOf, type MuiExGridFont } from './presentation';
+import { refuseThemeWithoutVariables } from './theme';
 
 /** A MuiExGrid's props: an ExGrid's, and the words MUI's Paper takes. No `presentationDefaults`: the Wrapper's are its
  * own, made from `font`, so the widths `####` is judged by are always the font's the Paper writes (ADR-0027). */
@@ -32,24 +33,6 @@ export type MuiExGridProps<Row> = Omit<ExGridProps<Row>, 'presentationDefaults'>
     readonly style?: CSSProperties;
 };
 
-/** Refuses a theme the stylesheet cannot read (ADR-0390 sections 5 and 10): one made without CSS variables, which has
- * no `vars` (MUI's ThemeProvider writes `null` there), and one whose variables carry a prefix other than MUI's own,
- * which the stylesheet's `--mui-*` names would not find. Either way the grid would be drawn in colours that are not
- * the theme's. */
-function refuseThemeWithoutVariables(theme: object): void {
-    const vars: unknown = Reflect.get(theme, 'vars');
-    if (vars === undefined || vars === null) {
-        throw new Error('MuiExGrid needs a MUI theme with CSS variables: make it with createTheme({ cssVariables: true }) and hand it to the '
-            + 'ThemeProvider above the grid. Without them the theme\'s colours exist only in script, and the grid would be drawn in colours '
-            + 'that are not the theme\'s (ADR-0390 section 5).');
-    }
-    const prefix: unknown = Reflect.get(theme, 'cssVarPrefix');
-    if (prefix !== 'mui') {
-        throw new Error(`MuiExGrid reads the theme's CSS variables by MUI's own prefix, --mui-*, and this theme writes them with the prefix '${String(prefix)}': `
-            + 'leave cssVariables.cssVarPrefix unset (ADR-0390 section 10).');
-    }
-}
-
 /**
  * An Excel-like grid drawn with MUI: the Chrome slots a `chrome` prop leaves are MUI's, the cells are in the font
  * whose widths the grid judges `####` by, and the colours follow the theme and its scheme with no render. Needs a
@@ -60,7 +43,7 @@ export function MuiExGrid<Row>(props: MuiExGridProps<Row>): ReactElement {
     const {
         variant = 'outlined', elevation, square, withColumnBorders, font = muiDefaultFont, className, style, chrome, ...grid
     } = props;
-    refuseThemeWithoutVariables(useTheme());
+    refuseThemeWithoutVariables(useTheme(), 'MuiExGrid');
     const density = grid.density ?? 'compact'; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: an untouched grid is compact
     const defaults = useMemo(() => muiPresentationDefaults(font), [font]);
     // The Consumer's slots win over the Wrapper's; one merge per chrome handed, so a render function handed again
