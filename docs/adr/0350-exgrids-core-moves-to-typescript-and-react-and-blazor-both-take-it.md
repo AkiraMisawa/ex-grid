@@ -455,6 +455,12 @@ than its spelling, Blazor's surface follows it under section 14.
 - **A Chrome slot is a mount function in the core**, `(slot, context) => cleanup`, and a render
   function in React, drawn through a portal into the slot the core made. Either way the core decides
   what the slot means (the spine's fourth rule).
+  *(2026-10-27, as the column menu's and the Context Menu's slots were built: a context is handed whole
+  and never changes under the contents. When what the core hands changes while the part stands, a focus
+  request, the core calls the cleanup and mounts again on the same slot, as it does a Template cell, so
+  React's portal, keyed by the slot, keeps the component and its state. The focus a request asks for is
+  the core's to give wherever DOM focus stands, as the built-in menu's is; any other the contents ask
+  for is given only while the keyboard is still the grid's (ADR-0204).)*
 
 ## Consequences
 

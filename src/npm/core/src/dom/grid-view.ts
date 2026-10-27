@@ -80,7 +80,8 @@ import {
 } from './column-gestures';
 import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
-import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, popoverMinWidthPx, type MenuKeyTable } from './menu-popover';
+import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, popoverMinWidthPx, type MenuKeyTable, type MenuPlace } from './menu-popover';
+import { checkedChrome, columnMenuExtra, SlottedMenu, type GridChrome, type GridChromeSlot, type GridMenuSlotContext } from './grid-chrome';
 import { FilterPanel } from './filter-panel';
 import { FindPanel, type FindHeld } from './find-panel';
 import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
@@ -388,6 +389,10 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly commandLabel?: (id: string) => string | undefined;
     /** Leaves Copy with headers off the Context Menu (ADR-0050, item 13). Shown unless given. */
     readonly hideCopyWithHeaders?: boolean;
+    /** The Chrome slots a Wrapper fills (ADR-0390): each part named here is drawn by its mount function in place
+     * of the built-in Chrome's, and what it means stays the core's. Read at each opening of the part: a part
+     * standing keeps the contents it opened with. */
+    readonly chrome?: GridChrome<Row>;
     /** Leaves the ▾ off every header, and Alt+↓ with it (ADR-0050, item 12): the column menu, the column's
      * commands, is shown unless given. */
     readonly hideColumnMenu?: boolean;
@@ -740,6 +745,7 @@ interface Taken<Row> {
     readonly contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
     readonly commandLabel: ((id: string) => string | undefined) | undefined;
     readonly hideCopyWithHeaders: boolean;
+    readonly chrome: GridChrome<Row> | undefined;
     readonly hideColumnMenu: boolean;
     readonly onColumnHidden: ((column: string) => void) | undefined;
     readonly onPinnedCountChanged: ((count: number) => void) | undefined;
@@ -779,7 +785,7 @@ type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTML
 type MenuPopover = {
     readonly element: HTMLElement;
     readonly commands: readonly GridCommand[];
-    readonly items: MenuItems;
+    readonly items: MenuPlace;
 } & ({
     readonly kind: 'context';
     readonly leftPx: number;
@@ -1413,6 +1419,7 @@ export class GridView<Row> {
     #contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
     #commandLabel: ((id: string) => string | undefined) | undefined;
     #hideCopyWithHeaders = false;
+    #chrome: GridChrome<Row> | undefined;
     #popover: OpenPopover | undefined;
     // The column menu (ADR-0010): whether the headers carry a ▾, each painted ▾'s column, and the commands'
     // sinks the Consumer gave.
@@ -1475,6 +1482,8 @@ export class GridView<Row> {
     #pending: PendingCommit<Row> | undefined;
     #pendingStamps = 0;
     #input: Event | undefined;
+    // The input a Chrome slot's callback last counted (ADR-0220).
+    #inputAnswered: Event | undefined;
     #retaking: Event | undefined;
     // An Escape cancelled a commit, and its repeats are its own.
     #escapeCancelled = false;
@@ -1835,7 +1844,10 @@ export class GridView<Row> {
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
         this.#edit = undefined;
         this.#tellEditing();
+        // A Chrome slot's contents are taken away with the grid, as a Template cell's are.
+        const popover = this.#popover;
         this.#popover = undefined;
+        if (popover !== undefined && popover.kind !== 'find' && popover.kind !== 'consumer') popover.items.dispose();
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#rowMarks.destroy();
@@ -2119,7 +2131,7 @@ export class GridView<Row> {
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick, onLeave: options.onLeave,
             onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
-            hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
+            chrome: checkedChrome<Row>(options.chrome), hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findError: options.findError, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
@@ -2377,6 +2389,7 @@ export class GridView<Row> {
         this.#contextCommands = taken.contextCommands;
         this.#commandLabel = taken.commandLabel;
         this.#hideCopyWithHeaders = taken.hideCopyWithHeaders;
+        this.#chrome = taken.chrome;
         this.#hideColumnMenu = taken.hideColumnMenu;
         this.#onColumnHidden = taken.onColumnHidden;
         this.#onPinnedCountChanged = taken.onPinnedCountChanged;
@@ -2918,8 +2931,7 @@ export class GridView<Row> {
         }
         // Escape peels a popover before anything else, from inside it or from the grid (ADR-0012's layering,
         // ADR-0039); the keyboard comes back to the grid.
-        if (popover !== undefined && escape && (onGrid || inPopover)
-            && !(popover.kind === 'consumer' && popover.frame.innerPopupOpen)) {
+        if (popover !== undefined && escape && (onGrid || inPopover) && !innerPopupOpen(popover)) {
             this.#taken(event);
             this.#closePopover(true);
             return;
@@ -5079,23 +5091,42 @@ export class GridView<Row> {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = 'ex-popover';
         element.setAttribute('role', 'menu');
-        this.#standMenu({ kind: 'context', element, commands, leftPx, topPx, version, source: this.#source }, element, resolveMenuKey, false);
+        const slot = this.#chrome?.contextMenu;
+        this.#standMenu({ kind: 'context', element, commands, leftPx, topPx, version, source: this.#source }, element, resolveMenuKey, false,
+            slot === undefined ? undefined : { name: 'contextMenu', mount: slot, extra: {
+                row: context.row, column: context.column, columnType: context.columnType, selection: context.selection,
+                rowSequenceVersion: context.rowSequenceVersion,
+            } });
     }
 
     // Stands a menu's popover: its items in `container`, inside the popover's element, placed under the root
     // after the scroller, and its first enabled item taking the keyboard (ADR-0039). `lettered` marks Excel's
-    // letters, the column menu's (ADR-0044).
-    #standMenu(popover: StandingPopover, container: HTMLElement, table: MenuKeyTable, lettered: boolean): void {
-        const items = new MenuItems(container, popover.commands, id => this.#labelOf(id), table, {
-            run: index => { this.#runCommand(index); },
+    // letters, the column menu's (ADR-0044). Where a Chrome slot is filled, its contents draw the items in
+    // `container` instead, mounted once the popover stands, and answer through the same table (ADR-0390).
+    #standMenu<Extra extends object>(popover: StandingPopover, container: HTMLElement, table: MenuKeyTable, lettered: boolean,
+        slot?: { readonly name: string; readonly mount: GridChromeSlot<GridMenuSlotContext & Extra>; readonly extra: Extra }): void {
+        const label = (id: string): string => this.#labelOf(id);
+        const answers = {
+            run: (index: number) => { this.#runCommand(index); },
             cancel: () => { this.#closePopover(true); },
             answered: this.#answer,
-            toFilter: where => { this.#toFilter(where); },
-        }, lettered);
+            toFilter: (where: 'filterFirst' | 'filterLast' | 'filterSearch') => { this.#toFilter(where); },
+        };
+        const items: MenuPlace = slot === undefined
+            ? new MenuItems(container, popover.commands, label, table, answers, lettered)
+            : new SlottedMenu(container, slot.name, slot.mount, slot.extra, popover.commands, label, table,
+                { ...answers, answered: this.#answerInput },
+                (control, preventScroll, owed) => { this.#takeChromeFocus(control, preventScroll, owed); });
         this.#popover = { ...popover, items };
         this.#placePopover();
         this.#scroller.after(popover.element);
-        items.focus();
+        try {
+            items.focus();
+        } catch (error) {
+            // A slot whose contents could not be drawn leaves no empty menu standing.
+            this.#closePopover(true);
+            throw error;
+        }
         this.#invalidate();
     }
 
@@ -5103,6 +5134,15 @@ export class GridView<Row> {
     readonly #answer = (): void => {
         this.#answered += 1;
         this.#invalidate();
+    };
+
+    // The same, for a Chrome slot's contents, which may call back twice for one input: a key resolved, then the
+    // command it runs invoked. The input the root heard is counted once.
+    readonly #answerInput = (): void => {
+        const input = this.#input;
+        if (input !== undefined && input === this.#inputAnswered) return;
+        this.#inputAnswered = input;
+        this.#answer();
     };
 
     // What the built-in menu calls a command: the Consumer's words where it has some, the built-in English
@@ -5153,14 +5193,17 @@ export class GridView<Row> {
         if (popover === undefined) return;
         this.#popover = undefined;
         if (popover.kind === 'column') popover.panel?.close();
+        const doc = this.#root.ownerDocument;
+        // Read before the contents go: a slot's cleanup that empties it moves DOM focus off what it held.
+        const held = popover.element.contains(doc.activeElement);
+        // A Chrome slot's contents are taken away before their slot goes (ADR-0390).
+        if (popover.kind === 'column' || popover.kind === 'context') popover.items.dispose();
         // A step still out is nobody's once the panel is gone (ADR-0055).
         if (popover.kind === 'find') {
             this.#findStepping?.abort();
             this.#findStepping = undefined;
         }
-        const doc = this.#root.ownerDocument;
         const active = doc.activeElement;
-        const held = popover.element.contains(active);
         const ours = active === null || active === doc.body || active === doc.documentElement || this.#root.contains(active);
         popover.element.remove();
         if (held || (giveBack && ours)) this.#takeKeyboard();
@@ -5333,8 +5376,10 @@ export class GridView<Row> {
             fetched: () => { this.#invalidate(); },
         }) : undefined;
         if (panel !== undefined) element.append(panel.lead, panel.body, panel.trail);
+        const slot = this.#chrome?.columnMenu;
         this.#standMenu({ kind: 'column', element, commands, column: name, panel }, menu,
-            (pressed, shift, chord, held, current) => resolveColumnMenuKey(pressed, shift, chord, held, current, filterable), true);
+            (pressed, shift, chord, held, current) => resolveColumnMenuKey(pressed, shift, chord, held, current, filterable), true,
+            slot === undefined ? undefined : { name: 'columnMenu', mount: slot, extra: columnMenuExtra(name, declared.type) });
     }
 
     // Tab, Shift+Tab and E on a command (ADR-0044): the keyboard goes into the filter below.
@@ -7524,6 +7569,15 @@ export class GridView<Row> {
         if (scroller.scrollLeft !== left) scroller.scrollLeft = left;
     }
 
+    // A Chrome slot's control takes the keyboard (ADR-0204, ADR-0390). A focus the grid owes, the one a menu's
+    // opening asked for, is taken wherever DOM focus stands, as the built-in menu takes it: a press on a ▾ never moves
+    // the keyboard itself (ADR-0039). Any other only while the keyboard is still this grid's, so a grid or a field
+    // of the page's the user has moved to keeps it.
+    #takeChromeFocus(control: HTMLElement, preventScroll: boolean, owed: boolean): void {
+        if (!control.isConnected || (!owed && !this.#keyboardHere())) return;
+        keyboardTargetIn(control, 'takeFocus').target.focus({ preventScroll });
+    }
+
     // DOM focus inside this root and not in a grid nested in it, or on nothing; or, while the keyboard is
     // moving, where it is going.
     #keyboardHere(toward?: Element): boolean {
@@ -9045,6 +9099,12 @@ function keyboardTargetIn(control: HTMLElement, asker: string): { readonly targe
     const target = control.querySelector<HTMLElement>(otherControls);
     if (target === null) throw new RangeError(`${asker} is handed an element that takes no keyboard and holds no enabled control that does.`);
     return { target, field: undefined };
+}
+
+/** Whether a popup the popover's contents opened of their own is open: Escape is then the popup's (ADR-0039). */
+function innerPopupOpen(popover: OpenPopover): boolean {
+    if (popover.kind === 'consumer') return popover.frame.innerPopupOpen;
+    return popover.kind !== 'find' && popover.items.innerPopupOpen;
 }
 
 /** A painted cell's Match Mark as a row's record of its marks writes it: nothing for none. */

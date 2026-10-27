@@ -3,9 +3,10 @@
 // instance root, and decides nothing. The rows are never React's: a component per row would repeat,
 // through `memo`, the fight with re-rendering that ADR-0003 measured.
 
-import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useRef, type ReactElement, type Ref } from 'react';
+import { createElement, Fragment, useImperativeHandle, useLayoutEffect, useMemo, useRef, type ReactElement, type Ref } from 'react';
 import { createGrid, type GridHandle, type GridOptions } from '@ex-grid/core';
-import { holdPortals, useTemplatePortals } from './template-column';
+import { chromeMounts, type ExGridChrome } from './chrome';
+import { holdPortals, useGridPortals } from './portals';
 
 /**
  * An ExGrid's props: the Script Core's options, whole. `locale` is the browser's language where not given,
@@ -13,9 +14,11 @@ import { holdPortals, useTemplatePortals } from './template-column';
  * never the browser's: a grid with a Date column whose filter is offered is given one on every browser
  * alike, or refused on every browser alike (ADR-0350 section 16).
  */
-export type ExGridProps<Row> = GridOptions<Row> & {
+export type ExGridProps<Row> = Omit<GridOptions<Row>, 'chrome'> & {
     /** A ref to what the Consumer may ask of the grid it rendered. */
     readonly ref?: Ref<ExGridApi<Row>>;
+    /** The Chrome slots a Wrapper renders, each a render function of its context (ADR-0390). */
+    readonly chrome?: ExGridChrome<Row>;
 };
 
 /**
@@ -36,19 +39,22 @@ function withLocale<Row>(props: GridOptions<Row>, browserLocale: string): GridOp
  * render hands the core the props again, and what did not change costs nothing (ADR-0003).
  */
 export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
-    const { ref, ...options } = props;
+    const { ref, chrome, ...options } = props;
     const element = useRef<HTMLDivElement>(null);
     const grid = useRef<GridHandle<Row> | undefined>(undefined);
     const browserLocale = useRef<string | undefined>(undefined);
-    // The Template cells' content, rendered by this component into the slots the core keeps (ADR-0020).
-    const portals = useTemplatePortals();
+    // The Template cells' content and the Chrome slots', rendered by this component into the slots the core keeps
+    // (ADR-0020, ADR-0390).
+    const portals = useGridPortals();
+    // Made again only when the Consumer hands another chrome: the ExGrid renders for every portal change.
+    const mounts = useMemo(() => chromeMounts(chrome, portals), [chrome, portals]);
     // Drawn before the browser paints, so a mounted grid is never seen empty.
     useLayoutEffect(() => {
         const root = element.current;
         if (root === null) throw new Error('Internal: React mounted no element for the grid to draw into.');
         holdPortals(root, portals);
         browserLocale.current ??= navigator.language;
-        const taken = withLocale(options, browserLocale.current);
+        const taken = withLocale(mounts === undefined ? options : { ...options, chrome: mounts }, browserLocale.current);
         if (grid.current === undefined) {
             portals.begin();
             grid.current = createGrid(root, taken);
