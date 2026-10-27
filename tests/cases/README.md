@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -621,6 +621,63 @@ suggestion takes to break a tie between two separators: a comma, a semicolon, or
 a table of its own that `Intl` does not hold, so `@ex-grid/data` carries a copy (`listSeparatorOf` in `src/csv/culture.ts`).
 xUnit holds the file to .NET (`ListSeparatorCaseTests.cs`, which writes it with `EXGRID_WRITE_DATA_CASES=1`) and Vitest holds
 the copy to the file (`list-separators.test.ts`).
+
+## `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape` and `xlsxColor`
+
+The `.xlsx` reader and writer ([ADR-0330](../../docs/adr/0330-exsheet-opens-and-saves-xlsx-with-a-reader-and-writer-of-its-own.md),
+ADR-0370 section 3), under `xlsx/`: xUnit runs them against ExGrid.Data.Xlsx (`tests/ExGrid.Data.Xlsx.Tests/Cases/XlsxCaseTests.cs`)
+and Vitest against `@ex-grid/data-xlsx` (`src/npm/data-xlsx/test/xlsx-cases.test.ts`). A reader and a writer of a file format
+have no differential run, so these cases are what holds the two packages together, and both runners stay. The C# runner writes
+the answers, with `EXGRID_WRITE_XLSX_CASES=1`. What a case cannot hold stays with its runner: how a stream that cannot seek is
+copied, the cause a refusal carries, the memory, progress and cancellation of a large read, and where the writer meets its size
+limit, which .NET meets as its `XmlWriter` flushes and the Script Core as it hands 64 KiB of a sheet to the zip.
+
+Text in a case is a string, `{"utf16": "half \\uD800"}` for text JSON cannot hold, or a list of pieces joined in order, each
+one of those or `{"each": "<row r=\"{i}\"/>", "from": 1, "to": 2000}`, written once for each number with `{i}` standing for
+it; `{Main}` and `{Rel}` stand for SpreadsheetML's main and relationships namespaces. A key a list of cases calls optional
+takes the API's own default when it is left out. An enumeration is written as its C# name with the first letter lowered
+(`sharedString`, `tooManyCells`), and a colour's ARGB as eight hex digits (`FFC00000`).
+
+**`xlsxRead`.** A case gives a `file`; any of `options` (`maxUncompressedBytes`, `maxCells`); `holds`, the aspects of the read
+its answer writes (`workbook`, `sharedStrings`, `styles`, `theme`, `sheets`, `batches`; `sheets` when it names none); and
+`saying`, the words a refusal's message starts with where the rest is the platform's own (an XML or zlib error), written as
+the answer's message. The file is one of:
+
+| `file` | The file |
+|---|---|
+| `{"bytes": [pieces]}` | Bytes, as a `csvRead` file's pieces |
+| `{"ole": [names]}` | An OLE compound file whose directory lists the names, four to a sector |
+| `{"zip": [[name, text], …]}` | A zip of the parts, each UTF-8, deflated |
+| `{"book": {…}}` | A workbook of one worksheet, `Sheet1`, laid out as the C# tests' `Fixtures.Book`: `sheet` (the part whole) or `sheetData` with any of `head` and `tail`, and any of `sharedStrings`, `styles`, `theme`, `metadata` and `workbook`, each a part related from the workbook part |
+
+and a zip may take `"stored": true` (every part stored), `"damage": part` (that part's deflate stream begins with the reserved
+block type) and `"lie": {"part", "declared"}` (that part's uncompressed size declared as `declared`).
+
+Its `expect` is `{"refused": {reason, part, sheet, cell, message}}`, each missing one `null`, or an object of the aspects held:
+`workbook` (`part`, `sheets` with each one's `name`, `sheetId`, `visibility`, `part` and `kind`, `activeSheet`, `date1904`,
+`definedNames` with each one's `name`, `text`, `localSheet` and `hidden`, `hasTheme`, and `parts` in ordinal order);
+`sharedStrings`, each `[text, rich]`; `styles` (`numberFormats` by id, `fonts`, `fills`, `borders`, `cellFormats`,
+`indexedColors`), where a key at its default is left out and a colour is `{kind, value, tint, resolved}`, `resolved` being what
+the workbook's theme and palette paint it; `theme`, the scheme's twelve colours; `sheets`, each `null` for a sheet that holds no
+cells or its `columns`, `rows` (each `[row, style]`), `cells`, `otherElements`, `customRowHeights`, `hiddenRows` and
+`frozenPanes`; and `batches`, each sheet's `[cells, rows]` per batch. A cell is `{at, type, value}` with `text`, `formula`
+(`{text}` with any of `kind`, `ref`, `si`, `dynamic`), `style` and `rich` where they are not their default; an element is
+`{name}` with `attributes`, `children`, `text` and `cut` where it has them.
+
+**`xlsxWrite`.** A case gives `steps`, taken in order on a writer made with its `options` (`styles`, as `styles` above with a
+list left out taken from the default styles, `activeSheet`, `date1904`, `fullCalculationOnLoad`, `definedNames`,
+`maxUncompressedBytes`); and may ask for `"parts": true`, the parts written, and `read`, the aspects of reading them back. A
+step is `{"addSheet": name}` with any of `columns` and `visibility`, `{"write": cell}`, `{"writeAll": [cells]}`, `{"writeRow":
+[row, style]}`, `{"addTable": table}`, `{"flush": true}` or `{"complete": true}`; each writes to the sheet added last, and a
+cell is written as an answer's is. Its `expect` is `create` (`null`, or how creating the writer threw, when nothing else
+follows), `outcomes`, one per step, `null` or how it threw, as `{kind, message}` with `kind` one of the refusals above or
+`{"kind": "refused", reason, part, sheet, message}`, and, where asked, `parts`, each `[name, text]` in the zip's order with its
+line ends written as `\n` (`null` for a workbook never completed), and `read`.
+
+**`xlsxReference`** gives a `place`, `[row, column]`, answered by its A1 text, or a `text`, answered by its `[row, column]` or
+`false`. **`xlsxEscape`** gives `written`, answered by the text Excel's `_xHHHH_` escapes decode to. **`xlsxColor`** gives a
+`color`, resolved through Office's theme or the `theme` it names and the default palette or the `indexedColors` it names, and
+answered by its ARGB or `null`; or an `argb` and a `tint`, answered by the tint applied.
 
 ## `boardInput`
 

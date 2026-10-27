@@ -1,0 +1,1311 @@
+{
+  "about": "Workbooks read: a package laid out as Excel 365 saves one, shared and inline strings, a theme and the colours it resolves, what a worksheet holds beside its cells, cells that name no place, dynamic arrays, and rows formatted without cells (ADR-0330 sections 3, 4, 8 and 9). Transcribed from ExGrid.Data.Xlsx's ExcelShapedTests, SharedStringTests, ThemeTests, StreamingTests and RowAndColumnFormatTests.",
+  "kind": "xlsxRead",
+  "cases": [
+    {
+      "name": "ADR-0330 §3, §4, §8, §9: a package as Excel 365 saves one gives its sheets, names, styles, theme and cells, and lists what it does not read",
+      "file": {
+        "zip": [
+          [
+            "[Content_Types].xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/><Override PartName=\"/xl/worksheets/sheet2.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/><Override PartName=\"/xl/theme/theme1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\"/><Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/><Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\"/><Override PartName=\"/xl/calcChain.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml\"/><Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/><Override PartName=\"/docProps/app.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.extended-properties+xml\"/></Types>"
+          ],
+          [
+            "_rels/.rels",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties\" Target=\"docProps/app.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>"
+          ],
+          [
+            "docProps/app.xml",
+            "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\"/>"
+          ],
+          [
+            "docProps/core.xml",
+            "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\"/>"
+          ],
+          [
+            "xl/workbook.xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" mc:Ignorable=\"x15 xr xr6 xr10 xr2\" xmlns:x15=\"http://schemas.microsoft.com/office/spreadsheetml/2010/11/main\" xmlns:xr=\"http://schemas.microsoft.com/office/spreadsheetml/2014/revision\" xmlns:xr6=\"http://schemas.microsoft.com/office/spreadsheetml/2016/revision6\" xmlns:xr10=\"http://schemas.microsoft.com/office/spreadsheetml/2016/revision10\" xmlns:xr2=\"http://schemas.microsoft.com/office/spreadsheetml/2015/revision2\"><fileVersion appName=\"xl\" lastEdited=\"7\" lowestEdited=\"7\" rupBuild=\"28322\"/><workbookPr defaultThemeVersion=\"202300\"/><mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice Requires=\"x15\"><x15ac:absPath url=\"C:\\Users\\me\\Documents\\\" xmlns:x15ac=\"http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac\"/></mc:Choice></mc:AlternateContent><xr:revisionPtr revIDLastSave=\"0\" documentId=\"8_{00000000-0000-0000-0000-000000000000}\" xr6:coauthVersionLast=\"47\" xr6:coauthVersionMax=\"47\" xr10:uidLastSave=\"{00000000-0000-0000-0000-000000000000}\"/><bookViews><workbookView xWindow=\"-110\" yWindow=\"-110\" windowWidth=\"25820\" windowHeight=\"15500\" activeTab=\"1\" xr2:uid=\"{00000000-0000-0000-0000-000000000000}\"/></bookViews><sheets><sheet name=\"Inputs\" sheetId=\"1\" r:id=\"rId1\"/><sheet name=\"Book\" sheetId=\"3\" r:id=\"rId2\"/></sheets><definedNames><definedName name=\"Rate\">Inputs!$B$1</definedName></definedNames><calcPr calcId=\"191029\"/><extLst><ext uri=\"{140A7094-0E35-4892-8432-C4D2E57EDEB5}\" xmlns:x15=\"http://schemas.microsoft.com/office/spreadsheetml/2010/11/main\"><x15:workbookPr chartTrackingRefBase=\"1\"/></ext></extLst></workbook>"
+          ],
+          [
+            "xl/_rels/workbook.xml.rels",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme\" Target=\"theme/theme1.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet2.xml\"/><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/><Relationship Id=\"rId6\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain\" Target=\"calcChain.xml\"/><Relationship Id=\"rId5\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" Target=\"sharedStrings.xml\"/><Relationship Id=\"rId4\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/></Relationships>"
+          ],
+          [
+            "xl/styles.xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" mc:Ignorable=\"x14ac x16r2 xr\" xmlns:x14ac=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac\" xmlns:x16r2=\"http://schemas.microsoft.com/office/spreadsheetml/2015/02/main\" xmlns:xr=\"http://schemas.microsoft.com/office/spreadsheetml/2014/revision\"><numFmts count=\"1\"><numFmt numFmtId=\"164\" formatCode=\"&quot;$&quot;#,##0.00\"/></numFmts><fonts count=\"2\" x14ac:knownFonts=\"1\"><font><sz val=\"11\"/><color theme=\"1\"/><name val=\"Aptos Narrow\"/><family val=\"2\"/><scheme val=\"minor\"/></font><font><b/><sz val=\"11\"/><color rgb=\"FFFF0000\"/><name val=\"Aptos Narrow\"/><family val=\"2\"/><scheme val=\"minor\"/></font></fonts><fills count=\"3\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill><fill><patternFill patternType=\"solid\"><fgColor theme=\"4\" tint=\"0.79998168889431442\"/><bgColor indexed=\"64\"/></patternFill></fill></fills><borders count=\"2\"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style=\"thin\"><color indexed=\"64\"/></left><right style=\"thin\"><color indexed=\"64\"/></right><top style=\"thin\"><color indexed=\"64\"/></top><bottom style=\"double\"><color indexed=\"64\"/></bottom><diagonal/></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs><cellXfs count=\"4\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/><xf numFmtId=\"164\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/><xf numFmtId=\"0\" fontId=\"1\" fillId=\"2\" borderId=\"1\" xfId=\"0\" applyFont=\"1\" applyFill=\"1\" applyBorder=\"1\" applyAlignment=\"1\"><alignment horizontal=\"center\"/></xf><xf numFmtId=\"14\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles><dxfs count=\"1\"><dxf><font><color rgb=\"FF9C0006\"/></font><fill><patternFill><bgColor rgb=\"FFFFC7CE\"/></patternFill></fill></dxf></dxfs><tableStyles count=\"0\" defaultTableStyle=\"TableStyleMedium2\" defaultPivotStyle=\"PivotStyleLight16\"/><extLst><ext uri=\"{EB79DEF2-80B8-43e5-95BD-54CBDDF9020C}\" xmlns:x14=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/main\"><x14:slicerStyles defaultSlicerStyle=\"SlicerStyleLight1\"/></ext></extLst></styleSheet>"
+          ],
+          [
+            "xl/sharedStrings.xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<sst xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" count=\"3\" uniqueCount=\"3\"><si><t>Rate</t></si><si><t>Notional</t></si><si><t>Total</t></si></sst>"
+          ],
+          [
+            "xl/theme/theme1.xml",
+            "<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:themeElements><a:clrScheme name=\"Office\"><a:dk1><a:sysClr val=\"windowText\" lastClr=\"000000\"/></a:dk1><a:lt1><a:sysClr val=\"window\" lastClr=\"FFFFFF\"/></a:lt1><a:dk2><a:srgbClr val=\"0E2841\"/></a:dk2><a:lt2><a:srgbClr val=\"E8E8E8\"/></a:lt2><a:accent1><a:srgbClr val=\"156082\"/></a:accent1><a:accent2><a:srgbClr val=\"E97132\"/></a:accent2><a:accent3><a:srgbClr val=\"196B24\"/></a:accent3><a:accent4><a:srgbClr val=\"0F9ED5\"/></a:accent4><a:accent5><a:srgbClr val=\"A02B93\"/></a:accent5><a:accent6><a:srgbClr val=\"4EA72E\"/></a:accent6><a:hlink><a:srgbClr val=\"467886\"/></a:hlink><a:folHlink><a:srgbClr val=\"96607D\"/></a:folHlink></a:clrScheme></a:themeElements></a:theme>"
+          ],
+          [
+            "xl/calcChain.xml",
+            "<calcChain xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><c r=\"B2\" i=\"2\"/></calcChain>"
+          ],
+          [
+            "xl/worksheets/sheet1.xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" mc:Ignorable=\"x14ac xr xr2 xr3\" xmlns:x14ac=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac\" xmlns:xr=\"http://schemas.microsoft.com/office/spreadsheetml/2014/revision\" xmlns:xr2=\"http://schemas.microsoft.com/office/spreadsheetml/2015/revision2\" xmlns:xr3=\"http://schemas.microsoft.com/office/spreadsheetml/2016/revision3\" xr:uid=\"{00000000-0001-0000-0000-000000000000}\"><dimension ref=\"A1:B1\"/><sheetViews><sheetView workbookViewId=\"0\"/></sheetViews><sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/><sheetData><row r=\"1\" spans=\"1:2\" x14ac:dyDescent=\"0.35\"><c r=\"A1\" t=\"s\"><v>0</v></c><c r=\"B1\"><v>0.0425</v></c></row></sheetData><pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/></worksheet>"
+          ],
+          [
+            "xl/worksheets/sheet2.xml",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" mc:Ignorable=\"x14ac xr xr2 xr3\" xmlns:x14ac=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac\" xmlns:xr=\"http://schemas.microsoft.com/office/spreadsheetml/2014/revision\" xmlns:xr2=\"http://schemas.microsoft.com/office/spreadsheetml/2015/revision2\" xmlns:xr3=\"http://schemas.microsoft.com/office/spreadsheetml/2016/revision3\" xr:uid=\"{00000000-0001-0000-0100-000000000000}\"><dimension ref=\"A1:C4\"/><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\"><selection activeCell=\"C4\" sqref=\"C4\"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight=\"14.5\" x14ac:dyDescent=\"0.35\"/><cols><col min=\"1\" max=\"1\" width=\"12.36328125\" customWidth=\"1\"/><col min=\"2\" max=\"3\" width=\"10.90625\" style=\"3\" customWidth=\"1\"/></cols><sheetData><row r=\"1\" spans=\"1:3\" x14ac:dyDescent=\"0.35\"><c r=\"A1\" s=\"2\" t=\"s\"><v>1</v></c><c r=\"B1\" s=\"3\"><v>46022</v></c></row><row r=\"2\" spans=\"1:3\" x14ac:dyDescent=\"0.35\"><c r=\"A2\" s=\"1\"><v>1000</v></c><c r=\"B2\" s=\"1\"><f>A2*Rate</f><v>42.5</v></c></row><row r=\"3\" spans=\"1:3\" x14ac:dyDescent=\"0.35\"><c r=\"A3\" s=\"1\"><v>2000</v></c><c r=\"B3\" s=\"1\"><f>A3*Rate</f><v>85</v></c></row><row r=\"4\" spans=\"1:3\" x14ac:dyDescent=\"0.35\"><c r=\"A4\" s=\"2\" t=\"s\"><v>2</v></c><c r=\"B4\" s=\"1\"><f>SUM(B2:B3)</f><v>127.5</v></c><c r=\"C4\" t=\"str\"><f>_xlfn.CONCAT(A4,\":\",B4)</f><v>Total:127.5</v></c></row></sheetData><conditionalFormatting sqref=\"B2:B3\"><cfRule type=\"cellIs\" dxfId=\"0\" priority=\"1\" operator=\"greaterThan\"><formula>50</formula></cfRule></conditionalFormatting><pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/></worksheet>"
+          ]
+        ]
+      },
+      "holds": [
+        "workbook",
+        "sharedStrings",
+        "styles",
+        "theme",
+        "sheets"
+      ],
+      "expect": {
+        "workbook": {
+          "part": "xl/workbook.xml",
+          "sheets": [
+            {
+              "name": "Inputs",
+              "sheetId": 1,
+              "visibility": "visible",
+              "part": "xl/worksheets/sheet1.xml",
+              "kind": "worksheet"
+            },
+            {
+              "name": "Book",
+              "sheetId": 3,
+              "visibility": "visible",
+              "part": "xl/worksheets/sheet2.xml",
+              "kind": "worksheet"
+            }
+          ],
+          "activeSheet": 1,
+          "date1904": false,
+          "definedNames": [
+            {
+              "name": "Rate",
+              "text": "Inputs!$B$1",
+              "localSheet": null,
+              "hidden": false
+            }
+          ],
+          "hasTheme": true,
+          "parts": [
+            "[Content_Types].xml",
+            "_rels/.rels",
+            "docProps/app.xml",
+            "docProps/core.xml",
+            "xl/_rels/workbook.xml.rels",
+            "xl/calcChain.xml",
+            "xl/sharedStrings.xml",
+            "xl/styles.xml",
+            "xl/theme/theme1.xml",
+            "xl/workbook.xml",
+            "xl/worksheets/sheet1.xml",
+            "xl/worksheets/sheet2.xml"
+          ]
+        },
+        "sharedStrings": [
+          [
+            "Rate",
+            false
+          ],
+          [
+            "Notional",
+            false
+          ],
+          [
+            "Total",
+            false
+          ]
+        ],
+        "styles": {
+          "numberFormats": {
+            "164": "\"$\"#,##0.00"
+          },
+          "fonts": [
+            {
+              "name": "Aptos Narrow",
+              "size": 11,
+              "color": {
+                "kind": "theme",
+                "value": 1,
+                "resolved": "FF000000"
+              }
+            },
+            {
+              "name": "Aptos Narrow",
+              "size": 11,
+              "bold": true,
+              "color": {
+                "kind": "rgb",
+                "value": "FFFF0000",
+                "resolved": "FFFF0000"
+              }
+            }
+          ],
+          "fills": [
+            {
+              "pattern": "none"
+            },
+            {
+              "pattern": "gray125"
+            },
+            {
+              "pattern": "solid",
+              "foreground": {
+                "kind": "theme",
+                "value": 4,
+                "tint": 0.7999816888943144,
+                "resolved": "FFC1E5F5"
+              },
+              "background": {
+                "kind": "indexed",
+                "value": 64,
+                "resolved": null
+              }
+            }
+          ],
+          "borders": [
+            {
+              "left": {
+                "style": "none"
+              },
+              "right": {
+                "style": "none"
+              },
+              "top": {
+                "style": "none"
+              },
+              "bottom": {
+                "style": "none"
+              },
+              "diagonal": {
+                "style": "none"
+              }
+            },
+            {
+              "left": {
+                "style": "thin",
+                "color": {
+                  "kind": "indexed",
+                  "value": 64,
+                  "resolved": null
+                }
+              },
+              "right": {
+                "style": "thin",
+                "color": {
+                  "kind": "indexed",
+                  "value": 64,
+                  "resolved": null
+                }
+              },
+              "top": {
+                "style": "thin",
+                "color": {
+                  "kind": "indexed",
+                  "value": 64,
+                  "resolved": null
+                }
+              },
+              "bottom": {
+                "style": "double",
+                "color": {
+                  "kind": "indexed",
+                  "value": 64,
+                  "resolved": null
+                }
+              },
+              "diagonal": {
+                "style": "none"
+              }
+            }
+          ],
+          "cellFormats": [
+            {
+              "numberFormat": 0,
+              "font": 0,
+              "fill": 0,
+              "border": 0
+            },
+            {
+              "numberFormat": 164,
+              "font": 0,
+              "fill": 0,
+              "border": 0
+            },
+            {
+              "numberFormat": 0,
+              "font": 1,
+              "fill": 2,
+              "border": 1,
+              "alignment": {
+                "horizontal": "center"
+              }
+            },
+            {
+              "numberFormat": 14,
+              "font": 0,
+              "fill": 0,
+              "border": 0
+            }
+          ],
+          "indexedColors": null
+        },
+        "theme": [
+          "FF000000",
+          "FFFFFFFF",
+          "FF0E2841",
+          "FFE8E8E8",
+          "FF156082",
+          "FFE97132",
+          "FF196B24",
+          "FF0F9ED5",
+          "FFA02B93",
+          "FF4EA72E",
+          "FF467886",
+          "FF96607D"
+        ],
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "sharedString",
+                "value": "0",
+                "text": "Rate"
+              },
+              {
+                "at": "B1",
+                "type": "number",
+                "value": "0.0425"
+              }
+            ],
+            "otherElements": [
+              {
+                "name": "dimension",
+                "attributes": {
+                  "ref": "A1:B1"
+                }
+              },
+              {
+                "name": "sheetViews",
+                "children": [
+                  {
+                    "name": "sheetView",
+                    "attributes": {
+                      "workbookViewId": "0"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "sheetFormatPr",
+                "attributes": {
+                  "defaultRowHeight": "14.5",
+                  "dyDescent": "0.35"
+                }
+              },
+              {
+                "name": "pageMargins",
+                "attributes": {
+                  "left": "0.7",
+                  "right": "0.7",
+                  "top": "0.75",
+                  "bottom": "0.75",
+                  "header": "0.3",
+                  "footer": "0.3"
+                }
+              }
+            ],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          },
+          {
+            "columns": [
+              {
+                "first": 0,
+                "last": 0,
+                "width": 12.36328125,
+                "hidden": false,
+                "style": 0,
+                "bestFit": false,
+                "customWidth": true
+              },
+              {
+                "first": 1,
+                "last": 2,
+                "width": 10.90625,
+                "hidden": false,
+                "style": 3,
+                "bestFit": false,
+                "customWidth": true
+              }
+            ],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "sharedString",
+                "value": "1",
+                "text": "Notional",
+                "style": 2
+              },
+              {
+                "at": "B1",
+                "type": "number",
+                "value": "46022",
+                "style": 3
+              },
+              {
+                "at": "A2",
+                "type": "number",
+                "value": "1000",
+                "style": 1
+              },
+              {
+                "at": "B2",
+                "type": "number",
+                "value": "42.5",
+                "formula": {
+                  "text": "A2*Rate"
+                },
+                "style": 1
+              },
+              {
+                "at": "A3",
+                "type": "number",
+                "value": "2000",
+                "style": 1
+              },
+              {
+                "at": "B3",
+                "type": "number",
+                "value": "85",
+                "formula": {
+                  "text": "A3*Rate"
+                },
+                "style": 1
+              },
+              {
+                "at": "A4",
+                "type": "sharedString",
+                "value": "2",
+                "text": "Total",
+                "style": 2
+              },
+              {
+                "at": "B4",
+                "type": "number",
+                "value": "127.5",
+                "formula": {
+                  "text": "SUM(B2:B3)"
+                },
+                "style": 1
+              },
+              {
+                "at": "C4",
+                "type": "formulaString",
+                "value": "Total:127.5",
+                "formula": {
+                  "text": "_xlfn.CONCAT(A4,\":\",B4)"
+                }
+              }
+            ],
+            "otherElements": [
+              {
+                "name": "dimension",
+                "attributes": {
+                  "ref": "A1:C4"
+                }
+              },
+              {
+                "name": "sheetViews",
+                "children": [
+                  {
+                    "name": "sheetView",
+                    "attributes": {
+                      "tabSelected": "1",
+                      "workbookViewId": "0"
+                    },
+                    "children": [
+                      {
+                        "name": "selection",
+                        "attributes": {
+                          "activeCell": "C4",
+                          "sqref": "C4"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "sheetFormatPr",
+                "attributes": {
+                  "defaultRowHeight": "14.5",
+                  "dyDescent": "0.35"
+                }
+              },
+              {
+                "name": "conditionalFormatting",
+                "attributes": {
+                  "sqref": "B2:B3"
+                },
+                "children": [
+                  {
+                    "name": "cfRule",
+                    "attributes": {
+                      "type": "cellIs",
+                      "dxfId": "0",
+                      "priority": "1",
+                      "operator": "greaterThan"
+                    },
+                    "children": [
+                      {
+                        "name": "formula",
+                        "text": "50"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "pageMargins",
+                "attributes": {
+                  "left": "0.7",
+                  "right": "0.7",
+                  "top": "0.75",
+                  "bottom": "0.75",
+                  "header": "0.3",
+                  "footer": "0.3"
+                }
+              }
+            ],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a cell's shared string is its text: runs joined and marked rich, a phonetic guide left out, escapes undone",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c><c r=\"B1\" t=\"s\"><v>1</v></c><c r=\"C1\" t=\"s\"><v>2</v></c><c r=\"D1\" t=\"s\"><v>3</v></c><c r=\"E1\" t=\"s\"><v>4</v></c><c r=\"F1\" t=\"s\"><v>0</v></c></row>",
+          "sharedStrings": "<sst xmlns=\"{Main}\" count=\"6\" uniqueCount=\"5\">\n  <si><t>EMEA</t></si>\n  <si><r><rPr><b/><sz val=\"11\"/></rPr><t>Bold</t></r><r><t xml:space=\"preserve\"> and plain</t></r></si>\n  <si><t>東京</t><rPh sb=\"0\" eb=\"2\"><t>トウキョウ</t></rPh><phoneticPr fontId=\"1\"/></si>\n  <si><t>line_x000D_\nbreak and _x005F_x0041_ kept</t></si>\n  <si><t/></si>\n</sst>"
+        }
+      },
+      "holds": [
+        "sharedStrings",
+        "sheets"
+      ],
+      "expect": {
+        "sharedStrings": [
+          [
+            "EMEA",
+            false
+          ],
+          [
+            "Bold and plain",
+            true
+          ],
+          [
+            "東京",
+            false
+          ],
+          [
+            "line\r\nbreak and _x0041_ kept",
+            false
+          ],
+          [
+            "",
+            false
+          ]
+        ],
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "sharedString",
+                "value": "0",
+                "text": "EMEA"
+              },
+              {
+                "at": "B1",
+                "type": "sharedString",
+                "value": "1",
+                "text": "Bold and plain",
+                "rich": true
+              },
+              {
+                "at": "C1",
+                "type": "sharedString",
+                "value": "2",
+                "text": "東京"
+              },
+              {
+                "at": "D1",
+                "type": "sharedString",
+                "value": "3",
+                "text": "line\r\nbreak and _x0041_ kept"
+              },
+              {
+                "at": "E1",
+                "type": "sharedString",
+                "value": "4",
+                "text": ""
+              },
+              {
+                "at": "F1",
+                "type": "sharedString",
+                "value": "0",
+                "text": "EMEA"
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §9: an inline string is read as a shared one is, runs and all",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>plain</t></is></c><c r=\"B1\" t=\"inlineStr\"><is><r><t>a</t></r><r><rPr><i/></rPr><t>b</t></r></is></c><c r=\"C1\" t=\"inlineStr\"><is/></c></row>"
+        }
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "inlineString",
+                "value": null,
+                "text": "plain"
+              },
+              {
+                "at": "B1",
+                "type": "inlineString",
+                "value": null,
+                "text": "ab",
+                "rich": true
+              },
+              {
+                "at": "C1",
+                "type": "inlineString",
+                "value": null,
+                "text": ""
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a carriage return a character reference writes is kept, and a line end written as it is reads as a line feed (XML 1.0 §2.11)",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>a&#13;b</t></is></c><c r=\"B1\" t=\"inlineStr\"><is><t>a&#13;&#10;b</t></is></c><c r=\"C1\" t=\"inlineStr\"><is><t>a\r\nb</t></is></c><c r=\"D1\" t=\"inlineStr\"><is><t>a\rb</t></is></c></row>"
+        }
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "inlineString",
+                "value": null,
+                "text": "a\rb"
+              },
+              {
+                "at": "B1",
+                "type": "inlineString",
+                "value": null,
+                "text": "a\r\nb"
+              },
+              {
+                "at": "C1",
+                "type": "inlineString",
+                "value": null,
+                "text": "a\nb"
+              },
+              {
+                "at": "D1",
+                "type": "inlineString",
+                "value": null,
+                "text": "a\nb"
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §8: the theme part's colour scheme is read in its order, a system colour by the value it was saved with",
+      "file": {
+        "book": {
+          "sheetData": "",
+          "theme": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" name=\"Custom\">\n  <a:themeElements>\n    <a:clrScheme name=\"Custom\">\n      <a:dk1><a:sysClr val=\"windowText\" lastClr=\"111111\"/></a:dk1>\n      <a:lt1><a:sysClr val=\"window\" lastClr=\"FEFEFE\"/></a:lt1>\n      <a:dk2><a:srgbClr val=\"1F497D\"/></a:dk2>\n      <a:lt2><a:srgbClr val=\"EEECE1\"/></a:lt2>\n      <a:accent1><a:srgbClr val=\"4F81BD\"/></a:accent1>\n      <a:accent2><a:srgbClr val=\"C0504D\"/></a:accent2>\n      <a:accent3><a:srgbClr val=\"9BBB59\"/></a:accent3>\n      <a:accent4><a:srgbClr val=\"8064A2\"/></a:accent4>\n      <a:accent5><a:srgbClr val=\"4BACC6\"/></a:accent5>\n      <a:accent6><a:srgbClr val=\"F79646\"/></a:accent6>\n      <a:hlink><a:srgbClr val=\"0000FF\"/></a:hlink>\n      <a:folHlink><a:srgbClr val=\"800080\"/></a:folHlink>\n    </a:clrScheme>\n    <a:fontScheme name=\"Office\"><a:majorFont><a:latin typeface=\"Cambria\"/></a:majorFont><a:minorFont><a:latin typeface=\"Calibri\"/></a:minorFont></a:fontScheme>\n  </a:themeElements>\n</a:theme>"
+        }
+      },
+      "holds": [
+        "workbook",
+        "theme"
+      ],
+      "expect": {
+        "workbook": {
+          "part": "xl/workbook.xml",
+          "sheets": [
+            {
+              "name": "Sheet1",
+              "sheetId": 1,
+              "visibility": "visible",
+              "part": "xl/worksheets/sheet1.xml",
+              "kind": "worksheet"
+            }
+          ],
+          "activeSheet": 0,
+          "date1904": false,
+          "definedNames": [],
+          "hasTheme": true,
+          "parts": [
+            "[Content_Types].xml",
+            "_rels/.rels",
+            "xl/_rels/workbook.xml.rels",
+            "xl/theme/theme1.xml",
+            "xl/workbook.xml",
+            "xl/worksheets/sheet1.xml"
+          ]
+        },
+        "theme": [
+          "FF111111",
+          "FFFEFEFE",
+          "FF1F497D",
+          "FFEEECE1",
+          "FF4F81BD",
+          "FFC0504D",
+          "FF9BBB59",
+          "FF8064A2",
+          "FF4BACC6",
+          "FFF79646",
+          "FF0000FF",
+          "FF800080"
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §8: a workbook's own theme resolves its fills, read from its styles part with their tints and its indexed palette",
+      "file": {
+        "book": {
+          "sheetData": "",
+          "styles": "<styleSheet xmlns=\"{Main}\">\n  <fonts count=\"1\"><font><sz val=\"11\"/><color theme=\"1\"/><name val=\"Calibri\"/></font></fonts>\n  <fills count=\"3\">\n    <fill><patternFill patternType=\"none\"/></fill>\n    <fill><patternFill patternType=\"gray125\"/></fill>\n    <fill><patternFill patternType=\"solid\"><fgColor theme=\"4\" tint=\"0.79998168889431442\"/><bgColor indexed=\"64\"/></patternFill></fill>\n  </fills>\n  <borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>\n  <cellXfs count=\"2\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/><xf numFmtId=\"0\" fontId=\"0\" fillId=\"2\" borderId=\"0\" applyFill=\"1\"/></cellXfs>\n  <colors><indexedColors><rgbColor rgb=\"FF010203\"/><rgbColor rgb=\"FF040506\"/></indexedColors></colors>\n</styleSheet>",
+          "theme": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" name=\"Custom\">\n  <a:themeElements>\n    <a:clrScheme name=\"Custom\">\n      <a:dk1><a:sysClr val=\"windowText\" lastClr=\"111111\"/></a:dk1>\n      <a:lt1><a:sysClr val=\"window\" lastClr=\"FEFEFE\"/></a:lt1>\n      <a:dk2><a:srgbClr val=\"1F497D\"/></a:dk2>\n      <a:lt2><a:srgbClr val=\"EEECE1\"/></a:lt2>\n      <a:accent1><a:srgbClr val=\"4F81BD\"/></a:accent1>\n      <a:accent2><a:srgbClr val=\"C0504D\"/></a:accent2>\n      <a:accent3><a:srgbClr val=\"9BBB59\"/></a:accent3>\n      <a:accent4><a:srgbClr val=\"8064A2\"/></a:accent4>\n      <a:accent5><a:srgbClr val=\"4BACC6\"/></a:accent5>\n      <a:accent6><a:srgbClr val=\"F79646\"/></a:accent6>\n      <a:hlink><a:srgbClr val=\"0000FF\"/></a:hlink>\n      <a:folHlink><a:srgbClr val=\"800080\"/></a:folHlink>\n    </a:clrScheme>\n    <a:fontScheme name=\"Office\"><a:majorFont><a:latin typeface=\"Cambria\"/></a:majorFont><a:minorFont><a:latin typeface=\"Calibri\"/></a:minorFont></a:fontScheme>\n  </a:themeElements>\n</a:theme>"
+        }
+      },
+      "holds": [
+        "styles"
+      ],
+      "expect": {
+        "styles": {
+          "numberFormats": {},
+          "fonts": [
+            {
+              "name": "Calibri",
+              "size": 11,
+              "color": {
+                "kind": "theme",
+                "value": 1,
+                "resolved": "FF111111"
+              }
+            }
+          ],
+          "fills": [
+            {
+              "pattern": "none"
+            },
+            {
+              "pattern": "gray125"
+            },
+            {
+              "pattern": "solid",
+              "foreground": {
+                "kind": "theme",
+                "value": 4,
+                "tint": 0.7999816888943144,
+                "resolved": "FFDCE6F2"
+              },
+              "background": {
+                "kind": "indexed",
+                "value": 64,
+                "resolved": null
+              }
+            }
+          ],
+          "borders": [
+            {
+              "left": {
+                "style": "none"
+              },
+              "right": {
+                "style": "none"
+              },
+              "top": {
+                "style": "none"
+              },
+              "bottom": {
+                "style": "none"
+              },
+              "diagonal": {
+                "style": "none"
+              }
+            }
+          ],
+          "cellFormats": [
+            {
+              "numberFormat": 0,
+              "font": 0,
+              "fill": 0,
+              "border": 0
+            },
+            {
+              "numberFormat": 0,
+              "font": 0,
+              "fill": 2,
+              "border": 0
+            }
+          ],
+          "indexedColors": [
+            "FF010203",
+            "FF040506"
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0330 §9: what a worksheet holds beside its cells is listed, not read: merged cells, notes, print settings, and rows and panes that are not carried",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\" ht=\"30\" customHeight=\"1\"><c r=\"A1\"><v>1</v></c></row><row r=\"3\" hidden=\"1\"><c r=\"A3\"><v>2</v></c></row>",
+          "head": "<sheetPr><tabColor rgb=\"FFFF0000\"/></sheetPr><dimension ref=\"A1:A3\"/><sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" state=\"frozen\"/></sheetView></sheetViews>",
+          "tail": "<mergeCells count=\"1\"><mergeCell ref=\"A1:B1\"/></mergeCells><pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/><legacyDrawing r:id=\"rId1\"/>"
+        }
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "number",
+                "value": "1"
+              },
+              {
+                "at": "A3",
+                "type": "number",
+                "value": "2"
+              }
+            ],
+            "otherElements": [
+              {
+                "name": "sheetPr",
+                "children": [
+                  {
+                    "name": "tabColor",
+                    "attributes": {
+                      "rgb": "FFFF0000"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "dimension",
+                "attributes": {
+                  "ref": "A1:A3"
+                }
+              },
+              {
+                "name": "sheetViews",
+                "children": [
+                  {
+                    "name": "sheetView",
+                    "attributes": {
+                      "workbookViewId": "0"
+                    },
+                    "children": [
+                      {
+                        "name": "pane",
+                        "attributes": {
+                          "ySplit": "1",
+                          "topLeftCell": "A2",
+                          "state": "frozen"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "mergeCells",
+                "attributes": {
+                  "count": "1"
+                },
+                "children": [
+                  {
+                    "name": "mergeCell",
+                    "attributes": {
+                      "ref": "A1:B1"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "pageMargins",
+                "attributes": {
+                  "left": "0.7",
+                  "right": "0.7",
+                  "top": "0.75",
+                  "bottom": "0.75",
+                  "header": "0.3",
+                  "footer": "0.3"
+                }
+              },
+              {
+                "name": "legacyDrawing",
+                "attributes": {
+                  "id": "rId1"
+                }
+              }
+            ],
+            "customRowHeights": true,
+            "hiddenRows": true,
+            "frozenPanes": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §4, §9: an element the reader does not read comes with its attributes, its text and its first children",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\"><c r=\"A1\"><v>1</v></c></row>",
+          "head": "<sheetPr><tabColor rgb=\"FFFF0000\"/></sheetPr>",
+          "tail": "<pageMargins left=\"0.25\" right=\"0.25\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/><pageSetup paperSize=\"9\" orientation=\"landscape\" r:id=\"rId1\"/><headerFooter><oddFooter>&amp;P of &amp;N</oddFooter></headerFooter><rowBreaks count=\"20\" manualBreakCount=\"20\"><brk id=\"1\" max=\"16383\" man=\"1\"/><brk id=\"2\" max=\"16383\" man=\"1\"/><brk id=\"3\" max=\"16383\" man=\"1\"/><brk id=\"4\" max=\"16383\" man=\"1\"/><brk id=\"5\" max=\"16383\" man=\"1\"/><brk id=\"6\" max=\"16383\" man=\"1\"/><brk id=\"7\" max=\"16383\" man=\"1\"/><brk id=\"8\" max=\"16383\" man=\"1\"/><brk id=\"9\" max=\"16383\" man=\"1\"/><brk id=\"10\" max=\"16383\" man=\"1\"/><brk id=\"11\" max=\"16383\" man=\"1\"/><brk id=\"12\" max=\"16383\" man=\"1\"/><brk id=\"13\" max=\"16383\" man=\"1\"/><brk id=\"14\" max=\"16383\" man=\"1\"/><brk id=\"15\" max=\"16383\" man=\"1\"/><brk id=\"16\" max=\"16383\" man=\"1\"/><brk id=\"17\" max=\"16383\" man=\"1\"/><brk id=\"18\" max=\"16383\" man=\"1\"/><brk id=\"19\" max=\"16383\" man=\"1\"/><brk id=\"20\" max=\"16383\" man=\"1\"/></rowBreaks><extLst><ext uri=\"{78C0D931-6437-407d-A8EE-F0AAD7539E65}\" xmlns:x14=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/main\"><x14:conditionalFormattings><x14:conditionalFormatting/></x14:conditionalFormattings></ext></extLst>"
+        }
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "number",
+                "value": "1"
+              }
+            ],
+            "otherElements": [
+              {
+                "name": "sheetPr",
+                "children": [
+                  {
+                    "name": "tabColor",
+                    "attributes": {
+                      "rgb": "FFFF0000"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "pageMargins",
+                "attributes": {
+                  "left": "0.25",
+                  "right": "0.25",
+                  "top": "0.75",
+                  "bottom": "0.75",
+                  "header": "0.3",
+                  "footer": "0.3"
+                }
+              },
+              {
+                "name": "pageSetup",
+                "attributes": {
+                  "paperSize": "9",
+                  "orientation": "landscape",
+                  "id": "rId1"
+                }
+              },
+              {
+                "name": "headerFooter",
+                "children": [
+                  {
+                    "name": "oddFooter",
+                    "text": "&P of &N"
+                  }
+                ]
+              },
+              {
+                "name": "rowBreaks",
+                "attributes": {
+                  "count": "20",
+                  "manualBreakCount": "20"
+                },
+                "children": [
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "1",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "2",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "3",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "4",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "5",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "6",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "7",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "8",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "9",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "10",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "11",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "12",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "13",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "14",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "15",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  },
+                  {
+                    "name": "brk",
+                    "attributes": {
+                      "id": "16",
+                      "max": "16383",
+                      "man": "1"
+                    }
+                  }
+                ],
+                "cut": true
+              },
+              {
+                "name": "extLst",
+                "children": [
+                  {
+                    "name": "ext",
+                    "attributes": {
+                      "uri": "{78C0D931-6437-407d-A8EE-F0AAD7539E65}"
+                    },
+                    "children": [
+                      {
+                        "name": "conditionalFormattings",
+                        "children": [
+                          {
+                            "name": "conditionalFormatting"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §9: a cell or row that names no place takes the one after the last",
+      "file": {
+        "book": {
+          "sheetData": "<row><c><v>1</v></c><c><v>2</v></c></row><row><c r=\"C2\"><v>3</v></c><c><v>4</v></c></row>"
+        }
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "number",
+                "value": "1"
+              },
+              {
+                "at": "B1",
+                "type": "number",
+                "value": "2"
+              },
+              {
+                "at": "C2",
+                "type": "number",
+                "value": "3"
+              },
+              {
+                "at": "D2",
+                "type": "number",
+                "value": "4"
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a dynamic array is told from a legacy array formula by the workbook's cell metadata",
+      "file": {
+        "book": {
+          "sheetData": "\n<row r=\"1\">\n  <c r=\"A1\" cm=\"2\"><f t=\"array\" ref=\"A1:A3\">_xlfn.SEQUENCE(3)</f><v>1</v></c>\n  <c r=\"B1\"><f t=\"array\" ref=\"B1:B3\">A1:A3*2</f><v>2</v></c>\n  <c r=\"C1\" cm=\"1\"><f t=\"array\" ref=\"C1\">CUBEVALUE(\"x\")</f><v>3</v></c>\n</row>",
+          "metadata": "<metadata xmlns=\"{Main}\" xmlns:xda=\"http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray\">\n  <metadataTypes count=\"2\"><metadataType name=\"XLMDX\" minSupportedVersion=\"120000\"/><metadataType name=\"XLDAPR\" minSupportedVersion=\"120000\" copy=\"1\"/></metadataTypes>\n  <futureMetadata name=\"XLDAPR\" count=\"1\"><bk><extLst><ext uri=\"{bdbb8cdc-fa1e-496e-a857-3c3f30c029c3}\"><xda:dynamicArrayProperties fDynamic=\"1\" fCollapsed=\"0\"/></ext></extLst></bk></futureMetadata>\n  <cellMetadata count=\"2\"><bk><rc t=\"1\" v=\"0\"/></bk><bk><rc t=\"2\" v=\"0\"/></bk></cellMetadata>\n</metadata>"
+        }
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "number",
+                "value": "1",
+                "formula": {
+                  "text": "_xlfn.SEQUENCE(3)",
+                  "kind": "array",
+                  "ref": "A1:A3",
+                  "dynamic": true
+                }
+              },
+              {
+                "at": "B1",
+                "type": "number",
+                "value": "2",
+                "formula": {
+                  "text": "A1:A3*2",
+                  "kind": "array",
+                  "ref": "B1:B3"
+                }
+              },
+              {
+                "at": "C1",
+                "type": "number",
+                "value": "3",
+                "formula": {
+                  "text": "CUBEVALUE(\"x\")",
+                  "kind": "array",
+                  "ref": "C1"
+                }
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §4: a row's s counts only beside customFormat",
+      "file": {
+        "book": {
+          "sheetData": "<row r=\"1\" s=\"1\"><c r=\"A1\"><v>1</v></c></row><row r=\"2\" s=\"1\" customFormat=\"0\"/><row r=\"3\" customFormat=\"1\"/>",
+          "styles": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\n  <fonts count=\"1\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts>\n  <fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills>\n  <borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>\n  <cellXfs count=\"2\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/><xf numFmtId=\"10\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellXfs>\n</styleSheet>"
+        }
+      },
+      "expect": {
+        "sheets": [
+          {
+            "columns": [],
+            "rows": [
+              [
+                2,
+                0
+              ]
+            ],
+            "cells": [
+              {
+                "at": "A1",
+                "type": "number",
+                "value": "1"
+              }
+            ],
+            "otherElements": [],
+            "customRowHeights": false,
+            "hiddenRows": false,
+            "frozenPanes": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0330 §4, §9: rows formatted without a cell count toward a batch, so they are read a batch at a time",
+      "file": {
+        "book": {
+          "sheetData": [
+            {
+              "each": "<row r=\"{i}\" s=\"1\" customFormat=\"1\"/>",
+              "from": 1,
+              "to": 8202
+            }
+          ],
+          "styles": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\n  <fonts count=\"1\"><font><sz val=\"11\"/><name val=\"Calibri\"/></font></fonts>\n  <fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills>\n  <borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>\n  <cellXfs count=\"2\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/><xf numFmtId=\"10\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellXfs>\n</styleSheet>"
+        }
+      },
+      "holds": [
+        "batches"
+      ],
+      "expect": {
+        "batches": [
+          [
+            [
+              0,
+              4096
+            ],
+            [
+              0,
+              4096
+            ],
+            [
+              0,
+              10
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

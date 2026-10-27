@@ -1,0 +1,5 @@
+Product: Data
+Kind: Added
+ADR: 0330, 0370
+
+`@ex-grid/data-xlsx` reads and writes `.xlsx` in TypeScript as `ExGrid.Data.Xlsx` does, with no dependency: `openXlsx` takes a `Uint8Array`, `ArrayBuffer` or `Blob` (a `File` is read where it is asked, never whole) and reads its sheets, shared strings, styles, theme and cells a batch at a time, paced in slices that report progress and can be cancelled; `createXlsxWriter` writes sheets, rows, columns, styles, defined names and Excel Tables to a `Blob`. The zip is inflated and deflated by the browser's `DecompressionStream` and `CompressionStream` (`deflate-raw`). A refused file is an `XlsxError` with the same reason, part, Sheet, cell and words as `XlsxException`, and the writer's parts are the same text, line ends aside (.NET writes its platform's, TypeScript a line feed); both packages run the cases under `tests/cases/xlsx/`. Where the writer refuses a workbook past `maxUncompressedBytes` is where it hands each 64 KiB of a sheet to the zip, not where .NET's `XmlWriter` flushes. It is published with 0.3.0.
