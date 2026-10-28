@@ -294,8 +294,9 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private ElementReference _root;
     // The commands the last Context Menu was answered with, by the number the browser asked it under (ADR-0421).
     private (long Number, IReadOnlyList<GridCommand> Commands)? _menu;
-    // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1).
-    private readonly RazorSlotHolders _slots = new(RazorSlot.ViewOf);
+    // The slots the script mounted for the Chrome and for Template cells, by the number it gave each (ADR-0410
+    // sections 1 and 6).
+    private readonly RazorSlotHolders _slots = new(static (name, context) => name == TemplateCellSlot.Name ? TemplateCellSlot.Of(context) : RazorSlot.ViewOf(name, context));
     private IGridChrome? _renderedChrome;
     private IJSObjectReference? _module;
     private IJSObjectReference? _grid;
@@ -445,6 +446,9 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 // The source sorts and filters by the columns' values, read in .NET, as the C# core tells it (ADR-0001).
                 source.OnColumnsChanged([.. Columns.Select(column => column.Info)]);
                 _toldColumns = Columns;
+                // A Template cell standing is drawn by the fragment its column now declares: the core mounts it again
+                // only for another row (ADR-0020).
+                _renderOwed |= _slots.Any;
             }
         }
     }
@@ -499,7 +503,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
-        _slots.Render(builder, 6, (name, view) => RazorSlot.Fragment(Chrome, name, view));
+        _slots.Render(builder, 6, (name, view) => view is TemplateCellSlot cell ? TemplateFragment(cell) : RazorSlot.Fragment(Chrome, name, view));
     }
 
     /// <inheritdoc />
@@ -715,6 +719,21 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (_disposed || !_slots.Unmount(id))
             return;
         RenderSlots();
+    }
+
+    // A Template cell's content: the column's fragment over the row .NET holds by the id the script sent (ADR-0020).
+    // Nothing where the column no longer templates, as the core takes the slot away with it. Every slot is drawn again
+    // as another mounts, so Space's request is handed on the first drawing of the data that carried it only (ADR-0037).
+    private RenderFragment? TemplateFragment(TemplateCellSlot cell)
+    {
+        var request = cell.Drawn ? 0 : cell.FocusRequest;
+        cell.Drawn = true;
+        foreach (var column in Columns)
+        {
+            if (column.Name == cell.Column)
+                return column.Template is { } template ? template(new TemplateCellContext<TRow>(_rows.RowOf(cell.Row), request)) : null;
+        }
+        return null;
     }
 
     private void RenderSlots()

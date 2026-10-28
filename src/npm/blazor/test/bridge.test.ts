@@ -821,3 +821,14 @@ describe('completion asked of .NET at machine speed (ADR-0051)', () => {
         expect(asked).toEqual([['=', 1], ['=SU', 3]]);
     });
 });
+
+describe('Template columns (ADR-0020, ADR-0410 section 6)', () => {
+    it('ADR-0410 section 6: each cell of a column .NET declares a Template asks .NET to draw it, naming the row by its id', async () => {
+        const dotnet = new FakeDotNet();
+        mount({ options: options({ columns: [{ ...book, editable: false, template: true }, notional] }) }, dotnet);
+        await turns();
+        const mounted = dotnet.calls.filter(call => call.method === 'MountSlot' && call.args[2] === 'templateCell')
+            .map(call => Reflect.get(JSON.parse(String(call.args[3])) as object, 'row') as unknown);
+        expect(mounted).toEqual([1, 2]);
+    });
+});

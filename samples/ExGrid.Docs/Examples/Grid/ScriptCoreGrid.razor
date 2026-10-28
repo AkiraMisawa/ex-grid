@@ -20,6 +20,14 @@
     // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.
     private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
 
+    // A Template cell, drawn in .NET from the row and moved into the cell by the grid's script. The value beside it
+    // is still what sorts, filters and copies.
+    private static readonly RenderFragment<TemplateCellContext<Trade>> Status = cell =>
+        @<span style="display: flex; align-items: center; gap: 6px; height: 100%; padding: 0 8px">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: @(cell.Row.Confirmed ? "#1a7f37" : "#bf8700")"></span>
+            @(cell.Row.Confirmed ? "Confirmed" : "Pending")
+        </span>;
+
     private readonly GridColumn<Trade>[] _columns =
     [
         new("Id", ColumnType.Number, t => t.Id),
@@ -29,7 +37,7 @@
         new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
         new("Price", ColumnType.Number, t => t.Price),
         new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
-        new("Confirmed", ColumnType.Boolean, t => t.Confirmed),
+        GridColumn<Trade>.TemplateColumn("Confirmed", ColumnType.Boolean, t => t.Confirmed, Status),
     ];
 
     private ExGrid.Script.ExGrid<Trade>? _grid;

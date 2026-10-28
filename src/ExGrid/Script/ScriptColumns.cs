@@ -7,8 +7,8 @@ namespace ExGrid.Script;
 /// A column as it crosses to the Script Core (ADR-0350 section 16): its declaration, which the core reads as a
 /// plain column of its own, and nothing of its behaviour, which stays in .NET. A column's values and its format
 /// are read in .NET and sent with each row, and its verdict is asked of .NET as a commit is made (ADR-0380). What a column declares that this adapter does not carry yet is
-/// refused by name, never dropped: a grid that quietly did not tone or template a column would look as if it
-/// did (the spine's first rule).
+/// refused by name, never dropped: a grid that quietly did not tone a column would look as if it did (the spine's
+/// first rule).
 /// </summary>
 internal static class ScriptColumns
 {
@@ -30,8 +30,6 @@ internal static class ScriptColumns
         foreach (var column in columns)
         {
             ArgumentNullException.ThrowIfNull(column);
-            if (column.Template is not null)
-                throw NotCarried(column.Name, "a Template");
             if (column.Tone is not null)
                 throw NotCarried(column.Name, "a Tone");
             if (column.IsMarkColumn)
@@ -69,6 +67,10 @@ internal static class ScriptColumns
             // The browser asks .NET for the verdict, now or later alike: the commit is pending until it answers (ADR-0380).
             if (column.Validate is not null || column.ValidateAsync is not null)
                 json.WriteBoolean("validates", true);
+            // Each cell's content is the column's fragment, drawn in .NET from the row it holds and moved into the cell
+            // by the script (ADR-0020, ADR-0410 section 6).
+            if (column.Template is not null)
+                json.WriteBoolean("template", true);
             if (column.Actions.Count > 0)
             {
                 json.WriteStartArray("actions");

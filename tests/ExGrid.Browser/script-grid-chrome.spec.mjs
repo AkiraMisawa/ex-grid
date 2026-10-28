@@ -200,3 +200,23 @@ test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and what 
     await expect(page.locator('#script-mud-named')).toHaveText('Named: B7');
     await expectKeyboardOn(grid(page));
 });
+
+test('ADR-0410 section 6 / ADR-0037: a Template cell is drawn in Razor from its row, and Space pressed at once over a slow circuit hands its field the keyboard through the grid', async ({ page }) => {
+    await settled(grid(page));
+    // Note is column 3: each cell's field was drawn in .NET from the trade the browser named, and stands in its cell.
+    const note = cell(page, 2, 3).locator('input.demo-note');
+    const [book, trader] = await Promise.all([cell(page, 2, 0).textContent(), cell(page, 2, 1).textContent()]);
+    await expect(note).toHaveAttribute('aria-label', `Note for ${book}, ${trader}`);
+
+    await cell(page, 2, 0).click({ force: true });
+    await setRoundTrip(150);
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Space');
+    await settled(grid(page));
+    await circuitQuiet();
+    await expect(note).toBeFocused();
+    await page.keyboard.type('hedge');
+    await expect(note).toHaveValue('hedge');
+});

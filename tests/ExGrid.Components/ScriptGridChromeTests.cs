@@ -350,6 +350,53 @@ public class ScriptGridChromeTests : BunitContext
         Assert.Equal(["B7"], typed);
     }
 
+    private static GridColumn<TestRow>[] Templated(string mark) =>
+    [
+        GridColumn<TestRow>.TemplateColumn("Book", ColumnType.Text, r => r.Book,
+            cell => builder => builder.AddContent(0, $"{mark} {cell.Row.Book} #{cell.FocusRequest}")),
+    ];
+
+    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> TemplatedGrid(GridColumn<TestRow>[] columns) => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        .Add(g => g.Rows, TestRows.Window())
+        .Add(g => g.Columns, columns));
+
+    private long RowIdAt(int index)
+    {
+        using var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2]));
+        return document.RootElement.GetProperty("state").GetProperty("window")[index].GetProperty("i").GetInt64();
+    }
+
+    [Fact] // ADR-0410 section 6 / ADR-0020: a Template column crosses as one, and each cell the script mounts is the column's fragment over the row .NET holds
+    public async Task ADR0410_a_Template_cell_is_drawn_from_the_row_dotnet_holds()
+    {
+        var cut = TemplatedGrid(Templated("bar"));
+        using (var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2])))
+            Assert.True(document.RootElement.GetProperty("options").GetProperty("columns")[0].GetProperty("template").GetBoolean());
+        var beta = RowIdAt(1);
+
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "templateCell", $$"""{"row":{{beta}},"drawing":1,"column":"Book","focusRequest":0}"""));
+        Assert.Equal("bar Beta #0", cut.Find(".ex-razor-slot").TextContent);
+
+        // Space's request reaches the fragment on the one drawing it was made for (ADR-0037).
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2, $$"""{"row":{{beta}},"drawing":1,"column":"Book","focusRequest":7}"""));
+        Assert.Equal("bar Beta #7", cut.Find(".ex-razor-slot").TextContent);
+
+        // Drawn again as another cell mounts, it is handed zero: the request was for one drawing.
+        await cut.InvokeAsync(() => Bridge().MountSlot(2, 1, "templateCell", $$"""{"row":{{RowIdAt(0)}},"drawing":2,"column":"Book","focusRequest":0}"""));
+        Assert.Equal(["bar Beta #0", "bar Alpha #0"], cut.FindAll(".ex-razor-slot").Select(slot => slot.TextContent));
+    }
+
+    [Fact] // ADR-0020: a Template cell standing is drawn again by the fragment the column declares now, as the core mounts it again only for another row
+    public async Task ADR0020_a_Template_cell_is_drawn_by_the_fragment_declared_now()
+    {
+        var cut = TemplatedGrid(Templated("bar"));
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "templateCell", $$"""{"row":{{RowIdAt(0)}},"drawing":1,"column":"Book","focusRequest":0}"""));
+
+        cut.Render(ps => ps.Add(g => g.Columns, Templated("badge")));
+
+        Assert.Equal("badge Alpha #0", cut.Find(".ex-razor-slot").TextContent);
+    }
+
     [Fact] // ADR-0410: a Chrome that names a slot this adapter does not fill is refused by name, never left out quietly
     public void ADR0410_a_slot_the_adapter_does_not_fill_is_refused()
     {

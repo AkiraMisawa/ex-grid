@@ -1,0 +1,28 @@
+@*
+    A Template Column's control on the Script grid (ADR-0020, ADR-0410 section 6): drawn in .NET from the trade the
+    browser named by its id, and moved into the cell by the adapter's script. Space enters it as on the C# core
+    (ADR-0037): the grid asks through the context, and the control takes the keyboard through the grid's
+    HandKeyboardToAsync, which the page cascades as TakeKeyboard and which grants it only while the keyboard is still
+    the grid's (ADR-0204). `tabindex="-1"` keeps the grid one tab stop.
+*@
+<input class="ex-interactive demo-note" tabindex="-1" placeholder="note"
+       aria-label="@($"Note for {Cell.Row.Book}, {Cell.Row.Trader}")" @ref="_input" />
+
+@code {
+    [Parameter, EditorRequired] public TemplateCellContext<DemoTrade> Cell { get; set; }
+
+    /// <summary>The grid's <c>HandKeyboardToAsync</c>, as the page cascades it; without it, the control's own focus.</summary>
+    [CascadingParameter(Name = "TakeKeyboard")] public Func<ElementReference, Task>? TakeKeyboard { get; set; }
+
+    private ElementReference _input;
+    private int _acted;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // A request is non-zero on one drawing only; acting once per number makes a second render carrying it harmless.
+        if (Cell.FocusRequest == 0 || Cell.FocusRequest == _acted)
+            return;
+        _acted = Cell.FocusRequest;
+        await (TakeKeyboard is { } take ? take(_input) : _input.FocusAsync().AsTask());
+    }
+}
