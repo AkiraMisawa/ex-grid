@@ -101,6 +101,9 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     // How many of the Consumer's Diffs have been put on their way to the browser.
     private int _diffsSent;
 
+    /// <summary>The browser's calls, in the order it made them, a call too large for a circuit's message among them.</summary>
+    internal global::ExGrid.Script.HeldCalls Calls { get; } = new();
+
     private readonly Queue<Func<Task>> _heard = new();
     private bool _hearing;
 
@@ -259,6 +262,8 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             json.WriteStartObject();
             json.WritePropertyName("options");
             json.WriteRawValue(options);
+            // Across a circuit, Blazor Server's, a call larger than its hub takes would close it: the browser holds one.
+            json.WriteBoolean("circuit", !OperatingSystem.IsBrowser());
             json.WriteString("board", _boardJson ?? throw new InvalidOperationException("Internal: the Board was never written."));
             naming.Write(json);
             _sourceCrossing.Write(json, Sources, Board);
@@ -286,6 +291,12 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             bridge.Dispose();
             return;
         }
+        catch
+        {
+            // Never attached: a call held as it attached is never taken, and every call after it is let through.
+            Calls.Stopped();
+            throw;
+        }
         finally
         {
             _attaching = false;
@@ -299,6 +310,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         }
         _view = view;
         _attached = true;
+        Calls.Attached(view);
         await SendUpdateAsync();
     }
 
@@ -384,15 +396,14 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
 
     // The Board's events, handed to the Consumer one at a time in the order the browser raised them: a handler that
     // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do.
-    internal Task HeardAsync(string kind, JsonElement payload, IJSStreamReference? streamed) => InvokeAsync(async () =>
+    internal Task HeardAsync(string kind, JsonElement payload) => InvokeAsync(async () =>
     {
         // What it names is found in the component's turn, as the event arrives: the Snapshot or the source it was raised
-        // from, which the browser still holds, since it lets one go only after telling what it raised from it. Its text,
-        // which may come as a stream, is read in its own turn among the events.
+        // from, which the browser still holds, since it lets one go only after telling what it raised from it.
         Func<Task> hand;
         try
         {
-            hand = Prepare(kind, payload, streamed);
+            hand = Prepare(kind, payload);
         }
         catch (Exception ex)
         {
@@ -425,7 +436,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         }
     });
 
-    private Func<Task> Prepare(string kind, JsonElement payload, IJSStreamReference? streamed)
+    private Func<Task> Prepare(string kind, JsonElement payload)
     {
         switch (kind)
         {
@@ -433,7 +444,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             {
                 // Taken from a Snapshot sent, read against it; taken from rows a source held, read as the Board that
                 // numbered the source declares the input.
-                var text = TextOrNull(payload.GetProperty("output"));
+                var text = Text(payload.GetProperty("output"));
                 var snapshot = payload.GetProperty("snapshot");
                 var source = payload.GetProperty("source");
                 if ((snapshot.ValueKind == JsonValueKind.Null) == (source.ValueKind == JsonValueKind.Null))
@@ -449,15 +460,14 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
                     var from = _crossing[snapshot.GetInt32()];
                     read = json => BoardOutput.Read(json, from);
                 }
-                return async () => await OnOutput.InvokeAsync(read(await CrossedTextAsync(text, streamed, CancellationToken.None)));
+                return async () => await OnOutput.InvokeAsync(read(text));
             }
             case "diff":
             {
-                var text = TextOrNull(payload.GetProperty("diff"));
+                var diff = BoardDiff.Read(Text(payload.GetProperty("diff")));
                 var diffsSent = payload.GetProperty("diffsSent").GetInt32();
                 return async () =>
                 {
-                    var diff = BoardDiff.Read(await CrossedTextAsync(text, streamed, CancellationToken.None));
                     // The one on screen as soon as it is read, unless a Diff of the Consumer's reached the browser after it.
                     _raised.AddOrUpdate(diff, new StrongBox<int>(diffsSent));
                     await OnDiff.InvokeAsync(diff);
@@ -474,11 +484,13 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     // The browser let go of these sources: it asks them nothing more.
     internal Task ReleaseSourcesAsync(int[] numbers) => InvokeAsync(() => _sourceCrossing.Release(numbers));
 
-    // A question the browser asked a source, which no longer waits for the answer.
-    internal void Cancel(long call)
+    // A question the browser asked a source, which no longer waits for the answer: whether it was being asked.
+    internal bool TryCancel(long call)
     {
-        if (_asked.TryGetValue(call, out var asked))
-            asked.Cancel();
+        if (!_asked.TryGetValue(call, out var asked))
+            return false;
+        asked.Cancel();
+        return true;
     }
 
     // One question to a source, under the number the browser asked it by, cancelled when the browser says it no longer
@@ -508,9 +520,9 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
 
     // A page of a grid's rows: where it starts, how many the whole result holds, and the rows as their Arrow stream
     // (ADR-0065), which crosses as bytes.
-    internal Task<SourcePage> FetchAsync(int number, long call, string? question, IJSStreamReference? streamed) => AskAsync(number, call, async (held, token) =>
+    internal Task<SourcePage> FetchAsync(int number, long call, string question) => AskAsync(number, call, async (held, token) =>
     {
-        using var document = JsonDocument.Parse(await CrossedTextAsync(question, streamed, token));
+        using var document = JsonDocument.Parse(question);
         var root = document.RootElement;
         var query = new BoardQuery(Text(root.GetProperty("view")), GridViewStateJson.ReadQuery(Text(root.GetProperty("grid"))), NarrowingOf(held, root.GetProperty("narrowing")));
         var page = await held.Source.Fetch(query, token);
@@ -521,11 +533,11 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
 
     // A chart's points, thinned where the data lives (ADR-0344): the rows kept as JSON text, each value written as the
     // input declares its column so the browser reads it as a Board Input reads a row, and what each thinned pixel held.
-    internal Task<string> ThinAsync(int number, long call, string? question, IJSStreamReference? streamed) => AskAsync(number, call, async (held, token) =>
+    internal Task<string> ThinAsync(int number, long call, string question) => AskAsync(number, call, async (held, token) =>
     {
         var input = held.Input;
         var thin = held.Source.Thin ?? throw new InvalidOperationException($"Internal: the browser asked the source of input '{input}' for a chart's points, and it thins none.");
-        using var document = JsonDocument.Parse(await CrossedTextAsync(question, streamed, token));
+        using var document = JsonDocument.Parse(question);
         var root = document.RootElement;
         var at = root.GetProperty("chart");
         var chart = new ChartSourceQuery(Text(at.GetProperty("data")), Text(at.GetProperty("x")), Text(at.GetProperty("y")),
@@ -588,23 +600,6 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         return conditions;
     }
 
-    // Text the browser sent: inline while it fits well inside one message of a Blazor Server circuit, whose hub closes
-    // the circuit on a message over its limit (32 KB by default), and as a stream .NET reads in parts when it is longer:
-    // a link's narrowing or an output can hold thousands of values (crossText in the bridge).
-    private static async Task<string> CrossedTextAsync(string? text, IJSStreamReference? streamed, CancellationToken token)
-    {
-        if (streamed is null)
-            return text ?? throw new InvalidOperationException("Internal: the browser sent neither a text nor its stream.");
-        await using (streamed)
-        {
-            if (text is not null)
-                throw new InvalidOperationException("Internal: the browser sent a text and its stream both.");
-            await using var stream = await streamed.OpenReadStreamAsync(maxAllowedSize: streamed.Length, token);
-            using var reader = new StreamReader(stream, Encoding.UTF8);
-            return await reader.ReadToEndAsync(token);
-        }
-    }
-
     // A point's value as a Board Input reads one: a number as JSON's, a date as its day and time, a Blank as null. The
     // browser reads it as the input declares the column, and refuses one of another kind by name.
     private static void WritePoint(Utf8JsonWriter json, object? value, string input, string column)
@@ -630,9 +625,6 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
 
     private static string Text(JsonElement json) => json.GetString() ?? throw new InvalidOperationException("Internal: the Script Core sent null for a text.");
 
-    // A text that crossed as a stream instead is null here.
-    private static string? TextOrNull(JsonElement json) => json.ValueKind == JsonValueKind.Null ? null : Text(json);
-
     private static string Json(Action<Utf8JsonWriter> write)
     {
         var buffer = new ArrayBufferWriter<byte>();
@@ -656,6 +648,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         if (_disposed)
             return;
         _disposed = true;
+        Calls.Stopped();
         // While it attaches, the Board it makes is stopped once it is made, and the bridge let go after it.
         if (!_attaching)
         {

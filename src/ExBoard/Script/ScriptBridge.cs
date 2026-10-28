@@ -7,32 +7,56 @@ namespace ExBoard.Script;
 /// What the bridge in the browser calls in .NET (ADR-0370 section 1): every event the Board raised, the Snapshots and
 /// sources it let go, and each question it asks a source held where the data lives (ADR-0343), each handed to the
 /// component it was made for. Its own object, so the component's public surface carries no
-/// <see cref="JSInvokableAttribute"/> member a Consumer could call.
+/// <see cref="JSInvokableAttribute"/> member a Consumer could call. Each call is made in the order the browser made it,
+/// a call too large for a message of its own among them (<see cref="Held"/>).
 /// </summary>
 internal sealed class ScriptBridge(ExBoard board)
 {
-    // Each text the browser sends crosses inline, or as a stream when it is too long for one message of a Blazor Server
-    // circuit: exactly one of the two is given.
-    [JSInvokable]
-    public Task Heard(string kind, JsonElement payload, IJSStreamReference? streamed) => board.HeardAsync(kind, payload, streamed);
+    private global::ExGrid.Script.HeldCalls Calls => board.Calls;
 
     [JSInvokable]
-    public Task Release(int[] numbers) => board.ReleaseSnapshotsAsync(numbers);
+    public Task Heard(string kind, JsonElement payload) => Calls.InOrder(() => board.HeardAsync(kind, payload));
 
     [JSInvokable]
-    public Task ReleaseSources(int[] numbers) => board.ReleaseSourcesAsync(numbers);
+    public Task Release(int[] numbers) => Calls.InOrder(() => board.ReleaseSnapshotsAsync(numbers));
 
     [JSInvokable]
-    public Task<string> Shape(int number, long call) => board.ShapeAsync(number, call);
+    public Task ReleaseSources(int[] numbers) => Calls.InOrder(() => board.ReleaseSourcesAsync(numbers));
 
     [JSInvokable]
-    public Task<SourcePage> Fetch(int number, long call, string? question, IJSStreamReference? streamed) => board.FetchAsync(number, call, question, streamed);
+    public Task<string> Shape(int number, long call) => Calls.InOrder(() => board.ShapeAsync(number, call));
 
     [JSInvokable]
-    public Task<string> Thin(int number, long call, string? question, IJSStreamReference? streamed) => board.ThinAsync(number, call, question, streamed);
+    public Task<SourcePage> Fetch(int number, long call, string question) => Calls.InOrder(() => board.FetchAsync(number, call, question));
 
     [JSInvokable]
-    public void Cancel(long call) => board.Cancel(call);
+    public Task<string> Thin(int number, long call, string question) => Calls.InOrder(() => board.ThinAsync(number, call, question));
+
+    // A question already asked is cancelled at once; one not yet asked, held or behind a held call, once it is.
+    [JSInvokable]
+    public Task Cancel(long call) => board.TryCancel(call) ? Task.CompletedTask : Calls.InOrder(() => board.TryCancel(call));
+
+    /// <summary>A call the browser held, too large for a message of its own: <paramref name="method"/>, with the
+    /// arguments taken from the browser by <paramref name="crossed"/>'s number, made in its turn. Only a call that can
+    /// carry what the Board or the Consumer made, an event or a question narrowed by a link's values, is held.</summary>
+    [JSInvokable]
+    public Task<object?> Held(string method, JsonElement crossed) => Calls.Held(crossed, async arguments =>
+    {
+        JsonElement At(int index) => arguments[index];
+        string Text(int index) => At(index).GetString() ?? throw new InvalidOperationException($"Internal: the browser held a call to {method} with no text at {index}.");
+        switch (method)
+        {
+            case nameof(Heard):
+                await board.HeardAsync(Text(0), At(1));
+                return null;
+            case nameof(Fetch):
+                return await board.FetchAsync(At(0).GetInt32(), At(1).GetInt64(), Text(2));
+            case nameof(Thin):
+                return await board.ThinAsync(At(0).GetInt32(), At(1).GetInt64(), Text(2));
+            default:
+                throw new InvalidOperationException($"Internal: the browser held a call to {method}, which carries nothing that large.");
+        }
+    });
 }
 
 /// <summary>A page of a grid's rows as it crosses to the browser: where it starts, how many rows the whole result holds,

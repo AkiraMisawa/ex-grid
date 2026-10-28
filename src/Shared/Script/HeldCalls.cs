@@ -23,13 +23,18 @@ internal sealed class HeldCalls
     private readonly Queue<Func<Task>> _waiting = new();
     private readonly TaskCompletionSource<IJSObjectReference> _handle = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool _taking;
+    private bool _stopped;
 
     /// <summary>The module's handle, which a held call's arguments are taken from, once it is attached: a call held as
     /// the module attached waits for it.</summary>
     public void Attached(IJSObjectReference handle) => _handle.TrySetResult(handle);
 
     /// <summary>The component let go of the module: a held call not yet taken never is, and is cancelled.</summary>
-    public void Stopped() => _handle.TrySetCanceled();
+    public void Stopped()
+    {
+        _stopped = true;
+        _handle.TrySetCanceled();
+    }
 
     /// <summary>A call that crossed as it is: made now, or, while a held call before it is being taken, once it has
     /// been made.</summary>
@@ -67,6 +72,12 @@ internal sealed class HeldCalls
         var started = new TaskCompletionSource<Task<object?>>(TaskCreationOptions.RunContinuationsAsynchronously);
         _waiting.Enqueue(async () =>
         {
+            if (_stopped)
+            {
+                // Let go of after the module attached: the handle it would be taken from is gone.
+                started.SetCanceled();
+                return;
+            }
             JsonElement arguments;
             try
             {
