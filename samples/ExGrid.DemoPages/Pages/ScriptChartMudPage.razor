@@ -1,0 +1,54 @@
+@page "/script-chart-mud"
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+@using global::ExChart.MudBlazor
+@using global::ExGrid.MudBlazor
+@using global::MudBlazor
+
+@* The Wrappers' stylesheets and font, loaded by this page alone, as /chart-dock loads them. *@
+<HeadContent>
+    <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <MudExGridStylesheet />
+    <ExChartStylesheet />
+    <MudExChartStylesheet />
+</HeadContent>
+
+<MudThemeProvider />
+
+<DemoNav />
+
+<h1>ExChart.MudBlazor over the Script Core</h1>
+
+<p>
+    The chart below is <code>ExChart.Script.ExChart</code> handed <code>MudChartChrome.Default</code> (ADR-0410): its
+    toolbar, Chart Filters and context menu are MudBlazor's components, rendered in .NET beside the chart and moved
+    into the Script Core's slots by the adapter's script, which wires each control in the browser. A command runs, a
+    typed range is read and a file is saved in the browser, inside the click; the range applied crosses to .NET and
+    comes back as a parameter, as on /script-chart.
+</p>
+
+<MudExGridPaper Elevation="0" Outlined="true">
+    <ExChart.Script.ExChart Definition="Exposure"
+                            Title="Exposure profile"
+                            Width="760"
+                            Height="420"
+                            Range="_range"
+                            OnRangeChanged="RangeChanged"
+                            Chrome="MudChartChrome.Default" />
+</MudExGridPaper>
+<p id="script-chart-mud-events" role="status">@_events</p>
+
+@code {
+    private static readonly ChartDefinition Exposure = ChartPage.Exposure(0);
+    private ChartRange? _range;
+    private string _events = "";
+
+    private void RangeChanged(ChartRange? range)
+    {
+        _range = range;
+        _events = range is null ? "range: all" : "range narrowed";
+    }
+}

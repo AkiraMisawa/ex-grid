@@ -24,6 +24,14 @@
     <InternalsVisibleTo Include="ExChart.Components.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The Shared Script's .NET halves (ADR-0411): a call too large for a Server hub's message, and the Chrome slots
+         filled with Razor (ADR-0410), crossing as every product's do. -->
+    <Compile Include="..\Shared\Script\HeldCalls.cs" Link="Script\HeldCalls.cs" />
+    <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
+    <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
+  </ItemGroup>
+
   <!-- ExChart's Script Core's module for ExChart.Script.ExChart and ExSurface (ADR-0370 section 1): the bridge and
        @ex-grid/chart, bundled from their sources in src/npm as this project builds, never committed, as ExPivot's is
        (ADR-0350 section 7). Named ex-chart-core, since ex-chart.min.js is the Razor component's pointer script. The
