@@ -7,7 +7,7 @@ import { sheet, cell, enter } from './sheet-helpers.mjs';
 // document of the page's own cross to the Sheet again. What the Sheet does with a key is the Script Core's, held by its
 // own specs; what crosses is held member for member by the bridge's tests in layers 1 and 2.
 
-test('ADR-0370 section 1, ADR-0048: the Sheet Document crosses both ways between .NET and the Sheet in the browser, and .NET\'s Undo and its own document reach the Sheet', async ({ page }) => {
+test('ADR-0370 section 1, ADR-0048: the Sheet Document crosses both ways between .NET and the Sheet in the browser, and .NET\'s Undo, its own document and its own edit reach the Sheet', async ({ page }) => {
     await page.goto('/script-sheet');
     const grid = sheet(page);
     const document = page.locator('#script-sheet-document');
@@ -29,4 +29,9 @@ test('ADR-0370 section 1, ADR-0048: the Sheet Document crosses both ways between
     await page.locator('#script-sheet-reset').click();
     await expect(cell(grid, 'B1')).toHaveText('');
     await expect(document).toHaveText('Cells in the document: 3');
+
+    // An edit .NET made, as SheetWire writes it, done by the Sheet in the browser.
+    await page.locator('#script-sheet-enter').click();
+    await expect(cell(grid, 'A3')).toHaveText('9');
+    await expect(cell(grid, 'A2')).toHaveText('7');
 });

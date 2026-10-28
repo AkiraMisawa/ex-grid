@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Bunit;
+using ExGrid.Chrome;
 using ExGrid.Summarizing;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components;
@@ -13,8 +14,9 @@ namespace ExSheet.Components.Tests;
 /// ADR-0370 section 1: Blazor's ExSheet over the Script Core. The Razor component's parameters cross with its defaults;
 /// a document crosses as the JSON both engines read, and one the Sheet raised, bound back two ways, crosses no more;
 /// the Sheet's events reach the Consumer's handlers as the Razor component raises them; a refusal in the browser is
-/// thrown in .NET as the Razor component throws it; and <c>CommandLabel</c>, a .NET function, crosses as the words it
-/// answers.
+/// thrown in .NET as the Razor component throws it, and what else the engine threw as the C# engine throws it; an edit,
+/// a Cell Format change and a Linked Table's rows cross as <see cref="SheetWire"/> writes them; and <c>CommandLabel</c>,
+/// a .NET function, crosses as the words it answers.
 /// </summary>
 public class ScriptSheetTests : BunitContext
 {
@@ -168,6 +170,25 @@ public class ScriptSheetTests : BunitContext
         Assert.IsType<JSException>(refused.InnerException);
     }
 
+    [Fact] // ADR-0123: a script that does not load, the circuit's fault included, is refused as another version's is, and a command waiting is told so
+    public async Task ADR0123_a_script_that_did_not_load_is_refused_and_a_waiting_command_is_told()
+    {
+        var stamp = _module.Setup<string?>("stamp");
+        var cut = Sheet(ps => ps.Add(p => p.CommandLabel, id => id == ReloadNoticeLabelIds.Script ? "Reload, please." : null));
+        var undo = cut.InvokeAsync(() => cut.Instance.UndoAsync());
+
+        stamp.SetException(new TaskCanceledException("The import took longer than the circuit waits."));
+
+        var refused = await Assert.ThrowsAsync<InvalidOperationException>(() => undo);
+        Assert.Contains("another version's ExSheet script", refused.Message, StringComparison.Ordinal);
+        Assert.Equal("Reload, please.", cut.Find("[data-ex-notice='script']").TextContent);
+        Assert.Empty(_module.Invocations["attach"]);
+
+        // The notice is worded through CommandLabel as it now stands (ADR-0203).
+        cut.Render(ps => ps.Add(p => p.CommandLabel, id => id == ReloadNoticeLabelIds.Script ? "Bitte neu laden." : null));
+        Assert.Equal("Bitte neu laden.", cut.Find("[data-ex-notice='script']").TextContent);
+    }
+
     [Fact] // ADR-0048, ADR-0071: a command answers as the browser's Sheet did, and its refusal is thrown as the Razor component throws it
     public async Task ADR0048_a_refusal_in_the_browser_is_thrown_as_a_SheetRefusedException()
     {
@@ -178,6 +199,79 @@ public class ScriptSheetTests : BunitContext
         Assert.True(await cut.InvokeAsync(() => cut.Instance.UndoAsync()));
         var refused = await Assert.ThrowsAsync<SheetRefusedException>(() => cut.InvokeAsync(() => cut.Instance.OpenFormatCellsAsync()));
         Assert.Equal(new SheetRefusal(SheetRefusalReason.EditIsOpen, "Finish the edit first."), refused.Refusal);
+    }
+
+    [Fact] // ADR-0370 section 1, ADR-0048, ADR-0331 §6: an edit crosses as SheetWire writes it, to the one Sheet or to the Sheet it names
+    public async Task ADR0370_an_edit_crosses_as_SheetWire_writes_it()
+    {
+        var cut = Sheet();
+        _sheet.Setup<JsonElement>("do", _ => true).SetResult(Parsed("""{"done":null}"""));
+        var edit = SheetEdit.Enter(CellAddress.Parse("A1"), "=1+2");
+
+        await cut.InvokeAsync(() => cut.Instance.DoAsync(edit));
+        await cut.InvokeAsync(() => cut.Instance.DoAsync("Prices", edit));
+
+        var calls = _sheet.Invocations["do"];
+        Assert.Equal([null, "Prices"], calls.Select(call => call.Arguments[0]));
+        Assert.All(calls, call => Assert.Equal(SheetWire.Write(edit), call.Arguments[1]));
+    }
+
+    [Fact] // ADR-0370 section 1, ADR-0049: what the browser's engine threw at the caller crosses as data, and is thrown as the C# engine throws it
+    public async Task ADR0370_what_the_engine_threw_in_the_browser_is_thrown_as_the_csharp_engine_throws_it()
+    {
+        var cut = Sheet();
+        _sheet.Setup<JsonElement>("do", _ => true)
+            .SetResult(Parsed("""{"thrown":{"kind":"formulaSyntax","message":"m","formula":"=1+","position":3,"reason":"An operand is missing."}}"""));
+        // A refused snapshot as the bridge writes it (writeRepeatedKey; src/npm/sheet-blazor/test/bridge.test.ts reads the same).
+        _sheet.Setup<JsonElement>("pushLinkedTable", call => (string?)call.Arguments[0] == "Rates").SetResult(Parsed("""
+            {"thrown":{"kind":"repeatedKey","message":"m","repeatedKey":"{\"table\":\"Rates\",\"keyColumns\":[\"Code\"],\"keys\":[\"USD\"],\"firstRow\":0,\"repeats\":[\"usd\"],\"secondRow\":1,\"change\":{\"valueChanges\":[\"B2\"],\"recalculated\":[],\"rows\":[1],\"columns\":[],\"reformatsUnnamedRows\":false}}"}}
+            """));
+        _sheet.Setup<JsonElement>("pushLinkedTable", call => (string?)call.Arguments[0] == "Nothing")
+            .SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"No Linked Table named 'Nothing' is declared."}}"""));
+        _sheet.Setup<JsonElement>("cellFormatAt", _ => true)
+            .SetResult(Parsed("""{"thrown":{"kind":"outOfRange","message":"No Sheet of the Workbook is named 'Three'."}}"""));
+        _sheet.Setup<JsonElement>("declareLinkedTable", _ => true).SetResult(Parsed("""{"thrown":{"kind":"argument","message":"'1st' is no name."}}"""));
+
+        var syntax = await Assert.ThrowsAsync<FormulaSyntaxException>(() => cut.InvokeAsync(() => cut.Instance.DoAsync(SheetEdit.Enter(CellAddress.Parse("A1"), "=1+"))));
+        Assert.Equal(("=1+", 3, "An operand is missing."), (syntax.Formula, syntax.Position, syntax.Reason));
+
+        Value?[] usd = [Value.FromText("USD"), Value.FromNumber(1)];
+        Value?[] again = [Value.FromText("usd"), null];
+        var rows = new[] { usd, again };
+        var repeated = await Assert.ThrowsAsync<RepeatedKeyException>(() => cut.InvokeAsync(() => cut.Instance.PushLinkedTableAsync("Rates", rows)));
+        Assert.Equal(("Rates", "Code", Value.FromText("USD"), 0, 1), (repeated.Table, repeated.KeyColumn, repeated.Key, repeated.FirstRow, repeated.SecondRow));
+        Assert.Equal([CellAddress.Parse("B2")], repeated.Change.ValueChanges);
+        Assert.Contains("usd", repeated.Message, StringComparison.Ordinal);
+        Assert.Equal(SheetWire.WriteRows(rows), _sheet.Invocations["pushLinkedTable"][0].Arguments[1]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => cut.InvokeAsync(() => cut.Instance.PushLinkedTableAsync("Nothing", [])));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => cut.InvokeAsync(() => cut.Instance.CellFormatAtAsync("Three", CellAddress.Parse("A1"))));
+        await Assert.ThrowsAsync<ArgumentException>(() => cut.InvokeAsync(() => cut.Instance.DeclareLinkedTableAsync("1st", ["A"])));
+    }
+
+    [Fact] // ADR-0071, ADR-0049: a Cell Format and the Linked Tables are read back as the browser's Sheet holds them, and a change that sets nothing never crosses
+    public async Task ADR0071_cell_formats_and_linked_tables_are_read_back_from_the_browser()
+    {
+        var cut = Sheet();
+        // A Cell Format as the bridge writes it (writeCellFormat; src/npm/sheet-blazor/test/bridge.test.ts expects the same text).
+        _sheet.Setup<JsonElement>("cellFormatAt", _ => true).SetResult(Parsed("""
+            {"done":"{\"numberFormat\":\"0.00\",\"alignment\":\"general\",\"font\":{\"colour\":\"Automatic\",\"bold\":true,\"italic\":false,\"underline\":false,\"strikethrough\":false},\"fill\":\"none\",\"borders\":{\"top\":\"none\",\"bottom\":\"none\",\"left\":\"none\",\"right\":\"none\"}}"}
+            """));
+        _sheet.Setup<JsonElement>("linkedTables").SetResult(Parsed("""[{"name":"Rates","columns":["Code","Region","Rate"],"keyColumns":["Code","Region"],"isWaiting":false,"rowCount":2}]"""));
+        _sheet.Setup<JsonElement>("setCellFormat", _ => true).SetResult(Parsed("""{"done":true}"""));
+
+        var format = await cut.InvokeAsync(() => cut.Instance.CellFormatAtAsync(CellAddress.Parse("B2")));
+        Assert.Equal(new CellFormat(NumberFormat.Parse("0.00"), HorizontalAlignment.General, new CellFont(Bold: true), CellFill.None, CellBorders.None), format);
+        Assert.Equal([null, "B2"], Assert.Single(_sheet.Invocations["cellFormatAt"]).Arguments);
+
+        var table = Assert.Single(await cut.InvokeAsync(() => cut.Instance.LinkedTablesAsync()));
+        Assert.Equal(("Rates", false, 2, (string?)null), (table.Name, table.IsWaiting, table.RowCount, table.Key));
+        Assert.Equal(["Code", "Region", "Rate"], table.Columns);
+        Assert.Equal(["Code", "Region"], table.KeyColumns);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => cut.InvokeAsync(() => cut.Instance.SetCellFormatAsync(new CellFormatChange())));
+        Assert.True(await cut.InvokeAsync(() => cut.Instance.SetNumberFormatAsync(null)));
+        Assert.Equal(SheetWire.Write(new CellFormatChange { NumberFormat = NumberFormat.General }), Assert.Single(_sheet.Invocations["setCellFormat"]).Arguments[0]);
     }
 
     [Fact] // ADR-0130, ADR-0048, ADR-0071, ADR-0331: the Sheet's events reach the handlers as the Razor component raises them

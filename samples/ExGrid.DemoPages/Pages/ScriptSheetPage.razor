@@ -15,12 +15,14 @@
     Sheet Tabs and the Selection Summary are the Script Core's, in the browser, on both hosting models.
     The page binds the Sheet Document two ways, as a page binds the Razor component's: each change
     crosses to .NET as the JSON both engines read and write, and the status line counts its cells.
-    <i>Reset</i> hands the first document back; <i>Undo</i> is a command asked from .NET.
+    <i>Reset</i> hands the first document back; <i>Undo</i> is a command asked from .NET, and <i>Enter 7 in A2</i> an
+    edit .NET makes, which crosses as <code>SheetWire</code> writes it.
 </p>
 
 <div class="demo-toolbar">
     <button id="script-sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
     <button id="script-sheet-reset" @onclick="Reset">Reset the Sheet</button>
+    <button id="script-sheet-enter" disabled="@_editing" @onclick="EnterAsync">Enter 7 in A2</button>
 </div>
 
 <p class="demo-status">
@@ -73,6 +75,8 @@
             _undone = refused.Refusal.Message;
         }
     }
+
+    private Task EnterAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("A2"), "7"));
 
     private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the page.");
 }

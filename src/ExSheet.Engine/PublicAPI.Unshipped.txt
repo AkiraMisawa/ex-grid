@@ -10,6 +10,7 @@ ExSheet.Engine.SheetDocument.SheetDocument(System.Globalization.CultureInfo! cul
 ExSheet.Engine.SheetRefusalReason.LastSheet = 7 -> ExSheet.Engine.SheetRefusalReason
 ExSheet.Engine.SheetRefusalReason.SheetNameTaken = 6 -> ExSheet.Engine.SheetRefusalReason
 ExSheet.Engine.SheetRefusalReason.SheetNotNamed = 8 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetWire
 ExSheet.Engine.Workbook
 ExSheet.Engine.Workbook.Changes.get -> long
 ExSheet.Engine.Workbook.Check(string! sheet, ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.SheetRefusal?
@@ -65,6 +66,11 @@ static ExSheet.Engine.SheetEdit.CopySheet(int? index = null) -> ExSheet.Engine.S
 static ExSheet.Engine.SheetEdit.DeleteSheet() -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.SheetEdit.InsertSheet(string? name = null, bool before = false) -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.SheetEdit.MoveSheet(int index) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetWire.ReadCellFormat(string! json) -> ExSheet.Engine.CellFormat!
+static ExSheet.Engine.SheetWire.ReadRepeatedKey(string! json) -> ExSheet.Engine.RepeatedKeyException!
+static ExSheet.Engine.SheetWire.Write(ExSheet.Engine.CellFormatChange! change) -> string!
+static ExSheet.Engine.SheetWire.Write(ExSheet.Engine.SheetEdit! edit) -> string!
+static ExSheet.Engine.SheetWire.WriteRows(System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> string!
 static ExSheet.Engine.Workbook.Open(ExSheet.Engine.SheetDocument! document) -> ExSheet.Engine.Workbook!
 static ExSheet.Engine.Workbook.Open(ExSheet.Engine.WorkbookDocument! document) -> ExSheet.Engine.Workbook!
 static ExSheet.Engine.WorkbookDocument.FromJson(string! json) -> ExSheet.Engine.WorkbookDocument!

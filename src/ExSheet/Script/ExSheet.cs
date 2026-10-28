@@ -197,6 +197,9 @@ public sealed class ExSheet : ComponentBase, IAsyncDisposable
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        // The refusal is worded through CommandLabel, which may have changed (ADR-0203).
+        if (_refused)
+            _renderOwed = true;
         if (Document is not null && Workbook is not null)
         {
             throw new InvalidOperationException(
@@ -287,9 +290,10 @@ public sealed class ExSheet : ComponentBase, IAsyncDisposable
             _module = module;
             stamp = await module.InvokeAsync<string?>("stamp");
         }
-        catch (JSException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
-            // A module that does not load, or one older than the stamp, which has no `stamp` to call.
+            // A module that does not load, by a fault of the page's or of the circuit's, or one older than the stamp,
+            // which has no `stamp` to call: refused as another version's is (ADR-0123), so a command waiting is told.
             stamp = null;
         }
         catch (JsonException)
@@ -359,6 +363,15 @@ public sealed class ExSheet : ComponentBase, IAsyncDisposable
             await ReleaseAsync(null, module);
             bridge.Dispose();
             return;
+        }
+        catch (Exception)
+        {
+            // Refused by the Sheet itself: nothing of the browser's is held for a Sheet that never opened.
+            _module = null;
+            _bridge = null;
+            await ReleaseAsync(null, module);
+            bridge.Dispose();
+            throw;
         }
         finally
         {
@@ -653,6 +666,155 @@ public sealed class ExSheet : ComponentBase, IAsyncDisposable
     /// <exception cref="SheetRefusedException">An edit is open; nothing opened.</exception>
     public Task<bool> OpenFormatCellsAsync() => CommandAsync("openFormatCells");
 
+    /// <summary>
+    /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo stack, in its place in the
+    /// order (ADR-0048), and raises <see cref="DocumentChanged"/>. It names no Sheet, so it is taken only while the
+    /// Workbook holds one; with several, name the Sheet with <see cref="DoAsync(string, SheetEdit)"/> (ADR-0331 §6).
+    /// The edit crosses to the browser as <see cref="SheetWire"/> writes it, and the Sheet there does it as the Razor
+    /// component's would.
+    /// </summary>
+    /// <exception cref="SheetRefusedException">The Sheet refuses the operation, an edit is open
+    /// (<see cref="IsEditing"/>), or the Workbook holds several Sheets
+    /// (<see cref="SheetRefusalReason.SheetNotNamed"/>); nothing changed.</exception>
+    /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read; nothing changed.</exception>
+    public Task DoAsync(SheetEdit edit)
+    {
+        ArgumentNullException.ThrowIfNull(edit);
+        return AnswerAsync("do", null, SheetWire.Write(edit));
+    }
+
+    /// <summary>
+    /// Does <paramref name="edit"/> on the Sheet named <paramref name="sheet"/>, as one operation on the user's undo stack
+    /// (ADR-0331 §6), as <see cref="DoAsync(SheetEdit)"/> does it on the one Sheet. The Sheet shown stays shown, unless
+    /// the edit makes or moves a Sheet as Excel's tab commands do.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">No Sheet of the Workbook is named so.</exception>
+    /// <exception cref="SheetRefusedException">The Sheet refuses the operation, or an edit is open; nothing changed.</exception>
+    /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read; nothing changed.</exception>
+    public Task DoAsync(string sheet, SheetEdit edit)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        ArgumentNullException.ThrowIfNull(edit);
+        return AnswerAsync("do", sheet, SheetWire.Write(edit));
+    }
+
+    /// <summary>
+    /// Sets the parts of a Cell Format that <paramref name="change"/> names on the Selection as the grid holds it when
+    /// the command runs, as one operation on the undo stack, and widens as the formatting keys do (ADR-0071, ADR-0048):
+    /// what the Razor component's <c>SetCellFormatAsync</c> does, done by the Sheet in the browser. Answers false when
+    /// nothing is selected.
+    /// </summary>
+    /// <exception cref="ArgumentException">The change sets no part of a Cell Format.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The change's alignment is not one.</exception>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public async Task<bool> SetCellFormatAsync(CellFormatChange change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        if (change.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
+        if (change.Alignment is { } alignment && !Enum.IsDefined(alignment))
+            throw new ArgumentOutOfRangeException(nameof(change), alignment, "Not an alignment.");
+        return (await AnswerAsync("setCellFormat", SheetWire.Write(change))).GetBoolean();
+    }
+
+    /// <summary>
+    /// Sets the Number Format of the Selection; <see langword="null"/> is General. A shorthand for
+    /// <see cref="SetCellFormatAsync"/> with a change that names the Number Format alone (ADR-0071).
+    /// </summary>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
+        SetCellFormatAsync(new CellFormatChange { NumberFormat = format ?? NumberFormat.General });
+
+    /// <summary>
+    /// Sets the horizontal alignment of the Selection. A shorthand for <see cref="SetCellFormatAsync"/> with a change
+    /// that names the Alignment alone (ADR-0071).
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The alignment is not one.</exception>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
+        SetCellFormatAsync(new CellFormatChange { Alignment = alignment });
+
+    /// <summary>
+    /// The Cell Format of the cell at <paramref name="address"/> as it shows (ADR-0071): each part the cell's own, else
+    /// its row's, else its column's, else the part's default, and each Border side the edge as shown. It is a read, so
+    /// it answers while an edit is open too. The address names no Sheet, so it is read only while the Workbook holds
+    /// one; with several, name the Sheet with <see cref="CellFormatAtAsync(string, CellAddress)"/> (ADR-0331 §6).
+    /// </summary>
+    /// <exception cref="SheetRefusedException">The Workbook holds several Sheets (<see cref="SheetRefusalReason.SheetNotNamed"/>).</exception>
+    public async Task<CellFormat> CellFormatAtAsync(CellAddress address)
+        => SheetWire.ReadCellFormat(Text(await AnswerAsync("cellFormatAt", null, address.ToString())));
+
+    /// <summary>The Cell Format of the cell at <paramref name="address"/> on the Sheet named <paramref name="sheet"/>, as it shows (ADR-0071, ADR-0331 §6).</summary>
+    /// <exception cref="ArgumentOutOfRangeException">No Sheet of the Workbook is named so.</exception>
+    public async Task<CellFormat> CellFormatAtAsync(string sheet, CellAddress address)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        return SheetWire.ReadCellFormat(Text(await AnswerAsync("cellFormatAt", sheet, address.ToString())));
+    }
+
+    /// <summary>
+    /// The Linked Tables declared on the Workbook, in the order they were declared (ADR-0049): each one's name, columns
+    /// and key, whether it is waiting for a snapshot, and how many rows the last one held.
+    /// </summary>
+    public async Task<IReadOnlyList<LinkedTable>> LinkedTablesAsync()
+    {
+        var sheet = await ReadyAsync();
+        var tables = await sheet.InvokeAsync<JsonElement>("linkedTables");
+        return [.. tables.EnumerateArray().Select(table =>
+        {
+            IReadOnlyList<string> key = Names(table.GetProperty("keyColumns"));
+            return new LinkedTable(Text(table.GetProperty("name")), Names(table.GetProperty("columns")), table.GetProperty("isWaiting").GetBoolean(),
+                table.GetProperty("rowCount").GetInt32(), key.Count == 1 ? key[0] : null) { KeyColumns = key };
+        })];
+    }
+
+    /// <summary>
+    /// Declares a Linked Table by name, columns and key, before any of its rows arrive (ADR-0049), as the Razor
+    /// component's <c>DeclareLinkedTableAsync</c> does: Formulas naming it show <c>#GETTING_DATA</c> until the first
+    /// snapshot is pushed, and the declaration is recorded in the Sheet Document. It is the Consumer's data, not a
+    /// user's operation, so it is no step on the undo stack.
+    /// </summary>
+    /// <param name="name">The name Formulas read the table by.</param>
+    /// <param name="columns">The column names, in order.</param>
+    /// <param name="key">The key column, one of <paramref name="columns"/>, or <see langword="null"/> for none.</param>
+    /// <exception cref="ArgumentException">The name or the columns are not ones a structured reference can name, or the key is not one of the columns.</exception>
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, string? key = null) =>
+        DeclareLinkedTableAsync(name, columns, key is null ? (IReadOnlyList<string>)[] : [key]);
+
+    /// <summary>
+    /// Declares a Linked Table whose rows are told apart by the Values of several columns together (ADR-0058); an empty
+    /// list declares no key. Otherwise as the overload that takes one key column.
+    /// </summary>
+    /// <param name="name">The name Formulas read it by.</param>
+    /// <param name="columns">The column names, in order.</param>
+    /// <param name="key">The key's columns, each one of <paramref name="columns"/>, none twice.</param>
+    /// <exception cref="ArgumentException">The name or the columns are not ones a structured reference can name, or a key column is not one of the columns, or is named twice.</exception>
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(columns);
+        ArgumentNullException.ThrowIfNull(key);
+        return AnswerAsync("declareLinkedTable", name, columns, key);
+    }
+
+    /// <summary>
+    /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049), as the Razor component's
+    /// <c>PushLinkedTableAsync</c> does: no recalculation sees part of one snapshot and part of another, nothing is
+    /// raised through <see cref="DocumentChanged"/>, and nothing goes on the undo stack. The rows cross to the browser
+    /// as <see cref="SheetWire.WriteRows"/> writes them.
+    /// </summary>
+    /// <param name="name">The declared table's name.</param>
+    /// <param name="rows">The rows, each holding one Value per declared column, in order; null is a blank.</param>
+    /// <exception cref="InvalidOperationException">No table of that name is declared.</exception>
+    /// <exception cref="RepeatedKeyException">The table was declared with a key, and a key repeats in the snapshot: the
+    /// table waits again, and every Formula that reads it shows <c>#GETTING_DATA</c> before the refusal is thrown.</exception>
+    /// <exception cref="ArgumentException">A row does not have one Value per column, or holds a Value that is not data.</exception>
+    public Task PushLinkedTableAsync(string name, IEnumerable<IReadOnlyList<Value?>> rows)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(rows);
+        return AnswerAsync("pushLinkedTable", name, SheetWire.WriteRows(rows));
+    }
+
     /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
     /// <exception cref="InvalidOperationException">The Workbook holds several Sheets, which a Sheet Document cannot
     /// record (ADR-0331): <see cref="ToWorkbookDocumentAsync"/> records them.</exception>
@@ -675,15 +837,35 @@ public sealed class ExSheet : ComponentBase, IAsyncDisposable
         return await sheet.InvokeAsync<JsonElement>("documents");
     }
 
+    private async Task<bool> CommandAsync(string command) => (await AnswerAsync(command)).GetBoolean();
+
     // A command, in its place behind the parameters sent before it: the browser takes the calls in the order they are
-    // made. A refusal crosses as data, and is thrown here as the Razor component throws it.
-    private async Task<bool> CommandAsync(string command)
+    // made. A refusal, and what else the Sheet threw at the caller, cross as data, and are thrown here as the Razor
+    // component's engine throws them.
+    private async Task<JsonElement> AnswerAsync(string command, params object?[] args)
     {
         var sheet = await ReadyAsync();
-        var answer = await sheet.InvokeAsync<JsonElement>(command);
+        var answer = await sheet.InvokeAsync<JsonElement>(command, args);
         if (answer.TryGetProperty("refused", out var refused))
             throw new SheetRefusedException(Refusal(refused));
-        return answer.GetProperty("done").GetBoolean();
+        if (answer.TryGetProperty("thrown", out var thrown))
+            throw Thrown(thrown);
+        return answer.GetProperty("done");
+    }
+
+    // An error the Sheet threw, as the C# engine throws the same (tests/cases/README.md: the kinds both engines refuse alike).
+    private static Exception Thrown(JsonElement json)
+    {
+        var message = Text(json.GetProperty("message"));
+        return Text(json.GetProperty("kind")) switch
+        {
+            "argument" => new ArgumentException(message),
+            "outOfRange" => new ArgumentOutOfRangeException(null, message),
+            "invalidOperation" => new InvalidOperationException(message),
+            "formulaSyntax" => new FormulaSyntaxException(Text(json.GetProperty("formula")), json.GetProperty("position").GetInt32(), Text(json.GetProperty("reason"))),
+            "repeatedKey" => SheetWire.ReadRepeatedKey(Text(json.GetProperty("repeatedKey"))),
+            var kind => new InvalidOperationException($"Internal: the Script Core threw an error of the kind '{kind}': {message}"),
+        };
     }
 
     // The browser's Sheet, once it is attached: a command made before waits for it, and one made after the component

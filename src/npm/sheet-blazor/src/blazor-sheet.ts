@@ -5,7 +5,10 @@
 
 import { builtInLabelIds, type GridSelection, type SummaryFigure, type ViewportSize } from '@ex-grid/core';
 import { createSheet, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId } from '@ex-grid/sheet';
-import { SheetRefusedError, WorkbookDocument, type SheetDay, type SheetRefusal } from '@ex-grid/sheet-engine';
+import {
+    CellAddress, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetRefusedError, WorkbookDocument,
+    writeCellFormat, writeRepeatedKey, type SheetDay, type SheetRefusal,
+} from '@ex-grid/sheet-engine';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. Whether an edit is open is
  * always heard, since the component answers `IsEditing`. */
@@ -89,9 +92,31 @@ export interface WireUpdate {
     readonly words?: WireWords;
 }
 
-/** What a command answers .NET: what the Sheet's method answered, or the refusal it threw, which .NET throws as its
- * own `SheetRefusedException`. */
-export type WireAnswer = { readonly done: boolean } | { readonly refused: WireRefusal };
+/**
+ * What a command answers .NET: what the Sheet's method answered; the refusal it threw, which .NET throws as its own
+ * `SheetRefusedException`; or what else it threw that a caller's mistake or the Sheet's state explains, which .NET
+ * throws as the Razor component's engine throws it.
+ */
+export type WireAnswer<T = boolean> = { readonly done: T } | { readonly refused: WireRefusal } | { readonly thrown: WireThrown };
+
+/**
+ * An error a command threw, by its kind (`tests/cases/README.md`): `argument` a `TypeError`, `outOfRange` a
+ * `RangeError`, `invalidOperation` a plain `Error`, `formulaSyntax` a Formula that cannot be read, with where and why,
+ * and `repeatedKey` a refused snapshot, as `writeRepeatedKey` writes it.
+ */
+export type WireThrown =
+    | { readonly kind: 'argument' | 'outOfRange' | 'invalidOperation'; readonly message: string }
+    | { readonly kind: 'formulaSyntax'; readonly message: string; readonly formula: string; readonly position: number; readonly reason: string }
+    | { readonly kind: 'repeatedKey'; readonly message: string; readonly repeatedKey: string };
+
+/** A Linked Table as the Sheet declares it, for .NET's `LinkedTable`. */
+export interface WireLinkedTable {
+    readonly name: string;
+    readonly columns: readonly string[];
+    readonly keyColumns: readonly string[];
+    readonly isWaiting: boolean;
+    readonly rowCount: number;
+}
 
 /** A refusal, as .NET's `SheetRefusal` reads it. */
 export interface WireRefusal {
@@ -112,6 +137,17 @@ export interface BlazorSheet {
     undo(): WireAnswer;
     redo(): WireAnswer;
     openFormatCells(): WireAnswer;
+    /** Does an edit .NET's `SheetWire` wrote, on the Sheet named, or with none named while the Workbook holds one. */
+    do(sheet: string | null, edit: string): WireAnswer<null>;
+    /** Sets a change .NET's `SheetWire` wrote on the Selection as the grid holds it; false when nothing is selected. */
+    setCellFormat(change: string): WireAnswer;
+    /** A cell's Cell Format as it shows, as `writeCellFormat` writes it. */
+    cellFormatAt(sheet: string | null, address: string): WireAnswer<string>;
+    /** The Linked Tables declared, in the order they were declared. */
+    linkedTables(): WireLinkedTable[];
+    declareLinkedTable(name: string, columns: readonly string[], key: readonly string[]): WireAnswer<null>;
+    /** Pushes a snapshot .NET's `SheetWire` wrote. */
+    pushLinkedTable(name: string, rows: string): WireAnswer<null>;
     /** The Workbook as it stands, as documents. */
     documents(): WireDocuments;
     /** Stops the Sheet and empties its element. */
@@ -149,6 +185,8 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): B
     return Object.freeze({
         update: (text: string) => {
             const next = parsed<WireUpdate>(text);
+            // .NET counts a document sent whether or not the Sheet takes it, so the count moves first.
+            if (next.documentsSent !== undefined) documentsSent = next.documentsSent;
             // Taken only once the Sheet has: one it refuses, as a document of a version it does not read, changes nothing.
             const nextDocument = next.document === undefined ? document : next.document === null ? undefined : WorkbookDocument.fromJson(next.document);
             const nextWords = next.words === undefined ? words : wordsOf(next.words);
@@ -157,11 +195,32 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): B
             made.update(sheetOptions(next.options, nextDocument, nextWords, heard));
             document = nextDocument;
             words = nextWords;
-            if (next.documentsSent !== undefined) documentsSent = next.documentsSent;
         },
         undo: () => answered(() => made.undo()),
         redo: () => answered(() => made.redo()),
         openFormatCells: () => answered(() => made.openFormatCells()),
+        do: (sheet: string | null, edit: string) => answered(() => {
+            const read = readSheetEdit(edit);
+            if (sheet === null) made.do(read);
+            else made.do(sheet, read);
+            return null;
+        }),
+        setCellFormat: (change: string) => answered(() => made.setCellFormat(readCellFormatChange(change))),
+        cellFormatAt: (sheet: string | null, address: string) => answered(() => {
+            const at = CellAddress.parse(address);
+            return writeCellFormat(sheet === null ? made.cellFormatAt(at) : made.cellFormatAt(sheet, at));
+        }),
+        linkedTables: () => made.workbook.linkedTables.map(table => ({
+            name: table.name, columns: table.columns, keyColumns: table.keyColumns, isWaiting: table.isWaiting, rowCount: table.rowCount,
+        })),
+        declareLinkedTable: (name: string, columns: readonly string[], key: readonly string[]) => answered(() => {
+            made.declareLinkedTable(name, columns, key);
+            return null;
+        }),
+        pushLinkedTable: (name: string, rows: string) => answered(() => {
+            made.pushLinkedTable(name, readLinkedRows(rows));
+            return null;
+        }),
         documents: () => ({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
         dispose: () => {
             stopped = true;
@@ -178,13 +237,28 @@ export function parsed<T>(json: string): T {
 }
 
 // A command's answer, or the Sheet's refusal of it, which crosses as data: any other failure is the command's.
-function answered(command: () => boolean): WireAnswer {
+function answered<T>(command: () => T): WireAnswer<T> {
     try {
         return { done: command() };
-    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a refusal is the command's answer, which .NET throws again as its own; anything else is rethrown
-        if (error instanceof SheetRefusedError) return { refused: wireRefusal(error.refusal) };
-        throw error;
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- what the command threw is its answer, which .NET throws again as its own; anything else is rethrown
+        const thrown = wireThrown(error);
+        if (thrown === undefined) throw error;
+        return thrown;
     }
+}
+
+// What the Sheet and its engine throw at a caller, as data .NET throws again as the Razor component's engine throws
+// it: the kinds of `tests/cases/README.md`, refused alike by both engines. Anything else is a defect, and stays one.
+function wireThrown(error: unknown): { readonly refused: WireRefusal } | { readonly thrown: WireThrown } | undefined {
+    if (error instanceof SheetRefusedError) return { refused: wireRefusal(error.refusal) };
+    if (error instanceof RepeatedKeyError) return { thrown: { kind: 'repeatedKey', message: error.message, repeatedKey: writeRepeatedKey(error) } };
+    if (error instanceof FormulaSyntaxError) {
+        return { thrown: { kind: 'formulaSyntax', message: error.message, formula: error.formula, position: error.position, reason: error.reason } };
+    }
+    if (error instanceof RangeError) return { thrown: { kind: 'outOfRange', message: error.message } };
+    if (error instanceof TypeError) return { thrown: { kind: 'argument', message: error.message } };
+    if (error instanceof Error && Object.getPrototypeOf(error) === Error.prototype) return { thrown: { kind: 'invalidOperation', message: error.message } };
+    return undefined;
 }
 
 function wireRefusal(refusal: SheetRefusal): WireRefusal {

@@ -169,6 +169,22 @@ describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)',
         expect(JSON.parse(sheet.documents().workbook)).toMatchObject({ sheets: [{ name: 'Sheet1' }] });
         expect(SheetDocument.fromJson(must(sheet.documents().sheet)).cells).toEqual([]);
     });
+
+    it('counts a document the Sheet refused as sent, as .NET does, and keeps the Sheet as it stood', async () => {
+        const { element, sheet, dotnet } = mount({ document: workbookJson(['Sheet1', { A1: 'kept' }]), documentsSent: 1 });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('kept'); });
+
+        // A version this engine does not read: refused, and .NET has counted it.
+        const unread = JSON.stringify({ ...JSON.parse(workbookJson(['Sheet1', { A1: 'other' }])), workbookVersion: 999 });
+        expect(() => { sheet.update(JSON.stringify({ options: options(), document: unread, documentsSent: 2 })); }).toThrow('The Workbook Document is version 999');
+        expect(cellText(element, 0, 0)).toBe('kept');
+
+        // What the Sheet raises next is on screen after the refused one, so .NET does not hand it back to be reopened.
+        select(element, 'A1');
+        key('Delete');
+        await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toHaveLength(1); });
+        expect((dotnet.of('workbookChanged')[0] as Raised).documentsSent).toBe(2);
+    });
 });
 
 describe('commands across the bridge (ADR-0048)', () => {
@@ -183,6 +199,64 @@ describe('commands across the bridge (ADR-0048)', () => {
 
         expect(sheet.undo()).toEqual({ refused: { reason: 'editIsOpen', message: expect.any(String) as string } });
         expect(sheet.openFormatCells()).toMatchObject({ refused: { reason: 'editIsOpen' } });
+    });
+});
+
+describe('edits, Cell Formats and Linked Tables across the bridge (ADR-0370 section 1, ADR-0048, ADR-0071, ADR-0049)', () => {
+    it('does an edit .NET wrote, on the one Sheet or the Sheet it names, and throws what the engine threw as data', async () => {
+        const { element, sheet, dotnet } = mount();
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBeNull(); });
+
+        expect(sheet.do(null, '{"enter":{"A1":"2","A2":"=A1*3"}}')).toEqual({ done: null });
+        await vi.waitFor(() => { expect(cellText(element, 1, 0)).toBe('6'); });
+        expect(dotnet.of('workbookChanged')).toHaveLength(1);
+
+        // A Formula that cannot be read is refused where it was typed, and .NET throws it as a FormulaSyntaxException.
+        expect(sheet.do(null, '{"enter":{"B1":"=1+"}}')).toMatchObject({ thrown: { kind: 'formulaSyntax', formula: '=1+', position: expect.any(Number) as number } });
+
+        // With two Sheets, an edit that names none is refused, and one that names its Sheet is done there.
+        expect(sheet.do(null, '{"insertSheet":{"name":"Two","before":false}}')).toEqual({ done: null });
+        expect(sheet.do(null, '{"enter":{"A1":"x"}}')).toMatchObject({ refused: { reason: 'sheetNotNamed' } });
+        expect(sheet.do('Two', '{"enter":{"A1":"x"}}')).toEqual({ done: null });
+        expect(sheet.do('Three', '{"enter":{"A1":"x"}}')).toMatchObject({ thrown: { kind: 'outOfRange' } });
+        expect(WorkbookDocument.fromJson(sheet.documents().workbook).sheets.map(s => s.name)).toEqual(['Sheet1', 'Two']);
+    });
+
+    it('sets a change on the Selection, and reads a cell\'s Cell Format back as .NET reads one', async () => {
+        const { element, sheet } = mount();
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBeNull(); });
+        select(element, 'B2');
+
+        expect(sheet.setCellFormat('{"bold":true,"numberFormat":"0.00"}')).toEqual({ done: true });
+        expect(sheet.cellFormatAt(null, 'B2')).toEqual({
+            done: JSON.stringify({
+                numberFormat: '0.00',
+                alignment: 'general',
+                font: { colour: 'Automatic', bold: true, italic: false, underline: false, strikethrough: false },
+                fill: 'none',
+                borders: { top: 'none', bottom: 'none', left: 'none', right: 'none' },
+            }),
+        });
+        expect(sheet.cellFormatAt('Nowhere', 'B2')).toMatchObject({ thrown: { kind: 'outOfRange' } });
+    });
+
+    it('declares a Linked Table, takes a snapshot, and hands back a refused one whole', async () => {
+        const { element, sheet } = mount();
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBeNull(); });
+
+        expect(sheet.declareLinkedTable('Rates', ['Code', 'Rate'], ['Code'])).toEqual({ done: null });
+        expect(sheet.linkedTables()).toEqual([{ name: 'Rates', columns: ['Code', 'Rate'], keyColumns: ['Code'], isWaiting: true, rowCount: 0 }]);
+        expect(sheet.pushLinkedTable('Rates', '[["USD",1.5],["EUR",null]]')).toEqual({ done: null });
+        expect(sheet.linkedTables()).toMatchObject([{ isWaiting: false, rowCount: 2 }]);
+
+        const refused = sheet.pushLinkedTable('Rates', '[["USD",1],["usd",2]]');
+        if (!('thrown' in refused) || refused.thrown.kind !== 'repeatedKey') throw new Error(`The snapshot was not refused: ${JSON.stringify(refused)}`);
+        expect(JSON.parse(refused.thrown.repeatedKey)).toMatchObject({
+            table: 'Rates', keyColumns: ['Code'], keys: ['USD'], repeats: ['usd'], firstRow: 0, secondRow: 1,
+            change: { valueChanges: [], recalculated: [], rows: [], columns: [], reformatsUnnamedRows: false },
+        });
+        expect(sheet.linkedTables()).toMatchObject([{ isWaiting: true }]);
+        expect(sheet.pushLinkedTable('Nothing', '[]')).toMatchObject({ thrown: { kind: 'invalidOperation' } });
     });
 });
 

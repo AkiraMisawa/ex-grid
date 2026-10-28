@@ -922,6 +922,16 @@ from `{"parts": [...]}`, each part a string or `[string, times]`, for a Formula 
 of one key, the factory, and its arguments, as `SheetEdit` takes them; `pasteFields` is the Script Core's name for the
 forms of `PasteText` that take `typed` fields cell by cell, with exact `entries` or without.
 
+That object is also the wire: `SheetWire` writes a `SheetEdit` in it, the text Blazor's `ExSheet.Script.ExSheet` sends
+to the Sheet in the browser, and the Script Core's `readSheetEdit` reads it (ADR-0370 section 1). Both runners send every
+edit of every case through it, so the corpus holds the writer and the reader together: xUnit writes the edit it read with
+`SheetWire`, reads that text back and requires the same text again, and Vitest reads the case's edit with `readSheetEdit`
+itself. A `block`, written `{"source", "cells"}` with each cell's `entry`, `numberFormat`, `alignment`, `font`, `fill` and
+`borders`, is the wire's form of a copied block and may be pasted as a literal. The verb `doWire` is an edit as `SheetWire`
+writes it, character for character: xUnit requires its own text to equal it, and Vitest does it as `do` does, so that a
+text the reader takes is one the writer writes. A `cellFormats` reading is held to both sides too: Vitest writes each Cell
+Format with `writeCellFormat`, and xUnit reads the expected one back with `SheetWire.ReadCellFormat`.
+
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
 Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in full, so that one written without
 `"refused": true` is never a refusal; a Value a case gives written so is a refusal as a Consumer holds one read from a

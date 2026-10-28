@@ -2,6 +2,7 @@
 
 <p>
     <button class="btn btn-sm btn-outline-secondary" @onclick="UndoAsync">Undo</button>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="ThreeMoreTaxisAsync">Three more taxis</button>
     <button class="btn btn-sm btn-outline-secondary" @onclick="() => _document = Expenses.Document()">Start again</button>
 </p>
 
@@ -16,13 +17,17 @@
     private ExSheet.Script.ExSheet? _sheet;
     private string _undone = "";
 
+    // An edit made in .NET, done by the Sheet in the browser as the Razor component's DoAsync does it.
+    private Task ThreeMoreTaxisAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("B5"), "12"));
+
+    private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
+
     // A command asked from .NET of the Sheet in the browser; its refusal comes back as the Razor component's does.
     private async Task UndoAsync()
     {
-        var sheet = _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
         try
         {
-            _undone = await sheet.UndoAsync() ? "Undone." : "Nothing to undo.";
+            _undone = await Sheet().UndoAsync() ? "Undone." : "Nothing to undo.";
         }
         catch (SheetRefusedException refused)
         {
