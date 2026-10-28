@@ -68,6 +68,7 @@ static ExSheet.Engine.SheetEdit.InsertSheet(string? name = null, bool before = f
 static ExSheet.Engine.SheetEdit.MoveSheet(int index) -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.SheetWire.ReadCellFormat(string! json) -> ExSheet.Engine.CellFormat!
 static ExSheet.Engine.SheetWire.ReadRepeatedKey(string! json) -> ExSheet.Engine.RepeatedKeyException!
+static ExSheet.Engine.SheetWire.ReadRows(string! json) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>!
 static ExSheet.Engine.SheetWire.Write(ExSheet.Engine.CellFormatChange! change) -> string!
 static ExSheet.Engine.SheetWire.Write(ExSheet.Engine.SheetEdit! edit) -> string!
 static ExSheet.Engine.SheetWire.WriteRows(System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> string!

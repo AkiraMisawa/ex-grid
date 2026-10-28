@@ -36,7 +36,7 @@ export {
 export { SheetDocument, type SheetDocumentLayout } from './sheet-document';
 export { SheetDocumentAxisFormat, SheetDocumentCell, SheetDocumentColumnWidth, SheetDocumentError, SheetDocumentTable } from './sheet-document-parts';
 export { SheetEdit } from './sheet-edit';
-export { readCellFormatChange, readLinkedRows, readSheetEdit, writeCellFormat, writeRepeatedKey } from './sheet-wire';
+export { readCellFormatChange, readLinkedRows, readSheetEdit, writeCellFormat, writeLinkedRows, writeRepeatedKey } from './sheet-wire';
 export { Value, type ErrorValue, type ValueKind } from './value';
 export { Workbook, WorkbookChange, WorkbookStep } from './workbook';
 export { WorkbookDocument } from './workbook-document';

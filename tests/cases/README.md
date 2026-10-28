@@ -941,7 +941,10 @@ itself. A `block`, written `{"source", "cells"}` with each cell's `entry`, `numb
 `borders`, is the wire's form of a copied block and may be pasted as a literal. The verb `doWire` is an edit as `SheetWire`
 writes it, character for character: xUnit requires its own text to equal it, and Vitest does it as `do` does, so that a
 text the reader takes is one the writer writes. A `cellFormats` reading is held to both sides too: Vitest writes each Cell
-Format with `writeCellFormat`, and xUnit reads the expected one back with `SheetWire.ReadCellFormat`.
+Format with `writeCellFormat`, and xUnit reads the expected one back with `SheetWire.ReadCellFormat`. The `rows` a
+`pushTable` step pushes cross the same way: each runner reads the case's own text with its wire's reader
+(`SheetWire.ReadRows`, `readLinkedRows`), requires the rows its writer writes of them to be the case's, and pushes what
+it read.
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
 Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in full, so that one written without

@@ -3,6 +3,8 @@
 <p>
     <button class="btn btn-sm btn-outline-secondary" @onclick="UndoAsync">Undo</button>
     <button class="btn btn-sm btn-outline-secondary" @onclick="ThreeMoreTaxisAsync">Three more taxis</button>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="KeepACopyAsync">Keep a copy</button>
+    <button class="btn btn-sm btn-outline-secondary" disabled="@(_copy is null)" @onclick="BackToTheCopyAsync">Back to the copy</button>
     <button class="btn btn-sm btn-outline-secondary" @onclick="() => _document = Expenses.Document()">Start again</button>
 </p>
 
@@ -19,6 +21,24 @@
 
     // An edit made in .NET, done by the Sheet in the browser as the Razor component's DoAsync does it.
     private Task ThreeMoreTaxisAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("B5"), "12"));
+
+    // A save and an opening, each in its turn among the Sheet's inputs: the write is handed .NET's copy of the
+    // browser's Workbook, its Values computed again in .NET, and the read runs in .NET. A file's writer and reader,
+    // such as ExSheet.Xlsx's, go where these keep the document in memory.
+    private WorkbookDocument? _copy;
+
+    private Task KeepACopyAsync() => Sheet().SaveAsync(workbook =>
+    {
+        _copy = workbook.ToDocument();
+        _undone = $"Copy kept, totalling {workbook.Sheets[0].GetValue(CellAddress.Parse("D7"))?.Number:#,##0.00}.";
+        return Task.CompletedTask;
+    });
+
+    private async Task BackToTheCopyAsync()
+    {
+        var copy = _copy ?? throw new InvalidOperationException("The button is offered once a copy is kept.");
+        _undone = await Sheet().OpenAsync(_ => Task.FromResult(copy)) ? "Back to the copy." : "Nothing opened.";
+    }
 
     private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
 

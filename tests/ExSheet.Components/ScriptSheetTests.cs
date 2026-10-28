@@ -189,6 +189,99 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal("Bitte neu laden.", cut.Find("[data-ex-notice='script']").TextContent);
     }
 
+    [Fact] // ADR-0330 s10: .NET's read runs in the opening's turn in the browser; its failure is thrown as it was, and an Escape cancels its token
+    public async Task ADR0330_an_opening_reads_in_dotnet_when_the_browser_asks_and_its_failure_is_thrown_whole()
+    {
+        var opened = WorkbookOf("opened").ToDocument();
+        var answers = _sheet.Setup<JsonElement>("open", _ => true);
+        var cut = Sheet();
+        var bridge = Bridge().Value;
+
+        var opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(_ => Task.FromResult(opened)));
+        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["open"]).Arguments[0]);
+        Assert.Equal(opened.ToJson(), Parsed(await bridge.Read(id)).GetProperty("document").GetString());
+        answers.SetResult(Parsed("""{"done":true}"""));
+        Assert.True(await opening);
+
+        // A read that fails: the browser is told its message, and .NET throws the failure itself.
+        answers = _sheet.Setup<JsonElement>("open", _ => true);
+        var failure = new IOException("The file is not an .xlsx workbook.");
+        opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(_ => Task.FromException<WorkbookDocument>(failure)));
+        id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
+        Assert.Equal("""{"failed":"The file is not an .xlsx workbook."}""", await bridge.Read(id));
+        answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The file is not an .xlsx workbook."}}"""));
+        Assert.Same(failure, await Assert.ThrowsAsync<IOException>(() => opening));
+
+        // An Escape the browser heard cancels the read's token, and nothing opens.
+        answers = _sheet.Setup<JsonElement>("open", _ => true);
+        opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(async token =>
+        {
+            await Task.Delay(Timeout.Infinite, token);
+            return opened;
+        }));
+        id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
+        var read = bridge.Read(id);
+        Assert.False(read.IsCompleted);
+        bridge.CancelRead(id);
+        Assert.Equal("""{"cancelled":true}""", await read);
+        answers.SetResult(Parsed("""{"done":false}"""));
+        Assert.False(await opening);
+    }
+
+    [Fact] // ADR-0330 s10, ADR-0180: a save hands the write a Workbook of .NET's that computes the Values the browser shows
+    public async Task ADR0330_a_save_writes_dotnets_copy_of_the_browsers_workbook_with_its_values()
+    {
+        var browser = new Workbook(CultureInfo.GetCultureInfo("en-US"));
+        browser.DeclareLinkedTable("Rates", ["Code", "Rate"], "Code");
+        browser.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A1"), "=RAND()"));
+        browser.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A2"), "=SUM(Rates[Rate])"));
+        browser.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A3"), "=TODAY()"));
+        browser.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A4"), "=NOW()"));
+        browser.PushLinkedTable("Rates", [[Value.FromText("USD"), Value.FromNumber(1.5)], [Value.FromText("EUR"), Value.FromNumber(2)]]);
+        var moment = new DateTime(2026, 10, 28, 9, 30, 15, 250);
+        browser.NowSource = () => moment;
+        browser.RecalculateVolatile();
+        browser.SetToday(new DateOnly(2026, 10, 28));
+        browser.SetSeed(42, browser.Changes + 3);
+        var saved = JsonSerializer.Serialize(new
+        {
+            document = browser.ToDocument().ToJson(),
+            tables = new[] { new { name = "Rates", rows = SheetWire.WriteRows([[Value.FromText("USD"), Value.FromNumber(1.5)], [Value.FromText("EUR"), Value.FromNumber(2)]]) } },
+            seed = "42",
+            changes = browser.Changes,
+            today = new { year = 2026, month = 10, day = 28 },
+            now = new { year = 2026, month = 10, day = 28, hour = 9, minute = 30, second = 15, millisecond = 250 },
+        });
+        var answers = _sheet.Setup<JsonElement>("save", _ => true);
+        var cut = Sheet();
+        Workbook? written = null;
+
+        var saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(workbook =>
+        {
+            written = workbook;
+            return Task.CompletedTask;
+        }));
+        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
+        Assert.Equal("""{"done":true}""", await Bridge().Value.Write(id, saved));
+        answers.SetResult(Parsed("""{"done":null}"""));
+        await saving;
+
+        var copy = Assert.IsType<Workbook>(written);
+        foreach (var cell in new[] { "A1", "A2", "A3", "A4" })
+            Assert.Equal(browser.Sheets[0].GetValue(CellAddress.Parse(cell)), copy.Sheets[0].GetValue(CellAddress.Parse(cell)));
+        Assert.Equal(3.5, copy.Sheets[0].GetValue(CellAddress.Parse("A2"))?.Number);
+        Assert.Equal((42UL, browser.Changes), (copy.Seed, copy.Changes));
+
+        // A write that fails: the browser is told its message, and .NET throws the failure itself.
+        answers = _sheet.Setup<JsonElement>("save", _ => true);
+        var failure = new IOException("The disk is full.");
+        saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(_ => Task.FromException(failure)));
+        id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
+        Assert.Equal("""{"failed":"The disk is full."}""", await Bridge().Value.Write(id, saved));
+        answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The disk is full."}}"""));
+        Assert.Same(failure, await Assert.ThrowsAsync<IOException>(() => saving));
+    }
+
     [Fact] // ADR-0048, ADR-0071: a command answers as the browser's Sheet did, and its refusal is thrown as the Razor component throws it
     public async Task ADR0048_a_refusal_in_the_browser_is_thrown_as_a_SheetRefusedException()
     {

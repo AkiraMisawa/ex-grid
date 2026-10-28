@@ -7,20 +7,39 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { gridCommandIds } from '@ex-grid/core';
 import { CellAddress, Culture, SheetDocument, SheetEdit, Workbook, WorkbookDocument } from '@ex-grid/sheet-engine';
-import { attach, labelIds, wordsOf, type BlazorSheet, type DotNetHandle, type WireAttach, type WireOptions } from '../src/blazor-sheet';
+import { attach, labelIds, wordsOf, type BlazorSheet, type DotNetHandle, type WireAttach, type WireOptions, type WireSaved } from '../src/blazor-sheet';
 
 /** .NET, as the bridge calls it: every event recorded. */
 class FakeDotNet implements DotNetHandle {
     readonly heard: { readonly kind: string; readonly payload: unknown }[] = [];
+    /** The calls other than `Heard`, each with its arguments. */
+    readonly called: { readonly method: string; readonly args: readonly unknown[] }[] = [];
+    /** What .NET answers a call other than `Heard`, by its method. */
+    readonly answers = new Map<string, (...args: readonly unknown[]) => Promise<unknown>>();
 
     invokeMethodAsync(method: string, ...args: readonly unknown[]): Promise<unknown> {
-        if (method !== 'Heard') throw new Error(`the bridge called ${method}`);
-        this.heard.push({ kind: String(args[0]), payload: args[1] });
-        return Promise.resolve(true);
+        if (method === 'Heard') {
+            this.heard.push({ kind: String(args[0]), payload: args[1] });
+            return Promise.resolve(true);
+        }
+        this.called.push({ method, args });
+        const answer = this.answers.get(method);
+        if (answer === undefined) throw new Error(`the bridge called ${method}`);
+        return answer(...args);
     }
 
     of(kind: string): readonly unknown[] {
         return this.heard.filter(event => event.kind === kind).map(event => event.payload);
+    }
+}
+
+/** An answer of .NET's that comes when the test says. */
+class Deferred {
+    resolve: (value: unknown) => void = Deferred.#unset;
+    readonly promise = new Promise<unknown>(settle => { this.resolve = settle; });
+
+    static #unset(this: void): void {
+        throw new Error('Internal: the promise is not yet made.');
     }
 }
 
@@ -257,6 +276,74 @@ describe('edits, Cell Formats and Linked Tables across the bridge (ADR-0370 sect
         });
         expect(sheet.linkedTables()).toMatchObject([{ isWaiting: true }]);
         expect(sheet.pushLinkedTable('Nothing', '[]')).toMatchObject({ thrown: { kind: 'invalidOperation' } });
+    });
+});
+
+describe('files across the bridge (ADR-0330 section 10)', () => {
+    it('opens what .NET read in the opening\'s turn, and answers a read that failed as .NET will throw it', async () => {
+        const { element, sheet, dotnet } = mount({ document: workbookJson(['Sheet1', { A1: 'before' }]), documentsSent: 1 });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('before'); });
+
+        dotnet.answers.set('Read', () => Promise.resolve(JSON.stringify({ document: workbookJson(['Opened', { A1: 'after' }]) })));
+        await expect(sheet.open(7)).resolves.toEqual({ done: true });
+        expect(dotnet.called).toEqual([{ method: 'Read', args: [7] }]);
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('after'); });
+        expect(WorkbookDocument.fromJson(must((dotnet.of('workbookChanged').at(-1) as Raised).workbook)).sheets.map(s => s.name)).toEqual(['Opened']);
+
+        dotnet.answers.set('Read', () => Promise.resolve(JSON.stringify({ failed: 'The file is not an .xlsx workbook.' })));
+        await expect(sheet.open(8)).resolves.toEqual({ thrown: { kind: 'invalidOperation', message: 'The file is not an .xlsx workbook.' } });
+        expect(cellText(element, 0, 0)).toBe('after');
+    });
+
+    it('tells .NET to cancel a read an Escape cancelled, and answers that nothing opened', async () => {
+        const { element, sheet, dotnet } = mount({ document: workbookJson(['Sheet1', { A1: 'kept' }]), documentsSent: 1 });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('kept'); });
+        press(element, 0, 0);
+
+        // .NET's read takes until its token is cancelled.
+        const read = new Deferred();
+        dotnet.answers.set('Read', () => read.promise);
+        dotnet.answers.set('CancelRead', () => {
+            read.resolve(JSON.stringify({ cancelled: true }));
+            return Promise.resolve(null);
+        });
+        const opening = sheet.open(3);
+        await vi.waitFor(() => { expect(dotnet.called.map(call => call.method)).toEqual(['Read']); });
+        key('Escape');
+
+        await expect(opening).resolves.toEqual({ done: false });
+        expect(dotnet.called).toEqual([{ method: 'Read', args: [3] }, { method: 'CancelRead', args: [3] }]);
+        expect(cellText(element, 0, 0)).toBe('kept');
+    });
+
+    it('hands .NET the Workbook a save sees, with what .NET needs to compute the same Values, and answers a failed write', async () => {
+        const { element, sheet, dotnet } = mount({
+            document: workbookJson(['Sheet1', { A1: '=RAND()' }]), documentsSent: 1,
+            options: options({ seed: '42', today: { year: 2026, month: 10, day: 28 } }),
+        });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBe(''); });
+        expect(sheet.declareLinkedTable('Rates', ['Code', 'Rate'], ['Code'])).toEqual({ done: null });
+        expect(sheet.pushLinkedTable('Rates', '[["USD",1.5],["EUR",{"error":"#VALUE!","refused":true}]]')).toEqual({ done: null });
+        expect(sheet.declareLinkedTable('Later', ['Id'], [])).toEqual({ done: null });
+
+        dotnet.answers.set('Write', () => Promise.resolve(JSON.stringify({ done: true })));
+        await expect(sheet.save(5)).resolves.toEqual({ done: null });
+        const [write] = dotnet.called;
+        expect(write?.args[0]).toBe(5);
+        const saved = JSON.parse(String(write?.args[1])) as WireSaved;
+        expect(WorkbookDocument.fromJson(saved.document).linkedTables.map(table => table.name)).toEqual(['Rates', 'Later']);
+        expect(saved.tables).toEqual([
+            { name: 'Rates', rows: '[["USD",1.5],["EUR",{"error":"#VALUE!","refused":true}]]' },
+            { name: 'Later', rows: null },
+        ]);
+        expect(saved).toMatchObject({ seed: '42', changes: expect.any(Number) as number, today: { year: 2026, month: 10, day: 28 } });
+
+        // NOW is the moment the last recalculation read, which .NET answers too, never the clock as the save is made.
+        expect(saved.now).toMatchObject({ year: expect.any(Number) as number, millisecond: expect.any(Number) as number });
+        await new Promise(resolve => { setTimeout(resolve, 20); });
+        dotnet.answers.set('Write', () => Promise.resolve(JSON.stringify({ failed: 'The disk is full.' })));
+        await expect(sheet.save(6)).resolves.toEqual({ thrown: { kind: 'invalidOperation', message: 'The disk is full.' } });
+        expect((JSON.parse(String(dotnet.called[1]?.args[1])) as WireSaved).now).toEqual(saved.now);
     });
 });
 

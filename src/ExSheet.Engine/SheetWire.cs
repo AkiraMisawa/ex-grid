@@ -58,6 +58,19 @@ public static class SheetWire
     }
 
     /// <summary>
+    /// A Linked Table's snapshot read from the JSON <see cref="WriteRows"/> writes and the Script Core's
+    /// <c>writeLinkedRows</c> writes: rows of Values, a blank as <c>null</c>, and a refusal a Consumer read from a
+    /// refused cell as one, so that pushed again it is refused where it was.
+    /// </summary>
+    /// <exception cref="FormatException">The JSON is not rows of Values so written.</exception>
+    public static IReadOnlyList<IReadOnlyList<Value?>> ReadRows(string json)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+        using var document = Parse(json);
+        return [.. Array(document.RootElement).Select(row => (IReadOnlyList<Value?>)[.. Array(row).Select(ValueOf)])];
+    }
+
+    /// <summary>
     /// A Cell Format read from the JSON the Script Core writes for one: its <c>numberFormat</c> code, its
     /// <c>alignment</c>, its whole <c>font</c>, its <c>fill</c> and its four <c>borders</c>, each written.
     /// </summary>
@@ -344,6 +357,32 @@ public static class SheetWire
             : CellColour.FromHex(text) ?? throw new FormatException($"'{text}' is no colour: Automatic, or #RRGGBB.");
     }
 
+    // A Value as WriteValue writes one: a blank as null, and a refusal as one.
+    private static Value? ValueOf(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Null)
+            return null;
+        if (element.ValueKind == JsonValueKind.Object && element.EnumerateObject().Count() == 2
+            && element.TryGetProperty("refused", out var refused) && refused.ValueKind == JsonValueKind.True
+            && element.TryGetProperty("error", out var error))
+        {
+            return String(error) switch
+            {
+                "#VALUE!" => Value.Refusal,
+                "#NAME?" => Value.RefusedName,
+                _ => throw new FormatException($"{element.GetRawText()} is no refusal: #VALUE! or #NAME?."),
+            };
+        }
+        // The states of a computation, which a snapshot never holds as data: read, so that the engine refuses them.
+        if (element.ValueKind == JsonValueKind.Object && element.EnumerateObject().Count() == 1
+            && element.TryGetProperty("error", out var state) && state.ValueKind == JsonValueKind.String
+            && state.GetString() is "#GETTING_DATA" or "#CIRC!")
+        {
+            return Value.FromError(String(state) == "#CIRC!" ? ErrorValue.Circ : ErrorValue.GettingData);
+        }
+        return DataOf(element);
+    }
+
     // A Value of a key, which is data: a refusal is never one.
     private static Value DataOf(JsonElement element) => element.ValueKind switch
     {
@@ -352,8 +391,8 @@ public static class SheetWire
         JsonValueKind.True => Value.FromBoolean(true),
         JsonValueKind.False => Value.FromBoolean(false),
         JsonValueKind.Object when element.EnumerateObject().Count() == 1 && element.TryGetProperty("error", out var error)
-            && ErrorValues.TryParseWritten(error.GetString(), out var code) => Value.FromError(code),
-        _ => throw new FormatException($"{element.GetRawText()} is no Value a key holds."),
+            && error.ValueKind == JsonValueKind.String && ErrorValues.TryParseWritten(error.GetString(), out var code) => Value.FromError(code),
+        _ => throw new FormatException($"{element.GetRawText()} is no Value of data."),
     };
 
     private static T EnumOf<T>(JsonElement element) where T : struct, Enum

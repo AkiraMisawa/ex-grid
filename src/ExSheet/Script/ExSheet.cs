@@ -27,11 +27,10 @@ namespace ExSheet.Script;
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
 /// <para>Not carried yet, and so not offered: a <c>Chrome</c>, <c>ToolbarContent</c>, a <c>PointingScope</c>,
-/// <c>OnLinkedColumnColoursChanged</c>, <c>OnSelectionSummaryChanged</c>, <c>SetCellFormatFromFocusAsync</c>,
-/// <c>OpenAsync</c> and <c>SaveAsync</c>. What the Razor component answers at once is asked of the browser here, so
+/// <c>OnLinkedColumnColoursChanged</c>, <c>OnSelectionSummaryChanged</c> and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
 /// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>
 /// </remarks>
-public sealed class ExSheet : ComponentBase, IAsyncDisposable
+public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
 {
     /// <summary>The script's address under the application's base: the package's minified Script Core and bridge.</summary>
     private const string ScriptPath = "_content/ExSheet/ex-sheet.min.js";
@@ -846,7 +845,11 @@ public sealed class ExSheet : ComponentBase, IAsyncDisposable
     private async Task<JsonElement> AnswerAsync(string command, params object?[] args)
     {
         var sheet = await ReadyAsync();
-        var answer = await sheet.InvokeAsync<JsonElement>(command, args);
+        return Answered(await sheet.InvokeAsync<JsonElement>(command, args));
+    }
+
+    private static JsonElement Answered(JsonElement answer)
+    {
         if (answer.TryGetProperty("refused", out var refused))
             throw new SheetRefusedException(Refusal(refused));
         if (answer.TryGetProperty("thrown", out var thrown))
@@ -865,6 +868,10 @@ public sealed class ExSheet : ComponentBase, IAsyncDisposable
             "invalidOperation" => new InvalidOperationException(message),
             "formulaSyntax" => new FormulaSyntaxException(Text(json.GetProperty("formula")), json.GetProperty("position").GetInt32(), Text(json.GetProperty("reason"))),
             "repeatedKey" => SheetWire.ReadRepeatedKey(Text(json.GetProperty("repeatedKey"))),
+            "sheetDocument" => new SheetDocumentException(message)
+            {
+                DocumentVersion = json.GetProperty("documentVersion") is { ValueKind: JsonValueKind.Number } version ? version.GetInt32() : null,
+            },
             var kind => new InvalidOperationException($"Internal: the Script Core threw an error of the kind '{kind}': {message}"),
         };
     }
@@ -946,6 +953,9 @@ public sealed class ExSheet : ComponentBase, IAsyncDisposable
             return;
         _disposed = true;
         _ready.TrySetResult(null);
+        // An opening under way reads no further, and lands nowhere.
+        foreach (var opening in _openings.Values)
+            opening.Cancel.Cancel();
         // While it attaches, the Sheet it makes is stopped once it is made, and the bridge let go after it.
         if (_attaching)
             return;

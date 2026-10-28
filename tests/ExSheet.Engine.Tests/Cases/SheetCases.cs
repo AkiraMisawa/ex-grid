@@ -742,7 +742,12 @@ internal sealed class Run(CultureInfo culture)
             {
                 var table = argument.AsObject();
                 var rows = table["rows"]!.AsArray().Select(r => (IReadOnlyList<Value?>)[.. r!.AsArray().Select(SheetCases.Decode)]).ToList();
-                outcome.WorkbookChange = Workbook.PushLinkedTable((string)table["name"]!, rows);
+                // The rows as an adapter's wire carries them (ADR-0370 section 1): the case's own text read by
+                // SheetWire, which must read what the case means and write what it reads.
+                var wired = SheetWire.ReadRows(table["rows"]!.ToJsonString());
+                if (SheetWire.WriteRows(wired) != SheetWire.WriteRows(rows))
+                    throw new InvalidDataException($"SheetWire reads the rows {table["rows"]!.ToJsonString()} as {SheetWire.WriteRows(wired)}.");
+                outcome.WorkbookChange = Workbook.PushLinkedTable((string)table["name"]!, wired);
                 outcome.Change = outcome.WorkbookChange.For(sheet);
                 break;
             }

@@ -158,10 +158,14 @@
             <code>SheetWire</code> writes it, the text the TypeScript engine reads. What the Sheet above answers at
             once is asked here, so it is awaited: <code>CellFormatAtAsync</code> and <code>LinkedTablesAsync</code>
             read the Sheet in the browser, and its documents are read with <code>ToDocumentAsync</code> and
-            <code>ToWorkbookDocumentAsync</code>. Not carried yet: a <code>Chrome</code>,
+            <code>ToWorkbookDocumentAsync</code>. <code>OpenAsync</code> and <code>SaveAsync</code> take their place
+            among the Sheet's inputs in the browser, as the Sheet above's do, and call back into .NET in their turn:
+            your read runs in .NET, and an Escape that cancels the opening cancels its token; your write is handed
+            .NET's own copy of the browser's Workbook, made from its document, its Linked Tables' rows, its seed and
+            its day, so that it computes the Values the browser shows. Not carried yet: a <code>Chrome</code>,
             <code>ToolbarContent</code>, a <code>PointingScope</code>, <code>OnLinkedColumnColoursChanged</code>,
-            <code>OnSelectionSummaryChanged</code>, <code>SetCellFormatFromFocusAsync</code>, <code>OpenAsync</code>
-            and <code>SaveAsync</code>; use the Sheet above for those until they arrive. Its engine holds the data of
+            <code>OnSelectionSummaryChanged</code> and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
+            for those until they arrive. Its engine holds the data of
             five cultures, en-US, en-GB, de-DE, ja-JP and fr-FR, and the invariant culture: a Sheet under another is
             refused by name when it opens, where the Sheet above takes any. The script it runs is bundled
             into the package, at an address that changes with its content.

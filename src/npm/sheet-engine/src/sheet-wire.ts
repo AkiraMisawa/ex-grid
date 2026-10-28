@@ -42,6 +42,14 @@ export function readLinkedRows(json: string): (Value | undefined)[][] {
     return items(parse(json), 'the rows').map(row => items(row, 'a row').map(valueOf));
 }
 
+/**
+ * A Linked Table's snapshot as JSON, rows of Values, a blank as `null` and a refusal as one, as `readLinkedRows` and
+ * .NET's `SheetWire.ReadRows` read it.
+ */
+export function writeLinkedRows(rows: Iterable<readonly (Value | undefined)[]>): string {
+    return JSON.stringify([...rows].map(row => row.map(value => value === undefined ? null : rowValueJson(value))));
+}
+
 /** A Cell Format as JSON: its Number Format's code, its alignment, its whole Font, its Fill and its four Borders. */
 export function writeCellFormat(format: CellFormat): string {
     return JSON.stringify({
@@ -355,6 +363,11 @@ function valueOf(element: JsonElement): Value | undefined {
         default:
             throw new FormatError('Internal: no kind of JSON.');
     }
+}
+
+// A Value of a snapshot: a refusal a Consumer read from a refused cell crosses as one.
+function rowValueJson(value: Value): unknown {
+    return value.isRefused ? { error: value.error, refused: true } : valueJson(value);
 }
 
 function valueJson(value: Value): unknown {

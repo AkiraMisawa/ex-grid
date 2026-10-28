@@ -6,8 +6,9 @@
 import { builtInLabelIds, type GridSelection, type SummaryFigure, type ViewportSize } from '@ex-grid/core';
 import { createSheet, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId } from '@ex-grid/sheet';
 import {
-    CellAddress, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetRefusedError, WorkbookDocument,
-    writeCellFormat, writeRepeatedKey, type SheetDay, type SheetRefusal,
+    CellAddress, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
+    WorkbookDocument, writeCellFormat, writeLinkedRows, writeRepeatedKey, type SheetDay, type SheetMoment, type SheetRefusal, type Value,
+    type Workbook,
 } from '@ex-grid/sheet-engine';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. Whether an edit is open is
@@ -107,7 +108,30 @@ export type WireAnswer<T = boolean> = { readonly done: T } | { readonly refused:
 export type WireThrown =
     | { readonly kind: 'argument' | 'outOfRange' | 'invalidOperation'; readonly message: string }
     | { readonly kind: 'formulaSyntax'; readonly message: string; readonly formula: string; readonly position: number; readonly reason: string }
-    | { readonly kind: 'repeatedKey'; readonly message: string; readonly repeatedKey: string };
+    | { readonly kind: 'repeatedKey'; readonly message: string; readonly repeatedKey: string }
+    | { readonly kind: 'sheetDocument'; readonly message: string; readonly documentVersion: number | null };
+
+/** What .NET's read of a file answered in the opening's turn: the document, its failure's message, which .NET throws
+ * itself as it was, or that it saw its token cancelled. */
+export type WireRead = { readonly document: string } | { readonly failed: string } | { readonly cancelled: true };
+
+/** What .NET's write of a file answered: done, or its failure's message, which .NET throws itself as it was. */
+export type WireWritten = { readonly done: true } | { readonly failed: string };
+
+/**
+ * The Workbook as a save hands it to .NET, for .NET to make the same Workbook and compute the same Values: its
+ * document; each Linked Table's rows, as `writeLinkedRows` writes them, or `null` while it waits; the seed, an unsigned
+ * 64-bit integer written in decimal, with the count of changes its draws are made from (ADR-0180); the Sheet Day; and
+ * the moment `NOW` answers, the one the last recalculation read (ADR-0124).
+ */
+export interface WireSaved {
+    readonly document: string;
+    readonly tables: readonly { readonly name: string; readonly rows: string | null }[];
+    readonly seed: string | null;
+    readonly changes: number;
+    readonly today: SheetDay | null;
+    readonly now: SheetMoment | null;
+}
 
 /** A Linked Table as the Sheet declares it, for .NET's `LinkedTable`. */
 export interface WireLinkedTable {
@@ -148,6 +172,14 @@ export interface BlazorSheet {
     declareLinkedTable(name: string, columns: readonly string[], key: readonly string[]): WireAnswer<null>;
     /** Pushes a snapshot .NET's `SheetWire` wrote. */
     pushLinkedTable(name: string, rows: string): WireAnswer<null>;
+    /**
+     * Opens a file at this call's place in the Input Order (ADR-0330 §10): in its turn the Sheet asks .NET to read the
+     * opening numbered `id`, and an Escape that cancels it tells .NET so.
+     */
+    open(id: number): Promise<WireAnswer>;
+    /** Saves at this call's place in the Input Order (ADR-0330 §10): in its turn the Sheet hands .NET the Workbook as a
+     * {@link WireSaved}, for the write of the save numbered `id`. */
+    save(id: number): Promise<WireAnswer<null>>;
     /** The Workbook as it stands, as documents. */
     documents(): WireDocuments;
     /** Stops the Sheet and empties its element. */
@@ -221,6 +253,11 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): B
             made.pushLinkedTable(name, readLinkedRows(rows));
             return null;
         }),
+        open: (id: number) => answeredLater(() => made.open(signal => readInDotNet(dotnet, id, signal, () => stopped))),
+        save: (id: number) => answeredLater(async () => {
+            await made.save(workbook => writeInDotNet(dotnet, id, workbook));
+            return null;
+        }),
         documents: () => ({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
         dispose: () => {
             stopped = true;
@@ -247,6 +284,69 @@ function answered<T>(command: () => T): WireAnswer<T> {
     }
 }
 
+async function answeredLater<T>(command: () => Promise<T>): Promise<WireAnswer<T>> {
+    try {
+        return { done: await command() };
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- what the command threw is its answer, which .NET throws again as its own; anything else is rethrown
+        const thrown = wireThrown(error);
+        if (thrown === undefined) throw error;
+        return thrown;
+    }
+}
+
+// The read of an opening, in its turn: .NET reads the file, and an Escape that aborts the signal cancels .NET's token.
+async function readInDotNet(dotnet: DotNetHandle, id: number, signal: AbortSignal, stopped: () => boolean): Promise<WorkbookDocument> {
+    const cancel = (): void => {
+        if (!stopped()) void dotnet.invokeMethodAsync('CancelRead', id);
+    };
+    signal.addEventListener('abort', cancel, { once: true });
+    try {
+        const read = parsed<WireRead>(textOf(await dotnet.invokeMethodAsync('Read', id)));
+        if ('document' in read) return WorkbookDocument.fromJson(read.document);
+        if ('failed' in read) throw new Error(read.failed);
+        // .NET saw its token cancelled: by the Escape, or by the component going away, which stops the Sheet too.
+        signal.throwIfAborted();
+        throw new Error('The read was cancelled in .NET.');
+    } finally {
+        signal.removeEventListener('abort', cancel);
+    }
+}
+
+// The write of a save, in its turn: the Workbook read whole before anything is awaited, as it is lent for the call
+// only, and handed to .NET, which makes its own of it.
+function writeInDotNet(dotnet: DotNetHandle, id: number, workbook: Workbook): Promise<void> {
+    const saved = JSON.stringify(savedOf(workbook));
+    return dotnet.invokeMethodAsync('Write', id, saved).then(answer => {
+        const written = parsed<WireWritten>(textOf(answer));
+        if ('failed' in written) throw new Error(written.failed);
+    });
+}
+
+function savedOf(workbook: Workbook): WireSaved {
+    const { seed, today, moment } = workbook;
+    return {
+        document: workbook.toDocument().toJson(),
+        tables: workbook.linkedTables.map(table => {
+            const columns = workbook.linkedTableColumns(table.name);
+            return { name: table.name, rows: columns === undefined ? null : writeLinkedRows(rowsOf(columns, table.rowCount)) };
+        }),
+        seed: seed === undefined ? null : seed.toString(),
+        changes: workbook.changes,
+        today: today === undefined ? null : { year: today.year, month: today.month, day: today.day },
+        now: moment === undefined ? null : moment,
+    };
+}
+
+// A snapshot's columns as its rows.
+function rowsOf(columns: readonly (readonly (Value | undefined)[])[], count: number): (Value | undefined)[][] {
+    return Array.from({ length: count }, (_, row) => columns.map(column => column[row]));
+}
+
+function textOf(answer: unknown): string {
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered the bridge something other than JSON text.');
+    return answer;
+}
+
 // What the Sheet and its engine throw at a caller, as data .NET throws again as the Razor component's engine throws
 // it: the kinds of `tests/cases/README.md`, refused alike by both engines. Anything else is a defect, and stays one.
 function wireThrown(error: unknown): { readonly refused: WireRefusal } | { readonly thrown: WireThrown } | undefined {
@@ -254,6 +354,9 @@ function wireThrown(error: unknown): { readonly refused: WireRefusal } | { reado
     if (error instanceof RepeatedKeyError) return { thrown: { kind: 'repeatedKey', message: error.message, repeatedKey: writeRepeatedKey(error) } };
     if (error instanceof FormulaSyntaxError) {
         return { thrown: { kind: 'formulaSyntax', message: error.message, formula: error.formula, position: error.position, reason: error.reason } };
+    }
+    if (error instanceof SheetDocumentError) {
+        return { thrown: { kind: 'sheetDocument', message: error.message, documentVersion: error.documentVersion === undefined ? null : error.documentVersion } };
     }
     if (error instanceof RangeError) return { thrown: { kind: 'outOfRange', message: error.message } };
     if (error instanceof TypeError) return { thrown: { kind: 'argument', message: error.message } };

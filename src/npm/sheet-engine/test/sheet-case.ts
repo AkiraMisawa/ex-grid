@@ -19,7 +19,7 @@ import { RepeatedKeyError, SheetRefusedError, type SheetChange, type SheetRefusa
 import { SheetDocumentError, type SheetDocumentAxisFormat } from '../src/sheet-document-parts';
 import { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
-import { readSheetEdit, writeCellFormat, writeRepeatedKey } from '../src/sheet-wire';
+import { readLinkedRows, readSheetEdit, writeCellFormat, writeLinkedRows, writeRepeatedKey } from '../src/sheet-wire';
 import { parseWrittenError, Value } from '../src/value';
 import { Workbook, type WorkbookChange, type WorkbookStep } from '../src/workbook';
 import { WorkbookDocument } from '../src/workbook-document';
@@ -629,7 +629,13 @@ export class Run {
             case 'pushTable': {
                 const table = object(argument, 'pushTable');
                 const rows = list(table['rows'], 'rows').map(r => list(r, 'a row').map(decode));
-                outcome.workbookChange = this.workbook.pushLinkedTable(text(table['name'], 'name'), rows);
+                // The rows as an adapter's wire carries them (ADR-0370 section 1): the case's own text read by
+                // readLinkedRows, which must read what the case means and write what it reads.
+                const wired = readLinkedRows(JSON.stringify(table['rows']));
+                if (writeLinkedRows(wired) !== writeLinkedRows(rows)) {
+                    throw new CaseError(`readLinkedRows reads the rows ${JSON.stringify(table['rows'])} as ${writeLinkedRows(wired)}.`);
+                }
+                outcome.workbookChange = this.workbook.pushLinkedTable(text(table['name'], 'name'), wired);
                 outcome.change = outcome.workbookChange.for(sheet);
                 break;
             }
