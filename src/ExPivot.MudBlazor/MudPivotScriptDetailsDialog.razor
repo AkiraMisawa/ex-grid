@@ -1,0 +1,27 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* What Show Details' dialog draws inside the pivot's frame when the Script Core draws the pivot (ADR-0410), laid out
+   as MudPivotDetailsDialog: the cell's title, the records in an anchor drawn empty, where the pivot places them, and
+   Close as a text MudButton, marked for the adapter's script, which closes in the browser. The frame, its backdrop,
+   Escape and the keyboard Close takes as the dialog opens are the pivot's. *@
+<div class="mud-ex-pivot-dialog-content">
+    <MudText Typo="Typo.h6" Class="mud-ex-pivot-dialog-title">@View.Title</MudText>
+    <div class="mud-ex-pivot-dialog-records" @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Anchor, "records")"></div>
+    <div class="mud-ex-pivot-dialog-actions">
+        <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mud-ex-pivot-dialog-close"
+                   UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Press, "close", PivotScriptSlotAttributes.Control, "close")">@View.CloseLabel</MudButton>
+    </div>
+</div>
+
+@code {
+    /// <summary>Show Details' dialog's view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotDetailsDialogView View { get; set; } = default!;
+}

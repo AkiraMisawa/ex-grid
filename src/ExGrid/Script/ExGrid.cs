@@ -242,6 +242,20 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// taken in.</summary>
     public IGridSource<TRow>? RowSource => _source;
 
+    /// <summary>
+    /// The declaration a Pointing Scope made for this grid as it registered it (ADR-0058, ADR-0430), or null — the
+    /// default — for a grid in no Scope. The grid joins the Scope in the page, where the Scope's Sheets drawn by the
+    /// Script Core point at it: while one points, a press on its rows or its column headers is written into that
+    /// Sheet's Formula, and the grid draws the Scope's dashes and column outlines. Each row is sent with what the
+    /// Scope's function reads of it as the table's row.
+    ///
+    /// <para>Set as the grid is made, as a Scope's grids are registered once, as the page is made: another declaration
+    /// later is refused. A declaration a Consumer made itself, whose <see cref="GridPointedAt{TRow}.OnPress"/> is a
+    /// .NET function, is not carried, and is refused by name; so is a Scope's declaration whose Scope already holds the
+    /// Razor components.</para>
+    /// </summary>
+    [Parameter] public GridPointedAt<TRow>? PointedAt { get; set; }
+
     private ElementReference _root;
     // The commands the last Context Menu was answered with, by the number the browser asked it under (ADR-0421).
     private (long Number, IReadOnlyList<GridCommand> Commands)? _menu;
@@ -297,6 +311,9 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private bool _stateScheduled;
     private bool _hearing;
     private bool _renderOwed = true;
+    // The declaration of a Pointing Scope this grid took as it was made, which it keeps (ADR-0430).
+    private GridPointedInBrowser<TRow>? _pointedAt;
+    private bool _parametersSet;
 
     /// <inheritdoc />
     protected override void OnParametersSet()
@@ -309,6 +326,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 + "the grid orders Rows out of its sight: give the grid a Source, GridSource.From(rows) for rows held in memory (ADR-0381).");
         }
         ScriptColumns.Check(Columns);
+        TakePointedAt();
         if (!ReferenceEquals(Chrome, _renderedChrome))
         {
             // Another Chrome draws the slots standing, and the script wires what it drew.
@@ -381,6 +399,30 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 _toldColumns = Columns;
             }
         }
+    }
+
+    // A Scope's declaration, taken once, as the grid is made: the browser registers it in its Scope then, and every row
+    // it is sent carries what the Scope reads of it (ADR-0430).
+    private void TakePointedAt()
+    {
+        var given = PointedAt?.InBrowser;
+        if (PointedAt is not null && given is null)
+        {
+            throw new NotSupportedException("PointedAt is carried by Blazor's ExGrid over the Script Core only as a Pointing Scope's RegisterGrid made it; "
+                + "a GridPointedAt whose OnPress is a .NET function of the Consumer's own is not (ADR-0430).");
+        }
+        if (_parametersSet)
+        {
+            if (!ReferenceEquals(given, _pointedAt))
+            {
+                throw new NotSupportedException("PointedAt is set as the grid is made, as a Pointing Scope registers its grids once, as the page is made; "
+                    + "another declaration later is not taken (ADR-0430).");
+            }
+            return;
+        }
+        _parametersSet = true;
+        given?.Take(inBrowser: true);
+        _pointedAt = given;
     }
 
     /// <inheritdoc />
@@ -750,7 +792,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cv", _columnsVersion);
             json.WriteStartArray("window");
             for (var at = from; at < to; at++)
-                _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, CellState);
+                _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, CellState, _pointedAt?.TableRow);
             json.WriteEndArray();
             json.WriteNumber("windowStart", to > from ? from : source.WindowStart);
             if (source.TotalCount is { } total)
@@ -837,6 +879,18 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteBoolean("findsErrors", true);
         if (ContextCommands is not null)
             json.WriteBoolean("contextCommands", true);
+        if (_pointedAt is { } pointedAt)
+        {
+            json.WriteStartObject("pointedAt");
+            json.WriteString("scope", pointedAt.Scope);
+            json.WriteString("declaration", pointedAt.Declaration);
+            json.WriteString("table", pointedAt.Table);
+            json.WriteStartObject("tableColumns");
+            foreach (var (gridColumn, tableColumn) in pointedAt.TableColumns)
+                json.WriteString(gridColumn, tableColumn);
+            json.WriteEndObject();
+            json.WriteEndObject();
+        }
         if (Chrome?.ScriptSlots is { } slots and not ScriptSlots.None)
         {
             json.WriteStartArray("razorSlots");
@@ -969,7 +1023,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 json.WriteStartArray("rows");
                 foreach (var row in rows)
                     // Read for a copy or a find, never painted: their states are not asked.
-                    _rows.Write(json, row, Columns, source.RowKey, cellState: null);
+                    _rows.Write(json, row, Columns, source.RowKey, cellState: null, _pointedAt?.TableRow);
                 json.WriteEndArray();
                 json.WriteEndObject();
             }));

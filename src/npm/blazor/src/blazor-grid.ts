@@ -6,9 +6,9 @@
 
 import {
     createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridCommand, type GridContextMenuContext, type GridErrorStepRequest,
-    type GridFindResult, type GridHandle, type GridOptions, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
+    type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
-import { crossingCalls, HeldMessages, isGridRazorSlotName, type GridRazorSlotName } from '@ex-grid/blazor-shared';
+import { awaitPointingScope, crossingCalls, HeldMessages, isGridRazorSlotName, type GridRazorSlotName } from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
 import { RazorSlots } from './razor-slots';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
@@ -40,6 +40,16 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly contextCommands?: true;
     /** The Chrome slots the Consumer's Chrome fills with Razor, which .NET renders as each is mounted (ADR-0410). */
     readonly razorSlots?: readonly GridRazorSlotName[];
+    /** The Pointing Scope's declaration the grid took as it was made, which it joins in the page (ADR-0430). */
+    readonly pointedAt?: WirePointedAt;
+}
+
+/** A Pointing Scope's declaration for this grid, as .NET's `GridPointedInBrowser` names it (ADR-0430). */
+export interface WirePointedAt {
+    readonly scope: string;
+    readonly declaration: string;
+    readonly table: string;
+    readonly tableColumns: Readonly<Record<string, string>>;
 }
 
 /** The options .NET sets as they are, with no function or object of the browser's in them. */
@@ -148,6 +158,13 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
         return made;
     };
     let source = sourceOf(init.source, init.state);
+    // The parameters as .NET last sent them, and the Scope's declaration once the page's Scope stands (ADR-0430).
+    let wired = init.options;
+    let pointedAt: GridPointedAt<BlazorRow> | undefined;
+    const optionsNow = (): GridOptions<BlazorRow> => {
+        const options = gridOptions(wired, columns, source, heard, paint, findError, slots, menus);
+        return pointedAt === undefined ? options : { ...options, pointedAt };
+    };
 
     const update = (next: WireUpdate): void => {
         // The columns first, so the rows that come with them are read by them.
@@ -158,7 +175,8 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
         } else if (next.state !== undefined) {
             source.take(next.state);
         }
-        grid.update(gridOptions(next.options, columns, source, heard, paint, findError, slots, menus));
+        wired = next.options;
+        grid.update(optionsNow());
     };
 
     const gate = new WriteGate<WireUpdate, WireState>(message => {
@@ -204,8 +222,14 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
         if (made.grid === undefined) throw new Error('Internal: a Razor slot held the keyboard while the grid was being made.');
         made.grid.focus();
     });
-    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint, findError, slots, menus));
+    const grid: GridHandle<BlazorRow> = createGrid(root, optionsNow());
     made.grid = grid;
+    // The grid joins its Scope once a Sheet of it brings it to the page, and is pointed at from then on (ADR-0430).
+    const declared = init.options.pointedAt;
+    const leaveScope = declared === undefined ? undefined : awaitPointingScope(declared.scope, scope => {
+        pointedAt = scope.registerGrid(declared.declaration, declared.table, declared.tableColumns, tableRowOf);
+        grid.update(optionsNow());
+    });
     return Object.freeze({
         update: (text: string) => { gate.receive({ update: parsed<WireUpdate>(text) }); },
         state: (text: string) => { gate.receive({ state: parsed<WireState>(text) }); },
@@ -227,9 +251,16 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
             rows.stop();
             slots.dispose();
             holding.clear();
+            leaveScope?.();
             grid.destroy();
         },
     });
+}
+
+// A row of a grid of a Pointing Scope as the table's row: .NET sends every row of such a grid with it (ADR-0430).
+function tableRowOf(row: BlazorRow): readonly unknown[] {
+    if (row.table === undefined) throw new Error(`Internal: .NET sent row ${String(row.id)} of a grid in a Pointing Scope without its table's row.`);
+    return row.table;
 }
 
 /** JSON .NET wrote, in a shape the adapter's own C# writes, member for member. */

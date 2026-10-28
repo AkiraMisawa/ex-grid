@@ -52,6 +52,7 @@
                         @bind-Layout="_layout"
                         @bind-ShowFieldList="_showFieldList"
                         Label="@(_japanese ? PivotWords.Japanese : null)"
+                        DetailsView="@(DetailsQuery == "dialog" ? PivotDetailsView.Dialog : null)"
                         OnShowDetails="@(_takeDetails ? _showDetails : default)"
                         SelectionChanged="ShowSelection"
                         OnSelectionSummaryChanged="ShowSummary"
@@ -68,7 +69,7 @@
     private bool _japanese;
     private bool _takeDetails;
     // `?details=dotnet` opens the page with the records taken in .NET, so a double click is never taken against a
-    // handler on its way to the browser.
+    // handler on its way to the browser; `?details=dialog` shows them in the pivot's dialog in place of a tab.
     [SupplyParameterFromQuery(Name = "details")] public string? DetailsQuery { get; set; }
     // `?chrome=mud` dresses the pivot in MudPivotChrome; read as the pivot attaches.
     [SupplyParameterFromQuery(Name = "chrome")] public string? ChromeName { get; set; }

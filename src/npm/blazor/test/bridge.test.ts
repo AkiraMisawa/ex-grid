@@ -4,9 +4,11 @@
 // row sent again unchanged is the same row (ADR-0003), that a row the browser let go is let go in .NET only once
 // .NET has not sent it again, and that what the grid tells its source and its Consumer reaches .NET in order.
 import { afterEach, describe, expect, it } from 'vitest';
+import { GridPointedAt } from '@ex-grid/core';
 import { attach, type BlazorGrid, type WireAttach, type WireOptions } from '../src/blazor-grid';
 import { DotNetSource, type DotNetHandle, type WireState } from '../src/dotnet-source';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type WireColumn, type WireRow } from '../src/wire-rows';
+import { awaitPointingScope, holdPointingScope, type PagePointingScope } from '../src/pointing-scopes';
 import { operandOf } from '../src/wire-query';
 import { valueKey, valueOf } from '../src/wire-values';
 import { WriteGate, type Sent } from '../src/write-gate';
@@ -404,6 +406,66 @@ describe('the grid', () => {
         const cancel = dotnet.calls.find(call => call.method === 'Cancel');
         const ask = dotnet.calls.find(call => call.method === 'Rows');
         expect(cancel?.args[0]).toBe(ask?.args[1]);
+    });
+});
+
+describe('a Pointing Scope held in the page (ADR-0430)', () => {
+    // A member a failed test leaves would stand in the page's next Scope of its name.
+    const leaving: (() => void)[] = [];
+    afterEach(() => { for (const leave of leaving.splice(0)) leave(); });
+
+    it('a grid joins the Scope once a Sheet of it brings it, registers its declaration, and reads each row as the table\'s row .NET sent', async () => {
+        const pointedAt = new GridPointedAt<BlazorRow>(() => Promise.resolve());
+        const registered: { readonly declaration: string; readonly table: string; readonly tableColumns: Readonly<Record<string, string>>; readonly tableRow: (row: BlazorRow) => readonly unknown[] }[] = [];
+        const scope: PagePointingScope = {
+            registerGrid: <TRow>(declaration: string, table: string, tableColumns: Readonly<Record<string, string>>, tableRow: (row: TRow) => readonly unknown[]) => {
+                // The one grid of this test registers rows of its own type.
+                registered.push({ declaration, table, tableColumns, tableRow: tableRow as (row: BlazorRow) => readonly unknown[] });
+                return pointedAt as unknown as GridPointedAt<TRow>;
+            },
+        };
+        const collector = new FakeCollector();
+        const { root } = mount({
+            options: options({ pointedAt: { scope: 'page-scope', declaration: 'page-scope-1', table: 'Books', tableColumns: { Book: 'Name' } } }),
+            state: state(1, [{ ...rates, p: ['Rates', 1500] }, { ...credit, p: ['Credit', 2500] }]),
+        }, new FakeDotNet(), collector);
+        expect(registered).toEqual([]);
+
+        leaving.push(holdPointingScope('page-scope', () => scope).release);
+        expect(registered.map(({ declaration, table, tableColumns }) => ({ declaration, table, tableColumns })))
+            .toEqual([{ declaration: 'page-scope-1', table: 'Books', tableColumns: { Book: 'Name' } }]);
+        const [{ tableRow } = { tableRow: undefined }] = registered;
+        const tables: (readonly unknown[] | undefined)[] = [];
+        collector.each(row => { tables.push(tableRow?.(row)); });
+        expect(tables).toEqual([['Rates', 1500], ['Credit', 2500]]);
+
+        // The declaration is the grid's: the Scope points at it, and the grid shows it.
+        pointedAt.isPointedAt = true;
+        await Promise.resolve();
+        expect(root.classList.contains('ex-pointed-at')).toBe(true);
+    });
+
+    it('a grid that fails as it joins fails the Sheet that brought the Scope, and neither holds it; the other grids join', () => {
+        const joined: string[] = [];
+        const scope: PagePointingScope = {
+            registerGrid: <TRow>(declaration: string) => {
+                if (declaration === 'failing-1') throw new TypeError('refused');
+                joined.push(declaration);
+                return new GridPointedAt<TRow>(() => Promise.resolve());
+            },
+        };
+        const failing = awaitPointingScope('failing', given => { given.registerGrid('failing-1', 'Books', {}, () => []); });
+        leaving.push(failing, awaitPointingScope('failing', given => { given.registerGrid('failing-2', 'Books', {}, () => []); }));
+
+        expect(() => holdPointingScope('failing', () => scope)).toThrow('refused');
+        expect(joined).toEqual(['failing-2']);
+
+        // The failed grid and the Sheet hold nothing: with the other grid gone, the name is a new Scope.
+        failing();
+        leaving.splice(0).forEach(leave => { leave(); });
+        let made = 0;
+        leaving.push(holdPointingScope('failing', () => { made += 1; return scope; }).release);
+        expect(made).toBe(1);
     });
 });
 

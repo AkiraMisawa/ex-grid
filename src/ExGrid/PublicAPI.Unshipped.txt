@@ -35,6 +35,16 @@ const ExGrid.Chrome.ScriptSlotAttributes.FindStep = "data-ex-find-step" -> strin
 const ExGrid.Chrome.ScriptSlotAttributes.MenuItem = "data-ex-menu-item" -> string!
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
+ExGrid.Cells.GridPointedAt<TRow>.InBrowser.get -> ExGrid.Cells.GridPointedInBrowser<TRow!>?
+ExGrid.Cells.GridPointedAt<TRow>.InBrowser.init -> void
+ExGrid.Cells.GridPointedInBrowser<TRow>
+ExGrid.Cells.GridPointedInBrowser<TRow>.Declaration.get -> string!
+ExGrid.Cells.GridPointedInBrowser<TRow>.GridPointedInBrowser(string! scope, string! declaration, string! table, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! tableColumns, System.Func<TRow!, string!>! tableRow, System.Action<bool>! taken) -> void
+ExGrid.Cells.GridPointedInBrowser<TRow>.Scope.get -> string!
+ExGrid.Cells.GridPointedInBrowser<TRow>.Table.get -> string!
+ExGrid.Cells.GridPointedInBrowser<TRow>.TableColumns.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+ExGrid.Cells.GridPointedInBrowser<TRow>.TableRow.get -> System.Func<TRow!, string!>!
+ExGrid.Cells.GridPointedInBrowser<TRow>.Take(bool inBrowser) -> void
 ExGrid.Chrome.FindContext.Deconstruct(out string! Text, out bool MatchCase, out bool WholeCell, out ExGrid.Finding.FindOutcome Outcome, out System.Action<string!>! TextChanged, out System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, out System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, out System.Func<System.Threading.Tasks.Task!>! Next, out System.Func<System.Threading.Tasks.Task!>! Previous, out System.Action! Close, out int FocusRequest, out System.Action<bool>? InnerPopupChanged, out System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus) -> void
 ExGrid.Chrome.FindContext.FindContext(string! Text, bool MatchCase, bool WholeCell, ExGrid.Finding.FindOutcome Outcome, System.Action<string!>! TextChanged, System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, System.Func<System.Threading.Tasks.Task!>! Next, System.Func<System.Threading.Tasks.Task!>! Previous, System.Action! Close, int FocusRequest = 0, System.Action<bool>? InnerPopupChanged = null, System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus = null) -> void
 ExGrid.Chrome.FindContext.MatchCaseChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
@@ -572,6 +582,8 @@ ExGrid.Script.ExGrid<TRow>.PasteMaySpill.set -> void
 ExGrid.Script.ExGrid<TRow>.PinnedColumnCount.get -> int
 ExGrid.Script.ExGrid<TRow>.PinnedColumnCount.set -> void
 ExGrid.Script.ExGrid<TRow>.PlaceSelectionAsync(ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus, int rowSequenceVersion) -> System.Threading.Tasks.Task<bool>!
+ExGrid.Script.ExGrid<TRow>.PointedAt.get -> ExGrid.Cells.GridPointedAt<TRow!>?
+ExGrid.Script.ExGrid<TRow>.PointedAt.set -> void
 ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync() -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync(Microsoft.AspNetCore.Components.ElementReference from) -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.RowHeight.get -> double?

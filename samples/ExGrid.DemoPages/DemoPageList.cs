@@ -82,6 +82,8 @@ public static class DemoPageList
             "Two ExSheets on one page: keys, completion, undo and the Formula Bar stay with the Sheet that has the keyboard, and each outlines a Linked Table's columns only in the grid its page wired to it (ADR-0018, ADR-0048, ADR-0057)."),
         new("script-sheet", "ExSheet over the Script Core", "ExSheet",
             "Blazor's ExSheet drawn by its TypeScript Script Core: the Workbook and its Formulas in the browser, the Sheet Document bound two ways in .NET, crossing as the JSON both engines read (ADR-0370 section 1)."),
+        new("script-pointing", "Pointing over the Script Core", "ExSheet",
+            "Blazor's ExSheet and ExGrid over the Script Core in one Pointing Scope: the C# Scope names the Scope the browser holds, and a press on the grid writes a lookup by the key .NET read from the row (ADR-0430)."),
         new("workbook", "Workbook", "ExSheet",
             "One ExSheet holding a Workbook of two Sheets behind Sheet Tabs: a press or Ctrl+PageUp and Ctrl+PageDown shows another Sheet, each keeping its own Selection and scroll position (ADR-0331)."),
         new("xlsx", "Open and save .xlsx", "ExSheet",
