@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 18:21:01 |
+| Generated on: | 10/28/2026 - 19:24:21 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1380 |
 | Files: | 675 |
-| **Line coverage:** | 90.5% (92618 of 102317) |
-| Covered lines: | 92618 |
-| Uncovered lines: | 9699 |
-| Coverable lines: | 102317 |
-| Total lines: | 156287 |
-| **Branch coverage:** | 85.2% (54070 of 63451) |
-| Covered branches: | 54070 |
-| Total branches: | 63451 |
+| **Line coverage:** | 90.5% (92645 of 102351) |
+| Covered lines: | 92645 |
+| Uncovered lines: | 9706 |
+| Coverable lines: | 102351 |
+| Total lines: | 156373 |
+| **Branch coverage:** | 85.2% (54075 of 63457) |
+| Covered branches: | 54075 |
+| Total branches: | 63457 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -717,7 +717,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1126,8 +1126,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1179,11 +1179,11 @@
 |ExPivot.MudBlazor.PivotSlotMarkup|0%||
 
 </details>
-<details><summary>ExSheet - 90.3%</summary>
+<details><summary>ExSheet - 90.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**90.3%**|**82%**|
+|**ExSheet**|**90.2%**|**82%**|
 |ExGrid.Script.CrossedText|92%|72.2%|
 |ExGrid.Script.HeldCalls|80.4%|75%|
 |ExGrid.Script.HeldCalls<T>|80.4%|75%|
@@ -1237,7 +1237,7 @@
 |ExSheet.PointingScope.GridMember<TRow>|100%|100%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
-|ExSheet.Script.ExSheet|85.6%|77.2%|
+|ExSheet.Script.ExSheet|85.3%|77%|
 |ExSheet.Script.ExSheet.Opening|100%||
 |ExSheet.Script.ExSheet.Press|100%||
 |ExSheet.Script.ExSheet.Saving|100%||
