@@ -11,9 +11,13 @@
         <input type="checkbox" @bind="_takeRecords" />
         Take the records of a double-clicked cell here
     </label>
+    <label>
+        <input type="checkbox" @bind="_byMarket" />
+        Order the regions by market size
+    </label>
 </p>
 
-<ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="360"
+<ExPivot.Script.ExPivot Source="@(_byMarket ? _byMarketSize : _source)" @bind-Layout="_layout" ViewportHeight="360"
                         Label="@(_japanese ? PivotWords.Japanese : null)"
                         OnShowDetails="@(_takeRecords ? _showDetails : default)"
                         SelectionChanged="ShowSelection" />
@@ -27,8 +31,20 @@
 }
 
 @code {
+    private static readonly Sale[] Records = Sales.Sample();
+
     // The same source as ExPivot.Components.ExPivot's: it answers in .NET, and the report is built in the browser.
-    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+    private readonly PivotSource _source = PivotSource.From(Records, Sales.Fields);
+
+    // The regions ordered by the size of their market, largest first, by an Order Key in C#: .NET answers each
+    // region's key with the regions, and the browser orders them by it.
+    private readonly PivotSource _byMarketSize = PivotSource.From(Records, Sales.FieldsOf(regionOrder: region => region switch
+    {
+        "North America" => 0,
+        "Europe" => 1,
+        "Asia Pacific" => 2,
+        _ => 3,
+    }));
 
     private PivotLayout _layout = new()
     {
@@ -39,6 +55,7 @@
 
     private bool _japanese;
     private bool _takeRecords;
+    private bool _byMarket;
     private string? _records;
     private string _selection = "Nothing selected";
     private EventCallback<PivotDetails> _showDetails;

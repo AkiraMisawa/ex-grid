@@ -210,6 +210,27 @@ export function fromPublicKey(key: PivotItemKey): ItemKey {
     }
 }
 
+/** The value an Item hands an Order Key and a format (ADR-0060): a text Item's text, a number's number, a date's
+ * clock ticks, a Boolean's Boolean; `undefined` for a Blank and for #NUM!, which no key orders. */
+export function itemValueOf(key: ItemKey): string | number | bigint | boolean | undefined {
+    switch (key.kind) {
+        case 'text': return key.text;
+        case 'number': return key.number;
+        case 'date': return key.ticks;
+        case 'boolean': return key.ticks === 1n;
+        case 'error':
+        case 'blank': return undefined;
+        default: return unreachable(key.kind);
+    }
+}
+
+/** The value the Item `key` names hands an Order Key (ADR-0060): a text Item's text, a number's number, a date's
+ * clock ticks, a Boolean's Boolean; `undefined` for a Blank and for #NUM!. A source that answers an Order Key's
+ * keys for the Items it names files them under this. */
+export function pivotItemValue(key: PivotItemKey): string | number | bigint | boolean | undefined {
+    return itemValueOf(fromPublicKey(key));
+}
+
 /** The public key of the engine's. */
 export function toPublicKey(key: ItemKey): PivotItemKey {
     switch (key.kind) {

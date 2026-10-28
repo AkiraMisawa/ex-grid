@@ -88,6 +88,14 @@
             away, but not by one held behind an earlier input, which is handed on as a keydown and presses no button:
             claim <code>keydown</code> too and press it at Enter's keydown, as ExPivot's own buttons do.
         </p>
+        <p>
+            Under React a part is a member of <code>chrome</code>, a function of the part's context that returns what
+            to draw (<code>toolbar</code> here), and <code>usePivotPart(context)</code> gives what it shows, drawn again
+            when that changes. A button calls the context's command (<code>toggleLayoutMenu</code>,
+            <code>toggleFieldList</code>) and is handed in by <code>ref</code> with <code>context.control(name)</code>,
+            and the box around it with <code>context.anchor(name)</code>, so the pivot opens the menu in that box and
+            gives the keyboard back to the button when it closes.
+        </p>
         <DocsExample Builtin="typeof(OwnToolbar)" Mud="typeof(OwnToolbarMud)"
                      Files="@(["Examples/Pivot/OwnToolbarView.razor", "Examples/Pivot/OwnToolbarMudView.razor", "Examples/Pivot/Sales.cs"])">
             A Pivot Toolbar of your own: open Layout ▾ and pick a form, or show the pane.
@@ -244,8 +252,16 @@
             never ordered by label instead. Changing <code>OrderKeyPolicies</code> on a report already shown asks
             for the report again, as a new layout does, so the Items follow the policy the parameter names.
         </p>
+        <p>
+            ExPivot for React builds the report in the browser from the server's Leaf Aggregates (ADR-0370), so there
+            is no policy to name: the field's Order Key is the browser's own, declared on the field the source offers,
+            and nothing about the order crosses the wire. The React Example gives the server's Region field an
+            <code>orderKey</code>. ExPivot drawn by the Script Core in Blazor builds its report the same way, and calls a
+            field's C# Order Key in .NET with each answer (<a href="expivot#a-pivot-drawn-in-the-browser">a pivot drawn in the browser</a>, ADR-0412).
+        </p>
         <DocsExample Builtin="typeof(ServerOrderKey)" Mud="typeof(ServerOrderKeyMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
-            The regions in order of their market's size, largest first, by a function the simulated server registered.
+            The regions in order of their market's size, largest first: by a function the simulated server registered,
+            and under React by the Order Key the browser gives the server's Region field.
         </DocsExample>
     </DocsSection>
 
