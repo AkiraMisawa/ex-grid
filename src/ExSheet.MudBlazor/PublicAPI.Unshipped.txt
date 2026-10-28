@@ -7,6 +7,7 @@ ExSheet.MudBlazor.MudScriptToolbarItem
 ExSheet.MudBlazor.MudScriptToolbarItem.MudScriptToolbarItem() -> void
 ExSheet.MudBlazor.MudScriptToolbarItem.View.get -> ExSheet.SheetToolbarItemView!
 ExSheet.MudBlazor.MudScriptToolbarItem.View.set -> void
+ExSheet.MudBlazor.MudSheetChrome.CellEditor(ExGrid.Chrome.GridCellEditorView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.FilterPanel(ExGrid.Chrome.GridFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?

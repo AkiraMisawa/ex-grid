@@ -111,6 +111,10 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <see cref="ScriptSlots"/> leaves the slot to it (ADR-0410 section 4's note of 2026-10-28).</summary>
     public RenderFragment? FindPanel(GridFindView view) => null;
 
+    /// <summary>No Cell Editor over the Script Core: a Sheet keeps the core's own, which colours a formula's References
+    /// (ADR-0057), and <see cref="ScriptSlots"/> leaves the slot to it (ADR-0410).</summary>
+    public RenderFragment? CellEditor(GridCellEditorView view) => null;
+
     /// <summary>The Sheet's own slots this Chrome fills over the Script Core (ADR-0410): the Toolbar Items, Format Cells,
     /// and the Sheet Tabs' faces and the + button's, drawn as they are over the C# core.</summary>
     public SheetScriptSlots SheetScriptSlots
