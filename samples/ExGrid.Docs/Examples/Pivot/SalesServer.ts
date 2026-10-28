@@ -12,11 +12,15 @@ const latencyMs = 500;
 function delay(signal: AbortSignal | undefined): Promise<void> {
     return new Promise((resolve, reject) => {
         signal?.throwIfAborted();
-        const timer = setTimeout(resolve, latencyMs);
-        signal?.addEventListener('abort', () => {
+        const abort = (): void => {
             clearTimeout(timer);
-            reject(signal.reason);
-        }, { once: true });
+            reject(signal?.reason);
+        };
+        const timer = setTimeout(() => {
+            signal?.removeEventListener('abort', abort);
+            resolve();
+        }, latencyMs);
+        signal?.addEventListener('abort', abort, { once: true });
     });
 }
 

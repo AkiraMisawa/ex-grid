@@ -42,7 +42,7 @@ export default function LiveBatchesMui(): ReactElement {
     return (
         <>
             <Stack direction="row" spacing={1} sx={{ mb: 1.5, alignItems: 'center' }}>
-                <Button size="small" variant="outlined" onClick={() => { setPaused(!paused); }}>{paused ? 'Resume the changes' : 'Pause the changes'}</Button>
+                <Button size="small" variant="outlined" onClick={() => { setPaused(was => !was); }}>{paused ? 'Resume the changes' : 'Pause the changes'}</Button>
                 <Chip size="small" label={`Snapshot version ${version.toString()}`} />
             </Stack>
             <MuiPivot source={source} layout={layout} onLayoutChanged={({ layout: next }) => { setLayout(next); }} viewportHeight={300} />

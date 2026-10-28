@@ -28,11 +28,14 @@ export default function LoadInSlicesMantine(): ReactElement {
         setProgress({ rows: 0, totalRows: undefined, bytes: undefined, totalBytes: undefined });
         // Paint the disabled button before the sales are made.
         await new Promise(resolve => { setTimeout(resolve, 0); });
-        // Read in slices of about 30 ms, yielding between them: the page paints the progress.
-        const snapshot = await readArrowSnapshot(download(), { sliceBudgetMs: 30, onProgress: setProgress });
-        // The pivot computes its report in slices of the same size.
-        setSource(new SnapshotPivotSource(snapshot, salesSnapshotFields, { sliceBudgetMs: 30 }));
-        setProgress(undefined);
+        try {
+            // Read in slices of about 30 ms, yielding between them: the page paints the progress.
+            const snapshot = await readArrowSnapshot(download(), { sliceBudgetMs: 30, onProgress: setProgress });
+            // The pivot computes its report in slices of the same size.
+            setSource(new SnapshotPivotSource(snapshot, salesSnapshotFields, { sliceBudgetMs: 30 }));
+        } finally {
+            setProgress(undefined);
+        }
     };
 
     return (
@@ -41,7 +44,9 @@ export default function LoadInSlicesMantine(): ReactElement {
                 <Button size="xs" disabled={progress !== undefined} onClick={() => { void load(); }}>Load 200,000 sales</Button>
                 {progress !== undefined && (
                     <>
-                        <Progress w={240} value={progress.totalRows === undefined ? 0 : (100 * progress.rows) / progress.totalRows} />
+                        {progress.totalRows === undefined
+                            ? <Progress w={240} value={100} striped animated />
+                            : <Progress w={240} value={(100 * progress.rows) / progress.totalRows} />}
                         <Text size="sm">{progress.rows.toLocaleString('en-US')} sales read</Text>
                     </>
                 )}

@@ -38,7 +38,7 @@ export default function LiveBatches(): ReactElement {
     return (
         <>
             <p>
-                <button type="button" onClick={() => { setPaused(!paused); }}>{paused ? 'Resume the changes' : 'Pause the changes'}</button>{' '}
+                <button type="button" onClick={() => { setPaused(was => !was); }}>{paused ? 'Resume the changes' : 'Pause the changes'}</button>{' '}
                 <span>Snapshot version {version.toString()}</span>
             </p>
             <ExPivot source={source} layout={layout} onLayoutChanged={({ layout: next }) => { setLayout(next); }} viewportHeight={300} />

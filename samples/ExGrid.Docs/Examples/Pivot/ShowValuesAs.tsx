@@ -22,29 +22,26 @@ const calculations: readonly (readonly [PivotShowValuesAs, string])[] = [
     ['noCalculation', 'No Calculation'],
 ];
 
-// The second Value Field, while the user has left it in Values.
-function shownOf(layout: PivotLayout): PivotShowValuesAs {
-    const second = layout.values[1];
-    return second === undefined ? 'noCalculation' : second.showValuesAs;
-}
-
-// The layout is immutable: the Value Field changed is a new one, in a new layout.
+// The layout is immutable: the second Value Field changed is a new one, in a new layout.
 function showingAs(layout: PivotLayout, showValuesAs: PivotShowValuesAs): PivotLayout {
-    if (layout.values.length < 2) return layout;
     return { ...layout, values: layout.values.map((value, i) => (i === 1 ? { ...value, showValuesAs } : value)) };
 }
 
 export default function ShowValuesAs(): ReactElement {
     const [layout, setLayout] = useState(firstLayout);
+    // The second Value Field, while the user has left it in Values; the choice is offered only then.
+    const second = layout.values[1];
     return (
         <>
             <p>
-                <label>
-                    Show the second Revenue as{' '}
-                    <select value={shownOf(layout)} onChange={event => { setLayout(showingAs(layout, event.target.value as PivotShowValuesAs)); }}>
-                        {calculations.map(([value, title]) => <option key={value} value={value}>{title}</option>)}
-                    </select>
-                </label>
+                {second === undefined ? 'Put a second value in Values to choose how it is shown.' : (
+                    <label>
+                        Show the second Revenue as{' '}
+                        <select value={second.showValuesAs} onChange={event => { setLayout(showingAs(layout, event.target.value as PivotShowValuesAs)); }}>
+                            {calculations.map(([value, title]) => <option key={value} value={value}>{title}</option>)}
+                        </select>
+                    </label>
+                )}
             </p>
             <ExPivot source={source} layout={layout} onLayoutChanged={({ layout: next }) => { setLayout(next); }} viewportHeight={340} />
         </>

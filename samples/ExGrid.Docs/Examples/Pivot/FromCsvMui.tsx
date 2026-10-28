@@ -39,6 +39,8 @@ export default function FromCsvMui(): ReactElement {
     const read = async (malformed: boolean): Promise<void> => {
         setReading(true);
         setStatus('Reading…');
+        // Paint the status and the disabled buttons before the file is made.
+        await new Promise(resolve => { setTimeout(resolve, 0); });
         try {
             // A file the user brings is an <input type="file">'s File, which reads the same way.
             const snapshot = await readCsvSnapshot(exported, writeSalesCsv(50_000, malformed));

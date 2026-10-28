@@ -10,12 +10,19 @@ const firstLayout = createPivotLayout({
 });
 
 // The regions by the size of their market, largest first, rather than by their names.
-const marketSize: Readonly<Record<string, number>> = { 'North America': 0, Europe: 1, 'Asia Pacific': 2 };
+const marketSize: ReadonlyMap<string, number> = new Map([['North America', 0], ['Europe', 1], ['Asia Pacific', 2], ['Latin America', 3]]);
+
+// A region the table does not rank is refused by name, never ordered last as if it were the smallest.
+function sizeOf(region: unknown): number {
+    const size = marketSize.get(String(region));
+    if (size === undefined) throw new Error(`No market size is known for the region '${String(region)}'.`);
+    return size;
+}
 
 // The browser orders the report, so a field's Order Key is the browser's: the server's fields, with Region given one.
 // Nothing about the order crosses the wire.
 function ordered(fields: readonly PivotField[]): readonly PivotField[] {
-    return fields.map(field => field.name === 'Region' ? { ...field, orderKey: region => marketSize[String(region)] ?? 3 } : field);
+    return fields.map(field => field.name === 'Region' ? { ...field, orderKey: sizeOf } : field);
 }
 
 // Under a ThemeProvider whose theme was made with createTheme({ cssVariables: true }), with @ex-grid/mui/styles.css

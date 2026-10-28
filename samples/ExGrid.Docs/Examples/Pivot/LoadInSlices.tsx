@@ -24,11 +24,14 @@ export default function LoadInSlices(): ReactElement {
         setProgress({ rows: 0, totalRows: undefined, bytes: undefined, totalBytes: undefined });
         // Paint the disabled button before the sales are made.
         await new Promise(resolve => { setTimeout(resolve, 0); });
-        // Read in slices of about 30 ms, yielding between them: the page paints the progress.
-        const snapshot = await readArrowSnapshot(download(), { sliceBudgetMs: 30, onProgress: setProgress });
-        // The pivot computes its report in slices of the same size.
-        setSource(new SnapshotPivotSource(snapshot, salesSnapshotFields, { sliceBudgetMs: 30 }));
-        setProgress(undefined);
+        try {
+            // Read in slices of about 30 ms, yielding between them: the page paints the progress.
+            const snapshot = await readArrowSnapshot(download(), { sliceBudgetMs: 30, onProgress: setProgress });
+            // The pivot computes its report in slices of the same size.
+            setSource(new SnapshotPivotSource(snapshot, salesSnapshotFields, { sliceBudgetMs: 30 }));
+        } finally {
+            setProgress(undefined);
+        }
     };
 
     return (

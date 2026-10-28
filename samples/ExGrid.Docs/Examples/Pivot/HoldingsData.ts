@@ -1,5 +1,6 @@
 import type { SnapshotDecimal } from '@ex-grid/data';
 import { pivotRecordField, type PivotRecordField } from '@ex-grid/pivot-engine';
+import { at } from './SalesData';
 import { mulberry32 } from './Seeded';
 
 /** One invented holding at a custodian: a market value in the tens of billions, to the cent. */
@@ -23,13 +24,6 @@ export const holdingFields: readonly PivotRecordField<Holding>[] = [
 
 const custodians = ['Harbor Trust', 'Northgate Custody', 'Pacific Clearing'] as const;
 const assetClasses = ['Government bonds', 'Corporate bonds', 'Equities', 'Cash'] as const;
-
-/** The entry at `index` of a list known to hold it. */
-function at<T>(list: readonly T[], index: number): T {
-    const found = list[index];
-    if (found === undefined) throw new RangeError(`No entry ${index} in a list of ${list.length}.`);
-    return found;
-}
 
 /** 5,000 holdings, the same on every call: they come from a fixed seed. */
 export function sampleHoldings(): readonly Holding[] {

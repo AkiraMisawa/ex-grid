@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import { MenuItem, TextField } from '@mui/material';
+import { MenuItem, TextField, Typography } from '@mui/material';
 import { RecordPivotSource, createPivotLayout, type PivotLayout, type PivotShowValuesAs } from '@ex-grid/pivot-engine';
 import { MuiPivot } from '@ex-grid/pivot-mui';
 import { salesFields, sampleSales } from './SalesData';
@@ -23,15 +23,8 @@ const calculations: readonly (readonly [PivotShowValuesAs, string])[] = [
     ['noCalculation', 'No Calculation'],
 ];
 
-// The second Value Field, while the user has left it in Values.
-function shownOf(layout: PivotLayout): PivotShowValuesAs {
-    const second = layout.values[1];
-    return second === undefined ? 'noCalculation' : second.showValuesAs;
-}
-
-// The layout is immutable: the Value Field changed is a new one, in a new layout.
+// The layout is immutable: the second Value Field changed is a new one, in a new layout.
 function showingAs(layout: PivotLayout, showValuesAs: PivotShowValuesAs): PivotLayout {
-    if (layout.values.length < 2) return layout;
     return { ...layout, values: layout.values.map((value, i) => (i === 1 ? { ...value, showValuesAs } : value)) };
 }
 
@@ -40,12 +33,16 @@ function showingAs(layout: PivotLayout, showValuesAs: PivotShowValuesAs): PivotL
 // components, its colours the theme's.
 export default function ShowValuesAsMui(): ReactElement {
     const [layout, setLayout] = useState(firstLayout);
+    // The second Value Field, while the user has left it in Values; the choice is offered only then.
+    const second = layout.values[1];
     return (
         <>
-            <TextField select size="small" label="Show the second Revenue as" sx={{ minWidth: 240, mb: 1.5 }} value={shownOf(layout)}
-                onChange={event => { setLayout(showingAs(layout, event.target.value as PivotShowValuesAs)); }}>
-                {calculations.map(([value, title]) => <MenuItem key={value} value={value}>{title}</MenuItem>)}
-            </TextField>
+            {second === undefined ? <Typography variant="body2" sx={{ mb: 1.5 }}>Put a second value in Values to choose how it is shown.</Typography> : (
+                <TextField select size="small" label="Show the second Revenue as" sx={{ minWidth: 240, mb: 1.5 }} value={second.showValuesAs}
+                    onChange={event => { setLayout(showingAs(layout, event.target.value as PivotShowValuesAs)); }}>
+                    {calculations.map(([value, title]) => <MenuItem key={value} value={value}>{title}</MenuItem>)}
+                </TextField>
+            )}
             <MuiPivot source={source} layout={layout} onLayoutChanged={({ layout: next }) => { setLayout(next); }} viewportHeight={340} />
         </>
     );

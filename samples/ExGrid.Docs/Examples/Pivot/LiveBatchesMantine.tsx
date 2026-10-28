@@ -42,7 +42,7 @@ export default function LiveBatchesMantine(): ReactElement {
     return (
         <>
             <Group mb="sm">
-                <Button size="xs" variant="default" onClick={() => { setPaused(!paused); }}>{paused ? 'Resume the changes' : 'Pause the changes'}</Button>
+                <Button size="xs" variant="default" onClick={() => { setPaused(was => !was); }}>{paused ? 'Resume the changes' : 'Pause the changes'}</Button>
                 <Badge variant="light">Snapshot version {version.toString()}</Badge>
             </Group>
             <MantinePivot withBorder source={source} layout={layout} onLayoutChanged={({ layout: next }) => { setLayout(next); }} viewportHeight={300} />

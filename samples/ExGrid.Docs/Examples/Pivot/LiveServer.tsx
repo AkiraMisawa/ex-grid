@@ -28,9 +28,10 @@ export default function LiveServer(): ReactElement {
         return () => { server.dispose(); };
     }, [server]);
 
+    // From the state it changes, so two presses before a render cut off and reconnect.
     const toggle = (): void => {
-        reachable.current = cutOff;
-        setCutOff(!cutOff);
+        reachable.current = !reachable.current;
+        setCutOff(!reachable.current);
     };
 
     return (
