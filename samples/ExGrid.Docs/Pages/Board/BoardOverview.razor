@@ -257,6 +257,17 @@ const output = bound.confirm('chosen');                         // the values ch
             code under <em>Show code</em>: the server's Example answers its source in a few lines of TypeScript over rows
             in memory, ordering a page with <code>GridSource.from</code>, as a server's query is written to match.
         </p>
+        <p>
+            React's ExBoard has no Wrapper either. Its <code>chrome</code> takes each kind of view's Chrome, as that
+            product's component takes it: <code>grid</code> as ExGrid's, <code>pivot</code> as ExPivot's and
+            <code>chart</code> as ExChart's. The grid's also dresses the pivots' report grids where <code>pivot</code> names
+            no grid of its own, as <code>Chrome</code> does on the Board above. So a Mantine application hands it
+            <code>mantineChrome</code>, <code>mantinePivotChrome</code> and <code>mantineChartChrome</code>, inside an
+            element of the Wrappers' classes, <code>mantine-ex-grid mantine-ex-pivot mantine-ex-chart</code>, which map the
+            views' colours onto the theme; an MUI application does the same with MUI's. Read this site for React and pick
+            Mantine or MUI: the first Example on this page runs so. The Script Core takes the same object as
+            <code>BoardOptions.chrome</code>, with mount functions in place of render functions.
+        </p>
     </DocsSection>
 
     <DocsSection Title="A Board drawn in the browser">

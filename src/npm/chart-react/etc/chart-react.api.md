@@ -4,6 +4,7 @@
 
 ```ts
 
+import { ChartChrome } from '@ex-grid/chart';
 import { ChartFileFormat } from '@ex-grid/chart';
 import type { ChartFiltersSlotContext } from '@ex-grid/chart';
 import { ChartMenuSlotContext } from '@ex-grid/chart';
@@ -13,11 +14,15 @@ import { ChartToolbarSlotContext } from '@ex-grid/chart';
 import { GridChart } from '@ex-grid/chart';
 import { GridChartBridge } from '@ex-grid/chart';
 import { GridChartBridgeOptions } from '@ex-grid/chart';
+import { GridPortals } from '@ex-grid/react';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { Ref } from 'react';
 import { RefObject } from 'react';
 import { SurfaceOptions } from '@ex-grid/chart';
+
+// @public
+export function chartChromeMounts(given: ExChartChrome | undefined, portals: GridPortals, made: ChartMountsMade): ChartChrome | undefined;
 
 // @public
 export type ChartDockBridgeOptions = Required<Pick<GridChartBridgeOptions<unknown>, 'targets' | 'onChart' | 'onAdded' | 'onRefused'>>;
@@ -51,6 +56,18 @@ export interface ChartFilterText {
     readonly setFrom: (text: string) => void;
     readonly setTo: (text: string) => void;
     readonly to: string;
+}
+
+// @public
+export interface ChartMountsMade {
+    menu?: {
+        readonly render: unknown;
+        readonly mount: (slot: HTMLElement, context: unknown) => () => void;
+    };
+    toolbar?: {
+        readonly render: unknown;
+        readonly mount: (slot: HTMLElement, context: unknown) => () => void;
+    };
 }
 
 // @public

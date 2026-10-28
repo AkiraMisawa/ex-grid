@@ -6,6 +6,7 @@
 
 import { AxisScale } from '@ex-grid/chart';
 import { BoardInput } from '@ex-grid/data';
+import { ChartChrome } from '@ex-grid/chart';
 import { ChartRange } from '@ex-grid/chart';
 import type { ChartSourceAnswer } from '@ex-grid/chart';
 import type { ChartSourceQuery } from '@ex-grid/chart';
@@ -14,6 +15,7 @@ import { ChartSpecReading } from '@ex-grid/chart';
 import { DataShape } from '@ex-grid/data';
 import { DataShapeColumn } from '@ex-grid/data';
 import { FetchingGridSource } from '@ex-grid/core';
+import { GridChrome } from '@ex-grid/core';
 import { GridColumn } from '@ex-grid/core';
 import type { GridQuery } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
@@ -21,6 +23,7 @@ import { GridSource } from '@ex-grid/core';
 import { GridViewState } from '@ex-grid/core';
 import { InMemoryGridSource } from '@ex-grid/core';
 import { JsonValue } from '@ex-grid/data';
+import { PivotChrome } from '@ex-grid/pivot';
 import { PivotFieldItem } from '@ex-grid/pivot-engine';
 import { PivotLayout } from '@ex-grid/pivot-engine';
 import { PivotSource } from '@ex-grid/pivot-engine';
@@ -95,6 +98,13 @@ export interface BoardChartView {
 
 // @public
 export const boardChartViewId = "chart";
+
+// @public
+export interface BoardChrome {
+    readonly chart?: ChartChrome;
+    readonly grid?: GridChrome<unknown>;
+    readonly pivot?: PivotChrome;
+}
 
 // @public
 export type BoardColumnKinds = ReadonlyMap<string, SnapshotKind>;
@@ -176,6 +186,7 @@ export function boardOfChart(chartSpec: string, tables: (handle: string) => Data
 // @public
 export interface BoardOptions {
     readonly board: BoardReading;
+    readonly chrome?: BoardChrome | undefined;
     readonly data: Readonly<Record<string, Snapshot>>;
     readonly diff?: BoardDiff | undefined;
     readonly locale?: string;

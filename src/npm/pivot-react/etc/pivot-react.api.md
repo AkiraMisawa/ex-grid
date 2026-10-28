@@ -4,7 +4,10 @@
 
 ```ts
 
+import { ChromeMountsMade } from '@ex-grid/react';
 import { ExGridChrome } from '@ex-grid/react';
+import { GridPortals } from '@ex-grid/react';
+import type { PivotChrome } from '@ex-grid/pivot';
 import type { PivotDetailsDialogSlotContext } from '@ex-grid/pivot';
 import type { PivotDetailsTabsSlotContext } from '@ex-grid/pivot';
 import type { PivotFieldListSlotContext } from '@ex-grid/pivot';
@@ -49,6 +52,9 @@ export type ExPivotProps = Omit<PivotViewOptions, 'chrome'> & {
 export function layPivotChrome(pivot: Omit<ExPivotChrome, 'grid'>, grid: ExGridChrome<unknown>, given: ExPivotChrome | undefined): ExPivotChrome;
 
 // @public
+export function pivotChromeMounts(given: ExPivotChrome | undefined, portals: GridPortals, made: PivotMountsMade): PivotChrome | undefined;
+
+// @public
 export interface PivotMenuHandles {
     readonly item: (index: number) => PivotMenuItemProps;
     readonly view: PivotMenuView;
@@ -62,6 +68,19 @@ export interface PivotMenuItemProps {
     readonly onClick: () => void;
     readonly ref?: (control: HTMLElement | null) => void;
     readonly role: 'menuitem' | 'menuitemradio';
+}
+
+// @public
+export interface PivotMountsMade {
+    readonly grid: ChromeMountsMade;
+    gridChrome?: {
+        readonly given: unknown;
+        readonly mounts: PivotChrome['grid'];
+    };
+    readonly pivot: Map<string, {
+        readonly render: unknown;
+        readonly mount: (slot: HTMLElement, context: unknown) => () => void;
+    }>;
 }
 
 // @public
