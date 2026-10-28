@@ -10,6 +10,7 @@ using ExGrid.Chrome;
 using ExGrid.Data;
 using ExGrid.Data.Arrow;
 using ExGrid.Script;
+using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.JSInterop;
@@ -29,11 +30,12 @@ namespace ExBoard.Script;
 /// has let one go. An output is read back against the very Snapshot it was taken from, so
 /// <see cref="BoardOutput.Take"/> holds it to that data's version as a Board bound in .NET does.</para>
 /// <para>A source held where the data lives (<see cref="Sources"/>, ADR-0343) stays in .NET: the Board in the browser asks
-/// it through .NET for its shape, a grid's pages and a chart's points, and each page of rows crosses as its Arrow stream.</para>
+/// it through .NET for its shape, a grid's pages, a chart's points and the values under a pivot's cells, and each page
+/// of rows crosses as its Arrow stream. A pivot over one reads the Pivot Source it makes (<see cref="BoardSource.Pivot"/>)
+/// through .NET, as ExPivot's adapter reads one: the engine in the browser builds the report and its totals from the
+/// Leaf Aggregates the source answers (ADR-0370 section 3).</para>
 /// <para>It stands beside <see cref="Components.ExBoard"/>, the Razor component, until ExBoard's Blazor step holds
-/// (ADR-0370 section 11). What it does not carry yet is refused by name, never left out quietly: a pivot over a source
-/// (<see cref="BoardSource.Report"/>), which asks a report of .NET, not the Leaf Aggregates the browser's engine reads
-/// (ADR-0370 section 3); and Chromes.</para>
+/// (ADR-0370 section 11). What it does not carry yet is refused by name, never left out quietly: Chromes.</para>
 /// </remarks>
 public sealed class ExBoard : ComponentBase, IAsyncDisposable
 {
@@ -81,6 +83,14 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     private readonly SourceCrossing _sourceCrossing = new();
     // The questions the browser has asked a source and not had answered, by the number it asked each under.
     private readonly ConcurrentDictionary<long, CancellationTokenSource> _asked = new();
+    // The Pivot Sources the browser's pivots made over sources, by the number the browser made each under, and the
+    // questions asked of them, numbered apart from the sources' own.
+    private readonly Dictionary<int, HeldPivot> _pivots = [];
+    private readonly ConcurrentDictionary<long, (int Pivot, CancellationTokenSource Cancellation)> _pivotAsked = new();
+    // Why the source's Pivot failed for a pivot the browser made, which its questions are refused with.
+    private readonly Dictionary<int, Exception> _pivotsFailed = [];
+    // What a Pivot Source said before the browser's Board was attached, said once it is, in the order it was said.
+    private readonly List<(int Pivot, string Notice)> _noticesOwed = [];
 
     private BoardReading? _board;
     private string? _boardJson;
@@ -174,12 +184,6 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         {
             if (source is null)
                 throw new InvalidOperationException($"ExBoard's Sources hands input '{input}' no source.");
-        }
-        if (board.Views.OfType<BoardPivotView>().FirstOrDefault(pivot => sources.ContainsKey(pivot.Input)) is { } over)
-        {
-            throw new NotSupportedException(
-                $"Pivot '{over.Id}' is over input '{over.Input}', held on a server, and ExBoard.Script.ExBoard does not carry a pivot over a source yet: "
-                + "its source makes a report (BoardSource.Report), and the pivot in the browser reads Leaf Aggregates (ADR-0370 section 3). Draw this Board with ExBoard.Components.ExBoard.");
         }
     }
 
@@ -311,6 +315,14 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         _view = view;
         _attached = true;
         Calls.Attached(view);
+        // Each in its turn, taken off before it is sent: one said meanwhile waits behind those still owed.
+        while (_noticesOwed.Count > 0)
+        {
+            var (pivot, notice) = _noticesOwed[0];
+            _noticesOwed.RemoveAt(0);
+            if (_pivots.ContainsKey(pivot))
+                await view.InvokeVoidAsync("pivotChanged", pivot, notice);
+        }
         await SendUpdateAsync();
     }
 
@@ -482,7 +494,16 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     internal Task ReleaseSnapshotsAsync(int[] numbers) => InvokeAsync(() => _crossing.Release(numbers));
 
     // The browser let go of these sources: it asks them nothing more.
-    internal Task ReleaseSourcesAsync(int[] numbers) => InvokeAsync(() => _sourceCrossing.Release(numbers));
+    internal Task ReleaseSourcesAsync(int[] numbers) => InvokeAsync(() =>
+    {
+        _sourceCrossing.Release(numbers);
+        // And the Pivot Sources made over them, which the Board that held them asks nothing more.
+        foreach (var (pivot, held) in _pivots.Where(p => numbers.Contains(p.Value.Source)).ToArray())
+        {
+            _pivots.Remove(pivot);
+            LetGo(pivot, held);
+        }
+    });
 
     // A question the browser asked a source, which no longer waits for the answer: whether it was being asked.
     internal bool TryCancel(long call)
@@ -582,6 +603,146 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         });
     });
 
+    // The rows under a pivot's selected cells, read where the data lives (ADR-0345): the layout as PivotLayoutJson, each
+    // cell's paths as a Details query names them, the one form both engines read a path in; answered as the link's
+    // columns and their tuples, each value written as the Board that numbered the source declares its column.
+    internal Task<string> UnderAsync(int number, long call, string question) => AskAsync(number, call, async (held, token) =>
+    {
+        var input = held.Input;
+        var under = held.Source.Under ?? throw new InvalidOperationException($"Internal: the browser asked the source of input '{input}' for the values under a pivot's cells, and it answers none.");
+        using var document = JsonDocument.Parse(question);
+        var root = document.RootElement;
+        var cells = root.GetProperty("cells").EnumerateArray().Select(cell => PivotJson.ReadDetailsQuery(Text(cell))).Select(path => new PivotCellItems(path.RowItems, path.ColumnItems)).ToArray();
+        var on = root.GetProperty("on").EnumerateArray().Select(Text).ToArray();
+        var query = new BoardCellsQuery(Text(root.GetProperty("view")), PivotLayoutJson.Read(Text(root.GetProperty("layout"))), cells, on, NarrowingOf(held, root.GetProperty("narrowing")));
+        if (on.Distinct(StringComparer.Ordinal).Count() != on.Length)
+            throw new InvalidOperationException($"Internal: a link from pivot '{query.View}' compares a column twice.");
+        var condition = await under(query, token);
+        if (!condition.On.SequenceEqual(on, StringComparer.Ordinal))
+            throw new InvalidOperationException($"The source of input '{input}' answered the values under pivot '{query.View}' on [{string.Join(", ", condition.On)}], not the link's [{string.Join(", ", on)}].");
+        return Json(json =>
+        {
+            json.WriteStartArray();
+            foreach (var tuple in condition.Values)
+            {
+                json.WriteStartObject();
+                for (var i = 0; i < on.Length; i++)
+                {
+                    json.WritePropertyName(on[i]);
+                    WritePoint(json, tuple[i], input, on[i]);
+                }
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        });
+    });
+
+    // A Pivot Source the browser's pivot made over a source, under the number the browser made it under: over the rows
+    // the narrowing lets through, read as the Board that numbered the source declares the input. What it says it
+    // changed is told the browser's pivot, in the order it said it.
+    internal Task MakePivotAsync(int source, int pivot, string narrowing) => InvokeAsync(async () =>
+    {
+        try
+        {
+            if (_disposed)
+                return;
+            var held = _sourceCrossing[source];
+            using var document = JsonDocument.Parse(narrowing);
+            var made = _sourceCrossing.PivotOver(source, NarrowingOf(held, document.RootElement));
+            Action<PivotSourceChanged> hear = Hear;
+            if (!_pivots.TryAdd(pivot, new HeldPivot(source, made, hear)))
+                throw new InvalidOperationException($"Internal: the browser made pivot {pivot} twice.");
+            made.Changed += hear;
+        }
+        catch (Exception ex)
+        {
+            // A source whose Pivot fails fails the component, as it does the Razor component's binding, and the
+            // pivot's questions are refused with why.
+            _pivotsFailed[pivot] = ex;
+            await DispatchExceptionAsync(ex);
+        }
+
+        void Hear(PivotSourceChanged change)
+        {
+            var text = PivotJson.Write(change);
+            // A source may say it changed from any thread: its notices cross from the component's context.
+            _ = InvokeAsync(async () =>
+            {
+                if (_disposed || !_pivots.ContainsKey(pivot))
+                    return;
+                if (_view is not { } view || _noticesOwed.Count > 0)
+                {
+                    _noticesOwed.Add((pivot, text));
+                    return;
+                }
+                try
+                {
+                    await view.InvokeVoidAsync("pivotChanged", pivot, text);
+                }
+                catch (Exception ex) when (ex is not JSDisconnectedException)
+                {
+                    await DispatchExceptionAsync(ex);
+                }
+            });
+        }
+    });
+
+    // A question the browser's pivot asked a Pivot Source made over a source, answered as ExPivot's adapter answers
+    // one; one the browser made over a source it has since let go is answered with nothing to act on.
+    internal async Task<string> PivotAskAsync(string kind, int pivot, long call, string? query)
+    {
+        var held = PivotAsked(pivot);
+        using var cancellation = new CancellationTokenSource();
+        if (!_pivotAsked.TryAdd(call, (pivot, cancellation)))
+            throw new InvalidOperationException($"Internal: the browser asked pivot question {call} twice.");
+        try
+        {
+            return await PivotSourceCrossing.AnswerAsync(held.Pivot, kind, query, cancellation.Token);
+        }
+        finally
+        {
+            _pivotAsked.TryRemove(call, out _);
+        }
+    }
+
+    internal async Task PivotRefreshAsync(int pivot) => await PivotAsked(pivot).Pivot.RefreshAsync();
+
+    private HeldPivot PivotAsked(int pivot)
+    {
+        if (_pivotsFailed.TryGetValue(pivot, out var failed))
+            throw new InvalidOperationException($"The source made no Pivot Source for this pivot: {failed.Message}", failed);
+        if (_disposed || !_pivots.TryGetValue(pivot, out var held))
+            throw new OperationCanceledException("The pivot's source was let go, and the browser has heard so.");
+        return held;
+    }
+
+    // The browser let go of the Pivot Source made under `pivot`, or of the source it was made over first.
+    internal void ReleasePivot(int pivot)
+    {
+        _pivotsFailed.Remove(pivot);
+        if (!_pivots.Remove(pivot, out var held))
+            return;
+        LetGo(pivot, held);
+    }
+
+    // A Pivot Source the browser asks nothing more: what it says is heard no longer, and what it was asked is called off.
+    private void LetGo(int pivot, HeldPivot held)
+    {
+        held.Pivot.Changed -= held.Hear;
+        foreach (var (_, asked) in _pivotAsked.Values.Where(asked => asked.Pivot == pivot))
+            asked.Cancel();
+    }
+
+    internal bool TryCancelPivot(long call)
+    {
+        if (!_pivotAsked.TryGetValue(call, out var asked))
+            return false;
+        asked.Cancellation.Cancel();
+        return true;
+    }
+
+    private sealed record HeldPivot(int Source, PivotSource Pivot, Action<PivotSourceChanged> Hear);
+
     private static double? Position(JsonElement json) => json.ValueKind == JsonValueKind.Null ? null : json.GetDouble();
 
     // A link's conditions as the browser writes them, each value read as the Board that numbered the source declares
@@ -657,7 +818,10 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         }
         // The questions still out are nobody's now: cancelled once the rest is let go, so what a source's own
         // cancellation callback throws reaches the caller with nothing left held.
-        foreach (var asked in _asked.Values)
+        foreach (var held in _pivots.Values)
+            held.Pivot.Changed -= held.Hear;
+        _pivots.Clear();
+        foreach (var asked in _asked.Values.Concat(_pivotAsked.Values.Select(asked => asked.Cancellation)))
             asked.Cancel();
     }
 

@@ -3,11 +3,15 @@
 // answer comes back in the form its data already travels in: a page of rows as the Arrow stream a Snapshot crosses as
 // (ADR-0065), in bytes; a shape and a chart's points as JSON whose values are read as the input declares them, as a
 // Board Input reads its rows. Neither side reads the other's objects, and nothing is decided here: the Board asks, and
-// the Consumer's C# answers.
+// the Consumer's C# answers. A pivot over the source reads the C# Pivot Source the source makes, through .NET, as
+// ExPivot's adapter reads one (DotNetPivotSource): the engine here builds the report and its totals from the Leaf
+// Aggregates it answers (ADR-0370 section 3).
 
-import type { BoardChartQuery, BoardQuery, BoardSource, BoardValue, LinkCondition, ShapedPage } from '@ex-grid/board';
+import { LinkCondition, type BoardCellsQuery, type BoardChartQuery, type BoardQuery, type BoardSource, type BoardValue, type ShapedPage } from '@ex-grid/board';
 import type { ChartData, ChartSourceAnswer } from '@ex-grid/chart';
 import { plainDateTimeOf, writeGridQueryJson } from '@ex-grid/core';
+import { PivotJson, pivotDetailsQuery, writePivotLayoutJson, type PivotSource } from '@ex-grid/pivot-engine';
+import { DotNetPivotSource, type WireSource as WirePivotSource } from '@ex-grid/pivot-blazor';
 import { BoardInput, boardKindNames, decimalText, readArrowSnapshot, ticksText, type DataShape, type Snapshot, type SnapshotColumn, type SnapshotKind } from '@ex-grid/data';
 
 /** What a source asks of the .NET object a Blazor ExBoard hands the bridge: Blazor's `DotNetObjectReference`. */
@@ -21,6 +25,23 @@ export interface WireSource {
     readonly number: number;
     /** Whether the C# source answers a chart's points (`BoardSource.Thin`). */
     readonly thin: boolean;
+    /** Whether the C# source answers the values under a pivot's cells (`BoardSource.Under`). */
+    readonly under: boolean;
+    /** The fields and what they answer of every Pivot Source the C# source makes (`BoardSource.Pivot`), when a pivot
+     * view of the Board reads it, and `null` otherwise. */
+    readonly pivot: Omit<WirePivotSource, 'generation'> | null;
+}
+
+/** What a source's pivots need of the bridge: a number for each Pivot Source made, .NET to ask what each was made
+ * over and then its questions, and to be told once one is let go. */
+export interface PivotMaking {
+    /** The next pivot's number, counted from 1 across the Board's sources. */
+    next(): number;
+    /** The bridge, as a Pivot Source made over a source calls it: its questions name the pivot's number. */
+    readonly calls: DotNetCaller;
+    /** Each Pivot Source made, by its number, so what .NET heard its C# source say reaches it, and .NET is told once
+     * the browser lets it go. */
+    made(source: DotNetPivotSource): void;
 }
 
 let calls = 0;
@@ -33,7 +54,7 @@ let calls = 0;
  * tells it nothing once the Board is stopped; a question too long for a message of a circuit is held by `dotnet`, the
  * bridge's crossing calls.
  */
-export function dotNetBoardSource(dotnet: DotNetCaller, cancel: (call: number) => void, declared: BoardInput, wire: WireSource): BoardSource {
+export function dotNetBoardSource(dotnet: DotNetCaller, cancel: (call: number) => void, declared: BoardInput, wire: WireSource, pivots: PivotMaking): BoardSource {
     const { number } = wire;
     // One question, with its call's number, so an abort tells .NET which question no longer waits, and what it asks,
     // where it asks anything but its call.
@@ -54,8 +75,22 @@ export function dotNetBoardSource(dotnet: DotNetCaller, cancel: (call: number) =
         shape: async signal => shapeOf(await ask('Shape', undefined, signal), declared.name),
         fetch: async (query, signal) => pageOf(await ask('Fetch', fetchJson(query, declared), signal), declared.name),
         ...(wire.thin ? { thin: async (query: BoardChartQuery, signal: AbortSignal) => answerOf(await ask('Thin', thinJson(query, declared), signal), query, declared) } : {}),
+        ...(wire.under ? { under: async (query: BoardCellsQuery, signal: AbortSignal) => conditionOf(await ask('Under', underJson(query, declared), signal), query, declared) } : {}),
+        ...(wire.pivot === null ? {} : { pivot: pivotOver(dotnet, number, wire.pivot, declared, pivots) }),
     };
     return Object.freeze(source);
+}
+
+// Each Pivot Source made over the rows a narrowing lets through: .NET is told what it was made over first, and makes the
+// C# source's own under the same number, before any question names it, as the bridge's calls arrive in order.
+function pivotOver(dotnet: DotNetCaller, number: number, wire: Omit<WirePivotSource, 'generation'>, input: BoardInput, pivots: PivotMaking): (narrowing: readonly LinkCondition[]) => PivotSource {
+    return narrowing => {
+        const generation = pivots.next();
+        void dotnet.invokeMethodAsync('MakePivot', number, generation, narrowingOf(narrowing, input));
+        const made = new DotNetPivotSource(pivots.calls, { ...wire, generation });
+        pivots.made(made);
+        return made;
+    };
 }
 
 function fetchJson(query: BoardQuery, input: BoardInput): string {
@@ -77,6 +112,22 @@ function narrowingOf(narrowing: readonly LinkCondition[], input: BoardInput): st
         return `{"on":${JSON.stringify(condition.on)},"values":[${tuples.join(',')}]}`;
     });
     return `[${conditions.join(',')}]`;
+}
+
+// The cells' paths each as a Details query names them, the one form both engines read a path in, and the layout as
+// PivotLayoutJson.
+function underJson(query: BoardCellsQuery, input: BoardInput): string {
+    const cells = query.cells.map(cell => PivotJson.writeDetailsQuery(pivotDetailsQuery({ sourceVersion: '', rowItems: cell.row, columnItems: cell.column })));
+    return `{"view":${JSON.stringify(query.view)},"layout":${JSON.stringify(writePivotLayoutJson(query.layout))},"cells":${JSON.stringify(cells)},`
+        + `"on":${JSON.stringify(query.on)},"narrowing":${narrowingOf(query.narrowing, input)}}`;
+}
+
+// The values under the cells as .NET wrote them, rows of the link's columns, read as the input declares them, as a
+// Board Input reads its rows: never through a double on the way.
+function conditionOf(answer: unknown, query: BoardCellsQuery, input: BoardInput): LinkCondition {
+    const rows = new BoardInput(input.name, query.on.map(name => ({ name, kind: declaredKind(input, name) }))).fromJson(text(answer, 'Under'));
+    const columns = query.on.map(name => rows.column(name));
+    return new LinkCondition(query.on, Array.from({ length: rows.rowCount }, (_, row) => columns.map(column => column.valueAt(row))));
 }
 
 function declaredKind(input: BoardInput, name: string): SnapshotKind {
