@@ -51,6 +51,9 @@ async function open(page, chrome, query = '') {
             .evaluate((p) => getComputedStyle(p).getPropertyValue('--ex-pivot-pane-background').trim())).not.toBe('');
     }
     await expect(entry(page, 'Region')).toBeVisible();
+    // A Chrome's pane stands for the data last sent once the report has settled: a drag taken on a pane a render
+    // behind the layout is refused (spine rule 6), and on Server the Razor is a round trip behind (ADR-0410).
+    await settled(report(page));
 }
 
 /** Drops `source` on the Area titled `title`, on its heading: the Area itself, which puts it after

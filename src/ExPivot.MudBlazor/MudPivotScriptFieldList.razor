@@ -62,9 +62,7 @@
                     <div class="mud-ex-pivot-area-entries" role="list" aria-label="@area.Title">
                         @foreach (var entry in area.Entries)
                         {
-                            @* Not draggable while its menu or a panel stands in its anchor, so a press that moves a little
-                               on the menu is the menu's, as the built-in pane's entry is. *@
-                            <div @key="entry.Key" role="listitem" draggable="@(entry.MenuOpen ? "false" : "true")" class="@EntryClass(entry)"
+                            <div @key="entry.Key" role="listitem" draggable="true" class="@EntryClass(entry)"
                                  @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Entry, entry.Key)">
                                 <MudButton Variant="Variant.Outlined" Size="Size.Small" FullWidth="true"
                                            Color="@(entry.Filtered ? Color.Primary : Color.Default)" EndIcon="@Icons.Material.Filled.ArrowDropDown"
