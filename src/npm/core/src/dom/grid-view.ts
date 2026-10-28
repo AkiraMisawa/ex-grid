@@ -2180,10 +2180,11 @@ export class GridView<Row> {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
+        // Revealed in the Viewport; the page is not moved for it, as a Consumer's placement is no move the grid made
+        // (ADR-0204): a Name Box's Go To scrolls the grid, never the page under it.
         if (this.#apply(this.#held.selection.place(range, focus, now))) {
             this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
             this.#revealHeaderOwed = undefined;
-            this.#followArmed = { focus, target: focus };
         }
         return true;
     }
