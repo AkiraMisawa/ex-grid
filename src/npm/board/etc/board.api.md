@@ -30,9 +30,7 @@ import { SnapshotKind } from '@ex-grid/data';
 import { TemporalLike } from '@ex-grid/core';
 
 // @public
-export function answerBoardSpec(json: string, tables: (handle: string) => Snapshot | undefined, options?: {
-    readonly locale?: string;
-}): BoardSpecAnswer;
+export function answerBoardSpec(json: string, tables: (handle: string) => Snapshot | undefined, options?: Pick<BindBoardOptions, 'locale'>): BoardSpecAnswer;
 
 // @public
 export function bindBoard(board: BoardReading, data: Readonly<Record<string, Snapshot>>, options?: BindBoardOptions): BoundBoard;

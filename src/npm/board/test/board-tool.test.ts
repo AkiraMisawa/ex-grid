@@ -3,7 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { answerChartSpec } from '@ex-grid/chart';
 import { BoardInput, BoardRefusedError, createSnapshot, decimalFromText, readJsonText, isJsonObject, jsonMember, jsonMemberNames, ticksFromText, type DataShape, type JsonValue, type Snapshot } from '@ex-grid/data';
-import { answerBoardSpec, bindBoard, boardChartViewId, boardDeclarationOf, boardInput, boardOfChart, boardSpecTool } from '../src/index';
+import { SnapshotPivotSource } from '@ex-grid/pivot-engine';
+import { answerBoardSpec, bindBoard, bindBoardThrough, boardChartViewId, boardDeclarationOf, boardInput, boardOfChart, boardSpecTool, readBoard, sayBoard } from '../src/index';
 import { declaredChartData } from '../src/snapshot-values';
 
 const board = `{"version": 1, "title": "Desk P&L",
@@ -15,6 +16,8 @@ const board = `{"version": 1, "title": "Desk P&L",
  "layout": [{"views": ["blotter", "byDesk"]}, {"views": ["daily"]}],
  "links": [{"from": "blotter", "to": ["byDesk", "daily"], "on": ["desk"]}],
  "outputs": {"review": {"from": "blotter", "on": ["day"], "confirm": "Send to review"}}}`;
+
+const inputs = '"inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "day", "type": "date"}, {"name": "pnl", "type": "decimal"}]}}';
 
 const days = ['2026-10-19', '2026-10-20', '2026-10-21'].map(ticksFromText);
 
@@ -67,6 +70,41 @@ describe('the draw_board tool (ADR-0340, in ADR-0320\'s form)', () => {
             .toBe(true);
         expect(answer.board.inputs.map(input => input.name)).toEqual(['trades']);
         expect(answer.bound.data.get('trades')?.rowCount).toBe(3);
+    });
+
+    it('says a Board with no title, a pivot of columns and filters and no values, and nothing linked', () => {
+        const reading = readBoard(`{"version": 1, ${inputs}, "views": [{"id": "byDesk", "pivot": {"data": "trades", "layout": {"version": 1,
+            "rows": [{"field": "desk"}], "columns": [{"field": "day"}], "filters": [{"field": "pnl"}]}}}], "layout": [{"views": ["byDesk"]}]}`);
+
+        expect(sayBoard(bindBoard(reading, { trades: trades() }))).toBe('The Board: 1 view in 1 row. byDesk is a pivot of 3 rows of trades: rows desk; '
+            + 'columns day; filtered by pnl; no values. No view narrows another, and nothing is handed on.');
+    });
+
+    it('says a grid and a pivot over a source held on a server by what they ask, not by rows they hold', async () => {
+        const reading = readBoard(`{"version": 1, ${inputs}, "views": [
+            {"id": "blotter", "grid": {"data": "trades", "columns": [{"column": "desk"}, {"column": "pnl", "format": "#,##0"}]}},
+            {"id": "byDesk", "pivot": {"data": "trades", "layout": {"version": 1, "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "countNumbers"}]}}}],
+            "layout": [{"views": ["blotter", "byDesk"]}]}`);
+        const served = trades();
+        const bound = await bindBoardThrough(reading, {}, {
+            trades: {
+                shape: () => Promise.resolve({ columns: served.columns.map(({ name, kind }) => ({ name, kind })) }),
+                fetch: () => Promise.resolve({ rows: served, start: 0, totalCount: served.rowCount }),
+                pivot: () => new SnapshotPivotSource(served),
+            },
+        });
+
+        expect(sayBoard(bound)).toBe('The Board: 2 views in 1 row. blotter is a grid of rows fetched over trades, showing desk and pnl. '
+            + 'byDesk is a pivot of a report of trades: rows desk; values CountNumbers of pnl. No view narrows another, and nothing is handed on.');
+        bound.dispose();
+    });
+
+    it('binds an input whatever its name, __proto__ included', () => {
+        const named = board.replaceAll('trades', '__proto__');
+        const answer = answerBoardSpec(call('{"__proto__": "h-1"}', named), handles);
+
+        expect(answer.text).toMatch(/^Board "Desk P&L": 3 views in 2 rows\. /);
+        expect(answer.bound?.data.get('__proto__')?.rowCount).toBe(3);
     });
 
     it.each([
@@ -135,7 +173,7 @@ describe('a Chart Spec as a Board of one view (ADR-0320 as rewritten by ADR-0340
     it.each([
         ['"data": "h-trades"', '"data": "h-quotes"', 'series[0].data', 'series[0].data "h-quotes" is not known'],
         ['"y": "pnl"', '"y": "book"', 'series[0].y', 'series[0].y: "h-trades" has no column "book"'],
-        ['"version": 1,', '"version": 1, "version": 1,', '', ''],
+        ['"version": 1,', '"version": 1, "version": 1,', '', 'The Chart Spec is not JSON: The member \'version\' is written twice'],
     ])('is refused as the tool refuses, with the spec\'s own path (%#)', (from, to, path, message) => {
         const refused = refusedBy(() => boardOfChart(spec.replace(from, to), tables(held())));
 

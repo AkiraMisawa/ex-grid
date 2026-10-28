@@ -8,7 +8,8 @@ import {
     BoardRefusedError, isJsonObject, jsonMember, jsonMemberNames, jsonRawText, jsonStringText, JsonTextError, readJsonText,
     type DataShape, type JsonValue, type Snapshot,
 } from '@ex-grid/data';
-import { bindBoard, type BoundBoard, type BoundView } from './bound-board';
+import { aggregationTitle } from '@ex-grid/pivot-engine';
+import { bindBoard, type BindBoardOptions, type BoundBoard, type BoundView } from './bound-board';
 import { boardInput, boardVersion, readBoard, type BoardReading } from './board-spec';
 import { declarationOf, surfaceRefusal } from './chart-view';
 import { members } from './json-members';
@@ -57,7 +58,7 @@ const chartPath = 'views[0].chart';
  * declares an input, `{"columns":[{"name":"desk","type":"text"},…]}`. The counterpart of C#'s `BoardSpec.DeclarationOf`.
  */
 export function boardDeclarationOf(shape: DataShape): string {
-    return `{"columns":${columnsJson(shape)}}`;
+    return `{"columns":[${shape.columns.map(column => `{"name":${jsonStringText(column.name)},"type":${jsonStringText(column.kind)}}`).join(',')}]}`;
 }
 
 /**
@@ -75,27 +76,28 @@ export function boardOfChart(chartSpec: string, tables: (handle: string) => Data
         if (!(error instanceof JsonTextError)) throw error;
     }
     if (isJsonObject(root) && jsonMember(root, 'surface') !== undefined) throw new BoardRefusedError('surface', surfaceRefusal);
-    const named: string[] = [];
+    // Each handle the spec names, in the order first named, with the shape the host gave for it then.
+    const named = new Map<string, DataShape>();
     try {
         readChartSpec(chartSpec, handle => {
             const shape = tables(handle);
             if (shape === undefined) return undefined;
-            if (!named.includes(handle)) named.push(handle);
+            if (!named.has(handle)) named.set(handle, shape);
             return declarationOf(shape);
         });
     } catch (error) {
         if (!(error instanceof ChartSpecRefusedError)) throw error;
         throw new BoardRefusedError(error.path, error.message, { cause: error });
     }
-    const inputs = named.map(handle => `${jsonStringText(handle)}:{"columns":${columnsJson(defined(tables(handle), `the shape of '${handle}'`))}}`);
+    const inputs = [...named].map(([handle, shape]) => `${jsonStringText(handle)}:${boardDeclarationOf(shape)}`);
     const id = jsonStringText(boardChartViewId);
     const json = `{"version":${String(boardVersion)},"inputs":{${inputs.join(',')}},"views":[{"id":${id},"chart":${chartSpec}}],"layout":[{"views":[${id}]}]}`;
     try {
         return readBoard(json);
     } catch (error) {
         if (!(error instanceof BoardRefusedError)) throw error;
-        // Anything else is in the inputs made from the host's tables, which the spec does not write. A DataShape
-        // already holds only what an input declares, so this is a guard, not a path taken.
+        // Anything else is in the inputs made from the host's tables, which the spec does not write, or the spec nested
+        // past the reader's depth once it stands three levels down in the Board: said as C#'s OfChart says it.
         if (error.path.startsWith(chartPath)) throw new BoardRefusedError(error.path.slice(chartPath.length).replace(/^\.+/, ''), error.message, { cause: error });
         throw new BoardRefusedError('', `A table the spec names cannot be a Board Input: ${error.message}`, { cause: error });
     }
@@ -107,7 +109,7 @@ export function boardOfChart(chartSpec: string, tables: (handle: string) => Data
  * handle the host does not know), its grids' text written in `locale`. Anything thrown but a refusal is thrown on.
  * The counterpart of C#'s `BoardSpec.Answer`.
  */
-export function answerBoardSpec(json: string, tables: (handle: string) => Snapshot | undefined, options: { readonly locale?: string } = {}): BoardSpecAnswer {
+export function answerBoardSpec(json: string, tables: (handle: string) => Snapshot | undefined, options: Pick<BindBoardOptions, 'locale'> = {}): BoardSpecAnswer {
     try {
         const { board, data } = readCall(json, tables);
         let bound: BoundBoard;
@@ -128,7 +130,7 @@ export function answerBoardSpec(json: string, tables: (handle: string) => Snapsh
     }
 }
 
-function readCall(json: string, tables: (handle: string) => Snapshot | undefined): { board: BoardReading; data: Record<string, Snapshot> } {
+function readCall(json: string, tables: (handle: string) => Snapshot | undefined): { board: BoardReading; data: Readonly<Record<string, Snapshot>> } {
     let root: JsonValue;
     try {
         root = readJsonText(json);
@@ -149,19 +151,20 @@ function readCall(json: string, tables: (handle: string) => Snapshot | undefined
     }
     const dataValue = jsonMember(root, 'data');
     if (!isJsonObject(dataValue)) throw new BoardRefusedError('data', "The call binds each input to a Data Handle in 'data'.");
-    const data: Record<string, Snapshot> = {};
+    // A Map, then own properties: an input may be named `__proto__`, which an assignment would take for the prototype.
+    const data = new Map<string, Snapshot>();
     for (const name of jsonMemberNames(dataValue)) {
         if (boardInput(board, name) === undefined) throw new BoardRefusedError(`data.${name}`, `The call binds input '${name}', which the Board does not declare.`);
         const handle = jsonMember(dataValue, name);
         if (typeof handle !== 'string' || handle === '') throw new BoardRefusedError(`data.${name}`, `Input '${name}' is bound to a Data Handle, a string.`);
         const table = tables(handle);
         if (table === undefined) throw new BoardRefusedError(`data.${name}`, `"${handle}" is not known: name a Data Handle a capability returned.`);
-        data[name] = table;
+        data.set(name, table);
     }
     for (const input of board.inputs) {
-        if (!Object.hasOwn(data, input.name)) throw new BoardRefusedError('data', `Input '${input.name}' is bound to no Data Handle.`);
+        if (!data.has(input.name)) throw new BoardRefusedError('data', `Input '${input.name}' is bound to no Data Handle.`);
     }
-    return { board, data };
+    return { board, data: Object.fromEntries(data) };
 }
 
 /**
@@ -194,7 +197,7 @@ function sayView(view: BoundView): string {
             if (layout.rows.length > 0) parts.push(`rows ${and(layout.rows.map(f => f.field))}`);
             if (layout.columns.length > 0) parts.push(`columns ${and(layout.columns.map(f => f.field))}`);
             if (layout.filters.length > 0) parts.push(`filtered by ${and(layout.filters.map(f => f.field))}`);
-            parts.push(layout.values.length === 0 ? 'no values' : `values ${and(layout.values.map(v => `${aggregationName(v.aggregation)} of ${v.field}`))}`);
+            parts.push(layout.values.length === 0 ? 'no values' : `values ${and(layout.values.map(v => `${aggregationTitle(v.aggregation)} of ${v.field}`))}`);
             const rows = view.snapshot === undefined ? 'a report' : count(view.snapshot.rowCount, 'row');
             return `${named} is a pivot of ${rows} of ${view.view.input}: ${parts.join('; ')}.`;
         }
@@ -214,17 +217,9 @@ function sayView(view: BoundView): string {
     }
 }
 
-function columnsJson(shape: DataShape): string {
-    return `[${shape.columns.map(column => `{"name":${jsonStringText(column.name)},"type":${jsonStringText(column.kind)}}`).join(',')}]`;
-}
-
-// An aggregation as C#'s PivotAggregation names it: Sum, CountNumbers, StdDevp.
-function aggregationName(aggregation: string): string {
-    return `${aggregation.charAt(0).toUpperCase()}${aggregation.slice(1)}`;
-}
-
 // A count as C#'s N0 writes it under the invariant culture, a comma between each three digits, and its noun.
 function count(value: number, noun: string): string {
+    if (!Number.isSafeInteger(value) || value < 0) throw new RangeError(`${String(value)} ${noun}s is not a count.`);
     return `${String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} ${noun}${value === 1 ? '' : 's'}`;
 }
 
