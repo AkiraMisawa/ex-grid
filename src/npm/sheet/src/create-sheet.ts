@@ -8,11 +8,12 @@
 // carry none (ADR-0050 item 12).
 
 import {
-    createGrid, formulaBarHeight, gridChromeSlotNames, refusedCells, replacedCells, type CellPosition, type GridChrome, type GridDirection,
+    createGrid, formulaBarHeight, gridChromeSlotNames, refusedCells, summaryFigureOrder, replacedCells, type CellPosition, type GridChrome, type GridDirection,
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
     type ViewportSize, type GridEditorReference, type ReferenceKeyColour, type GridPointArrow, type GridPointState, type EditorCompletion,
+    type SelectionSummary, type SummaryFigure,
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
@@ -154,6 +155,36 @@ export interface SheetOptions {
     readonly japanese?: boolean;
     /** The Consumer's word for any id, which wins over ExSheet's own (ADR-0370, section 10). */
     readonly label?: SheetLabel;
+    /**
+     * The Consumer's word for each of the grid's own ids, its commands and its refusals (ADR-0036, ADR-0203), handed to
+     * the Sheet's grid as its `commandLabel`: `undefined` keeps the grid's English, and the empty string silences the
+     * announcement of a refusal. The Sheet's own ids are worded through `label`.
+     */
+    readonly commandLabel?: (id: string) => string | undefined;
+    /** Shows the Selection Summary under the Sheet, as Excel's status bar does (ADR-0130); shown unless `false`.
+     * `onSelectionSummaryChanged` still hears it while hidden. */
+    readonly showSelectionSummary?: boolean;
+    /** The Selection Summary's figures, Excel's Average, Count and Sum unless given (ADR-0130). The Sheet holds the
+     * choice made in the figures menu from then on, and tells it through `onSummaryFiguresChanged`; figures handed here
+     * that differ from the ones given before replace it. */
+    readonly summaryFigures?: readonly SummaryFigure[];
+    /** Hears the figures the user chose in the figures menu, a right-click on the summary (ADR-0130). The Sheet already
+     * shows them. */
+    readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
+    /** Hears the Selection Summary as it now stands (ADR-0130), for an application that shows the figures elsewhere. */
+    readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
+    /**
+     * Offers copy with headers in the Context Menu, which copies the Values with the column letters as the first row
+     * (ADR-0048). Off unless `true`: a Sheet's column letters are addresses, not headers, and Excel has no such command
+     * (ADR-0050 item 13).
+     */
+    readonly allowCopyWithHeaders?: boolean;
+    /**
+     * Hears that one of Excel's formatting keys was pressed while an edit is open (ADR-0071): the key changed nothing,
+     * and the Sheet's notice says why. In that state Excel formats the selected characters, and a Cell Format is per
+     * cell. The key is still claimed, so the browser's own meaning does not run either: Ctrl+U opens no page source.
+     */
+    readonly onFormatKeyRefused?: (refusal: SheetRefusal) => void;
     /** The grid's density (ADR-0028); `compact` unless given. Column widths in characters follow it. */
     readonly density?: GridDensity;
     /** The height of a row in pixels (ADR-0013). */
@@ -400,6 +431,15 @@ function isSheetDay(day: unknown): day is SheetDay {
     return read.getUTCFullYear() === year && read.getUTCMonth() === month - 1 && read.getUTCDate() === date;
 }
 
+// Whether two lists name the same figures, in any order: the summary shows them in Excel's order whatever the order
+// given (ADR-0130).
+function sameFigures(a: readonly SummaryFigure[] | undefined, b: readonly SummaryFigure[] | undefined): boolean {
+    if (a === b) return true;
+    if (a === undefined || b === undefined) return false;
+    const held = new Set(a);
+    return held.size === new Set(b).size && b.every(figure => held.has(figure));
+}
+
 // Excel's key for the ribbon, which hides and shows the Sheet Toolbar (ADR-0100).
 const toolbarToggleKey = 'Control+F1';
 
@@ -466,6 +506,8 @@ class SheetView {
     #selection: GridSelection | undefined;
     #editing = false;
     #linkedColumnsTold: readonly LinkedColumnColour[] = [];
+    // The figures chosen in the summary's menu, which stand until the Consumer hands other figures (ADR-0130).
+    #summaryChoice: readonly SummaryFigure[] | undefined;
     // The Pointing Scope this Sheet joined (ADR-0058), where the grid last said its edit stands with respect to Point,
     // whether DOM focus is inside the Sheet as the browser last said, and whether the Scope last heard it points.
     #joinedScope: PointingScope | undefined;
@@ -537,7 +579,7 @@ class SheetView {
         this.#document = this.#options.document;
         this.#chosenSeed = chooseSeed();
         this.#workbook = this.#open(this.#options);
-        this.#source = new SheetSource(this.#workbook.shown);
+        this.#source = new SheetSource(this.#workbook.shown, () => this.#words);
         this.#columns = new SheetColumns(this.#options.density ?? 'compact', error => this.#words.formulaUnreadable(error)); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
         this.#columns.read(this.#workbook.shown);
         this.#appearance = appearanceLookup(this.#reading);
@@ -605,10 +647,13 @@ class SheetView {
             this.#columns = new SheetColumns(next.density ?? 'compact', error => this.#words.formulaUnreadable(error)); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
             this.#columns.read(this.#source.sheet);
         }
-        if (next.label !== this.#options.label || next.japanese !== this.#options.japanese) this.#words = new SheetWords({ japanese: next.japanese, label: next.label });
+        const wordsMoved = next.label !== this.#options.label || next.japanese !== this.#options.japanese;
+        if (wordsMoved) this.#words = new SheetWords({ japanese: next.japanese, label: next.label });
         const seedBefore = this.#options.seed;
         const previous = this.#options;
         this.#options = next;
+        // Other figures handed over replace the choice made in the menu; the same figures again leave it standing.
+        if (!sameFigures(next.summaryFigures, previous.summaryFigures)) this.#summaryChoice = undefined;
         // A document this Sheet raised, handed back, is its own state: nothing is opened again.
         if (next.document !== undefined && this.#raised.has(next.document)) this.#document = next.document;
         if (next.document !== this.#document) {
@@ -627,6 +672,8 @@ class SheetView {
             this.#armTheMinute();
         }
         this.#grid?.update(this.#gridOptions());
+        // A summary declined over a refused cell says why in the words that stand.
+        if (wordsMoved) this.#grid?.refreshSummary();
         this.#bindPointingScope();
         this.#paintFrame();
     }
@@ -737,7 +784,10 @@ class SheetView {
             // has every row of its Window read again, as the C# Sheet's are.
             const first = this.#source.sheet === this.#workbook.sheets[0];
             this.#sheetChanged(first ? [error.change] : [], false);
-            if (!first) this.#source.renewWindow();
+            if (!first) {
+                this.#source.renewWindow();
+                this.#grid?.refreshSummary();
+            }
             this.#paintToolbar();
             throw error;
         }
@@ -911,7 +961,13 @@ class SheetView {
             onNameBoxEntered: this.#onNameBoxEntered,
             dataEdge: this.#dataEdge,
             hideColumnMenu: true,
-            hideCopyWithHeaders: true,
+            hideCopyWithHeaders: this.#options.allowCopyWithHeaders !== true,
+            ...(this.#options.commandLabel === undefined ? {} : { commandLabel: this.#options.commandLabel }),
+            // The Selection Summary is the Sheet Source's (ADR-0130); the Sheet holds the figures chosen in its menu.
+            ...(this.#options.showSelectionSummary === undefined ? {} : { showSelectionSummary: this.#options.showSelectionSummary }),
+            ...this.#summaryFiguresShown(),
+            ...(this.#options.onSelectionSummaryChanged === undefined ? {} : { onSelectionSummaryChanged: this.#options.onSelectionSummaryChanged }),
+            onSummaryFiguresChanged: this.#onSummaryFiguresChanged,
             // Find matches the text a cell is shown with, by the Sheet's rule; the column letters are addresses,
             // not content, and Excel's Find never stops on them (ADR-0332 §4, ADR-0333 §2).
             findMatch: sheetFindMatch,
@@ -947,6 +1003,19 @@ class SheetView {
             ...this.#gridChrome(),
         };
     }
+
+    // The figures the summary shows: those chosen in its menu, else the Consumer's, else the grid's own.
+    #summaryFiguresShown(): { readonly summaryFigures?: readonly SummaryFigure[] } {
+        const figures = this.#summaryChoice ?? this.#options.summaryFigures;
+        return figures === undefined ? {} : { summaryFigures: figures };
+    }
+
+    // A choice made in the summary's menu: the Sheet holds it and shows it, then tells the Consumer (ADR-0130).
+    readonly #onSummaryFiguresChanged = (figures: readonly SummaryFigure[]): void => {
+        this.#summaryChoice = Object.freeze([...figures]);
+        this.#grid?.update(this.#gridOptions());
+        this.#options.onSummaryFiguresChanged?.(this.#summaryChoice);
+    };
 
     // The grid's slots of the Sheet's chrome, handed to its grid as they were given: the same object while the chrome
     // is, so the grid keeps the parts it has drawn (ADR-0390).
@@ -1851,7 +1920,9 @@ class SheetView {
     // is open it changes nothing, and the notice says why.
     #formatKey(kind: SheetFormatKey): void {
         if (this.#editing) {
-            this.#tell(this.#words.formatKeyWhileEditing);
+            const refusal = new SheetRefusal('editIsOpen', this.#words.formatKeyWhileEditing);
+            this.#tell(refusal.message);
+            this.#options.onFormatKeyRefused?.(refusal);
             return;
         }
         // Ctrl+1 opens Format Cells and sets nothing itself (ADR-0071, case 22).
@@ -2094,6 +2165,9 @@ class SheetView {
         if (widths.length > 0 && this.#columns.read(this.#source.sheet, widths)) options = true;
         if (options) this.#grid?.update(this.#gridOptions());
         this.#source.changed(changes);
+        // A change may reach cells under the Selection that the Window does not hold, a recalculation or a whole
+        // column's format among them: the Selection Summary is asked again (ADR-0130).
+        this.#grid?.refreshSummary();
     }
 
     #showSheet(sheet: Sheet): void {
@@ -2242,6 +2316,10 @@ class SheetView {
         // The day is taken as it is now: one the Consumer changes in place afterwards is a new day only when handed over again.
         const taken = today === undefined ? options : { ...options, today: { year: today.year, month: today.month, day: today.day } };
         checkToolbar(options.toolbar);
+        const figures: unknown = options.summaryFigures;
+        if (figures !== undefined && (!Array.isArray(figures) || figures.some((figure: unknown) => !summaryFigureOrder.some(known => known === figure)))) {
+            throw new TypeError(`summaryFigures is a list of the figures ${summaryFigureOrder.join(', ')} (ADR-0130).`);
+        }
         const chrome: unknown = options.chrome;
         if (chrome !== undefined) {
             if (typeof chrome !== 'object' || chrome === null) throw new TypeError("A Sheet's chrome is an object of Chrome slots, each a mount function (ADR-0390).");
@@ -2255,7 +2333,9 @@ class SheetView {
             ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
             ['onShowToolbarChanged', options.onShowToolbarChanged], ['onLinkedColumnColoursChanged', options.onLinkedColumnColoursChanged],
-            ['onPointingRefused', options.onPointingRefused],
+            ['onPointingRefused', options.onPointingRefused], ['onSummaryFiguresChanged', options.onSummaryFiguresChanged],
+            ['onSelectionSummaryChanged', options.onSelectionSummaryChanged], ['onFormatKeyRefused', options.onFormatKeyRefused],
+            ['commandLabel', options.commandLabel],
         ];
         const scope: unknown = options.pointingScope;
         if (scope !== undefined && !(scope instanceof PointingScope)) throw new TypeError('pointingScope is a PointingScope (ADR-0058).');

@@ -122,6 +122,9 @@
             toggle bold, italic, underline and strikethrough, and Ctrl+2, Ctrl+3 and Ctrl+4 the first three, as in Excel; Ctrl+Shift with <code>~ ! @@ # $ % ^</code> applies
             General, <code>#,##0.00</code>, a time, a date, the currency, a percentage and scientific; Ctrl+Shift+&amp;
             draws an outline and Ctrl+Shift+_ removes the borders. Ctrl+1 opens Format Cells.
+            While an edit is open a formatting key changes nothing: the Sheet's notice says why, and
+            <code>OnFormatKeyRefused</code> (<code>onFormatKeyRefused</code> under React) hears the refusal, for a page
+            that shows it on its own status line. The key is still taken, so Ctrl+U opens no page source.
         </p>
         <p>
             From code, <code>SetCellFormatAsync(CellFormatChange)</code> sets only the parts the change names, on every

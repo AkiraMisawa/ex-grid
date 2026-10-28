@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { GridFindRequest } from '@ex-grid/core';
 import { CellAddress, Culture, SheetEdit, Workbook, type Sheet } from '@ex-grid/sheet-engine';
 import { planSheetReplace, positionsOf, sheetFindStep } from '../src/sheet-find';
+import { SheetWords } from '../src/sheet-words';
 import { SheetSource } from '../src/sheet-source';
 
 const columns = ['A', 'B', 'C'];
@@ -58,7 +59,7 @@ describe('SheetSource.find (ADR-0055)', () => {
     it('ADR-0055: a step asked under the version before is answered from the Sheet shown then, which the grid still paints; an older one is given up, never "not found"', async () => {
         const first = sheetOf({ A1: 'here' });
         const second = sheetOf({ B2: 'there' });
-        const source = new SheetSource(first);
+        const source = new SheetSource(first, () => SheetWords.english);
         const signal = new AbortController().signal;
         source.show(second);
         await expect(source.find(request('here', { rowSequenceVersion: 0 }), signal)).resolves.toEqual({ found: true, row: 0, column: 'A' });

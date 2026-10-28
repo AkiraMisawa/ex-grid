@@ -1842,3 +1842,107 @@ describe('the Sheet\'s Chrome slots (ADR-0390)', () => {
         expect(told.toSorted()).toEqual(['-Second', '-Sheet1', '-add']);
     });
 });
+
+const figuresShown = (element: HTMLElement): (string | null)[] =>
+    [...element.querySelectorAll('.ex-status .ex-summary .ex-summary-figure')].map(figure => figure.textContent);
+const figuresMenu = (element: HTMLElement): HTMLButtonElement[] =>
+    [...element.querySelectorAll<HTMLButtonElement>('.ex-summary-menu [role=menuitemcheckbox]')];
+const contextLabels = (element: HTMLElement): (string | null)[] =>
+    [...element.querySelectorAll<HTMLButtonElement>('.ex-popover button[role=menuitem]')].map(item => item.textContent);
+function rightClick(target: Element): void {
+    target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
+}
+function secondaryOnCell(element: HTMLElement, row: number, column: number): void {
+    const viewport = element.querySelector<HTMLElement>('.ex-viewport');
+    if (viewport === null) throw new Error('The grid has no viewport.');
+    for (const type of ['mousedown', 'contextmenu']) {
+        const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 2 });
+        Object.defineProperty(event, 'offsetX', { value: rowHeadingWidthPx(element) + (column * 99) + 20 });
+        Object.defineProperty(event, 'offsetY', { value: row * 28 + 5 });
+        viewport.dispatchEvent(event);
+    }
+}
+
+
+describe('createSheet: the options the Razor ExSheet has beside its grid (ADR-0370 section 1)', () => {
+    it('ADR-0130: the Sheet answers the Selection Summary, holds the figures chosen in its menu, and other figures handed over replace them', async () => {
+        const chosen: (readonly string[])[] = [];
+        const heard: string[] = [];
+        const options: SheetOptions = {
+            document: documentOf({ A1: '1', A2: '2' }), summaryFigures: ['sum'],
+            onSummaryFiguresChanged: figures => { chosen.push(figures); },
+            onSelectionSummaryChanged: summary => { heard.push(summary.status); },
+        };
+        const { element, sheet } = sheetOf(options);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key('ArrowDown', { shiftKey: true });
+        await vi.waitFor(() => { expect(figuresShown(element)).toEqual(['Sum: 3']); });
+        expect(heard).toContain('answered');
+
+        const box = element.querySelector('.ex-status .ex-summary');
+        if (box === null) throw new Error('The Sheet shows no Selection Summary.');
+        rightClick(box);
+        await vi.waitFor(() => { expect(figuresMenu(element)).toHaveLength(6); });
+        figuresMenu(element)[1]?.click();
+        await vi.waitFor(() => { expect(figuresShown(element)).toEqual(['Count: 2', 'Sum: 3']); });
+        expect(chosen).toEqual([['count', 'sum']]);
+
+        // The same figures handed again, in a new list, leave the choice standing; other figures replace it.
+        sheet.update({ ...options, summaryFigures: ['sum'] });
+        await vi.waitFor(() => { expect(figuresShown(element)).toEqual(['Count: 2', 'Sum: 3']); });
+        sheet.update({ ...options, summaryFigures: ['average'] });
+        await vi.waitFor(() => { expect(figuresShown(element)).toEqual(['Average: 1.5']); });
+    });
+
+    it('ADR-0130: a change to cells under the Selection outside the painted rows asks the summary again', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1', A2: '2' }), summaryFigures: ['sum'] });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key(' ', { ctrlKey: true });
+        await vi.waitFor(() => { expect(figuresShown(element)).toEqual(['Sum: 3']); });
+        sheet.do(SheetEdit.enter(CellAddress.parse('A5000'), '10'));
+        await vi.waitFor(() => { expect(figuresShown(element)).toEqual(['Sum: 13']); });
+    });
+
+    it('ADR-0130: showSelectionSummary false hides the line, and the Consumer still hears the figures', async () => {
+        const heard: string[] = [];
+        const { element } = sheetOf({
+            document: documentOf({ A1: '1', A2: '2' }), showSelectionSummary: false,
+            onSelectionSummaryChanged: summary => { heard.push(summary.status); },
+        });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key('ArrowDown', { shiftKey: true });
+        await vi.waitFor(() => { expect(heard).toContain('answered'); });
+        expect(figuresShown(element)).toEqual([]);
+    });
+
+    it('ADR-0071: a formatting key while an edit is open changes nothing, says why, and is heard as a refusal', async () => {
+        const refused: { readonly reason: string; readonly message: string }[] = [];
+        const { element, sheet } = sheetOf({
+            document: documentOf({ A1: '1' }), onFormatKeyRefused: refusal => { refused.push({ reason: refusal.reason, message: refusal.message }); },
+        });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key('F2');
+        expect(sheet.isEditing).toBe(true);
+        key('b', { ctrlKey: true });
+        expect(refused).toEqual([{ reason: 'editIsOpen', message: element.querySelector('.ex-sheet-notice')?.textContent }]);
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(false);
+    });
+
+    it('ADR-0048, ADR-0050 item 13, ADR-0036: Copy with headers is offered only when allowed, and the Consumer words the grid\'s commands', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        secondaryOnCell(element, 0, 0);
+        await vi.waitFor(() => { expect(contextLabels(element)).toEqual(['Copy']); });
+        key('Escape');
+
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, document: documentOf({ A1: '1' }), allowCopyWithHeaders: true,
+            commandLabel: id => (id === 'copy' ? 'コピー' : undefined) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        secondaryOnCell(element, 0, 0);
+        await vi.waitFor(() => { expect(contextLabels(element)).toEqual(['コピー', 'Copy with headers']); });
+    });
+});

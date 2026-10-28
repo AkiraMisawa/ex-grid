@@ -41,12 +41,14 @@ import type { PasteRefusalReason } from '@ex-grid/core';
 import type { PlacementRefusalReason } from '@ex-grid/core';
 import type { PointedAtGrid } from '@ex-grid/core';
 import type { ReferenceColour } from '@ex-grid/core';
+import { SelectionSummary } from '@ex-grid/core';
 import { Sheet } from '@ex-grid/sheet-engine';
 import { SheetChange } from '@ex-grid/sheet-engine';
 import { SheetDay } from '@ex-grid/sheet-engine';
 import { SheetDocument } from '@ex-grid/sheet-engine';
 import { SheetEdit } from '@ex-grid/sheet-engine';
-import type { SheetRefusal } from '@ex-grid/sheet-engine';
+import { SheetRefusal } from '@ex-grid/sheet-engine';
+import { SummaryFigure } from '@ex-grid/core';
 import { Value } from '@ex-grid/sheet-engine';
 import { ViewportSize } from '@ex-grid/core';
 import { Workbook } from '@ex-grid/sheet-engine';
@@ -371,18 +373,23 @@ export type SheetLabel = (id: SheetWordId, english: string) => string | undefine
 
 // @public
 export interface SheetOptions {
+    readonly allowCopyWithHeaders?: boolean;
     readonly chrome?: SheetChrome;
+    readonly commandLabel?: (id: string) => string | undefined;
     readonly density?: GridDensity;
     readonly document?: SheetDocument | WorkbookDocument | undefined;
     readonly japanese?: boolean;
     readonly label?: SheetLabel;
     readonly locale?: string;
     readonly onEditingChanged?: (open: boolean) => void;
+    readonly onFormatKeyRefused?: (refusal: SheetRefusal) => void;
     readonly onLinkedColumnColoursChanged?: (columns: readonly LinkedColumnColour[]) => void;
     readonly onPointingRefused?: (refusal: PointingRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
+    readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
     readonly onSheetsChanged?: (change: SheetsChange) => void;
     readonly onShowToolbarChanged?: (shown: boolean) => void;
+    readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
     readonly onWorkbookChanged?: (document: WorkbookDocument) => void;
     readonly pinnedColumnCount?: number;
     readonly pointingScope?: PointingScope | undefined;
@@ -391,8 +398,10 @@ export interface SheetOptions {
     readonly showColumnHeadings?: boolean;
     readonly showFormulaBar?: boolean;
     readonly showRowHeadings?: boolean;
+    readonly showSelectionSummary?: boolean;
     readonly showSheetTabs?: boolean;
     readonly showToolbar?: boolean;
+    readonly summaryFigures?: readonly SummaryFigure[];
     readonly timeZone?: string | undefined;
     readonly today?: SheetDay | undefined;
     readonly toolbar?: readonly (SheetToolbarRowOptions | 'default')[] | undefined;

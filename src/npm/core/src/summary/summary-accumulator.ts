@@ -100,6 +100,26 @@ export class SummaryAccumulator {
         this.#values += 1;
     }
 
+    /** Adds a number in Excel's double arithmetic, as C#'s `AddDouble` does: never read as a decimal, so a Sheet's
+     * figures are the doubles Excel's are (ADR-0047). One that is not finite makes every figure that reads numbers
+     * #NUM!. */
+    addDouble(value: number): void {
+        this.#values += 1;
+        const first = this.#numbers === 0;
+        this.#numbers += 1;
+        if (!Number.isFinite(value)) {
+            this.#nonFinite = true;
+            return;
+        }
+        if (this.#nonFinite) return;
+        this.#addDouble(value, first);
+    }
+
+    /** Adds a cell that holds something other than a number: counted, never summed. */
+    addOther(): void {
+        this.#values += 1;
+    }
+
     /** Adds a cell holding an error value: counted and never a number. Average, Min, Max and Sum are then
      * shown nowhere; Count and Numerical Count still are, as in Excel's status bar. */
     addError(): void {

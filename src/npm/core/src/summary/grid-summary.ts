@@ -104,11 +104,65 @@ function checkExact(figure: SummaryFigure, exact: ExactDecimal): void {
 
 /** The figures asked for, read from an accumulator over the selected cells, in Excel's order. */
 export function summaryAnswer(accumulator: SummaryAccumulator, figures: readonly SummaryFigure[]): GridSummaryResult {
+    return answeredSummary(summaryFiguresOf(accumulator, figures));
+}
+
+// Each figure asked for, read from the accumulator, in Excel's order.
+function summaryFiguresOf(accumulator: SummaryAccumulator, figures: readonly SummaryFigure[]): Partial<Record<SummaryFigure, AggregateResult>> {
     const answers: Partial<Record<SummaryFigure, AggregateResult>> = {};
     for (const figure of summaryFigureOrder) {
         if (figures.includes(figure)) answers[figure] = accumulator.read(figure);
     }
-    return answeredSummary(answers);
+    return answers;
+}
+
+/**
+ * The selected cells of an answerer that reads them itself, a Sheet's among them, folded one at a time into the
+ * figures' one definition (ADR-0130), which `summaryOf` reads too: the counterpart of C#'s `GridSummaryCells`. A
+ * number is in every figure; text and a Boolean are counted; an error is counted, is never a number, and leaves only
+ * Count and Numerical Count, as Excel's status bar does; a blank is not added at all.
+ */
+export class GridSummaryCells {
+    readonly #accumulator = new SummaryAccumulator();
+
+    /** Adds a value by what it is, as `summaryOf` reads a row's value: `null` and `undefined` are blank, a `number`
+     * and a `bigint` exact numbers, anything else counted and never summed. */
+    add(value: unknown): void {
+        this.#accumulator.add(value);
+    }
+
+    /** Adds a number in Excel's double arithmetic, never read as a decimal. */
+    addNumber(value: number): void {
+        this.#accumulator.addDouble(value);
+    }
+
+    /** Adds a cell that holds something other than a number: counted, never summed. */
+    addOther(): void {
+        this.#accumulator.addOther();
+    }
+
+    /** Adds an error value: counted and never a number. Average, Min, Max and Sum are then shown nowhere; Count and
+     * Numerical Count still are. */
+    addError(): void {
+        this.#accumulator.addError();
+    }
+
+    /** The figures asked for, over the cells added, in Excel's order. `textOf`, where given, writes the text of each
+     * figure that reads numbers (Average, Min, Max, Sum) in the format of the request's Focus, or answers
+     * `undefined` to leave it to the grid. It is handed the figure's double. */
+    answer(figures: readonly SummaryFigure[], textOf?: (figure: number) => string | undefined): GridSummaryResult {
+        const answers = summaryFiguresOf(this.#accumulator, figures);
+        const texts: Partial<Record<SummaryFigure, string>> = {};
+        if (textOf !== undefined) {
+            for (const figure of summaryFigureOrder) {
+                const result = answers[figure];
+                if (result?.kind !== 'number' || isCountFigure(figure)) continue;
+                const text = textOf(result.number);
+                if (text !== undefined) texts[figure] = text;
+            }
+        }
+        return answeredSummary(answers, texts);
+    }
 }
 
 /** A band of selected rows, `top` to before `bottom`, and the columns some range covers across all of it. */
