@@ -348,12 +348,9 @@ test.describe('a recovery the server refuses', () => {
         await gate({ spoil: 1000, fail: 1000 });
         await expect(notice).toContainText('Showing the data as of', { timeout: 30_000 });
         await expect(shell).toHaveClass(/ex-pivot-report-stale/);
+        await expect(notice.getByRole('button', { name: 'Retry' })).toBeVisible();
         expect((await state()).failed).toBeGreaterThan(0);
-
-        // Retry, with the server answering truly again: the newest is shown.
-        await gate({ spoil: 0, fail: 0 });
-        await notice.getByRole('button', { name: 'Retry' }).click();
-        await expect(shell).not.toHaveClass(/ex-pivot-report-stale/);
-        await expect(notice).toHaveText('');
+        // What Retry brings back is PV-37's, above. Pressed here, it raced the live notices, any of
+        // which brings the newest back once the gate opens, and took the button away under the press.
     });
 });
