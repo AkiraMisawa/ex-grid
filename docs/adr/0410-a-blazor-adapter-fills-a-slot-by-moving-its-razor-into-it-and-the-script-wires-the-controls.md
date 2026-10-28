@@ -98,11 +98,23 @@ Script Core's slot contexts (section 3), with the attributes of section 2 named 
 written against the C# core's contexts is rewritten; each product's Change Note says so (ADR-0190). The
 MudBlazor Wrappers are rewritten against the new contexts, keeping their components and their look.
 
+*Note of 2026-10-28, as the first slice was built on ExGrid:* while the C# core still draws the
+grid (ADR-0350 section 7), the views stand beside its contexts rather than replacing them, so a Chrome
+answers both cores. `IGridChrome.ScriptSlots` names the slots a Chrome fills over the Script Core, and
+each is asked for through an overload that takes a view (`ColumnMenu(GridMenuView)`,
+`ContextMenu(GridMenuView)`, `LoadingIndicator(GridLoadingView)`); the members have defaults, so no
+Chrome breaks before the C# core goes, and the C# contexts go with it. A slot a Chrome does not name
+stays the Script Core's own. `ScriptSlotAttributes` holds section 2's attributes, `MenuItem` first.
+
 ### 5. A slot's contents arrive a render later, and the grid is settled only once they stand
 
 On the Server host the contents arrive a round trip after the slot. Meanwhile the core already owes the
 opening focus (ADR-0204), numbers the inputs that arrive (ADR-0240), and answers a menu's keys against the
-place it keeps, which needs no drawn item. The Settled Mark (ADR-0220) is not raised while a mounted
+place it keeps, which needs no drawn item: a key typed on the grid while a menu's contents still owe
+the opening focus is the menu's, and a move it makes renews the focus request, which names the item
+the place stands on (`focusItem`), so the contents take the keyboard there when they arrive (note of
+2026-10-28: the first build answered such a key as the grid's, and a Server-host test of End and
+Enter typed as the menu opened caught it). The Settled Mark (ADR-0220) is not raised while a mounted
 slot's contents have not been moved in, so a test reads a part only once it stands, and a reading never
 depends on the round trip's length (spine rule 6).
 

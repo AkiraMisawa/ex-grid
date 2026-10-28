@@ -1,0 +1,92 @@
+@using ExGrid.Docs.Examples.Data
+@using ExGrid.Cells
+@using ExGrid.Selection
+
+@* A double click on a cell that does not edit opens that trade's note: the grid hands the keyboard on to the
+   field, and Enter there gives it back. MudGridChrome draws the column menu, the Context Menu and the loading bar
+   with MudBlazor's components inside the grid the browser draws. *@
+<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+    <label for="trade-note">@(_noteFor is null ? "Double-click a Trader for its note" : $"Note for trade {_noteFor.Id}")</label>
+    <input id="trade-note" placeholder="Enter to go back to the grid" style="flex: 1"
+           @bind:get="Note" @bind:set="SetNote" @bind:event="oninput" @onkeydown="NoteKeyAsync" @ref="_noteField" />
+</div>
+<ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
+                      OnEdit="Edit" ShowFillHandle OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" Chrome="MudGridChrome.Default" @ref="_grid" />
+
+@code {
+    // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book, editable: true),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed),
+    ];
+
+    private ExGrid.Script.ExGrid<Trade>? _grid;
+    private ElementReference _noteField;
+    private Trade? _noteFor;
+    private readonly Dictionary<int, string> _notes = [];
+
+    private string Note => _noteFor is null ? "" : _notes.GetValueOrDefault(_noteFor.Id, "");
+
+    private void SetNote(string? text)
+    {
+        if (_noteFor is null)
+            return;
+        if (string.IsNullOrEmpty(text))
+            _notes.Remove(_noteFor.Id);
+        else
+            _notes[_noteFor.Id] = text;
+    }
+
+    // Handed on by the grid, not by the field's own FocusAsync: a cell the user pressed meanwhile keeps the keyboard.
+    private async Task OpenNoteAsync(CellPosition at)
+    {
+        if (_grid is null || at.Row >= _source.Window.Count)
+            return;
+        _noteFor = _source.Window[at.Row];
+        await _grid.HandKeyboardToAsync(_noteField);
+    }
+
+    // Given back from the field, which still holds the keyboard as it asks; an Enter that ends a composition is the IME's.
+    private async Task NoteKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.IsComposing && _grid is not null)
+            await _grid.ReturnKeyboardAsync(_noteField);
+    }
+
+    // The browser committed the edit; your source holds what the cell shows from then on.
+    private void Edit(GridEditIntent<Trade> intent) => _source.ReplaceRow(intent.Row, intent.Row with { Book = intent.Value });
+
+    // Each target cell takes the text of the source cell it repeats. Only Book is editable, so every target cell is a
+    // Book, whichever way the drag went. A fill raised under an order that has since moved names other rows: it is
+    // refused, so the grid neither selects nor counts cells nothing wrote. Every row is resolved before one is written,
+    // since a write could reorder them.
+    private void Fill(GridFillIntent fill)
+    {
+        if (fill.RowSequenceVersion != _source.RowSequenceVersion)
+        {
+            fill.Refuse();
+            return;
+        }
+        var rows = _source.Window;
+        var (source, target) = (fill.Source, fill.Target);
+        var writes = Enumerable.Range(target.TopRow, target.RowCount).Select(at =>
+        {
+            var from = rows[source.TopRow + Mod(at - source.TopRow, source.RowCount)];
+            var column = _columns[source.LeftColumn + Mod(target.LeftColumn - source.LeftColumn, source.ColumnCount)];
+            return (Row: rows[at], Book: column.Info.TextOf(from));
+        }).ToList();
+        foreach (var (row, book) in writes)
+            _source.ReplaceRow(row, row with { Book = book });
+    }
+
+    private static int Mod(int value, int by) => ((value % by) + by) % by;
+}

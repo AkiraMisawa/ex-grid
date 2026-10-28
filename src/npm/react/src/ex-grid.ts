@@ -27,7 +27,7 @@ export type ExGridProps<Row> = Omit<GridOptions<Row>, 'chrome'> & {
  * the keyboard's hand-offs: `returnKeyboard` then does nothing, and `handKeyboardTo` focuses the control itself
  * (DC-61).
  */
-export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
+export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy' | 'holdSettled'>;
 
 /** The props as the core takes them: the browser's language where the Consumer gave no locale. */
 function withLocale<Row>(props: GridOptions<Row>, browserLocale: string): GridOptions<Row> {

@@ -8,6 +8,7 @@ import {
     useLayoutEffect, useRef, useState, useSyncExternalStore, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent,
     type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
+import { answerMenuKey, takeMenuFocus } from '@ex-grid/core';
 import type {
     CellEditorView, FilterPanelView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome,
     GridColumnMenuSlotContext, GridContextMenuSlotContext, GridEditorCompletionSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext,
@@ -123,8 +124,7 @@ export function useMenuItems(context: GridMenuSlotContext): (index: number) => M
     useLayoutEffect(() => {
         if (answered.current === context.focusRequest) return;
         answered.current = context.focusRequest;
-        const first = context.commands.findIndex(command => command.enabled);
-        if (first >= 0) context.takeFocus(drawn(first), { preventScroll: true });
+        takeMenuFocus(context, drawn);
     }, [context]);
     return (index: number): MenuItemProps => {
         const command = context.commands[index];
@@ -141,18 +141,7 @@ export function useMenuItems(context: GridMenuSlotContext): (index: number) => M
             onKeyDown: event => {
                 // Only the item's own: an event from a popup the item opened through a portal reaches it in React's
                 // tree, but is not inside it in the page, and is that popup's.
-                if (!within(event)) return;
-                event.preventDefault();
-                const meaning = context.resolveKey(event.key, event.shiftKey, event.ctrlKey || event.altKey || event.metaKey);
-                if (meaning.kind === 'move') {
-                    context.takeFocus(drawn(meaning.item));
-                } else if (meaning.kind === 'run') {
-                    const run = context.commands[meaning.item];
-                    if (run === undefined) throw new Error(`Internal: the core ran item ${meaning.item} of ${context.commands.length}.`);
-                    run.invoke();
-                } else if (meaning.kind === 'close') {
-                    context.close();
-                }
+                if (within(event)) answerMenuKey(context, event, drawn);
             },
             onClick: event => { if (within(event)) command.invoke(); },
             onFocus: event => { if (within(event)) context.itemFocused(index); },

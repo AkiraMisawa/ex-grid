@@ -210,7 +210,19 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// </summary>
     [Parameter] public Func<Validation.GridErrorStepRequest, CancellationToken, Task<Finding.GridFindResult>>? OnFindError { get; set; }
 
+    /// <summary>
+    /// The Chrome that fills the Script Core's slots with Razor (ADR-0410): each slot its
+    /// <see cref="IGridChrome.ScriptSlots"/> names is drawn by its view overload, rendered beside the grid's root
+    /// and moved into the slot by the script, which wires its controls in the browser from the attributes of
+    /// <see cref="ScriptSlotAttributes"/>. Every other part is the Script Core's own, and so is every part while
+    /// this is null.
+    /// </summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
     private ElementReference _root;
+    // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1).
+    private readonly SortedDictionary<long, RazorSlot> _slots = [];
+    private IGridChrome? _renderedChrome;
     private IJSObjectReference? _module;
     private IJSObjectReference? _grid;
     private DotNetObjectReference<ScriptBridge<TRow>>? _bridge;
@@ -268,6 +280,14 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 + "the grid orders Rows out of its sight: give the grid a Source, GridSource.From(rows) for rows held in memory (ADR-0381).");
         }
         ScriptColumns.Check(Columns);
+        if (!ReferenceEquals(Chrome, _renderedChrome))
+        {
+            // Another Chrome draws the slots standing, and the script wires what it drew.
+            _renderedChrome = Chrome;
+            foreach (var slot in _slots.Values)
+                slot.Owed = true;
+            _renderOwed |= _slots.Count > 0;
+        }
         if (!ReferenceEquals(CellState, _sentCellState))
         {
             // Another judgement: the rows the browser shows go again, with their states (ADR-0006).
@@ -361,13 +381,30 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
+        // Each slot's holder beside the root, never inside it: hidden, and holding only the element the fragment is
+        // drawn in, which the script moves into the slot and back (ADR-0410 section 1).
+        foreach (var slot in _slots.Values)
+        {
+            builder.OpenElement(6, "div");
+            builder.SetKey(slot.Id);
+            builder.AddAttribute(7, "hidden", true);
+            builder.OpenElement(8, "div");
+            builder.AddAttribute(9, "class", "ex-razor-slot");
+            builder.AddElementReferenceCapture(10, element => slot.Contents = element);
+            builder.AddContent(11, slot.Fragment(Chrome));
+            builder.CloseElement();
+            builder.CloseElement();
+        }
     }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
+        {
+            await ReportSlotsAsync();
             return;
+        }
         // The script this build was made with, by an address that changes with its content (ADR-0123), and refused
         // when the browser holds another version's: nothing is attached, and the root says so.
         var address = "./" + PackageStylesheet.AddressOf(Assets, ScriptPath, ScriptCoreAsset.Version);
@@ -431,6 +468,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         }
         _grid = grid;
         _attached = true;
+        // A slot the grid mounted as it attached may have been drawn already, before there was a grid to hand it to.
+        await ReportSlotsAsync();
         await SendUpdateAsync();
     }
 
@@ -540,6 +579,60 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         });
 
     // ---- What crosses to the browser ------------------------------------------------------------------------
+
+    /// <summary>The script mounted slot <paramref name="id"/> for the Chrome, with its context as data (ADR-0410).</summary>
+    internal void MountSlot(long id, int version, string name, string context)
+    {
+        if (_disposed)
+            return;
+        _slots.Add(id, new RazorSlot(id, RazorSlot.NameOf(name), version, context));
+        RenderSlots();
+    }
+
+    /// <summary>The slot <paramref name="id"/> was mounted again in place, with another context.</summary>
+    internal void UpdateSlot(long id, int version, string context)
+    {
+        if (_disposed || !_slots.TryGetValue(id, out var slot))
+            return;
+        slot.Take(version, context);
+        RenderSlots();
+    }
+
+    /// <summary>The core took the slot <paramref name="id"/> away; the script has moved its contents back.</summary>
+    internal void UnmountSlot(long id)
+    {
+        if (_disposed || !_slots.Remove(id))
+            return;
+        RenderSlots();
+    }
+
+    private void RenderSlots()
+    {
+        _renderOwed = true;
+        StateHasChanged();
+    }
+
+    // Each slot drawn again is handed to the script, which moves it in, or wires it for the context it now holds.
+    private async Task ReportSlotsAsync()
+    {
+        var grid = _grid;
+        foreach (var slot in _slots.Values.Where(slot => slot.Owed).ToArray())
+        {
+            // Disposed while an earlier slot was handed over: the grid is gone, and nothing is handed to it.
+            if (grid is null || _disposed)
+                return;
+            slot.Owed = false;
+            try
+            {
+                await grid.InvokeVoidAsync("slotRendered", slot.Id, slot.Version, slot.Contents);
+            }
+            catch (JSDisconnectedException)
+            {
+                // The circuit is gone, and the grid with it.
+                return;
+            }
+        }
+    }
 
     private async Task SendUpdateAsync()
     {
@@ -737,6 +830,13 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cellMessages", _judgement);
         if (OnFindError is not null)
             json.WriteBoolean("findsErrors", true);
+        if (Chrome?.ScriptSlots is { } slots and not ScriptSlots.None)
+        {
+            json.WriteStartArray("razorSlots");
+            foreach (var name in RazorSlot.NamesOf(slots))
+                json.WriteStringValue(name);
+            json.WriteEndArray();
+        }
         json.WriteStartArray("hears");
         foreach (var (kind, heard) in Hears())
         {
@@ -1333,8 +1433,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         };
     }
 
-    private static string Text(JsonElement json, string name)
-        => json.GetProperty(name).GetString() ?? throw new InvalidOperationException($"Internal: the Script Core sent no {name}.");
+    private static string Text(JsonElement json, string name) => ScriptJson.Text(json, name);
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()

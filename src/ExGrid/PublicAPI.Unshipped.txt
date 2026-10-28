@@ -19,12 +19,54 @@ const ExGrid.Chrome.GridLabelIds.PasteAlreadyLanded = "paste-already-landed" -> 
 const ExGrid.Chrome.GridLabelIds.PasteUnderWay = "paste-under-way" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.RowCommandTargetLeft = "key-refusal-row-command-target-left" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.MenuItem = "data-ex-menu-item" -> string!
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
 ExGrid.Chrome.FindContext.Deconstruct(out string! Text, out bool MatchCase, out bool WholeCell, out ExGrid.Finding.FindOutcome Outcome, out System.Action<string!>! TextChanged, out System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, out System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, out System.Func<System.Threading.Tasks.Task!>! Next, out System.Func<System.Threading.Tasks.Task!>! Previous, out System.Action! Close, out int FocusRequest, out System.Action<bool>? InnerPopupChanged, out System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus) -> void
 ExGrid.Chrome.FindContext.FindContext(string! Text, bool MatchCase, bool WholeCell, ExGrid.Finding.FindOutcome Outcome, System.Action<string!>! TextChanged, System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, System.Func<System.Threading.Tasks.Task!>! Next, System.Func<System.Threading.Tasks.Task!>! Previous, System.Action! Close, int FocusRequest = 0, System.Action<bool>? InnerPopupChanged = null, System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus = null) -> void
 ExGrid.Chrome.FindContext.MatchCaseChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
 ExGrid.Chrome.FindContext.WholeCellChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
+ExGrid.Chrome.GridLoadingView
+ExGrid.Chrome.GridLoadingView.<Clone>$() -> ExGrid.Chrome.GridLoadingView!
+ExGrid.Chrome.GridLoadingView.Deconstruct(out bool IsLoading, out int PlaceholderRowCount) -> void
+ExGrid.Chrome.GridLoadingView.Equals(ExGrid.Chrome.GridLoadingView? other) -> bool
+ExGrid.Chrome.GridLoadingView.GridLoadingView(bool IsLoading, int PlaceholderRowCount) -> void
+ExGrid.Chrome.GridLoadingView.IsLoading.get -> bool
+ExGrid.Chrome.GridLoadingView.IsLoading.init -> void
+ExGrid.Chrome.GridLoadingView.PlaceholderRowCount.get -> int
+ExGrid.Chrome.GridLoadingView.PlaceholderRowCount.init -> void
+ExGrid.Chrome.GridMenuItemView
+ExGrid.Chrome.GridMenuItemView.<Clone>$() -> ExGrid.Chrome.GridMenuItemView!
+ExGrid.Chrome.GridMenuItemView.Deconstruct(out string! Id, out string! Label, out bool Enabled) -> void
+ExGrid.Chrome.GridMenuItemView.Enabled.get -> bool
+ExGrid.Chrome.GridMenuItemView.Enabled.init -> void
+ExGrid.Chrome.GridMenuItemView.Equals(ExGrid.Chrome.GridMenuItemView? other) -> bool
+ExGrid.Chrome.GridMenuItemView.GridMenuItemView(string! Id, string! Label, bool Enabled) -> void
+ExGrid.Chrome.GridMenuItemView.Id.get -> string!
+ExGrid.Chrome.GridMenuItemView.Id.init -> void
+ExGrid.Chrome.GridMenuItemView.Label.get -> string!
+ExGrid.Chrome.GridMenuItemView.Label.init -> void
+ExGrid.Chrome.GridMenuView
+ExGrid.Chrome.GridMenuView.<Clone>$() -> ExGrid.Chrome.GridMenuView!
+ExGrid.Chrome.GridMenuView.Column.get -> string!
+ExGrid.Chrome.GridMenuView.Column.init -> void
+ExGrid.Chrome.GridMenuView.Deconstruct(out string! Column, out ExGrid.ColumnType Type, out System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridMenuItemView!>! Items) -> void
+ExGrid.Chrome.GridMenuView.Equals(ExGrid.Chrome.GridMenuView? other) -> bool
+ExGrid.Chrome.GridMenuView.GridMenuView(string! Column, ExGrid.ColumnType Type, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridMenuItemView!>! Items) -> void
+ExGrid.Chrome.GridMenuView.Items.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridMenuItemView!>!
+ExGrid.Chrome.GridMenuView.Items.init -> void
+ExGrid.Chrome.GridMenuView.Type.get -> ExGrid.ColumnType
+ExGrid.Chrome.GridMenuView.Type.init -> void
+ExGrid.Chrome.IGridChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.Chrome.IGridChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.Chrome.IGridChrome.LoadingIndicator(ExGrid.Chrome.GridLoadingView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.Chrome.IGridChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlotAttributes
+ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.ColumnMenu = 1 -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.ContextMenu = 2 -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.LoadingIndicator = 4 -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.None = 0 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Clipboard.GridPasteIntent.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Columns.HeaderGroup.Expanded.get -> bool?
 ExGrid.Columns.HeaderGroup.Expanded.init -> void
@@ -290,6 +332,8 @@ ExGrid.Script.ExGrid<TRow>.CellMessageOf.get -> System.Func<TRow!, ExGrid.GridCo
 ExGrid.Script.ExGrid<TRow>.CellMessageOf.set -> void
 ExGrid.Script.ExGrid<TRow>.CellState.get -> ExGrid.Cells.CellStateOf<TRow!>?
 ExGrid.Script.ExGrid<TRow>.CellState.set -> void
+ExGrid.Script.ExGrid<TRow>.Chrome.get -> ExGrid.Chrome.IGridChrome?
+ExGrid.Script.ExGrid<TRow>.Chrome.set -> void
 ExGrid.Script.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<TRow!>!>!
 ExGrid.Script.ExGrid<TRow>.Columns.set -> void
 ExGrid.Script.ExGrid<TRow>.CopyCellCap.get -> long?
@@ -503,6 +547,15 @@ ExGrid.Validation.GridRuleset<TRow>.Set(System.Func<System.Collections.Generic.I
 override ExGrid.Chrome.FindPanelRefusedCell.Equals(object? obj) -> bool
 override ExGrid.Chrome.FindPanelRefusedCell.GetHashCode() -> int
 override ExGrid.Chrome.FindPanelRefusedCell.ToString() -> string!
+override ExGrid.Chrome.GridLoadingView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridLoadingView.GetHashCode() -> int
+override ExGrid.Chrome.GridLoadingView.ToString() -> string!
+override ExGrid.Chrome.GridMenuItemView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridMenuItemView.GetHashCode() -> int
+override ExGrid.Chrome.GridMenuItemView.ToString() -> string!
+override ExGrid.Chrome.GridMenuView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridMenuView.GetHashCode() -> int
+override ExGrid.Chrome.GridMenuView.ToString() -> string!
 override ExGrid.Columns.HeaderGroupToggle.Equals(object? obj) -> bool
 override ExGrid.Columns.HeaderGroupToggle.GetHashCode() -> int
 override ExGrid.Columns.HeaderGroupToggle.ToString() -> string!
@@ -571,6 +624,12 @@ override sealed ExGrid.Script.GridRefusal<TRow>.Placement.Equals(ExGrid.Script.G
 static ExGrid.Chrome.FindPanelLabelIds.OutcomeText(ExGrid.Chrome.FindContext! context, System.Func<string!, string!>! words) -> string!
 static ExGrid.Chrome.FindPanelRefusedCell.operator !=(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
 static ExGrid.Chrome.FindPanelRefusedCell.operator ==(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
+static ExGrid.Chrome.GridLoadingView.operator !=(ExGrid.Chrome.GridLoadingView? left, ExGrid.Chrome.GridLoadingView? right) -> bool
+static ExGrid.Chrome.GridLoadingView.operator ==(ExGrid.Chrome.GridLoadingView? left, ExGrid.Chrome.GridLoadingView? right) -> bool
+static ExGrid.Chrome.GridMenuItemView.operator !=(ExGrid.Chrome.GridMenuItemView? left, ExGrid.Chrome.GridMenuItemView? right) -> bool
+static ExGrid.Chrome.GridMenuItemView.operator ==(ExGrid.Chrome.GridMenuItemView? left, ExGrid.Chrome.GridMenuItemView? right) -> bool
+static ExGrid.Chrome.GridMenuView.operator !=(ExGrid.Chrome.GridMenuView? left, ExGrid.Chrome.GridMenuView? right) -> bool
+static ExGrid.Chrome.GridMenuView.operator ==(ExGrid.Chrome.GridMenuView? left, ExGrid.Chrome.GridMenuView? right) -> bool
 static ExGrid.Columns.HeaderGroupToggle.operator !=(ExGrid.Columns.HeaderGroupToggle? left, ExGrid.Columns.HeaderGroupToggle? right) -> bool
 static ExGrid.Columns.HeaderGroupToggle.operator ==(ExGrid.Columns.HeaderGroupToggle? left, ExGrid.Columns.HeaderGroupToggle? right) -> bool
 static ExGrid.Columns.HiddenMark.operator !=(ExGrid.Columns.HiddenMark? left, ExGrid.Columns.HiddenMark? right) -> bool

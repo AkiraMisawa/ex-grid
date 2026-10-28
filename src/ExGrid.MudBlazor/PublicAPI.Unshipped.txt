@@ -1,1 +1,12 @@
 #nullable enable
+ExGrid.MudBlazor.MudExGridScriptMenu
+ExGrid.MudBlazor.MudExGridScriptMenu.Chrome.get -> ExGrid.MudBlazor.MudGridChrome!
+ExGrid.MudBlazor.MudExGridScriptMenu.Chrome.set -> void
+ExGrid.MudBlazor.MudExGridScriptMenu.MudExGridScriptMenu() -> void
+ExGrid.MudBlazor.MudExGridScriptMenu.View.get -> ExGrid.Chrome.GridMenuView!
+ExGrid.MudBlazor.MudExGridScriptMenu.View.set -> void
+ExGrid.MudBlazor.MudGridChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.LoadingIndicator(ExGrid.Chrome.GridLoadingView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
+~override ExGrid.MudBlazor.MudExGridScriptMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

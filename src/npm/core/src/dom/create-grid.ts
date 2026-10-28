@@ -68,6 +68,12 @@ export interface GridHandle<Row> {
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
     /** Closes the Consumer's popover where one stands; the keyboard returns to the grid. */
     closePopover(): void;
+    /**
+     * Holds the Settled Mark (ADR-0220) until the function it answers is called: for a Framework Adapter whose slot's
+     * contents arrive after the slot, a round trip later on a circuit (ADR-0410 section 5), so that nothing reads the
+     * part before it stands. Each hold is let go once; a second call of its function does nothing.
+     */
+    holdSettled(): () => void;
     /** Whether anything can answer a Selection Summary (ADR-0130): `onSummarize`, or a source that summarises.
      * False: no figure ever appears. */
     readonly canSummarize: boolean;
@@ -150,6 +156,7 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         keyName: (event: KeyboardEvent) => view.keyName(event),
         openPopover: (content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void) => view.openPopover(content, label, closed),
         closePopover: () => { view.closePopover(); },
+        holdSettled: () => view.holdSettled(),
         get canSummarize() {
             return view.canSummarize;
         },

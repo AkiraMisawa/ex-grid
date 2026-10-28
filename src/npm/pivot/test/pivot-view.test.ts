@@ -133,6 +133,7 @@ class GridStandIn {
             keyName: () => { throw new Error('The pivot names no key.'); },
             openPopover: () => { throw new Error('The pivot opens no popover.'); },
             closePopover: () => { throw new Error('The pivot closes no popover.'); },
+            holdSettled: () => { throw new Error('The pivot holds no grid\'s Settled Mark.'); },
             canSummarize: false,
             refreshSummary: () => { throw new Error('The pivot refreshes no summary.'); },
             returnKeyboard: () => { throw new Error('The pivot returns no grid\'s keyboard.'); },

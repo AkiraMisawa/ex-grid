@@ -47,4 +47,13 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
 
     [JSInvokable]
     public void Release(long[] ids, long seen) => grid.Release(ids, seen);
+
+    [JSInvokable]
+    public void MountSlot(long id, int version, string name, string context) => grid.MountSlot(id, version, name, context);
+
+    [JSInvokable]
+    public void UpdateSlot(long id, int version, string context) => grid.UpdateSlot(id, version, context);
+
+    [JSInvokable]
+    public void UnmountSlot(long id) => grid.UnmountSlot(id);
 }

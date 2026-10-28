@@ -34,6 +34,7 @@ export type {
     GridFormulaBarTextSlotContext, GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridNameBoxSlotContext, GridSelectionSummarySlotContext,
 } from './dom/grid-chrome';
 export { gridChromeSlotNames } from './dom/grid-chrome';
+export { answerMenuKey, menuItemAttribute, takeMenuFocus, wireMenuItems, type MenuItemKeyEvent } from './dom/slot-wiring';
 export type {
     FilterPanelCondition, FilterPanelConditions, FilterPanelEntry, FilterPanelValueList, FilterPanelView,
 } from './chrome/filter-panel-model';

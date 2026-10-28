@@ -34,6 +34,9 @@ export type AggregateResult = {
 export function answeredSummary(figures: Readonly<Partial<Record<SummaryFigure, AggregateResult>>>, texts?: Readonly<Partial<Record<SummaryFigure, string>>>): GridSummaryResult;
 
 // @public
+export function answerMenuKey(context: GridMenuSlotContext, event: MenuItemKeyEvent, item: (index: number) => HTMLElement): void;
+
+// @public
 export function assembleCopy(plan: CopyPlan, values: CopyValues): CopyFlavours;
 
 // @public
@@ -1006,6 +1009,7 @@ export interface GridHandle<Row> {
     handKeyboardTo(control: HTMLElement, options?: {
         readonly preventScroll?: boolean;
     }): void;
+    holdSettled(): () => void;
     inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
     keyName(event: KeyboardEvent): string;
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
@@ -1057,6 +1061,7 @@ export interface GridLoadingIndicatorSlotContext {
 export interface GridMenuSlotContext {
     readonly close: () => void;
     readonly commands: readonly GridCommand[];
+    readonly focusItem: number;
     readonly focusRequest: number;
     readonly innerPopupChanged: (open: boolean) => void;
     readonly itemFocused: (index: number) => void;
@@ -1678,6 +1683,19 @@ export interface MarksHost<Row> {
 }
 
 // @public
+export const menuItemAttribute = "data-ex-menu-item";
+
+// @public
+export interface MenuItemKeyEvent {
+    readonly altKey: boolean;
+    readonly ctrlKey: boolean;
+    readonly key: string;
+    readonly metaKey: boolean;
+    preventDefault(): void;
+    readonly shiftKey: boolean;
+}
+
+// @public
 export interface MenuKey {
     readonly item: number;
     readonly kind: MenuKeyKind;
@@ -1963,6 +1981,9 @@ export function summaryOf<Row>(rows: readonly Row[], request: GridSummaryRequest
 export const systemClock: GridClock;
 
 // @public
+export function takeMenuFocus(context: GridMenuSlotContext, item: (index: number) => HTMLElement): void;
+
+// @public
 export interface TemporalLike {
     readonly PlainDate: {
         from(fields: {
@@ -2032,6 +2053,9 @@ export type ViewStateOperand = {
     readonly ticks: bigint;
     readonly offsetMinutes: number;
 };
+
+// @public
+export function wireMenuItems(contents: HTMLElement, context: GridMenuSlotContext, answered?: boolean): () => void;
 
 // @public
 export function writeGridQueryJson(query: GridQuery): string;

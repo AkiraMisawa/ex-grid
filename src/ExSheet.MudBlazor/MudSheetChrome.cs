@@ -89,6 +89,18 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <summary>The loading bar: <see cref="Grid"/>'s.</summary>
     public RenderFragment? LoadingIndicator(LoadingContext context) => GridSeams.LoadingIndicator(context);
 
+    /// <summary>The slots the Grid Chrome fills over the Script Core (ADR-0410), forwarded.</summary>
+    public ScriptSlots ScriptSlots => GridSeams.ScriptSlots;
+
+    /// <summary>The Grid Chrome's column menu over the Script Core (ADR-0410), in ExSheet's words.</summary>
+    public RenderFragment? ColumnMenu(GridMenuView view) => GridSeams.ColumnMenu(view);
+
+    /// <summary>The Grid Chrome's Context Menu over the Script Core (ADR-0410), in ExSheet's words.</summary>
+    public RenderFragment? ContextMenu(GridMenuView view) => GridSeams.ContextMenu(view);
+
+    /// <summary>The Grid Chrome's loading bar over the Script Core (ADR-0410).</summary>
+    public RenderFragment? LoadingIndicator(GridLoadingView view) => GridSeams.LoadingIndicator(view);
+
     /// <summary>The Formula Bar's Name Box: <see cref="Grid"/>'s.</summary>
     public RenderFragment? NameBox(NameBoxContext context) => GridSeams.NameBox(context);
 

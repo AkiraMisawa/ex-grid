@@ -62,7 +62,21 @@
             <code>GridFillIntent</code>, and once your handler completes without refusing, the Selection is the
             source and the target together.
         </p>
-        <DocsExample Builtin="typeof(ScriptCoreGrid)" Files="@(["Examples/Data/Trade.cs"])" />
+        <DocsExample Builtin="typeof(ScriptCoreGrid)" Mud="typeof(ScriptCoreGridMud)" Files="@(["Examples/Data/Trade.cs"])" />
+        <p>
+            Its <code>Chrome</code> takes the same <code>IGridChrome</code>, and a part your Chrome draws in Razor
+            stands inside the grid the browser draws: the component renders it beside the grid, in a hidden holder,
+            and the grid's script moves it into its place. <code>MudGridChrome</code> draws the column menu, the
+            Context Menu and the loading bar this way, with the same MudBlazor buttons and bar; switch the Example
+            to MudBlazor and open a column's ▾. The other parts are still the browser's own here, until the Wrapper
+            draws them too. A Chrome of your own names the parts it draws in <code>ScriptSlots</code> and answers
+            each through the overload that takes a view: <code>ColumnMenu(GridMenuView)</code>,
+            <code>ContextMenu(GridMenuView)</code> and <code>LoadingIndicator(GridLoadingView)</code>. A view is data,
+            the commands' ids, words and whether each is enabled, so a menu's Razor draws one control per item, marks
+            each with <code>ScriptSlotAttributes.MenuItem</code> and its index, and handles none of its keys or
+            presses: the grid's script does, in the browser, so a key typed as the menu opens, before your Razor has
+            arrived over a Blazor Server circuit, is still the menu's.
+        </p>
         <p>
             Not carried yet, and refused by name when a column declares it: Template Columns, Tone and Row Marks.
             Find and the
