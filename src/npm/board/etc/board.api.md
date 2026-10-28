@@ -7,20 +7,30 @@
 import { AxisScale } from '@ex-grid/chart';
 import { BoardInput } from '@ex-grid/data';
 import { ChartRange } from '@ex-grid/chart';
+import type { ChartSourceAnswer } from '@ex-grid/chart';
+import type { ChartSourceQuery } from '@ex-grid/chart';
+import { ChartSourceReading } from '@ex-grid/chart';
 import { ChartSpecReading } from '@ex-grid/chart';
 import { DataShape } from '@ex-grid/data';
+import { DataShapeColumn } from '@ex-grid/data';
+import { FetchingGridSource } from '@ex-grid/core';
 import { GridColumn } from '@ex-grid/core';
+import type { GridQuery } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
+import { GridSource } from '@ex-grid/core';
 import { GridViewState } from '@ex-grid/core';
-import { InMemoryGridSource } from '@ex-grid/core';
 import { JsonValue } from '@ex-grid/data';
 import { PivotFieldItem } from '@ex-grid/pivot-engine';
 import { PivotLayout } from '@ex-grid/pivot-engine';
+import { PivotSource } from '@ex-grid/pivot-engine';
+import type { ShapedSource } from '@ex-grid/data';
 import { Snapshot } from '@ex-grid/data';
 import { SnapshotDecimal } from '@ex-grid/data';
 import { SnapshotKind } from '@ex-grid/data';
-import { SnapshotPivotSource } from '@ex-grid/pivot-engine';
 import { TemporalLike } from '@ex-grid/core';
+
+// @public
+export function answerBoardSpec(json: string, tables: (handle: string) => Snapshot | undefined, options?: Pick<BindBoardOptions, 'locale'>): BoardSpecAnswer;
 
 // @public
 export function bindBoard(board: BoardReading, data: Readonly<Record<string, Snapshot>>, options?: BindBoardOptions): BoundBoard;
@@ -32,9 +42,26 @@ export interface BindBoardOptions {
 }
 
 // @public
+export function bindBoardThrough(board: BoardReading, data: Readonly<Record<string, Snapshot>>, sources: Readonly<Record<string, BoardSource>>, options?: BindBoardThroughOptions): Promise<BoundBoard>;
+
+// @public
+export interface BindBoardThroughOptions extends BindBoardOptions {
+    readonly signal?: AbortSignal;
+}
+
+// @public
 export interface BoardCell {
     readonly view: string;
     readonly width: number;
+}
+
+// @public
+export interface BoardCellsQuery {
+    readonly cells: readonly PivotCellItems[];
+    readonly layout: PivotLayout;
+    readonly narrowing: readonly LinkCondition[];
+    readonly on: readonly string[];
+    readonly view: string;
 }
 
 // @public
@@ -47,6 +74,16 @@ export class BoardChartChange {
 }
 
 // @public
+export const boardChartPixels = 2048;
+
+// @public
+export interface BoardChartQuery {
+    readonly chart: ChartSourceQuery;
+    readonly narrowing: readonly LinkCondition[];
+    readonly view: string;
+}
+
+// @public
 export interface BoardChartView {
     readonly data: readonly string[];
     readonly id: string;
@@ -56,7 +93,13 @@ export interface BoardChartView {
 }
 
 // @public
+export const boardChartViewId = "chart";
+
+// @public
 export type BoardColumnKinds = ReadonlyMap<string, SnapshotKind>;
+
+// @public
+export function boardDeclarationOf(shape: DataShape): string;
 
 // @public
 export const boardDefaultRowHeight = 320;
@@ -127,6 +170,9 @@ export interface BoardLink {
 }
 
 // @public
+export function boardOfChart(chartSpec: string, tables: (handle: string) => DataShape | undefined): BoardReading;
+
+// @public
 export interface BoardOptions {
     readonly board: BoardReading;
     readonly data: Readonly<Record<string, Snapshot>>;
@@ -134,6 +180,7 @@ export interface BoardOptions {
     readonly locale?: string;
     readonly onDiff?: (diff: BoardDiff) => void;
     readonly onOutput?: (output: BoardOutput) => void;
+    readonly sources?: Readonly<Record<string, BoardSource>> | undefined;
     readonly temporal?: TemporalLike;
     readonly width?: number;
 }
@@ -176,6 +223,13 @@ export interface BoardPivotView {
 }
 
 // @public
+export interface BoardQuery {
+    readonly grid: GridQuery;
+    readonly narrowing: readonly LinkCondition[];
+    readonly view: string;
+}
+
+// @public
 export interface BoardReading {
     readonly inputs: readonly BoardInput[];
     readonly layout: readonly BoardRow[];
@@ -190,6 +244,38 @@ export interface BoardRow {
     readonly cells: readonly BoardCell[];
     readonly height: number;
 }
+
+// @public
+export interface BoardSource extends ShapedSource {
+    fetch(query: BoardQuery, signal: AbortSignal): Promise<ShapedPage>;
+    pivot?(narrowing: readonly LinkCondition[]): PivotSource;
+    shape(signal?: AbortSignal): Promise<DataShape>;
+    thin?(query: BoardChartQuery, signal: AbortSignal): Promise<ChartSourceAnswer>;
+    under?(query: BoardCellsQuery, signal: AbortSignal): Promise<LinkCondition>;
+}
+
+// @public
+export type BoardSpecAnswer = {
+    readonly accepted: true;
+    readonly text: string;
+    readonly board: BoardReading;
+    readonly bound: BoundBoard;
+} | {
+    readonly accepted: false;
+    readonly text: string;
+    readonly board: undefined;
+    readonly bound: undefined;
+};
+
+// @public
+export interface BoardSpecTool {
+    readonly description: string;
+    readonly inputSchema: string;
+    readonly name: string;
+}
+
+// @public
+export const boardSpecTool: BoardSpecTool;
 
 // @public
 export const boardTitleHeight = 28;
@@ -209,7 +295,9 @@ export function boardView(board: BoardReading, id: string): BoardView | undefine
 // @public
 export class BoundBoard {
     // @internal
-    constructor(board: BoardReading, data: ReadonlyMap<string, Snapshot>, inputs: ReadonlyMap<string, BoardInput>, views: readonly BoundView[], dropped: readonly string[]);
+    constructor(board: BoardReading, data: ReadonlyMap<string, Snapshot>, sources: ReadonlyMap<string, BoardSource>, inputs: ReadonlyMap<string, BoardInput>, views: readonly BoundView[], dropped: readonly string[]);
+    // @internal
+    askChart(id: string): Promise<void>;
     readonly board: BoardReading;
     canConfirm(name: string): boolean;
     cellCondition(link: BoardLink, cells: readonly PivotCellItems[]): LinkCondition | undefined;
@@ -217,12 +305,19 @@ export class BoundBoard {
     confirm(name: string): BoardOutput | undefined;
     readonly data: ReadonlyMap<string, Snapshot>;
     get diff(): BoardDiff;
+    dispose(): void;
     readonly dropped: readonly string[];
     gridCondition(link: BoardLink, selection: SelectedRows): LinkCondition | undefined;
     narrow(link: BoardLink, condition: LinkCondition | undefined): void;
+    // @internal
+    readThrough(chart: BoundChartView, narrowing: readonly LinkCondition[], signal: AbortSignal | undefined): Promise<ChartSourceReading>;
     select(from: string, selection: SelectedRows): boolean;
     selectCells(from: string, cells: readonly PivotCellItems[] | undefined): boolean;
+    selectCellsThrough(from: string, cells: readonly PivotCellItems[] | undefined): Promise<boolean>;
+    readonly sources: ReadonlyMap<string, BoardSource>;
     subscribe(listener: () => void): () => void;
+    // @internal
+    tellFailed(): void;
     view(id: string): BoundView;
     readonly views: readonly BoundView[];
 }
@@ -230,7 +325,16 @@ export class BoundBoard {
 // @public
 export class BoundChartView {
     // @internal
-    constructor(view: BoardChartView, reading: ChartSpecReading);
+    constructor(view: BoardChartView, reading: ChartSpecReading | undefined);
+    // @internal
+    answers(asked: number): boolean;
+    // @internal
+    ask(stop: AbortSignal): {
+        readonly asked: number;
+        readonly signal: AbortSignal;
+    };
+    // @internal
+    asks(ask: () => Promise<void>): void;
     get change(): BoardChartChange | undefined;
     changeRange(range: ChartRange | undefined): void;
     changeScale(scale: AxisScale): void;
@@ -241,36 +345,56 @@ export class BoundChartView {
     layOver(change: BoardChartChange): void;
     range: ChartRange | undefined;
     // @internal
-    read(reading: ChartSpecReading): void;
-    reading: ChartSpecReading;
+    read(reading: ChartSpecReading | ChartSourceReading): void;
+    get reading(): ChartSpecReading;
     refusal: string | undefined;
     // @internal
     refuse(refusal: string): void;
     scale: AxisScale | undefined;
+    // @internal
+    stopAsking(): void;
+    readonly thinned: boolean;
+    // @internal
+    get versions(): ReadonlyMap<string, bigint>;
     readonly view: BoardChartView;
 }
 
 // @public
 export class BoundGridView {
     // @internal
-    constructor(view: BoardGridView, snapshot: Snapshot, locale: string, path: string);
+    constructor(view: BoardGridView, rows: {
+        readonly snapshot: Snapshot;
+    } | {
+        readonly source: BoardSource;
+        readonly alsoRead: readonly DataShapeColumn[];
+    }, locale: string, path: string);
+    // @internal
+    begin(failed: () => void): void;
     get change(): BoardGridChange | undefined;
     columns: readonly GridColumn<ShapedRow>[];
     // @internal
-    condition(on: readonly string[], selection: SelectedRows): LinkCondition | undefined;
+    condition(on: readonly string[], selection: SelectedRows): {
+        readonly condition: LinkCondition;
+        readonly from: Snapshot | undefined;
+    } | undefined;
+    get failure(): string | undefined;
+    readonly fetched: FetchingGridSource<ShapedRow> | undefined;
     get hidden(): readonly string[];
     hide(column: string): boolean;
+    // @internal
+    holds(selection: SelectedRows): boolean;
     readonly kind = "grid";
     // @internal
     layOver(change: BoardGridChange, dropped: string[]): void;
     // @internal
-    narrowTo(positions: readonly number[] | undefined): void;
+    narrowTo(conditions: readonly LinkCondition[]): void;
     pin(count: number): boolean;
     get pinnedColumnCount(): number;
     reorder(order: readonly string[]): boolean;
     resize(column: string, widthPx: number): boolean;
-    readonly snapshot: Snapshot;
-    readonly source: InMemoryGridSource<ShapedRow>;
+    readonly snapshot: Snapshot | undefined;
+    readonly source: GridSource<ShapedRow>;
+    unread: string | undefined;
     readonly view: BoardGridView;
     get viewState(): GridViewState;
 }
@@ -278,20 +402,33 @@ export class BoundGridView {
 // @public
 export class BoundPivotView {
     // @internal
-    constructor(view: BoardPivotView, snapshot: Snapshot, shape: DataShape);
+    constructor(view: BoardPivotView, shape: DataShape, snapshot: Snapshot | undefined, served: PivotSource | undefined);
     get change(): BoardPivotChange | undefined;
     changeLayout(layout: PivotLayout): void;
     readonly kind = "pivot";
     layout: PivotLayout;
     // @internal
-    narrowTo(narrowed: Snapshot | undefined): void;
-    readonly snapshot: Snapshot;
-    source: SnapshotPivotSource;
+    narrowTo(narrowed: Snapshot | undefined, served: PivotSource | undefined): void;
+    // @internal
+    select(stop: AbortSignal): {
+        readonly selected: number;
+        readonly signal: AbortSignal;
+    };
+    // @internal
+    get selected(): number;
+    readonly served: boolean;
+    // @internal
+    shownData(): Snapshot;
+    readonly snapshot: Snapshot | undefined;
+    source: PivotSource;
     readonly view: BoardPivotView;
 }
 
 // @public
 export type BoundView = BoundGridView | BoundPivotView | BoundChartView;
+
+// @public
+export function checkShapedPage(page: Snapshot, spec: GridViewSpecReading, alsoRead?: readonly DataShapeColumn[]): void;
 
 // @public
 export function createBoard(element: HTMLElement, options: BoardOptions): BoardHandle;
@@ -301,6 +438,9 @@ export const dateFormat = "yyyy-mm-dd";
 
 // @public
 export const dateTimeFormat = "yyyy-mm-dd hh:mm:ss";
+
+// @public
+export function fetchedColumns(spec: GridViewSpecReading, locale?: string): readonly GridColumn<ShapedRow>[];
 
 // @public
 export interface GridViewSpecReading {
@@ -340,6 +480,9 @@ export function readBoard(json: string): BoardReading;
 export function readGridViewSpec(spec: JsonValue, inputs: (name: string) => DataShape | undefined, path: string): GridViewSpecReading;
 
 // @public
+export function sayBoard(bound: BoundBoard): string;
+
+// @public
 export type SelectedRows = Pick<GridSelection, 'ranges'>;
 
 // @public
@@ -354,6 +497,13 @@ export interface ShapedColumn {
 export function shapedColumns(snapshot: Snapshot, spec: GridViewSpecReading, locale?: string): readonly GridColumn<ShapedRow>[];
 
 // @public
+export interface ShapedPage {
+    readonly rows: Snapshot;
+    readonly start: number;
+    readonly totalCount: number;
+}
+
+// @public
 export interface ShapedRow {
     readonly at: number;
     readonly snapshot: Snapshot;
@@ -361,5 +511,8 @@ export interface ShapedRow {
 
 // @public
 export function shapedRows(snapshot: Snapshot): readonly ShapedRow[];
+
+// @public
+export function valuesUnder(data: Snapshot, query: BoardCellsQuery): LinkCondition;
 
 ```

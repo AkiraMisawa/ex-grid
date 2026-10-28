@@ -123,6 +123,12 @@
             the Board, which is what a workflow saves and runs again without the model, and the Board bound to draw now.
             Edit the call below and leave the field.
         </p>
+        <p>
+            In TypeScript the tool is <code>boardSpecTool</code>, the shape is said by <code>boardDeclarationOf(shape)</code>,
+            and <code>answerBoardSpec(call, handle =&gt; snapshot)</code> answers with <code>accepted</code>,
+            <code>text</code>, <code>board</code> and <code>bound</code>, in the same words as the C# tool, so a host on
+            Node answers a model as a .NET host does.
+        </p>
         <DocsExample Builtin="typeof(BoardToolCallBuiltin)" Mud="typeof(BoardToolCallMud)" Files="@(["Examples/Board/BoardToolCall.cs"])" />
     </DocsSection>
 
@@ -137,7 +143,9 @@
             makes that spec a Board of one view, <code>BoardSpec.ChartViewId</code>: each handle the spec names becomes an
             input declared with the shape of the table the host holds for it, and a refusal keeps the spec's own path, as
             the tool says it. Bind it with each handle's Snapshot under the handle's name. Below, the spec is a
-            <code>draw_chart</code> call's; write <code>"y": "book"</code> and leave the field to see it refused.
+            <code>draw_chart</code> call's; write <code>"y": "book"</code> and leave the field to see it refused. In
+            TypeScript it is <code>boardOfChart(spec, handle =&gt; shape)</code>, and the view's id
+            <code>boardChartViewId</code>.
         </p>
         <DocsExample Builtin="typeof(ChartSpecBoardBuiltin)" Mud="typeof(ChartSpecBoardMud)" Files="@(["Examples/Board/ChartSpecBoard.cs"])" />
     </DocsSection>
@@ -189,9 +197,33 @@
             cannot do: a sort by a column the grid does not show, and a filter that compares a column with a value of
             another type. <code>BoardDiff</code> reads, writes and fits a Board Diff as ExBoard does, to the byte, and
             <code>bindBoard(board, data, { diff })</code> lays one over the Board, naming in <code>dropped</code> what no
-            longer fits; <code>bound.diff</code> is what the user has changed since. A Board over a server is not yet bound
-            in TypeScript.
+            longer fits; <code>bound.diff</code> is what the user has changed since.
         </p>
+        <p>
+            A Board over a server binds in TypeScript too. Hand <code>createBoard</code> a <code>sources</code> record beside
+            <code>data</code>, or call <code>bindBoardThrough(board, data, sources)</code>. A source is an object of your
+            own. Its <code>shape</code> answers the input's shape, which is checked before anything is drawn, while the
+            Board says it is asking. Its <code>fetch</code> answers a grid's query with a <code>ShapedPage</code>. Its
+            <code>pivot(narrowing)</code> makes the pivot's source, a <code>FetchingPivotSource</code> answering Leaf
+            Aggregates from your server, or any other <code>PivotSource</code>. Its <code>thin</code> answers a chart's
+            points, as <code>thinChartData</code> thins, at <code>boardChartPixels</code> (2,048). Its <code>under</code>
+            answers the values under a pivot's cells, as <code>valuesUnder</code> reads them. Every question carries the
+            link conditions narrowing the view, and the behaviour is the C# Board's, held by the same tests: a
+            selection past the rows fetched says so under the grid, and an answer a later ask replaced is dropped. One
+            thing more is said in TypeScript: a fetched grid whose source fails says so under the grid.
+        </p>
+        <pre class="docs-code"><code>createBoard(element, {
+    board, data: {}, temporal: Temporal,
+    sources: {
+        trades: {
+            shape: () => api.shape('trades'),                                   // checked before anything is drawn
+            fetch: (query, signal) => api.page('trades', query, signal),          // { rows: Snapshot, start, totalCount }
+            pivot: narrowing => new FetchingPivotSource(fields, features, api.pivotFetchers('trades', narrowing)),
+            thin: (query, signal) => api.thin('trades', query, signal),           // as thinChartData thins
+            under: (query, signal) => api.under('trades', query, signal),         // as valuesUnder reads
+        },
+    },
+});</code></pre>
         <p>
             <code>createBoard(element, options)</code> draws a bound Board into an element, as the <code>ExBoard</code>
             component does: its grids with <code>createGrid</code>, its pivots with <code>createPivot</code> and its
@@ -220,7 +252,9 @@ const bound = bindBoard(board, { trades: input.fromJson(rowsJson) });  // or a S
 bound.select('blotter', selection);                             // a grid's selection narrows its links' views
 const output = bound.confirm('chosen');                         // the values chosen with their version, or undefined while none are</code></pre>
         <p>
-            There is no Example here, because this site is a Blazor app and runs no package script of its own.
+            Read this site for React and every Example on this page runs on <code>@@ex-grid/board-react</code>, with its
+            code under <em>Show code</em>: the server's Example answers its source in a few lines of TypeScript over rows
+            in memory, ordering a page with <code>GridSource.from</code>, as a server's query is written to match.
         </p>
     </DocsSection>
 

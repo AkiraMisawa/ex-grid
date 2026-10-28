@@ -8,6 +8,7 @@
 // screen, and the DOM is brought to them. Anything that changes them asks for a pass, which runs in a
 // microtask, so a burst of changes in one task paints once.
 
+import { showCaret } from './caret-shown';
 import { AutoWidth } from '../columns/auto-width';
 import { assembleCopy, checkedCopyAnswer, fieldCopyFlavours, type CopyFlavours, type GridCopyAnswer, type GridCopyRequest } from '../clipboard/clipboard-data';
 import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
@@ -1723,7 +1724,7 @@ export class GridView<Row> {
     // the generated stylesheet their classes name, last in the root (ADR-0071).
     #cellPaint: CellPaint<Row> = CellPaint.empty();
     // The Formula Bar (ADR-0051): its declarations, and its band, made once and in the root while it is shown.
-    #formulaBarDeclared: FormulaBarDeclarations<Row> = { shown: false, nameBoxLabel: undefined, onNameBoxEntered: undefined, borrowedText: undefined };
+    #formulaBarDeclared: FormulaBarDeclarations<Row> = { shown: false, nameBoxLabel: undefined, nameBoxSizeLabel: undefined, onNameBoxEntered: undefined, borrowedText: undefined };
     readonly #bar: FormulaBar;
     #barRead: BarReading<Row> | undefined;
     readonly #appearances = new RowAppearances<Row>();
@@ -2159,6 +2160,46 @@ export class GridView<Row> {
             this.#revealHeaderOwed = undefined;
             this.#followArmed = { focus, target: focus };
         }
+        return true;
+    }
+
+    /**
+     * Places the Selection on `cell` alone and takes it as the current match a Find step found there (ADR-0332 §5),
+     * as the step's own answer would land: a Consumer that answers a step by showing other rows, a Sheet showing the
+     * Sheet the match is on, places the match itself under the version it shows them with, and gives the step up. The
+     * find panel stays open with the keyboard. The cell wears `ex-match-mark-current` while the panel holds a search,
+     * and the next step goes on from it. Answers false, and places nothing, under a version the grid has moved past;
+     * with an edit open it throws, since a step's answer never lands over one.
+     */
+    placeMatch(cell: CellPosition, rowSequenceVersion: number): boolean {
+        if (this.#destroyed) throw new Error('This grid was destroyed: a grid destroyed places nothing.');
+        if (this.#edit !== undefined) throw new Error('A match is placed with no edit open: a Find step never lands over one (ADR-0332).');
+        this.#source.publishGathered?.();
+        const extent = this.#extent;
+        if (!Number.isInteger(cell.row) || !Number.isInteger(cell.column) || cell.row < 0 || cell.column < 0
+            || cell.row >= extent.rowCount || cell.column >= extent.columnCount) {
+            throw new RangeError(`The match (row ${String(cell.row)}, column ${String(cell.column)}) is outside the grid's `
+                + `${String(extent.rowCount)} rows × ${String(extent.columnCount)} columns (ADR-0332).`);
+        }
+        if (rowSequenceVersion !== this.#handedVersion()) {
+            this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
+            return false;
+        }
+        // Landed as a step's own answer lands: the find panel stays open with the keyboard where it is. A step still
+        // out is answered by it, so what that step's source says afterwards, a give-up included, changes nothing.
+        this.#findStepping?.abort();
+        this.#findStepping = undefined;
+        this.#reconcileSelection();
+        const found = cellPosition(cell.row, cell.column);
+        this.#findCurrent = { cell: found, version: this.#sequence() };
+        this.#findCurrentHeader = undefined;
+        this.#setFindOutcome({ kind: 'found' });
+        this.#apply(this.#held.selection.click(found, this.#extent));
+        this.#revealOwed = { target: found, extending: undefined, rowStart: false, stepRows: 0 };
+        this.#revealHeaderOwed = undefined;
+        this.#followArmed = { focus: found, target: found };
+        this.#answered += 1;
+        this.#invalidate();
         return true;
     }
 
@@ -4037,6 +4078,10 @@ export class GridView<Row> {
         // (ADR-0051).
         if (this.#pointPress(event, at)) {
             event.preventDefault();
+            // The press is the user's own way back to the edit: a keyboard that had gone to a control on the page
+            // comes back with it, to the surface the edit is typed in, its selection what Point wrote (ADR-0058, SH-35).
+            const surface = this.#edit === undefined ? undefined : this.#surfaceOf(this.#edit);
+            if (surface !== undefined && this.#root.ownerDocument.activeElement !== surface) surface.focus({ preventScroll: true });
             return;
         }
         // A press past an open editor commits it, as Excel's click-away does; a Reject or a refusal holds it,
@@ -5558,7 +5603,10 @@ export class GridView<Row> {
     #writeEditText(edit: OpenEdit<Row>, text: string, start: number, end: number): void {
         this.#writeEditorText(edit, text);
         if (this.#formulaBarDeclared.shown) this.#bar.showText(text);
-        this.#surfaceOf(edit)?.setSelectionRange(start, end);
+        const surface = this.#surfaceOf(edit);
+        if (surface === undefined) return;
+        surface.setSelectionRange(start, end);
+        showCaret(surface, end);
     }
 
     // Whether what Point wrote stands, its outline over this grid's cells or text written from outside, the
@@ -6689,13 +6737,44 @@ export class GridView<Row> {
             heightPx: this.#barPx,
             widthPx: this.#width === 'stretch' ? undefined : this.#width,
             nameBoxWidthPx: this.#metrics.nameBoxWidthPx,
-            nameBox: read.named,
+            nameBox: this.#nameBoxText(read.named),
             text: edit === undefined ? read.text : this.#editorText(edit),
             borrowed: edit === undefined && read.borrowed,
             editable: edit !== undefined || read.editable,
             nameBoxLabel: read.nameBoxLabel,
             textLabel: read.textLabel,
         });
+    }
+
+    // The Name Box's text, as the C# core's NameBoxText: the Consumer's words for the Focus (`named`). While a pointing
+    // outline stands over an open edit it names the outline's Focus instead, as Excel's does in Point (the Focus itself
+    // has not moved), and the edited cell again the moment the outline goes; while what Point wrote came from outside
+    // the grid, nothing, since the cell pressed there has no name here and naming the edited cell would read as
+    // pointing at it (ADR-0058). While a selecting drag holds the button over more than one cell, the Consumer's words
+    // for the range's size, as Excel's shows `4R x 3C` (ADR-0052). Asked on each pass: these change between passes
+    // that leave the Focus where it was.
+    #nameBoxText(named: string): string {
+        const declared = this.#formulaBarDeclared;
+        if (this.#edit !== undefined) {
+            if (this.#pointedFromOutside) return '';
+            const pointer = this.#pointer?.focus;
+            if (pointer !== undefined) return this.#nameBoxWords(declared.nameBoxLabel?.(pointer), 'nameBoxLabel');
+        }
+        const range = this.#held.selection.focusRange;
+        const sizeLabel = declared.nameBoxSizeLabel;
+        if (sizeLabel === undefined || range === undefined || !this.#dragging || this.#headingDrag || this.#handleDrag !== undefined
+            || this.#pointDragging || rangeCellCount(range) <= 1) {
+            return named;
+        }
+        const size: unknown = sizeLabel(range);
+        if (size === undefined) return named;
+        return this.#nameBoxWords(size, 'nameBoxSizeLabel');
+    }
+
+    #nameBoxWords(words: unknown, from: string): string {
+        if (words === undefined) return '';
+        if (typeof words !== 'string') throw new TypeError(`${from} answers the Name Box's text, not ${typeof words} (ADR-0051).`);
+        return words;
     }
 
     // What the bar reads of the Focus, asked of the Consumer again only when the Focus, its row's instance or a
@@ -8588,6 +8667,8 @@ export class GridView<Row> {
             this.#root.addEventListener('mouseup', this.#onDragEnd);
             this.#root.addEventListener('mouseleave', this.#onLeave);
         } else {
+            // The Name Box names the Focus again once the button is up, where a drag showed its size (ADR-0052).
+            if (this.#formulaBarDeclared.nameBoxSizeLabel !== undefined) this.#invalidate();
             this.#viewport.removeEventListener('mousemove', this.#onDrag);
             this.#header.removeEventListener('mousemove', this.#onDrag);
             this.#root.removeEventListener('mouseup', this.#onDragEnd);
@@ -10893,6 +10974,7 @@ export class GridView<Row> {
         if (element === undefined || this.#root.ownerDocument.activeElement === element) return;
         element.focus({ preventScroll: true });
         element.setSelectionRange(element.value.length, element.value.length);
+        showCaret(element, element.value.length);
     }
 
     // Whether `target` is the editor's: its own field, or anything in the box a Chrome draws it in.

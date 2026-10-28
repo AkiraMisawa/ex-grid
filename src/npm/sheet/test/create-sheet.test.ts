@@ -489,6 +489,141 @@ function twoSheets(): ReturnType<Workbook['toDocument']> {
     return workbook.toDocument();
 }
 
+function claimWorkbook(): ReturnType<Workbook['toDocument']> {
+    const workbook = new Workbook(Culture.of('en-US'), ['Claim', 'Summary']);
+    workbook.do('Claim', SheetEdit.enter(CellAddress.parse('D5'), '7'));
+    workbook.do('Summary', SheetEdit.enter(CellAddress.parse('B1'), '=Claim!D5'));
+    return workbook.toDocument();
+}
+
+function mouse(target: Element | null | undefined, type: string, init: MouseEventInit = {}): MouseEvent {
+    if (target === null || target === undefined) throw new Error(`Nothing to ${type}.`);
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, ...init });
+    target.dispatchEvent(event);
+    return event;
+}
+
+const tabOf = (element: HTMLElement, name: string): HTMLElement => {
+    const found = [...element.querySelectorAll<HTMLElement>('.ex-sheet-tab')].find(tab => tab.textContent === name);
+    if (found === undefined) throw new Error(`No tab '${name}'.`);
+    return found;
+};
+
+describe('what the Sheet Tabs do besides showing a Sheet (ADR-0331 §4, exsheet-workbook ticket 06)', () => {
+    it('ADR-0331 §4: a double click edits the name on its tab, whole selected; Enter commits it as one step, the Formulas follow, and the keyboard is back in the grid', async () => {
+        const { element, sheet } = sheetOf({ document: claimWorkbook() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 1, 1);
+        const grid = document.activeElement;
+        mouse(tabOf(element, 'Claim'), 'dblclick');
+        const field = element.querySelector<HTMLInputElement>('input.ex-sheet-tab-name');
+        if (field === null) throw new Error('No name field.');
+        expect([document.activeElement, field.value, field.selectionStart, field.selectionEnd]).toEqual([field, 'Claim', 0, 5]);
+        field.value = 'Costs';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        key('Enter');
+        expect(element.querySelector('.ex-sheet-tab-name')).toBeNull();
+        expect([tabNames(element), document.activeElement, noticeOf(element)]).toEqual([['Costs', 'Summary'], grid, "Sheet 'Claim' was renamed 'Costs'."]);
+        expect(sheet.workbook.find('Summary')?.getEntryText(CellAddress.parse('B1'))).toBe('=Costs!D5');
+        key('z', { ctrlKey: true });
+        await vi.waitFor(() => { expect(tabNames(element)).toEqual(['Claim', 'Summary']); });
+    });
+
+    it('ADR-0331 §4: a name Excel refuses is refused by name and the field stays; Escape keeps the old name; a press on another tab commits what was typed', async () => {
+        const { element } = sheetOf({ document: claimWorkbook() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 1, 1);
+        const grid = document.activeElement;
+        mouse(tabOf(element, 'Claim'), 'dblclick');
+        const field = (): HTMLInputElement | null => element.querySelector<HTMLInputElement>('input.ex-sheet-tab-name');
+        const typed = (text: string): void => {
+            const at = field();
+            if (at === null) throw new Error('No name field.');
+            at.value = text;
+            at.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        typed('Q1/Q2');
+        key('Enter');
+        expect([field()?.getAttribute('aria-invalid'), document.activeElement === field()]).toEqual(['true', true]);
+        expect(noticeOf(element)).toContain('cannot contain any of');
+        key('Escape');
+        expect([field(), tabNames(element), document.activeElement]).toEqual([null, ['Claim', 'Summary'], grid]);
+
+        mouse(tabOf(element, 'Claim'), 'dblclick');
+        typed('Costs');
+        click(tabOf(element, 'Summary'));
+        expect([field(), tabNames(element), selectedTab(element), document.activeElement]).toEqual([null, ['Costs', 'Summary'], 'Summary', grid]);
+    });
+
+    it('ADR-0331 §4: a name being edited stands while the Consumer moves the tabs round it, and its commit raises the document once', async () => {
+        let raised = 0;
+        const { element, sheet } = sheetOf({ document: claimWorkbook(), onWorkbookChanged: () => { raised += 1; } });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        mouse(tabOf(element, 'Claim'), 'dblclick');
+        const field = element.querySelector<HTMLInputElement>('input.ex-sheet-tab-name');
+        if (field === null) throw new Error('No name field.');
+        field.value = 'Costs';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        raised = 0;
+        sheet.do('Summary', SheetEdit.moveSheet(0));
+        expect([document.activeElement, field.value, raised]).toEqual([field, 'Costs', 1]);
+        key('Enter');
+        expect([tabNames(element), raised, noticeOf(element)]).toEqual([['Summary', 'Costs'], 2, "Sheet 'Claim' was renamed 'Costs'."]);
+    });
+
+    it('ADR-0331 §4: a secondary press opens the tab\'s menu on its first command; ↓ passes what cannot be done; Delete deletes as one step, said, and the keyboard is back in the grid', async () => {
+        const { element, sheet } = sheetOf({ document: claimWorkbook() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 1, 1);
+        const grid = document.activeElement;
+        expect(mouse(tabOf(element, 'Claim'), 'contextmenu', { button: 2 }).defaultPrevented).toBe(true);
+        const menu = element.querySelector<HTMLElement>('.ex-sheet-tab-menu');
+        const items = (): (string | null)[][] => [...element.querySelectorAll('.ex-sheet-tab-command')]
+            .map(item => [item.textContent, item.getAttribute('aria-disabled'), item.classList.contains('ex-sheet-tab-command-active') ? 'active' : null]);
+        expect([document.activeElement === menu, menu?.getAttribute('aria-label')]).toEqual([true, "Sheet 'Claim'"]);
+        expect(items()).toEqual([['Rename', null, 'active'], ['Delete', null, null], ['Move Left', 'true', null], ['Move Right', null, null], ['Copy', null, null]]);
+        key('ArrowDown');
+        key('ArrowDown');
+        expect(items()[3]).toEqual(['Move Right', null, 'active']);
+        key('ArrowUp');
+        key('Enter');
+        expect([element.querySelector('.ex-sheet-tab-menu'), tabNames(element), document.activeElement, noticeOf(element)])
+            .toEqual([null, ['Summary'], grid, "Sheet 'Claim' was deleted. Ctrl+Z gives it back."]);
+        expect(sheet.workbook.find('Summary')?.getEntryText(CellAddress.parse('B1'))).toBe('=#REF!');
+        key('z', { ctrlKey: true });
+        await vi.waitFor(() => { expect(tabNames(element)).toEqual(['Claim', 'Summary']); });
+        expect(selectedTab(element)).toBe('Claim');
+    });
+
+    it('ADR-0331 §4: Shift+F10 on a tab opens its menu and Escape gives the keyboard back to the tab; Copy places the copy after the Sheet and shows it', async () => {
+        const { element } = sheetOf({ document: claimWorkbook() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        const claim = tabOf(element, 'Claim');
+        claim.focus();
+        key('F10', { shiftKey: true });
+        expect(document.activeElement?.className).toBe('ex-sheet-tab-menu');
+        key('Escape');
+        expect([element.querySelector('.ex-sheet-tab-menu'), document.activeElement]).toEqual([null, claim]);
+        mouse(claim, 'contextmenu', { button: 2 });
+        mouse([...element.querySelectorAll('.ex-sheet-tab-command')].find(item => item.textContent === 'Copy'), 'click');
+        expect([tabNames(element), selectedTab(element)]).toEqual([['Claim', 'Claim (2)', 'Summary'], 'Claim (2)']);
+    });
+
+    it('ADR-0331 §4: a tab dragged onto another takes its place and is shown; a press that leaves the strip moves nothing', async () => {
+        const { element } = sheetOf({ document: claimWorkbook() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        const area = element.querySelector('.ex-sheet-tab-area');
+        mouse(tabOf(element, 'Claim'), 'mousedown');
+        expect(area?.getAttribute('data-ex-dragging')).toBe('true');
+        mouse(area, 'mouseleave', { bubbles: false });
+        mouse(tabOf(element, 'Summary'), 'mouseup');
+        expect([tabNames(element), area?.hasAttribute('data-ex-dragging')]).toEqual([['Claim', 'Summary'], false]);
+        mouse(tabOf(element, 'Claim'), 'mousedown');
+        mouse(tabOf(element, 'Summary'), 'mouseup');
+        expect([tabNames(element), selectedTab(element), noticeOf(element)]).toEqual([['Summary', 'Claim'], 'Claim', "Sheet 'Claim' was moved to position 2 of 2."]);
+    });
+});
+
 describe('the Sheet Tabs (ADR-0331)', () => {
     it('ADR-0331 §4: a tab per Sheet under the grid, in the Formula Bar\'s height; a press shows its Sheet and leaves the keyboard in the grid', async () => {
         const { element, sheet } = sheetOf({ document: twoSheets() });
@@ -1852,7 +1987,8 @@ const contextLabels = (element: HTMLElement): (string | null)[] =>
 function rightClick(target: Element): void {
     target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
 }
-function secondaryOnCell(element: HTMLElement, row: number, column: number): void {
+// A secondary press on a cell, as the browser sends it: the press, then the contextmenu.
+function secondary(element: HTMLElement, row: number, column: number): void {
     const viewport = element.querySelector<HTMLElement>('.ex-viewport');
     if (viewport === null) throw new Error('The grid has no viewport.');
     for (const type of ['mousedown', 'contextmenu']) {
@@ -1862,6 +1998,44 @@ function secondaryOnCell(element: HTMLElement, row: number, column: number): voi
         viewport.dispatchEvent(event);
     }
 }
+function menuItems(element: HTMLElement): HTMLButtonElement[] {
+    return [...element.querySelectorAll<HTMLButtonElement>('.ex-popover button[role=menuitem]')];
+}
+function menuItem(element: HTMLElement, label: string): HTMLButtonElement {
+    const found = menuItems(element).find(item => item.textContent === label);
+    if (found === undefined) throw new Error(`The menu has no item '${label}'.`);
+    return found;
+}
+
+describe('the Sheet\'s Context Menu commands (ADR-0036)', () => {
+    it('ADR-0036, ADR-0046: after the clipboard\'s commands the menu offers the Sheet\'s own in its words, and Insert rows above inserts as many rows as the Selection spans, one step', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: 'one', A2: 'two', A3: 'three' }) });
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('two'); });
+        press(element, 1, 0);
+        secondary(element, 1, 0);
+        await vi.waitFor(() => { expect(menuItems(element).length).toBeGreaterThan(0); });
+        expect(menuItems(element).map(item => item.textContent).slice(-5))
+            .toEqual(['Insert rows above', 'Delete rows', 'Insert columns to the left', 'Delete columns', 'Format Cells…']);
+
+        menuItem(element, 'Insert rows above').click();
+        await vi.waitFor(() => { expect(textAt(element, 2, 0)).toBe('two'); });
+        expect(textAt(element, 1, 0)).toBe('');
+        expect(sheet.undo()).toBe(true);
+        await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('two'); });
+    });
+
+    it('ADR-0036, ADR-0071: Format Cells… opens Format Cells over the Selection, and the commands are worded in the Sheet\'s Japanese where it is chosen', async () => {
+        const { element } = sheetOf({ document: documentOf({ A1: '1' }), japanese: true });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        secondary(element, 0, 0);
+        await vi.waitFor(() => { expect(menuItems(element).length).toBeGreaterThan(0); });
+        expect(menuItems(element).map(item => item.textContent)).toContain('上に行を挿入');
+
+        menuItem(element, 'セルの書式設定…').click();
+        await vi.waitFor(() => { expect(element.querySelector('.ex-format-cells')).not.toBeNull(); });
+    });
+});
 
 
 describe('createSheet: the options the Razor ExSheet has beside its grid (ADR-0370 section 1)', () => {
@@ -1935,14 +2109,14 @@ describe('createSheet: the options the Razor ExSheet has beside its grid (ADR-03
     it('ADR-0048, ADR-0050 item 13, ADR-0036: Copy with headers is offered only when allowed, and the Consumer words the grid\'s commands', async () => {
         const { element, sheet } = sheetOf({ document: documentOf({ A1: '1' }) });
         await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
-        secondaryOnCell(element, 0, 0);
-        await vi.waitFor(() => { expect(contextLabels(element)).toEqual(['Copy']); });
+        secondary(element, 0, 0);
+        await vi.waitFor(() => { expect(contextLabels(element).slice(0, 2)).toEqual(['Copy', 'Insert rows above']); });
         key('Escape');
 
         sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, document: documentOf({ A1: '1' }), allowCopyWithHeaders: true,
             commandLabel: id => (id === 'copy' ? 'コピー' : undefined) });
         await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
-        secondaryOnCell(element, 0, 0);
-        await vi.waitFor(() => { expect(contextLabels(element)).toEqual(['コピー', 'Copy with headers']); });
+        secondary(element, 0, 0);
+        await vi.waitFor(() => { expect(contextLabels(element).slice(0, 3)).toEqual(['コピー', 'Copy with headers', 'Insert rows above']); });
     });
 });

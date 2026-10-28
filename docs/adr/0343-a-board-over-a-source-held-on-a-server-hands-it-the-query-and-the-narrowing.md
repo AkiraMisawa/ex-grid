@@ -75,3 +75,19 @@ view that cannot yet be drawn over a server source does.
   held on a server.
 - ~~Open: the chart over a Chart Source, and a link from a server pivot. Each waits on its own decision.~~
   Settled by ADR-0344 and ADR-0345 (2026-10-21).
+
+## Note of 2026-10-28: the Script Core's Board makes a Pivot Source, not a report source
+
+`@ex-grid/board` binds a Board over sources too (`bindBoardThrough`, and `createBoard`'s `sources`), held to
+the C# Board by the same tests, ported. One member differs in what it makes, because the Script Core's
+pivot reads another kind of source. ADR-0370 section 3 has a server pivot answer Leaf Aggregates, with
+the totals built in the page (`FetchingPivotSource`), and ADR-0151's report windows end with the C#
+pivot. So the TypeScript `BoardSource.pivot(narrowing)` makes a `PivotSource` over the rows the
+narrowing lets through, where C#'s `Report` makes a `PivotReportSource`. It is called again at each new
+narrowing, and is refused by path when the source has none, as `Report` is. The rest of the decision
+holds in both: the shape asked first, the narrowing handed to every question, `Unread`, the page's
+version on an output, the date-time default, `thin` and `under` (ADR-0344, ADR-0345).
+
+One thing is said that the C# Board leaves unsaid. A fetched grid whose source fails a question says
+so under the grid ("The source did not answer the grid: …"), and keeps the rows it had, as a chart
+whose source fails says so in its place.

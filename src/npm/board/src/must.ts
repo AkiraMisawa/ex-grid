@@ -27,3 +27,8 @@ export function defined<T>(value: T | undefined, what: string): T {
 export function unreachable(value: never): never {
     throw new Error(`Internal: ${String(value)} is not a value this switch takes.`);
 }
+
+/** What a failure says: an `Error`'s message, or what was thrown, as text. */
+export function messageOf(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
