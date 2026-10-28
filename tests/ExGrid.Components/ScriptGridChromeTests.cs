@@ -99,6 +99,54 @@ public class ScriptGridChromeTests : BunitContext
         Assert.Empty(cut.FindAll(".ex-razor-slot"));
     }
 
+    /// <summary>A held call's arguments as the browser hands them over: gzip of their JSON.</summary>
+    private sealed class Gzipped(byte[] text) : IJSStreamReference
+    {
+        private readonly byte[] _bytes = Packed(text);
+        public long Length => _bytes.LongLength;
+        public ValueTask<Stream> OpenReadStreamAsync(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) =>
+            Length > maxAllowedSize ? throw new ArgumentOutOfRangeException(nameof(maxAllowedSize)) : ValueTask.FromResult<Stream>(new MemoryStream(_bytes, writable: false));
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new NotSupportedException();
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => throw new NotSupportedException();
+
+        private static byte[] Packed(byte[] text)
+        {
+            using var packed = new MemoryStream();
+            using (var gzip = new System.IO.Compression.GZipStream(packed, System.IO.Compression.CompressionLevel.Fastest))
+                gzip.Write(text);
+            return packed.ToArray();
+        }
+    }
+
+    [Fact] // ADR-0005 (as amended 2026-10-20): a call too large for a circuit's message is taken as a stream in its turn, and the calls after it wait for it
+    public async Task ADR0005_a_held_call_is_made_in_its_turn_ahead_of_the_calls_after_it()
+    {
+        var take = _grid.Setup<IJSStreamReference>("take", _ => true);
+        var cut = Grid(new RazorChrome());
+        var arguments = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new object[]
+        {
+            1, 1, "columnMenu", """{"column":"Book","columnType":"text","commands":[{"id":"sort-ascending","label":"Sort A to Z","enabled":true}]}""",
+        }));
+        using var crossed = JsonDocument.Parse($$"""{"held":7,"bytes":{{arguments.Length}}}""");
+        Task mounted = Task.CompletedTask, updated = Task.CompletedTask;
+        await cut.InvokeAsync(() =>
+        {
+            mounted = Bridge().Held("MountSlot", crossed.RootElement);
+            updated = Bridge().UpdateSlot(1, 2,
+                """{"column":"Book","columnType":"text","commands":[{"id":"sort-ascending","label":"Sort A to Z","enabled":false}]}""");
+        });
+        // The slot is not mounted until its call is taken, and the update that names it waits rather than finding nothing.
+        Assert.Equal([7], Assert.Single(take.Invocations).Arguments);
+        Assert.Empty(cut.FindAll(".ex-razor-slot"));
+        Assert.False(updated.IsCompleted);
+
+        take.SetResult(new Gzipped(arguments));
+        await mounted.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+        await updated.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForAssertion(() => Assert.Equal("Sort A to Z (Book, Text, disabled)", cut.Find(".ex-razor-slot button").TextContent));
+    }
+
     /// <summary>A Chrome that fills the filter panel, writing what its view says.</summary>
     private sealed class FilterChrome : IGridChrome
     {

@@ -185,4 +185,17 @@ test.describe('ADR-0380: a commit .NET answers, with 150 ms injected on the Serv
         await expect(page.locator('#script-paste')).toHaveText('Paste: 3 notionals booked');
         await expect(cell(page, 2, 2)).toHaveText('5000');
     });
+
+    // The verdict's text and the fill's three values are each larger than the 32 KB a Server hub takes in one message,
+    // which closed the circuit with nothing on the page: each is held and taken as a stream, in its turn (ADR-0005).
+    test('CP-21, ADR-0005: a commit and a fill past a Server hub\'s message limit reach the Consumer in .NET', async ({ page }) => {
+        await cell(page, 0, 2).click({ force: true });
+        await cell(page, 2, 2).click({ force: true, modifiers: ['Shift'] });
+        await page.keyboard.type('5');
+        await editor(page).fill(`5000${' '.repeat(40_000)}`);
+        await page.keyboard.press('Control+Enter');
+        await answered(page);
+        await expect(page.locator('#script-paste')).toHaveText('Paste: 3 notionals booked');
+        await expect(cell(page, 2, 2)).toHaveText('5000');
+    });
 });

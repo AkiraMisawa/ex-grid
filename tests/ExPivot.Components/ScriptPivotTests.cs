@@ -138,4 +138,40 @@ public class ScriptPivotTests : BunitContext
         Assert.Equal(new SelectionRange(4, 2, 1, 1), heard[0].FocusRange);
         Assert.Same(GridSelection.Empty, heard[1]);
     }
+
+    /// <summary>A held call's arguments as a browser without CompressionStream hands them over: their JSON as it is.</summary>
+    private sealed class Plain(byte[] text) : IJSStreamReference
+    {
+        public long Length => text.LongLength;
+        public ValueTask<Stream> OpenReadStreamAsync(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) =>
+            Length > maxAllowedSize ? throw new ArgumentOutOfRangeException(nameof(maxAllowedSize)) : ValueTask.FromResult<Stream>(new MemoryStream(text, writable: false));
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new NotSupportedException();
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => throw new NotSupportedException();
+    }
+
+    [Fact] // ADR-0005 (as amended 2026-10-20), spine rule 6: a Selection too large for a circuit's message is taken as a stream, and reaches the handler before the one raised after it
+    public async Task ADR0005_a_held_selection_reaches_the_handler_before_the_one_after_it()
+    {
+        var take = _pivot.Setup<IJSStreamReference>("take", _ => true);
+        var heard = new List<GridSelection>();
+        var cut = Pivot(PivotTestContext.Bundled(), ps => ps.Add(p => p.SelectionChanged, (GridSelection selection) => heard.Add(selection)));
+        var ranges = string.Join(",", Enumerable.Range(0, 2_000).Select(row => $$"""{"topRow":{{row * 2}},"leftColumn":1,"rowCount":1,"columnCount":1}"""));
+        var arguments = System.Text.Encoding.UTF8.GetBytes($$"""["selectionChanged",{"ranges":[{{ranges}}],"focus":{"row":0,"column":1},"focusRangeIndex":0}]""");
+        var crossed = Parsed($$"""{"held":3,"bytes":{{arguments.Length}}}""");
+        var none = Parsed("""{"ranges":[],"focus":null,"focusRangeIndex":0}""");
+
+        Task large = Task.CompletedTask, after = Task.CompletedTask;
+        await cut.InvokeAsync(() =>
+        {
+            large = Bridge().Value.Held("Heard", crossed);
+            after = Bridge().Value.Heard("selectionChanged", none);
+        });
+        Assert.Empty(heard);
+        take.SetResult(new Plain(arguments));
+        await large.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+        await after.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+
+        Assert.Equal([2_000, 0], heard.Select(selection => selection.Ranges.Count));
+    }
 }

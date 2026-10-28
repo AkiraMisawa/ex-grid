@@ -8,6 +8,7 @@ import {
     createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridErrorStepRequest, type GridFindResult,
     type GridHandle, type GridOptions, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
+import { crossingCalls, HeldMessages } from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
 import { RazorSlots, isRazorSlotName, type RazorSlotName } from './razor-slots';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
@@ -72,6 +73,8 @@ export interface BlazorGrid {
     /** .NET rendered the contents of the Razor slot `id`, for the data it was sent numbered `version`, in `contents`, in
      * its holder beside the root (ADR-0410). */
     slotRendered(id: number, version: number, contents: HTMLElement | null): void;
+    /** The call held as `held`, too large for a message of its own, as the stream .NET reads it from. Taken once. */
+    take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the grid and empties its element. */
     dispose(): void;
 }
@@ -81,6 +84,9 @@ export interface WireAttach {
     readonly options: WireOptions;
     readonly source: WireSourceTraits;
     readonly state: WireState;
+    /** Whether .NET is across a circuit, Blazor Server's, whose hub limits the size of a message: only then is a
+     * call larger than `inlineBytes` held for .NET to take as a stream (ADR-0005, as amended 2026-10-20). */
+    readonly circuit: boolean;
 }
 
 /** What `update` is handed. `source` is another source of .NET's, the Consumer's next, which the grid hears as a
@@ -98,12 +104,19 @@ export function browserCollector(collected: (held: number) => void): RowCollecto
     return { register: (row, held) => { registry.register(row, held); } };
 }
 
+/** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
+const heldGridCalls: ReadonlySet<string> = new Set(['Heard', 'Validate', 'Find', 'FindError', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot']);
+
 /**
  * Mounts the Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
  * `DotNetObjectReference` and `json` a {@link WireAttach}. What it answers is the component's handle on the grid.
  */
-export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, makeCollector = browserCollector): BlazorGrid {
+export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, makeCollector = browserCollector): BlazorGrid {
     const init = parsed<WireAttach>(json);
+    // A call too large for a message of its own, a large paste, a long edit, a filter of many values or a filter
+    // panel's list, is held, and .NET takes it in its turn: the hub would otherwise close the circuit.
+    const holding = new HeldMessages(init.circuit);
+    const dotnet = crossingCalls(bridge, holding, heldGridCalls);
     // Each answer .NET is asked to give later is numbered, so the user's cancel calls that one off there (ADR-0380).
     let answers = 0;
     const asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>): Promise<T> => {
@@ -182,6 +195,9 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
         // Only a part the user opened takes the keyboard, and the user opens nothing before the grid stands.
         if (made.grid === undefined) throw new Error('Internal: a Razor slot that takes the keyboard was mounted while the grid was being made.');
         void made.grid.inOrder(() => until);
+    }, () => {
+        if (made.grid === undefined) throw new Error('Internal: a Razor slot held the keyboard while the grid was being made.');
+        made.grid.focus();
     });
     const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint, findError, slots));
     made.grid = grid;
@@ -199,11 +215,13 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
             if (control !== null) grid.handKeyboardTo(control, { preventScroll });
         },
         slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots.rendered(id, version, contents); },
+        take: (number: number) => holding.take(number),
         dispose: () => {
             // Nothing is let go once .NET has let go of the bridge, and nothing held is taken in.
             gate.stop();
             rows.stop();
             slots.dispose();
+            holding.clear();
             grid.destroy();
         },
     });

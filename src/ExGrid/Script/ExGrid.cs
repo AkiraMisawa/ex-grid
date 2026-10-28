@@ -229,6 +229,10 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private IJSObjectReference? _grid;
     private DotNetObjectReference<ScriptBridge<TRow>>? _bridge;
     private readonly ScriptRows<TRow> _rows = new();
+
+    /// <summary>The browser's calls into .NET, made in the order the browser made them, one too large for a message of
+    /// its own among them (ADR-0005, as amended 2026-10-20).</summary>
+    internal HeldCalls Calls { get; } = new();
     private readonly Dictionary<long, CancellationTokenSource> _asked = [];
     private readonly Queue<Heard> _heard = new();
     private readonly Dictionary<long, CancellationTokenSource> _answers = [];
@@ -459,6 +463,12 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             grid = await module.InvokeAsync<IJSObjectReference>("attach", _root, bridge, attach);
         }
+        catch
+        {
+            // Never attached: a call held as it attached is never taken, and every call after it is let through.
+            Calls.Stopped();
+            throw;
+        }
         finally
         {
             _attaching = false;
@@ -472,6 +482,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         }
         _grid = grid;
         _attached = true;
+        Calls.Attached(grid);
         // A slot the grid mounted as it attached may have been drawn already, before there was a grid to hand it to.
         await ReportSlotsAsync();
         await SendUpdateAsync();
@@ -723,6 +734,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         WriteTraits(json);
         json.WritePropertyName("state");
         json.WriteRawValue(StateJson());
+        // Across a circuit, Blazor Server's, a call larger than its hub takes would close it: the browser holds one.
+        json.WriteBoolean("circuit", !OperatingSystem.IsBrowser());
         json.WriteEndObject();
     });
 
@@ -1487,6 +1500,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (_disposed)
             return;
         _disposed = true;
+        Calls.Stopped();
         if (_source is not null)
         {
             _source.StateChanged -= OnSourceChanged;

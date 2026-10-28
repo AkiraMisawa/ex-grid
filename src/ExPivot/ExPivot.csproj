@@ -32,7 +32,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)pivot-engine/src/**/*.ts;$(ScriptCoreWorkspace)pivot/src/**/*.ts;$(ScriptCoreWorkspace)pivot-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)pivot-engine/src/**/*.ts;$(ScriptCoreWorkspace)pivot/src/**/*.ts;$(ScriptCoreWorkspace)pivot-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts;$(ScriptCoreWorkspace)blazor/src/held-messages.ts" />
     <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
     <Content Remove="wwwroot/ex-pivot.min.js;wwwroot/ex-pivot.min.js.map" />
   </ItemGroup>
@@ -62,5 +62,12 @@
       <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
     </ItemGroup>
   </Target>
+
+  <ItemGroup>
+    <!-- The browser's calls in their order, a call too large for a circuit's message among them: compiled into each
+         Script adapter, beside the Shared Script's half (src/npm/blazor/src/held-messages.ts). -->
+    <Compile Include="..\Shared\Script\HeldCalls.cs" Link="Script\HeldCalls.cs" />
+    <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
+  </ItemGroup>
 
 </Project>
