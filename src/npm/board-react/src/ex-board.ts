@@ -41,11 +41,12 @@ function withLocale(props: BoardOptions, browserLocale: string | undefined): Boa
     return { ...props, locale: browserLocale };
 }
 
-/** The mount functions made for an ExBoard's render functions, by kind. */
+/** The mount functions made for an ExBoard's render functions, by kind, and the Board's Chrome last made of them. */
 interface BoardMountsMade {
     readonly grid: ChromeMountsMade;
     readonly pivot: PivotMountsMade;
     readonly chart: ChartMountsMade;
+    laid?: { readonly grid: unknown; readonly pivot: unknown; readonly chart: unknown; readonly portals: GridPortals; readonly chrome: BoardChrome };
 }
 
 /** The Board's Chrome as the core takes it: each kind's render functions as the mount functions its product's React
@@ -61,6 +62,10 @@ function boardChromeMounts(given: ExBoardChrome | undefined, portals: GridPortal
     const { grid, pivot, chart, ...others }: { readonly grid?: unknown; readonly pivot?: unknown; readonly chart?: unknown } = chrome;
     const other = Object.keys(others)[0];
     if (other !== undefined) throw new TypeError(`An ExBoard's chrome has no kind '${other}': its kinds are grid, pivot and chart (ADR-0390).`);
+    // The same kinds' Chromes in another object, as a Consumer writes them inline, are the Board's Chrome as it stands:
+    // handed another, every view would be dressed again for each render of the Consumer's.
+    const { laid } = made;
+    if (laid !== undefined && laid.grid === grid && laid.pivot === pivot && laid.chart === chart && laid.portals === portals) return laid.chrome;
     // Each product's own maker checks what it is handed, in its own words, as its React component checks its chrome.
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- checked by chromeMounts
     const gridMounts = chromeMounts(grid as ExGridChrome<unknown> | undefined, portals, made.grid);
@@ -68,11 +73,13 @@ function boardChromeMounts(given: ExBoardChrome | undefined, portals: GridPortal
     const pivotMounts = pivotChromeMounts(pivot as ExPivotChrome | undefined, portals, made.pivot);
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- checked by chartChromeMounts
     const chartMounts = chartChromeMounts(chart as ExChartChrome | undefined, portals, made.chart);
-    return {
+    const laidNow: BoardChrome = {
         ...(gridMounts === undefined ? {} : { grid: gridMounts }),
         ...(pivotMounts === undefined ? {} : { pivot: pivotMounts }),
         ...(chartMounts === undefined ? {} : { chart: chartMounts }),
     };
+    made.laid = { grid, pivot, chart, portals, chrome: laidNow };
+    return laidNow;
 }
 
 /**

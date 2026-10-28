@@ -540,18 +540,23 @@ export class BoardDrawing {
             }
         };
         show();
-        let drawn = { reading: view.reading, refusal: view.refusal, width: this.#options.width };
+        const shownNow = () => ({ reading: view.reading, refusal: view.refusal, width: this.#options.width });
+        let drawn = shownNow();
+        const drawAgain = () => {
+            drawn = shownNow();
+            chart.update(options());
+            show();
+        };
         return {
             destroy: () => { chart.destroy(); },
             redraw: () => {
                 // Told of every narrowing on the Board: only one that reached this chart, or another width, redraws it.
-                const now = { reading: view.reading, refusal: view.refusal, width: this.#options.width };
+                const now = shownNow();
                 if (now.reading === drawn.reading && now.refusal === drawn.refusal && now.width === drawn.width) return;
-                drawn = now;
-                chart.update(options());
-                show();
+                drawAgain();
             },
-            dress: () => { chart.update(options()); },
+            // Dressed again, it is drawn with all the Board now holds, so a width changed with the Chrome is not drawn twice.
+            dress: drawAgain,
         };
     }
 

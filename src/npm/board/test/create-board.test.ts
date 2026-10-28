@@ -407,6 +407,10 @@ describe('createBoard (ADR-0340)', () => {
         view.update({ ...options, chrome: { grid, pivot: { menu, grid: pivotGrid } } });
         expect(mounts.grids).toHaveLength(1);
         expect([shownGrid.options.chrome, pivotView.options.chrome, chartView.options.chrome]).toEqual([grid, { menu, grid: pivotGrid }, undefined]);
+        // Dressed again with another width, a chart is drawn once.
+        const before = chartView.updates;
+        view.update({ ...options, width: 600, chrome: { grid } });
+        expect([chartView.updates - before, chartView.options.width]).toEqual([1, 600]);
     });
 });
 

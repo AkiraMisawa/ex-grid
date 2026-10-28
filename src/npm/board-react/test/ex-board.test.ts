@@ -79,6 +79,8 @@ describe('ExBoard', () => {
         expect(root?.querySelector('[data-ex-view="blotter"] .own-pivot-toolbar')).toBeNull();
         const once = drawn;
         rerender(createElement(ExBoard, { board, data: rows, locale: 'invariant', chrome }));
+        // The same kinds' Chromes written inline again, as a Consumer's render does, draw nothing again either.
+        rerender(createElement(ExBoard, { board, data: rows, locale: 'invariant', chrome: { ...chrome } }));
         await settled();
         expect(drawn).toBe(once);
     });
