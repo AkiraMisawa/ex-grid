@@ -72,6 +72,12 @@ internal sealed class HeldCalls
         var started = new TaskCompletionSource<Task<object?>>(TaskCreationOptions.RunContinuationsAsynchronously);
         _waiting.Enqueue(async () =>
         {
+            if (_stopped)
+            {
+                // Let go of after the module attached: the handle it would be taken from is gone.
+                started.SetCanceled();
+                return;
+            }
             JsonElement arguments;
             try
             {

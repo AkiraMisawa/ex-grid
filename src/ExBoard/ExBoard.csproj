@@ -21,6 +21,10 @@
     <!-- How a Snapshot crosses to a Script adapter's module, compiled into each adapter that sends one, so every one
          crosses them alike (ADR-0065's note of 2026-10-28). -->
     <Compile Include="..\Shared\Script\SnapshotCrossing.cs" Link="Script\SnapshotCrossing.cs" />
+    <!-- The browser's calls in their order, a call too large for a circuit's message among them: compiled into each
+         Script adapter, beside the Shared Script's half (src/npm/blazor/src/held-messages.ts). -->
+    <Compile Include="..\Shared\Script\HeldCalls.cs" Link="Script\HeldCalls.cs" />
+    <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
   </ItemGroup>
 
   <ItemGroup>
