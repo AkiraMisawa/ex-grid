@@ -28,11 +28,17 @@ ExSheet.ISheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Micro
 ExSheet.Script.ExSheet
 ExSheet.Script.ExSheet.AllowCopyWithHeaders.get -> bool
 ExSheet.Script.ExSheet.AllowCopyWithHeaders.set -> void
+ExSheet.Script.ExSheet.CellFormatAtAsync(ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
+ExSheet.Script.ExSheet.CellFormatAtAsync(string! sheet, ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
 ExSheet.Script.ExSheet.CommandLabel.get -> System.Func<string!, string?>?
 ExSheet.Script.ExSheet.CommandLabel.set -> void
 ExSheet.Script.ExSheet.Culture.get -> System.Globalization.CultureInfo?
 ExSheet.Script.ExSheet.Culture.set -> void
+ExSheet.Script.ExSheet.DeclareLinkedTableAsync(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, string? key = null) -> System.Threading.Tasks.Task!
+ExSheet.Script.ExSheet.DeclareLinkedTableAsync(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, System.Collections.Generic.IReadOnlyList<string!>! key) -> System.Threading.Tasks.Task!
 ExSheet.Script.ExSheet.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExSheet.Script.ExSheet.DoAsync(ExSheet.Engine.SheetEdit! edit) -> System.Threading.Tasks.Task!
+ExSheet.Script.ExSheet.DoAsync(string! sheet, ExSheet.Engine.SheetEdit! edit) -> System.Threading.Tasks.Task!
 ExSheet.Script.ExSheet.Document.get -> ExSheet.Engine.SheetDocument?
 ExSheet.Script.ExSheet.Document.set -> void
 ExSheet.Script.ExSheet.DocumentChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetDocument!>
@@ -41,18 +47,27 @@ ExSheet.Script.ExSheet.EditingChanged.get -> Microsoft.AspNetCore.Components.Eve
 ExSheet.Script.ExSheet.EditingChanged.set -> void
 ExSheet.Script.ExSheet.ExSheet() -> void
 ExSheet.Script.ExSheet.IsEditing.get -> bool
+ExSheet.Script.ExSheet.LinkedTablesAsync() -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!>!
 ExSheet.Script.ExSheet.OnFormatKeyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetRefusal!>
 ExSheet.Script.ExSheet.OnFormatKeyRefused.set -> void
+ExSheet.Script.ExSheet.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SelectionSummary!>
+ExSheet.Script.ExSheet.OnSelectionSummaryChanged.set -> void
+ExSheet.Script.ExSheet.OpenAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!>! read) -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.OpenFormatCellsAsync() -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.PinnedColumnCount.get -> int
 ExSheet.Script.ExSheet.PinnedColumnCount.set -> void
+ExSheet.Script.ExSheet.PushLinkedTableAsync(string! name, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> System.Threading.Tasks.Task!
 ExSheet.Script.ExSheet.RedoAsync() -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.RowHeight.get -> double
 ExSheet.Script.ExSheet.RowHeight.set -> void
+ExSheet.Script.ExSheet.SaveAsync(System.Func<ExSheet.Engine.Workbook!, System.Threading.Tasks.Task!>! write) -> System.Threading.Tasks.Task!
 ExSheet.Script.ExSheet.Seed.get -> ulong?
 ExSheet.Script.ExSheet.Seed.set -> void
 ExSheet.Script.ExSheet.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
 ExSheet.Script.ExSheet.SelectionChanged.set -> void
+ExSheet.Script.ExSheet.SetAlignmentAsync(ExSheet.Engine.HorizontalAlignment alignment) -> System.Threading.Tasks.Task<bool>!
+ExSheet.Script.ExSheet.SetCellFormatAsync(ExSheet.Engine.CellFormatChange! change) -> System.Threading.Tasks.Task<bool>!
+ExSheet.Script.ExSheet.SetNumberFormatAsync(ExSheet.Engine.NumberFormat? format) -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.SheetsChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.SheetsChange!>
 ExSheet.Script.ExSheet.SheetsChanged.set -> void
 ExSheet.Script.ExSheet.ShowColumnHeadings.get -> bool

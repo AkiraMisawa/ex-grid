@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ExSheet.Engine.Formulas;
 
 namespace ExSheet.Engine;
@@ -9,8 +10,21 @@ namespace ExSheet.Engine;
 /// </summary>
 public abstract class SheetEdit
 {
+    // How the edit is written for the Script Core (SheetWire.Write): the factory that made it, and the arguments it took.
+    private Action<Utf8JsonWriter>? _wire;
+
     private protected SheetEdit()
     {
+    }
+
+    /// <summary>Writes the edit's factory and its arguments as one property of the object being written (<see cref="SheetWire.Write(SheetEdit)"/>).</summary>
+    internal void WriteTo(Utf8JsonWriter json) =>
+        (_wire ?? throw new InvalidOperationException("Internal: an edit was made without the factory's wire."))(json);
+
+    private static SheetEdit Wired(SheetEdit edit, Action<Utf8JsonWriter> wire)
+    {
+        edit._wire = wire;
+        return edit;
     }
 
     /// <summary>Text typed into one cell, read under the Sheet's culture (<see cref="Sheet.Enter(CellAddress, string)"/>).</summary>
@@ -22,7 +36,7 @@ public abstract class SheetEdit
     {
         ArgumentNullException.ThrowIfNull(typed);
         var list = typed.ToList();
-        return new CellsEdit(list.Select(p => p.Key), sheet => sheet.Enter(list));
+        return Wired(new CellsEdit(list.Select(p => p.Key), sheet => sheet.Enter(list)), json => SheetWire.WriteTyped(json, "enter", list));
     }
 
     /// <summary>Entries set or cleared (<see langword="null"/>) as one operation.</summary>
@@ -30,7 +44,7 @@ public abstract class SheetEdit
     {
         ArgumentNullException.ThrowIfNull(entries);
         var list = entries.ToList();
-        return new CellsEdit(list.Select(p => p.Key), sheet => sheet.SetEntries(list));
+        return Wired(new CellsEdit(list.Select(p => p.Key), sheet => sheet.SetEntries(list)), json => SheetWire.WriteEntries(json, "setEntries", list));
     }
 
     /// <summary>A Number Format set on cells; <see langword="null"/> is General.</summary>
@@ -38,7 +52,13 @@ public abstract class SheetEdit
     {
         ArgumentNullException.ThrowIfNull(addresses);
         var list = addresses.ToList();
-        return new CellsEdit(list, sheet => sheet.SetNumberFormat(list, format));
+        return Wired(new CellsEdit(list, sheet => sheet.SetNumberFormat(list, format)), json =>
+        {
+            json.WriteStartObject("setNumberFormat");
+            SheetWire.WriteAddresses(json, "at", list);
+            WriteFormat(json, format);
+            json.WriteEndObject();
+        });
     }
 
     /// <summary>A horizontal alignment set on cells.</summary>
@@ -46,7 +66,13 @@ public abstract class SheetEdit
     {
         ArgumentNullException.ThrowIfNull(addresses);
         var list = addresses.ToList();
-        return new CellsEdit(list, sheet => sheet.SetAlignment(list, alignment));
+        return Wired(new CellsEdit(list, sheet => sheet.SetAlignment(list, alignment)), json =>
+        {
+            json.WriteStartObject("setAlignment");
+            SheetWire.WriteAddresses(json, "at", list);
+            json.WriteString("alignment", SheetWire.Camel(alignment));
+            json.WriteEndObject();
+        });
     }
 
     /// <summary>
@@ -55,13 +81,31 @@ public abstract class SheetEdit
     /// each, and undoing the step puts back every level exactly (ADR-0047).
     /// </summary>
     public static SheetEdit SetNumberFormat(CellRange range, NumberFormat? format) =>
-        new CellFormatEdit(range, new CellFormatChange { NumberFormat = format ?? NumberFormat.General });
+        Wired(new CellFormatEdit(range, new CellFormatChange { NumberFormat = format ?? NumberFormat.General }), json =>
+        {
+            json.WriteStartObject("setNumberFormat");
+            json.WriteString("at", range.ToString());
+            WriteFormat(json, format);
+            json.WriteEndObject();
+        });
+
+    private static void WriteFormat(Utf8JsonWriter json, NumberFormat? format)
+    {
+        if (format is null) json.WriteNull("format");
+        else json.WriteString("format", format.Code);
+    }
 
     /// <summary>A horizontal alignment set on a range, recorded as <see cref="SetNumberFormat(CellRange, NumberFormat?)"/> records a Number Format.</summary>
     public static SheetEdit SetAlignment(CellRange range, HorizontalAlignment alignment)
     {
         if (!Enum.IsDefined(alignment)) throw new ArgumentOutOfRangeException(nameof(alignment), alignment, "Not an alignment.");
-        return new CellFormatEdit(range, new CellFormatChange { Alignment = alignment });
+        return Wired(new CellFormatEdit(range, new CellFormatChange { Alignment = alignment }), json =>
+        {
+            json.WriteStartObject("setAlignment");
+            json.WriteString("at", range.ToString());
+            json.WriteString("alignment", SheetWire.Camel(alignment));
+            json.WriteEndObject();
+        });
     }
 
     /// <summary>
@@ -74,8 +118,18 @@ public abstract class SheetEdit
     /// </summary>
     /// <exception cref="ArgumentException">There is no range, or the change sets nothing.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The alignment is not one.</exception>
-    public static SheetEdit SetCellFormat(IEnumerable<CellRange> ranges, CellFormatChange change) =>
-        new CellFormatsEdit(Sheet.CheckCellFormat(ranges, change), change);
+    public static SheetEdit SetCellFormat(IEnumerable<CellRange> ranges, CellFormatChange change)
+    {
+        var checkedRanges = Sheet.CheckCellFormat(ranges, change);
+        return Wired(new CellFormatsEdit(checkedRanges, change), json =>
+        {
+            json.WriteStartObject("setCellFormat");
+            SheetWire.WriteRanges(json, "ranges", checkedRanges);
+            json.WritePropertyName("change");
+            SheetWire.WriteChange(json, change);
+            json.WriteEndObject();
+        });
+    }
 
     /// <summary>
     /// A width the user set on every column <paramref name="columns"/> spans, in characters
@@ -85,7 +139,14 @@ public abstract class SheetEdit
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="Sheet.MaxColumnWidth"/>.</exception>
     public static SheetEdit SetColumnWidth(CellRange columns, double? width) =>
-        new ColumnWidthEdit(columns, Sheet.CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, SheetColumnWidthKind.SetByUser) : null);
+        Wired(new ColumnWidthEdit(columns, Sheet.CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, SheetColumnWidthKind.SetByUser) : null), json =>
+        {
+            json.WriteStartObject("setColumnWidth");
+            json.WriteString("columns", columns.ToString());
+            if (width is { } given) json.WriteNumber("width", given);
+            else json.WriteNull("width");
+            json.WriteEndObject();
+        });
 
     /// <summary>
     /// A width an entry widened every column <paramref name="columns"/> spans to, in characters
@@ -96,19 +157,29 @@ public abstract class SheetEdit
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="Sheet.MaxColumnWidth"/>.</exception>
     public static SheetEdit SetAutomaticColumnWidth(CellRange columns, double width) =>
-        new ColumnWidthEdit(columns, new SheetColumnWidth(Sheet.CheckColumnWidth(width)!.Value, SheetColumnWidthKind.WidenedByEntry));
+        Wired(new ColumnWidthEdit(columns, new SheetColumnWidth(Sheet.CheckColumnWidth(width)!.Value, SheetColumnWidthKind.WidenedByEntry)), json =>
+        {
+            json.WriteStartObject("setAutomaticColumnWidth");
+            json.WriteString("columns", columns.ToString());
+            json.WriteNumber("width", width);
+            json.WriteEndObject();
+        });
 
     /// <summary>Rows inserted (<see cref="Sheet.InsertRows"/>).</summary>
-    public static SheetEdit InsertRows(int row, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, true));
+    public static SheetEdit InsertRows(int row, int count = 1) =>
+        Wired(new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, true)), json => SheetWire.WritePlaceAndCount(json, "insertRows", row, count));
 
     /// <summary>Rows deleted (<see cref="Sheet.DeleteRows"/>).</summary>
-    public static SheetEdit DeleteRows(int row, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, false));
+    public static SheetEdit DeleteRows(int row, int count = 1) =>
+        Wired(new StructureEdit(new StructuralEdit(SheetAxis.Rows, row, count, false)), json => SheetWire.WritePlaceAndCount(json, "deleteRows", row, count));
 
     /// <summary>Columns inserted (<see cref="Sheet.InsertColumns"/>).</summary>
-    public static SheetEdit InsertColumns(int column, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Columns, column, count, true));
+    public static SheetEdit InsertColumns(int column, int count = 1) =>
+        Wired(new StructureEdit(new StructuralEdit(SheetAxis.Columns, column, count, true)), json => SheetWire.WritePlaceAndCount(json, "insertColumns", column, count));
 
     /// <summary>Columns deleted (<see cref="Sheet.DeleteColumns"/>).</summary>
-    public static SheetEdit DeleteColumns(int column, int count = 1) => new StructureEdit(new StructuralEdit(SheetAxis.Columns, column, count, false));
+    public static SheetEdit DeleteColumns(int column, int count = 1) =>
+        Wired(new StructureEdit(new StructuralEdit(SheetAxis.Columns, column, count, false)), json => SheetWire.WritePlaceAndCount(json, "deleteColumns", column, count));
 
     /// <summary>
     /// A block copied inside ExSheet, pasted with its top-left cell at <paramref name="origin"/>:
@@ -120,8 +191,9 @@ public abstract class SheetEdit
     {
         ArgumentNullException.ThrowIfNull(block);
         var refusal = Sheet.OffSheet(origin, block.RowCount, block.ColumnCount);
-        return new PlacedEdit(refusal, () => Sheet.Place(block, origin),
-            refusal is null ? [new CellRange(origin, new CellAddress(origin.Row + block.RowCount - 1, origin.Column + block.ColumnCount - 1))] : []);
+        return Wired(new PlacedEdit(refusal, () => Sheet.Place(block, origin),
+            refusal is null ? [new CellRange(origin, new CellAddress(origin.Row + block.RowCount - 1, origin.Column + block.ColumnCount - 1))] : []),
+            json => WritePaste(json, block, at => at.WriteString("at", origin.ToString())));
     }
 
     /// <summary>
@@ -133,7 +205,8 @@ public abstract class SheetEdit
     {
         ArgumentNullException.ThrowIfNull(block);
         CheckWholeMultiple(block, target, nameof(target));
-        return new PlacedEdit(null, () => Tiles(block, target).SelectMany(origin => Sheet.Place(block, origin)), [target]);
+        return Wired(new PlacedEdit(null, () => Tiles(block, target).SelectMany(origin => Sheet.Place(block, origin)), [target]),
+            json => WritePaste(json, block, at => at.WriteString("at", SheetWire.RangeText(target))));
     }
 
     /// <summary>
@@ -152,12 +225,25 @@ public abstract class SheetEdit
         var ranges = targets.ToList();
         if (ranges.Count == 0) throw new ArgumentException("There is no range to paste over.", nameof(targets));
         foreach (var target in ranges) CheckWholeMultiple(block, target, nameof(targets));
-        return new PlacedEdit(null, () =>
+        return Wired(new PlacedEdit(null, () =>
         {
             var states = new Dictionary<CellAddress, CellState>();
             foreach (var (address, state) in ranges.SelectMany(target => Tiles(block, target)).SelectMany(origin => Sheet.Place(block, origin))) states[address] = state;
             return states.Select(p => (p.Key, p.Value));
-        }, ranges);
+        }, ranges), json => WritePaste(json, block, at =>
+        {
+            at.WriteStartArray("at");
+            foreach (var target in ranges) at.WriteStringValue(SheetWire.RangeText(target));
+            at.WriteEndArray();
+        }));
+    }
+
+    private static void WritePaste(Utf8JsonWriter json, SheetBlock block, Action<Utf8JsonWriter> at)
+    {
+        json.WriteStartObject("paste");
+        SheetWire.WriteBlock(json, "block", block);
+        at(json);
+        json.WriteEndObject();
     }
 
     private static void CheckWholeMultiple(SheetBlock block, CellRange target, string parameter)
@@ -194,13 +280,28 @@ public abstract class SheetEdit
         var width = fields[0].Count;
         if (fields.Any(row => row is null || row.Count != width)) throw new ArgumentException("The pasted fields are not rectangular.", nameof(fields));
         var refusal = Sheet.OffSheet(origin, fields.Count, width);
-        if (refusal is not null) return new RefusedEdit(refusal);
+        List<IReadOnlyList<string>> rows = [.. fields.Select(row => (IReadOnlyList<string>)[.. row])];
+        void Wire(Utf8JsonWriter json)
+        {
+            json.WriteStartObject("pasteText");
+            json.WriteStartArray("fields");
+            foreach (var row in rows)
+            {
+                json.WriteStartArray();
+                foreach (var field in row) json.WriteStringValue(field ?? throw new ArgumentException("A field is null.", nameof(fields)));
+                json.WriteEndArray();
+            }
+            json.WriteEndArray();
+            json.WriteString("at", origin.ToString());
+            json.WriteEndObject();
+        }
+        if (refusal is not null) return Wired(new RefusedEdit(refusal), Wire);
         var typed = new List<KeyValuePair<CellAddress, string>>();
         for (var r = 0; r < fields.Count; r++)
         {
             for (var c = 0; c < width; c++) typed.Add(new(new CellAddress(origin.Row + r, origin.Column + c), fields[r][c] ?? throw new ArgumentException("A field is null.", nameof(fields))));
         }
-        return PasteText(typed);
+        return Wired(PasteText(typed), Wire);
     }
 
     /// <summary>
@@ -212,7 +313,12 @@ public abstract class SheetEdit
     {
         ArgumentNullException.ThrowIfNull(fields);
         var list = fields.ToList();
-        return new CellsEdit(list.Select(p => p.Key), sheet => sheet.Enter(list, pasted: true));
+        return Wired(new CellsEdit(list.Select(p => p.Key), sheet => sheet.Enter(list, pasted: true)), json =>
+        {
+            json.WriteStartObject("pasteFields");
+            SheetWire.WriteTyped(json, "typed", list);
+            json.WriteEndObject();
+        });
     }
 
     /// <summary>
@@ -229,8 +335,14 @@ public abstract class SheetEdit
         ArgumentNullException.ThrowIfNull(entries);
         var typed = fields.ToList();
         var exact = entries.ToList();
-        return new CellsEdit(typed.Select(p => p.Key).Concat(exact.Select(p => p.Key)),
-            sheet => SheetChange.Merge([sheet.Enter(typed, pasted: true), sheet.SetEntries(exact)]));
+        return Wired(new CellsEdit(typed.Select(p => p.Key).Concat(exact.Select(p => p.Key)),
+            sheet => SheetChange.Merge([sheet.Enter(typed, pasted: true), sheet.SetEntries(exact)])), json =>
+        {
+            json.WriteStartObject("pasteFields");
+            SheetWire.WriteTyped(json, "typed", typed);
+            SheetWire.WriteEntries(json, "entries", exact);
+            json.WriteEndObject();
+        });
     }
 
     /// <summary>
@@ -246,7 +358,7 @@ public abstract class SheetEdit
     public static SheetEdit Fill(CellRange source, CellRange target, FillDirection direction)
     {
         if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a fill direction.");
-        return new FillEdit(source, target, direction, copyOnly: false);
+        return Wired(new FillEdit(source, target, direction, copyOnly: false), json => WriteFill(json, "fill", source, target, direction));
     }
 
     /// <summary>
@@ -260,7 +372,16 @@ public abstract class SheetEdit
     public static SheetEdit FillCopy(CellRange source, CellRange target, FillDirection direction)
     {
         if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a fill direction.");
-        return new FillEdit(source, target, direction, copyOnly: true);
+        return Wired(new FillEdit(source, target, direction, copyOnly: true), json => WriteFill(json, "fillCopy", source, target, direction));
+    }
+
+    private static void WriteFill(Utf8JsonWriter json, string name, CellRange source, CellRange target, FillDirection direction)
+    {
+        json.WriteStartObject(name);
+        json.WriteString("source", source.ToString());
+        json.WriteString("target", target.ToString());
+        json.WriteString("direction", SheetWire.Camel(direction));
+        json.WriteEndObject();
     }
 
     /// <summary>
@@ -288,7 +409,14 @@ public abstract class SheetEdit
             throw new ArgumentException($"{enteredAt} is not inside any target range.", nameof(enteredAt));
         }
         var cells = ranges.SelectMany(range => range.Cells()).Distinct().ToList();
-        return new CellsEdit(cells, sheet => sheet.EnterInto(cells, enteredAt, typed), FocusFirst(ranges, enteredAt));
+        return Wired(new CellsEdit(cells, sheet => sheet.EnterInto(cells, enteredAt, typed), FocusFirst(ranges, enteredAt)), json =>
+        {
+            json.WriteStartObject("enterInto");
+            SheetWire.WriteRanges(json, "targets", ranges);
+            json.WriteString("at", enteredAt.ToString());
+            json.WriteString("typed", typed);
+            json.WriteEndObject();
+        });
     }
 
     /// <summary>
@@ -303,7 +431,7 @@ public abstract class SheetEdit
     public static SheetEdit Rename(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        return new RenameEdit(Sheet.CheckName(name, nameof(name)));
+        return Wired(new RenameEdit(Sheet.CheckName(name, nameof(name))), json => json.WriteString("rename", name));
     }
 
     /// <summary>
@@ -315,21 +443,27 @@ public abstract class SheetEdit
     /// </summary>
     /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="Sheet.IsValidName"/>).</exception>
     public static SheetEdit InsertSheet(string? name = null, bool before = false) =>
-        new InsertSheetEdit(name is null ? null : Sheet.CheckName(name, nameof(name)), before);
+        Wired(new InsertSheetEdit(name is null ? null : Sheet.CheckName(name, nameof(name)), before), json =>
+        {
+            json.WriteStartObject("insertSheet");
+            if (name is not null) json.WriteString("name", name);
+            json.WriteBoolean("before", before);
+            json.WriteEndObject();
+        });
 
     /// <summary>
     /// The Sheet deleted (ADR-0331): every Reference on another Sheet qualified with its name becomes
     /// <c>#REF!</c>. Unlike Excel, nothing is asked first, and undoing it gives back the Sheet and those
     /// Formulas exactly. The Workbook's last Sheet is not deleted (<see cref="SheetRefusalReason.LastSheet"/>).
     /// </summary>
-    public static SheetEdit DeleteSheet() => new DeleteSheetEdit();
+    public static SheetEdit DeleteSheet() => Wired(new DeleteSheetEdit(), json => json.WriteBoolean("deleteSheet", true));
 
     /// <summary>The Sheet moved to <paramref name="index"/> in the order of the Sheets after the move (ADR-0331).</summary>
     /// <exception cref="ArgumentOutOfRangeException">The index is negative.</exception>
     public static SheetEdit MoveSheet(int index)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
-        return new MoveSheetEdit(index);
+        return Wired(new MoveSheetEdit(index), json => json.WriteNumber("moveSheet", index));
     }
 
     /// <summary>
@@ -342,7 +476,11 @@ public abstract class SheetEdit
     public static SheetEdit CopySheet(int? index = null)
     {
         if (index is { } at) ArgumentOutOfRangeException.ThrowIfNegative(at, nameof(index));
-        return new CopySheetEdit(index);
+        return Wired(new CopySheetEdit(index), json =>
+        {
+            if (index is { } at) json.WriteNumber("copySheet", at);
+            else json.WriteBoolean("copySheet", true);
+        });
     }
 
     /// <summary>Whether the Sheet would refuse this operation as it stands, and why. Changes nothing.</summary>

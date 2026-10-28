@@ -128,6 +128,10 @@ internal sealed class HeldCalls
         }
     }
 
+    /// <summary>Whether <paramref name="crossed"/>, an answer from the browser, is a held message's number and length
+    /// in place of the answer itself, to be taken with <see cref="TakeAsync"/>.</summary>
+    public static bool IsHeld(JsonElement crossed) => crossed.ValueKind == JsonValueKind.Object && crossed.TryGetProperty("held", out _);
+
     /// <summary>The message <paramref name="crossed"/> stands for, taken from <paramref name="handle"/> by its
     /// number.</summary>
     public static async Task<JsonElement> TakeAsync(IJSObjectReference handle, JsonElement crossed)

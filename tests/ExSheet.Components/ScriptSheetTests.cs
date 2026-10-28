@@ -1,6 +1,10 @@
 using System.Globalization;
 using System.Text.Json;
 using Bunit;
+using ExGrid.Components.Tests.Support;
+using ExGrid;
+using ExGrid.Chrome;
+using ExGrid.Selection;
 using ExGrid.Summarizing;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components;
@@ -13,8 +17,9 @@ namespace ExSheet.Components.Tests;
 /// ADR-0370 section 1: Blazor's ExSheet over the Script Core. The Razor component's parameters cross with its defaults;
 /// a document crosses as the JSON both engines read, and one the Sheet raised, bound back two ways, crosses no more;
 /// the Sheet's events reach the Consumer's handlers as the Razor component raises them; a refusal in the browser is
-/// thrown in .NET as the Razor component throws it; and <c>CommandLabel</c>, a .NET function, crosses as the words it
-/// answers.
+/// thrown in .NET as the Razor component throws it, and what else the engine threw as the C# engine throws it; an edit,
+/// a Cell Format change and a Linked Table's rows cross as <see cref="SheetWire"/> writes them; and <c>CommandLabel</c>,
+/// a .NET function, crosses as the words it answers.
 /// </summary>
 public class ScriptSheetTests : BunitContext
 {
@@ -83,6 +88,8 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(["documentChanged"], options.GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
         Assert.Equal(JsonValueKind.Null, attach.GetProperty("document").ValueKind);
         Assert.Equal(0, attach.GetProperty("documentsSent").GetInt32());
+        // Not in a browser, so across a circuit: a message too large for one is held (ADR-0005 as amended 2026-10-20).
+        Assert.True(attach.GetProperty("circuit").GetBoolean());
     }
 
     [Fact] // ADR-0048, ADR-0331: a document raised and bound back crosses no more; the Consumer's own does, and null after one opens an empty Sheet
@@ -168,6 +175,180 @@ public class ScriptSheetTests : BunitContext
         Assert.IsType<JSException>(refused.InnerException);
     }
 
+    [Fact] // ADR-0123: a script that does not load, the circuit's fault included, is refused as another version's is, and a command waiting is told so
+    public async Task ADR0123_a_script_that_did_not_load_is_refused_and_a_waiting_command_is_told()
+    {
+        var stamp = _module.Setup<string?>("stamp");
+        var cut = Sheet(ps => ps.Add(p => p.CommandLabel, id => id == ReloadNoticeLabelIds.Script ? "Reload, please." : null));
+        var undo = cut.InvokeAsync(() => cut.Instance.UndoAsync());
+
+        stamp.SetException(new TaskCanceledException("The import took longer than the circuit waits."));
+
+        var refused = await Assert.ThrowsAsync<InvalidOperationException>(() => undo);
+        Assert.Contains("another version's ExSheet script", refused.Message, StringComparison.Ordinal);
+        Assert.Equal("Reload, please.", cut.Find("[data-ex-notice='script']").TextContent);
+        Assert.Empty(_module.Invocations["attach"]);
+
+        // The notice is worded through CommandLabel as it now stands (ADR-0203).
+        cut.Render(ps => ps.Add(p => p.CommandLabel, id => id == ReloadNoticeLabelIds.Script ? "Bitte neu laden." : null));
+        Assert.Equal("Bitte neu laden.", cut.Find("[data-ex-notice='script']").TextContent);
+    }
+
+    [Fact] // ADR-0330 s10: .NET's read runs in the opening's turn in the browser; its failure is thrown as it was, and an Escape cancels its token
+    public async Task ADR0330_an_opening_reads_in_dotnet_when_the_browser_asks_and_its_failure_is_thrown_whole()
+    {
+        var opened = WorkbookOf("opened").ToDocument();
+        var answers = _sheet.Setup<JsonElement>("open", _ => true);
+        var cut = Sheet();
+        var bridge = Bridge().Value;
+
+        var opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(_ => Task.FromResult(opened)));
+        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["open"]).Arguments[0]);
+        Assert.Equal(opened.ToJson(), Parsed(await bridge.Read(id)).GetProperty("document").GetString());
+        answers.SetResult(Parsed("""{"done":true}"""));
+        Assert.True(await opening);
+
+        // A read that fails: the browser is told its message, and .NET throws the failure itself.
+        answers = _sheet.Setup<JsonElement>("open", _ => true);
+        var failure = new IOException("The file is not an .xlsx workbook.");
+        opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(_ => Task.FromException<WorkbookDocument>(failure)));
+        id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
+        Assert.Equal("""{"failed":"The file is not an .xlsx workbook."}""", await bridge.Read(id));
+        answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The file is not an .xlsx workbook."}}"""));
+        Assert.Same(failure, await Assert.ThrowsAsync<IOException>(() => opening));
+
+        // An Escape the browser heard cancels the read's token, and nothing opens.
+        answers = _sheet.Setup<JsonElement>("open", _ => true);
+        opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(async token =>
+        {
+            await Task.Delay(Timeout.Infinite, token);
+            return opened;
+        }));
+        id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
+        var read = bridge.Read(id);
+        Assert.False(read.IsCompleted);
+        await bridge.CancelRead(id);
+        Assert.Equal("""{"cancelled":true}""", await read);
+        answers.SetResult(Parsed("""{"done":false}"""));
+        Assert.False(await opening);
+    }
+
+    [Fact] // ADR-0330 s10, ADR-0180: a save hands the write a Workbook of .NET's that computes the Values the browser shows
+    public async Task ADR0330_a_save_writes_dotnets_copy_of_the_browsers_workbook_with_its_values()
+    {
+        var browser = new Workbook(CultureInfo.GetCultureInfo("en-US"));
+        browser.DeclareLinkedTable("Rates", ["Code", "Rate"], "Code");
+        browser.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A1"), "=RAND()"));
+        browser.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A2"), "=SUM(Rates[Rate])"));
+        browser.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A3"), "=TODAY()"));
+        browser.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A4"), "=NOW()"));
+        browser.PushLinkedTable("Rates", [[Value.FromText("USD"), Value.FromNumber(1.5)], [Value.FromText("EUR"), Value.FromNumber(2)]]);
+        var moment = new DateTime(2026, 10, 28, 9, 30, 15, 250);
+        browser.NowSource = () => moment;
+        browser.RecalculateVolatile();
+        browser.SetToday(new DateOnly(2026, 10, 28));
+        browser.SetSeed(42, browser.Changes + 3);
+        var saved = JsonSerializer.Serialize(new
+        {
+            document = browser.ToDocument().ToJson(),
+            tables = new[] { new { name = "Rates", rows = SheetWire.WriteRows([[Value.FromText("USD"), Value.FromNumber(1.5)], [Value.FromText("EUR"), Value.FromNumber(2)]]) } },
+            seed = "42",
+            changes = browser.Changes,
+            today = new { year = 2026, month = 10, day = 28 },
+            now = new { year = 2026, month = 10, day = 28, hour = 9, minute = 30, second = 15, millisecond = 250 },
+        });
+        var answers = _sheet.Setup<JsonElement>("save", _ => true);
+        var cut = Sheet();
+        Workbook? written = null;
+
+        var saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(workbook =>
+        {
+            written = workbook;
+            return Task.CompletedTask;
+        }));
+        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
+        Assert.Equal("""{"done":true}""", await Bridge().Value.Write(id, Parsed(saved)));
+        answers.SetResult(Parsed("""{"done":null}"""));
+        await saving;
+
+        var copy = Assert.IsType<Workbook>(written);
+        foreach (var cell in new[] { "A1", "A2", "A3", "A4" })
+            Assert.Equal(browser.Sheets[0].GetValue(CellAddress.Parse(cell)), copy.Sheets[0].GetValue(CellAddress.Parse(cell)));
+        Assert.Equal(3.5, copy.Sheets[0].GetValue(CellAddress.Parse("A2"))?.Number);
+        Assert.Equal((42UL, browser.Changes), (copy.Seed, copy.Changes));
+
+        // A write that fails: the browser is told its message, and .NET throws the failure itself.
+        answers = _sheet.Setup<JsonElement>("save", _ => true);
+        var failure = new IOException("The disk is full.");
+        saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(_ => Task.FromException(failure)));
+        id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
+        Assert.Equal("""{"failed":"The disk is full."}""", await Bridge().Value.Write(id, Parsed(saved)));
+        answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The disk is full."}}"""));
+        Assert.Same(failure, await Assert.ThrowsAsync<IOException>(() => saving));
+    }
+
+    [Fact] // ADR-0005 as amended 2026-10-28: an event, an answer and a save too large for a circuit's message are taken as streams, in their turn
+    public async Task ADR0005_messages_held_in_the_browser_are_taken_as_streams_in_their_turn()
+    {
+        WorkbookDocument? raised = null;
+        var heard = new List<string>();
+        var cut = Sheet(ps => ps
+            .Add(p => p.WorkbookChanged, (WorkbookDocument document) => { heard.Add("workbook"); raised = document; })
+            .Add(p => p.EditingChanged, (bool _) => heard.Add("editing")));
+        var large = WorkbookOf(new string('x', 20_000));
+        var raisedJson = JsonSerializer.Serialize(new object[] { "workbookChanged", new { workbook = large.ToDocument().ToJson(), sheet = (string?)null, documentsSent = 0 } });
+        var taking = new TaskCompletionSource();
+        _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 1))
+            .SetResult(FakeJSStream.Gated(raisedJson, taking.Task));
+
+        // The held event, its kind and payload taken as the call's arguments, and one after it: the second waits for
+        // the first to be taken.
+        var first = cut.InvokeAsync(() => Bridge().Value.Held("Heard", Held(1, raisedJson)));
+        var second = cut.InvokeAsync(() => Bridge().Value.Heard("editingChanged", Parsed("true")));
+        Assert.Empty(heard);
+        Assert.False(second.IsCompleted);
+        taking.SetResult();
+        await first;
+        await second;
+        cut.WaitForAssertion(() => Assert.Equal(["workbook", "editing"], heard));
+        Assert.Equal(large.ToDocument().ToJson(), raised?.ToJson());
+
+        // An answer, held as the event was, and gzip-compressed.
+        var documentsJson = JsonSerializer.Serialize(new { workbook = large.ToDocument().ToJson(), sheet = (string?)null });
+        _sheet.Setup<JsonElement>("documents").SetResult(Held(2, documentsJson));
+        _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 2)).SetResult(FakeJSStream.Gzipped(documentsJson));
+        Assert.Equal(large.ToDocument().ToJson(), (await cut.InvokeAsync(() => cut.Instance.ToWorkbookDocumentAsync())).ToJson());
+
+        // A save's write, its id and Workbook taken as the call's arguments, answered as the write it makes.
+        var answers = _sheet.Setup<JsonElement>("save", _ => true);
+        Workbook? written = null;
+        var saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(workbook =>
+        {
+            written = workbook;
+            return Task.CompletedTask;
+        }));
+        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
+        var writeJson = JsonSerializer.Serialize(new object[]
+        {
+            id,
+            new { document = large.ToDocument().ToJson(), tables = Array.Empty<object>(), seed = (string?)null, changes = 0, today = (object?)null, now = (object?)null },
+        });
+        _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 4)).SetResult(FakeJSStream.Gzipped(writeJson));
+        Assert.Equal("""{"done":true}""", await cut.InvokeAsync(() => Bridge().Value.Held("Write", Held(4, writeJson))));
+        answers.SetResult(Parsed("""{"done":null}"""));
+        await saving;
+        Assert.Equal(large.ToDocument().ToJson(), written?.ToDocument().ToJson());
+
+        // A stream that is not the length declared is refused, never read as an answer.
+        _sheet.Setup<JsonElement>("linkedTables").SetResult(Held(3, "[ ]"));
+        _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 3)).SetResult(FakeJSStream.Of("[]"));
+        await Assert.ThrowsAsync<InvalidDataException>(() => cut.InvokeAsync(() => cut.Instance.LinkedTablesAsync()));
+    }
+
+    // What the browser hands .NET in place of a message too large for one: its number and length.
+    private static JsonElement Held(int held, string json)
+        => Parsed(JsonSerializer.Serialize(new { held, bytes = System.Text.Encoding.UTF8.GetByteCount(json) }));
+
     [Fact] // ADR-0048, ADR-0071: a command answers as the browser's Sheet did, and its refusal is thrown as the Razor component throws it
     public async Task ADR0048_a_refusal_in_the_browser_is_thrown_as_a_SheetRefusedException()
     {
@@ -178,6 +359,79 @@ public class ScriptSheetTests : BunitContext
         Assert.True(await cut.InvokeAsync(() => cut.Instance.UndoAsync()));
         var refused = await Assert.ThrowsAsync<SheetRefusedException>(() => cut.InvokeAsync(() => cut.Instance.OpenFormatCellsAsync()));
         Assert.Equal(new SheetRefusal(SheetRefusalReason.EditIsOpen, "Finish the edit first."), refused.Refusal);
+    }
+
+    [Fact] // ADR-0370 section 1, ADR-0048, ADR-0331 §6: an edit crosses as SheetWire writes it, to the one Sheet or to the Sheet it names
+    public async Task ADR0370_an_edit_crosses_as_SheetWire_writes_it()
+    {
+        var cut = Sheet();
+        _sheet.Setup<JsonElement>("do", _ => true).SetResult(Parsed("""{"done":null}"""));
+        var edit = SheetEdit.Enter(CellAddress.Parse("A1"), "=1+2");
+
+        await cut.InvokeAsync(() => cut.Instance.DoAsync(edit));
+        await cut.InvokeAsync(() => cut.Instance.DoAsync("Prices", edit));
+
+        var calls = _sheet.Invocations["do"];
+        Assert.Equal([null, "Prices"], calls.Select(call => call.Arguments[0]));
+        Assert.All(calls, call => Assert.Equal(SheetWire.Write(edit), call.Arguments[1]));
+    }
+
+    [Fact] // ADR-0370 section 1, ADR-0049: what the browser's engine threw at the caller crosses as data, and is thrown as the C# engine throws it
+    public async Task ADR0370_what_the_engine_threw_in_the_browser_is_thrown_as_the_csharp_engine_throws_it()
+    {
+        var cut = Sheet();
+        _sheet.Setup<JsonElement>("do", _ => true)
+            .SetResult(Parsed("""{"thrown":{"kind":"formulaSyntax","message":"m","formula":"=1+","position":3,"reason":"An operand is missing."}}"""));
+        // A refused snapshot as the bridge writes it (writeRepeatedKey; src/npm/sheet-blazor/test/bridge.test.ts reads the same).
+        _sheet.Setup<JsonElement>("pushLinkedTable", call => (string?)call.Arguments[0] == "Rates").SetResult(Parsed("""
+            {"thrown":{"kind":"repeatedKey","message":"m","repeatedKey":"{\"table\":\"Rates\",\"keyColumns\":[\"Code\"],\"keys\":[\"USD\"],\"firstRow\":0,\"repeats\":[\"usd\"],\"secondRow\":1,\"change\":{\"valueChanges\":[\"B2\"],\"recalculated\":[],\"rows\":[1],\"columns\":[],\"reformatsUnnamedRows\":false}}"}}
+            """));
+        _sheet.Setup<JsonElement>("pushLinkedTable", call => (string?)call.Arguments[0] == "Nothing")
+            .SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"No Linked Table named 'Nothing' is declared."}}"""));
+        _sheet.Setup<JsonElement>("cellFormatAt", _ => true)
+            .SetResult(Parsed("""{"thrown":{"kind":"outOfRange","message":"No Sheet of the Workbook is named 'Three'."}}"""));
+        _sheet.Setup<JsonElement>("declareLinkedTable", _ => true).SetResult(Parsed("""{"thrown":{"kind":"argument","message":"'1st' is no name."}}"""));
+
+        var syntax = await Assert.ThrowsAsync<FormulaSyntaxException>(() => cut.InvokeAsync(() => cut.Instance.DoAsync(SheetEdit.Enter(CellAddress.Parse("A1"), "=1+"))));
+        Assert.Equal(("=1+", 3, "An operand is missing."), (syntax.Formula, syntax.Position, syntax.Reason));
+
+        Value?[] usd = [Value.FromText("USD"), Value.FromNumber(1)];
+        Value?[] again = [Value.FromText("usd"), null];
+        var rows = new[] { usd, again };
+        var repeated = await Assert.ThrowsAsync<RepeatedKeyException>(() => cut.InvokeAsync(() => cut.Instance.PushLinkedTableAsync("Rates", rows)));
+        Assert.Equal(("Rates", "Code", Value.FromText("USD"), 0, 1), (repeated.Table, repeated.KeyColumn, repeated.Key, repeated.FirstRow, repeated.SecondRow));
+        Assert.Equal([CellAddress.Parse("B2")], repeated.Change.ValueChanges);
+        Assert.Contains("usd", repeated.Message, StringComparison.Ordinal);
+        Assert.Equal(SheetWire.WriteRows(rows), _sheet.Invocations["pushLinkedTable"][0].Arguments[1]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => cut.InvokeAsync(() => cut.Instance.PushLinkedTableAsync("Nothing", [])));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => cut.InvokeAsync(() => cut.Instance.CellFormatAtAsync("Three", CellAddress.Parse("A1"))));
+        await Assert.ThrowsAsync<ArgumentException>(() => cut.InvokeAsync(() => cut.Instance.DeclareLinkedTableAsync("1st", ["A"])));
+    }
+
+    [Fact] // ADR-0071, ADR-0049: a Cell Format and the Linked Tables are read back as the browser's Sheet holds them, and a change that sets nothing never crosses
+    public async Task ADR0071_cell_formats_and_linked_tables_are_read_back_from_the_browser()
+    {
+        var cut = Sheet();
+        // A Cell Format as the bridge writes it (writeCellFormat; src/npm/sheet-blazor/test/bridge.test.ts expects the same text).
+        _sheet.Setup<JsonElement>("cellFormatAt", _ => true).SetResult(Parsed("""
+            {"done":"{\"numberFormat\":\"0.00\",\"alignment\":\"general\",\"font\":{\"colour\":\"Automatic\",\"bold\":true,\"italic\":false,\"underline\":false,\"strikethrough\":false},\"fill\":\"none\",\"borders\":{\"top\":\"none\",\"bottom\":\"none\",\"left\":\"none\",\"right\":\"none\"}}"}
+            """));
+        _sheet.Setup<JsonElement>("linkedTables").SetResult(Parsed("""[{"name":"Rates","columns":["Code","Region","Rate"],"keyColumns":["Code","Region"],"isWaiting":false,"rowCount":2}]"""));
+        _sheet.Setup<JsonElement>("setCellFormat", _ => true).SetResult(Parsed("""{"done":true}"""));
+
+        var format = await cut.InvokeAsync(() => cut.Instance.CellFormatAtAsync(CellAddress.Parse("B2")));
+        Assert.Equal(new CellFormat(NumberFormat.Parse("0.00"), HorizontalAlignment.General, new CellFont(Bold: true), CellFill.None, CellBorders.None), format);
+        Assert.Equal([null, "B2"], Assert.Single(_sheet.Invocations["cellFormatAt"]).Arguments);
+
+        var table = Assert.Single(await cut.InvokeAsync(() => cut.Instance.LinkedTablesAsync()));
+        Assert.Equal(("Rates", false, 2, (string?)null), (table.Name, table.IsWaiting, table.RowCount, table.Key));
+        Assert.Equal(["Code", "Region", "Rate"], table.Columns);
+        Assert.Equal(["Code", "Region"], table.KeyColumns);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => cut.InvokeAsync(() => cut.Instance.SetCellFormatAsync(new CellFormatChange())));
+        Assert.True(await cut.InvokeAsync(() => cut.Instance.SetNumberFormatAsync(null)));
+        Assert.Equal(SheetWire.Write(new CellFormatChange { NumberFormat = NumberFormat.General }), Assert.Single(_sheet.Invocations["setCellFormat"]).Arguments[0]);
     }
 
     [Fact] // ADR-0130, ADR-0048, ADR-0071, ADR-0331: the Sheet's events reach the handlers as the Razor component raises them
@@ -204,6 +458,39 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(SheetRefusalReason.EditIsOpen, refusal?.Reason);
         Assert.Equal(["Sheet1", "Sheet2"], sheets?.After);
         Assert.Equal("Sheet2", sheets?.Shown);
+    }
+
+    [Fact] // ADR-0130: the Selection Summary the Sheet answered in the browser reaches the handler whole, its columns the Sheet's letters
+    public async Task ADR0130_the_selection_summary_reaches_the_handler_with_the_sheets_columns()
+    {
+        var summaries = new List<SelectionSummary>();
+        var cut = Sheet(ps => ps.Add(p => p.OnSelectionSummaryChanged, (SelectionSummary summary) => summaries.Add(summary)));
+        Assert.Contains("selectionSummaryChanged", Attach().GetProperty("options").GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
+
+        // As the bridge writes it (bridge.test.ts): no column names cross.
+        const string request = """{"ranges":[{"topRow":0,"leftColumn":0,"rowCount":3,"columnCount":1}],"rowSequenceVersion":0,"figures":["average","count","sum"],"focus":{"row":0,"column":0}}""";
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""{"status":"pending","request":{{{request}}},"result":null}""")));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""
+            {"status":"answered","request":{{{request}}},"result":{
+              "figures":{"average":{"kind":"error","error":"divideByZero"},"count":{"kind":"number","exact":"3"},"sum":{"kind":"number","number":0.30000000000000004}},
+              "texts":{"sum":"0.3"} } }
+            """)));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""{"status":"declined","request":{{{request}}},"result":{"reason":"too many"}}""")));
+
+        Assert.Equal([SelectionSummaryStatus.Pending, SelectionSummaryStatus.Answered, SelectionSummaryStatus.Declined], summaries.Select(summary => summary.Status));
+        Assert.Null(summaries[0].Result);
+        var asked = summaries[1].Request ?? throw new InvalidOperationException("An answered summary carries its question.");
+        Assert.Equal(new SelectionRange(0, 0, 3, 1), Assert.Single(asked.Ranges));
+        Assert.Equal(SummaryFigures.Average | SummaryFigures.Count | SummaryFigures.Sum, asked.Figures);
+        Assert.Equal(new CellPosition(0, 0), asked.Focus);
+        Assert.Equal(16_384, asked.Columns.Count);
+        Assert.Equal(["A", "B", "Z", "AA", "XFD"], new[] { 0, 1, 25, 26, 16_383 }.Select(at => asked.Columns[at]));
+        var answer = summaries[1].Result ?? throw new InvalidOperationException("An answered summary carries its answer.");
+        Assert.Equal(ExGrid.Data.AggregateResult.Of(3m), answer[SummaryFigures.Count]);
+        Assert.Equal(ExGrid.Data.AggregateResult.Of(0.30000000000000004), answer[SummaryFigures.Sum]);
+        Assert.Equal(ExGrid.Data.AggregateResult.Of(ExGrid.Data.AggregateError.DivideByZero), answer[SummaryFigures.Average]);
+        Assert.Equal("0.3", answer.TextOf(SummaryFigures.Sum));
+        Assert.Equal("too many", summaries[2].Result?.DeclineReason);
     }
 
     [Fact] // ADR-0036, ADR-0370 section 10: CommandLabel is asked for each id the module names, and crosses again only when its answers changed

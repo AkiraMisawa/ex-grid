@@ -3,15 +3,24 @@
 // write, and every event it raises handed to .NET in the order it was raised. It decides nothing and computes
 // nothing: the Workbook, its Formulas and what each input means are the Script Core's, in the browser.
 
-import { builtInLabelIds, type GridSelection, type SummaryFigure, type ViewportSize } from '@ex-grid/core';
+import {
+    builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary, type SummaryFigure,
+    type ViewportSize,
+} from '@ex-grid/core';
+import { crossingCalls, HeldMessages, type WireHeld } from '@ex-grid/blazor-shared';
+import { decimalText } from '@ex-grid/data';
 import { createSheet, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId } from '@ex-grid/sheet';
-import { SheetRefusedError, WorkbookDocument, type SheetDay, type SheetRefusal } from '@ex-grid/sheet-engine';
+import {
+    CellAddress, columnCount, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
+    WorkbookDocument, writeCellFormat, writeLinkedRows, writeRepeatedKey, type SheetDay, type SheetMoment, type SheetRefusal, type Value,
+    type Workbook,
+} from '@ex-grid/sheet-engine';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. Whether an edit is open is
  * always heard, since the component answers `IsEditing`. */
 export type HeardKind =
     | 'workbookChanged' | 'documentChanged' | 'sheetsChanged' | 'showToolbarChanged' | 'summaryFiguresChanged' | 'selectionChanged'
-    | 'formatKeyRefused';
+    | 'selectionSummaryChanged' | 'formatKeyRefused';
 
 /** ExSheet's command ids as the Razor component names them (`SheetCommandIds`), each with the id the Script Core
  * words it by, so a Consumer's `CommandLabel` words both components alike. */
@@ -77,6 +86,9 @@ export interface WireAttach {
     /** How many of the Consumer's documents .NET has sent, this one included. */
     readonly documentsSent: number;
     readonly words: WireWords;
+    /** Whether .NET is across a circuit, Blazor Server's, whose hub limits the size of a message: only then is a
+     * message too large for one held (`HeldMessages`). WebAssembly's .NET takes any message as it is. */
+    readonly circuit: boolean;
 }
 
 /** What `update` is handed: the parameters again, whole; a document of the Consumer's own making, if it handed one
@@ -89,9 +101,54 @@ export interface WireUpdate {
     readonly words?: WireWords;
 }
 
-/** What a command answers .NET: what the Sheet's method answered, or the refusal it threw, which .NET throws as its
- * own `SheetRefusedException`. */
-export type WireAnswer = { readonly done: boolean } | { readonly refused: WireRefusal };
+/**
+ * What a command answers .NET: what the Sheet's method answered; the refusal it threw, which .NET throws as its own
+ * `SheetRefusedException`; or what else it threw that a caller's mistake or the Sheet's state explains, which .NET
+ * throws as the Razor component's engine throws it.
+ */
+export type WireAnswer<T = boolean> = { readonly done: T } | { readonly refused: WireRefusal } | { readonly thrown: WireThrown };
+
+/**
+ * An error a command threw, by its kind (`tests/cases/README.md`): `argument` a `TypeError`, `outOfRange` a
+ * `RangeError`, `invalidOperation` a plain `Error`, `formulaSyntax` a Formula that cannot be read, with where and why,
+ * and `repeatedKey` a refused snapshot, as `writeRepeatedKey` writes it.
+ */
+export type WireThrown =
+    | { readonly kind: 'argument' | 'outOfRange' | 'invalidOperation'; readonly message: string }
+    | { readonly kind: 'formulaSyntax'; readonly message: string; readonly formula: string; readonly position: number; readonly reason: string }
+    | { readonly kind: 'repeatedKey'; readonly message: string; readonly repeatedKey: string }
+    | { readonly kind: 'sheetDocument'; readonly message: string; readonly documentVersion: number | null };
+
+/** What .NET's read of a file answered in the opening's turn: the document, its failure's message, which .NET throws
+ * itself as it was, or that it saw its token cancelled. */
+export type WireRead = { readonly document: string } | { readonly failed: string } | { readonly cancelled: true };
+
+/** What .NET's write of a file answered: done, or its failure's message, which .NET throws itself as it was. */
+export type WireWritten = { readonly done: true } | { readonly failed: string };
+
+/**
+ * The Workbook as a save hands it to .NET, for .NET to make the same Workbook and compute the same Values: its
+ * document; each Linked Table's rows, as `writeLinkedRows` writes them, or `null` while it waits; the seed, an unsigned
+ * 64-bit integer written in decimal, with the count of changes its draws are made from (ADR-0180); the Sheet Day; and
+ * the moment `NOW` answers, the one the last recalculation read (ADR-0124).
+ */
+export interface WireSaved {
+    readonly document: string;
+    readonly tables: readonly { readonly name: string; readonly rows: string | null }[];
+    readonly seed: string | null;
+    readonly changes: number;
+    readonly today: SheetDay | null;
+    readonly now: SheetMoment | null;
+}
+
+/** A Linked Table as the Sheet declares it, for .NET's `LinkedTable`. */
+export interface WireLinkedTable {
+    readonly name: string;
+    readonly columns: readonly string[];
+    readonly keyColumns: readonly string[];
+    readonly isWaiting: boolean;
+    readonly rowCount: number;
+}
 
 /** A refusal, as .NET's `SheetRefusal` reads it. */
 export interface WireRefusal {
@@ -105,18 +162,46 @@ export interface WireDocuments {
     readonly sheet: string | null;
 }
 
+/** An answer as it crosses to .NET: itself, or held (`WireHeld`) when it is too large for a message of its own. */
+export type Crossing<T> = T | WireHeld;
+
 /** What the component asks of the Sheet it attached. */
 export interface BlazorSheet {
     /** Takes a {@link WireUpdate}, as the JSON text .NET wrote. */
     update(json: string): void;
-    undo(): WireAnswer;
-    redo(): WireAnswer;
-    openFormatCells(): WireAnswer;
+    undo(): Crossing<WireAnswer>;
+    redo(): Crossing<WireAnswer>;
+    openFormatCells(): Crossing<WireAnswer>;
+    /** Does an edit .NET's `SheetWire` wrote, on the Sheet named, or with none named while the Workbook holds one. */
+    do(sheet: string | null, edit: string): Crossing<WireAnswer<null>>;
+    /** Sets a change .NET's `SheetWire` wrote on the Selection as the grid holds it; false when nothing is selected. */
+    setCellFormat(change: string): Crossing<WireAnswer>;
+    /** A cell's Cell Format as it shows, as `writeCellFormat` writes it. */
+    cellFormatAt(sheet: string | null, address: string): Crossing<WireAnswer<string>>;
+    /** The Linked Tables declared, in the order they were declared. */
+    linkedTables(): Crossing<WireLinkedTable[]>;
+    declareLinkedTable(name: string, columns: readonly string[], key: readonly string[]): Crossing<WireAnswer<null>>;
+    /** Pushes a snapshot .NET's `SheetWire` wrote. */
+    pushLinkedTable(name: string, rows: string): Crossing<WireAnswer<null>>;
+    /**
+     * Opens a file at this call's place in the Input Order (ADR-0330 §10): in its turn the Sheet asks .NET to read the
+     * opening numbered `id`, and an Escape that cancels it tells .NET so.
+     */
+    open(id: number): Promise<Crossing<WireAnswer>>;
+    /** Saves at this call's place in the Input Order (ADR-0330 §10): in its turn the Sheet hands .NET the Workbook as a
+     * {@link WireSaved}, for the write of the save numbered `id`. */
+    save(id: number): Promise<Crossing<WireAnswer<null>>>;
     /** The Workbook as it stands, as documents. */
-    documents(): WireDocuments;
+    documents(): Crossing<WireDocuments>;
+    /** A message held for .NET (`WireHeld`), as the stream .NET reads it from: gzip-compressed where the browser can
+     * compress, and as it is where it cannot. Taken once. */
+    take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the Sheet and empties its element. */
     dispose(): void;
 }
+
+/** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
+const heldSheetCalls: ReadonlySet<string> = new Set(['Heard', 'Write']);
 
 /** What the bridge calls in .NET. */
 export interface DotNetHandle {
@@ -127,13 +212,24 @@ export interface DotNetHandle {
  * Mounts ExSheet's Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
  * `DotNetObjectReference` and `json` a {@link WireAttach}. What it answers is the component's handle on the Sheet.
  */
-export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): BlazorSheet {
+export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): BlazorSheet {
     const init = parsed<WireAttach>(json);
     let stopped = false;
-    // Once the Sheet is stopped .NET has let go of the bridge, and nothing more crosses.
+    // An event or a save's Workbook too large for a message of its own is held, and .NET takes it in its turn, as the
+    // Shared Script crosses every product's: the hub would otherwise close the circuit.
+    const held = new HeldMessages(init.circuit);
+    const dotnet = crossingCalls(bridge, held, heldSheetCalls);
+    // Once the Sheet is stopped .NET has let go of the bridge, and nothing more crosses: an event still being taken
+    // then is let go with it, and only a failure while the Sheet stands is the page's to report.
     const send = (kind: HeardKind | 'editingChanged', payload: unknown): void => {
-        if (!stopped) void dotnet.invokeMethodAsync('Heard', kind, payload);
+        if (stopped) return;
+        void dotnet.invokeMethodAsync('Heard', kind, payload).catch((failure: unknown) => { // oxlint-disable-line ex-grid/no-catch -- rethrown while the Sheet stands; once stopped .NET has let go of what it was taking
+            if (!stopped) throw failure;
+        });
     };
+    // A command's answer as it crosses: itself, or held when it is too large for a message of its own; .NET takes it
+    // before it reads the answer.
+    const answer = <T>(value: T): T | WireHeld => held.crossing(value) ?? value;
     // The document the Sheet is handed on every update: the Consumer's, read once, or the one the Sheet raised last,
     // the same object, so handing it back opens nothing.
     let document = init.document === null ? undefined : WorkbookDocument.fromJson(init.document);
@@ -149,6 +245,8 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): B
     return Object.freeze({
         update: (text: string) => {
             const next = parsed<WireUpdate>(text);
+            // .NET counts a document sent whether or not the Sheet takes it, so the count moves first.
+            if (next.documentsSent !== undefined) documentsSent = next.documentsSent;
             // Taken only once the Sheet has: one it refuses, as a document of a version it does not read, changes nothing.
             const nextDocument = next.document === undefined ? document : next.document === null ? undefined : WorkbookDocument.fromJson(next.document);
             const nextWords = next.words === undefined ? words : wordsOf(next.words);
@@ -157,14 +255,42 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): B
             made.update(sheetOptions(next.options, nextDocument, nextWords, heard));
             document = nextDocument;
             words = nextWords;
-            if (next.documentsSent !== undefined) documentsSent = next.documentsSent;
         },
-        undo: () => answered(() => made.undo()),
-        redo: () => answered(() => made.redo()),
-        openFormatCells: () => answered(() => made.openFormatCells()),
-        documents: () => ({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
+        undo: () => answer(answered(() => made.undo())),
+        redo: () => answer(answered(() => made.redo())),
+        openFormatCells: () => answer(answered(() => made.openFormatCells())),
+        do: (sheet: string | null, edit: string) => answer(answered(() => {
+            const read = readSheetEdit(edit);
+            if (sheet === null) made.do(read);
+            else made.do(sheet, read);
+            return null;
+        })),
+        setCellFormat: (change: string) => answer(answered(() => made.setCellFormat(readCellFormatChange(change)))),
+        cellFormatAt: (sheet: string | null, address: string) => answer(answered(() => {
+            const at = CellAddress.parse(address);
+            return writeCellFormat(sheet === null ? made.cellFormatAt(at) : made.cellFormatAt(sheet, at));
+        })),
+        linkedTables: () => answer(made.workbook.linkedTables.map(table => ({
+            name: table.name, columns: table.columns, keyColumns: table.keyColumns, isWaiting: table.isWaiting, rowCount: table.rowCount,
+        }))),
+        declareLinkedTable: (name: string, columns: readonly string[], key: readonly string[]) => answer(answered(() => {
+            made.declareLinkedTable(name, columns, key);
+            return null;
+        })),
+        pushLinkedTable: (name: string, rows: string) => answer(answered(() => {
+            made.pushLinkedTable(name, readLinkedRows(rows));
+            return null;
+        })),
+        open: async (id: number) => answer(await answeredLater(() => made.open(signal => readInDotNet(dotnet, id, signal, () => stopped)))),
+        save: async (id: number) => answer(await answeredLater(async () => {
+            await made.save(workbook => writeInDotNet(dotnet, id, workbook));
+            return null;
+        })),
+        documents: () => answer({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
+        take: (number: number) => held.take(number),
         dispose: () => {
             stopped = true;
+            held.clear();
             made.destroy();
         },
     });
@@ -178,13 +304,93 @@ export function parsed<T>(json: string): T {
 }
 
 // A command's answer, or the Sheet's refusal of it, which crosses as data: any other failure is the command's.
-function answered(command: () => boolean): WireAnswer {
+function answered<T>(command: () => T): WireAnswer<T> {
     try {
         return { done: command() };
-    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a refusal is the command's answer, which .NET throws again as its own; anything else is rethrown
-        if (error instanceof SheetRefusedError) return { refused: wireRefusal(error.refusal) };
-        throw error;
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- what the command threw is its answer, which .NET throws again as its own; anything else is rethrown
+        const thrown = wireThrown(error);
+        if (thrown === undefined) throw error;
+        return thrown;
     }
+}
+
+async function answeredLater<T>(command: () => Promise<T>): Promise<WireAnswer<T>> {
+    try {
+        return { done: await command() };
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- what the command threw is its answer, which .NET throws again as its own; anything else is rethrown
+        const thrown = wireThrown(error);
+        if (thrown === undefined) throw error;
+        return thrown;
+    }
+}
+
+// The read of an opening, in its turn: .NET reads the file, and an Escape that aborts the signal cancels .NET's token.
+async function readInDotNet(dotnet: DotNetHandle, id: number, signal: AbortSignal, stopped: () => boolean): Promise<WorkbookDocument> {
+    const cancel = (): void => {
+        if (!stopped()) void dotnet.invokeMethodAsync('CancelRead', id);
+    };
+    signal.addEventListener('abort', cancel, { once: true });
+    try {
+        const read = parsed<WireRead>(textOf(await dotnet.invokeMethodAsync('Read', id)));
+        if ('document' in read) return WorkbookDocument.fromJson(read.document);
+        if ('failed' in read) throw new Error(read.failed);
+        // .NET saw its token cancelled: by the Escape, or by the component going away, which stops the Sheet too.
+        signal.throwIfAborted();
+        throw new Error('The read was cancelled in .NET.');
+    } finally {
+        signal.removeEventListener('abort', cancel);
+    }
+}
+
+// The write of a save, in its turn: the Workbook read whole before anything is awaited, as it is lent for the call
+// only, and handed to .NET, which makes its own of it: held, when it is too large for a message of its own.
+function writeInDotNet(dotnet: DotNetHandle, id: number, workbook: Workbook): Promise<void> {
+    return dotnet.invokeMethodAsync('Write', id, savedOf(workbook)).then(answer => {
+        const written = parsed<WireWritten>(textOf(answer));
+        if ('failed' in written) throw new Error(written.failed);
+    });
+}
+
+function savedOf(workbook: Workbook): WireSaved {
+    const { seed, today, moment } = workbook;
+    return {
+        document: workbook.toDocument().toJson(),
+        tables: workbook.linkedTables.map(table => {
+            const columns = workbook.linkedTableColumns(table.name);
+            return { name: table.name, rows: columns === undefined ? null : writeLinkedRows(rowsOf(columns, table.rowCount)) };
+        }),
+        seed: seed === undefined ? null : seed.toString(),
+        changes: workbook.changes,
+        today: today === undefined ? null : { year: today.year, month: today.month, day: today.day },
+        now: moment === undefined ? null : moment,
+    };
+}
+
+// A snapshot's columns as its rows.
+function rowsOf(columns: readonly (readonly (Value | undefined)[])[], count: number): (Value | undefined)[][] {
+    return Array.from({ length: count }, (_, row) => columns.map(column => column[row]));
+}
+
+function textOf(answer: unknown): string {
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered the bridge something other than JSON text.');
+    return answer;
+}
+
+// What the Sheet and its engine throw at a caller, as data .NET throws again as the Razor component's engine throws
+// it: the kinds of `tests/cases/README.md`, refused alike by both engines. Anything else is a defect, and stays one.
+function wireThrown(error: unknown): { readonly refused: WireRefusal } | { readonly thrown: WireThrown } | undefined {
+    if (error instanceof SheetRefusedError) return { refused: wireRefusal(error.refusal) };
+    if (error instanceof RepeatedKeyError) return { thrown: { kind: 'repeatedKey', message: error.message, repeatedKey: writeRepeatedKey(error) } };
+    if (error instanceof FormulaSyntaxError) {
+        return { thrown: { kind: 'formulaSyntax', message: error.message, formula: error.formula, position: error.position, reason: error.reason } };
+    }
+    if (error instanceof SheetDocumentError) {
+        return { thrown: { kind: 'sheetDocument', message: error.message, documentVersion: error.documentVersion === undefined ? null : error.documentVersion } };
+    }
+    if (error instanceof RangeError) return { thrown: { kind: 'outOfRange', message: error.message } };
+    if (error instanceof TypeError) return { thrown: { kind: 'argument', message: error.message } };
+    if (error instanceof Error && Object.getPrototypeOf(error) === Error.prototype) return { thrown: { kind: 'invalidOperation', message: error.message } };
+    return undefined;
 }
 
 function wireRefusal(refusal: SheetRefusal): WireRefusal {
@@ -201,7 +407,7 @@ function sheetDocumentOf(sheet: SheetHandle): string | null {
 
 type Handlers = Required<Pick<SheetOptions,
     'onWorkbookChanged' | 'onSheetsChanged' | 'onShowToolbarChanged' | 'onSummaryFiguresChanged' | 'onSelectionChanged' | 'onEditingChanged'
-    | 'onFormatKeyRefused'>>;
+    | 'onSelectionSummaryChanged' | 'onFormatKeyRefused'>>;
 
 // One function per event, made once, so the Sheet sees the same handler on every update.
 function handlers(
@@ -222,6 +428,7 @@ function handlers(
         onShowToolbarChanged: shown => { send('showToolbarChanged', shown); },
         onSummaryFiguresChanged: figures => { send('summaryFiguresChanged', figures); },
         onSelectionChanged: selection => { send('selectionChanged', wireSelection(selection)); },
+        onSelectionSummaryChanged: summary => { send('selectionSummaryChanged', wireSummary(summary)); },
         onEditingChanged: open => { send('editingChanged', open); },
         onFormatKeyRefused: refusal => { send('formatKeyRefused', wireRefusal(refusal)); },
     });
@@ -236,6 +443,49 @@ export function wireSelection(selection: Pick<GridSelection, 'ranges' | 'focus' 
     const focusRangeIndex = selection.ranges.indexOf(focusRange);
     if (focusRangeIndex < 0) throw new Error('Internal: a Selection\'s Focus range is not among its ranges.');
     return { ranges: selection.ranges, focus, focusRangeIndex };
+}
+
+/** A Selection Summary as .NET reads it back: its status, the question and the answer, an exact figure as its
+ * decimal's digits, which no JSON number holds. Written as Blazor's ExPivot writes its own, but for the columns: a
+ * Sheet's are its letters, A to XFD, which .NET makes again rather than read 16,384 names on every selection. */
+export function wireSummary(summary: SelectionSummary): unknown {
+    return { status: summary.status, request: summary.request === undefined ? null : wireRequest(summary.request), result: summary.result === undefined ? null : wireResult(summary.result) };
+}
+
+function wireRequest(request: GridSummaryRequest): unknown {
+    lettersChecked(request.columns);
+    return {
+        ranges: request.ranges,
+        rowSequenceVersion: request.rowSequenceVersion,
+        figures: request.figures,
+        focus: request.focus === undefined ? null : request.focus,
+    };
+}
+
+// The column lists already seen to be the Sheet's letters, so a list the grid hands again is not walked again.
+const lettered = new WeakSet<readonly string[]>();
+let letters: readonly string[] | undefined;
+
+function lettersChecked(columns: readonly string[]): void {
+    if (lettered.has(columns)) return;
+    letters ??= Object.freeze(Array.from({ length: columnCount }, (_, at) => CellAddress.columnName(at)));
+    const all = letters;
+    if (columns.length !== all.length || columns.some((name, at) => name !== all[at]))
+        throw new Error('Internal: a Sheet\'s columns are not its letters, A to XFD.');
+    lettered.add(columns);
+}
+
+function wireResult(result: GridSummaryResult): unknown {
+    if (result.kind === 'declined') return { reason: result.reason };
+    return {
+        figures: Object.fromEntries(Object.entries(result.figures).map(([figure, answer]) => [figure, wireFigure(answer)])),
+        texts: result.texts,
+    };
+}
+
+function wireFigure(answer: AggregateResult): unknown {
+    if (answer.kind !== 'number') return answer;
+    return answer.exact === undefined ? { kind: 'number', number: answer.number } : { kind: 'number', exact: decimalText(answer.exact) };
 }
 
 /** The Consumer's words as the Sheet takes them: the grid's ids through `commandLabel`, ExSheet's through `label`, by
@@ -276,6 +526,7 @@ function sheetOptions(wire: WireOptions, document: WorkbookDocument | undefined,
         ...(hears.has('showToolbarChanged') ? { onShowToolbarChanged: heard.onShowToolbarChanged } : {}),
         ...(hears.has('summaryFiguresChanged') ? { onSummaryFiguresChanged: heard.onSummaryFiguresChanged } : {}),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
+        ...(hears.has('selectionSummaryChanged') ? { onSelectionSummaryChanged: heard.onSelectionSummaryChanged } : {}),
         ...(hears.has('formatKeyRefused') ? { onFormatKeyRefused: heard.onFormatKeyRefused } : {}),
         onEditingChanged: heard.onEditingChanged,
     };
