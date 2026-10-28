@@ -52,8 +52,21 @@ export function hintOf(hint: ArgumentHint | undefined): EditorHint | undefined {
 
 /** The Reference Point mode writes for a pointed range (ADR-0051): `A3`, or `B7:C9` from its top-left. */
 export function sheetReferenceText(range: SelectionRange): string {
-    return referenceText(new CellRange(new CellAddress(range.topRow, range.leftColumn),
-        new CellAddress(range.topRow + range.rowCount - 1, range.leftColumn + range.columnCount - 1)));
+    return referenceText(cellRangeOf(range));
+}
+
+/**
+ * The Reference Point writes for a range pointed at on `shown` while the Formula is typed on `home` (ADR-0331 §5): bare
+ * on the Sheet it is typed on, and qualified with the Sheet's name on another, `Sheet2!A3`, quoted as a Reference
+ * quotes a name.
+ */
+export function sheetReferenceTextOn(range: SelectionRange, shown: Sheet, home: Sheet | undefined): string {
+    return home === undefined || home === shown ? sheetReferenceText(range) : referenceText(cellRangeOf(range), shown.name);
+}
+
+function cellRangeOf(range: SelectionRange): CellRange {
+    return new CellRange(new CellAddress(range.topRow, range.leftColumn),
+        new CellAddress(range.topRow + range.rowCount - 1, range.leftColumn + range.columnCount - 1));
 }
 
 /**
@@ -70,8 +83,12 @@ export function sheetCycleReference(text: string, selectionStart: number, select
  * on `sheet`, for the grid to colour and outline. A structured reference names no cells here, so it carries the key
  * of its Linked Table's column instead. Nothing for text that is not a Formula.
  */
-export function sheetReferences(sheet: Sheet, text: string): readonly GridEditorReference[] {
-    return sheet.references(text).map(({ start, length, cells, linkedColumn }) => (cells === undefined
+export function sheetReferences(sheet: Sheet, text: string, home?: Sheet): readonly GridEditorReference[] {
+    // While a Formula typed on `home` is edited with `sheet` shown, a Reference names cells on the Sheet shown only where
+    // it names a Sheet: one that names none is the home Sheet's (ADR-0331 §5).
+    const away = home !== undefined && home !== sheet;
+    const found = sheet.references(text).filter(({ start, length, cells }) => !away || cells === undefined || text.slice(start, start + length).includes('!'));
+    return found.map(({ start, length, cells, linkedColumn }) => (cells === undefined
         ? { start, length, key: linkedColumnKey(defined(linkedColumn, 'the Linked Table column a structured reference reads')) }
         : { start, length, range: { topRow: cells.first.row, leftColumn: cells.first.column, rowCount: cells.rowCount, columnCount: cells.columnCount } }));
 }

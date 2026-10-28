@@ -169,7 +169,7 @@ export function unmountAll(): void {
 /** Mounts a grid; `browser` sets what the browser can do before the grid attaches, and `parent` is what the grid's
  * root is placed in. */
 export function mount<Row>(
-    options: GridOptions<Row>, browser: Partial<Pick<Told, 'clipboardWatched'>> = {}, parent: HTMLElement = document.body,
+    options: GridOptions<Row>, browser: Partial<Pick<Told, 'clipboardWatched' | 'primaryIsMeta'>> = {}, parent: HTMLElement = document.body,
 ): { readonly root: HTMLElement; readonly view: GridView<Row>; readonly told: Told } {
     const root = document.createElement('div');
     parent.append(root);
