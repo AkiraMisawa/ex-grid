@@ -1,0 +1,318 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExSheet.MudBlazor, so a plain "MudBlazor" here is this
+   namespace, not MudBlazor's, and every product using is written with global:: (the name
+   collisions in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using global::MudBlazor
+@using global::ExSheet
+@* Not the contract (ADR-0201): MudSheetChrome draws Format Cells over the Script Core with this, and
+   no Consumer places it. It is public only because Razor makes every component public, is hidden
+   from a Consumer's editor, and may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@*
+    Format Cells when the Script Core draws the Sheet (ADR-0071, ADR-0410): MudFormatCellsDialog's
+    tabs, drawn from the view and marked for the adapter's script (SheetScriptSlotAttributes), with no
+    handler of their own. It stands in the grid's popover frame, as the Script Core's own Format Cells
+    and the React Wrappers' do, not in a MudDialog: where it stands, Escape, a press elsewhere and the
+    keyboard back on the grid are the grid's.
+
+    The draft is the Sheet's, in the browser. The script reads every control as the browser fires it,
+    sets it through the draft and sends the view again; it shows the tab chosen and sets what each
+    radio, checkbox, select and field holds from the draft, so a render a round trip behind never
+    draws over a choice. So every choice is a native control (a radio, a checkbox, a select, a field),
+    as ADR-0410 section 3's note has MudSelect's choice read too late for an OK typed after it, and the
+    fields are drawn with no value. MudBlazor draws the type, the buttons and the palette's colours.
+*@
+<form class="mud-ex-sheet-format-cells-form mud-ex-sheet-script-format-cells" novalidate data-ex-format-form="">
+    <div class="mud-ex-sheet-script-format-tabs" role="tablist" aria-label="@View.Labels.Tabs">
+        @foreach (var tab in View.Tabs)
+        {
+            <button type="button" class="mud-ex-sheet-script-format-tab" data-ex-format-tab="@tab.Value"
+                    id="@($"{_id}-tab-{tab.Value}")" aria-controls="@($"{_id}-panel-{tab.Value}")">@tab.Label</button>
+        }
+    </div>
+    @foreach (var tab in View.Tabs)
+    {
+        <div class="mud-ex-sheet-format-cells-panel" data-ex-format-panel="@tab.Value" id="@($"{_id}-panel-{tab.Value}")"
+             aria-labelledby="@($"{_id}-tab-{tab.Value}")">
+            @(tab.Value switch
+            {
+                "number" => NumberTab,
+                "alignment" => AlignmentTab,
+                "font" => FontTab,
+                "border" => BorderTab,
+                "fill" => Palette(View.Fill),
+                _ => throw new InvalidOperationException($"Format Cells has no tab '{tab.Value}' (ADR-0071)."),
+            })
+        </div>
+    }
+    @if (View.Refusal is { } refusal)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mud-ex-sheet-format-cells-refusal">@refusal</MudAlert>
+    }
+    <div class="mud-ex-sheet-format-cells-actions mud-ex-sheet-script-format-actions">
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mud-ex-sheet-format-cells-ok">@View.Labels.Ok</MudButton>
+        <MudButton Variant="Variant.Text" Class="mud-ex-sheet-format-cells-cancel" data-ex-format-cancel="">@View.Labels.Cancel</MudButton>
+    </div>
+</form>
+
+@code {
+    private static int _instances;
+
+    // Ids unique on the page, for the radio groups' names and the tabs' ids: two Sheets each have their own (ADR-0018).
+    private readonly string _id = "mud-ex-sheet-script-format-cells-" + Interlocked.Increment(ref _instances).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Format Cells, as the Script Core describes it.</summary>
+    [Parameter, EditorRequired] public SheetFormatCellsView View { get; set; } = default!;
+
+    // The view drawn last: a new one whenever a choice changes what Format Cells shows, and the same one on every other
+    // render of the Sheet, which would otherwise draw every tab and every swatch again (ADR-0003).
+    private SheetFormatCellsView? _drawn;
+
+    protected override bool ShouldRender() => !ReferenceEquals(_drawn, View);
+
+    protected override void OnAfterRender(bool firstRender) => _drawn = View;
+
+    // A list of choices of which one is made, as radio buttons under their legend, each with its note where it has one.
+    private RenderFragment Radios(string set, string legend, IReadOnlyList<SheetFormatCellsChoice> choices, string? @class = null) => __builder =>
+    {
+        <fieldset class="@($"mud-ex-sheet-script-fieldset {@class}")">
+            <legend><MudText Typo="Typo.subtitle2">@legend</MudText></legend>
+            @foreach (var choice in choices)
+            {
+                <label class="@(choice.Enabled ? "mud-ex-sheet-script-choice-label" : "mud-ex-sheet-script-choice-label mud-ex-sheet-script-choice-disabled")">
+                    <input type="radio" name="@($"{_id}-{set}")" disabled="@(!choice.Enabled)"
+                           data-ex-format-set="@set" data-ex-format-value="@choice.Value" />
+                    <MudText Typo="Typo.body2" Inline="true">@choice.Label</MudText>
+                </label>
+                @if (choice.Note is { } note)
+                {
+                    <MudText Typo="Typo.caption" Class="mud-ex-sheet-format-cells-reason">@note</MudText>
+                }
+            }
+        </fieldset>
+    };
+
+    // A checkbox with its label.
+    private static RenderFragment Checkbox(string set, string label) => __builder =>
+    {
+        <label class="mud-ex-sheet-script-choice-label">
+            <input type="checkbox" data-ex-format-set="@set" />
+            <MudText Typo="Typo.body2" Inline="true">@label</MudText>
+        </label>
+    };
+
+    // A native select under its label: the browser's own list, read in the browser as it is chosen.
+    private static RenderFragment Select(string set, string label, IReadOnlyList<SheetFormatCellsChoice> choices) => __builder =>
+    {
+        <label class="mud-ex-sheet-script-field">
+            <MudText Typo="Typo.caption">@label</MudText>
+            <select class="mud-ex-sheet-script-select" data-ex-format-set="@set">
+                @foreach (var choice in choices)
+                {
+                    <option value="@choice.Value">@choice.Label</option>
+                }
+            </select>
+        </label>
+    };
+
+    // ---- Number ----
+
+    private RenderFragment NumberTab => __builder =>
+    {
+        var number = View.Number;
+        <div class="mud-ex-sheet-format-cells-columns">
+            @Radios("category", View.Labels.Category, number.Categories, "mud-ex-sheet-format-cells-list")
+            <div class="mud-ex-sheet-format-cells-options">
+                @if (number.Hint is { } hint)
+                {
+                    <MudText Typo="Typo.body2">@hint</MudText>
+                }
+                @if (number.TakesDecimalPlaces)
+                {
+                    <label class="mud-ex-sheet-script-field">
+                        <MudText Typo="Typo.caption">@View.Labels.DecimalPlaces</MudText>
+                        <input type="number" min="0" max="30" required class="mud-ex-sheet-script-input mud-ex-sheet-format-cells-places" data-ex-format-set="places" />
+                    </label>
+                }
+                @if (number.ThousandsSeparator is not null)
+                {
+                    @Checkbox("separator", View.Labels.ThousandsSeparator)
+                }
+                @if (number.CurrencySymbol is { } symbol)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-ex-sheet-format-cells-symbol">@symbol</MudText>
+                }
+                @if (number.NegativeNumbers.Count > 0)
+                {
+                    @Radios("negative", View.Labels.NegativeNumbers, number.NegativeNumbers, "mud-ex-sheet-format-cells-list")
+                }
+                @if (number.TakesCode)
+                {
+                    <label class="mud-ex-sheet-script-field">
+                        <MudText Typo="Typo.caption">@View.Labels.Type</MudText>
+                        <input type="text" spellcheck="false" class="mud-ex-sheet-script-input mud-ex-sheet-format-cells-code" data-ex-format-set="code"
+                               aria-invalid="@(number.CodeRefusal is null ? "false" : "true")" />
+                        @if (number.CodeRefusal is { } refusal)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Error">@refusal</MudText>
+                        }
+                    </label>
+                }
+                @if (number.TypesLegend is { } legend && number.Types.Count > 0)
+                {
+                    @Radios("type", legend, number.Types, "mud-ex-sheet-format-cells-list mud-ex-sheet-format-cells-types")
+                }
+            </div>
+        </div>
+    };
+
+    // ---- Alignment ----
+
+    private RenderFragment AlignmentTab => Select("alignment", View.Labels.Horizontal, View.Alignments);
+
+    // ---- Font ----
+
+    private RenderFragment FontTab => __builder =>
+    {
+        var font = View.Font;
+        <div class="mud-ex-sheet-format-cells-columns">
+            @Radios("fontStyle", View.Labels.FontStyle, font.Styles, "mud-ex-sheet-format-cells-list")
+            <div class="mud-ex-sheet-format-cells-options">
+                @Select("underline", View.Labels.Underline,
+                    [new("none", View.Labels.UnderlineNone, !font.Underline, true, null), new("single", View.Labels.UnderlineSingle, font.Underline, true, null)])
+                @Checkbox("strikethrough", View.Labels.Strikethrough)
+                @* Excel's Normal font (ADR-0071, 2026-10-02): checking it sets every part of the Font to its default,
+                   and it shows checked while they are; the script checks it again on an uncheck. *@
+                @Checkbox("normalFont", View.Labels.NormalFont)
+            </div>
+        </div>
+        @Palette(font.Palette)
+    };
+
+    // ---- Border ----
+
+    private RenderFragment BorderTab => __builder =>
+    {
+        var border = View.Border;
+        <div class="mud-ex-sheet-format-cells-columns">
+            <fieldset class="mud-ex-sheet-script-fieldset">
+                <legend><MudText Typo="Typo.subtitle2">@View.Labels.LineStyle</MudText></legend>
+                <div class="mud-ex-sheet-format-cells-columns">
+                    @foreach (var column in border.LineStyles)
+                    {
+                        <div class="mud-ex-sheet-format-cells-line-column">
+                            @foreach (var style in column)
+                            {
+                                <label class="mud-ex-sheet-script-choice-label" title="@style.Label">
+                                    <input type="radio" name="@($"{_id}-lineStyle")" aria-label="@style.Label"
+                                           data-ex-format-set="lineStyle" data-ex-format-value="@style.Value" />
+                                    @LineSample(style)
+                                </label>
+                            }
+                        </div>
+                    }
+                </div>
+            </fieldset>
+            <div class="mud-ex-sheet-format-cells-options">
+                <MudText Typo="Typo.subtitle2">@View.Labels.Presets</MudText>
+                <div class="mud-ex-sheet-format-cells-buttons" role="group" aria-label="@View.Labels.Presets">
+                    @foreach (var preset in border.Presets)
+                    {
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="!preset.Enabled" Class="mud-ex-sheet-format-cells-preset"
+                                   data-ex-format-set="preset" data-ex-format-value="@preset.Value">@preset.Label</MudButton>
+                    }
+                </div>
+                <MudText Typo="Typo.subtitle2">@View.Labels.BorderEdges</MudText>
+                @* An edge set is filled, one unset outlined, and one whose cells' sides differ outlined in the primary, by
+                   the aria-pressed the script sets from the draft (the stylesheet), never by a render behind it. *@
+                <div class="mud-ex-sheet-format-cells-buttons" role="group" aria-label="@View.Labels.BorderEdges">
+                    @foreach (var edge in border.Edges)
+                    {
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="!edge.Enabled" Class="mud-ex-sheet-format-cells-edge mud-ex-sheet-script-edge"
+                                   data-ex-format-set="edge" data-ex-format-value="@edge.Value">@edge.Label</MudButton>
+                    }
+                </div>
+                @Preview(border)
+            </div>
+        </div>
+        @Palette(border.Palette)
+    };
+
+    // A line style's sample: its stroke and its dashes; Double as two strokes.
+    private static RenderFragment LineSample(SheetFormatCellsLineStyle style) => __builder =>
+    {
+        <svg class="mud-ex-sheet-format-cells-line" width="56" height="8" aria-hidden="true">
+            @if (style.Value == "double")
+            {
+                <line x1="0" y1="2.5" x2="56" y2="2.5" stroke="currentColor" stroke-width="@style.Width" />
+                <line x1="0" y1="5.5" x2="56" y2="5.5" stroke="currentColor" stroke-width="@style.Width" />
+            }
+            else if (style.Value != "none")
+            {
+                <line x1="0" y1="4" x2="56" y2="4" stroke="currentColor" stroke-width="@style.Width" stroke-dasharray="@style.Dashes" />
+            }
+        </svg>
+    };
+
+    // Where each edge lies in the preview.
+    private static (int X1, int Y1, int X2, int Y2) EdgeAt(string edge) => edge switch
+    {
+        "top" => (4, 4, 116, 4),
+        "bottom" => (4, 68, 116, 68),
+        "left" => (4, 4, 4, 68),
+        "right" => (116, 4, 116, 68),
+        "insideHorizontal" => (4, 36, 116, 36),
+        "insideVertical" => (60, 4, 60, 68),
+        _ => throw new InvalidOperationException($"Format Cells has no edge '{edge}' (ADR-0071)."),
+    };
+
+    // The preview: the range's edges as they will be, and an edge whose cells' sides differ as a grey dotted line.
+    private RenderFragment Preview(SheetFormatCellsBorder border) => __builder =>
+    {
+        <svg class="mud-ex-sheet-format-cells-preview" width="120" height="72" viewBox="0 0 120 72" role="img" aria-label="@View.Labels.Preview">
+            @foreach (var edge in border.Edges.Where(edge => edge.InPreview && edge.Line is not { None: true }))
+            {
+                var (x1, y1, x2, y2) = EdgeAt(edge.Value);
+                if (edge.Line is { } line)
+                {
+                    <line x1="@x1" y1="@y1" x2="@x2" y2="@y2" data-edge="@edge.Value" stroke="@line.Paint" stroke-width="@line.Width" stroke-dasharray="@line.Dashes" />
+                }
+                else
+                {
+                    <line x1="@x1" y1="@y1" x2="@x2" y2="@y2" data-edge="@edge.Value" class="mud-ex-sheet-format-cells-differs" stroke="#808080" stroke-width="1" stroke-dasharray="1 2" />
+                }
+            }
+        </svg>
+    };
+
+    // ---- A palette ----
+
+    // Case 23's palette as one group of radio buttons: Automatic or No Colour first, the theme's sixty and the ten
+    // standard colours, each named as Excel names it and painted in its colour, the user's choice of data written
+    // inline (ADR-0071), and More Colours, which takes a hex value.
+    private RenderFragment Palette(SheetFormatCellsPalette palette) => __builder =>
+    {
+        var name = $"{_id}-palette-{palette.Target}";
+        <fieldset class="mud-ex-sheet-script-fieldset mud-ex-sheet-palette" role="radiogroup" aria-label="@palette.Legend">
+            <legend><MudText Typo="Typo.subtitle2">@palette.Legend</MudText></legend>
+            <label class="mud-ex-sheet-palette-first">
+                <input type="radio" name="@name" data-ex-format-set="colour" data-ex-format-value="@palette.FirstValue" />
+                <MudText Typo="Typo.body2" Inline="true">@palette.First</MudText>
+            </label>
+            <div class="mud-ex-sheet-swatches">
+                @foreach (var swatch in palette.Rows.SelectMany(row => row))
+                {
+                    <input type="radio" name="@name" class="mud-ex-sheet-swatch" aria-label="@swatch.Name" title="@swatch.Name"
+                           style="@($"background-color: {swatch.Paint}")"
+                           data-ex-format-set="colour" data-ex-format-value="@palette.ValueOf(swatch)" />
+                }
+            </div>
+            <label class="mud-ex-sheet-script-field">
+                <MudText Typo="Typo.caption">@View.Labels.MoreColours</MudText>
+                <input type="text" maxlength="7" placeholder="#RRGGBB" spellcheck="false" class="mud-ex-sheet-script-input mud-ex-sheet-more-colours"
+                       data-ex-format-set="colourText" data-ex-format-value="@palette.Target" />
+            </label>
+        </fieldset>
+    };
+}

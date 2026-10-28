@@ -176,6 +176,70 @@ button.mud-ex-sheet-swatch { padding: 0; }
 .mud-ex-sheet-script-swatches { display: flex; gap: 4px; padding: 3px 10px; }
 .mud-ex-sheet-script-swatch-disabled { opacity: 0.38; cursor: default; }
 
+/* Format Cells over the Script Core (ADR-0410): the same tabs as the dialog's, in the grid's popover frame. Every
+   choice is a native control, which the script reads and sets from the draft; MudBlazor's palette draws them. */
+.mud-ex-sheet-script-format-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 34em;
+    color: var(--mud-palette-text-primary);
+    font-family: var(--mud-typography-default-family);
+}
+.mud-ex-sheet-script-format-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+.mud-ex-sheet-script-format-tab {
+    padding: 6px 12px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--mud-palette-text-secondary);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+}
+.mud-ex-sheet-script-format-tab[aria-selected="true"] {
+    color: var(--mud-palette-primary);
+    border-bottom-color: var(--mud-palette-primary);
+}
+.mud-ex-sheet-script-format-tab:focus-visible { outline: 2px solid var(--mud-palette-primary); outline-offset: -2px; }
+.mud-ex-sheet-script-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.mud-ex-sheet-script-fieldset > legend { padding: 0; }
+.mud-ex-sheet-script-choice-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 26px;
+    cursor: pointer;
+}
+.mud-ex-sheet-script-choice-label input { accent-color: var(--mud-palette-primary); margin: 0; }
+.mud-ex-sheet-script-choice-disabled { cursor: default; color: var(--mud-palette-text-disabled); }
+.mud-ex-sheet-script-field { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
+.mud-ex-sheet-script-input,
+.mud-ex-sheet-script-select {
+    max-width: 14em;
+    padding: 6px 8px;
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: var(--mud-default-borderradius);
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    font: inherit;
+}
+.mud-ex-sheet-script-input:focus,
+.mud-ex-sheet-script-select:focus { outline: 2px solid var(--mud-palette-primary); outline-offset: -1px; }
+.mud-ex-sheet-script-input[aria-invalid="true"] { border-color: var(--mud-palette-error); }
+.mud-ex-sheet-script-format-actions { display: flex; justify-content: flex-end; gap: 8px; }
+/* An edge's button as its aria-pressed says, which the script sets from the draft: filled while set, outlined in the
+   primary while the cells' sides differ, and outlined otherwise. */
+.mud-ex-sheet-script-edge[aria-pressed="true"] {
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+    border-color: var(--mud-palette-primary);
+}
+.mud-ex-sheet-script-edge[aria-pressed="mixed"] { color: var(--mud-palette-primary); border-color: var(--mud-palette-primary); }
+
 /* ADR-0039: the frame holds opening keys until the dialog root can hear Escape.
    Do not inherit visibility: MudTabs transitions all properties on its tab wrapper,
    leaving it hidden when the ready render asks the selected tab for focus. */

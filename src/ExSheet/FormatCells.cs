@@ -290,6 +290,12 @@ public interface ISheetChrome : IGridChrome
     /// a fragment for every view: null is refused, as is a null from <see cref="SheetTab(SheetTabContext)"/> or
     /// <see cref="SheetTabAdd"/> for a slot named.</summary>
     RenderFragment? ToolbarItem(SheetToolbarItemView view) => null;
+
+    /// <summary>Format Cells' contents when the Script Core draws the Sheet (ADR-0071, ADR-0410), for a Chrome that names
+    /// <see cref="SheetScriptSlots.FormatCells"/>: every tab's controls in one form, marked with
+    /// <see cref="SheetScriptSlotAttributes"/>, and no handler of their own. They stand in the grid's popover frame, not
+    /// a dialog of the Chrome's. Drawn again from each view the script sends as a choice is made.</summary>
+    RenderFragment? FormatCells(SheetFormatCellsView view) => null;
 }
 
 /// <summary>

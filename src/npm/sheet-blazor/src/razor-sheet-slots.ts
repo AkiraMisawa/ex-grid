@@ -8,6 +8,8 @@ import { gridRazorSlotKinds, type HostedSlotKind, type RazorSlotKind } from '@ex
 import {
     toolbarChoiceMovedTo, toolbarChoiceRows, toolbarChoiceStart, type SheetTabSlotContext, type SheetToolbarItemSlotContext, type SheetToolbarItemView,
 } from '@ex-grid/sheet';
+import { formatCellsKind } from './razor-format-cells';
+import { crossed, marked } from './slot-markup';
 
 /** The attributes the Razor of a Sheet slot writes on its controls (ADR-0410 section 2), as `SheetScriptSlotAttributes`
  * names them in .NET. */
@@ -22,7 +24,7 @@ export const sheetSlotAttributes = Object.freeze({
 });
 
 /** The Sheet's slots a Razor Chrome fills, as the Sheet names them. */
-export type SheetRazorSlotName = 'toolbarItem' | 'sheetTab' | 'sheetTabAdd';
+export type SheetRazorSlotName = 'toolbarItem' | 'formatCells' | 'sheetTab' | 'sheetTabAdd';
 
 /** What a Toolbar Item's list holds across the renders .NET makes of its contents: whether it is open, the toolbar's
  * requests answered, and what a press elsewhere closes. */
@@ -107,7 +109,7 @@ const sheetTabAddKind: RazorSlotKind<undefined> = {
 
 // Every slot a Razor Chrome fills has its kind: a name added to SheetRazorSlotName without one does not compile.
 const sheetKindsByName = {
-    toolbarItem: toolbarItemKind, sheetTab: sheetTabKind, sheetTabAdd: sheetTabAddKind,
+    toolbarItem: toolbarItemKind, formatCells: formatCellsKind, sheetTab: sheetTabKind, sheetTabAdd: sheetTabAddKind,
 } satisfies Record<SheetRazorSlotName, HostedSlotKind>;
 
 /** The kinds of the slots a Razor Chrome fills on a Sheet, by the core's slot names: the Sheet's own, and its grid's. */
@@ -116,22 +118,6 @@ export const sheetRazorSlotKinds: ReadonlyMap<string, HostedSlotKind> = new Map(
 /** Whether `name` is one of the Sheet's own slots a Razor Chrome fills. */
 export function isSheetRazorSlotName(name: unknown): name is SheetRazorSlotName {
     return typeof name === 'string' && Object.hasOwn(sheetKindsByName, name);
-}
-
-/** A part of the view as JSON carries it: JSON has no undefined, and .NET reads null as none. */
-function crossed<T>(value: T | undefined): T | null {
-    return value === undefined ? null : value;
-}
-
-/** The elements of the contents marked `attribute`, each with its value. */
-function marked(contents: HTMLElement, attribute: string): [HTMLElement, string][] {
-    const found: [HTMLElement, string][] = [];
-    for (const element of contents.querySelectorAll<HTMLElement>(`[${attribute}]`)) {
-        const value = element.getAttribute(attribute);
-        if (value === null) throw new Error(`Internal: an element found by ${attribute} does not carry it.`);
-        found.push([element, value]);
-    }
-    return found;
 }
 
 /** The list the contents drew, and their choices by index. */
