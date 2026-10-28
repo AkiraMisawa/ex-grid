@@ -1,10 +1,14 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using ExChart.Engine;
+using ExGrid;
 using ExGrid.Chrome;
 using ExGrid.Data;
+using ExGrid.Data.Arrow;
 using ExGrid.Script;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -24,8 +28,12 @@ namespace ExBoard.Script;
 /// <para>A Snapshot crosses once: a later render names it by the number it crossed under, and the browser says when it
 /// has let one go. An output is read back against the very Snapshot it was taken from, so
 /// <see cref="BoardOutput.Take"/> holds it to that data's version as a Board bound in .NET does.</para>
+/// <para>A source held where the data lives (<see cref="Sources"/>, ADR-0343) stays in .NET: the Board in the browser asks
+/// it through .NET for its shape, a grid's pages and a chart's points, and each page of rows crosses as its Arrow stream.</para>
 /// <para>It stands beside <see cref="Components.ExBoard"/>, the Razor component, until ExBoard's Blazor step holds
-/// (ADR-0370 section 11). It does not take sources held where the data lives (ADR-0343) or Chromes yet.</para>
+/// (ADR-0370 section 11). What it does not carry yet is refused by name, never left out quietly: a pivot over a source
+/// (<see cref="BoardSource.Report"/>), which asks a report of .NET, not the Leaf Aggregates the browser's engine reads
+/// (ADR-0370 section 3); and Chromes.</para>
 /// </remarks>
 public sealed class ExBoard : ComponentBase, IAsyncDisposable
 {
@@ -40,6 +48,11 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     /// <summary>The Snapshot each input is bound to, by the input's name. A new dictionary binds again; a Snapshot the
     /// browser already holds is not sent again.</summary>
     [Parameter, EditorRequired] public IReadOnlyDictionary<string, Snapshot> Data { get; set; } = default!;
+
+    /// <summary>The source each input held where the data lives is bound to, by the input's name (ADR-0343): asked for its
+    /// shape before anything is drawn, for a grid's rows a page at a time, and for a chart's points thinned where the data
+    /// lives. A new dictionary binds again.</summary>
+    [Parameter] public IReadOnlyDictionary<string, BoardSource>? Sources { get; set; }
 
     /// <summary>The Board's width in CSS pixels, from which a chart's width is its share of its row (a chart is drawn
     /// at a width it is told). Grids and pivots stretch to their share.</summary>
@@ -65,12 +78,18 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback<BoardDiff> OnDiff { get; set; }
 
     private readonly SnapshotCrossing _crossing = new();
+    private readonly SourceCrossing _sourceCrossing = new();
+    // The questions the browser has asked a source and not had answered, by the number it asked each under.
+    private readonly ConcurrentDictionary<long, CancellationTokenSource> _asked = new();
 
     private BoardReading? _board;
     private string? _boardJson;
     private bool _boardOwed;
     private IReadOnlyDictionary<string, Snapshot>? _data;
     private bool _dataOwed;
+    private bool _sourcesRead;
+    private IReadOnlyDictionary<string, BoardSource>? _sources;
+    private bool _sourcesOwed;
 
     // The Diffs the Board raised, by identity, each with the number of the Consumer's Diffs the browser had been sent
     // when it raised it. Handed back while no other Diff of the Consumer's has been sent since, it is the one on screen
@@ -104,12 +123,23 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             throw new InvalidOperationException("ExBoard draws a Board, read by BoardSpec.Read (ADR-0340).");
         if (Data is null)
             throw new InvalidOperationException("ExBoard binds each input to a Snapshot in Data (ADR-0340).");
-        if (!ReferenceEquals(Board, _board))
+        var boardMoved = !ReferenceEquals(Board, _board);
+        var sourcesMoved = !_sourcesRead || !ReferenceEquals(Sources, _sources);
+        if (boardMoved || sourcesMoved)
+            RefuseWhatIsNotCarried(Board, Sources);
+        if (boardMoved)
         {
             // Written before anything moves; a new one binds again, as the Razor component's does.
             _boardJson = BoardSpec.Write(Board);
             _board = Board;
             _boardOwed = true;
+        }
+        if (sourcesMoved || boardMoved)
+        {
+            // A new Board numbers each source again under its own declaration of the input.
+            _sourcesRead = true;
+            _sources = Sources;
+            _sourcesOwed = true;
         }
         if (!ReferenceEquals(Data, _data))
         {
@@ -129,6 +159,24 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             var onScreen = Diff is { } raised && _raised.TryGetValue(raised, out var sentThen) && sentThen.Value == _diffsSent;
             if (!onScreen)
                 _diffOwed = true;
+        }
+    }
+
+    // What the browser's Board cannot be handed yet, refused here, by name, before anything crosses.
+    private static void RefuseWhatIsNotCarried(BoardReading board, IReadOnlyDictionary<string, BoardSource>? sources)
+    {
+        if (sources is null)
+            return;
+        foreach (var (input, source) in sources)
+        {
+            if (source is null)
+                throw new InvalidOperationException($"ExBoard's Sources hands input '{input}' no source.");
+        }
+        if (board.Views.OfType<BoardPivotView>().FirstOrDefault(pivot => sources.ContainsKey(pivot.Input)) is { } over)
+        {
+            throw new NotSupportedException(
+                $"Pivot '{over.Id}' is over input '{over.Input}', held on a server, and ExBoard.Script.ExBoard does not carry a pivot over a source yet: "
+                + "its source makes a report (BoardSource.Report), and the pivot in the browser reads Leaf Aggregates (ADR-0370 section 3). Draw this Board with ExBoard.Components.ExBoard.");
         }
     }
 
@@ -213,12 +261,14 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             json.WriteRawValue(options);
             json.WriteString("board", _boardJson ?? throw new InvalidOperationException("Internal: the Board was never written."));
             naming.Write(json);
+            _sourceCrossing.Write(json, Sources, Board);
             WriteDiff(json);
             json.WriteEndObject();
         });
         _sentOptions = options;
         _boardOwed = false;
         _dataOwed = false;
+        _sourcesOwed = false;
         var streams = await naming.StreamsAsync();
         var bridge = DotNetObjectReference.Create(new ScriptBridge(this));
         _bridge = bridge;
@@ -270,7 +320,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         if (view is null || _disposed)
             return;
         var options = OptionsJson();
-        if (options == _sentOptions && !_boardOwed && !_dataOwed && !_diffOwed)
+        if (options == _sentOptions && !_boardOwed && !_dataOwed && !_sourcesOwed && !_diffOwed)
             return;
         _sentOptions = options;
         var naming = _dataOwed ? _crossing.Name(Data) : null;
@@ -290,12 +340,15 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
                 json.WriteStartArray("sent");
                 json.WriteEndArray();
             }
+            if (_sourcesOwed)
+                _sourceCrossing.Write(json, Sources, Board);
             if (_diffOwed)
                 WriteDiff(json);
             json.WriteEndObject();
         });
         _boardOwed = false;
         _dataOwed = false;
+        _sourcesOwed = false;
         DotNetStreamReference[] streams = naming is null ? [] : await naming.StreamsAsync();
         await view.InvokeVoidAsync("update", update, streams);
     }
@@ -331,14 +384,15 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
 
     // The Board's events, handed to the Consumer one at a time in the order the browser raised them: a handler that
     // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do.
-    internal Task HeardAsync(string kind, JsonElement payload) => InvokeAsync(async () =>
+    internal Task HeardAsync(string kind, JsonElement payload, IJSStreamReference? streamed) => InvokeAsync(async () =>
     {
-        // Read in the component's turn, as the event arrives, against the Snapshot it names, which the browser still
-        // holds: it lets one go only after telling what it raised from it.
+        // What it names is found in the component's turn, as the event arrives: the Snapshot or the source it was raised
+        // from, which the browser still holds, since it lets one go only after telling what it raised from it. Its text,
+        // which may come as a stream, is read in its own turn among the events.
         Func<Task> hand;
         try
         {
-            hand = Prepare(kind, payload);
+            hand = Prepare(kind, payload, streamed);
         }
         catch (Exception ex)
         {
@@ -371,21 +425,43 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         }
     });
 
-    private Func<Task> Prepare(string kind, JsonElement payload)
+    private Func<Task> Prepare(string kind, JsonElement payload, IJSStreamReference? streamed)
     {
         switch (kind)
         {
             case "output":
             {
-                var output = BoardOutput.Read(Text(payload.GetProperty("output")), _crossing[payload.GetProperty("snapshot").GetInt32()]);
-                return () => OnOutput.InvokeAsync(output);
+                // Taken from a Snapshot sent, read against it; taken from rows a source held, read as the Board that
+                // numbered the source declares the input.
+                var text = TextOrNull(payload.GetProperty("output"));
+                var snapshot = payload.GetProperty("snapshot");
+                var source = payload.GetProperty("source");
+                if ((snapshot.ValueKind == JsonValueKind.Null) == (source.ValueKind == JsonValueKind.Null))
+                    throw new InvalidOperationException("Internal: the Script Core raised an output naming not exactly one of a Snapshot and a source.");
+                Func<string, BoardOutput> read;
+                if (snapshot.ValueKind == JsonValueKind.Null)
+                {
+                    var held = _sourceCrossing[source.GetInt32()];
+                    read = json => BoardOutput.ReadFromSource(json, held.Input, held.Declared);
+                }
+                else
+                {
+                    var from = _crossing[snapshot.GetInt32()];
+                    read = json => BoardOutput.Read(json, from);
+                }
+                return async () => await OnOutput.InvokeAsync(read(await CrossedTextAsync(text, streamed, CancellationToken.None)));
             }
             case "diff":
             {
-                var diff = BoardDiff.Read(Text(payload.GetProperty("diff")));
-                // The one on screen as soon as it is read, unless a Diff of the Consumer's reached the browser after it.
-                _raised.AddOrUpdate(diff, new StrongBox<int>(payload.GetProperty("diffsSent").GetInt32()));
-                return () => OnDiff.InvokeAsync(diff);
+                var text = TextOrNull(payload.GetProperty("diff"));
+                var diffsSent = payload.GetProperty("diffsSent").GetInt32();
+                return async () =>
+                {
+                    var diff = BoardDiff.Read(await CrossedTextAsync(text, streamed, CancellationToken.None));
+                    // The one on screen as soon as it is read, unless a Diff of the Consumer's reached the browser after it.
+                    _raised.AddOrUpdate(diff, new StrongBox<int>(diffsSent));
+                    await OnDiff.InvokeAsync(diff);
+                };
             }
             default:
                 throw new InvalidOperationException($"Internal: the Script Core raised an event of the kind '{kind}'.");
@@ -395,7 +471,167 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     // The browser let go of these Snapshots: no message names them again.
     internal Task ReleaseSnapshotsAsync(int[] numbers) => InvokeAsync(() => _crossing.Release(numbers));
 
+    // The browser let go of these sources: it asks them nothing more.
+    internal Task ReleaseSourcesAsync(int[] numbers) => InvokeAsync(() => _sourceCrossing.Release(numbers));
+
+    // A question the browser asked a source, which no longer waits for the answer.
+    internal void Cancel(long call)
+    {
+        if (_asked.TryGetValue(call, out var asked))
+            asked.Cancel();
+    }
+
+    // One question to a source, under the number the browser asked it by, cancelled when the browser says it no longer
+    // waits; the source is the Consumer's, called as the Razor component calls it, and what it is asked is read as the
+    // Board that numbered it declares the input.
+    private async Task<T> AskAsync<T>(int number, long call, Func<SourceCrossing.Held, CancellationToken, Task<T>> ask)
+    {
+        if (_disposed)
+            throw new OperationCanceledException("The Board was disposed, and asks its sources nothing more.");
+        var held = _sourceCrossing[number];
+        using var cancellation = new CancellationTokenSource();
+        if (!_asked.TryAdd(call, cancellation))
+            throw new InvalidOperationException($"Internal: the browser asked question {call} twice.");
+        try
+        {
+            return await ask(held, cancellation.Token);
+        }
+        finally
+        {
+            _asked.TryRemove(call, out _);
+        }
+    }
+
+    // The input's shape, as a Board declares its columns: {"columns": [{"name": "desk", "type": "text"}, …]}.
+    internal Task<string> ShapeAsync(int number, long call) => AskAsync(number, call, async (held, token) =>
+        BoardSpec.DeclarationOf(await held.Source.ShapeAsync(token) ?? throw new InvalidOperationException($"The source of input '{held.Input}' answered no shape.")));
+
+    // A page of a grid's rows: where it starts, how many the whole result holds, and the rows as their Arrow stream
+    // (ADR-0065), which crosses as bytes.
+    internal Task<SourcePage> FetchAsync(int number, long call, string? question, IJSStreamReference? streamed) => AskAsync(number, call, async (held, token) =>
+    {
+        using var document = JsonDocument.Parse(await CrossedTextAsync(question, streamed, token));
+        var root = document.RootElement;
+        var query = new BoardQuery(Text(root.GetProperty("view")), GridViewStateJson.ReadQuery(Text(root.GetProperty("grid"))), NarrowingOf(held, root.GetProperty("narrowing")));
+        var page = await held.Source.Fetch(query, token);
+        using var stream = new MemoryStream();
+        await SnapshotArrow.WriteAsync(page.Rows, stream, token);
+        return new SourcePage(page.Start, page.TotalCount, stream.ToArray());
+    });
+
+    // A chart's points, thinned where the data lives (ADR-0344): the rows kept as JSON text, each value written as the
+    // input declares its column so the browser reads it as a Board Input reads a row, and what each thinned pixel held.
+    internal Task<string> ThinAsync(int number, long call, string? question, IJSStreamReference? streamed) => AskAsync(number, call, async (held, token) =>
+    {
+        var input = held.Input;
+        var thin = held.Source.Thin ?? throw new InvalidOperationException($"Internal: the browser asked the source of input '{input}' for a chart's points, and it thins none.");
+        using var document = JsonDocument.Parse(await CrossedTextAsync(question, streamed, token));
+        var root = document.RootElement;
+        var at = root.GetProperty("chart");
+        var chart = new ChartSourceQuery(Text(at.GetProperty("data")), Text(at.GetProperty("x")), Text(at.GetProperty("y")),
+            Enum.Parse<AxisValues>(Text(at.GetProperty("values")), ignoreCase: true), Position(at.GetProperty("from")), Position(at.GetProperty("to")), at.GetProperty("pixels").GetInt32());
+        var answer = await thin(new BoardChartQuery(Text(root.GetProperty("view")), chart, NarrowingOf(held, root.GetProperty("narrowing"))), token);
+        string[] columns = chart.X == chart.Y ? [chart.X] : [chart.X, chart.Y];
+        var points = Json(json =>
+        {
+            json.WriteStartArray();
+            for (var row = 0; row < answer.Points.RowCount; row++)
+            {
+                json.WriteStartObject();
+                foreach (var column in columns)
+                {
+                    json.WritePropertyName(column);
+                    WritePoint(json, answer.Points.Value(column, row), input, column);
+                }
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        });
+        return Json(json =>
+        {
+            json.WriteStartObject();
+            json.WriteString("version", answer.Version.ToString(CultureInfo.InvariantCulture));
+            json.WriteString("points", points);
+            json.WriteStartArray("thinned");
+            foreach (var pixel in answer.Thinned)
+            {
+                json.WriteStartArray();
+                foreach (var value in new[] { pixel.From, pixel.To, pixel.Min, pixel.Max })
+                {
+                    if (!double.IsFinite(value))
+                        throw new InvalidOperationException($"The source of input '{input}' answered chart '{chart.Data}' with a thinned pixel that holds {value}.");
+                    json.WriteNumberValue(value);
+                }
+                json.WriteNumberValue(pixel.Count);
+                json.WriteEndArray();
+            }
+            json.WriteEndArray();
+            json.WriteEndObject();
+        });
+    });
+
+    private static double? Position(JsonElement json) => json.ValueKind == JsonValueKind.Null ? null : json.GetDouble();
+
+    // A link's conditions as the browser writes them, each value read as the Board that numbered the source declares
+    // its column.
+    private static List<LinkCondition> NarrowingOf(SourceCrossing.Held held, JsonElement narrowing)
+    {
+        var (input, _, declared) = held;
+        var conditions = new List<LinkCondition>();
+        foreach (var condition in narrowing.EnumerateArray())
+        {
+            var columns = condition.GetProperty("on").EnumerateArray().Select(Text).Select(name => declared.TryGetColumn(name, out var column)
+                ? column
+                : throw new InvalidOperationException($"Internal: a link narrows input '{input}' on column '{name}', which it does not declare.")).ToArray();
+            conditions.Add(BoardOutput.ConditionOf(input, columns, condition.GetProperty("values"), $"a link's condition on input '{input}'"));
+        }
+        return conditions;
+    }
+
+    // Text the browser sent: inline while it fits well inside one message of a Blazor Server circuit, whose hub closes
+    // the circuit on a message over its limit (32 KB by default), and as a stream .NET reads in parts when it is longer:
+    // a link's narrowing or an output can hold thousands of values (crossText in the bridge).
+    private static async Task<string> CrossedTextAsync(string? text, IJSStreamReference? streamed, CancellationToken token)
+    {
+        if (streamed is null)
+            return text ?? throw new InvalidOperationException("Internal: the browser sent neither a text nor its stream.");
+        await using (streamed)
+        {
+            if (text is not null)
+                throw new InvalidOperationException("Internal: the browser sent a text and its stream both.");
+            await using var stream = await streamed.OpenReadStreamAsync(maxAllowedSize: streamed.Length, token);
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            return await reader.ReadToEndAsync(token);
+        }
+    }
+
+    // A point's value as a Board Input reads one: a number as JSON's, a date as its day and time, a Blank as null. The
+    // browser reads it as the input declares the column, and refuses one of another kind by name.
+    private static void WritePoint(Utf8JsonWriter json, object? value, string input, string column)
+    {
+        switch (value)
+        {
+            case int or short or byte or sbyte or ushort or uint:
+                json.WriteNumberValue(Convert.ToInt64(value, CultureInfo.InvariantCulture));
+                break;
+            case float number:
+                BoardOutput.Write(json, (double)number);
+                break;
+            case DateOnly day:
+                BoardOutput.Write(json, day.ToDateTime(TimeOnly.MinValue));
+                break;
+            case null or string or decimal or double or long or bool or DateTime:
+                BoardOutput.Write(json, value);
+                break;
+            default:
+                throw new InvalidOperationException($"The source of input '{input}' answered a point whose '{column}' is a {value.GetType().Name}, which no column of a Board holds.");
+        }
+    }
+
     private static string Text(JsonElement json) => json.GetString() ?? throw new InvalidOperationException("Internal: the Script Core sent null for a text.");
+
+    // A text that crossed as a stream instead is null here.
+    private static string? TextOrNull(JsonElement json) => json.ValueKind == JsonValueKind.Null ? null : Text(json);
 
     private static string Json(Action<Utf8JsonWriter> write)
     {
@@ -421,10 +657,15 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             return;
         _disposed = true;
         // While it attaches, the Board it makes is stopped once it is made, and the bridge let go after it.
-        if (_attaching)
-            return;
-        await ReleaseAsync(_view, _module);
-        _bridge?.Dispose();
+        if (!_attaching)
+        {
+            await ReleaseAsync(_view, _module);
+            _bridge?.Dispose();
+        }
+        // The questions still out are nobody's now: cancelled once the rest is let go, so what a source's own
+        // cancellation callback throws reaches the caller with nothing left held.
+        foreach (var asked in _asked.Values)
+            asked.Cancel();
     }
 
     /// <summary>Stops the browser's Board, and lets go what .NET holds of the browser.</summary>
