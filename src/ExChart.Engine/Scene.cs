@@ -911,5 +911,5 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
     }
 
     private static string XLabel(ChartAxis axis, double x) =>
-        axis.Format is null && axis.Values == AxisValues.Numbers && axis.Named.All(n => n.Position != x) ? TickLayout.Tenor(x) : axis.Write(x);
+        !axis.Writes && axis.Values == AxisValues.Numbers && axis.Named.All(n => n.Position != x) ? TickLayout.Tenor(x) : axis.Write(x);
 }

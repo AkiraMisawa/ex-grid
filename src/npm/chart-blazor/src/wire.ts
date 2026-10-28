@@ -8,14 +8,17 @@
 // holds through it once and sends the texts that differ from the Script Core's own writing (`texts`), and the chart
 // writes each value by them. .NET refuses, by name, a function the chart would ask of a value it does not hold, such
 // as a tick between the data's positions, rather than send a writer that would answer some values its own way
-// (spine rule 1). A Row Key crosses as the JSON value .NET chose for it, which the click hands back.
+// (spine rule 1); an Excel format code crosses as itself in its place, read by the Script Core's own reader (ADR-0420). A series
+// sampled from one of the family's interpolations or fits crosses as what it was made from, and is made again here by the
+// Script Core's twin of its method (ADR-0420 section 4). A Row Key crosses as the JSON value .NET chose for it, which the click hands back.
 
-import { ChartDefinition, SurfaceAxis, SurfaceDefinition } from '@ex-grid/chart';
+import { ChartDefinition, FittedCurve, interpolateLinear, interpolateNaturalCubicSpline, SurfaceAxis, SurfaceDefinition } from '@ex-grid/chart';
 import type {
     AppearanceKeys, AxisScale, AxisValues, CandlePeriod, ChartEdge, ChartPoint, ChartSeriesOptions, ChartValue, IntervalBound, IntervalStyle,
     NamedPosition, PixelSummary, PointColour, PointDetail, PointSize, PriceBar, Segment, SeriesInterval, SeriesKind, StepSide, AxisSide,
-    SurfaceNode, SurfaceTriangle, SurfaceValue,
+    SeriesSampler, SurfaceNode, SurfaceTriangle, SurfaceValue, FitSpace,
 } from '@ex-grid/chart';
+import { keyOf, noScripts, samplerBy, writerBy, type ScriptCalls, type WireScript } from './scripts';
 
 /** A number as .NET writes one JSON cannot hold: its name. */
 export type WireNumber = number | 'NaN' | 'Infinity' | '-Infinity';
@@ -38,6 +41,10 @@ export interface WireAxis {
     readonly named: readonly (readonly [position: WireNumber, label: string])[];
     readonly daysPerYear: number;
     readonly packed: boolean;
+    /** The Excel format code its positions are written by, which the Script Core reads as C# does (ADR-0420). */
+    readonly formatCode: string | null;
+    /** The Consumer's function its positions are written by (ADR-0420 section 3). */
+    readonly formatScript: WireScript | null;
 }
 
 /** An Interval's bounds, each `[x, lower, upper]`. */
@@ -45,6 +52,25 @@ export interface WireInterval {
     readonly meaning: string;
     readonly style: IntervalStyle;
     readonly bounds: readonly (readonly [x: WireNumber, lower: WireValue, upper: WireValue])[];
+}
+
+/**
+ * What a series sampled from one of the family's own curves was made from (ADR-0420 section 4): an interpolation's
+ * points, or a fit's members, from which the Script Core makes the same curve again.
+ */
+export type WireMadeFrom =
+    | { readonly kind: 'linear' | 'naturalCubicSpline'; readonly xs: readonly WireNumber[]; readonly ys: readonly WireNumber[] }
+    | { readonly kind: 'script'; readonly module: string; readonly export: string }
+    | {
+        readonly kind: 'fit'; readonly method: string; readonly coefficients: readonly WireNumber[]; readonly rSquared: WireNumber;
+        readonly count: number; readonly from: WireNumber; readonly to: WireNumber; readonly space: FitSpace;
+    };
+
+/** A series' sampler: the range it is asked over, and the curve it asks. */
+export interface WireSampler {
+    readonly from: WireNumber;
+    readonly to: WireNumber;
+    readonly madeFrom: WireMadeFrom;
 }
 
 /** One series. Its points are columns: `x` and `y` one entry a point, `names` and `rows` too where any point has one. */
@@ -55,10 +81,16 @@ export interface WireSeries {
     readonly step: StepSide;
     readonly axis: AxisSide;
     readonly panel: string;
+    /** The Excel format code its values are written by (ADR-0420); it then carries no `texts`. */
+    readonly formatCode: string | null;
+    /** The Consumer's function its values are written by (ADR-0420 section 3); it then carries no `texts`. */
+    readonly formatScript: WireScript | null;
     readonly keys: { readonly colour: string; readonly lineStyle: string | null; readonly marker: string | null } | null;
     readonly fromZero: boolean | null;
     readonly interpolated: boolean;
     readonly segments: readonly { readonly from: WireNumber; readonly to: WireNumber; readonly method: string; readonly extrapolated: boolean }[];
+    /** The curve it is sampled from, `null` for a series of points. */
+    readonly sampler: WireSampler | null;
     readonly x: readonly WireNumber[];
     readonly y: readonly WireValue[];
     readonly names: readonly (string | null)[] | null;
@@ -92,6 +124,10 @@ export interface WireSurfaceAxis {
     readonly scale: AxisScale;
     /** How its values are written. */
     readonly writing: WireSurfaceWriting;
+    /** The number code its values and ticks are written by (ADR-0420); it then carries no texts. */
+    readonly formatCode: string | null;
+    /** The Consumer's function its values and ticks are written by (ADR-0420 section 3). */
+    readonly formatScript: WireScript | null;
 }
 
 /** How a surface axis writes its values: `null` as the Script Core does, `plain` as a sampled surface's axis does, or
@@ -106,6 +142,10 @@ interface WireSurfaceScale {
     readonly centre: number | null;
     /** How its values are written where that is not the Script Core's own writing, or `null` for none. */
     readonly zTexts: WireTexts | null;
+    /** The code its values are written by (ADR-0420); it then carries no texts. */
+    readonly zFormatCode: string | null;
+    /** The Consumer's function its values are written by (ADR-0420 section 3); it then carries no texts. */
+    readonly zFormatScript: WireScript | null;
     readonly notes: readonly string[];
 }
 
@@ -130,6 +170,12 @@ export interface WireSurfaceTriangles extends WireSurfaceScale {
      * sends no texts for them. */
     readonly xWriting: null | 'plain';
     readonly yWriting: null | 'plain';
+    /** Each axis' number code (ADR-0420). */
+    readonly xFormatCode: string | null;
+    readonly yFormatCode: string | null;
+    /** Each axis' function of the Consumer's (ADR-0420 section 3). */
+    readonly xFormatScript: WireScript | null;
+    readonly yFormatScript: WireScript | null;
     /** Each node, `[x, y, z]`. */
     readonly nodes: readonly (readonly [x: WireNumber, y: WireNumber, z: WireValue])[];
     /** Each triangle, `[a, b, c]`. */
@@ -225,8 +271,35 @@ function keys(wire: WireSeries['keys']): AppearanceKeys | undefined {
     };
 }
 
-function series(s: WireSeries): ChartSeriesOptions {
-    const format = writerOf(s.texts);
+const twins: ReadonlyMap<string, (xs: readonly number[], ys: readonly number[]) => { valueAt(x: number): number | null }> = new Map([
+    ['linear', interpolateLinear],
+    ['naturalCubicSpline', interpolateNaturalCubicSpline],
+]);
+
+// The curve made again from what .NET's was made from, by the Script Core's twin of its method.
+function curve(made: WireMadeFrom, calls: ScriptCalls, name: string): (x: number) => ChartValue | null {
+    if (made.kind === 'script') return samplerBy(calls, made, name);
+    if (made.kind === 'fit') {
+        const fitted = new FittedCurve({
+            method: made.method, coefficients: made.coefficients.map(wireNumber), rSquared: wireNumber(made.rSquared), count: made.count,
+            from: wireNumber(made.from), to: wireNumber(made.to), space: made.space,
+        });
+        return x => fitted.valueAt(x);
+    }
+    // A kind this side does not know is a writer's defect, said by name, never drawn by another method.
+    const make = twins.get(made.kind);
+    if (make === undefined) throw new Error(`Internal: .NET sent a curve made by "${made.kind}", which has no twin here.`);
+    const interpolant = make(made.xs.map(wireNumber), made.ys.map(wireNumber));
+    return x => interpolant.valueAt(x);
+}
+
+function sampler(wire: WireSampler | null, calls: ScriptCalls, name: string): SeriesSampler | undefined {
+    if (wire === null) return undefined;
+    return { from: wireNumber(wire.from), to: wireNumber(wire.to), valueAt: curve(wire.madeFrom, calls, name) };
+}
+
+function series(s: WireSeries, calls: ScriptCalls): ChartSeriesOptions {
+    const format = s.formatScript === null ? writerOf(s.texts) : writerBy(calls, s.formatScript, `a value of '${s.name}'`);
     const colourBy: PointColour | undefined = s.colourBy === null ? undefined : {
         title: s.colourBy.title,
         values: s.colourBy.values.map(wireValue),
@@ -236,6 +309,7 @@ function series(s: WireSeries): ChartSeriesOptions {
     const appearance = keys(s.keys);
     const xInterval = interval(s.xInterval);
     const yInterval = interval(s.interval);
+    const sampled = sampler(s.sampler, calls, s.name);
     return {
         id: s.id,
         name: s.name,
@@ -243,10 +317,12 @@ function series(s: WireSeries): ChartSeriesOptions {
         step: s.step,
         axis: s.axis,
         panel: s.panel,
+        ...(s.formatCode === null ? {} : { formatCode: s.formatCode }),
         ...(appearance === undefined ? {} : { keys: appearance }),
         ...(s.fromZero === null ? {} : { fromZero: s.fromZero }),
         interpolated: s.interpolated,
         segments: s.segments.map((g): Segment => ({ from: wireNumber(g.from), to: wireNumber(g.to), method: g.method, extrapolated: g.extrapolated })),
+        ...(sampled === undefined ? {} : { sampler: sampled }),
         // A Price Range's points are its closes, which the definition makes from its rows, as C#'s does.
         ...(s.bars === null
             ? { points: points(s) }
@@ -269,8 +345,32 @@ function series(s: WireSeries): ChartSeriesOptions {
     };
 }
 
-/** The Chart Definition .NET wrote, made again in the Script Core, which checks it as C# did. */
-export function readDefinition(wire: WireDefinition): ChartDefinition {
+/** The Consumer's functions a definition names, each once, in the order the reader asks for them. */
+export function scriptsOf(wire: WireDefinition): WireScript[] {
+    return distinct([
+        wire.axis.formatScript,
+        ...wire.series.flatMap(s => [s.formatScript, s.sampler?.madeFrom.kind === 'script' ? s.sampler.madeFrom : null]),
+    ]);
+}
+
+/** The Consumer's functions a surface names, each once. */
+export function surfaceScriptsOf(wire: WireSurface): WireScript[] {
+    return distinct(wire.form === 'grid'
+        ? [wire.x.formatScript, wire.y.formatScript, wire.zFormatScript]
+        : [wire.xFormatScript, wire.yFormatScript, wire.zFormatScript]);
+}
+
+function distinct(scripts: readonly (WireScript | null | undefined)[]): WireScript[] {
+    const seen = new Map<string, WireScript>();
+    for (const script of scripts) {
+        if (script !== null && script !== undefined) seen.set(keyOf(script), { module: script.module, export: script.export });
+    }
+    return [...seen.values()];
+}
+
+/** The Chart Definition .NET wrote, made again in the Script Core, which checks it as C# did, the Consumer's functions it
+ * names taken from `calls`. */
+export function readDefinition(wire: WireDefinition, calls: ScriptCalls = noScripts): ChartDefinition {
     const named = wire.axis.named.map(([position, label]): NamedPosition => [wireNumber(position), label]);
     return new ChartDefinition({
         axis: {
@@ -281,15 +381,21 @@ export function readDefinition(wire: WireDefinition): ChartDefinition {
             named,
             daysPerYear: wire.axis.daysPerYear,
             packed: wire.axis.packed,
+            ...(wire.axis.formatCode === null ? {} : { formatCode: wire.axis.formatCode }),
+            ...(wire.axis.formatScript === null ? {} : { format: writerBy(calls, wire.axis.formatScript, 'the position') }),
         },
-        series: wire.series.map(series),
+        series: wire.series.map(s => series(s, calls)),
         notes: wire.notes,
     });
 }
 
-/** The Surface Definition .NET wrote, made again in the Script Core, which checks it as C# did. */
-export function readSurface(wire: WireSurface): SurfaceDefinition {
-    const zFormat = writerOf(wire.zTexts);
+/** The Surface Definition .NET wrote, made again in the Script Core, which checks it as C# did, the Consumer's
+ * functions it names taken from `calls`. */
+export function readSurface(wire: WireSurface, calls: ScriptCalls = noScripts): SurfaceDefinition {
+    const zFormat = wire.zFormatScript === null ? writerOf(wire.zTexts) : writerBy(calls, wire.zFormatScript, `the value of ${wire.zTitle === '' ? 'the surface' : wire.zTitle}`);
+    const axisFormat = (writing: WireSurfaceWriting, script: WireScript | null, title: string) =>
+        script === null ? surfaceValueWriter(writing) : writerBy(calls, script, `the value of ${title === '' ? 'an axis' : title}`);
+    const zFormatCode = wire.zFormatCode === null ? {} : { zFormatCode: wire.zFormatCode };
     const scale = {
         ...(wire.zScale === 'proportional' ? {} : { zScale: wire.zScale }),
         ...(wire.centre === null ? {} : { centre: wire.centre }),
@@ -297,8 +403,11 @@ export function readSurface(wire: WireSurface): SurfaceDefinition {
     switch (wire.form) {
         case 'grid': {
             const axis = (a: WireSurfaceAxis) => {
-                const format = surfaceValueWriter(a.writing);
-                return { title: a.title, values: a.values, scale: a.scale, ...(format === undefined ? {} : { format }) };
+                const format = axisFormat(a.writing, a.formatScript, a.title);
+                return {
+                    title: a.title, values: a.values, scale: a.scale, ...(format === undefined ? {} : { format }),
+                    ...(a.formatCode === null ? {} : { formatCode: a.formatCode }),
+                };
             };
             return SurfaceDefinition.grid({
                 x: axis(wire.x),
@@ -306,6 +415,7 @@ export function readSurface(wire: WireSurface): SurfaceDefinition {
                 z: wire.z.map(row => row.map(wireValue)),
                 zTitle: wire.zTitle,
                 ...(zFormat === undefined ? {} : { zFormat }),
+                ...zFormatCode,
                 ...(wire.method === null ? {} : { method: wire.method }),
                 ...(wire.interpolated === null ? {} : { interpolated: wire.interpolated }),
                 notes: wire.notes,
@@ -313,8 +423,8 @@ export function readSurface(wire: WireSurface): SurfaceDefinition {
             });
         }
         case 'triangles': {
-            const xFormat = surfaceValueWriter(wire.xWriting);
-            const yFormat = surfaceValueWriter(wire.yWriting);
+            const xFormat = axisFormat(wire.xWriting, wire.xFormatScript, wire.xTitle);
+            const yFormat = axisFormat(wire.yWriting, wire.yFormatScript, wire.yTitle);
             return SurfaceDefinition.fromTriangles({
                 nodes: wire.nodes.map(([x, y, z]): SurfaceNode => ({ x: wireNumber(x), y: wireNumber(y), z: wireValue(z) })),
                 triangles: wire.triangles.map(([a, b, c]): SurfaceTriangle => ({ a, b, c })),
@@ -326,6 +436,9 @@ export function readSurface(wire: WireSurface): SurfaceDefinition {
                 yScale: wire.yScale,
                 ...(xFormat === undefined ? {} : { xFormat }),
                 ...(yFormat === undefined ? {} : { yFormat }),
+                ...(wire.xFormatCode === null ? {} : { xFormatCode: wire.xFormatCode }),
+                ...(wire.yFormatCode === null ? {} : { yFormatCode: wire.yFormatCode }),
+                ...zFormatCode,
                 notes: wire.notes,
                 ...scale,
             });

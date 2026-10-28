@@ -18,6 +18,41 @@ namespace ExChart.Engine.Interpolation;
 /// <param name="Evaluate">Its value at a position, null outside <paramref name="From"/>–<paramref name="To"/>.</param>
 public sealed record Interpolant1D(string Method, double From, double To, Func<double, double?> Evaluate)
 {
+    /// <summary>
+    /// The method's name, shown as it is. A curve given another loses the points it was made from, since the method is
+    /// what makes it again from them; to name it otherwise on a chart, rename its series' Segment.
+    /// </summary>
+    public string Method
+    {
+        get;
+        init
+        {
+            field = value;
+            (Xs, Ys) = ([], []);
+        }
+    } = Method;
+
+    /// <summary>Its value at a position, null outside the range. A curve given another loses the points it was made from.</summary>
+    public Func<double, double?> Evaluate
+    {
+        get;
+        init
+        {
+            field = value;
+            (Xs, Ys) = ([], []);
+        }
+    } = Evaluate;
+
+    /// <summary>
+    /// The positions it was made from by <see cref="Interpolate"/>'s method, so a chart drawn in the browser makes the same
+    /// curve again from them (ADR-0420); empty for a curve of the Consumer's own function, or one whose method or
+    /// function was replaced.
+    /// </summary>
+    public IReadOnlyList<double> Xs { get; internal init; } = [];
+
+    /// <summary>The values at <see cref="Xs"/>, one a position.</summary>
+    public IReadOnlyList<double> Ys { get; internal init; } = [];
+
     /// <summary>The value at <paramref name="x"/>, or null outside the range it was made over.</summary>
     public ChartValue? ValueAt(double x) => Evaluate(x) is { } v && double.IsFinite(v) ? ChartValue.Of(v) : null;
 
@@ -64,7 +99,7 @@ public static class Interpolate
             var k = Interval(x, t);
             var f = (t - x[k]) / (x[k + 1] - x[k]);
             return y[k] + f * (y[k + 1] - y[k]);
-        });
+        }) { Xs = Array.AsReadOnly(x), Ys = Array.AsReadOnly(y) };
     }
 
     /// <summary>A natural cubic spline through the points (zero second derivative at both ends); <paramref name="xs"/> strictly increasing.</summary>
@@ -83,7 +118,7 @@ public static class Interpolate
             var a = (x[k + 1] - t) / h;
             var b = (t - x[k]) / h;
             return a * y[k] + b * y[k + 1] + ((a * a * a - a) * m[k] + (b * b * b - b) * m[k + 1]) * h * h / 6;
-        });
+        }) { Xs = Array.AsReadOnly(x), Ys = Array.AsReadOnly(y) };
     }
 
     /// <summary>

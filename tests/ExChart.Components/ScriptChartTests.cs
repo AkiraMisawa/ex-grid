@@ -115,7 +115,7 @@ public class ScriptChartTests : BunitContext
         Assert.Contains("axis has a Format", Assert.Throws<NotSupportedException>(() => ChartWire.Definition(axisFormat)).Message, StringComparison.Ordinal);
 
         var sampled = new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Sampled("f", "Fitted", SeriesKind.Level, 0, 1, x => ChartValue.Of(x))]);
-        Assert.Contains("'Fitted' is a function", Assert.Throws<NotSupportedException>(() => ChartWire.Definition(sampled)).Message, StringComparison.Ordinal);
+        Assert.Contains("'Fitted' is sampled from a .NET function", Assert.Throws<NotSupportedException>(() => ChartWire.Definition(sampled)).Message, StringComparison.Ordinal);
 
         // 3.3 and 3.30 are one number in the browser, and the Format writes them apart.
         var both = new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Of("a", "A", SeriesKind.Level, [new(0, 3.3m), new(1, 3.30m)])]);
@@ -229,6 +229,28 @@ public class ScriptChartTests : BunitContext
         Assert.Contains("between its nodes", Assert.Throws<NotSupportedException>(() => ChartWire.Surface(mesh)).Message, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0420: a surface's number codes cross as themselves, in place of the Formats a mesh refuses; a date code's axis crosses as the texts it writes
+    public void A_surfaces_codes_cross_in_place_of_its_Formats()
+    {
+        SurfaceNode[] nodes = [new(0, 0, 0.015), new(1, 0, 0.0225), new(0, 1, 0.03)];
+        var mesh = SurfaceDefinition.FromTriangles(nodes, [new SurfaceTriangle(0, 1, 2)], "Strike", "Tenor", "Rate", xFormatCode: "0.00") with { ZFormatCode = "0.00%" };
+        var parsed = Parsed(ChartWire.Surface(mesh).Json);
+        Assert.Equal("0.00", parsed.GetProperty("xFormatCode").GetString());
+        Assert.Equal(JsonValueKind.Null, parsed.GetProperty("yFormatCode").ValueKind);
+        Assert.Equal("0.00%", parsed.GetProperty("zFormatCode").GetString());
+        Assert.Equal(JsonValueKind.Null, parsed.GetProperty("zTexts").ValueKind);
+
+        var dated = new SurfaceDefinition(
+            SurfaceAxis.Of("Expiry", new[] { new DateOnly(2026, 12, 18), new DateOnly(2027, 3, 19) }) with { FormatCode = "mmm yy" },
+            SurfaceAxis.Of("Delta", new[] { 0.25, 0.5 }) with { FormatCode = "0%" },
+            [[1.0, 2.0], [3.0, 4.0]]);
+        var grid = Parsed(ChartWire.Surface(dated).Json);
+        Assert.Equal("""["Dec 26","Mar 27"]""", grid.GetProperty("x").GetProperty("values").GetRawText());
+        Assert.Equal(JsonValueKind.Null, grid.GetProperty("x").GetProperty("formatCode").ValueKind);
+        Assert.Equal("0%", grid.GetProperty("y").GetProperty("formatCode").GetString());
+        Assert.Equal(JsonValueKind.Null, grid.GetProperty("y").GetProperty("writing").ValueKind);
+    }
+
     [Fact] // ADR-0370 s1: two axis values that would be one value in the browser are refused, as a slice at either could not say which
     public void Axis_values_that_cross_alike_are_refused()
     {
@@ -245,6 +267,77 @@ public class ScriptChartTests : BunitContext
         var candles = ChartSeries.Candles("ix", "Index", [new PriceBar(20000, 3.30m, 3.50m, 3.10m, 3.30m, 100m), new PriceBar(20001, 3.30m, 6.70m, 3.30m, 6.60m, 120m)]);
         var (json, _) = ChartWire.Definition(new ChartDefinition(ChartAxis.Dates(), [candles]));
         Assert.Equal(JsonValueKind.Null, Parsed(json).GetProperty("series")[0].GetProperty("texts").ValueKind);
+    }
+
+    [Fact] // ADR-0420: a format code crosses as itself, for the Script Core's reader to write every value by, so a candle's change is written by it too
+    public void A_format_code_crosses_as_itself_in_place_of_texts()
+    {
+        var candles = ChartSeries.Candles("ix", "Index", [new PriceBar(20000, 3.30m, 3.50m, 3.10m, 3.30m, 100m)]) with { FormatCode = "#,##0.00" };
+        var (json, _) = ChartWire.Definition(new ChartDefinition(ChartAxis.Dates() with { FormatCode = "dd/mm/yyyy" }, [candles]));
+        var parsed = Parsed(json);
+        Assert.Equal("dd/mm/yyyy", parsed.GetProperty("axis").GetProperty("formatCode").GetString());
+        var series = parsed.GetProperty("series")[0];
+        Assert.Equal("#,##0.00", series.GetProperty("formatCode").GetString());
+        Assert.Equal(JsonValueKind.Null, series.GetProperty("texts").ValueKind);
+
+        var plain = ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Of("a", "A", SeriesKind.Level, [P(0, 1)])])).Json;
+        Assert.Equal(JsonValueKind.Null, Parsed(plain).GetProperty("axis").GetProperty("formatCode").ValueKind);
+    }
+
+    [Fact] // ADR-0420 s4: a series sampled from the family's own curve crosses as what it was made from; one whose function was replaced is refused
+    public void A_family_curve_crosses_as_what_it_was_made_from()
+    {
+        var spline = Engine.Interpolation.Interpolate.NaturalCubicSpline([0, 1, 2], [0, 1, 0]);
+        var fitted = Engine.Fitting.Fit.LeastSquares([1, 2, 3, 4], [2, 4, 7, 15], Engine.Fitting.FitSpace.LogY);
+        var (json, _) = ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [spline.Series("s", "Spline"), fitted.Series("f", "Fit")]));
+        var series = Parsed(json).GetProperty("series");
+        Assert.Equal("""{"from":0,"to":2,"madeFrom":{"kind":"naturalCubicSpline","xs":[0,1,2],"ys":[0,1,0]}}""", series[0].GetProperty("sampler").GetRawText());
+        var fit = series[1].GetProperty("sampler").GetProperty("madeFrom");
+        Assert.Equal("fit", fit.GetProperty("kind").GetString());
+        Assert.Equal("logY", fit.GetProperty("space").GetString());
+        Assert.Equal(fitted.Coefficients, fit.GetProperty("coefficients").EnumerateArray().Select(c => c.GetDouble()));
+
+        // The curve's function replaced, or the sampler's: the function is the Consumer's.
+        var replaced = (spline with { Evaluate = x => x }).Series("r", "Replaced");
+        Assert.Contains("'Replaced' is sampled from a .NET function", Assert.Throws<NotSupportedException>(
+            () => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [replaced]))).Message, StringComparison.Ordinal);
+        var linear = Engine.Interpolation.Interpolate.Linear([0, 1, 2], [0, 1, 0]);
+        var straight = Parsed(ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [linear.Series("l", "Linear")])).Json).GetProperty("series")[0];
+        Assert.Equal("linear", straight.GetProperty("sampler").GetProperty("madeFrom").GetProperty("kind").GetString());
+        var renamed = (linear with { Method = "mine" }).Series("n", "Renamed");
+        Assert.Throws<NotSupportedException>(() => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [renamed])));
+        var wrapped = fitted.Series("w", "Wrapped") with { Sampler = new SeriesSampler(1, 4, x => fitted.ValueAt(x)) };
+        Assert.Throws<NotSupportedException>(() => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [wrapped])));
+        var formatted = spline.Series("p", "Formatted") with { Format = v => $"{v}" };
+        Assert.Contains("write the values it samples", Assert.Throws<NotSupportedException>(
+            () => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [formatted]))).Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0420 s3: the Consumer's own script crosses as its module and export wherever it stands; a component drawing in .NET refuses it
+    public void A_script_function_crosses_by_name_and_the_razor_component_refuses_it()
+    {
+        var tenor = ScriptFunction.Of("./js/chart-formats.js", "tenor");
+        var smile = ScriptFunction.Of("./js/curves.js", "smile");
+        var definition = new ChartDefinition(ChartAxis.Numbers() with { FormatScript = tenor },
+        [
+            ChartSeries.Of("a", "A", SeriesKind.Level, [P(0, 1), P(1, 2)]) with { FormatScript = smile },
+            ChartSeries.Sampled("s", "Smile", SeriesKind.Level, 0, 1, smile),
+        ]);
+        var parsed = Parsed(ChartWire.Definition(definition).Json);
+        Assert.Equal("""{"module":"./js/chart-formats.js","export":"tenor"}""", parsed.GetProperty("axis").GetProperty("formatScript").GetRawText());
+        Assert.Equal(JsonValueKind.Null, parsed.GetProperty("series")[0].GetProperty("texts").ValueKind);
+        Assert.Equal("""{"kind":"script","module":"./js/curves.js","export":"smile"}""",
+            parsed.GetProperty("series")[1].GetProperty("sampler").GetProperty("madeFrom").GetRawText());
+
+        var surface = new SurfaceDefinition(SurfaceAxis.Of("x", [1.0, 2.0]) with { FormatScript = tenor }, SurfaceAxis.Of("y", [1.0, 2.0]),
+            [[ChartValue.Of(1.0), ChartValue.Of(2.0)], [ChartValue.Of(3.0), ChartValue.Of(4.0)]], "z") { ZFormatScript = smile };
+        var wired = Parsed(ChartWire.Surface(surface).Json);
+        Assert.Equal("tenor", wired.GetProperty("x").GetProperty("formatScript").GetProperty("export").GetString());
+        Assert.Equal("smile", wired.GetProperty("zFormatScript").GetProperty("export").GetString());
+
+        Assert.Contains("only a chart drawn in the browser calls", Assert.Throws<NotSupportedException>(
+            () => Render<global::ExChart.Components.ExChart>(ps => ps.Add(c => c.Definition, definition))).Message, StringComparison.Ordinal);
+        Assert.Throws<NotSupportedException>(() => Render<global::ExChart.Components.ExSurface>(ps => ps.Add(c => c.Definition, surface)));
     }
 
     // ---- Read through Chart Sources (ADR-0322, ADR-0344) ----
