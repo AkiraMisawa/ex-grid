@@ -64,6 +64,10 @@ internal static class KeyboardByHand
         new("Clipboard", "[Ctrl] + [C] / [Ctrl] + [Insert]",
             "Copy the selection: the text each cell shows, and its full values for Excel. Rows off screen are copied too, or the copy is refused.",
             "exgrid/clipboard#copy", ["ADR-0005"], Canonical: ["Control+c", "Control+Insert"]),
+        // Outside GridKeys' table, and answered only on the grid the Script Core draws, where the item is offered (ADR-0005).
+        new("Clipboard", "[Ctrl] + [Shift] + [C]",
+            "Copy with headers: the selection with each column's header as its first row, as the Context Menu's item copies it. Only on a grid that offers the item.",
+            "exgrid/clipboard#copy", ["ADR-0005"]),
         new("Clipboard", "[Ctrl] + [V] / [Shift] + [Insert]", "Paste into the selection, under the shape rules, as one paste.", "exgrid/clipboard#paste",
             ["ADR-0014"], Canonical: ["Control+v", "Shift+Insert"]),
         new("Clipboard", "[Escape] after a copy", "Take away the dashed outline of what was copied.", "exgrid/clipboard#copy", ["ADR-0170"]),

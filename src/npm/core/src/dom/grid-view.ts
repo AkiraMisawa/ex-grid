@@ -52,7 +52,10 @@ import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-wa
 import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '../finding/replace';
 import { defined, elementAt, itemAt, unreachable } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
-import { canonicalKey, declareKeys, errorStepOf, headerGroupKeyOf, headerGroupKeys, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
+import {
+    canonicalKey, copiesWithHeaders, copyWithHeadersKeys, declareKeys, errorStepOf, headerGroupKeyOf, headerGroupKeys, resolveKey, type GridKeyAction,
+    type KeyPress,
+} from '../keys/grid-keys';
 import type { GridErrorStepRequest } from '../cells/grid-ruleset';
 import { cellClasses, type CellTone, type MatchMark } from '../paint/cell-classes';
 import { columnMark, rowMark } from '../paint/heading-mark-styles';
@@ -442,7 +445,8 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * `refusalColumnPlaceholder` stands for the column's header; `undefined` keeps the built-in English and `''`
      * says nothing, the refusal still reaching `onRefused`. */
     readonly commandLabel?: (id: string) => string | undefined;
-    /** Leaves Copy with headers off the Context Menu (ADR-0050, item 13). Shown unless given. */
+    /** Leaves Copy with headers off the Context Menu, and leaves its key, Ctrl+Shift+C, to the page (ADR-0050, item 13;
+     * ADR-0005). Shown and taken unless given. */
     readonly hideCopyWithHeaders?: boolean;
     /** The Chrome slots a Wrapper fills (ADR-0390): each part named here is drawn by its mount function in place
      * of the built-in Chrome's, and what it means stays the core's. Read at each opening of the part: a part
@@ -2470,6 +2474,11 @@ export class GridView<Row> {
             throw new TypeError(`declaredKeys names ${groupKey}, which opens or closes a Header Group on a grid given onHeaderGroupToggled: the `
                 + 'key would mean two things (ADR-0400 section 4, ADR-0050 item 14).');
         }
+        const copyKey = options.hideCopyWithHeaders === true ? undefined : copyWithHeadersKeys.find(key => declaredKeys.has(key));
+        if (copyKey !== undefined) {
+            throw new TypeError(`declaredKeys names ${copyKey}, which is Copy with headers on a grid that offers it: the key would mean two `
+                + 'things (ADR-0005, ADR-0050 item 14). A grid given hideCopyWithHeaders leaves it to be declared.');
+        }
         if (declaredKeys.size > 0 && onDeclaredKey === undefined) {
             throw new TypeError('declaredKeys names keys, but no onDeclaredKey hears them: the keys would be taken from the page and nobody told '
                 + '(ADR-0050, item 14).');
@@ -3700,6 +3709,14 @@ export class GridView<Row> {
         if (action.kind === 'openColumnMenu' && !this.#hideColumnMenu) {
             this.#taken(event);
             this.#openColumnMenuAtFocus();
+            return;
+        }
+        // Ctrl+Shift+C copies with headers, on a grid that offers it (ADR-0005), as the Context Menu's item does: the key
+        // fires no copy event, so the write takes the asynchronous route, inside the press's activation. Not past an edit
+        // left open (ED-26): it would copy the value the edit has not yet replaced.
+        if (!this.#hideCopyWithHeaders && this.#edit === undefined && copiesWithHeaders(press)) {
+            this.#taken(event);
+            this.#commandCopy(true);
             return;
         }
         // F8 and Shift+F8 step to the next and the previous error cell, on a grid given findError (ADR-0381). Not
@@ -4939,7 +4956,7 @@ export class GridView<Row> {
                 if (field !== undefined && !grids) this.#fieldCopy(field, input.kind === 'cut');
                 // The grid's copy, by the asynchronous route a menu's takes: the event that carried data is gone.
                 // The grid has no cut of its own (ADR-0005).
-                else if (grids && input.kind === 'copy') this.#menuCopy(false);
+                else if (grids && input.kind === 'copy') this.#commandCopy(false);
                 return true;
             case 'turn':
                 input.take();
@@ -7260,10 +7277,10 @@ export class GridView<Row> {
         if (slice < 0 || slice >= window.length || cell.column >= this.#columns.length) return;
         const canCopy = !this.#held.selection.isEmpty;
         const core: GridCommand[] = [
-            coreCommand(gridCommandIds.copy, canCopy, () => { this.#menuCopy(false); }),
+            coreCommand(gridCommandIds.copy, canCopy, () => { this.#commandCopy(false); }),
         ];
         if (!this.#hideCopyWithHeaders) {
-            core.push(coreCommand(gridCommandIds.copyWithHeaders, canCopy, () => { this.#menuCopy(true); }));
+            core.push(coreCommand(gridCommandIds.copyWithHeaders, canCopy, () => { this.#commandCopy(true); }));
         }
         const { column } = itemAt(this.#columns, cell.column);
         const version = this.#sequence();
@@ -8385,10 +8402,10 @@ export class GridView<Row> {
         event.preventDefault();
     };
 
-    // The Context Menu's copy (ADR-0005, ADR-0036): a menu item's click fires no copy event, so it always takes
-    // the asynchronous route, whatever the Selection's size, started inside the gesture that chose it. With
-    // headers, the header row counts against the cap and goes into both flavours.
-    #menuCopy(withHeaders: boolean): void {
+    // The Context Menu's copy and Ctrl+Shift+C (ADR-0005, ADR-0036): neither a menu item's click nor a taken key fires
+    // a copy event, so it always takes the asynchronous route, whatever the Selection's size, started inside the
+    // gesture that chose it. With headers, the header row counts against the cap and goes into both flavours.
+    #commandCopy(withHeaders: boolean): void {
         this.#copy?.abort();
         this.#copy = undefined;
         this.#reconcileSelection();

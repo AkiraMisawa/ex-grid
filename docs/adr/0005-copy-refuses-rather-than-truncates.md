@@ -233,6 +233,32 @@ meets every day. **Layer 3 is where that answer lives**: the suite asserts that 
 writes without a prompt on Chrome and on Edge, and if one appears that is a finding, recorded
 against this section, not a surprise in the field.
 
+## Copy with headers from the keyboard *(added 2026-10-28, decided with the user)*
+
+Copy with headers was reachable only from the Context Menu, so a user who copies a report with its
+headers every day went through a menu every time. **Ctrl+Shift+C** (Command+Shift+C where Command is
+the primary modifier) is now its key, on the grid drawn by the Script Core
+([ADR-0350](./0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)).
+
+- **Why this key.** Excel has no such command, and AG Grid none either: it changes what Ctrl+C
+  copies with an option instead. SQL Server Management Studio's results grid, the nearest grid
+  that has the command, copies with headers by Ctrl+Shift+C, and the key is the plain copy's with
+  Shift, which is how it is remembered. No key of ExGrid, ExSheet or ExPivot used it.
+- **The browser's meaning.** Chrome and Edge open their element inspector by Ctrl+Shift+C, but a
+  page may take it, as Google Docs does for its word count. The grid takes it only where it holds
+  the keyboard, on its root or its Keyboard Field, never in a control inside it or an open editor.
+- **Only where the item is offered.** A grid given `hideCopyWithHeaders` (an ExSheet without
+  `allowCopyWithHeaders`, by default) leaves the key to the page, and a Consumer may declare it
+  there (ADR-0050 item 14). On a grid that offers the item, declaring it is refused at mount, as
+  F8 beside `findError` is ([ADR-0381](./0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)):
+  the key would mean two things. It is outside the key table for that reason, as the Header Group
+  keys are ([ADR-0400](./0400-a-header-group-draws-a-toggle-and-notifies-and-the-consumer-holds-its-columns.md)).
+- **The menu item's route, not the copy event's.** A taken key fires no `copy` event, so the key
+  takes the asynchronous route a menu copy takes (the section above), inside the key press's own
+  activation, with the same cap and the same refusals.
+- **The C# core's grid does not take it.** It is going away (ADR-0350), and keeps Copy with headers
+  on its Context Menu alone; in Blazor the key is `ExGrid.Script.ExGrid`'s.
+
 ## What the Blazor Server host settled *(added 2026-09-25)*
 
 The routes above were wired and verified on WebAssembly only. Designing the Server host

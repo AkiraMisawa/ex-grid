@@ -8,14 +8,20 @@
     <DocsSection Title="Copy">
         <p>
             Select cells and press <kbd>Ctrl</kbd>+<kbd>C</kbd> (or <kbd>Ctrl</kbd>+<kbd>Insert</kbd>); the Context Menu (right-click, or
-            <kbd>Shift</kbd>+<kbd>F10</kbd>) also offers <em>Copy with headers</em>. Nothing needs wiring.
+            <kbd>Shift</kbd>+<kbd>F10</kbd>) also offers <em>Copy with headers</em>, and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>
+            (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> on a Mac) runs it from the keyboard, as SQL Server Management Studio's
+            results grid does. Nothing needs wiring.
         </p>
         <ul>
             <li>
                 <strong>Two formats go on the clipboard.</strong> The text each cell shows, its <code>format</code>
                 applied, as plain text; and the raw values as an HTML table, so Excel receives every digit of an
                 amount the grid displays rounded. A cell showing <code>####</code> copies its value, never the hashes.
-                <em>Copy with headers</em> puts each column's header in both. When you answer a copy yourself,
+                <em>Copy with headers</em> puts each column's header in both. The key is the grid's only while it
+                offers the item: with <code>hideCopyWithHeaders</code> (<code>HideCopyWithHeaders</code>) it stays the
+                browser's, which opens its element inspector by it, and you may declare it yourself. In Blazor the key
+                is <code>ExGrid.Script.ExGrid</code>'s; the C# core's grid offers Copy with headers from its menu only.
+                When you answer a copy yourself,
                 <code>ClipboardData.Assemble</code> makes the two formats from each cell's shown and raw text, and a
                 header that shows a number rounded can carry the number in full for the HTML through
                 <code>headerRawAt</code>, as ExPivot's number column Items do.

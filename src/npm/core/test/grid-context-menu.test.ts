@@ -276,6 +276,47 @@ describe('the menu\'s copy', () => {
         expect([written.text.split('\r\n').slice(0, 2), written.html.includes('<th>Book</th><th>Notional</th>')])
             .toEqual([['Book\tNotional', 'Book-1\t1000'], true]);
     });
+
+    it('ADR-0005: Ctrl+Shift+C copies with headers as the menu\'s item does, and counts the header row against the cap', async () => {
+        const refusals: GridRefusal[] = [];
+        const { root, told } = heard({ copyCellCap: 5, onRefused: refusal => { refusals.push(refusal); } });
+        await painted();
+        root.focus();
+        press(root, 10, rowY(1));
+        press(root, 150, rowY(1), { shiftKey: true });
+        const taken = key(root, 'C', { ctrlKey: true, shiftKey: true });
+        await settle();
+        const written = defined(told.clipboard[0], 'the copy written');
+        expect([taken.defaultPrevented, written.text.split('\r\n').slice(0, 2), written.html.includes('<th>Book</th><th>Notional</th>'), menu(root)])
+            .toEqual([true, ['Book\tNotional', 'Book-1\t1000'], true, null]);
+        // Two rows of two and the header row are six cells, past the cap of five: refused, and the key still taken.
+        press(root, 150, rowY(2), { shiftKey: true });
+        const refused = key(root, 'c', { ctrlKey: true, shiftKey: true });
+        await settle();
+        expect([refused.defaultPrevented, told.clipboard.length, refusals]).toEqual([true, 1, [{ kind: 'copy', reason: 'tooLarge' }]]);
+    });
+
+    it('ADR-0005: a grid that hides Copy with headers leaves Ctrl+Shift+C to the page, and to a Consumer that declares it', async () => {
+        const declared: string[] = [];
+        const { root, told } = heard({
+            hideCopyWithHeaders: true, declaredKeys: ['Control+Shift+C'], onDeclaredKey: ({ key: name }) => { declared.push(name); },
+        });
+        await painted();
+        root.focus();
+        press(root, 10, rowY(1));
+        const left = key(root, 'C', { ctrlKey: true, shiftKey: true });
+        await settle();
+        expect([told.clipboard.length, declared, left.defaultPrevented]).toEqual([0, ['Control+Shift+C'], true]);
+        const { root: plain } = heard({ hideCopyWithHeaders: true });
+        await painted();
+        plain.focus();
+        press(plain, 10, rowY(1));
+        expect(key(plain, 'C', { ctrlKey: true, shiftKey: true }).defaultPrevented).toBe(false);
+    });
+
+    it('ADR-0005: Ctrl+Shift+C declared on a grid that offers Copy with headers is refused at mount, as two meanings of one key', () => {
+        expect(() => mount<Trade>({ ...base, declaredKeys: ['Control+Shift+c'], onDeclaredKey: () => undefined })).toThrow(/Control\+Shift\+c/);
+    });
 });
 
 function later<T>(): { readonly promise: Promise<T>; readonly resolve: (value: T) => void } {
