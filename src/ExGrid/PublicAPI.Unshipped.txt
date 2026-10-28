@@ -19,6 +19,8 @@ const ExGrid.Chrome.GridLabelIds.PasteAlreadyLanded = "paste-already-landed" -> 
 const ExGrid.Chrome.GridLabelIds.PasteUnderWay = "paste-under-way" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.RowCommandTargetLeft = "key-refusal-row-command-target-left" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.CompletionCandidate = "data-ex-candidate" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.CompletionList = "data-ex-completion-list" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.EditorField = "data-ex-editor-field" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.FilterAddToCurrent = "data-ex-filter-add" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.FilterCancel = "data-ex-filter-cancel" -> string!
@@ -69,6 +71,15 @@ ExGrid.Chrome.GridCellEditorView.Mode.get -> ExGrid.Chrome.CellEditMode
 ExGrid.Chrome.GridCellEditorView.Mode.init -> void
 ExGrid.Chrome.GridCellEditorView.Type.get -> ExGrid.ColumnType
 ExGrid.Chrome.GridCellEditorView.Type.init -> void
+ExGrid.Chrome.GridEditorCompletionView
+ExGrid.Chrome.GridEditorCompletionView.<Clone>$() -> ExGrid.Chrome.GridEditorCompletionView!
+ExGrid.Chrome.GridEditorCompletionView.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! Labels, out ExGrid.Cells.EditorHint? Hint) -> void
+ExGrid.Chrome.GridEditorCompletionView.Equals(ExGrid.Chrome.GridEditorCompletionView? other) -> bool
+ExGrid.Chrome.GridEditorCompletionView.GridEditorCompletionView(System.Collections.Generic.IReadOnlyList<string!>! Labels, ExGrid.Cells.EditorHint? Hint) -> void
+ExGrid.Chrome.GridEditorCompletionView.Hint.get -> ExGrid.Cells.EditorHint?
+ExGrid.Chrome.GridEditorCompletionView.Hint.init -> void
+ExGrid.Chrome.GridEditorCompletionView.Labels.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExGrid.Chrome.GridEditorCompletionView.Labels.init -> void
 ExGrid.Chrome.GridFilterConditionsView
 ExGrid.Chrome.GridFilterConditionsView.<Clone>$() -> ExGrid.Chrome.GridFilterConditionsView!
 ExGrid.Chrome.GridFilterConditionsView.Allowed.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridFilterOperatorView!>!
@@ -256,6 +267,7 @@ ExGrid.Chrome.GridNameBoxView.GridNameBoxView() -> void
 ExGrid.Chrome.IGridChrome.CellEditor(ExGrid.Chrome.GridCellEditorView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.Chrome.IGridChrome.EditorCompletion(ExGrid.Chrome.GridEditorCompletionView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.FilterPanel(ExGrid.Chrome.GridFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.FindPanel(ExGrid.Chrome.GridFindView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.FormulaBarText(ExGrid.Chrome.GridFormulaBarTextView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
@@ -267,6 +279,7 @@ ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.CellEditor = 32 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.ColumnMenu = 1 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.ContextMenu = 2 -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.EditorCompletion = 256 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.FilterPanel = 8 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.FindPanel = 16 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.FormulaBarText = 64 -> ExGrid.Chrome.ScriptSlots
@@ -544,6 +557,8 @@ ExGrid.Script.ExGrid<TRow>.Chrome.get -> ExGrid.Chrome.IGridChrome?
 ExGrid.Script.ExGrid<TRow>.Chrome.set -> void
 ExGrid.Script.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<TRow!>!>!
 ExGrid.Script.ExGrid<TRow>.Columns.set -> void
+ExGrid.Script.ExGrid<TRow>.CompleteEditorText.get -> System.Func<string!, int, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditorCompletion?>>?
+ExGrid.Script.ExGrid<TRow>.CompleteEditorText.set -> void
 ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.get -> System.Func<string!, string?>?
 ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.set -> void
 ExGrid.Script.ExGrid<TRow>.ContextCommands.get -> System.Func<ExGrid.Chrome.ContextMenuContext<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Chrome.GridCommand!>!>?
@@ -771,6 +786,9 @@ override ExGrid.Chrome.FindPanelRefusedCell.ToString() -> string!
 override ExGrid.Chrome.GridCellEditorView.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridCellEditorView.GetHashCode() -> int
 override ExGrid.Chrome.GridCellEditorView.ToString() -> string!
+override ExGrid.Chrome.GridEditorCompletionView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridEditorCompletionView.GetHashCode() -> int
+override ExGrid.Chrome.GridEditorCompletionView.ToString() -> string!
 override ExGrid.Chrome.GridFilterConditionsView.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridFilterConditionsView.GetHashCode() -> int
 override ExGrid.Chrome.GridFilterConditionsView.ToString() -> string!
@@ -884,6 +902,8 @@ static ExGrid.Chrome.FindPanelRefusedCell.operator !=(ExGrid.Chrome.FindPanelRef
 static ExGrid.Chrome.FindPanelRefusedCell.operator ==(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
 static ExGrid.Chrome.GridCellEditorView.operator !=(ExGrid.Chrome.GridCellEditorView? left, ExGrid.Chrome.GridCellEditorView? right) -> bool
 static ExGrid.Chrome.GridCellEditorView.operator ==(ExGrid.Chrome.GridCellEditorView? left, ExGrid.Chrome.GridCellEditorView? right) -> bool
+static ExGrid.Chrome.GridEditorCompletionView.operator !=(ExGrid.Chrome.GridEditorCompletionView? left, ExGrid.Chrome.GridEditorCompletionView? right) -> bool
+static ExGrid.Chrome.GridEditorCompletionView.operator ==(ExGrid.Chrome.GridEditorCompletionView? left, ExGrid.Chrome.GridEditorCompletionView? right) -> bool
 static ExGrid.Chrome.GridFilterConditionsView.operator !=(ExGrid.Chrome.GridFilterConditionsView? left, ExGrid.Chrome.GridFilterConditionsView? right) -> bool
 static ExGrid.Chrome.GridFilterConditionsView.operator ==(ExGrid.Chrome.GridFilterConditionsView? left, ExGrid.Chrome.GridFilterConditionsView? right) -> bool
 static ExGrid.Chrome.GridFilterConditionView.operator !=(ExGrid.Chrome.GridFilterConditionView? left, ExGrid.Chrome.GridFilterConditionView? right) -> bool

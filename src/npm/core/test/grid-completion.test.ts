@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { EditorCompletion, EditorHint } from '../src/cells/editor-text';
 import { checkedCompletion, completionPlace } from '../src/dom/completion';
+import { wireEditorCompletion } from '../src/dom/slot-wiring';
 import type { GridEditorCompletionSlotContext } from '../src/dom/grid-chrome';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
@@ -409,5 +410,68 @@ describe('The editorCompletion slot (ADR-0390, ADR-0051)', () => {
         expect([drawn.contexts.at(-1)?.selected, drawn.contexts.at(-1)?.hint?.text]).toEqual([-1, 'SUM(number1, [number2], ...)']);
         unmountAll();
         expect(drawn.cleanups()).toBe(drawn.contexts.length);
+    });
+});
+
+// Contents as a Framework Adapter's markup draws them, with no handler and no choice of their own: the candidates and
+// the hint marked for wireEditorCompletion, which the adapter calls, here with whether they show the answer.
+function marked(current: () => boolean): NonNullable<GridOptions<Trade>['chrome']> {
+    return {
+        editorCompletion: (slot, context) => {
+            const contents = document.createElement('div');
+            const list = document.createElement('ul');
+            list.setAttribute('data-ex-completion-list', '');
+            context.candidates.forEach((candidate, index) => {
+                const item = document.createElement('li');
+                item.setAttribute('data-ex-candidate', String(index));
+                item.textContent = candidate.label;
+                list.append(item);
+            });
+            contents.append(list);
+            slot.append(contents);
+            const unwire = wireEditorCompletion(contents, context, current);
+            return () => {
+                unwire();
+                contents.remove();
+            };
+        },
+    };
+}
+
+describe('wireEditorCompletion: the completion slot\'s marked contents (ADR-0410 section 2, ADR-0051)', () => {
+    it('ADR-0410: the list and each candidate take the ids the editor names and the chosen one is marked, and a click accepts a candidate', async () => {
+        const { root } = await grid({ chrome: marked(() => true) });
+        await typeFormula(root, 'SU');
+        const list = q(root, '.ex-completion ul');
+        const items = [...list.querySelectorAll('li')];
+        expect([list.getAttribute('role'), editor(root).getAttribute('aria-controls')]).toEqual(['listbox', list.id]);
+        expect(items.map(item => [item.getAttribute('role'), item.getAttribute('aria-selected')])).toEqual([['option', 'true'], ['option', 'false']]);
+        expect(editor(root).getAttribute('aria-activedescendant')).toBe(items[0]?.id);
+        key('ArrowDown');
+        await painted();
+        const moved = [...root.querySelectorAll('.ex-completion li')];
+        expect(moved.map(item => item.getAttribute('aria-selected'))).toEqual(['false', 'true']);
+        expect(editor(root).getAttribute('aria-activedescendant')).toBe(moved[1]?.id);
+        defined(moved[1], 'SUMIF').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+        await painted();
+        expect([editor(root).value, document.activeElement]).toEqual(['=SUMIF(', editor(root)]);
+    });
+
+    it('Spine rule 6: a click on contents still showing an earlier answer accepts nothing', async () => {
+        const { root } = await grid({ chrome: marked(() => false) });
+        await typeFormula(root, 'SU');
+        defined(root.querySelectorAll('.ex-completion li')[1], 'SUMIF').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+        await painted();
+        expect(editor(root).value).toBe('=SU');
+    });
+
+    it('ADR-0410: a candidate marked with no index of the answer\'s is refused by name', () => {
+        const contents = document.createElement('div');
+        contents.innerHTML = '<ul data-ex-completion-list><li data-ex-candidate="2">SUM</li></ul>';
+        const context: GridEditorCompletionSlotContext = {
+            candidates: [{ label: 'SUM', start: 1, length: 2, insert: 'SUM(' }], selected: 0, hint: undefined, listId: 'l',
+            optionId: index => `o${String(index)}`, accept: () => undefined,
+        };
+        expect(() => wireEditorCompletion(contents, context, () => true)).toThrow('data-ex-candidate="2"');
     });
 });

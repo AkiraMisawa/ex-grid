@@ -210,6 +210,9 @@
     white-space: nowrap;
     cursor: pointer;
 }
+/* The chosen candidate, in the primary colour as mud-selected-item paints it: over the Script Core the
+   script marks it aria-selected in the browser as the arrows move the choice (ADR-0410). */
+.mud-ex-grid .mud-ex-completion-item[aria-selected="true"] { color: var(--mud-palette-primary); }
 .mud-ex-grid .mud-ex-completion-hint {
     padding: 0 var(--ex-cell-padding-x, 8px);
     line-height: var(--ex-row-height);

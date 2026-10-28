@@ -1,0 +1,35 @@
+@* Written in each file, not in an _Imports.razor, whose class Razor makes public (ADR-0201); and
+   with global::, as this project's root namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using global::ExGrid.Chrome
+@* Not the contract (ADR-0201): MudGridChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The completion list and the argument hint when the Script Core draws the grid (ADR-0410): the same
+   Material list as MudEditorCompletion, each candidate marked with its index, and nothing else. The
+   chosen candidate is marked aria-selected by the adapter's script, in the browser, as ↑ and ↓ move it,
+   and the stylesheet paints it in the primary colour as mud-selected-item does; a click accepts a
+   candidate there too, so no handler is drawn here. *@
+@if (View.Labels.Count > 0)
+{
+    <div class="mud-list mud-ex-completion-list" data-ex-completion-list>
+        @for (var i = 0; i < View.Labels.Count; i++)
+        {
+            <div class="mud-list-item mud-ex-completion-item" data-ex-candidate="@i">
+                <span class="mud-typography mud-typography-body2">@View.Labels[i]</span>
+            </div>
+        }
+    </div>
+}
+@if (View.Hint is { } hint)
+{
+    var (before, emphasis, after) = hint.Parts();
+    <div class="mud-typography mud-typography-caption mud-ex-completion-hint">@before@if (emphasis.Length > 0)
+        {<strong>@emphasis</strong>}@after</div>
+}
+
+@code {
+    /// <summary>The view the Script Core sent (ADR-0410): the candidates' labels and the hint.</summary>
+    [Parameter, EditorRequired] public GridEditorCompletionView View { get; set; } = default!;
+}

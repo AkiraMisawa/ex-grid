@@ -15,7 +15,7 @@
 </div>
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
     <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
-                          OnEdit="Edit" ShowFillHandle ShowFormulaBar OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" OnNameBoxEntered="GoToTradeAsync" Chrome="MudGridChrome.Default" @ref="_grid" />
+                          OnEdit="Edit" ShowFillHandle ShowFormulaBar OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" OnNameBoxEntered="GoToTradeAsync" CompleteEditorText="CompleteBook" Chrome="MudGridChrome.Default" @ref="_grid" />
 </MudExGridPaper>
 @if (_nameBoxRefusal is not null)
 {
@@ -86,6 +86,17 @@
         _nameBoxRefusal = at < 0 ? $"No trade has the Id '{typed}'." : null;
         if (at >= 0 && _grid is not null)
             await _grid.PlaceSelectionAsync(new SelectionRange(at, 1, 1, 1), new CellPosition(at, 1), _source.RowSequenceVersion);
+    }
+
+    // The books whose names begin with what is typed, each replacing it whole. The grid knows no book: what is offered,
+    // and what accepting it writes, are yours.
+    private static readonly string[] Books = ["Credit", "Equities", "FX", "Rates"];
+
+    private static ValueTask<EditorCompletion?> CompleteBook(string text, int caret)
+    {
+        var candidates = text.Length == 0 ? [] : Books.Where(book => book.StartsWith(text, StringComparison.OrdinalIgnoreCase))
+            .Select(book => new CompletionCandidate(book, 0, text.Length, book)).ToList();
+        return ValueTask.FromResult<EditorCompletion?>(candidates.Count == 0 ? null : new EditorCompletion(candidates));
     }
 
     // The browser committed the edit; your source holds what the cell shows from then on.

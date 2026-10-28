@@ -773,3 +773,34 @@ describe('the Context Menu\'s commands .NET answers (ADR-0421)', () => {
         expect(dotnet.calls.filter(call => call.method === 'ContextCommands')).toHaveLength(2);
     });
 });
+
+describe('completion .NET answers (ADR-0051)', () => {
+    it('ADR-0051: the editor\'s text and caret are asked of .NET as typed, and its answer is listed, Tab writing the chosen candidate', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = (method, args) => (method === 'Complete' && args[0] === '=SU'
+            ? '{"candidates":[{"label":"SUM","start":1,"length":2,"insert":"SUM("},{"label":"SUMIF","start":1,"length":2,"insert":"SUMIF("}],"hint":{"text":"SUM(number1)","emphasisStart":4,"emphasisLength":7}}'
+            : null);
+        const { root } = mount({ options: options({ rowHeight: 24, completesText: true, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('=SU');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Complete').map(call => call.args).at(-1)).toEqual(['=SU', 3]);
+        expect([...root.querySelectorAll('.ex-completion-item')].map(item => item.textContent)).toEqual(['SUM', 'SUMIF']);
+        expect(root.querySelector('.ex-completion-hint')?.textContent).toBe('SUM(number1)');
+        key('ArrowDown');
+        key('Tab');
+        await turns();
+        expect(editorOf(root)?.value).toBe('=SUMIF(');
+    });
+
+    it('ADR-0051: a grid whose Consumer answers no completion asks .NET nothing', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({ options: options({ rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('=SU');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Complete')).toEqual([]);
+    });
+});

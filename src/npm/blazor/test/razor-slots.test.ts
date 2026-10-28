@@ -4,7 +4,7 @@
 // is held while contents are owed. Wiring a menu's items is the core's (core/test/slot-wiring.test.ts).
 import { describe, expect, it } from 'vitest';
 import {
-    filterPanelAttributes, findPanelAttributes, type FilterPanelView, type FindPanelView, type GridColumnMenuSlotContext, type GridFilterPanelSlotContext,
+    completionAttributes, filterPanelAttributes, findPanelAttributes, type FilterPanelView, type GridEditorCompletionSlotContext, type FindPanelView, type GridColumnMenuSlotContext, type GridFilterPanelSlotContext,
     type GridFindPanelSlotContext, type GridLoadingIndicatorSlotContext,
 } from '@ex-grid/core';
 import type { DotNetHandle } from '../src/dotnet-source';
@@ -100,7 +100,7 @@ function made(): Made {
     return { dotnet, mark, order, slots: new RazorSlots(dotnet, { hold: mark.hold, order: order.order, keyboardBack: () => { root.focus(); } }), slot, root };
 }
 
-const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'filterPanel' | 'findPanel' | 'loadingIndicator') => {
+const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'editorCompletion' | 'filterPanel' | 'findPanel' | 'loadingIndicator') => {
     const mount = slots.chrome([name])[name];
     if (mount === undefined) throw new Error(`No mount for ${name}.`);
     return mount as (slot: HTMLElement, context: unknown) => () => void;
@@ -405,5 +405,60 @@ describe('a find panel filled with Razor', () => {
         field.value = 'Novak';
         field.dispatchEvent(new Event('input', { bubbles: true }));
         expect([focused, typed]).toEqual([[field], ['Novak']]);
+    });
+});
+
+// The completion's contents as .NET draws them, numbered, and which of its candidates are marked chosen.
+const drawnCompletion = (version: number, labels: readonly string[]): HTMLElement => {
+    const contents = rendered(`<div ${completionAttributes.list}>${labels.map((label, index) => `<div ${completionAttributes.candidate}="${String(index)}">${label}</div>`).join('')}</div>`);
+    contents.setAttribute(drawnVersionAttribute, String(version));
+    return contents;
+};
+const chosen = (contents: HTMLElement): (string | null)[] => [...contents.querySelectorAll(`[${completionAttributes.candidate}]`)].map(option => option.getAttribute('aria-selected'));
+
+describe('a completion list filled with Razor', () => {
+    const candidates = [{ label: 'SUM', start: 1, length: 2, insert: 'SUM(' }, { label: 'SUMIF', start: 1, length: 2, insert: 'SUMIF(' }];
+    const completion = (selected: number, accepted: number[], given = candidates): GridEditorCompletionSlotContext => ({
+        candidates: given, selected, hint: undefined, listId: 'g-completion', optionId: index => `g-completion-${String(index)}`,
+        accept: index => { accepted.push(index); },
+    });
+
+    it('ADR-0410 / ADR-0051: .NET draws the labels once, and ↑ or ↓, which mount the slot again, move the choice in the browser', async () => {
+        const { dotnet, slots, slot } = made();
+        const accepted: number[] = [];
+        const mount = mountOf(slots, 'editorCompletion');
+        const leave = mount(slot, completion(0, accepted));
+        const contents = drawnCompletion(1, ['SUM', 'SUMIF']);
+        slots.rendered(1, 1, contents);
+        expect([contents.querySelector(`[${completionAttributes.list}]`)?.id, chosen(contents)]).toEqual(['g-completion', ['true', 'false']]);
+        // The core takes the slot away and mounts it again in the same task for the next candidate chosen.
+        leave();
+        mount(slot, completion(1, accepted));
+        await Promise.resolve();
+        expect(dotnet.methods()).toEqual(['MountSlot']);
+        expect(JSON.parse(String(dotnet.calls[0]?.args.at(-1)))).toEqual({ labels: ['SUM', 'SUMIF'], hint: null });
+        expect([chosen(contents), contents.parentElement]).toEqual([['false', 'true'], slot]);
+        contents.querySelectorAll('div')[2]?.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+        expect(accepted).toEqual([1]);
+    });
+
+    it('Spine rule 6: a click on contents still drawn from an earlier answer that showed otherwise accepts nothing, until .NET draws the new one', async () => {
+        const { dotnet, slots, slot } = made();
+        const accepted: number[] = [];
+        const mount = mountOf(slots, 'editorCompletion');
+        const leave = mount(slot, completion(0, accepted));
+        const contents = drawnCompletion(1, ['SUM', 'SUMIF']);
+        slots.rendered(1, 1, contents);
+        leave();
+        mount(slot, completion(0, accepted, [{ label: 'SUMIF', start: 1, length: 3, insert: 'SUMIF(' }]));
+        await Promise.resolve();
+        expect(dotnet.methods()).toEqual(['MountSlot', 'UpdateSlot']);
+        contents.querySelectorAll('div')[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+        expect(accepted).toEqual([]);
+        const again = drawnCompletion(2, ['SUMIF']);
+        contents.replaceWith(again);
+        slots.rendered(1, 2, again);
+        again.querySelectorAll('div')[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
+        expect(accepted).toEqual([0]);
     });
 });
