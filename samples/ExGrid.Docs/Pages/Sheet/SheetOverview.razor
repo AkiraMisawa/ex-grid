@@ -170,6 +170,12 @@
             refused by name when it opens, where the Sheet above takes any. The script it runs is bundled
             into the package, at an address that changes with its content.
         </p>
+        <p>
+            The grid core under the Sheet is the Shared Script the ExGrid package ships,
+            <code>_content/ExGrid/ex-grid-script.min.js</code>, which every product over the core on the page shares,
+            so a page with a grid and a sheet loads it once. A Content Security Policy that lists the packages' files
+            names it too.
+        </p>
     </DocsSection>
 
     <DocsSection Title="The parts of a sheet">

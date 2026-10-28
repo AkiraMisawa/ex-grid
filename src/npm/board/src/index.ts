@@ -11,8 +11,8 @@ export type {
 export { boardDefaultRowHeight, boardInput, boardVersion, boardView, readBoard } from './board-spec';
 export type { GridViewSpecReading, ShapedColumn } from './grid-view-spec';
 export { readGridViewSpec } from './grid-view-spec';
-export type { ShapedRow } from './shaped-grid';
-export { checkShapedPage, dateFormat, dateTimeFormat, fetchedColumns, integerFormat, shapedColumns, shapedRows } from './shaped-grid';
+export type { ShapedGrid, ShapedRow } from './shaped-grid';
+export { checkShapedPage, dateFormat, dateTimeFormat, fetchedColumns, integerFormat, shapedColumns, shapedGrid, shapedRows } from './shaped-grid';
 export type { BoardValue } from './link-condition';
 export { LinkCondition, narrowedPositions, narrowedSnapshot } from './link-condition';
 export { BoardOutput } from './board-output';
