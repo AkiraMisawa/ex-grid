@@ -3,10 +3,10 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 94% | 87.8% |
-| ExSheet | 94.9% | 87.3% |
+| ExSheet | 94.8% | 87.3% |
 | ExPivot | 89.3% | 83.3% |
-| ExChart | 90% | 85% |
-| ExBoard | 87.6% | 80.4% |
+| ExChart | 89.8% | 84.7% |
+| ExBoard | 87.4% | 80.4% |
 | Data | 94.5% | 89.9% |
 
 # Summary
@@ -14,29 +14,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 10:13:11 |
+| Generated on: | 10/28/2026 - 10:30:07 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1312 |
-| Files: | 657 |
-| **Line coverage:** | 92.7% (90304 of 97325) |
-| Covered lines: | 90304 |
-| Uncovered lines: | 7021 |
-| Coverable lines: | 97325 |
-| Total lines: | 152718 |
-| **Branch coverage:** | 86.5% (53124 of 61386) |
-| Covered branches: | 53124 |
-| Total branches: | 61386 |
+| Classes: | 1325 |
+| Files: | 661 |
+| **Line coverage:** | 92.7% (90895 of 98027) |
+| Covered lines: | 90895 |
+| Uncovered lines: | 7132 |
+| Coverable lines: | 98027 |
+| Total lines: | 153297 |
+| **Branch coverage:** | 86.4% (53259 of 61578) |
+| Covered branches: | 53259 |
+| Total branches: | 61578 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 87.6%</summary>
+<details><summary>ExBoard - 87.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**87.6%**|**80.4%**|
+|**ExBoard**|**87.4%**|**80.4%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|100%|
@@ -83,8 +83,8 @@
 |ExBoard.Script.SourceCrossing.HeldKey|100%|50%|
 |ExBoard.Script.SourcePage|100%||
 |ExGrid.Script.CrossedText|52%|38.8%|
-|ExGrid.Script.HeldCalls|82.2%|62.5%|
-|ExGrid.Script.HeldCalls<T>|82.2%|62.5%|
+|ExGrid.Script.HeldCalls|79.3%|62.5%|
+|ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
 |ExGrid.Script.PivotSourceCrossing|59.3%|35.2%|
 |ExGrid.Script.SnapshotCrossing|94.8%|81.2%|
 |ExGrid.Script.SnapshotNaming|100%|100%|
@@ -94,15 +94,20 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84%**|**75.9%**|
+|**ExChart**|**84%**|**75.3%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
 |ExChart.Chrome.ChartCommand|100%||
+|ExChart.Chrome.ChartCommandView|100%||
 |ExChart.Chrome.ChartFiltersContext|90%||
+|ExChart.Chrome.ChartFiltersView|100%||
 |ExChart.Chrome.ChartMenuContext|100%||
+|ExChart.Chrome.ChartMenuView|100%||
 |ExChart.Chrome.ChartToolbarContext|100%||
-|ExChart.Chrome.IChartChrome|0%||
+|ExChart.Chrome.ChartToolbarView|100%||
+|ExChart.Chrome.ChartToolbarWords|100%||
+|ExChart.Chrome.IChartChrome|20%||
 |ExChart.ColumnSeries|100%||
 |ExChart.Components.ChartAxesView|97.9%|86.1%|
 |ExChart.Components.ChartBandView|100%|71.4%|
@@ -131,19 +136,25 @@
 |ExChart.GridState<TRow>|85.7%||
 |ExChart.KeyedPosition|100%||
 |ExChart.RowSeries|100%||
-|ExChart.Script.ChartWire|80.7%|75.1%|
+|ExChart.Script.ChartRazorSlot|95.5%|86.1%|
+|ExChart.Script.ChartWire|80.8%|74.6%|
 |ExChart.Script.DrawingState|100%||
-|ExChart.Script.ExChart|86.9%|87.1%|
+|ExChart.Script.ExChart|87.8%|87.6%|
 |ExChart.Script.ExSurface|78.3%|61.1%|
 |ExChart.Script.RowKeys|77.5%|71.6%|
-|ExChart.Script.ScriptBridge|100%||
-|ExChart.Script.ScriptMount|77.6%|79.3%|
-|ExChart.Script.ScriptMount<T>|77.6%|79.3%|
+|ExChart.Script.ScriptBridge|86.3%|50%|
+|ExChart.Script.ScriptMount|77.6%|73%|
+|ExChart.Script.ScriptMount<T>|77.6%|73%|
 |ExChart.Script.SurfaceValues|100%||
 |ExChart.SelectionReader|92.1%|73.9%|
 |ExChart.SelectionReader<TRow>|92.1%|73.9%|
 |ExChart.SeriesVisibility|100%||
 |ExChart.SnapshotChartData|100%|100%|
+|ExGrid.Script.CrossedText|80%|44.4%|
+|ExGrid.Script.HeldCalls|79.3%|62.5%|
+|ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
+|ExGrid.Script.RazorSlotHolders|90.5%|78.5%|
+|ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
 
 </details>
 <details><summary>ExChart.Engine - 97.3%</summary>
@@ -247,15 +258,17 @@
 |ExChart.Engine.VerticalAxis|100%|62.5%|
 
 </details>
-<details><summary>ExChart.MudBlazor - 37.3%</summary>
+<details><summary>ExChart.MudBlazor - 65.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.MudBlazor**|**37.3%**|**45.7%**|
-|ExChart.MudBlazor.MudChartChrome|87.8%|66.6%|
+|**ExChart.MudBlazor**|**65.4%**|**57.2%**|
+|ExChart.MudBlazor.MudChartChrome|91.6%|66.6%|
 |ExChart.MudBlazor.MudChartDock<TRow>|0%|0%|
 |ExChart.MudBlazor.MudChartDock<TRow>|0%|0%|
 |ExChart.MudBlazor.MudChartMenu|66.6%|100%|
+|ExChart.MudBlazor.MudChartScriptMenu|66.6%|75%|
+|ExChart.MudBlazor.MudChartScriptToolbar|100%|96.1%|
 |ExChart.MudBlazor.MudChartToolbar|66%|63%|
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
@@ -537,8 +550,8 @@
 |ExGrid.Script.GridRefusal.Paste<TRow>|0%||
 |ExGrid.Script.GridRefusal.Placement<TRow>|0%||
 |ExGrid.Script.GridRefusal<TRow>|0%||
-|ExGrid.Script.HeldCalls|82.2%|62.5%|
-|ExGrid.Script.HeldCalls<T>|82.2%|62.5%|
+|ExGrid.Script.HeldCalls|79.3%|62.5%|
+|ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
 |ExGrid.Script.RazorSlot|89.3%|69%|
 |ExGrid.Script.RazorSlotHolders|88.6%|71.4%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
@@ -689,7 +702,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -850,8 +863,8 @@
 |:---|---:|---:|
 |**ExPivot**|**81.6%**|**75.3%**|
 |ExGrid.Script.CrossedText|52%|38.8%|
-|ExGrid.Script.HeldCalls|71.1%|62.5%|
-|ExGrid.Script.HeldCalls<T>|71.1%|62.5%|
+|ExGrid.Script.HeldCalls|69%|62.5%|
+|ExGrid.Script.HeldCalls<T>|69%|62.5%|
 |ExGrid.Script.PivotSourceCrossing|56.2%|32.3%|
 |ExGrid.Script.RazorSlot|0%|0%|
 |ExGrid.Script.RazorSlotHolders|15%|28.5%|
@@ -1143,8 +1156,8 @@
 |:---|---:|---:|
 |**ExSheet**|**91.5%**|**82.6%**|
 |ExGrid.Script.CrossedText|92%|72.2%|
-|ExGrid.Script.HeldCalls|83.3%|75%|
-|ExGrid.Script.HeldCalls<T>|83.3%|75%|
+|ExGrid.Script.HeldCalls|80.4%|75%|
+|ExGrid.Script.HeldCalls<T>|80.4%|75%|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
