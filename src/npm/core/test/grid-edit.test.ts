@@ -236,6 +236,34 @@ describe('the Cell Editor', () => {
         expect(focusOf(listener.selections)).toEqual({ row: 3, column: 1 });
     });
 
+    it('ticket 32 / ADR-0010: in Caret, PageUp and PageDown are taken and do nothing, so no browser scrolls the grid from the field', async () => {
+        const listener = heard();
+        const root = await grid(listener);
+        press(root, book, rowY(3));
+        await painted();
+        key('F2');
+        await painted();
+        expect([key('PageUp').defaultPrevented, key('PageDown').defaultPrevented]).toEqual([true, true]);
+        await painted();
+        expect([editor(root).value, editor(root).selectionStart, listener.edits, focusOf(listener.selections)])
+            .toEqual(['Book-3', 6, [], { row: 3, column: 0 }]);
+    });
+
+    it('ticket 32 / ADR-0010: in Caret where Command is the primary key, Home and End place the caret and Shift extends, where the browser would scroll', async () => {
+        const listener = heard();
+        const { root } = mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, ...listener.options }, { primaryIsMeta: true });
+        await painted();
+        press(root, book, rowY(3));
+        await painted();
+        key('F2');
+        await painted();
+        expect(key('Home').defaultPrevented).toBe(true);
+        expect([editor(root).selectionStart, editor(root).selectionEnd]).toEqual([0, 0]);
+        expect(key('End', { shiftKey: true }).defaultPrevented).toBe(true);
+        expect([editor(root).selectionStart, editor(root).selectionEnd]).toEqual([0, 6]);
+        expect(listener.edits).toEqual([]);
+    });
+
     it('ADR-0029: ex-editing joins the root while the Cell Editor stands, and goes with it', async () => {
         const root = await grid(heard());
         press(root, book, rowY(3));

@@ -747,6 +747,9 @@ const edgeScrollTickMs = 50;
 /** The keys whose own keydown is no key of the grid's: they neither take nor end a release of Tab. */
 const modifierKeys: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
 
+/** Home and End where Command is the primary key, which the browser binds to a scroll in a text field (ticket 32). */
+const appleCaretKeys: ReadonlySet<string> = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
+
 /** The built-in Chrome's words for a stylesheet of another version (ADR-0123, ADR-0203). */
 const stylesheetNoticeWords = 'This page holds another version\'s stylesheet. Reload the page.';
 
@@ -4575,7 +4578,10 @@ export class GridView<Row> {
         const overPoint = listed && this.#completionOverPoint(edit);
         const keys = listed ? overPoint ? 'completionOverPoint' : 'completion'
             : edit.mode === 'caret' ? 'editing' : edit.mode === 'overwrite' ? 'overwrite' : this.#pointedFromOutside ? 'pointed' : 'point';
-        if (!editingKeysByMode[keys].includes(canonical)) return;
+        if (!editingKeysByMode[keys].includes(canonical)) {
+            this.#scrollingKeyInField(event, canonical);
+            return;
+        }
         if (listed && this.#completionKey(canonical, overPoint)) {
             this.#taken(event);
             this.#invalidate();
@@ -4607,6 +4613,23 @@ export class GridView<Row> {
                 return;
             default:
                 this.#commitAndKey(press);
+        }
+    }
+
+    // A key left to an editor surface that the browser would scroll the grid with is answered here (ADR-0010's note
+    // of 2026-09-30, ticket 32): scrolled away, the edited cell left the painted rows. PageUp and PageDown, which move
+    // no caret in a one-line field, do nothing on every platform, and Home and End, bound to a scroll where Command is
+    // the primary key, place the caret or, with Shift, extend the selection as they do elsewhere. The keys the core
+    // claims, Home and End in Overwrite and Point, stay the core's.
+    #scrollingKeyInField(event: KeyboardEvent, canonical: string): void {
+        if (canonical === 'PageUp' || canonical === 'PageDown') {
+            this.#taken(event);
+            return;
+        }
+        const field = event.target;
+        if (this.#metaIsPrimary && appleCaretKeys.has(canonical) && (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) {
+            this.#taken(event);
+            keyDefault(field, event, true);
         }
     }
 
