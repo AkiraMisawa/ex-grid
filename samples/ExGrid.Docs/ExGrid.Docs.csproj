@@ -113,7 +113,7 @@
   <ItemGroup>
     <ReactExampleSource Include="Examples/**/*.ts;Examples/**/*.tsx" />
     <ReactExampleSource Include="$(ReactExamplesProject)src/**/*;$(ReactExamplesProject)index.html;$(ReactExamplesProject)vite.config.ts;$(ReactExamplesProject)tsconfig.json;$(ReactExamplesProject)package.json;$(ReactExamplesProject)package-lock.json;$(ReactExamplesPackages)tsconfig.base.json" />
-    <ReactExampleSource Include="$(ReactExamplesPackages)core/src/**/*.ts;$(ReactExamplesPackages)react/src/**/*.ts;$(ReactExamplesPackages)data/src/**/*.ts" />
+    <ReactExampleSource Include="$(ReactExamplesPackages)core/src/**/*.ts;$(ReactExamplesPackages)react/src/**/*.ts;$(ReactExamplesPackages)data/src/**/*.ts;$(ReactExamplesPackages)board/src/**/*.ts" />
     <ReactExampleSource Include="$(ReactExamplesPackages)sheet-engine/src/**/*.ts;$(ReactExamplesPackages)sheet/src/**/*.ts;$(ReactExamplesPackages)sheet-react/src/**/*.ts" />
     <ReactExampleSource Include="$(ReactExamplesPackages)mantine/src/**/*.ts;$(ReactExamplesPackages)mantine/styles.css;$(ReactExamplesPackages)mui/src/**/*.ts;$(ReactExamplesPackages)mui/styles.css" />
     <ReactExampleSource Include="$(ReactExamplesPackages)chart/src/**/*.ts;$(ReactExamplesPackages)chart-react/src/**/*.ts;$(ReactExamplesPackages)chart-mantine/src/**/*.ts;$(ReactExamplesPackages)chart-mantine/styles.css;$(ReactExamplesPackages)chart-mui/src/**/*.ts;$(ReactExamplesPackages)chart-mui/styles.css" />

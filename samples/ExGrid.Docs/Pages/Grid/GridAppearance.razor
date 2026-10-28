@@ -106,6 +106,12 @@
             typography, because a font the grid was not measured for would put one font on screen and another's
             widths in the arithmetic. Below, the theme's font is the system font, the one ExGrid's own stylesheet
             paints, so its widths are the ones ExGrid measured: under the built-in Chrome there is nothing to set.
+            Under React, <code>MantineExGrid</code> and <code>MuiExGrid</code> take the same one value as
+            <code>font</code>, its <code>widths</code> in the form of <code>presentationDefaults</code>: the font's size
+            and the width of each class of character, regular and bold, with its glyph table. ExGrid's own are read from
+            <code>GridMetrics.resolve({ density: 'standard' })</code> in <code>@@ex-grid/core</code>, its
+            <code>fontSizePx</code> and its <code>cellMetrics</code>, as the Example below does; the grid scales them to
+            the size of whichever density it resolves.
         </p>
         <DocsExample Title="A font other than Roboto" Builtin="typeof(FontGrid)" Mud="typeof(FontGridMud)"
                      Files="@(["Examples/Grid/Position.cs"])" />

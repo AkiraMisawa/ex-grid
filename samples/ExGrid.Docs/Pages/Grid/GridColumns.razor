@@ -325,6 +325,13 @@
             a value that does not convert is refused by its row and column, never dropped or read as zero. Edit the
             texts below and draw again: remove the rate's format, or write <code>"abc"</code> as a notional.
         </p>
+        <p>
+            Under React the same readers are <code>BoardInput.read</code> and <code>fromJson</code> in
+            <code>@@ex-grid/data</code>, and <code>readGridViewSpec</code>, <code>shapedColumns</code> and
+            <code>shapedGrid(snapshot, reading)</code>, <code>ShapedGrid.Of</code>'s counterpart, in
+            <code>@@ex-grid/board</code>, which answers the same <code>source</code>, <code>columns</code> and
+            <code>pinnedColumnCount</code>; a refusal is a <code>BoardRefusedError</code> naming its path.
+        </p>
         <DocsExample Title="A grid from JSON, its columns built at run time" Builtin="typeof(ShapedColumns)" Mud="typeof(ShapedColumnsMud)"
                      Files="@(["Examples/Grid/ShapedTrades.cs"])" />
         <p>
