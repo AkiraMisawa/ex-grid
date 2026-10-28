@@ -125,7 +125,7 @@ public sealed class ScriptBoardTests : BunitContext
             snapshot = 1,
             source = (int?)null,
         }));
-        await cut.InvokeAsync(() => Bridge().Value.Heard("output", payload, null));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("output", payload));
 
         Assert.NotNull(taken);
         Assert.Equal(("chosen", "trades", 0L), (taken.Name, taken.Input, taken.SourceVersion));
@@ -144,7 +144,7 @@ public sealed class ScriptBoardTests : BunitContext
         Assert.Equal(JsonValueKind.Null, Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("diff").ValueKind);
 
         var payload = Parsed(JsonSerializer.Serialize(new { diff = BoardDiff.Empty.ToJson(), diffsSent = 1 }));
-        await cut.InvokeAsync(() => Bridge().Value.Heard("diff", payload, null));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("diff", payload));
         Assert.NotNull(raised);
         cut.Render(ps => ps.Add(p => p.Diff, raised));
         Assert.Empty(_view.Invocations["update"]);
@@ -214,7 +214,7 @@ public sealed class ScriptBoardTests : BunitContext
 
         var question = """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""")
             + ""","narrowing":[{"on":["day","pnl","count"],"values":[["2026-10-16T09:30:00",12345678901234567890.25,9007199254740993]]}]}""";
-        var page = await Bridge().Value.Fetch(1, 7, question, null);
+        var page = await Bridge().Value.Fetch(1, 7, question);
 
         Assert.NotNull(asked);
         Assert.Equal(("blotter", 0, 50), (asked.View, asked.Grid.Range.Start, asked.Grid.Range.Count));
@@ -226,20 +226,34 @@ public sealed class ScriptBoardTests : BunitContext
         Assert.Equal((1, 12.50m), (crossed.RowCount, crossed.ValueAt(crossed.Rows[0], crossed["pnl"])));
     }
 
-    [Fact] // ADR-0370 section 1: a question too long for one message of a Blazor Server circuit crosses as a stream, read whole
-    public async Task ADR0370_a_question_too_long_for_one_message_crosses_as_a_stream()
+    [Fact] // ADR-0005 (as amended 2026-10-28), ADR-0370 section 1: a question too long for one message of a Blazor Server circuit is taken as a stream, read whole, in its turn
+    public async Task ADR0005_a_question_too_long_for_one_message_is_taken_in_its_turn()
     {
-        BoardQuery? asked = null;
+        var take = _view.Setup<IJSStreamReference>("take", _ => true);
+        var asked = new List<int>();
         var rows = Held.Input("trades")!.FromJson("[]");
-        DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = SourceOf((query, _) => { asked = query; return ValueTask.FromResult(new ShapedPage(rows, 0, 0)); }) });
+        var cut = DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = SourceOf((query, _) => { asked.Add(query.Narrowing.Count == 0 ? 0 : query.Narrowing[0].Values.Count); return ValueTask.FromResult(new ShapedPage(rows, 0, 0)); }) });
 
+        var grid = JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""");
         var desks = string.Join(",", Enumerable.Range(0, 3000).Select(i => $"""["Desk {i}"]"""));
-        var question = """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""")
-            + ""","narrowing":[{"on":["desk"],"values":[""" + desks + "]}]}";
-        await Bridge().Value.Fetch(1, 8, null, new TextStream(question));
+        var question = """{"view":"blotter","grid":""" + grid + ""","narrowing":[{"on":["desk"],"values":[""" + desks + "]}]}";
+        var arguments = JsonSerializer.Serialize(new object[] { 1, 8, question });
+        using var crossed = JsonDocument.Parse($$"""{"held":4,"bytes":{{Encoding.UTF8.GetByteCount(arguments)}}}""");
 
-        Assert.NotNull(asked);
-        Assert.Equal(3000, Assert.Single(asked.Narrowing).Values.Count);
+        Task large = Task.CompletedTask, after = Task.CompletedTask;
+        await cut.InvokeAsync(() =>
+        {
+            large = Bridge().Value.Held("Fetch", crossed.RootElement);
+            after = Bridge().Value.Fetch(1, 9, """{"view":"blotter","grid":""" + grid + ""","narrowing":[]}""");
+        });
+        // The question after it waits for the held one to be taken, rather than reaching the source first.
+        Assert.Equal([4], Assert.Single(take.Invocations).Arguments);
+        Assert.Empty(asked);
+
+        take.SetResult(new TextStream(arguments));
+        await large.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+        await after.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal([3000, 0], asked);
     }
 
     [Fact] // ADR-0343, spine rule 6: a new Board numbers each source anew, and a question under the old number is read as the Board that numbered it declares the input
@@ -257,13 +271,13 @@ public sealed class ScriptBoardTests : BunitContext
 
         var question = """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""")
             + ""","narrowing":[{"on":["count"],"values":[[3]]}]}""";
-        await Bridge().Value.Fetch(1, 10, question, null);
-        await Bridge().Value.Fetch(2, 11, question, null);
+        await Bridge().Value.Fetch(1, 10, question);
+        await Bridge().Value.Fetch(2, 11, question);
 
         Assert.Equal([3L, 3m], asked.Select(query => Assert.Single(Assert.Single(query.Narrowing).Values)[0]));
     }
 
-    // A text the browser sends as a stream, as Blazor hands .NET one.
+    // A held call's arguments as the browser hands .NET them, uncompressed, as a browser without CompressionStream does.
     private sealed class TextStream(string text) : IJSStreamReference
     {
         private readonly byte[] _bytes = Encoding.UTF8.GetBytes(text);
@@ -288,7 +302,7 @@ public sealed class ScriptBoardTests : BunitContext
         });
         DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = source });
 
-        var answer = await Bridge().Value.Thin(1, 1, """{"view":"daily","chart":{"data":"trades","x":"day","y":"pnl","values":"dates","from":null,"to":20000,"pixels":300},"narrowing":[]}""", null);
+        var answer = await Bridge().Value.Thin(1, 1, """{"view":"daily","chart":{"data":"trades","x":"day","y":"pnl","values":"dates","from":null,"to":20000,"pixels":300},"narrowing":[]}""");
 
         Assert.NotNull(asked);
         Assert.Equal(new ChartSourceQuery("trades", "day", "pnl", AxisValues.Dates, null, 20000, 300), asked.Chart);
@@ -307,11 +321,41 @@ public sealed class ScriptBoardTests : BunitContext
         });
         DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = source });
 
-        var fetching = Bridge().Value.Fetch(1, 9, """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""") + ""","narrowing":[]}""", null);
-        Bridge().Value.Cancel(9);
+        var fetching = Bridge().Value.Fetch(1, 9, """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""") + ""","narrowing":[]}""");
+        await Bridge().Value.Cancel(9);
 
         await cancelled.Task;
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fetching);
+    }
+
+    [Fact] // ADR-0005 (as amended 2026-10-28), spine rule 6: an output too large for a circuit's message is taken in its turn, read against its Snapshot before the release the browser sent after it
+    public async Task ADR0005_a_held_output_is_read_against_its_Snapshot_before_the_release_after_it()
+    {
+        var take = _view.Setup<IJSStreamReference>("take", _ => true);
+        var trades = Trades("""[{"desk": "FX", "day": "2026-10-20"}]""");
+        BoardOutput? taken = null;
+        var cut = Draw(new Dictionary<string, Snapshot> { ["trades"] = trades }, ps => ps.Add(p => p.OnOutput, (BoardOutput output) => taken = output));
+        // The browser still holds Snapshot 1 when it raises the output; .NET names another since.
+        cut.Render(ps => ps.Add(p => p.Data, new Dictionary<string, Snapshot> { ["trades"] = Trades("[]") }));
+
+        var arguments = JsonSerializer.Serialize(new object[]
+        {
+            "output", new { output = """{"output":"chosen","input":"trades","version":0,"on":["desk"],"values":[["FX"]]}""", snapshot = 1, source = (int?)null },
+        });
+        using var crossed = JsonDocument.Parse($$"""{"held":2,"bytes":{{Encoding.UTF8.GetByteCount(arguments)}}}""");
+        Task held = Task.CompletedTask, released = Task.CompletedTask;
+        await cut.InvokeAsync(() =>
+        {
+            held = Bridge().Value.Held("Heard", crossed.RootElement);
+            released = Bridge().Value.Release([1]);
+        });
+        Assert.False(released.IsCompleted);
+
+        take.SetResult(new TextStream(arguments));
+        await held.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+        await released.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+        Assert.NotNull(taken);
+        Assert.Equal(1, taken.Take(trades).RowCount);
     }
 
     [Fact] // ADR-0340 Q6, ADR-0343: an output taken from rows a source held crosses with no Snapshot, is read as the input declares its columns, and vouches for its values by the version the source answered them at
@@ -326,7 +370,7 @@ public sealed class ScriptBoardTests : BunitContext
             snapshot = (int?)null,
             source = 1,
         }));
-        await cut.InvokeAsync(() => Bridge().Value.Heard("output", payload, null));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("output", payload));
 
         Assert.NotNull(taken);
         Assert.Equal(("chosen", "trades", 7L), (taken.Name, taken.Input, taken.SourceVersion));

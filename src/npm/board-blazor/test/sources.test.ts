@@ -44,8 +44,8 @@ class Drawn {
     }
 }
 
-function attachJson(sources: WireAttach['sources'], hears: WireAttach['options']['hears'] = []): string {
-    const init: WireAttach = { options: { width: 1200, locale: 'en-GB', hears }, board: boardJson, data: {}, sent: [], sources, diff: null, diffsSent: 0 };
+function attachJson(sources: WireAttach['sources'], hears: WireAttach['options']['hears'] = [], circuit = false): string {
+    const init: WireAttach = { options: { width: 1200, locale: 'en-GB', hears }, circuit, board: boardJson, data: {}, sent: [], sources, diff: null, diffsSent: 0 };
     return JSON.stringify(init);
 }
 
@@ -64,6 +64,12 @@ function only(calls: readonly (readonly unknown[])[]): readonly unknown[] {
 function text(value: unknown): string {
     if (typeof value !== 'object' || value === null || !('scale' in value)) throw new Error(`Not a Decimal: ${String(value)}.`);
     return decimalText(value as Parameters<typeof decimalText>[0]);
+}
+
+/** A held call's arguments as .NET reads them: gzip-compressed where the browser compresses. */
+async function unpacked(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
+    if (bytes[0] !== 0x1f) return new TextDecoder().decode(bytes);
+    return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
 }
 
 const anyQuery = { range: { start: 0, count: 50 }, sorts: [], filter: undefined } as const;
@@ -97,8 +103,8 @@ describe('a source held where the data lives, asked through .NET (ADR-0343, ADR-
 
         expect([page.start, page.totalCount, page.rows.version]).toEqual([4, 9, 7n]);
         expect(text(page.rows.column('pnl').valueAt(0))).toBe('12.5');
-        const [number, , json, streamed] = only(dotnet.of('Fetch'));
-        expect([number, streamed]).toEqual([3, null]);
+        const [number, , json] = only(dotnet.of('Fetch'));
+        expect(number).toBe(3);
         expect(json).toBe('{"view":"blotter","grid":' + JSON.stringify('{"version":1,"range":{"start":0,"count":50},"sorts":[]}')
             + ',"narrowing":[{"on":["day","pnl","count"],"values":[["2026-10-16",12345678901234567890.25,9007199254740993]]}]}');
     });
@@ -154,23 +160,24 @@ describe('a source held where the data lives, asked through .NET (ADR-0343, ADR-
         expect(dotnet.of('ReleaseSources')).toEqual([[[3]]]);
     });
 
-    it('sends a narrowing too long for one message of the circuit as a stream, and tells .NET nothing once the Board is stopped', async () => {
+    it('holds a narrowing too long for one message of the circuit for .NET to take, and tells .NET nothing once the Board is stopped', async () => {
         const drawn = new Drawn();
         const dotnet = new FakeDotNet();
         let answer: ((value: unknown) => void) | undefined;
-        dotnet.answers.set('Fetch', () => new Promise(resolve => { answer = resolve; }));
-        const streamed: Uint8Array[] = [];
-        const board = await attach(document.createElement('div'), dotnet, attachJson({ trades: { number: 3, thin: false } }), [], drawn.draw, bytes => { streamed.push(bytes); return 'stream 1'; });
+        dotnet.answers.set('Held', () => new Promise(resolve => { answer = resolve; }));
+        const board = await attach(document.createElement('div'), dotnet, attachJson({ trades: { number: 3, thin: false } }, [], true), [], drawn.draw);
 
         const desks = Array.from({ length: 3000 }, (_, i) => [`Desk ${i}`]);
         const abort = new AbortController();
         const fetched = drawn.source('trades').fetch({ view: 'blotter', grid: anyQuery, narrowing: [new LinkCondition(['desk'], desks)] }, abort.signal);
         await Promise.resolve();
-        const [, , json, stream] = only(dotnet.of('Fetch'));
-        expect([json, stream]).toEqual([null, 'stream 1']);
-        const [bytes, ...more] = streamed;
-        if (bytes === undefined || more.length > 0) throw new Error(`${streamed.length} streams, not one.`);
-        expect(new TextDecoder().decode(bytes)).toContain('"values":[["Desk 0"],["Desk 1"],');
+        expect(dotnet.of('Fetch')).toEqual([]);
+        const [method, crossed] = only(dotnet.of('Held'));
+        expect(method).toBe('Fetch');
+        if (typeof crossed !== 'object' || crossed === null || !('held' in crossed) || typeof crossed.held !== 'number') throw new Error('Not a held call.');
+        const [number, , json] = JSON.parse(await unpacked(await board.take(crossed.held))) as unknown[];
+        expect(number).toBe(3);
+        expect(json).toContain('"values":[["Desk 0"],["Desk 1"],');
 
         board.dispose();
         abort.abort();
@@ -187,6 +194,6 @@ describe('a source held where the data lives, asked through .NET (ADR-0343, ADR-
 
         drawn.options.at(-1)?.onOutput?.(new BoardOutput('chosen', 'trades', page, new LinkCondition(['desk'], [['FX']]), ['text']));
 
-        expect(dotnet.of('Heard')).toEqual([['output', { output: '{"output":"chosen","input":"trades","version":7,"on":["desk"],"values":[["FX"]]}', snapshot: null, source: 3 }, null]]);
+        expect(dotnet.of('Heard')).toEqual([['output', { output: '{"output":"chosen","input":"trades","version":7,"on":["desk"],"values":[["FX"]]}', snapshot: null, source: 3 }]]);
     });
 });

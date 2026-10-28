@@ -8,7 +8,6 @@
 import type { BoardChartQuery, BoardQuery, BoardSource, BoardValue, LinkCondition, ShapedPage } from '@ex-grid/board';
 import type { ChartData, ChartSourceAnswer } from '@ex-grid/chart';
 import { plainDateTimeOf, writeGridQueryJson } from '@ex-grid/core';
-import { crossText, type StreamText } from './cross-text';
 import { BoardInput, boardKindNames, decimalText, readArrowSnapshot, ticksText, type DataShape, type Snapshot, type SnapshotColumn, type SnapshotKind } from '@ex-grid/data';
 
 /** What a source asks of the .NET object a Blazor ExBoard hands the bridge: Blazor's `DotNetObjectReference`. */
@@ -31,9 +30,10 @@ let calls = 0;
  * declaration of the input, so `declared` is the one it holds the number under: what the source is asked carries the
  * narrowing the Board's links put on the view, each value written as `declared` declares its column, and what it
  * answers is read as `declared` declares the columns it holds. `cancel` tells .NET a question no longer waits, and
- * tells it nothing once the Board is stopped; a long question crosses as a stream `stream` makes.
+ * tells it nothing once the Board is stopped; a question too long for a message of a circuit is held by `dotnet`, the
+ * bridge's crossing calls.
  */
-export function dotNetBoardSource(dotnet: DotNetCaller, cancel: (call: number) => void, declared: BoardInput, wire: WireSource, stream?: StreamText): BoardSource {
+export function dotNetBoardSource(dotnet: DotNetCaller, cancel: (call: number) => void, declared: BoardInput, wire: WireSource): BoardSource {
     const { number } = wire;
     // One question, with its call's number, so an abort tells .NET which question no longer waits, and what it asks,
     // where it asks anything but its call.
@@ -45,7 +45,7 @@ export function dotNetBoardSource(dotnet: DotNetCaller, cancel: (call: number) =
         try {
             return await (json === undefined
                 ? dotnet.invokeMethodAsync(method, number, call)
-                : dotnet.invokeMethodAsync(method, number, call, ...crossText(json, stream)));
+                : dotnet.invokeMethodAsync(method, number, call, json));
         } finally {
             signal?.removeEventListener('abort', aborted);
         }

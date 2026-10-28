@@ -6,18 +6,18 @@
 // A Snapshot crosses once, as the Arrow stream ADR-0065 has it travel, as every product's Snapshots cross (the Shared
 // Script's HeldSnapshots): .NET numbers each Snapshot it sends, a later message names an input's data by that number
 // alone, and the browser says which numbers it no longer holds, so .NET lets them go. A source held where the data
-// lives (ADR-0343) stays in .NET and is asked through it; it crosses as a number the same way.
+// lives (ADR-0343) stays in .NET and is asked through it; it crosses as a number the same way. A call too large for a
+// message of Blazor Server's circuit, an output, a Diff or a question with a long narrowing, is held for .NET to take as
+// a stream in its turn, as every product's are (the Shared Script's crossingCalls, ADR-0005).
 
 import { BoardDiff, createBoard, readBoard, type BoardHandle, type BoardOptions, type BoardReading, type BoardSource } from '@ex-grid/board';
-import { HeldSnapshots, type DotNetStream } from '@ex-grid/blazor-shared';
+import { crossingCalls, HeldMessages, HeldSnapshots, type DotNetStream } from '@ex-grid/blazor-shared';
 import type { TemporalLike } from '@ex-grid/core';
 import type { BoardInput, Snapshot } from '@ex-grid/data';
-import { crossText, type StreamText } from './cross-text';
 import { dotNetBoardSource, type WireSource } from './dotnet-board-source';
 
 export type { DotNetStream } from '@ex-grid/blazor-shared';
 export type { WireSource } from './dotnet-board-source';
-export type { StreamText } from './cross-text';
 
 /** What the bridge asks of the .NET object a Blazor ExBoard hands it: Blazor's `DotNetObjectReference`. */
 export interface DotNetHandle {
@@ -37,6 +37,9 @@ export interface WireOptions {
 /** What `attach` is handed once. */
 export interface WireAttach {
     readonly options: WireOptions;
+    /** Whether .NET is across a circuit, Blazor Server's, whose hub limits the size of a message: only then is a call
+     * larger than `inlineBytes` held for .NET to take as a stream (ADR-0005, as amended 2026-10-28). */
+    readonly circuit: boolean;
     /** The Board's JSON, as .NET writes the Board it was handed. */
     readonly board: string;
     /** Each input's data, by the number of the Snapshot .NET sent for it. */
@@ -69,9 +72,15 @@ export interface WireUpdate {
 export interface BlazorBoard {
     /** Takes a {@link WireUpdate}, after every update before it. */
     update(json: string, streams: readonly DotNetStream[]): Promise<void>;
+    /** The arguments of the call .NET was handed `held` in place of, as the stream it reads them from. Taken once. */
+    take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the Board and empties its element. */
     dispose(): void;
 }
+
+/** The calls .NET's `Held` makes: each one that can carry what the Board or the Consumer made, an output, a Diff or a
+ * link's narrowing of thousands of values. */
+const heldBoardCalls: ReadonlySet<string> = new Set(['Heard', 'Fetch', 'Thin']);
 
 /** How the Board is drawn: ExBoard's Script Core, unless a test hands its own. */
 export type DrawBoard = (element: HTMLElement, options: BoardOptions) => BoardHandle;
@@ -82,13 +91,19 @@ export type DrawBoard = (element: HTMLElement, options: BoardOptions) => BoardHa
  * Snapshots are read, is the component's handle on the Board.
  */
 export async function attach(
-    root: HTMLElement, dotnet: DotNetHandle, json: string, streams: readonly DotNetStream[], draw: DrawBoard = createBoard, stream?: StreamText,
+    root: HTMLElement, dotnet: DotNetHandle, json: string, streams: readonly DotNetStream[], draw: DrawBoard = createBoard,
 ): Promise<BlazorBoard> {
     const init = parsed<WireAttach>(json);
     let stopped = false;
-    // Once the Board is stopped .NET has let go of the bridge, and nothing more crosses.
+    const messages = new HeldMessages(init.circuit);
+    const crossing = crossingCalls(dotnet, messages, heldBoardCalls);
+    // Once the Board is stopped .NET has let go of the bridge, and nothing more crosses: a question still on its way is
+    // the stopped Board's, which reads no answer, so it is left unanswered rather than failed.
+    const bridge: DotNetHandle = {
+        invokeMethodAsync: (method, ...args) => (stopped ? new Promise<never>(() => undefined) : crossing.invokeMethodAsync(method, ...args)),
+    };
     const send = (method: string, ...args: readonly unknown[]): void => {
-        if (!stopped) void dotnet.invokeMethodAsync(method, ...args);
+        void bridge.invokeMethodAsync(method, ...args);
     };
     const held = new HeldSnapshots();
     held.hold(await HeldSnapshots.read(init.sent, streams));
@@ -116,7 +131,7 @@ export async function attach(
         return Object.freeze(Object.fromEntries(entries.map(([input, source]) => {
             let made = asked.get(source.number);
             if (made === undefined) {
-                made = dotNetBoardSource(dotnet, cancel, declared(input), source, stream);
+                made = dotNetBoardSource(bridge, cancel, declared(input), source);
                 asked.set(source.number, made);
             }
             return [input, made];
@@ -126,8 +141,7 @@ export async function attach(
     let sources = sourcesOf(sourceNumbers);
     // Raised with the number of the Snapshot it was taken from, so .NET takes it from the data it sent, or of the source
     // that held its rows, so .NET reads it as the Board that numbered the source declares the input; and with the number
-    // of the Consumer's Diffs sent, so .NET knows whether one of theirs reached the screen after it. The text of each
-    // crosses inline, or as a stream when it is long.
+    // of the Consumer's Diffs sent, so .NET knows whether one of theirs reached the screen after it.
     const onOutput: NonNullable<BoardOptions['onOutput']> = output => {
         const snapshot = numbers[output.input];
         const source = sourceNumbers[output.input];
@@ -135,13 +149,11 @@ export async function attach(
             throw new Error(`Internal: an output was taken from input '${output.input}', which neither a Snapshot sent nor a source holds.`);
         }
         if (!options.hears.includes('output')) return;
-        const [text, streamed] = crossText(output.toJson(), stream);
-        send('Heard', 'output', { output: text, snapshot: snapshot === undefined ? null : snapshot, source: snapshot === undefined && source !== undefined ? source.number : null }, streamed);
+        send('Heard', 'output', { output: output.toJson(), snapshot: snapshot === undefined ? null : snapshot, source: snapshot === undefined && source !== undefined ? source.number : null });
     };
     const onDiff: NonNullable<BoardOptions['onDiff']> = raised => {
         if (!options.hears.includes('diff')) return;
-        const [text, streamed] = crossText(raised.toJson(), stream);
-        send('Heard', 'diff', { diff: text, diffsSent }, streamed);
+        send('Heard', 'diff', { diff: raised.toJson(), diffsSent });
     };
     const optionsOf = (): BoardOptions => boardOptions(options, board, data, sources, diff, onOutput, onDiff);
     const handle = draw(root, optionsOf());
@@ -181,10 +193,12 @@ export async function attach(
             queue = applied.then(ended, ended); // oxlint-disable-line ex-grid/no-catch -- the failure is answered to .NET by `applied`; the queue waits only for it to end
             return applied;
         },
+        take: (number: number) => messages.take(number),
         dispose: () => {
             stopped = true;
             handle.destroy();
             held.clear();
+            messages.clear();
             asked.clear();
         },
     });
