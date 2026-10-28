@@ -2292,8 +2292,9 @@ class SheetView {
     // one step on the undo stack, whose undo shows the Sheet it was added from (ADR-0331 §3).
     #addSheet(before: boolean): void {
         if (this.#refusedSheetOperation()) return;
-        // A name being edited is committed first, the keyboard going back to the grid as the field goes.
-        const onTabs = this.#tabs.holdsKeyboard;
+        // A name being edited is committed first, the keyboard going back to the grid as the field goes; the keyboard
+        // on a tab itself stays on the tab list.
+        const onTabs = this.#tabs.holdsKeyboard && this.#tabs.renaming === undefined && !this.#tabs.menuOpen;
         this.#leaveTabGestures('grid');
         const from = this.#source.sheet;
         this.#resizing = undefined;
@@ -2328,6 +2329,8 @@ class SheetView {
     // What ending a gesture on the tabs said — a name committed, or refused and kept — when the operation that ended
     // it says something of its own: both are said, the first not lost under the second.
     #saidOnLeaving: string | undefined;
+    // What committing or refusing the name last said, so leaving the edit keeps only what the edit itself said.
+    #renameSaid: string | undefined;
 
     // Any open edit refuses a Sheet operation, and the notice says why.
     #refusedSheetOperation(): boolean {
@@ -2349,9 +2352,9 @@ class SheetView {
     #leaveTabGestures(keyboard: 'nowhere' | 'grid'): void {
         this.#saidOnLeaving = undefined;
         if (this.#tabs.renaming !== undefined) {
+            this.#renameSaid = undefined;
             if (!this.#commitRename(keyboard)) this.#endRename(keyboard);
-            const said = this.#notice.textContent;
-            this.#saidOnLeaving = said === '' ? undefined : said;
+            this.#saidOnLeaving = this.#renameSaid;
         }
         if (this.#menuSheet !== undefined) this.#closeTabMenu(keyboard);
     }
@@ -2413,16 +2416,17 @@ class SheetView {
         }
         this.#history.record([step], sheet);
         this.#endRename(keyboard);
+        // A rename changes the Sheets: #changed draws the tabs again and raises the document, once.
         this.#changed([step.change]);
-        this.#raiseDocument();
-        this.#paintFrame();
-        this.#tell(this.#words.sheetRenamed(from, sheet.name));
+        this.#renameSaid = this.#words.sheetRenamed(from, sheet.name);
+        this.#tell(this.#renameSaid);
         return true;
     }
 
     #refuseRename(reason: string): void {
         this.#tabs.markRenameRefused(true);
-        this.#tell(this.#words.sheetNotRenamed(reason));
+        this.#renameSaid = this.#words.sheetNotRenamed(reason);
+        this.#tell(this.#renameSaid);
     }
 
     // Ends the name's edit, the keyboard going `keyboard` while the field still holds it, and the tab drawn again.
@@ -2579,8 +2583,12 @@ class SheetView {
         this.#history.record([step], sheet);
         const shown = show?.(step);
         const target = shown !== undefined && this.#workbook.sheets.includes(shown) ? shown : this.#workbook.shown;
-        if (target !== this.#source.sheet) this.#showSheet(target);
-        else this.#changed([step.change]);
+        if (target === this.#source.sheet) {
+            // A change to the Sheets: #changed draws the tabs again and raises the document, once.
+            this.#changed([step.change]);
+            return step;
+        }
+        this.#showSheet(target);
         this.#raiseDocument();
         this.#paintFrame();
         return step;
@@ -2601,24 +2609,28 @@ class SheetView {
             return;
         }
         const name = sheet.name;
+        // A move refused says why, after what ending a name's edit said, if it said anything.
         if (this.#sheetOperation(sheet, SheetEdit.moveSheet(to), () => sheet) === undefined) {
-            this.#sayLeftOrClear();
+            const refused = this.#notice.textContent;
+            this.#say(refused);
             return;
         }
         this.#say(this.#words.sheetMoved(name, to + 1, this.#workbook.sheets.length));
     }
 
     // The Sheets have changed — by a gesture, a Consumer's command, an undo or a redo: a name being edited on a tab
-    // whose Sheet is gone ends, and so does its menu, the keyboard going back to the grid; a menu still standing is
+    // whose Sheet is gone ends, and so does its menu, the keyboard they held going back to the grid; a menu still standing is
     // drawn again, so what it offers follows the Sheets as they stand.
     #forgetTabGesturesGone(): void {
         const sheets = this.#workbook.sheets;
         const renaming = this.#tabs.renaming;
-        if (renaming !== undefined && !sheets.includes(renaming)) this.#endRename('grid');
+        // The keyboard goes to the grid only from the field or the menu that held it: one elsewhere on the page stays.
+        const keyboard = this.#tabs.gestureHoldsKeyboard ? 'grid' : 'nowhere';
+        if (renaming !== undefined && !sheets.includes(renaming)) this.#endRename(keyboard);
         const menuSheet = this.#menuSheet;
         if (menuSheet === undefined) return;
         if (!sheets.includes(menuSheet)) {
-            this.#closeTabMenu('grid');
+            this.#closeTabMenu(keyboard);
             return;
         }
         if (this.#tabCommandRefusal(this.#menuActive, menuSheet) !== undefined) {

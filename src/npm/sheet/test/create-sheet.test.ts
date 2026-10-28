@@ -555,6 +555,22 @@ describe('what the Sheet Tabs do besides showing a Sheet (ADR-0331 §4, exsheet-
         expect([field(), tabNames(element), selectedTab(element), document.activeElement]).toEqual([null, ['Costs', 'Summary'], 'Summary', grid]);
     });
 
+    it('ADR-0331 §4: a name being edited stands while the Consumer moves the tabs round it, and its commit raises the document once', async () => {
+        let raised = 0;
+        const { element, sheet } = sheetOf({ document: claimWorkbook(), onWorkbookChanged: () => { raised += 1; } });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        mouse(tabOf(element, 'Claim'), 'dblclick');
+        const field = element.querySelector<HTMLInputElement>('input.ex-sheet-tab-name');
+        if (field === null) throw new Error('No name field.');
+        field.value = 'Costs';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        raised = 0;
+        sheet.do('Summary', SheetEdit.moveSheet(0));
+        expect([document.activeElement, field.value, raised]).toEqual([field, 'Costs', 1]);
+        key('Enter');
+        expect([tabNames(element), raised, noticeOf(element)]).toEqual([['Summary', 'Costs'], 2, "Sheet 'Claim' was renamed 'Costs'."]);
+    });
+
     it('ADR-0331 §4: a secondary press opens the tab\'s menu on its first command; ↓ passes what cannot be done; Delete deletes as one step, said, and the keyboard is back in the grid', async () => {
         const { element, sheet } = sheetOf({ document: claimWorkbook() });
         await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });

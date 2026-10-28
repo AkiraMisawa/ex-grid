@@ -541,6 +541,23 @@ export type FilterUi = 'condition' | 'valueList' | 'both';
 export function findMatches(displayedText: string, pattern: GridFindPattern): boolean;
 
 // @public
+export type FindOutcome = {
+    readonly kind: 'none' | 'found' | 'notFound' | 'orderChanged' | 'sourceChanged';
+} | {
+    readonly kind: 'foundInHeader';
+    readonly header: string;
+} | {
+    readonly kind: 'replaced';
+    readonly count: number;
+} | {
+    readonly kind: 'replaceRefused';
+    readonly cells: readonly FindPanelRefusedCell[];
+};
+
+// @public
+export function findOutcomeText(outcome: FindOutcome, words: (id: string) => string): string;
+
+// @public
 export const findPanelLabelIds: Readonly<{
     readonly title: 'find';
     readonly field: 'find-field';
@@ -563,6 +580,13 @@ export const findPanelLabelIds: Readonly<{
     readonly replaceRefusedMore: 'find-replace-refused-more';
     readonly notEditable: 'find-not-editable';
 }>;
+
+// @public
+export interface FindPanelRefusedCell {
+    readonly column: string;
+    readonly reason: string | undefined;
+    readonly rowNumber: number;
+}
 
 // @public
 export interface FindPanelView {
@@ -613,6 +637,7 @@ export function formulaBarHeight(density: GridDensity, rowHeight?: number): numb
 export interface FormulaBarOptions<Row> {
     readonly formulaBarBorrowedText?: (row: Row, column: GridColumn<Row>) => string | undefined;
     readonly nameBoxLabel?: (cell: CellPosition) => string;
+    readonly nameBoxSizeLabel?: (range: SelectionRange) => string | undefined;
     readonly onNameBoxEntered?: (typed: string) => void;
     readonly showFormulaBar?: boolean;
 }
@@ -984,6 +1009,7 @@ export interface GridHandle<Row> {
     inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
     keyName(event: KeyboardEvent): string;
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
+    placeMatch(cell: CellPosition, rowSequenceVersion: number): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     readView(): GridViewRead;
     refreshSummary(): void;

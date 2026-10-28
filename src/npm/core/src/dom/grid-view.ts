@@ -2185,7 +2185,10 @@ export class GridView<Row> {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
-        // Landed as a step's own answer lands: the find panel stays open with the keyboard where it is.
+        // Landed as a step's own answer lands: the find panel stays open with the keyboard where it is. A step still
+        // out is answered by it, so what that step's source says afterwards, a give-up included, changes nothing.
+        this.#findStepping?.abort();
+        this.#findStepping = undefined;
         this.#reconcileSelection();
         const found = cellPosition(cell.row, cell.column);
         this.#findCurrent = { cell: found, version: this.#sequence() };
@@ -8664,6 +8667,8 @@ export class GridView<Row> {
             this.#root.addEventListener('mouseup', this.#onDragEnd);
             this.#root.addEventListener('mouseleave', this.#onLeave);
         } else {
+            // The Name Box names the Focus again once the button is up, where a drag showed its size (ADR-0052).
+            if (this.#formulaBarDeclared.nameBoxSizeLabel !== undefined) this.#invalidate();
             this.#viewport.removeEventListener('mousemove', this.#onDrag);
             this.#header.removeEventListener('mousemove', this.#onDrag);
             this.#root.removeEventListener('mouseup', this.#onDragEnd);

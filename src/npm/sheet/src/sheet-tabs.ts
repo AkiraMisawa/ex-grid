@@ -174,9 +174,21 @@ export class SheetTabs {
             }
             return renaming ?? tab;
         });
-        // Moved only when the order differs: a tab moved loses the keyboard it holds.
+        // Moved only when the order differs: a tab moved loses the keyboard it holds. A name's field being edited is
+        // never moved itself, the others are moved round it: moved, it would lose the keyboard, and losing it ends the
+        // edit the user did not end.
         const children = [...this.#list.children];
-        if (children.length !== tabs.length || tabs.some((tab, i) => children[i] !== tab)) this.#list.replaceChildren(...tabs);
+        if (children.length === tabs.length && tabs.every((tab, i) => children[i] === tab)) return;
+        const field = this.#renaming?.element;
+        const at = field === undefined || field.parentNode !== this.#list ? -1 : tabs.indexOf(field);
+        if (field === undefined || at < 0) {
+            this.#list.replaceChildren(...tabs);
+            return;
+        }
+        const kept = new Set<Element>(tabs);
+        for (const child of children) if (child !== field && !kept.has(child)) child.remove();
+        field.before(...tabs.slice(0, at));
+        field.after(...tabs.slice(at + 1));
     }
 
     /** Takes away every face a Chrome drew, as the band or the Sheet goes. */
@@ -396,6 +408,12 @@ export class SheetTabs {
     /** Whether the keyboard is on the tab list. */
     get holdsKeyboard(): boolean {
         return this.#list.contains(this.#doc.activeElement);
+    }
+
+    /** Whether a name's field or a tab's menu holds the keyboard. */
+    get gestureHoldsKeyboard(): boolean {
+        const active = this.#doc.activeElement;
+        return active !== null && ((this.#renaming?.element.contains(active) ?? false) || (this.#menu?.element.contains(active) ?? false)); // oxlint-disable-line ex-grid/no-stand-in-default -- no field or menu holds nothing
     }
 
     #tabOf(sheet: Sheet): HTMLButtonElement {

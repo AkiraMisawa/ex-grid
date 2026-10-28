@@ -325,7 +325,11 @@ export class FormulaBar {
         const paint = this.#paint;
         if (paint === undefined) return;
         setAttr(name, 'aria-label', paint.nameBoxLabel);
-        if (this.#typed === undefined && name.value !== paint.nameBox) name.value = paint.nameBox;
+        if (this.#typed !== undefined || name.value === paint.nameBox) return;
+        name.value = paint.nameBox;
+        // Renamed while it holds the keyboard with nothing typed, as the commit a press into it makes renames it: the
+        // new name is selected, so what is typed replaces it, as it would have replaced the old (ticket 78, ADR-0051).
+        if (name.ownerDocument.activeElement === name) name.select();
     }
 
     #showText(text: EditorField): void {

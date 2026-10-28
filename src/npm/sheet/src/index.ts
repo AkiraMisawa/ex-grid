@@ -34,13 +34,14 @@ export type {
 export { sheetToolbarPictures } from './sheet-toolbar';
 export { sheetFormatChangeFor, sheetFormatKeyOf, sheetFormatKeysDeclared, type SheetFormatKey } from './sheet-format-keys';
 export { sheetCommandIds } from './sheet-context-commands';
+export { sheetFindLabelIds, type SheetFindWithin } from './sheet-find-panel';
 export { sheetStructureEditFor, sheetStructureKeyOf, sheetStructureKeysDeclared, type SheetStructureKey } from './sheet-structure-keys';
 export { sheetSummaryCells, sheetSummaryDeclined, type SheetSummaryCells } from './sheet-summary';
 export { sheetTabKeys, sheetTabKeysDeclared, sheetTabStepOf } from './sheet-tab-keys';
 export { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes } from './sheet-widening';
 export {
     sheetWordIdList, sheetWords, SheetWords,
-    type FormatCellsLabel, type FormatCellsRefusal, type PointingRefusalWordCase, type SheetContextCommand, type SheetLabel, type SheetToolbarBorder, type SheetToolbarCommand, type SheetWordId, type SheetWordsChoice,
+    type FormatCellsLabel, type FormatCellsRefusal, type PointingRefusalWordCase, type SheetContextCommand, type SheetFindWithinWord, type SheetLabel, type SheetTabCommand, type SheetToolbarBorder, type SheetToolbarCommand, type SheetWordId, type SheetWordsChoice,
 } from './sheet-words';
 export {
     GridPointedAt, PointingScope, type GridPointArrow, type GridPointDashes, type GridPointedPress, type GridPointedPressKind,
