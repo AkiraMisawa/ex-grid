@@ -14,6 +14,9 @@ import { SnapshotDecimal } from '@ex-grid/data';
 export function aggregatePivot<TRecord>(records: readonly TRecord[], fields: readonly PivotRecordField<TRecord>[], layout: PivotLayout): PivotCube;
 
 // @public
+export function aggregationTitle(aggregation: PivotAggregation): string;
+
+// @public
 export const blankItemKey: PivotItemKey;
 
 // @public

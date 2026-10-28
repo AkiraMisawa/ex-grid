@@ -25,6 +25,69 @@ ExSheet.ISheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Micros
 ExSheet.ISheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.Script.ExSheet
+ExSheet.Script.ExSheet.AllowCopyWithHeaders.get -> bool
+ExSheet.Script.ExSheet.AllowCopyWithHeaders.set -> void
+ExSheet.Script.ExSheet.CommandLabel.get -> System.Func<string!, string?>?
+ExSheet.Script.ExSheet.CommandLabel.set -> void
+ExSheet.Script.ExSheet.Culture.get -> System.Globalization.CultureInfo?
+ExSheet.Script.ExSheet.Culture.set -> void
+ExSheet.Script.ExSheet.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExSheet.Script.ExSheet.Document.get -> ExSheet.Engine.SheetDocument?
+ExSheet.Script.ExSheet.Document.set -> void
+ExSheet.Script.ExSheet.DocumentChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetDocument!>
+ExSheet.Script.ExSheet.DocumentChanged.set -> void
+ExSheet.Script.ExSheet.EditingChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
+ExSheet.Script.ExSheet.EditingChanged.set -> void
+ExSheet.Script.ExSheet.ExSheet() -> void
+ExSheet.Script.ExSheet.IsEditing.get -> bool
+ExSheet.Script.ExSheet.OnFormatKeyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetRefusal!>
+ExSheet.Script.ExSheet.OnFormatKeyRefused.set -> void
+ExSheet.Script.ExSheet.OpenFormatCellsAsync() -> System.Threading.Tasks.Task<bool>!
+ExSheet.Script.ExSheet.PinnedColumnCount.get -> int
+ExSheet.Script.ExSheet.PinnedColumnCount.set -> void
+ExSheet.Script.ExSheet.RedoAsync() -> System.Threading.Tasks.Task<bool>!
+ExSheet.Script.ExSheet.RowHeight.get -> double
+ExSheet.Script.ExSheet.RowHeight.set -> void
+ExSheet.Script.ExSheet.Seed.get -> ulong?
+ExSheet.Script.ExSheet.Seed.set -> void
+ExSheet.Script.ExSheet.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
+ExSheet.Script.ExSheet.SelectionChanged.set -> void
+ExSheet.Script.ExSheet.SheetsChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.SheetsChange!>
+ExSheet.Script.ExSheet.SheetsChanged.set -> void
+ExSheet.Script.ExSheet.ShowColumnHeadings.get -> bool
+ExSheet.Script.ExSheet.ShowColumnHeadings.set -> void
+ExSheet.Script.ExSheet.ShowFormulaBar.get -> bool
+ExSheet.Script.ExSheet.ShowFormulaBar.set -> void
+ExSheet.Script.ExSheet.ShowRowHeadings.get -> bool
+ExSheet.Script.ExSheet.ShowRowHeadings.set -> void
+ExSheet.Script.ExSheet.ShowSelectionSummary.get -> bool
+ExSheet.Script.ExSheet.ShowSelectionSummary.set -> void
+ExSheet.Script.ExSheet.ShowSheetTabs.get -> bool
+ExSheet.Script.ExSheet.ShowSheetTabs.set -> void
+ExSheet.Script.ExSheet.ShowToolbar.get -> bool
+ExSheet.Script.ExSheet.ShowToolbar.set -> void
+ExSheet.Script.ExSheet.ShowToolbarChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
+ExSheet.Script.ExSheet.ShowToolbarChanged.set -> void
+ExSheet.Script.ExSheet.SummaryFigures.get -> ExGrid.Summarizing.SummaryFigures
+ExSheet.Script.ExSheet.SummaryFigures.set -> void
+ExSheet.Script.ExSheet.SummaryFiguresChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SummaryFigures>
+ExSheet.Script.ExSheet.SummaryFiguresChanged.set -> void
+ExSheet.Script.ExSheet.TimeZone.get -> System.TimeZoneInfo?
+ExSheet.Script.ExSheet.TimeZone.set -> void
+ExSheet.Script.ExSheet.Today.get -> System.DateOnly?
+ExSheet.Script.ExSheet.Today.set -> void
+ExSheet.Script.ExSheet.ToDocumentAsync() -> System.Threading.Tasks.Task<ExSheet.Engine.SheetDocument!>!
+ExSheet.Script.ExSheet.ToWorkbookDocumentAsync() -> System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!
+ExSheet.Script.ExSheet.UndoAsync() -> System.Threading.Tasks.Task<bool>!
+ExSheet.Script.ExSheet.ViewportHeight.get -> ExGrid.ViewportSize
+ExSheet.Script.ExSheet.ViewportHeight.set -> void
+ExSheet.Script.ExSheet.ViewportWidth.get -> ExGrid.ViewportSize
+ExSheet.Script.ExSheet.ViewportWidth.set -> void
+ExSheet.Script.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
+ExSheet.Script.ExSheet.Workbook.set -> void
+ExSheet.Script.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
+ExSheet.Script.ExSheet.WorkbookChanged.set -> void
 ExSheet.SheetFindContext
 ExSheet.SheetFindContext.<Clone>$() -> ExSheet.SheetFindContext!
 ExSheet.SheetFindContext.Deconstruct(out ExGrid.Chrome.FindContext! Find, out ExSheet.SheetFindWithin Within, out System.Func<ExSheet.SheetFindWithin, System.Threading.Tasks.Task!>! WithinChanged, out System.Func<string!>! OutcomeText, out System.Func<ExGrid.Finding.FindOutcome>! Outcome, out System.Func<string!, string!>! Words) -> void

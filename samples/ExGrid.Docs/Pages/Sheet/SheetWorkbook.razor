@@ -50,7 +50,8 @@
             right-click a tab for Delete, Move Left, Move Right and Copy, or drag a tab onto another, and watch
             Summary's Formulas follow. Change a quantity on Claim, select Summary and press <kbd>Ctrl</kbd> +
             <kbd>Z</kbd>: Claim is shown again with that cell selected. Under React the tabs show, select and add
-            Sheets; pressing another tab while a Formula is typed, and a tab's rename, menu and drag, are not there yet.
+            Sheets, and a tab's rename, menu and drag work as here; pressing another tab while a Formula is typed is
+            not there yet.
         </DocsExample>
         <p>
             Under React a Chrome draws each tab's face through <code>chrome=&#123;&#123; sheetTab, sheetTabAdd &#125;&#125;</code>:
@@ -314,6 +315,13 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
                 a label around it — so a step clicked after it searches where and how it says. Its words are <code>SheetFindLabelIds</code>, translated through
                 <code>CommandLabel</code> or the Chrome's own. A Chrome that draws no Sheet panel gets the built-in one; the
                 grid's own <code>IGridChrome.FindPanel</code> is not asked on a Sheet.
+            </li>
+            <li>
+                <b>Under React</b> <code>ExSheet</code> draws the same panel, Within included, with the same classes, and
+                its words are <code>sheetFindLabelIds</code>, answered through <code>commandLabel</code>. A grid
+                <code>findPanel</code> slot handed in <code>chrome</code> draws the grid's panel in its place, without
+                Within, so it searches the Sheet shown: that is the panel <code>MantineExSheet</code> and
+                <code>MuiExSheet</code> draw today.
             </li>
         </ul>
         <DocsExample Builtin="typeof(FindReplace)" Mud="typeof(FindReplaceMud)" CodeOpen="true"

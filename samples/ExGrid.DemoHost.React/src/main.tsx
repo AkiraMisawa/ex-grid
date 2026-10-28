@@ -35,7 +35,11 @@ import { PivotLive } from './pages/pivot-live';
 import { PivotMantineDemo } from './pages/pivot-mantine';
 import { PivotMuiDemo } from './pages/pivot-mui';
 import { PivotRisk } from './pages/pivot-risk';
+import { PointingDemo } from './pages/pointing';
 import { SheetDemo } from './pages/sheet';
+import { SheetsDemo } from './pages/sheets';
+import { WorkbookDemo } from './pages/workbook';
+import { XlsxDemo } from './pages/xlsx';
 import { Sizing } from './pages/sizing';
 import { Stretch } from './pages/stretch';
 import { Stripes } from './pages/stripes';
@@ -72,6 +76,10 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     'pivot-mantine': PivotMantineDemo,
     'pivot-mui': PivotMuiDemo,
     sheet: SheetDemo,
+    sheets: SheetsDemo,
+    workbook: WorkbookDemo,
+    pointing: PointingDemo,
+    xlsx: XlsxDemo,
     marks: Marks,
     stripes: Stripes,
     tones: Tones,

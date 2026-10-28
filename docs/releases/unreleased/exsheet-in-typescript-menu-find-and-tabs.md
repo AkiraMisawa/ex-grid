@@ -1,0 +1,5 @@
+Product: ExSheet
+Kind: Added
+ADR: 0370, 0050, 0332, 0331, 0071, 0122, 0052, 0051
+
+`@ex-grid/sheet` now does what the Razor ExSheet does in four more places. Its Context Menu inserts and deletes the rows or columns the Selection spans, in the Sheet's words. Its find panel has Within, the Sheet shown or the Workbook: a step goes on from Sheet to Sheet in tab order and shows the Sheet it lands on, and Replace All over the Workbook is one step that one Undo takes back. A tab is renamed by a double-click, offers Rename, Delete, Move Left, Move Right and Copy on a right-click or Shift+F10, and is moved by a drag onto another tab. The Name Box names the pointed cell while a Formula points, is empty while the Reference came from another grid of the Pointing Scope, and shows `4R x 3C` while a drag selects. Excel's formatting keys are taken as the grid's declared keys, so they keep their place among the keys typed with them, and where the browser names no time zone and none is given, `TODAY()` and `NOW()` wait, as the Razor ExSheet's do, never answered in a zone guessed.

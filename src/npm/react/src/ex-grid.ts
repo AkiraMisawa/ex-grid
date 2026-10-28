@@ -66,6 +66,7 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
     });
     useImperativeHandle(ref, () => ({
         placeSelection: (range, focus, rowSequenceVersion) => mounted(grid.current).placeSelection(range, focus, rowSequenceVersion),
+        placeMatch: (cell, rowSequenceVersion) => mounted(grid.current).placeMatch(cell, rowSequenceVersion),
         readView: () => mounted(grid.current).readView(),
         writePointedText: (text) => mounted(grid.current).writePointedText(text),
         takeBackPointedText: () => mounted(grid.current).takeBackPointedText(),

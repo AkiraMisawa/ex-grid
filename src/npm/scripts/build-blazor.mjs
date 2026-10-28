@@ -1,7 +1,8 @@
 // Builds the script a Blazor adapter imports (ADR-0350 sections 7 and 9, ADR-0370 section 1, ADR-0411): the
 // product's bridge and Script Core, read from their sources and bundled into one minified ES module with its source
 // map, which the product's NuGet package ships: ExGrid's `ex-grid-core`, from src/npm/blazor, ExPivot's `ex-pivot`,
-// from src/npm/pivot-blazor, and ExChart's `ex-chart-core`, from src/npm/chart-blazor. Nothing here is published to npm.
+// from src/npm/pivot-blazor, ExSheet's `ex-sheet`, from src/npm/sheet-blazor, and ExChart's `ex-chart-core`, from
+// src/npm/chart-blazor. Nothing here is published to npm.
 //
 // `@ex-grid/core` and `@ex-grid/data` are bundled once, into the Shared Script ExGrid ships beside its bridge
 // (`ex-grid-script.min.js`, from blazor/src/shared.ts), and every product's module imports them from it by one
@@ -55,6 +56,8 @@ const alias = {
     '@ex-grid/pivot': path.join(workspace, 'pivot/src/index.ts'),
     '@ex-grid/chart': path.join(workspace, 'chart/src/index.ts'),
     '@ex-grid/pivot-engine': path.join(workspace, 'pivot-engine/src/index.ts'),
+    '@ex-grid/sheet': path.join(workspace, 'sheet/src/index.ts'),
+    '@ex-grid/sheet-engine': path.join(workspace, 'sheet-engine/src/index.ts'),
 };
 
 const hashOf = (text) => createHash('sha256').update(text.replace(/\r\n/g, '\n'), 'utf8').digest('hex');

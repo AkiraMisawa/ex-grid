@@ -80,8 +80,11 @@ export const refusedCellsNamed = 5;
 /** One cell a Replace could not write, as the panel names it: its row's number from 1, its column's header,
  * and why in the Consumer's words, or `undefined` where the column is not Editable. */
 export interface FindPanelRefusedCell {
+    /** The cell's row, counted from 1 in the order shown. */
     readonly rowNumber: number;
+    /** The header of the cell's column. */
     readonly column: string;
+    /** Why the cell was not written, in the Consumer's words, or `undefined` where its column is not Editable. */
     readonly reason: string | undefined;
 }
 
@@ -98,7 +101,7 @@ export type FindOutcome =
 
 /**
  * The whole sentence the panel shows for `outcome`, in `words`, or the empty string for an outcome that says
- * nothing. A refused Replace names its first {@link refusedCellsNamed} cells and counts the rest (ADR-0332
+ * nothing. A refused Replace names its first cells, as many as the panel names, and counts the rest (ADR-0332
  * §2). A number is written as the invariant culture writes it, as the C# core's built-in panel does under
  * the hosts' culture.
  */

@@ -14,6 +14,12 @@ export interface GridHandle<Row> {
      * `onRefused` (kind `placement`) or held by an open edit's Reject. A range outside the grid throws a
      * RangeError. */
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
+    /** Places the Selection on `cell` alone and takes it as the current match of a Find step (ADR-0332 §5), as the
+     * step's own answer would land, the find panel open: for a Consumer that answers a step by showing other rows,
+     * places the match under the version it shows them with, and gives the step up. It wears `ex-match-mark-current`
+     * while the panel holds a search, and the next step goes on from it. False under a version the grid has moved
+     * past; throws with an edit open. */
+    placeMatch(cell: CellPosition, rowSequenceVersion: number): boolean;
     /** The view as the grid holds it now (ADR-0331): the Selection, with the Row Sequence Version it is written in,
      * and the scroll offsets the grid last knew. A Consumer that shows several sets of rows in one grid keeps each
      * set's view to hand back with `showViewWith`. */
@@ -133,6 +139,7 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
     return Object.freeze({
         update: (next: GridOptions<Row>) => { view.update(next); },
         placeSelection: (range: SelectionRange, focus: CellPosition, rowSequenceVersion: number) => view.placeSelection(range, focus, rowSequenceVersion),
+        placeMatch: (cell: CellPosition, rowSequenceVersion: number) => view.placeMatch(cell, rowSequenceVersion),
         readView: () => view.readView(),
         writePointedText: (text: string) => view.writePointedText(text),
         takeBackPointedText: () => view.takeBackPointedText(),

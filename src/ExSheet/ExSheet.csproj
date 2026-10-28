@@ -24,6 +24,42 @@
     <InternalsVisibleTo Include="ExGrid.Docs.Generator.Tests" />
   </ItemGroup>
 
+  <!-- ExSheet's Script Core's module for ExSheet.Script.ExSheet (ADR-0370 section 1): the bridge, @ex-grid/sheet,
+       its engine and the grid it draws through, bundled from their sources in src/npm as this project builds, never
+       committed, as ExGrid's and ExPivot's are (ADR-0350 section 7). The module goes to wwwroot, where the package
+       serves it; its version and stamp (ADR-0123) are compiled in as ScriptCoreAsset. src/npm's dependencies are
+       ExGrid's build's to install: the bundle is built once the project references are, so the two never run npm in
+       the workspace at once. -->
+  <PropertyGroup>
+    <ScriptCoreWorkspace>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'npm'))</ScriptCoreWorkspace>
+    <ScriptCoreModule>$(MSBuildThisFileDirectory)wwwroot/ex-sheet.min.js</ScriptCoreModule>
+    <ScriptCoreConstants>$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ScriptCoreAsset.g.cs</ScriptCoreConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)sheet-engine/src/**/*.ts;$(ScriptCoreWorkspace)sheet/src/**/*.ts;$(ScriptCoreWorkspace)sheet-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
+    <Content Remove="wwwroot/ex-sheet.min.js;wwwroot/ex-sheet.min.js.map" />
+  </ItemGroup>
+
+  <Target Name="BuildScriptCore" DependsOnTargets="ResolveProjectReferences"
+          Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
+    <Exec Command="node ../scripts/build-blazor.mjs --name ex-sheet --namespace ExSheet.Script --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-sheet.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+          WorkingDirectory="$(ScriptCoreWorkspace)sheet-blazor" />
+  </Target>
+
+  <!-- Apart from the build, which is skipped while its outputs are newer than every source: the items are
+       added on every build, so the static web assets and the compile always hold the module. -->
+  <Target Name="IncludeScriptCore" DependsOnTargets="BuildScriptCore"
+          BeforeTargets="BeforeBuild;CoreCompile;ResolveProjectStaticWebAssets;ResolveStaticWebAssetsConfiguration">
+    <ItemGroup>
+      <Content Remove="wwwroot/ex-sheet.min.js;wwwroot/ex-sheet.min.js.map" />
+      <Content Include="wwwroot/ex-sheet.min.js;wwwroot/ex-sheet.min.js.map" />
+      <Compile Remove="$(ScriptCoreConstants)" />
+      <Compile Include="$(ScriptCoreConstants)" />
+    </ItemGroup>
+  </Target>
+
   <!-- ExSheet depends on exactly the core and engine versions it was built with, as the
        Wrapper does (ADR-0042): the declarations it makes are the core's of that version. -->
   <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">

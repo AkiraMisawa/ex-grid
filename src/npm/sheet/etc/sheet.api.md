@@ -313,11 +313,30 @@ export interface SheetChrome extends GridChrome<unknown> {
 }
 
 // @public
+export const sheetCommandIds: Readonly<Record<SheetContextCommand, string>>;
+
+// @public
+export type SheetContextCommand = 'insertRows' | 'deleteRows' | 'insertColumns' | 'deleteColumns' | 'formatCells';
+
+// @public
 export class SheetEdges {
     find(from: CellAddress, direction: GridDirection): CellAddress;
     static of(sheet: Sheet): SheetEdges;
     update(sheet: Sheet, change: SheetChange): void;
 }
+
+// @public
+export const sheetFindLabelIds: Readonly<{
+    readonly within: 'exsheet.find-within';
+    readonly withinSheet: 'exsheet.find-within-sheet';
+    readonly withinWorkbook: 'exsheet.find-within-workbook';
+}>;
+
+// @public
+export type SheetFindWithin = 'sheet' | 'workbook';
+
+// @public
+export type SheetFindWithinWord = 'within' | 'withinSheet' | 'withinWorkbook';
 
 // @public
 export type SheetFormatCellsSlot = (slot: HTMLElement, context: SheetFormatCellsSlotContext) => () => void;
@@ -454,6 +473,9 @@ export function sheetSummaryDeclined(refused: {
 export type SheetTabAddSlot = (slot: HTMLElement) => () => void;
 
 // @public
+export type SheetTabCommand = 'rename' | 'delete' | 'moveLeft' | 'moveRight' | 'copy';
+
+// @public
 export const sheetTabKeys: Readonly<{
     readonly previous: 'Control+PageUp';
     readonly next: 'Control+PageDown';
@@ -551,7 +573,7 @@ export interface SheetToolbarRowOptions {
 }
 
 // @public
-export type SheetWordId = 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened' | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded' | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing' | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete' | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete' | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'toolbar.more' | 'toolbar.automatic' | 'toolbar.noFill' | `toolbar.border.${SheetToolbarBorder}` | 'toolbar.moreNumberFormats' | 'sheetTabsName' | 'editSheetGone' | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded' | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied' | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName' | 'onlySheet' | 'sheetGone' | 'sheetNotChanged' | 'firstSheet' | 'lastSheet' | 'commaStyleUnread' | 'editDiscardedByNewDocument' | `editDiscarded.${EditDiscardReason}` | 'pasteReadsDifferently' | 'pasteRefusedFormula' | 'summaryRefused' | 'pasteTooNarrowToShow' | `pasteRefused.${PasteRefusalReason}` | `commitRefused.${CommitRefusalReason}` | `placementRefused.${PlacementRefusalReason}` | 'overwritten' | `copyRefused.${CopyRefusalReason}` | `pointingRefused.${PointingRefusalWordCase}` | 'pointingExtendedByKey' | 'nothingToUndo' | 'nothingToRedo' | 'command.insertRows' | 'command.deleteRows' | 'command.insertColumns' | 'command.deleteColumns' | 'command.formatCells' | 'formatCellsTitle' | `formatCells.tab.${FormatCellsTab}` | `formatCells.category.${NumberFormatCategory}` | `formatCells.disabled.${DisabledNumberFormatCategory}` | 'formatCells.noNumberFormatCode' | 'formatCells.numberFormatNotRead' | 'formatCells.notAColour' | `formatCells.alignment.${HorizontalAlignment}` | `formatCells.fontStyle.${FontStyle}` | `formatCells.edge.${BorderEdge}` | `formatCells.preset.${BorderPreset}` | `formatCells.lineStyle.${BorderLineStyle}` | `formatCells.colour.${ThemeColourName | StandardColourName}` | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep' | `formatCells.label.${FormatCellsLabel}` | 'formatCells.symbol';
+export type SheetWordId = 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened' | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded' | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing' | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete' | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete' | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'toolbar.more' | 'toolbar.automatic' | 'toolbar.noFill' | `toolbar.border.${SheetToolbarBorder}` | 'toolbar.moreNumberFormats' | 'sheetTabsName' | 'editSheetGone' | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded' | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied' | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName' | `tabCommand.${SheetTabCommand}` | 'onlySheet' | 'sheetGone' | 'sheetNotChanged' | 'firstSheet' | 'lastSheet' | 'commaStyleUnread' | 'editDiscardedByNewDocument' | `editDiscarded.${EditDiscardReason}` | 'pasteReadsDifferently' | 'pasteRefusedFormula' | 'summaryRefused' | 'pasteTooNarrowToShow' | `pasteRefused.${PasteRefusalReason}` | `commitRefused.${CommitRefusalReason}` | `placementRefused.${PlacementRefusalReason}` | 'overwritten' | `copyRefused.${CopyRefusalReason}` | `pointingRefused.${PointingRefusalWordCase}` | 'pointingExtendedByKey' | 'nothingToUndo' | 'nothingToRedo' | `command.${SheetContextCommand}` | `find.${SheetFindWithinWord}` | 'formatCellsTitle' | `formatCells.tab.${FormatCellsTab}` | `formatCells.category.${NumberFormatCategory}` | `formatCells.disabled.${DisabledNumberFormatCategory}` | 'formatCells.noNumberFormatCode' | 'formatCells.numberFormatNotRead' | 'formatCells.notAColour' | `formatCells.alignment.${HorizontalAlignment}` | `formatCells.fontStyle.${FontStyle}` | `formatCells.edge.${BorderEdge}` | `formatCells.preset.${BorderPreset}` | `formatCells.lineStyle.${BorderLineStyle}` | `formatCells.colour.${ThemeColourName | StandardColourName}` | 'formatCells.colourDarker' | 'formatCells.colourLighter' | 'formatCells.colourStep' | `formatCells.label.${FormatCellsLabel}` | 'formatCells.symbol';
 
 // @public
 export function sheetWordIdList(): readonly SheetWordId[];
@@ -563,6 +585,7 @@ export class SheetWords {
     alignmentName(alignment: HorizontalAlignment): string;
     categoryDisabled(category: DisabledNumberFormatCategory): string;
     categoryName(category: NumberFormatCategory): string;
+    command(command: SheetContextCommand): string;
     get commaStyleUnread(): string;
     commitRefused(address: string, reason: CommitRefusalReason): string;
     copyRefused(reason: CopyRefusalReason): string;
@@ -574,6 +597,7 @@ export class SheetWords {
     get editIsOpen(): string;
     get editSheetGone(): string;
     static readonly english: SheetWords;
+    findWithin(word: SheetFindWithinWord): string;
     get firstSheet(): string;
     fontStyleName(style: FontStyle): string;
     formatCellsLabel(label: FormatCellsLabel): string;
@@ -624,6 +648,7 @@ export class SheetWords {
     summaryRefused(refused: CellAddress, shown: string): string;
     static readonly summaryRefusedEnglish: string;
     swatchName(swatch: PaletteSwatch): string;
+    tabCommand(command: SheetTabCommand): string;
     tabName(tab: FormatCellsTab): string;
     get toolbarAutomatic(): string;
     toolbarBorder(preset: SheetToolbarBorder): string;

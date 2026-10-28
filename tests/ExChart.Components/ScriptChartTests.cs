@@ -246,4 +246,137 @@ public class ScriptChartTests : BunitContext
         var (json, _) = ChartWire.Definition(new ChartDefinition(ChartAxis.Dates(), [candles]));
         Assert.Equal(JsonValueKind.Null, Parsed(json).GetProperty("series")[0].GetProperty("texts").ValueKind);
     }
+
+    // ---- Read through Chart Sources (ADR-0322, ADR-0344) ----
+
+    private const string TicksSpec = """
+        { "version": 1, "axis": { "values": "numbers", "title": "Second" },
+          "series": [ { "id": "p", "name": "Price", "kind": "level", "data": "ticks", "x": "t", "y": "price", "fromZero": false } ] }
+        """;
+
+    // Ten thousand ticks, one spike at 7,000 that every thinning keeps.
+    private static ChartData Ticks() => ChartData.Of(
+        ("t", Enumerable.Range(0, 10_000).Select(i => (object?)(double)i).ToArray()),
+        ("price", Enumerable.Range(0, 10_000).Select(i => (object?)(i == 7_000 ? 500m : 100m + i % 7)).ToArray()));
+
+    /// <summary>A source whose answers the test releases, each thinned as the reference thins.</summary>
+    private sealed class Gated(ChartData data) : IChartSource
+    {
+        public List<(ChartSourceQuery Query, TaskCompletionSource<ChartSourceAnswer> Answer)> Asks { get; } = [];
+
+        public ValueTask<ChartSourceAnswer> ThinAsync(ChartSourceQuery query, CancellationToken cancellationToken = default)
+        {
+            var answer = new TaskCompletionSource<ChartSourceAnswer>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Asks.Add((query, answer));
+            return new ValueTask<ChartSourceAnswer>(answer.Task);
+        }
+
+        public void Answer(int ask, long version = 1) => Asks[ask].Answer.SetResult(ChartSource.Thin(data, Asks[ask].Query, version));
+    }
+
+    private IRenderedComponent<ScriptChart> FromSpec(Gated source) => Render<ScriptChart>(ps => ps
+        .Add(c => c.Spec, TicksSpec)
+        .Add(c => c.Sources, h => h == "ticks" ? source : null)
+        .Add(c => c.Width, 600));
+
+    // The definitions that crossed after the attach, with their generations.
+    private List<JsonElement> DefinitionsSent() => _chart.Invocations["update"]
+        .Select(i => Parsed(i.Arguments[0])).Where(u => u.TryGetProperty("definition", out _)).ToList();
+
+    [Fact] // ADR-0344 / ADR-0370 s1: a spec is read through its source in .NET, at the chart's pixels; nothing is drawn and the root is Busy until the answer, which crosses as a definition with what each pixel held
+    public void A_spec_is_read_through_its_source_and_crosses_as_a_definition()
+    {
+        var source = new Gated(Ticks());
+        var cut = FromSpec(source);
+        var (query, _) = Assert.Single(source.Asks);
+        Assert.Equal(1200, query.Pixels);
+        Assert.Equal("true", cut.Find("div").GetAttribute("aria-busy"));
+        Assert.Equal(0, Attached(_module, "attachChart").GetProperty("definition").GetProperty("series").GetArrayLength());
+
+        source.Answer(0);
+        cut.WaitForAssertion(() => Assert.Single(DefinitionsSent()));
+        var series = DefinitionsSent()[0].GetProperty("definition").GetProperty("series")[0];
+        Assert.Equal("p", series.GetProperty("id").GetString());
+        Assert.NotEqual(0, series.GetProperty("thinned").GetArrayLength()); // the chart offers no CSV of points it does not hold
+        Assert.Null(cut.Find("div").GetAttribute("aria-busy"));
+    }
+
+    [Fact] // ADR-0344, spine rule 6: a range narrowed by the parameter or by the user is asked again; what crossed stays until the newest answer, and an overtaken one is dropped
+    public async Task A_narrowed_range_is_asked_again_and_an_overtaken_answer_is_dropped()
+    {
+        var source = new Gated(Ticks());
+        var cut = FromSpec(source);
+        source.Answer(0);
+        await cut.WaitForStateAsync(() => DefinitionsSent().Count == 1);
+        // Heard although the Consumer does not, so the user's range is asked for.
+        Assert.Contains("rangeChanged", Attached(_module, "attachChart").GetProperty("options").GetProperty("hears").EnumerateArray().Select(e => e.GetString()));
+
+        var updates = _chart.Invocations["update"].Count;
+        cut.Render(ps => ps.Add(c => c.Range, new ChartRange(1000, 2000)));
+        // The range crosses with the points read over it, never before them.
+        Assert.Equal(updates, _chart.Invocations["update"].Count);
+        // Handled without waiting on the source: the ask it makes is not awaited, so no later event waits on it.
+        await Bridge("attachChart").Value.Heard("rangeChanged", Parsed("""{"from":3000,"to":4000}"""));
+        Assert.Equal(3, source.Asks.Count);
+        Assert.Equal((3000.0, 4000.0), (source.Asks[2].Query.From!.Value, source.Asks[2].Query.To!.Value));
+        Assert.Single(DefinitionsSent());
+
+        source.Answer(2);
+        await cut.WaitForStateAsync(() => DefinitionsSent().Count == 2);
+        source.Answer(1);
+        Assert.Equal(2, DefinitionsSent().Count);
+        Assert.Null(cut.Find("div").GetAttribute("aria-busy"));
+    }
+
+    [Fact] // ADR-0322, spine rule 1: an answer from data older than the chart drew is said in its place, and the drawing is hidden under it
+    public void An_answer_from_older_data_is_said_in_the_charts_place()
+    {
+        var source = new Gated(Ticks());
+        var cut = FromSpec(source);
+        source.Answer(0, version: 5);
+        cut.WaitForAssertion(() => Assert.Single(DefinitionsSent()));
+
+        cut.Render(ps => ps.Add(c => c.Range, new ChartRange(6000, 8000)));
+        source.Answer(1, version: 4);
+        cut.WaitForAssertion(() => Assert.Contains("version 4 of 'ticks', older than version 5", cut.Find(".ex-chart-source-refusal").TextContent, StringComparison.Ordinal));
+        // The drawing beside it is hidden.
+        Assert.Single(cut.FindAll("div[hidden]"));
+        Assert.Single(DefinitionsSent());
+    }
+
+    [Fact] // ADR-0344, spine rule 1: a spec refused as it is read is said in the chart's place, in the chart's box, from the first render
+    public void A_spec_refused_at_once_is_said_in_the_charts_place()
+    {
+        var cut = Render<ScriptChart>(ps => ps
+            .Add(c => c.Spec, TicksSpec.Replace("\"ticks\"", "\"quotes\"", StringComparison.Ordinal))
+            .Add(c => c.Sources, _ => null)
+            .Add(c => c.Width, 600)
+            .Add(c => c.Height, 300));
+        var refusal = cut.Find(".ex-chart-source-refusal");
+        Assert.StartsWith("series[0].data \"quotes\" is not known", refusal.TextContent, StringComparison.Ordinal);
+        Assert.Equal("width:600px;min-height:300px", refusal.ParentElement!.GetAttribute("style"));
+    }
+
+    [Fact] // ADR-0254, ADR-0344: a chart made wider asks its source again for its new pixels
+    public void A_wider_chart_asks_its_source_again()
+    {
+        var source = new Gated(Ticks());
+        var cut = FromSpec(source);
+        source.Answer(0);
+        cut.Render(ps => ps.Add(c => c.Width, 900));
+        Assert.Equal(1800, source.Asks[^1].Query.Pixels);
+    }
+
+    [Fact] // ADR-0344, spine rule 6: a Definition handed while an ask is out is drawn, and the ask's failure is dropped
+    public void An_ask_left_out_by_a_definition_is_dropped()
+    {
+        var source = new Gated(Ticks());
+        var cut = FromSpec(source);
+        cut.Render(ps => ps.Add(c => c.Spec, (string?)null).Add(c => c.Sources, null).Add(c => c.Definition, Bonds(P(0, 1))));
+        Assert.Null(cut.Find("div").GetAttribute("aria-busy"));
+
+        source.Asks[0].Answer.SetException(new TaskCanceledException("timed out"));
+        Assert.Empty(cut.FindAll(".ex-chart-source-refusal"));
+        Assert.Equal("bonds", DefinitionsSent()[^1].GetProperty("definition").GetProperty("series")[0].GetProperty("id").GetString());
+    }
 }
