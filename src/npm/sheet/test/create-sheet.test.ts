@@ -2120,3 +2120,31 @@ describe('createSheet: the options the Razor ExSheet has beside its grid (ADR-03
         await vi.waitFor(() => { expect(contextLabels(element).slice(0, 3)).toEqual(['コピー', 'Copy with headers', 'Insert rows above']); });
     });
 });
+
+describe('a Framework Adapter\'s hold on the Sheet\'s grid (ADR-0410 section 5)', () => {
+    it('ADR-0240 s6: work run in the Input Order holds the keys typed after it until it settles, and a destroyed Sheet refuses all three', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        const work: { finish?: () => void } = {};
+        const ran = sheet.inOrder(() => new Promise<void>(resolve => { work.finish = resolve; }));
+        key('Delete');
+        await Promise.resolve();
+        // The Delete waits behind the work, in its order.
+        expect(textAt(element, 0, 0)).toBe('1');
+        if (work.finish === undefined) throw new Error('The work never ran.');
+        work.finish();
+        await ran;
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe(''); });
+
+        sheet.focus();
+        expect(element.contains(document.activeElement)).toBe(true);
+        const release = sheet.holdSettled();
+        release();
+
+        sheet.destroy();
+        expect(() => { sheet.focus(); }).toThrow('This Sheet was destroyed.');
+        expect(() => sheet.holdSettled()).toThrow('This Sheet was destroyed.');
+        expect(() => sheet.inOrder(() => undefined)).toThrow('This Sheet was destroyed.');
+    });
+});

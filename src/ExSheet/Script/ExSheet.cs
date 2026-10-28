@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using ExGrid;
 using ExGrid.Chrome;
+using ExGrid.Script;
 using ExGrid.Selection;
 using ExGrid.Summarizing;
 using ExSheet.Engine;
@@ -26,7 +27,8 @@ namespace ExSheet.Script;
 /// <para>Its parameters are the Razor component's (<see cref="Components.ExSheet"/>), under the same names and with the
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
-/// <para>Not carried yet, and so not offered: a <c>Chrome</c>, <c>ToolbarContent</c>,
+/// <para>Not carried yet, and so not offered: the Sheet's own slots of an <see cref="ISheetChrome"/> (its Toolbar Items,
+/// Format Cells, the Sheet Tabs' faces and its find panel), <c>ToolbarContent</c>,
 /// <c>OnLinkedColumnColoursChanged</c> (ADR-0430 section 3) and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
 /// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>
 /// </remarks>
@@ -161,6 +163,15 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// </summary>
     [Parameter] public EventCallback<PointingRefusal> OnPointingRefused { get; set; }
 
+    /// <summary>
+    /// The Chrome that fills the slots of the Sheet's grid with Razor (ADR-0410): each slot its
+    /// <see cref="IGridChrome.ScriptSlots"/> names, such as the Context Menu, is drawn by its view overload, rendered
+    /// beside the Sheet's root and moved into the slot by the script, which wires its controls. The find panel stays the
+    /// Sheet's own, with Within (ADR-0332 section 5), as it does under the Razor component. Null — the default — leaves
+    /// every part the Script Core's own.
+    /// </summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
     /// <summary>A fixed Sheet Seed (ADR-0180): what <c>RAND()</c> and <c>RANDBETWEEN</c> draw from. Unless given, the
     /// Sheet chooses one whenever it opens a document.</summary>
     [Parameter] public ulong? Seed { get; set; }
@@ -223,10 +234,21 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private bool _refused;
     private bool _disposed;
     private bool _renderOwed = true;
+    // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1), and the Chrome they
+    // were last drawn by.
+    private readonly RazorSlotHolders _slots = new(RazorSlot.ViewOf);
+    private IGridChrome? _renderedChrome;
 
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        if (!ReferenceEquals(Chrome, _renderedChrome))
+        {
+            // Another Chrome draws the slots standing, and the script wires what it drew.
+            _renderedChrome = Chrome;
+            _slots.Redrawn();
+            _renderOwed |= _slots.Any;
+        }
         if (!ReferenceEquals(PointingScope, _claimedScope))
         {
             // Refused by name if it holds the Razor components, before the browser is told of it (ADR-0430).
@@ -308,13 +330,17 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
+        _slots.Render(builder, 6, (name, view) => RazorSlot.Fragment(Chrome, name, view));
     }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
+        {
+            await ReportSlotsAsync();
             return;
+        }
         // The script this build was made with, by an address that changes with its content (ADR-0123), and refused
         // when the browser holds another version's: nothing is attached, and the root says so.
         var address = "./" + AddressOf(Assets, ScriptPath, ScriptCoreAsset.Version);
@@ -424,6 +450,9 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         _sheet = sheet;
         _attached = true;
         Calls.Attached(sheet);
+        // A slot the Sheet's grid mounted as it attached may have been drawn already, before there was a Sheet to hand
+        // it to.
+        await ReportSlotsAsync();
         await SendUpdateAsync();
         _ready.TrySetResult(sheet);
     }
@@ -541,6 +570,14 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         // The Scope by its name in the page, where the browser holds it (ADR-0430).
         if (PointingScope is { } scope)
             json.WriteString("pointingScope", scope.Id);
+        // The slots the Chrome fills with Razor, but the find panel: a Sheet's is its own (ADR-0332 section 5).
+        if (Chrome?.ScriptSlots is { } slots && (slots & ~ScriptSlots.FindPanel) is var filled and not ScriptSlots.None)
+        {
+            json.WriteStartArray("razorSlots");
+            foreach (var name in RazorSlot.NamesOf(filled))
+                json.WriteStringValue(name);
+            json.WriteEndArray();
+        }
         json.WriteStartArray("hears");
         if (WorkbookChanged.HasDelegate)
             json.WriteStringValue("workbookChanged");
@@ -657,6 +694,40 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     // The Sheet's events, handed to the Consumer one at a time in the order the browser raised them: a handler that
     // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do.
     internal Task HeardAsync(string kind, JsonElement payload) => InvokeAsync(() => HearAsync(Prepared(kind, payload)));
+
+    /// <summary>The script mounted slot <paramref name="id"/> for the Chrome, with its context as data (ADR-0410).</summary>
+    internal void MountSlot(long id, int version, string name, string context)
+    {
+        if (_disposed)
+            return;
+        _slots.Mount(id, version, name, context);
+        RenderSlots();
+    }
+
+    /// <summary>The slot <paramref name="id"/> was mounted again in place, or its context changed.</summary>
+    internal void UpdateSlot(long id, int version, string context)
+    {
+        if (_disposed || !_slots.Update(id, version, context))
+            return;
+        RenderSlots();
+    }
+
+    /// <summary>The Sheet's grid took the slot <paramref name="id"/> away; the script has moved its contents back.</summary>
+    internal void UnmountSlot(long id)
+    {
+        if (_disposed || !_slots.Unmount(id))
+            return;
+        RenderSlots();
+    }
+
+    private void RenderSlots()
+    {
+        _renderOwed = true;
+        StateHasChanged();
+    }
+
+    // Each slot drawn again is handed to the script, which moves it in, or wires it for the context it now holds.
+    private Task ReportSlotsAsync() => _slots.ReportAsync(_sheet, () => _disposed);
 
     // Read in the component's turn, against the parameters as they stand when the event arrives.
     private Func<Task> Prepared(string kind, JsonElement payload)

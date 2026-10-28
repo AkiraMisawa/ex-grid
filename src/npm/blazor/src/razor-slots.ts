@@ -1,7 +1,7 @@
 // ExGrid's Chrome slots filled with Razor (ADR-0410): the grid's kinds over the Shared Script's RazorSlotHost, which
 // moves the contents in and out and holds the Settled Mark and the inputs.
 
-import { drawnVersionAttribute, gridRazorSlotKinds, RazorSlotHost, type GridRazorSlotName } from '@ex-grid/blazor-shared';
+import { drawnVersionAttribute, gridRazorSlotKinds, RazorSlotHost, type GridRazorSlotName, type RazorSlotHostOptions } from '@ex-grid/blazor-shared';
 import type { GridChrome } from '@ex-grid/core';
 import type { DotNetHandle } from './dotnet-source';
 import type { BlazorRow } from './wire-rows';
@@ -10,16 +10,13 @@ export { drawnVersionAttribute };
 
 /**
  * The Razor Chrome of one grid: mount functions for the slots .NET fills, and the contents .NET renders for each.
- * `hold` holds the grid's Settled Mark until the function it answers is called.
  */
 export class RazorSlots {
     readonly #host: RazorSlotHost;
 
-    /** `hold` holds the grid's Settled Mark until the function it answers is called; `order` holds every input made in
-     * the grid after it, in its order, until the promise it is handed settles (ADR-0240); `keyboardBack` hands the
-     * keyboard to the grid. */
-    constructor(dotnet: DotNetHandle, hold: () => (() => void), order: (until: Promise<void>) => void, keyboardBack: () => void) {
-        this.#host = new RazorSlotHost(dotnet, gridRazorSlotKinds, { hold, order, keyboardBack });
+    /** `options` hold the grid's Settled Mark and its inputs, and hand it the keyboard (ADR-0240, ADR-0410 section 5). */
+    constructor(dotnet: DotNetHandle, options: RazorSlotHostOptions) {
+        this.#host = new RazorSlotHost(dotnet, gridRazorSlotKinds, options);
     }
 
     /** The core's Chrome for the slots .NET fills: each a mount function that asks .NET for the slot's contents. The

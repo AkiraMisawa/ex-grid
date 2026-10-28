@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 // The Shared Script's Razor slot host (ADR-0410, ADR-0411) for a product with neither a Settled Mark nor an Input
 // Order, as ExChart's is: a kind registered by name is mounted, crossed and wired, and a slot of no registered kind is
-// refused. The grid's kinds over the host are razor-slots.test.ts'.
+// refused; and the options a product still being made is held through. The grid's kinds over the host are
+// razor-slots.test.ts'.
 import { describe, expect, it } from 'vitest';
 import type { DotNetCalls } from '../src/held-messages';
-import { drawnVersionAttribute, RazorSlotHost, type RazorSlotKind } from '../src/razor-slot-host';
+import { drawnVersionAttribute, RazorSlotHost, slotHostOptionsOf, type RazorSlotKind, type SlotHostProduct } from '../src/razor-slot-host';
 
 class FakeDotNet implements DotNetCalls {
     readonly calls: { readonly method: string; readonly args: readonly unknown[] }[] = [];
@@ -100,5 +101,35 @@ describe('the keys that toggle a control in a Razor slot', () => {
             document.removeEventListener('keydown', hear);
         }
         expect(heard).toEqual(['checkbox Enter', 'text  ', 'text Delete', 'text Enter']);
+    });
+});
+
+describe('the options over a product being made', () => {
+    it('ADR-0410 section 5: a hold taken while the product is made holds it once it stands, before the task ends; ordering or handing the keyboard back then is a defect', async () => {
+        const made: { product: SlotHostProduct | undefined } = { product: undefined };
+        const options = slotHostOptionsOf(() => made.product, 'grid');
+        const slot = document.createElement('div');
+        let held = 0;
+        const released: string[] = [];
+        const release = options.hold?.(slot);
+        expect(() => { options.order?.(Promise.resolve(), slot); }).toThrow('Internal: a Razor slot that takes the keyboard was mounted while the grid was being made.');
+        expect(() => { options.keyboardBack?.(slot); }).toThrow('Internal: a Razor slot held the keyboard while the grid was being made.');
+        made.product = {
+            holdSettled: () => { held += 1; return () => { released.push('held'); }; },
+            inOrder: () => Promise.resolve(),
+            focus: () => undefined,
+        };
+        await Promise.resolve();
+        expect(held).toBe(1);
+        release?.();
+        expect(released).toEqual(['held']);
+
+        // Let go before the product stood: nothing is held for it.
+        made.product = undefined;
+        const early = options.hold?.(slot);
+        early?.();
+        made.product = { holdSettled: () => { held += 1; return () => undefined; }, inOrder: () => Promise.resolve(), focus: () => undefined };
+        await Promise.resolve();
+        expect(held).toBe(1);
     });
 });

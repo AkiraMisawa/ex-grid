@@ -30,6 +30,8 @@ ExSheet.Script.ExSheet.AllowCopyWithHeaders.get -> bool
 ExSheet.Script.ExSheet.AllowCopyWithHeaders.set -> void
 ExSheet.Script.ExSheet.CellFormatAtAsync(ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
 ExSheet.Script.ExSheet.CellFormatAtAsync(string! sheet, ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
+ExSheet.Script.ExSheet.Chrome.get -> ExGrid.Chrome.IGridChrome?
+ExSheet.Script.ExSheet.Chrome.set -> void
 ExSheet.Script.ExSheet.CommandLabel.get -> System.Func<string!, string?>?
 ExSheet.Script.ExSheet.CommandLabel.set -> void
 ExSheet.Script.ExSheet.Culture.get -> System.Globalization.CultureInfo?

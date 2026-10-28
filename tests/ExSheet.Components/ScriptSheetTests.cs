@@ -203,7 +203,9 @@ public class ScriptSheetTests : BunitContext
         var bridge = Bridge().Value;
 
         var opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(_ => Task.FromResult(opened)));
-        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["open"]).Arguments[0]);
+        // Each opening reaches the browser once the Sheet is ready, after the InvokeAsync returns: wait for its call.
+        cut.WaitForAssertion(() => Assert.Single(_sheet.Invocations["open"]));
+        var id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
         Assert.Equal(opened.ToJson(), Parsed(await bridge.Read(id)).GetProperty("document").GetString());
         answers.SetResult(Parsed("""{"done":true}"""));
         Assert.True(await opening);
@@ -212,6 +214,7 @@ public class ScriptSheetTests : BunitContext
         answers = _sheet.Setup<JsonElement>("open", _ => true);
         var failure = new IOException("The file is not an .xlsx workbook.");
         opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(_ => Task.FromException<WorkbookDocument>(failure)));
+        cut.WaitForAssertion(() => Assert.Equal(2, _sheet.Invocations["open"].Count));
         id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
         Assert.Equal("""{"failed":"The file is not an .xlsx workbook."}""", await bridge.Read(id));
         answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The file is not an .xlsx workbook."}}"""));
@@ -224,6 +227,7 @@ public class ScriptSheetTests : BunitContext
             await Task.Delay(Timeout.Infinite, token);
             return opened;
         }));
+        cut.WaitForAssertion(() => Assert.Equal(3, _sheet.Invocations["open"].Count));
         id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
         var read = bridge.Read(id);
         Assert.False(read.IsCompleted);
@@ -266,7 +270,8 @@ public class ScriptSheetTests : BunitContext
             written = workbook;
             return Task.CompletedTask;
         }));
-        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
+        cut.WaitForAssertion(() => Assert.Single(_sheet.Invocations["save"]));
+        var id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
         Assert.Equal("""{"done":true}""", await Bridge().Value.Write(id, Parsed(saved)));
         answers.SetResult(Parsed("""{"done":null}"""));
         await saving;
@@ -281,6 +286,7 @@ public class ScriptSheetTests : BunitContext
         answers = _sheet.Setup<JsonElement>("save", _ => true);
         var failure = new IOException("The disk is full.");
         saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(_ => Task.FromException(failure)));
+        cut.WaitForAssertion(() => Assert.Equal(2, _sheet.Invocations["save"].Count));
         id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
         Assert.Equal("""{"failed":"The disk is full."}""", await Bridge().Value.Write(id, Parsed(saved)));
         answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The disk is full."}}"""));
@@ -327,7 +333,8 @@ public class ScriptSheetTests : BunitContext
             written = workbook;
             return Task.CompletedTask;
         }));
-        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
+        cut.WaitForAssertion(() => Assert.Single(_sheet.Invocations["save"]));
+        var id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
         var writeJson = JsonSerializer.Serialize(new object[]
         {
             id,
@@ -561,5 +568,49 @@ public class ScriptSheetTests : BunitContext
         Sheet(ps => ps.Add(p => p.PointingScope, script));
         thrown = Assert.Throws<InvalidOperationException>(() => scriptGrid.Take(inBrowser: false));
         Assert.Contains("a Razor ExGrid cannot join it", thrown.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>A Chrome of the Consumer's own that fills the Context Menu and the find panel over the Script Core.</summary>
+    private sealed class MenuChrome : IGridChrome
+    {
+        public ScriptSlots ScriptSlots => ScriptSlots.ContextMenu | ScriptSlots.FindPanel;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? ContextMenu(GridMenuView view) => builder =>
+        {
+            for (var i = 0; i < view.Items.Count; i++)
+            {
+                builder.OpenElement(0, "button");
+                builder.AddAttribute(1, ScriptSlotAttributes.MenuItem, i);
+                builder.AddContent(2, $"{view.Items[i].Label} ({(view.Items[i].Enabled ? "enabled" : "disabled")})");
+                builder.CloseElement();
+            }
+        };
+    }
+
+    [Fact] // ADR-0410 sections 1 and 3, ADR-0332 section 5: the Chrome fills the grid's slots but the find panel, a slot is drawn beside the root, handed to the script, and goes when unmounted
+    public async Task ADR0410_the_Chrome_fills_the_sheets_grid_slots_but_the_find_panel()
+    {
+        _sheet.SetupVoid("slotRendered", _ => true).SetVoidResult();
+        var cut = Sheet(ps => ps.Add(p => p.Chrome, new MenuChrome()));
+        Assert.Equal("""["contextMenu"]""", Attach().GetProperty("options").GetProperty("razorSlots").GetRawText());
+
+        await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "contextMenu",
+            """{"column":"A","columnType":"text","commands":[{"id":"exsheet.insert-rows","label":"Insert rows above","enabled":true}]}"""));
+        var holder = cut.Find("div[hidden] > .ex-razor-slot");
+        Assert.Equal("Insert rows above (enabled)", holder.QuerySelector("button[data-ex-menu-item='0']")?.TextContent);
+        // Beside the root, never inside it.
+        Assert.Same(holder.ParentElement, cut.Nodes.OfType<AngleSharp.Dom.IElement>().Last());
+        Assert.Equal([1L, 1], Assert.Single(_sheet.Invocations["slotRendered"]).Arguments.Take(2));
+
+        await cut.InvokeAsync(() => Bridge().Value.UnmountSlot(1));
+        Assert.Empty(cut.FindAll(".ex-razor-slot"));
     }
 }

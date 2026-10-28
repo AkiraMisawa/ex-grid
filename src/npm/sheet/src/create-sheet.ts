@@ -419,6 +419,22 @@ export interface SheetHandle {
      * @throws Error Whatever `write` failed with, such as `XlsxSaveError`.
      */
     save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void>;
+    /** Hands the keyboard to the Sheet's grid: to the field an open edit is typed in, else to where the grid takes keys
+     * (ADR-0080), as the grid's own `focus` does. A Consumer's control beside the Sheet gives the keyboard back with
+     * this. Throws once the Sheet is destroyed, as `holdSettled` and `inOrder` do. */
+    focus(): void;
+    /**
+     * Holds the Settled Mark of the Sheet's grid (ADR-0220) until the function it answers is called, as the grid's own
+     * `holdSettled` does: for a Framework Adapter whose Chrome's contents arrive after their slot, a round trip later on
+     * a circuit (ADR-0410 section 5), so that nothing reads the part before it stands. Each hold is let go once.
+     */
+    holdSettled(): () => void;
+    /**
+     * Runs `handling` in its place in the Input Order of the Sheet's grid (ADR-0240 section 6), as the grid's own
+     * `inOrder` does: after every input made so far, and before any made after it, which wait until the promise it
+     * answers settles. A Sheet destroyed before its turn runs nothing; one already destroyed throws.
+     */
+    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
     /** Stops the Sheet and empties its element. */
     destroy(): void;
 }
@@ -482,6 +498,9 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
         pushLinkedTable: (name: string, rows: Iterable<readonly (Value | undefined)[]>) => { view.pushLinkedTable(name, rows); },
         open: (read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>) => view.open(read),
         save: (write: (workbook: Workbook) => void | PromiseLike<void>) => view.save(write),
+        focus: () => { view.focus(); },
+        holdSettled: () => view.holdSettled(),
+        inOrder: (handling: () => void | PromiseLike<void>) => view.inOrder(handling),
         destroy: () => { view.destroy(); },
     });
 }
@@ -930,6 +949,27 @@ class SheetView {
         // A save whose turn never came — the Sheet destroyed while inputs before it were held — wrote nothing, and says so.
         if (written.writing === undefined) throw new Error('This Sheet was destroyed before the save\'s turn: nothing was written.');
         await written.writing;
+    }
+
+    focus(): void {
+        this.#liveGrid().focus();
+    }
+
+    holdSettled(): () => void {
+        return this.#liveGrid().holdSettled();
+    }
+
+    inOrder(handling: () => void | PromiseLike<void>): Promise<void> {
+        if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240 section 6).');
+        return this.#liveGrid().inOrder(handling);
+    }
+
+    // The Sheet's grid, while the Sheet stands.
+    #liveGrid(): GridHandle<SheetRow> {
+        this.#alive();
+        const grid = this.#grid;
+        if (grid === undefined) throw new Error('Internal: a Sheet that stands has no grid.');
+        return grid;
     }
 
     // A file opened or saved while an edit is open is refused by name, and said (ADR-0330 §10, ADR-0048).

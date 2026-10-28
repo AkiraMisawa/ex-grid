@@ -28,7 +28,7 @@ import { SheetToolbarRowOptions } from '@ex-grid/sheet';
 export function ExSheet(props: ExSheetProps): ReactElement;
 
 // @public
-export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy'>;
+export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy' | 'holdSettled'>;
 
 // @public
 export interface ExSheetChrome extends ExGridChrome<unknown> {
