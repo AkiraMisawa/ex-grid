@@ -61,6 +61,8 @@ const alias = {
     '@ex-grid/board': path.join(workspace, 'board/src/index.ts'),
     // ExPivot's bridge for a C# Pivot Source, which ExBoard's asks a pivot over a source through too, and its Razor slots' kinds.
     '@ex-grid/pivot-blazor': path.join(workspace, 'pivot-blazor/src/for-board.ts'),
+    // ExChart's Razor slots' kinds, which ExBoard's dresses its charts with.
+    '@ex-grid/chart-blazor': path.join(workspace, 'chart-blazor/src/razor-slots.ts'),
 };
 
 const hashOf = (text) => createHash('sha256').update(text.replace(/\r\n/g, '\n'), 'utf8').digest('hex');

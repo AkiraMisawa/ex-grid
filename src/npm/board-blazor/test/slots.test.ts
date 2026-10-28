@@ -4,6 +4,7 @@
 // Shared Script's host's and each product's kinds' (their own tests); what the views draw is the Script Core's.
 import { describe, expect, it } from 'vitest';
 import type { BoardHandle, BoardMounts, BoardOptions, ShapedRow } from '@ex-grid/board';
+import type { ChartHandle, ChartOptions } from '@ex-grid/chart';
 import type { GridHandle } from '@ex-grid/core';
 import type { PivotHandle, PivotViewOptions } from '@ex-grid/pivot';
 import { attach, type DotNetHandle, type DrawBoard, type WireAttach, type WireRazorSlots } from '../src/blazor-board';
@@ -104,7 +105,7 @@ describe('A Board\'s Razor slots', () => {
         const drawnWith: BoardOptions[] = [];
         const viewsGiven: { readonly chrome?: unknown }[] = [];
         const board = await attach(document.createElement('div'), new FakeDotNet(),
-            attachJson({ grid: ['loadingIndicator'], pivot: ['menu'], pivotGrid: ['contextMenu', 'loadingIndicator'] }), [],
+            attachJson({ grid: ['loadingIndicator'], pivot: ['menu'], pivotGrid: ['contextMenu', 'loadingIndicator'], chart: [] }), [],
             drawing(new Holds(), new Holds(), [], drawnWith, viewsGiven));
         const chrome = drawnWith[0]?.chrome;
         if (chrome?.grid === undefined || chrome.pivot?.grid === undefined) throw new Error('The Board was handed no grid Chrome, or its pivots none.');
@@ -128,7 +129,7 @@ describe('A Board\'s Razor slots', () => {
         const drawnWith: BoardOptions[] = [];
         await attach(document.createElement('div'), new FakeDotNet(), attachJson(null), [], drawing(new Holds(), new Holds(), [], drawnWith));
         expect(drawnWith[0]?.chrome).toBeUndefined();
-        await expect(attach(document.createElement('div'), new FakeDotNet(), attachJson({ grid: ['toolbar'], pivot: [], pivotGrid: [] }), [],
+        await expect(attach(document.createElement('div'), new FakeDotNet(), attachJson({ grid: ['toolbar'], pivot: [], pivotGrid: [], chart: [] }), [],
             drawing(new Holds(), new Holds(), [], []))).rejects.toThrow('\'toolbar\' as a grid slot');
     });
 
@@ -137,7 +138,7 @@ describe('A Board\'s Razor slots', () => {
         const grid = new Holds();
         const pivot = new Holds();
         const slots: HTMLElement[] = [];
-        const board = await attach(document.createElement('div'), dotnet, attachJson({ grid: ['loadingIndicator'], pivot: [], pivotGrid: ['loadingIndicator'] }), [],
+        const board = await attach(document.createElement('div'), dotnet, attachJson({ grid: ['loadingIndicator'], pivot: [], pivotGrid: ['loadingIndicator'], chart: [] }), [],
             drawing(grid, pivot, slots, []));
         // The grid view holds its own; the pivot holds the grid the slot stands in, which it finds from the slot.
         expect(grid.asked).toEqual([undefined]);
@@ -154,5 +155,60 @@ describe('A Board\'s Razor slots', () => {
         expect([grid.released, pivot.released]).toEqual([1, 1]);
         expect(slots[0]?.firstElementChild).not.toBeNull();
         board.dispose();
+    });
+
+    it('ADR-0410: a chart\'s slots cross apart from the pivot\'s of the same name, and hold nothing, as ExChart\'s own adapter holds nothing', async () => {
+        const dotnet = new FakeDotNet();
+        const drawnWith: BoardOptions[] = [];
+        const chartsGiven: ChartOptions[] = [];
+        const closings: (() => void)[] = [];
+        const draw: DrawBoard = (root, options, withViews) => {
+            drawnWith.push(options);
+            const mounts = withViews({
+                grid: () => { throw new Error('The Board draws no grid here.'); },
+                pivot: () => { throw new Error('The Board draws no pivot here.'); },
+                chart: (element, chartOptions) => {
+                    chartsGiven.push(chartOptions);
+                    const slot = document.createElement('div');
+                    element.append(slot);
+                    const menu: object = { name: 'Chart', commands: [] };
+                    const close = chartOptions.chrome?.menu?.(slot, menu as never);
+                    if (close !== undefined) closings.push(close);
+                    return { update: (next: ChartOptions) => { chartsGiven.push(next); } } as unknown as ChartHandle;
+                },
+            });
+            const element = document.createElement('div');
+            root.append(element);
+            const given: object = options.chrome?.chart === undefined ? {} : { chrome: options.chrome.chart };
+            mounts.chart(element, given as ChartOptions).update(given as ChartOptions);
+            return { update: () => undefined, destroy: () => undefined, bound: undefined };
+        };
+        const root = document.createElement('div');
+        document.body.append(root);
+        const board = await attach(root, dotnet, attachJson({ grid: [], pivot: ['menu'], pivotGrid: [], chart: ['toolbar', 'menu'] }), [], draw);
+        const chrome = drawnWith[0]?.chrome;
+        if (chrome?.chart === undefined) throw new Error('The Board was handed no chart Chrome.');
+        expect(Object.keys(chrome.chart).toSorted()).toEqual(['menu', 'toolbar']);
+        expect(chrome.chart.menu).not.toBe(chrome.pivot?.menu);
+        expect(dotnet.of('MountSlot').map(([, , name]) => name)).toEqual(['chart.menu']);
+        // Handed the same Chrome again for an update.
+        expect(chartsGiven[1]?.chrome).toBe(chartsGiven[0]?.chrome);
+        // The menu goes with the keyboard on a command among its contents, as a click on one leaves it: the keyboard
+        // is handed nowhere, as ExChart's own adapter hands it nowhere.
+        const [[id, version] = []] = dotnet.of('MountSlot');
+        const holder = document.createElement('div');
+        const contents = document.createElement('div');
+        const command = document.createElement('button');
+        contents.append(command);
+        holder.append(contents);
+        document.body.append(holder);
+        board.slotRendered(id as number, version as number, contents);
+        command.focus();
+        expect(document.activeElement).toBe(command);
+        for (const close of closings) close();
+        await Promise.resolve();
+        expect(dotnet.of('UnmountSlot')).toEqual([[id]]);
+        board.dispose();
+        root.remove();
     });
 });
