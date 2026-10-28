@@ -5,7 +5,7 @@
 | ExGrid | 94.4% | 88% |
 | ExSheet | 94.9% | 87.4% |
 | ExPivot | 93% | 85.2% |
-| ExChart | 89.8% | 85% |
+| ExChart | 90% | 85% |
 | ExBoard | 91.1% | 84.4% |
 | Data | 94.5% | 89.9% |
 
@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 06:18:28 |
+| Generated on: | 10/28/2026 - 07:07:39 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1248 |
 | Files: | 634 |
-| **Line coverage:** | 93.7% (87962 of 93799) |
-| Covered lines: | 87962 |
-| Uncovered lines: | 5837 |
+| **Line coverage:** | 93.7% (87974 of 93799) |
+| Covered lines: | 87974 |
+| Uncovered lines: | 5825 |
 | Coverable lines: | 93799 |
-| Total lines: | 148805 |
-| **Branch coverage:** | 87% (52532 of 60321) |
-| Covered branches: | 52532 |
+| Total lines: | 148809 |
+| **Branch coverage:** | 87% (52535 of 60321) |
+| Covered branches: | 52535 |
 | Total branches: | 60321 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -85,11 +85,11 @@
 |ExGrid.Script.SnapshotNaming|100%|100%|
 
 </details>
-<details><summary>ExChart - 83.7%</summary>
+<details><summary>ExChart - 84%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**83.7%**|**75.8%**|
+|**ExChart**|**84%**|**75.9%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -129,11 +129,11 @@
 |ExChart.Script.ChartWire|80.7%|75.1%|
 |ExChart.Script.DrawingState|100%||
 |ExChart.Script.ExChart|86.9%|87.1%|
-|ExChart.Script.ExSurface|76.2%|59.2%|
+|ExChart.Script.ExSurface|78.3%|61.1%|
 |ExChart.Script.RowKeys|77.5%|71.6%|
 |ExChart.Script.ScriptBridge|100%||
-|ExChart.Script.ScriptMount|76.1%|79.3%|
-|ExChart.Script.ScriptMount<T>|76.1%|79.3%|
+|ExChart.Script.ScriptMount|77.6%|79.3%|
+|ExChart.Script.ScriptMount<T>|77.6%|79.3%|
 |ExChart.Script.SurfaceValues|100%||
 |ExChart.SelectionReader|92.1%|73.9%|
 |ExChart.SelectionReader<TRow>|92.1%|73.9%|
@@ -508,7 +508,7 @@
 |ExGrid.Rows.RowMarkStep.AllOf|100%||
 |ExGrid.Rows.RowMarkStep.OneKey|100%||
 |ExGrid.Script.ExGrid.Heard<TRow>|100%||
-|ExGrid.Script.ExGrid<TRow>|65.5%|64.3%|
+|ExGrid.Script.ExGrid<TRow>|65.7%|64.3%|
 |ExGrid.Script.ExGrid<TRow>|76.4%|60.4%|
 |ExGrid.Script.FormatNames|50%||
 |ExGrid.Script.GridRefusal.Action<TRow>|0%||
@@ -876,7 +876,7 @@
 |ExPivot.PivotCommandIds|95%|93.3%|
 |ExPivot.PivotDetailItem|100%||
 |ExPivot.PivotDetails|100%||
-|ExPivot.Script.ExPivot|52.6%|38.4%|
+|ExPivot.Script.ExPivot|52.8%|38.4%|
 |ExPivot.Script.ScriptBridge|22.2%||
 
 </details>
@@ -1093,12 +1093,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
@@ -1130,7 +1130,7 @@
 |ExSheet.PointingScope.GridMember<TRow>|100%|100%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
-|ExSheet.Script.ExSheet|77.1%|71.4%|
+|ExSheet.Script.ExSheet|77.3%|71.4%|
 |ExSheet.Script.ScriptBridge|100%||
 |ExSheet.SheetAppearance|97.6%|96%|
 |ExSheet.SheetCellText|94.4%|100%|
