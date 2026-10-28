@@ -203,6 +203,15 @@ export class RazorSlotHost {
         return mounts;
     }
 
+    /** Mounts the slot `name` in `slot` with `context`, answering the function that takes it away: for a part a product
+     * fills with Razor from the Consumer's own markup rather than from the Chrome, such as a Sheet's Toolbar button's
+     * content, which the core hands a mount function of its own. */
+    mount(name: string, slot: HTMLElement, context: unknown): () => void {
+        const kind = this.#kinds.get(name);
+        if (kind === undefined) throw new TypeError(`Internal: a Razor slot '${name}' of no kind the product registered.`);
+        return this.#mount(name, kind, slot, context);
+    }
+
     /** .NET rendered the contents of slot `id` for the data numbered `version` in `contents`: they move into the slot,
      * or are wired again with the context that slot now holds. Contents of a slot already gone stay in their holder,
      * which .NET removes. The Settled Mark stays held until the data last sent stand. */

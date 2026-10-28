@@ -26,6 +26,9 @@ internal sealed class ScriptBridge(ExSheet sheet)
     public Task<string> Write(int id, JsonElement saved) => Calls.InOrder(() => sheet.WriteAsync(id, saved));
 
     [JSInvokable]
+    public Task ToolbarPressed(int button) => Calls.InOrder(() => sheet.ToolbarPressedAsync(button));
+
+    [JSInvokable]
     public Task MountSlot(long id, int version, string name, string context) => Calls.InOrder(() => sheet.MountSlot(id, version, name, context));
 
     [JSInvokable]

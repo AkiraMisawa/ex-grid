@@ -181,10 +181,20 @@
             <code>SheetFormatCellsView</code> in the grid's popover frame: every tab's controls in one form, each
             choice a native radio, checkbox, select or field the script reads as the browser fires it and sets through
             the Sheet's draft, so an OK pressed at once after a choice sets that choice (Ctrl+1 on the Sheet above, with
-            the MudBlazor switch on, shows MudBlazor's). The find panel stays the Sheet's
+            the MudBlazor switch on, shows MudBlazor's). <code>ToolbarContent</code> is declared as above, with the
+            same rows, items and buttons: they declare themselves and draw nothing, the Script Core draws the toolbar,
+            and a press on a <code>ToolbarButton</code> runs its <code>OnClick</code> in .NET before the Sheet takes the
+            next key, so nothing typed after the press lands first. <code>OpenAsync</code> and <code>SaveAsync</code>
+            take their own place in that order, so an <code>OnClick</code> cannot call them there: they are refused by
+            name rather than left waiting for the press they are part of, where the Sheet above runs them inside it.
+            Its <code>ChildContent</code> is rendered beside
+            the Sheet and moved into the button, and a Chrome that draws the item marks where it goes with
+            <code>SheetScriptSlotAttributes.Content</code>. A Toolbar Item of your own, derived from
+            <code>ToolbarItemBase</code>, is refused there by name, as is a KeyTip on one of ExSheet's items: the
+            Script Core has neither. The find panel stays the Sheet's
             own, with Within, as it does above under a Chrome that draws none. Not carried yet: the
             Sheet Tabs' menu and the find panel of an <code>ISheetChrome</code>, which the Sheet draws itself,
-            <code>ToolbarContent</code>, <code>OnLinkedColumnColoursChanged</code>
+            <code>OnLinkedColumnColoursChanged</code>
             and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
             for those until they arrive. Its engine holds the data of
             five cultures, en-US, en-GB, de-DE, ja-JP and fr-FR, and the invariant culture: a Sheet under another is

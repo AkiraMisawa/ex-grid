@@ -6,7 +6,8 @@
 
 import { gridRazorSlotKinds, type HostedSlotKind, type RazorSlotKind } from '@ex-grid/blazor-shared';
 import {
-    toolbarChoiceMovedTo, toolbarChoiceRows, toolbarChoiceStart, type SheetTabSlotContext, type SheetToolbarItemSlotContext, type SheetToolbarItemView,
+    toolbarChoiceMovedTo, toolbarChoiceRows, toolbarChoiceStart, type SheetTabSlotContext, type SheetToolbarContent, type SheetToolbarItemSlotContext,
+    type SheetToolbarItemView,
 } from '@ex-grid/sheet';
 import { formatCellsKind } from './razor-format-cells';
 import { crossed, marked } from './slot-markup';
@@ -21,6 +22,8 @@ export const sheetSlotAttributes = Object.freeze({
     list: 'data-ex-sheet-list',
     /** On a choice's control: the choice's index in the view's choices, once for every choice. */
     choice: 'data-ex-sheet-choice',
+    /** On the empty element where a Consumer's button's own content goes, for an item that has some. */
+    content: 'data-ex-sheet-content',
 });
 
 /** The Sheet's slots a Razor Chrome fills, as the Sheet names them. */
@@ -39,6 +42,9 @@ interface ItemList {
     openers: readonly HTMLElement[];
     /** Stops hearing presses outside the item, while the list is open. */
     outside: (() => void) | undefined;
+    /** A Consumer's button's own content, where the contents drew its place: kept across the renders of the same
+     * place, so it is not drawn again for each. */
+    content: { readonly element: HTMLElement; readonly mounted: SheetToolbarContent; readonly remove: () => void } | undefined;
 }
 
 const itemLists = new WeakMap<SheetToolbarItemSlotContext, ItemList>();
@@ -46,7 +52,9 @@ const itemLists = new WeakMap<SheetToolbarItemSlotContext, ItemList>();
 function listOf(item: SheetToolbarItemSlotContext): ItemList {
     const known = itemLists.get(item);
     if (known !== undefined) return known;
-    const made: ItemList = { open: false, seenOpen: 0, seenClose: 0, contents: undefined, drawn: undefined, holder: undefined, openers: [], outside: undefined };
+    const made: ItemList = {
+        open: false, seenOpen: 0, seenClose: 0, contents: undefined, drawn: undefined, holder: undefined, openers: [], outside: undefined, content: undefined,
+    };
     itemLists.set(item, made);
     return made;
 }
@@ -67,6 +75,7 @@ const toolbarItemKind: RazorSlotKind<SheetToolbarItemSlotContext, SheetToolbarIt
                 })),
                 // Laid out as the keys move, so the Razor draws the rows the keys walk and keeps no count of its own.
                 rows: toolbarChoiceRows(view.choices).map(row => (typeof row === 'number' ? [row] : row)),
+                content: view.content !== undefined,
             }),
             drawn: view,
             memo: undefined,
@@ -87,6 +96,7 @@ const toolbarItemKind: RazorSlotKind<SheetToolbarItemSlotContext, SheetToolbarIt
             list.contents = undefined;
             list.holder = undefined;
             list.openers = [];
+            removeContent(list);
         };
     },
     wire: (contents, item, _answered, drawn) => wireToolbarItem(contents, item, drawn),
@@ -107,13 +117,30 @@ const sheetTabAddKind: RazorSlotKind<undefined> = {
     wire: () => () => undefined,
 };
 
+/** A Consumer's ToolbarButton's ChildContent (ADR-0100), which .NET draws from the button's own markup, not from the
+ * Chrome: the button by the number .NET gave it. It takes no keyboard and hears nothing. */
+export interface ToolbarContentContext {
+    readonly button: number;
+}
+
+/** The slot of a button's content, which no Chrome names: the core hands each button's content a mount of its own. */
+export const toolbarContentSlotName = 'toolbarContent';
+
+const toolbarContentKind: RazorSlotKind<ToolbarContentContext> = {
+    takesKeyboard: false,
+    data: context => ({ json: JSON.stringify({ button: context.button }), drawn: undefined, memo: undefined }),
+    wire: () => () => undefined,
+};
+
 // Every slot a Razor Chrome fills has its kind: a name added to SheetRazorSlotName without one does not compile.
 const sheetKindsByName = {
     toolbarItem: toolbarItemKind, formatCells: formatCellsKind, sheetTab: sheetTabKind, sheetTabAdd: sheetTabAddKind,
 } satisfies Record<SheetRazorSlotName, HostedSlotKind>;
 
 /** The kinds of the slots a Razor Chrome fills on a Sheet, by the core's slot names: the Sheet's own, and its grid's. */
-export const sheetRazorSlotKinds: ReadonlyMap<string, HostedSlotKind> = new Map([...gridRazorSlotKinds, ...Object.entries(sheetKindsByName)]);
+export const sheetRazorSlotKinds: ReadonlyMap<string, HostedSlotKind> = new Map([
+    ...gridRazorSlotKinds, ...Object.entries(sheetKindsByName), [toolbarContentSlotName, toolbarContentKind],
+]);
 
 /** Whether `name` is one of the Sheet's own slots a Razor Chrome fills. */
 export function isSheetRazorSlotName(name: unknown): name is SheetRazorSlotName {
@@ -208,9 +235,31 @@ function wireToolbarItem(contents: HTMLElement, item: SheetToolbarItemSlotContex
             if (drawn().choices[index]?.disabledReason === undefined) choose(item, list, index);
         });
     }
+    placeContent(contents, view, list);
     // A request made before the contents stood is answered on them.
     answerRequests(item, list);
     return () => { for (const each of unwire) each(); };
+}
+
+/** A Consumer's button's own content, mounted where the contents drew its place, and taken away once that place, or the
+ * content, is another. A button with content whose contents draw no place for it would quietly lose it, and is refused. */
+function placeContent(contents: HTMLElement, view: SheetToolbarItemView, list: ItemList): void {
+    const places = marked(contents, sheetSlotAttributes.content);
+    if (places.length > 1) throw new Error(`The Toolbar Item ${view.name} draws ${String(places.length)} places for its content: mark one element with ${sheetSlotAttributes.content}.`);
+    const element = places[0]?.[0];
+    const content = view.content;
+    if (content !== undefined && element === undefined) {
+        throw new Error(`The Toolbar Item ${view.name} has content of its own, and its contents draw no place for it: draw an empty element marked ${sheetSlotAttributes.content}.`);
+    }
+    if (list.content?.element === element && list.content?.mounted === content) return;
+    removeContent(list);
+    if (content === undefined || element === undefined) return;
+    list.content = { element, mounted: content, remove: content(element) };
+}
+
+function removeContent(list: ItemList): void {
+    list.content?.remove();
+    list.content = undefined;
 }
 
 /** The toolbar's requests: one to close reaches the list asked for, or any opened by a press; one to open opens it,
