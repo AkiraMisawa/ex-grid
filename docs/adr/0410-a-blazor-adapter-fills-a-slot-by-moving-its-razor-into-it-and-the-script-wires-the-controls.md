@@ -66,6 +66,16 @@ Blazor keeps the element's identity, its delegated events (heard on the document
 component's state while it stands in the slot, and the fragment renders under the Consumer's cascading
 values and services, `MudThemeProvider`'s and `MudPopoverProvider`'s among them.
 
+*Note of 2026-10-28.* The contents go back to their holder at the end of the task in which the core took
+the slot away, not synchronously at the cleanup: a focus request takes the slot away and mounts it again
+in one task, and contents moved out and back would drop the keyboard they hold. Contents that held the
+keyboard as their slot went hand it to the product, never to the page's body. The mechanism is one host
+for every product, the Shared Script's `RazorSlotHost` (ADR-0411) and .NET's `RazorSlotHolders`, compiled
+into each adapter that fills slots with Razor: a product registers each of its slots as a kind, which says what its context crosses as,
+how the contents are wired, whether they take the keyboard and when they stand whole. A product without a
+Settled Mark or an Input Order, ExChart's, gives the host neither, and none of its kinds may take the
+keyboard: a host handed such a kind without an Input Order and a way to hand the keyboard back refuses it.
+
 ### 2. Razor draws; the script wires
 
 What a slot's controls do on a key, a press, a focus request or a popup of their own is wired by the

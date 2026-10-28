@@ -5,8 +5,8 @@
  *
  * @packageDocumentation
  */
-export { ExChart } from './ex-chart';
-export type { ExChartApi, ExChartChrome, ExChartProps } from './ex-chart';
+export { ExChart, chartChromeMounts } from './ex-chart';
+export type { ChartMountsMade, ExChartApi, ExChartChrome, ExChartProps } from './ex-chart';
 export { ExSurface } from './ex-surface';
 export type { ExSurfaceApi, ExSurfaceProps } from './ex-surface';
 export { DockedChart, useChartDock, useChartDockKeyboard } from './chart-dock';
