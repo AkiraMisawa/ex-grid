@@ -97,7 +97,7 @@ function made(): Made {
     const slot = document.createElement('div');
     root.append(slot);
     document.body.append(root);
-    return { dotnet, mark, order, slots: new RazorSlots(dotnet, mark.hold, order.order, () => { root.focus(); }), slot, root };
+    return { dotnet, mark, order, slots: new RazorSlots(dotnet, { hold: mark.hold, order: order.order, keyboardBack: () => { root.focus(); } }), slot, root };
 }
 
 const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'filterPanel' | 'findPanel' | 'loadingIndicator') => {

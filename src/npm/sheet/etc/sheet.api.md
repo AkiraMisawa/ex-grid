@@ -375,6 +375,9 @@ export interface SheetHandle {
     destroy(): void;
     do(edit: SheetEdit): void;
     do(sheet: string, edit: SheetEdit): void;
+    focus(): void;
+    holdSettled(): () => void;
+    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
     readonly isEditing: boolean;
     open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean>;
     openFormatCells(): boolean;

@@ -7,10 +7,14 @@ import {
     builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary, type SummaryFigure,
     type ViewportSize,
 } from '@ex-grid/core';
-import { crossingCalls, HeldMessages, holdPointingScope, type PagePointingScope, type WireHeld } from '@ex-grid/blazor-shared';
+import {
+    crossingCalls, gridRazorSlotKinds, HeldMessages, holdPointingScope, isGridRazorSlotName, RazorSlotHost, slotHostOptionsOf, type GridRazorSlotName,
+    type PagePointingScope, type WireHeld,
+} from '@ex-grid/blazor-shared';
 import { decimalText } from '@ex-grid/data';
 import {
-    createSheet, PointingScope, type GridPointedAt, type PointingRefusal, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId, type TableRow,
+    createSheet, PointingScope, type GridPointedAt, type PointingRefusal, type SheetChrome, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId,
+    type TableRow,
 } from '@ex-grid/sheet';
 import {
     CellAddress, columnCount, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
@@ -75,6 +79,9 @@ export interface WireOptions {
     readonly seed?: string;
     /** The Pointing Scope's name in the page, where the Sheet joins it (ADR-0430). */
     readonly pointingScope?: string;
+    /** The grid's slots the Consumer's Chrome fills with Razor (ADR-0410), never the find panel, which is the Sheet's
+     * own, with Within (ADR-0332 §5). */
+    readonly razorSlots?: readonly GridRazorSlotName[];
     readonly hears: readonly HeardKind[];
 }
 
@@ -200,12 +207,14 @@ export interface BlazorSheet {
     /** A message held for .NET (`WireHeld`), as the stream .NET reads it from: gzip-compressed where the browser can
      * compress, and as it is where it cannot. Taken once. */
     take(held: number): Promise<Uint8Array<ArrayBuffer>>;
+    /** .NET rendered the contents of the Razor slot `id` for the data numbered `version` in `contents` (ADR-0410). */
+    slotRendered(id: number, version: number, contents: HTMLElement | null): void;
     /** Stops the Sheet and empties its element. */
     dispose(): void;
 }
 
 /** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
-const heldSheetCalls: ReadonlySet<string> = new Set(['Heard', 'Write']);
+const heldSheetCalls: ReadonlySet<string> = new Set(['Heard', 'Write', 'MountSlot', 'UpdateSlot']);
 
 /** What the bridge calls in .NET. */
 export interface DotNetHandle {
@@ -254,8 +263,22 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
         }
         return inScope?.scope.pointing;
     };
+    // The grid's slots the Chrome fills with Razor (ADR-0410). A slot the grid mounts as the Sheet is made holds its
+    // Settled Mark once there is a Sheet to hold, before the task ends.
+    const making: { sheet?: SheetHandle } = {};
+    const slots = new RazorSlotHost(dotnet, gridRazorSlotKinds, slotHostOptionsOf(() => making.sheet, 'Sheet'));
+    const chromeOf = (wire: WireOptions): SheetChrome | undefined => {
+        const names = wire.razorSlots;
+        if (names === undefined || names.length === 0) return undefined;
+        for (const name of names) {
+            // The find panel is the Sheet's own, which a grid's panel would replace (ADR-0332 §5): .NET never names it.
+            if (!isGridRazorSlotName(name) || name === 'findPanel') throw new TypeError(`Internal: .NET named '${name}' as a slot its Chrome fills.`);
+        }
+        return slots.mounts(names);
+    };
     // The Sheet raises nothing while it is made, so `made` stands before a handler reads it.
-    const made = createSheet(root, sheetOptions(init.options, document, words, heard, scopeNamed(init.options.pointingScope)));
+    const made = createSheet(root, sheetOptions(init.options, document, words, heard, scopeNamed(init.options.pointingScope), chromeOf(init.options)));
+    making.sheet = made;
     return Object.freeze({
         update: (text: string) => {
             const next = parsed<WireUpdate>(text);
@@ -266,7 +289,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
             const nextWords = next.words === undefined ? words : wordsOf(next.words);
             // Heard as the parameters now say, events the update itself raises included.
             hears = new Set(next.options.hears);
-            made.update(sheetOptions(next.options, nextDocument, nextWords, heard, scopeNamed(next.options.pointingScope)));
+            made.update(sheetOptions(next.options, nextDocument, nextWords, heard, scopeNamed(next.options.pointingScope), chromeOf(next.options)));
             document = nextDocument;
             words = nextWords;
         },
@@ -302,8 +325,11 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
         })),
         documents: () => answer({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
         take: (number: number) => held.take(number),
+        slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots.rendered(id, version, contents); },
         dispose: () => {
             stopped = true;
+            // Every slot's contents go back to their holders before the Sheet empties its element.
+            slots.dispose();
             held.clear();
             made.destroy();
             // Left once the Sheet has left it: its last member gone, the page lets the Scope go.
@@ -569,7 +595,10 @@ export function wordsOf(words: WireWords): Words {
     };
 }
 
-function sheetOptions(wire: WireOptions, document: WorkbookDocument | undefined, words: Words, heard: Handlers, pointingScope: PointingScope | undefined): SheetOptions {
+function sheetOptions(
+    wire: WireOptions, document: WorkbookDocument | undefined, words: Words, heard: Handlers, pointingScope: PointingScope | undefined,
+    chrome: SheetChrome | undefined,
+): SheetOptions {
     const hears = new Set(wire.hears);
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
     return {
@@ -589,6 +618,7 @@ function sheetOptions(wire: WireOptions, document: WorkbookDocument | undefined,
         ...(hears.has('selectionSummaryChanged') ? { onSelectionSummaryChanged: heard.onSelectionSummaryChanged } : {}),
         ...(hears.has('formatKeyRefused') ? { onFormatKeyRefused: heard.onFormatKeyRefused } : {}),
         ...(pointingScope === undefined ? {} : { pointingScope }),
+        ...(chrome === undefined ? {} : { chrome }),
         ...(hears.has('pointingRefused') ? { onPointingRefused: heard.onPointingRefused } : {}),
         onEditingChanged: heard.onEditingChanged,
     };

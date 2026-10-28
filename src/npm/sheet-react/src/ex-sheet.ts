@@ -70,9 +70,11 @@ export type ExSheetProps = Omit<SheetOptions, 'chrome' | 'toolbar'> & {
 
 /**
  * What a ref to an ExSheet reaches: the Sheet's handle, less what the adapter itself does with it (taking the props
- * again, and destroying the Sheet on unmount). Asked of a Sheet not mounted, it throws.
+ * again, and destroying the Sheet on unmount) and the hold of the Settled Mark, which is for a Framework Adapter whose
+ * Chrome arrives later than its slot (ADR-0410 section 5), as ExGrid's ref leaves it out. Asked of a Sheet not mounted,
+ * it throws.
  */
-export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy'>;
+export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy' | 'holdSettled'>;
 
 /**
  * An Excel-like sheet with formulas. The element it renders is the Sheet's, which `@ex-grid/sheet` owns; every
@@ -138,6 +140,8 @@ export function ExSheet(props: ExSheetProps): ReactElement {
         pushLinkedTable: (name, rows) => { mounted(sheet.current).pushLinkedTable(name, rows); },
         open: read => mounted(sheet.current).open(read),
         save: write => mounted(sheet.current).save(write),
+        focus: () => { mounted(sheet.current).focus(); },
+        inOrder: handling => mounted(sheet.current).inOrder(handling),
     }), []);
     useLayoutEffect(() => () => {
         // The portals go first: the contents the Sheet takes away as it goes ask for no render of a component gone.

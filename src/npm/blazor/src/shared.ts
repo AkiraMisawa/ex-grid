@@ -28,6 +28,7 @@ export { crossingCalls, HeldMessages, inlineBytes, mostHeldBytes, type DotNetCal
 export { HeldSnapshots, type DotNetStream, type SnapshotsRead } from './snapshots';
 export { awaitPointingScope, holdPointingScope, type PagePointingScope } from './pointing-scopes';
 export {
-    drawnVersionAttribute, RazorSlotHost, type HostedSlotKind, type RazorSlotData, type RazorSlotHostOptions, type RazorSlotKind,
+    drawnVersionAttribute, RazorSlotHost, slotHostOptionsOf, type HostedSlotKind, type RazorSlotData, type RazorSlotHostOptions, type RazorSlotKind,
+    type SlotHostProduct,
 } from './razor-slot-host';
 export { gridRazorSlotKinds, isGridRazorSlotName, type GridRazorSlotName } from './grid-razor-slot-kinds';

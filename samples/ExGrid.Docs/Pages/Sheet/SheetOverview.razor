@@ -141,7 +141,7 @@
             browser when you hand over one of your own, and each change comes back through <code>DocumentChanged</code>
             and <code>WorkbookChanged</code>; one it raised, bound back two ways, crosses no more.
         </p>
-        <DocsExample Builtin="typeof(ScriptCoreSheet)" Files="@(["Examples/Sheet/Expenses.cs"])" />
+        <DocsExample Builtin="typeof(ScriptCoreSheet)" Mud="typeof(ScriptCoreSheetMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
         <p>
             It carries <code>Document</code>, <code>Workbook</code> and their events, <code>SheetsChanged</code>,
             <code>Culture</code>, <code>PinnedColumnCount</code>, <code>RowHeight</code>, the sizes, the Headings,
@@ -167,8 +167,13 @@
             anything else the browser hands .NET, that is larger than a message of a Server circuit carries crosses as
             a stream, so the hub's 32 KB limit need not be raised for it. A <code>PointingScope</code> and
             <code>OnPointingRefused</code> point into <code>ExGrid.Script.ExGrid</code>s registered in the Scope
-            (<a href="exsheet/linked-tables">Linked Tables</a> says how). Not carried yet: a <code>Chrome</code>,
-            <code>ToolbarContent</code>, <code>OnLinkedColumnColoursChanged</code>
+            (<a href="exsheet/linked-tables">Linked Tables</a> says how). Its <code>Chrome</code> fills the slots of
+            the Sheet's grid as <a href="exgrid#a-grid-drawn-in-the-browser">ExGrid's</a> does: a part drawn in Razor,
+            such as <code>MudSheetChrome</code>'s Context Menu, is rendered beside the Sheet and moved into its place
+            by the script, so the MudBlazor switch above shows the Sheet in MudBlazor's menu. The find panel stays the
+            Sheet's own, with Within, as it does above under a Chrome that draws none. Not carried yet: the Sheet's
+            own slots of an <code>ISheetChrome</code> (its Toolbar Items, Format Cells, the Sheet Tabs' faces and its
+            find panel), <code>ToolbarContent</code>, <code>OnLinkedColumnColoursChanged</code>
             and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
             for those until they arrive. Its engine holds the data of
             five cultures, en-US, en-GB, de-DE, ja-JP and fr-FR, and the invariant culture: a Sheet under another is

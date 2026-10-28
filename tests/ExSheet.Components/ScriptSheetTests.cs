@@ -562,4 +562,48 @@ public class ScriptSheetTests : BunitContext
         thrown = Assert.Throws<InvalidOperationException>(() => scriptGrid.Take(inBrowser: false));
         Assert.Contains("a Razor ExGrid cannot join it", thrown.Message, StringComparison.Ordinal);
     }
+
+    /// <summary>A Chrome of the Consumer's own that fills the Context Menu and the find panel over the Script Core.</summary>
+    private sealed class MenuChrome : IGridChrome
+    {
+        public ScriptSlots ScriptSlots => ScriptSlots.ContextMenu | ScriptSlots.FindPanel;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? ContextMenu(GridMenuView view) => builder =>
+        {
+            for (var i = 0; i < view.Items.Count; i++)
+            {
+                builder.OpenElement(0, "button");
+                builder.AddAttribute(1, ScriptSlotAttributes.MenuItem, i);
+                builder.AddContent(2, $"{view.Items[i].Label} ({(view.Items[i].Enabled ? "enabled" : "disabled")})");
+                builder.CloseElement();
+            }
+        };
+    }
+
+    [Fact] // ADR-0410 sections 1 and 3, ADR-0332 section 5: the Chrome fills the grid's slots but the find panel, a slot is drawn beside the root, handed to the script, and goes when unmounted
+    public async Task ADR0410_the_Chrome_fills_the_sheets_grid_slots_but_the_find_panel()
+    {
+        _sheet.SetupVoid("slotRendered", _ => true).SetVoidResult();
+        var cut = Sheet(ps => ps.Add(p => p.Chrome, new MenuChrome()));
+        Assert.Equal("""["contextMenu"]""", Attach().GetProperty("options").GetProperty("razorSlots").GetRawText());
+
+        await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "contextMenu",
+            """{"column":"A","columnType":"text","commands":[{"id":"exsheet.insert-rows","label":"Insert rows above","enabled":true}]}"""));
+        var holder = cut.Find("div[hidden] > .ex-razor-slot");
+        Assert.Equal("Insert rows above (enabled)", holder.QuerySelector("button[data-ex-menu-item='0']")?.TextContent);
+        // Beside the root, never inside it.
+        Assert.Same(holder.ParentElement, cut.Nodes.OfType<AngleSharp.Dom.IElement>().Last());
+        Assert.Equal([1L, 1], Assert.Single(_sheet.Invocations["slotRendered"]).Arguments.Take(2));
+
+        await cut.InvokeAsync(() => Bridge().Value.UnmountSlot(1));
+        Assert.Empty(cut.FindAll(".ex-razor-slot"));
+    }
 }
