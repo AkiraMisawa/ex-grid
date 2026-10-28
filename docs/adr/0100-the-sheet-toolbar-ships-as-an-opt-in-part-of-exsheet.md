@@ -191,7 +191,7 @@ None of these changes the decision. Each records how a part of it is held, or a 
     false would say nothing about why nothing happened. So the set carries the reading it was made
     from, and is refused with `SheetRefusalReason.SelectionMoved` when the Selection, or the Sheet
     shown, is no longer the one read. The Sheet's notice says so, because the user moved it and sees
-    nothing happen. *(As built, on the same reasoning.)* A Focus cell whose Cell Format changed between
+    nothing happen. *(Decided with the user the same day: a reason of its own.)* A Focus cell whose Cell Format changed between
     the two is refused as `FocusFormatChanged`. The Script Core offers the same pair to any adapter,
     `readFocusFormat` and `setCellFormatFrom`, beside `setCellFormatFromFocus`, which runs within one
     turn and is never refused this way. A `ToolbarButton`'s `OnClick` holds the Sheet's Input Order,
