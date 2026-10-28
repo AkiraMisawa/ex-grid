@@ -2,10 +2,10 @@
 // own mounts, ExGrid's createGrid, ExPivot's createPivot and ExChart's createChart, laid out as the Board's rows.
 // Nothing of a Board that does not bind is drawn: a part drawn beside a refusal would look like the whole.
 
-import { createChart, type ChartHandle, type ChartOptions } from '@ex-grid/chart';
-import { createGrid, type GridHandle, type GridOptions, type TemporalLike } from '@ex-grid/core';
+import { createChart, type ChartChrome, type ChartHandle, type ChartOptions } from '@ex-grid/chart';
+import { createGrid, type GridChrome, type GridHandle, type GridOptions, type TemporalLike } from '@ex-grid/core';
 import { BoardRefusedError, type Snapshot } from '@ex-grid/data';
-import { createPivot, type PivotHandle, type PivotSelectionChangedEvent, type PivotViewOptions } from '@ex-grid/pivot';
+import { createPivot, type PivotChrome, type PivotHandle, type PivotSelectionChangedEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import type { BoardDiff } from './board-diff';
 import type { BoardOutput } from './board-output';
 import type { BoardSource } from './board-source';
@@ -57,6 +57,23 @@ export interface BoardOptions {
      * layout, a chart's series, range or axis — with the whole Board Diff. The Board is never rewritten; the host
      * keeps this ({@link BoardDiff.toJson}) and hands it back as `diff` next time. */
     readonly onDiff?: (diff: BoardDiff) => void;
+    /** The Chrome each kind of view is drawn with (ADR-0390): a Wrapper's, or the Consumer's own; the built-in
+     * markup where a kind has none. A new one dresses the views again, and the same one costs nothing. */
+    readonly chrome?: BoardChrome | undefined;
+}
+
+/**
+ * The Chrome a Board hands its views, by kind, as the Razor ExBoard takes its `Chrome`, `PivotChrome` and
+ * `ChartChrome`. ExBoard has no Wrapper of its own (ADR-0370 section 5): a Board is dressed by the Chromes the
+ * family's Wrappers make for each product.
+ */
+export interface BoardChrome {
+    /** The grids' Chrome, and the pivots' report grids' where `pivot` names no grid of its own. */
+    readonly grid?: GridChrome<unknown>;
+    /** The pivots' Chrome. */
+    readonly pivot?: PivotChrome;
+    /** The charts' Chrome. */
+    readonly chart?: ChartChrome;
 }
 
 /** A Board drawn into an element, handed back by {@link createBoard}. */
@@ -98,6 +115,8 @@ interface Mounted {
     readonly destroy: () => void;
     /** Hears the Board narrowed, or the width changed. */
     readonly redraw: () => void;
+    /** Hands the view the Board's Chrome again, another one. */
+    readonly dress: () => void;
 }
 
 /** @internal Draws a Board with the mounts it is given; {@link createBoard} hands it the family's. */
@@ -105,6 +124,7 @@ export class BoardDrawing {
     readonly #element: HTMLElement;
     readonly #mounts: BoardMounts;
     #options: BoardOptions;
+    #laidPivot: { readonly from: BoardChrome | undefined; readonly pivot: PivotChrome | undefined } | undefined;
     #bound: BoundBoard | undefined;
     // The Diff last handed in: one handed again is not new, and one that differs from it is, even an earlier one.
     #handedDiff: BoardDiff | undefined;
@@ -150,6 +170,7 @@ export class BoardDrawing {
         const shown = () => bound !== undefined && (options.diff === undefined ? bound.diff.isEmpty : options.diff.sameAs(bound.diff));
         if (!this.#binding && options.board === was.board && options.data === was.data && options.sources === was.sources
             && options.locale === was.locale && options.temporal === was.temporal && (!newDiff || shown())) {
+            if (options.chrome !== was.chrome) for (const mounted of this.#mounted) mounted.dress();
             if (options.width !== was.width) for (const mounted of this.#mounted) mounted.redraw();
             return;
         }
@@ -371,6 +392,7 @@ export class BoardDrawing {
             viewportWidth: 'stretch',
             locale: this.#locale(),
             ...(this.#options.temporal === undefined ? {} : { temporal: this.#options.temporal }),
+            ...(this.#options.chrome?.grid === undefined ? {} : { chrome: this.#options.chrome.grid }),
             onSelectionChanged: next => {
                 // A selection a grid raises after the Board was bound again is of a grid no longer shown.
                 if (this.#bound !== bound) return;
@@ -417,7 +439,7 @@ export class BoardDrawing {
             section.append(line);
         }
         // Its source tells it of the rows a link lets through; a narrowing lets go of what was said of its selection.
-        return { destroy: () => { grid.destroy(); }, redraw: say };
+        return { destroy: () => { grid.destroy(); }, redraw: say, dress: () => { grid.update(options()); } };
     }
 
     #pivot(bound: BoundBoard, view: BoundPivotView, row: BoardRow, host: HTMLElement, section: HTMLElement): Mounted {
@@ -434,6 +456,7 @@ export class BoardDrawing {
             showFieldList: false,
             viewportHeight: row.height,
             viewportWidth: 'stretch',
+            ...this.#pivotChrome(),
             // A pivot's cells narrow by the Items they stand for, read from the report its grid held as it raised the
             // selection. One the pivot cannot read narrows nothing, and says so.
             ...(linked ? {
@@ -475,6 +498,7 @@ export class BoardDrawing {
                 status.textContent = '';
                 pivot.update(options());
             },
+            dress: () => { pivot.update(options()); },
         };
     }
 
@@ -499,6 +523,7 @@ export class BoardDrawing {
                 // The chart's whole range is null; the view's, undefined.
                 range: view.range === undefined ? null : view.range,
                 ...(view.scale === undefined ? {} : { scale: view.scale }),
+                ...(this.#options.chrome?.chart === undefined ? {} : { chrome: this.#options.chrome.chart }),
                 onSeriesVisibilityChanged: ({ key, hidden }) => { if (this.#bound === bound) view.changeVisibility(key, hidden); changed(); },
                 onRangeChanged: range => { if (this.#bound === bound) view.changeRange(range === null ? undefined : range); changed(); },
                 onScaleChanged: scale => { if (this.#bound === bound) view.changeScale(scale); changed(); },
@@ -526,7 +551,23 @@ export class BoardDrawing {
                 chart.update(options());
                 show();
             },
+            dress: () => { chart.update(options()); },
         };
+    }
+
+    // The pivots' Chrome: the Board's grid Chrome dresses their report grids where the pivot Chrome names none, as the
+    // Razor ExBoard hands its Chrome to its pivots. Laid once for each Chrome handed, so a pivot handed the Board's
+    // options again is handed the same object, and does not draw its parts again.
+    #pivotChrome(): { readonly chrome?: PivotChrome } {
+        const chrome = this.#options.chrome;
+        if (this.#laidPivot === undefined || this.#laidPivot.from !== chrome) {
+            const grid = chrome?.pivot?.grid ?? chrome?.grid;
+            const pivot = chrome?.pivot === undefined && grid === undefined ? undefined
+                : { ...chrome?.pivot, ...(grid === undefined ? {} : { grid }) };
+            this.#laidPivot = { from: chrome, pivot };
+        }
+        const { pivot } = this.#laidPivot;
+        return pivot === undefined ? {} : { chrome: pivot };
     }
 
     #locale(): string {

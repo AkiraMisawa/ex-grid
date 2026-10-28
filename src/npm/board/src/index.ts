@@ -24,5 +24,5 @@ export type { BoardSpecAnswer, BoardSpecTool } from './board-tool';
 export { answerBoardSpec, boardChartViewId, boardDeclarationOf, boardOfChart, boardSpecTool, sayBoard } from './board-tool';
 export type { BoardColumnKinds, BoardDiffParts, BoardDiffReading } from './board-diff';
 export { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange } from './board-diff';
-export type { BoardHandle, BoardOptions } from './create-board';
+export type { BoardChrome, BoardHandle, BoardOptions } from './create-board';
 export { boardGap, boardTitleHeight, createBoard } from './create-board';

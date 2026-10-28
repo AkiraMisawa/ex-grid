@@ -58,6 +58,9 @@ class Mounted<O> {
     }
 }
 
+/** A Chrome slot's mount function, which the stand-ins never call: each made is another. */
+const slot = () => () => () => undefined;
+
 /** A member of a handle the Board never calls. */
 const unused = (what: string) => () => { throw new Error(`The Board does not ${what}.`); };
 
@@ -386,6 +389,24 @@ describe('createBoard (ADR-0340)', () => {
         expect(element.classList.contains('ex-board')).toBe(false);
         expect([element.style.display, element.style.gap, element.style.margin]).toEqual(['', '', '0px auto']);
         expect([mounts.grids[0]?.destroyed, mounts.pivots[0]?.destroyed, mounts.charts[0]?.destroyed]).toEqual([true, true, true]);
+    });
+
+    it('hands each kind of view its Chrome, the grids\' to the pivots\' report grids where the pivot names none, and a new one again (ADR-0390)', () => {
+        const grid = { columnMenu: slot() };
+        const pivotGrid = { contextMenu: slot() };
+        const chart = { menu: slot() };
+        const { view, mounts, options } = draw({ board: board(), chrome: { grid, chart } });
+        const [shownGrid, pivotView, chartView] = [only(mounts.grids), only(mounts.pivots), only(mounts.charts)];
+
+        expect([shownGrid.options.chrome, pivotView.options.chrome, chartView.options.chrome]).toEqual([grid, { grid }, chart]);
+        // The same Chrome handed again asks no view anything.
+        view.update({ ...options });
+        expect([shownGrid.updates, pivotView.updates, chartView.updates]).toEqual([0, 0, 0]);
+
+        const menu = slot();
+        view.update({ ...options, chrome: { grid, pivot: { menu, grid: pivotGrid } } });
+        expect(mounts.grids).toHaveLength(1);
+        expect([shownGrid.options.chrome, pivotView.options.chrome, chartView.options.chrome]).toEqual([grid, { menu, grid: pivotGrid }, undefined]);
     });
 });
 
