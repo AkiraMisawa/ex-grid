@@ -184,10 +184,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-borrowed {
+/* Under the Script Core the field is the core's: it marks the box borrowed and the field
+   read only in the browser, and these read that, with no round trip. */
+.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-borrowed,
+.mud-ex-grid .ex-formula-bar-text.ex-formula-bar-borrowed .mud-ex-formula-bar-text[data-ex-formula-bar-field] {
     color: var(--mud-palette-text-disabled);
 }
-.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-editable:focus {
+.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-editable:focus,
+.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text[data-ex-formula-bar-field]:read-write:focus {
     box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
 }
 /* The completion list and the argument hint (ADR-0051): the contents of the box the core

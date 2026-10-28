@@ -33,7 +33,9 @@ const ExGrid.Chrome.ScriptSlotAttributes.FilterValues = "data-ex-filter-values" 
 const ExGrid.Chrome.ScriptSlotAttributes.FindField = "data-ex-find-field" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.FindOption = "data-ex-find-option" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.FindStep = "data-ex-find-step" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FormulaBarField = "data-ex-formula-bar-field" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.MenuItem = "data-ex-menu-item" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.NameBoxField = "data-ex-name-box-field" -> string!
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
 ExGrid.Cells.GridPointedAt<TRow>.InBrowser.get -> ExGrid.Cells.GridPointedInBrowser<TRow!>?
@@ -212,6 +214,15 @@ ExGrid.Chrome.GridFindWords.ReplaceField.get -> string!
 ExGrid.Chrome.GridFindWords.ReplaceField.init -> void
 ExGrid.Chrome.GridFindWords.WholeCell.get -> string!
 ExGrid.Chrome.GridFindWords.WholeCell.init -> void
+ExGrid.Chrome.GridFormulaBarTextView
+ExGrid.Chrome.GridFormulaBarTextView.<Clone>$() -> ExGrid.Chrome.GridFormulaBarTextView!
+ExGrid.Chrome.GridFormulaBarTextView.Deconstruct(out bool IsReadOnly, out bool IsBorrowed) -> void
+ExGrid.Chrome.GridFormulaBarTextView.Equals(ExGrid.Chrome.GridFormulaBarTextView? other) -> bool
+ExGrid.Chrome.GridFormulaBarTextView.GridFormulaBarTextView(bool IsReadOnly, bool IsBorrowed) -> void
+ExGrid.Chrome.GridFormulaBarTextView.IsBorrowed.get -> bool
+ExGrid.Chrome.GridFormulaBarTextView.IsBorrowed.init -> void
+ExGrid.Chrome.GridFormulaBarTextView.IsReadOnly.get -> bool
+ExGrid.Chrome.GridFormulaBarTextView.IsReadOnly.init -> void
 ExGrid.Chrome.GridLoadingView
 ExGrid.Chrome.GridLoadingView.<Clone>$() -> ExGrid.Chrome.GridLoadingView!
 ExGrid.Chrome.GridLoadingView.Deconstruct(out bool IsLoading, out int PlaceholderRowCount) -> void
@@ -243,12 +254,18 @@ ExGrid.Chrome.GridMenuView.Items.get -> System.Collections.Generic.IReadOnlyList
 ExGrid.Chrome.GridMenuView.Items.init -> void
 ExGrid.Chrome.GridMenuView.Type.get -> ExGrid.ColumnType
 ExGrid.Chrome.GridMenuView.Type.init -> void
+ExGrid.Chrome.GridNameBoxView
+ExGrid.Chrome.GridNameBoxView.<Clone>$() -> ExGrid.Chrome.GridNameBoxView!
+ExGrid.Chrome.GridNameBoxView.Equals(ExGrid.Chrome.GridNameBoxView? other) -> bool
+ExGrid.Chrome.GridNameBoxView.GridNameBoxView() -> void
 ExGrid.Chrome.IGridChrome.CellEditor(ExGrid.Chrome.GridCellEditorView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.FilterPanel(ExGrid.Chrome.GridFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.FindPanel(ExGrid.Chrome.GridFindView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.Chrome.IGridChrome.FormulaBarText(ExGrid.Chrome.GridFormulaBarTextView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.LoadingIndicator(ExGrid.Chrome.GridLoadingView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.Chrome.IGridChrome.NameBox(ExGrid.Chrome.GridNameBoxView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlotAttributes
 ExGrid.Chrome.ScriptSlots
@@ -257,7 +274,9 @@ ExGrid.Chrome.ScriptSlots.ColumnMenu = 1 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.ContextMenu = 2 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.FilterPanel = 8 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.FindPanel = 16 -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.FormulaBarText = 64 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.LoadingIndicator = 4 -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.NameBox = 128 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.None = 0 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Clipboard.GridPasteIntent.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Columns.HeaderGroup.Expanded.get -> bool?
@@ -780,6 +799,9 @@ override ExGrid.Chrome.GridFindView.ToString() -> string!
 override ExGrid.Chrome.GridFindWords.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridFindWords.GetHashCode() -> int
 override ExGrid.Chrome.GridFindWords.ToString() -> string!
+override ExGrid.Chrome.GridFormulaBarTextView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFormulaBarTextView.GetHashCode() -> int
+override ExGrid.Chrome.GridFormulaBarTextView.ToString() -> string!
 override ExGrid.Chrome.GridLoadingView.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridLoadingView.GetHashCode() -> int
 override ExGrid.Chrome.GridLoadingView.ToString() -> string!
@@ -789,6 +811,9 @@ override ExGrid.Chrome.GridMenuItemView.ToString() -> string!
 override ExGrid.Chrome.GridMenuView.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridMenuView.GetHashCode() -> int
 override ExGrid.Chrome.GridMenuView.ToString() -> string!
+override ExGrid.Chrome.GridNameBoxView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridNameBoxView.GetHashCode() -> int
+override ExGrid.Chrome.GridNameBoxView.ToString() -> string!
 override ExGrid.Columns.HeaderGroupToggle.Equals(object? obj) -> bool
 override ExGrid.Columns.HeaderGroupToggle.GetHashCode() -> int
 override ExGrid.Columns.HeaderGroupToggle.ToString() -> string!
@@ -878,12 +903,16 @@ static ExGrid.Chrome.GridFindView.operator !=(ExGrid.Chrome.GridFindView? left, 
 static ExGrid.Chrome.GridFindView.operator ==(ExGrid.Chrome.GridFindView? left, ExGrid.Chrome.GridFindView? right) -> bool
 static ExGrid.Chrome.GridFindWords.operator !=(ExGrid.Chrome.GridFindWords? left, ExGrid.Chrome.GridFindWords? right) -> bool
 static ExGrid.Chrome.GridFindWords.operator ==(ExGrid.Chrome.GridFindWords? left, ExGrid.Chrome.GridFindWords? right) -> bool
+static ExGrid.Chrome.GridFormulaBarTextView.operator !=(ExGrid.Chrome.GridFormulaBarTextView? left, ExGrid.Chrome.GridFormulaBarTextView? right) -> bool
+static ExGrid.Chrome.GridFormulaBarTextView.operator ==(ExGrid.Chrome.GridFormulaBarTextView? left, ExGrid.Chrome.GridFormulaBarTextView? right) -> bool
 static ExGrid.Chrome.GridLoadingView.operator !=(ExGrid.Chrome.GridLoadingView? left, ExGrid.Chrome.GridLoadingView? right) -> bool
 static ExGrid.Chrome.GridLoadingView.operator ==(ExGrid.Chrome.GridLoadingView? left, ExGrid.Chrome.GridLoadingView? right) -> bool
 static ExGrid.Chrome.GridMenuItemView.operator !=(ExGrid.Chrome.GridMenuItemView? left, ExGrid.Chrome.GridMenuItemView? right) -> bool
 static ExGrid.Chrome.GridMenuItemView.operator ==(ExGrid.Chrome.GridMenuItemView? left, ExGrid.Chrome.GridMenuItemView? right) -> bool
 static ExGrid.Chrome.GridMenuView.operator !=(ExGrid.Chrome.GridMenuView? left, ExGrid.Chrome.GridMenuView? right) -> bool
 static ExGrid.Chrome.GridMenuView.operator ==(ExGrid.Chrome.GridMenuView? left, ExGrid.Chrome.GridMenuView? right) -> bool
+static ExGrid.Chrome.GridNameBoxView.operator !=(ExGrid.Chrome.GridNameBoxView? left, ExGrid.Chrome.GridNameBoxView? right) -> bool
+static ExGrid.Chrome.GridNameBoxView.operator ==(ExGrid.Chrome.GridNameBoxView? left, ExGrid.Chrome.GridNameBoxView? right) -> bool
 static ExGrid.Columns.HeaderGroupToggle.operator !=(ExGrid.Columns.HeaderGroupToggle? left, ExGrid.Columns.HeaderGroupToggle? right) -> bool
 static ExGrid.Columns.HeaderGroupToggle.operator ==(ExGrid.Columns.HeaderGroupToggle? left, ExGrid.Columns.HeaderGroupToggle? right) -> bool
 static ExGrid.Columns.HiddenMark.operator !=(ExGrid.Columns.HiddenMark? left, ExGrid.Columns.HiddenMark? right) -> bool

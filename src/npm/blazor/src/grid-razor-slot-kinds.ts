@@ -4,15 +4,16 @@
 // so every product that draws a grid fills its slots alike: ExGrid's own, and a pivot's report grid.
 
 import {
-    filterPanelLabelIds, findPanelLabelIds, operatorLabelId, wireCellEditor, wireFilterPanel, wireFindPanel, wireMenuItems, type FilterPanelCondition,
-    type FilterPanelView, type FindPanelView, type GridCellEditorSlotContext, type GridColumnMenuSlotContext, type GridContextMenuSlotContext,
-    type GridFilterPanelSlotContext,
+    filterPanelLabelIds, findPanelLabelIds, operatorLabelId, wireCellEditor, wireFilterPanel, wireFindPanel, wireFormulaBarText, wireMenuItems, wireNameBox,
+    type FilterPanelCondition, type FilterPanelView, type FindPanelView, type GridCellEditorSlotContext, type GridColumnMenuSlotContext,
+    type GridContextMenuSlotContext, type GridFilterPanelSlotContext, type GridFormulaBarTextSlotContext, type GridNameBoxSlotContext,
     type GridFindPanelSlotContext, type GridLoadingIndicatorSlotContext,
 } from '@ex-grid/core';
 import type { HostedSlotKind, RazorSlotKind } from './razor-slot-host';
 
 /** The grid's slots a Razor Chrome fills, as the core names them. */
-export type GridRazorSlotName = 'cellEditor' | 'columnMenu' | 'contextMenu' | 'filterPanel' | 'findPanel' | 'loadingIndicator';
+export type GridRazorSlotName =
+    'cellEditor' | 'columnMenu' | 'contextMenu' | 'filterPanel' | 'findPanel' | 'formulaBarText' | 'loadingIndicator' | 'nameBox';
 
 /** A menu's kind: the commands as data, and the keys wired on the items, which take the keyboard. */
 const menuKind: RazorSlotKind<GridColumnMenuSlotContext | GridContextMenuSlotContext<unknown>> = {
@@ -86,9 +87,31 @@ const editorKind: RazorSlotKind<GridCellEditorSlotContext> = {
     wire: (contents, editor, answered) => wireCellEditor(contents, editor, answered),
 };
 
+/** The Formula Bar's text field's kind: whether it takes typing and whether its text is borrowed, as data, drawn again
+ * as they change, and the field the contents mark handed to the core, which reads, writes and names it in the browser.
+ * It takes the keyboard only by the user's press, so no input waits for it. */
+const barTextKind: RazorSlotKind<GridFormulaBarTextSlotContext> = {
+    takesKeyboard: false,
+    data: bar => {
+        const view = bar.view();
+        return { json: JSON.stringify({ readOnly: view.readOnly, borrowed: view.borrowed }), drawn: undefined, memo: undefined };
+    },
+    subscribe: (bar, again) => bar.subscribe(again),
+    wire: (contents, bar) => wireFormulaBarText(contents, bar),
+};
+
+/** The Name Box's kind: nothing as data, and the field the contents mark handed to the core, which writes the Focus's
+ * name into it and hears what is typed and entered in the browser. */
+const nameBoxKind: RazorSlotKind<GridNameBoxSlotContext> = {
+    takesKeyboard: false,
+    data: () => ({ json: '{}', drawn: undefined, memo: undefined }),
+    wire: (contents, box) => wireNameBox(contents, box),
+};
+
 // Every slot a Razor Chrome fills has its kind: a name added to GridRazorSlotName without one does not compile.
 const gridKindsByName = {
     cellEditor: editorKind, columnMenu: menuKind, contextMenu: menuKind, loadingIndicator: loadingKind, filterPanel: filterKind, findPanel: findKind,
+    formulaBarText: barTextKind, nameBox: nameBoxKind,
 } satisfies Record<GridRazorSlotName, HostedSlotKind>;
 
 /** The kinds of the grid's slots a Razor Chrome fills, by the core's slot names, for a RazorSlotHost. */

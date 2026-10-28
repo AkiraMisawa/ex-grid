@@ -249,6 +249,38 @@ public class ScriptGridChromeTests : BunitContext
         Assert.Equal("Book Text 'a' Point error 'Not a book' pending True", cut.Find(".ex-razor-slot").TextContent);
     }
 
+    private sealed class BarChrome : IGridChrome
+    {
+        public ScriptSlots ScriptSlots => ScriptSlots.FormulaBarText | ScriptSlots.NameBox;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? FormulaBarText(GridFormulaBarTextView view) => builder => builder.AddContent(0,
+            $"bar read only {view.IsReadOnly} borrowed {view.IsBorrowed}");
+
+        public RenderFragment? NameBox(GridNameBoxView view) => builder => builder.AddContent(0, "name box");
+    }
+
+    [Fact] // ADR-0410 section 3 / ADR-0051: the Formula Bar's text field's view crosses as data, and the Name Box is drawn from none
+    public async Task ADR0410_the_formula_bars_views_cross_as_data()
+    {
+        var cut = Grid(new BarChrome());
+        using (var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2])))
+            Assert.Equal("""["formulaBarText","nameBox"]""", document.RootElement.GetProperty("options").GetProperty("razorSlots").GetRawText());
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "formulaBarText", "{\"readOnly\":true,\"borrowed\":false}"));
+        await cut.InvokeAsync(() => Bridge().MountSlot(2, 1, "nameBox", "{}"));
+        Assert.Equal(["bar read only True borrowed False", "name box"], cut.FindAll(".ex-razor-slot").Select(slot => slot.TextContent));
+
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2, "{\"readOnly\":true,\"borrowed\":true}"));
+        Assert.Equal("bar read only True borrowed True", cut.FindAll(".ex-razor-slot")[0].TextContent);
+    }
+
     [Fact] // ADR-0410: a Chrome that names a slot this adapter does not fill is refused by name, never left out quietly
     public void ADR0410_a_slot_the_adapter_does_not_fill_is_refused()
     {
@@ -258,7 +290,7 @@ public class ScriptGridChromeTests : BunitContext
 
     private sealed class UnknownSlotChrome : IGridChrome
     {
-        public ScriptSlots ScriptSlots => (ScriptSlots)64;
+        public ScriptSlots ScriptSlots => (ScriptSlots)1024;
 
         public RenderFragment? FilterPanel(FilterPanelContext context) => null;
 
