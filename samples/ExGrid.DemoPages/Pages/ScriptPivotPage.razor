@@ -1,6 +1,7 @@
 @page "/script-pivot"
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
 @using global::ExGrid.Selection
+@using global::ExGrid.Summarizing
 @using global::ExPivot
 @using global::ExPivot.Components
 @using global::ExPivot.Engine
@@ -34,7 +35,8 @@
     <span id="script-pivot-layout" role="status">Rows: @string.Join(", ", _layout.Rows.Select(row => row.Field))</span><br />
     <span id="script-pivot-field-list" role="status">Field List shown: @_showFieldList</span><br />
     <span id="script-pivot-details" role="status">@_details</span><br />
-    <span id="script-pivot-selection" role="status">@_selection</span>
+    <span id="script-pivot-selection" role="status">@_selection</span><br />
+    <span id="script-pivot-summary" role="status">@_summary</span>
 </p>
 
 <ExPivot.Script.ExPivot Source="_source"
@@ -43,6 +45,7 @@
                         Label="@(_japanese ? PivotWords.Japanese : null)"
                         OnShowDetails="@(_takeDetails ? _showDetails : default)"
                         SelectionChanged="ShowSelection"
+                        OnSelectionSummaryChanged="ShowSummary"
                         ViewportHeight="420" />
 
 @code {
@@ -83,6 +86,18 @@
     private void ShowSelection(GridSelection selection) => _selection = selection.IsEmpty
         ? "Nothing selected"
         : $"Focus: row {selection.Focus.Row}, column {selection.Focus.Column}; {selection.Ranges.Count} range(s)";
+
+    // The Selection Summary as .NET heard it (ADR-0130): the sum the strip shows, in the text the pivot wrote it in
+    // the Focus value's number format. Never empty, for the reason the Selection's line is not.
+    private string _summary = "No summary";
+
+    private void ShowSummary(SelectionSummary summary) => _summary = summary switch
+    {
+        { Status: SelectionSummaryStatus.Answered, Result: { } result } => result.TextOf(SummaryFigures.Sum) is { } text
+            ? $"Sum: {text}"
+            : "Sum: no text, as the Focus value has no number format",
+        _ => $"No summary ({summary.Status})",
+    };
 
     // A layout of the page's own making replaces the one on screen.
     private void Reset() => _layout = First;

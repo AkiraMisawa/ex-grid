@@ -4,7 +4,9 @@
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { systemClock } from '@ex-grid/core';
-import type { CellPosition, CopyPlan, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
+import type {
+    CellPosition, CopyPlan, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, GridSummaryResult, SelectionRange, SummaryFigure,
+} from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
     type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotReportCopyQuery, type PivotReportCopyResult, type PivotReportMetadata, type PivotReportRange, type PivotReportRefusal,
@@ -547,6 +549,58 @@ describe('ExPivot\'s copy (ADR-0152)', () => {
         const version = defined(grid.current.source, 'the report rows').snapshot().rowSequenceVersion;
         expect(await answer({ plan: across(1), withHeaders: false, rowSequenceVersion: version + 1 }, new AbortController().signal))
             .toEqual({ kind: 'refuse', sentence: 'The data has changed — refresh.' });
+    });
+});
+
+/** The Selection Summary the report's rows answer over its first two value cells. */
+async function summary(grid: GridStandIn, figures: readonly SummaryFigure[]): Promise<GridSummaryResult> {
+    const rows = defined(grid.current.source, 'the report rows');
+    if (rows.summarize === undefined) throw new Error('The report\'s rows summarise nothing.');
+    return rows.summarize({
+        ranges: [{ topRow: 0, leftColumn: 1, rowCount: 2, columnCount: 1 }],
+        columns: grid.current.columns.map(column => column.name),
+        rowSequenceVersion: rows.snapshot().rowSequenceVersion,
+        figures,
+        focus: { row: 0, column: 1 },
+    }, new AbortController().signal);
+}
+
+describe('ExPivot\'s Selection Summary (ADR-0130)', () => {
+    it('ADR-0130: the figures are the report source\'s over the cells selected, those that read numbers written in the Focus value\'s format', async () => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region'], values: [{ field: 'Amount', numberFormat: '#,##0.00' }] }) });
+        await settled();
+        const answer = await summary(grid, ['average', 'count', 'sum']);
+        if (answer.kind !== 'answered') throw new Error(answer.reason);
+        expect(answer.figures.sum).toMatchObject({ kind: 'number', number: 42 });
+        expect(answer.figures.average).toMatchObject({ kind: 'number', number: 21 });
+        expect(answer.figures.count).toMatchObject({ kind: 'number', number: 2 });
+        expect(answer.texts).toEqual({ average: '21.00', sum: '42.00' });
+    });
+
+    it('ADR-0130: the grid is handed the figures to show and whether to show them, Excel\'s three unless given', async () => {
+        const source = local();
+        const { view, grid } = mount({ source, layout: byRegion });
+        await settled();
+        expect(grid.current.summaryFigures).toEqual(['average', 'count', 'sum']);
+        expect(grid.current.showSelectionSummary).toBe(true);
+        view.update({ source, layout: byRegion, showSelectionSummary: false });
+        expect(grid.current.showSelectionSummary).toBe(false);
+    });
+
+    it('ADR-0130: the figures menu\'s choice is the report\'s, raised, and kept until the Consumer hands in different figures', async () => {
+        const chosen: (readonly SummaryFigure[])[] = [];
+        const source = local();
+        const { view, grid } = mount({ source, layout: byRegion, summaryFigures: ['sum'], onSummaryFiguresChanged: figures => { chosen.push(figures); } });
+        await settled();
+        expect(grid.current.summaryFigures).toEqual(['sum']);
+        defined(grid.current.onSummaryFiguresChanged, 'the figures menu\'s handler')(['max']);
+        expect(grid.current.summaryFigures).toEqual(['max']);
+        expect(chosen).toEqual([['max']]);
+        // The same figures handed again, in a new list, are no new choice of the Consumer's.
+        view.update({ source, layout: byRegion, summaryFigures: ['sum'], onSummaryFiguresChanged: figures => { chosen.push(figures); } });
+        expect(grid.current.summaryFigures).toEqual(['max']);
+        view.update({ source, layout: byRegion, summaryFigures: ['min'] });
+        expect(grid.current.summaryFigures).toEqual(['min']);
     });
 });
 

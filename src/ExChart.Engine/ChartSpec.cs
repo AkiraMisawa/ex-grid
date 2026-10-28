@@ -195,6 +195,10 @@ public static class ChartSpec
         ArgumentNullException.ThrowIfNull(json);
         ArgumentNullException.ThrowIfNull(sources);
         ArgumentOutOfRangeException.ThrowIfLessThan(pixels, 1);
+        if (from is { } f && !double.IsFinite(f))
+            throw new ArgumentOutOfRangeException(nameof(from), from, "A chart is read through its sources over a range of finite positions.");
+        if (to is { } t && !double.IsFinite(t))
+            throw new ArgumentOutOfRangeException(nameof(to), to, "A chart is read through its sources over a range of finite positions.");
         JsonDocument document;
         try
         {
@@ -210,12 +214,15 @@ public static class ChartSpec
             var answers = new ChartSourceAnswer[asked.Count];
             if (asked.Count > 0)
             {
+                // Every source is found before any is asked, so a Data Handle no source answers for leaves no question in flight.
+                var found = new IChartSource[asked.Count];
+                for (var i = 0; i < asked.Count; i++)
+                    found[i] = sources(asked[i].Data) ?? throw new ChartSpecRefusedException($"series[{i}].data", $"series[{i}].data \"{asked[i].Data}\" is not known: name a Data Handle a capability returned.");
                 var asks = new Task<ChartSourceAnswer>[asked.Count];
                 for (var i = 0; i < asked.Count; i++)
                 {
                     var (data, x, y) = asked[i];
-                    var source = sources(data) ?? throw new ChartSpecRefusedException($"series[{i}].data", $"series[{i}].data \"{data}\" is not known: name a Data Handle a capability returned.");
-                    asks[i] = source.ThinAsync(new ChartSourceQuery(data, x, y, values, from, to, pixels), cancellationToken).AsTask();
+                    asks[i] = found[i].ThinAsync(new ChartSourceQuery(data, x, y, values, from, to, pixels), cancellationToken).AsTask();
                 }
                 answers = await Task.WhenAll(asks).ConfigureAwait(false);
             }

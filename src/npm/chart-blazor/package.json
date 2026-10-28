@@ -1,0 +1,20 @@
+{
+  "name": "@ex-grid/chart-blazor",
+  "private": true,
+  "version": "0.0.0-dev",
+  "description": "Blazor's ExChart, the browser's half: ExChart's Script Core and its bridge to .NET, bundled into the script the ExChart NuGet package ships (ADR-0370 section 1, ADR-0350 section 9). Never published to npm.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build": "node ../scripts/build-blazor.mjs --name ex-chart-core",
+    "api": "node ../scripts/build-blazor.mjs --name ex-chart-core",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ex-grid/chart": "0.0.0-dev",
+    "@ex-grid/core": "0.0.0-dev",
+    "@ex-grid/data": "0.0.0-dev"
+  }
+}

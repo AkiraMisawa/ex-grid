@@ -20,6 +20,8 @@ import { PivotLayout } from '@ex-grid/pivot-engine';
 import type { PivotShowValuesAs } from '@ex-grid/pivot-engine';
 import { PivotSlicing } from '@ex-grid/pivot-engine';
 import { PivotSource } from '@ex-grid/pivot-engine';
+import { SelectionSummary } from '@ex-grid/core';
+import { SummaryFigure } from '@ex-grid/core';
 import { ViewportSize } from '@ex-grid/core';
 
 // @public
@@ -432,13 +434,17 @@ export interface PivotViewOptions {
     readonly onLayoutChanged?: (event: PivotLayoutChangedEvent) => void;
     readonly onRefused?: (event: PivotRefusedEvent) => void;
     readonly onSelectionChanged?: (event: PivotSelectionChangedEvent) => void;
+    readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
     readonly onShowDetails?: (event: PivotShowDetailsEvent) => void;
     readonly onShowFieldListChanged?: (event: PivotFieldListShownEvent) => void;
+    readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
     readonly redrawInterval?: number;
     readonly rowHeight?: number;
     readonly showFieldList?: boolean;
+    readonly showSelectionSummary?: boolean;
     readonly slicing?: PivotSlicing;
     readonly source: PivotSource;
+    readonly summaryFigures?: readonly SummaryFigure[];
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
 }

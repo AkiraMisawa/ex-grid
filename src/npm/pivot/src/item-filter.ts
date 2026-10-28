@@ -62,10 +62,7 @@ interface DrawnItem {
 /** The sentence for a source's refusal or failure to list Items, as the Razor component's ProblemText says it. */
 export function itemsProblemText(problem: ItemsProblem, words: PivotScreenWords): string {
     if ('error' in problem) return words.failed(problem.error);
-    const { refusal } = problem;
-    if (refusal.sourceRefusal !== undefined) return words.sourceRefused(refusal.sourceRefusal);
-    // A report the source no longer holds asks for a refresh, as data that moved on does (ADR-0066).
-    return refusal.kind === 'reportVersionNotHeld' ? words.word('data-changed') : words.fill('source-refused', refusal.message);
+    return words.reportRefused(problem.refusal);
 }
 
 /** Filter…' draft: the ticks and the search, and the source's answer to a search past the Items held. It is drawn

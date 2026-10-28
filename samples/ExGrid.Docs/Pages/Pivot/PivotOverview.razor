@@ -45,13 +45,17 @@
             It carries <code>Layout</code>, <code>ShowFieldList</code>, the sizes, <code>Density</code>,
             <code>Culture</code>, <code>Caps</code>, <code>RedrawInterval</code>, <code>ChangeHighlightDuration</code>,
             <code>DetailsView</code>, <code>OnShowDetails</code>, <code>SelectionChanged</code>, which hands over the
-            report grid's <code>GridSelection</code> as the pivot above does, and <code>Label</code>. A function cannot cross to the
+            report grid's <code>GridSelection</code> as the pivot above does, the Selection Summary's
+            <code>ShowSelectionSummary</code>, <code>SummaryFigures</code>, <code>SummaryFiguresChanged</code> and
+            <code>OnSelectionSummaryChanged</code>, and <code>Label</code>. <code>Slicing</code> carries its
+            <code>Budget</code>, read once as the pivot attaches; its clock and its yield are .NET's, and one that sets
+            them is refused by name. A function cannot cross to the
             browser, so <code>Label</code> is asked for every id the pivot and its grid have words for each time the
             parameters are set, as the Razor component asks it on each render; the words cross only when they changed,
             and it answers from the id alone. Records double clicked while a
             removed <code>OnShowDetails</code> was still on its way to the browser open as if nobody had listened. Not carried yet: the Chromes,
-            the Selection Summary's parameters, <code>OrderKeyPolicies</code>,
-            <code>Clock</code>, <code>Slicing</code>, <code>CellMetrics</code> and <code>ReportSource</code>; use the pivot above for those until they arrive. A field with an
+            <code>OrderKeyPolicies</code>, <code>Clock</code>, <code>CellMetrics</code> and <code>ReportSource</code>;
+            use the pivot above for those until they arrive. A field with an
             <code>OrderKey</code>, a .NET function the browser cannot call, is refused by name; declare its order with
             <code>ItemOrder</code> instead. The script it runs is bundled into the package, at an address that changes
             with its content.
