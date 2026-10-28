@@ -27,8 +27,9 @@ namespace ExSheet.Script;
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
 /// <para>Not carried yet, and so not offered: a <c>Chrome</c>, <c>ToolbarContent</c>, a <c>PointingScope</c>,
-/// <c>OnLinkedColumnColoursChanged</c>, <c>OnSelectionSummaryChanged</c>, and the commands that edit, format, open
-/// and save, or declare and push a Linked Table.</para>
+/// <c>OnLinkedColumnColoursChanged</c>, <c>OnSelectionSummaryChanged</c>, <c>SetCellFormatFromFocusAsync</c>,
+/// <c>OpenAsync</c> and <c>SaveAsync</c>. What the Razor component answers at once is asked of the browser here, so
+/// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>
 /// </remarks>
 public sealed class ExSheet : ComponentBase, IAsyncDisposable
 {
