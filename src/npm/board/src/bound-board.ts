@@ -15,10 +15,9 @@ import { SnapshotPivotSource, writePivotLayoutJson, type PivotLayout, type Pivot
 import { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange, kindsOf, placed } from './board-diff';
 import { BoardOutput } from './board-output';
 import { valuesUnder, type BoardSource, type PivotCellItems } from './board-source';
-import { refusedAt } from './grid-view-spec';
 import { declaredInput, type BoardChartView, type BoardGridView, type BoardLink, type BoardPivotView, type BoardReading } from './board-spec';
 import { LinkCondition, narrowedPositions, narrowedSnapshot, valueAt, type BoardValue } from './link-condition';
-import { checkShapedPage, fetchedColumns, resized, shapedColumns, shapedRows, type ShapedRow } from './shaped-grid';
+import { checkShapedPage, checkSortsShown, engineFilterAt, fetchedColumns, resized, shapedColumns, shapedRows, type ShapedRow } from './shaped-grid';
 import { declaredChartData } from './snapshot-values';
 import { elementAt, messageOf } from './must';
 import { taggedFilter } from './tagged-filter';
@@ -698,13 +697,7 @@ export class BoundGridView {
             held.gatherInterval = 0;
             this.source = this.#held = held;
             held.setColumns(columns);
-            // The spec's reader reads the sort against every column the input declares, as a server's grid may sort by
-            // any; a grid over a Snapshot sorts by those it shows (C#'s GridSource.From refuses the rest by name).
-            view.grid.viewState.sorts.forEach((sort, i) => {
-                if (!this.#declared.has(sort.column)) {
-                    throw new BoardRefusedError(`${path}.sorts[${i}]`, `The grid sorts by column '${sort.column}', which it does not show.`);
-                }
-            });
+            checkSortsShown(view.grid.viewState.sorts, this.#declared, path);
         } else {
             const { source, alsoRead } = rows;
             this.snapshot = undefined;
@@ -727,7 +720,7 @@ export class BoundGridView {
             });
         }
         this.#taggedFilter = view.grid.viewState.filter;
-        this.#engineSet = this.#engineFilter(view.grid.viewState.filter, path);
+        this.#engineSet = engineFilterAt(view.grid.viewState.filter, this.#declared, path);
         this.source.setSorts(view.grid.viewState.sorts);
         this.source.setFilter(this.#engineSet);
         // The query first, so a fetched grid's first page is fetched under it.
@@ -789,17 +782,6 @@ export class BoundGridView {
             return;
         }
         this.source.setFilter(this.#engineSet);
-    }
-
-    // The spec's filter as the engine compares it, against the columns the grid is built with; a refusal named under
-    // the grid's path. Only the conversion is in the try: a refusal of the source's own is not the spec's.
-    #engineFilter(filter: GridFilter | undefined, path: string): GridFilter | undefined {
-        try {
-            return engineFilterOf(filter, name => this.#declared.get(name));
-        } catch (error) {
-            if (!(error instanceof GridViewStateJsonError)) throw error;
-            throw refusedAt(error, path);
-        }
     }
 
     /** How many leading columns are pinned. */

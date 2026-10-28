@@ -18,8 +18,9 @@ namespace ExChart.Script;
 /// </summary>
 /// <remarks>
 /// <para>It stands beside <see cref="Components.ExChart"/>, the Razor component, until ExChart's Blazor step holds
-/// (ADR-0370 section 11). It reads no Chart Spec yet, and takes no Chrome: the toolbar and the menu are the built-in
-/// ones.</para>
+/// (ADR-0370 section 11). It takes no Chrome yet: the toolbar and the menu are the built-in ones. A Chart Spec is read
+/// through its Chart Sources in .NET, where the sources are, as the Razor component reads it (ADR-0344), and the
+/// reading crosses as a definition does.</para>
 /// <para>A .NET function cannot cross to the browser, so a definition's Formats cross as the texts they write each
 /// value the definition holds; what the chart would ask a Format of a value it does not hold, an axis' ticks, a
 /// candle's change, is refused by name, never written another way. A function series, an axis Format and a Row Key
@@ -30,9 +31,21 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
 {
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    /// <summary>The chart, in the data's terms. A new instance is a new definition, and crosses to the browser again;
-    /// the same one handed back crosses nothing.</summary>
-    [Parameter, EditorRequired] public ChartDefinition Definition { get; set; } = default!;
+    /// <summary>The chart, in the data's terms; or null when it is read from a <see cref="Spec"/> through
+    /// <see cref="Sources"/>. A new instance is a new definition, and crosses to the browser again; the same one handed
+    /// back crosses nothing.</summary>
+    [Parameter] public ChartDefinition? Definition { get; set; }
+
+    /// <summary>
+    /// A Chart Spec the chart reads through <see cref="Sources"/> in place of a <see cref="Definition"/> (ADR-0344):
+    /// each series asks its Data Handle's source for its column, thinned to the chart's pixels over the range shown, and
+    /// asks again when the range changes. Until the first answer nothing is drawn; a spec the sources cannot answer,
+    /// or an answer older than the data drawn, is said in the chart's place.
+    /// </summary>
+    [Parameter] public string? Spec { get; set; }
+
+    /// <summary>The Chart Source of each Data Handle <see cref="Spec"/> names, null for a handle the host does not know.</summary>
+    [Parameter] public Func<string, IChartSource?>? Sources { get; set; }
 
     /// <summary>The drawing's width in CSS pixels; geometry is a C# parameter, never only a stylesheet value (ADR-0027).</summary>
     [Parameter] public double Width { get; set; } = 800;
@@ -94,6 +107,8 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
 
     private ScriptMount? _mount;
     private ElementReference _root;
+    private bool _disposed;
+    // The definition that crossed last, as JSON with its Row Keys, and its generation.
     private ChartDefinition? _definition;
     private string? _definitionJson;
     private RowKeys _rows = new();
@@ -107,17 +122,176 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
-        if (Definition is null)
-            throw new InvalidOperationException("The Script Core's ExChart draws a Definition; it reads no Chart Spec yet (ADR-0370 section 1).");
-        if (!ReferenceEquals(Definition, _definition))
+        if (Spec is null && Definition is null)
+            throw new InvalidOperationException("An ExChart is given its Definition, or a Spec and the Sources it is read through.");
+        if (Spec is not null && (Definition is not null || Sources is null))
+            throw new InvalidOperationException("An ExChart read from a Spec is given the Sources it is read through, and no Definition beside them (ADR-0344).");
+        // The range a spec is read over: the parameter when it changed, else what the user last narrowed it to, as the
+        // Script Core takes it back (ADR-0272).
+        if (!_rangeTaken || _rangeParameter != Range)
+            _range = Range;
+        (_rangeParameter, _rangeTaken) = (Range, true);
+        // Compared by value: a spec built again on each render, or a method group's new delegate, is the same ask and is
+        // not read again.
+        var ask = false;
+        if (Spec is not null && (!string.Equals(_askedSpec, Spec, StringComparison.Ordinal) || !Equals(_askedSources, Sources)))
         {
-            // Checked before anything moves: a definition this adapter cannot carry leaves the chart on the one it had.
-            var (json, rows) = ChartWire.Definition(Definition);
-            _definition = Definition;
-            _definitionJson = json;
-            _rows = rows;
-            _generation += 1;
+            // Another spec or other sources: what was read from the last is not drawn under the new.
+            _read = null;
+            _versions = new Dictionary<string, long>();
+            SetRefusal(null);
+            ask = true;
         }
+        else if (Spec is not null && (_askedRange != _range || _askedPixels != SourcePixels))
+        {
+            // Another range, or another width, whose pixels the source thins to.
+            ask = true;
+        }
+        else if (Spec is null)
+        {
+            // An ask still out is dropped when it answers: the Consumer's Definition is drawn now.
+            if (_askedSpec is not null)
+            {
+                _asked++;
+                _renderOwed = true;
+            }
+            (_read, _askedSpec, _askedSources, _asking, _held) = (null, null, null, false, null);
+            SetRefusal(null);
+        }
+        if (Definition is { } definition)
+            Take(definition);
+        else if (!_asking || _read is null)
+            // Read through a source, the definition drawn stays until the newest ask is answered (ADR-0344).
+            Take(_read?.Definition ?? Unread);
+        // Asked once a definition is held: an ask a spec refuses at once answers before this method returns.
+        if (ask)
+            _ = AskObservedAsync();
+    }
+
+    // Checked before anything moves: a definition this adapter cannot carry leaves the chart on the one it had.
+    private void Take(ChartDefinition definition)
+    {
+        if (ReferenceEquals(definition, _definition))
+            return;
+        var (json, rows) = ChartWire.Definition(definition);
+        _definition = definition;
+        _definitionJson = json;
+        _rows = rows;
+        _generation += 1;
+    }
+
+    // ---- Read through Chart Sources (ADR-0322, ADR-0344) ----
+
+    // The newest ask, and what it asked; the reading drawn, the version each Data Handle was read at, and what is said
+    // in the chart's place when no reading can be drawn.
+    private int _asked;
+    private bool _asking;
+    private string? _askedSpec;
+    private Func<string, IChartSource?>? _askedSources;
+    private ChartRange? _askedRange;
+    private int _askedPixels;
+    // What crossed last, and, while an ask is out over a reading drawn, what stays drawn until it is answered.
+    private DrawingState? _lastState;
+    private DrawingState? _held;
+    private ChartSpecReading? _read;
+    private IReadOnlyDictionary<string, long> _versions = new Dictionary<string, long>();
+    private string? _refusal;
+    // The range read over, and the parameter it was last taken from.
+    private ChartRange? _range;
+    private ChartRange? _rangeParameter;
+    private bool _rangeTaken;
+
+    // Drawn until the first answer: no series, so nothing is drawn as if it were the data.
+    private static readonly ChartDefinition Unread = new(ChartAxis.Numbers(), []);
+
+    // The device pixels a plot of the chart's width could have, at the two device pixels a CSS pixel ExChart counts in
+    // (ADR-0254): the source thins to them, and the plot thins on top if it is narrower.
+    private int SourcePixels => Math.Max(1, (int)Math.Ceiling(Width * 2));
+
+    // Asked from OnParametersSet, which does not wait for the answer: what the answer throws fails the component, as a
+    // handler's exception does.
+    private async Task AskObservedAsync()
+    {
+        try
+        {
+            await AskAsync();
+        }
+        catch (Exception e)
+        {
+            await DispatchExceptionAsync(e);
+        }
+    }
+
+    private async Task AskAsync()
+    {
+        var asked = ++_asked;
+        var (spec, sources, range, pixels) = (Spec!, Sources!, _range, SourcePixels);
+        (_askedSpec, _askedSources, _askedRange, _askedPixels) = (spec, sources, range, pixels);
+        // The points of another range, drawn at this one, are not what this range holds: the drawing, its options with
+        // it, stays as it crossed until the answer (ADR-0344).
+        if (_read is not null && !_asking)
+            _held = _lastState;
+        _asking = true;
+        _renderOwed = true;
+        ChartSourceReading? read = null;
+        string? refusal = null;
+        try
+        {
+            // Resumed where the ask was made: the reading is the renderer's.
+            read = await ChartSpec.ReadAsync(spec, sources, pixels, range?.From, range?.To);
+        }
+        catch (ChartSpecRefusedException e)
+        {
+            refusal = e.Message;
+        }
+        catch (Exception e)
+        {
+            // A source's own cancellation or timeout too: the chart says it was not answered, and is never left waiting
+            // on an ask that ended.
+            refusal = $"The source did not answer the chart: {e.Message}";
+        }
+        // Another ask replaced this one, or the chart is gone: dropped (spine rule 6).
+        if (asked != _asked || _disposed)
+            return;
+        _asking = false;
+        _held = null;
+        _renderOwed = true;
+        if (read?.Versions.FirstOrDefault(v => _versions.TryGetValue(v.Key, out var shown) && v.Value < shown) is { Key: not null } older)
+        {
+            // Never drawn over the newer data shown, nor left showing what was asked before as if it were the answer:
+            // said in the chart's place (spine rule 1).
+            SetRefusal($"The source answered the chart from version {older.Value} of '{older.Key}', older than version {_versions[older.Key]} the chart was drawn from, so it is not drawn.");
+        }
+        else if (read is not null)
+        {
+            try
+            {
+                Take(read.Reading.Definition);
+                _read = read.Reading;
+                _versions = read.Versions;
+                SetRefusal(null);
+            }
+            catch (NotSupportedException e)
+            {
+                // A reading this adapter cannot carry is said in the chart's place, never drawn another way.
+                SetRefusal(e.Message);
+            }
+        }
+        else
+        {
+            SetRefusal(refusal);
+        }
+        if (_mount is { } mount)
+            await mount.SendAsync(State());
+        StateHasChanged();
+    }
+
+    private void SetRefusal(string? refusal)
+    {
+        if (refusal == _refusal)
+            return;
+        _refusal = refusal;
+        _renderOwed = true;
     }
 
     /// <inheritdoc />
@@ -134,7 +308,7 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         _renderOwed = false;
-        _mount?.Render(builder, element => _root = element);
+        _mount?.Render(builder, element => _root = element, _refusal, _asking, Width, Height);
     }
 
     /// <inheritdoc />
@@ -158,7 +332,14 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
         _mount is { } mount ? mount.AskAsync("download", false, ChartWire.Camel(format)) : Task.FromResult(false);
 
     // The options as they stand, and the definition the component holds.
-    private DrawingState State() => new(OptionsJson(), _definitionJson ?? throw new InvalidOperationException("Internal: the chart has no definition."), _generation);
+    private DrawingState State()
+    {
+        if (_held is { } held)
+            return held;
+        var state = new DrawingState(OptionsJson(), _definitionJson ?? throw new InvalidOperationException("Internal: the chart has no definition."), _generation);
+        _lastState = state;
+        return state;
+    }
 
     private string OptionsJson() => ChartWire.Json(json =>
     {
@@ -214,7 +395,8 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
         json.WriteStartArray("hears");
         if (OnSeriesVisibilityChanged.HasDelegate)
             json.WriteStringValue("seriesVisibilityChanged");
-        if (OnRangeChanged.HasDelegate)
+        // Read through a source, the range the user narrows to is asked for again, whoever else hears it.
+        if (OnRangeChanged.HasDelegate || Spec is not null)
             json.WriteStringValue("rangeChanged");
         if (OnScaleChanged.HasDelegate)
             json.WriteStringValue("scaleChanged");
@@ -239,7 +421,17 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
                 ChartRange? range = payload.ValueKind == JsonValueKind.Null
                     ? null
                     : new ChartRange(End(payload, "from"), End(payload, "to"), End(payload, "yFrom"), End(payload, "yTo"));
-                return () => OnRangeChanged.InvokeAsync(range);
+                return async () =>
+                {
+                    var handed = Range;
+                    await OnRangeChanged.InvokeAsync(range);
+                    // A Consumer that handed a range back, the user's or one of its own, has had it asked for.
+                    if (Spec is null || handed != Range || _range == range)
+                        return;
+                    _range = range;
+                    // Not awaited: the events after it are not held behind a source's answer.
+                    _ = AskObservedAsync();
+                };
             }
             case "scaleChanged":
             {
@@ -304,6 +496,7 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         if (_mount is { } mount)
             await mount.DisposeAsync();
     }

@@ -78,6 +78,8 @@ public static class DemoPageList
             "A Sheet pointing into a positions grid through a Pointing Scope: a press writes a lookup by key, and the arrow keys move it inside the grid, which scrolls to follow (ADR-0058). With ?narrow the grid is laid out narrower than its columns, and shows both of its own scrollbars."),
         new("sheets", "Two sheets", "ExSheet",
             "Two ExSheets on one page: keys, completion, undo and the Formula Bar stay with the Sheet that has the keyboard, and each outlines a Linked Table's columns only in the grid its page wired to it (ADR-0018, ADR-0048, ADR-0057)."),
+        new("script-sheet", "ExSheet over the Script Core", "ExSheet",
+            "Blazor's ExSheet drawn by its TypeScript Script Core: the Workbook and its Formulas in the browser, the Sheet Document bound two ways in .NET, crossing as the JSON both engines read (ADR-0370 section 1)."),
         new("workbook", "Workbook", "ExSheet",
             "One ExSheet holding a Workbook of two Sheets behind Sheet Tabs: a press or Ctrl+PageUp and Ctrl+PageDown shows another Sheet, each keeping its own Selection and scroll position (ADR-0331)."),
         new("xlsx", "Open and save .xlsx", "ExSheet",

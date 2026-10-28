@@ -101,6 +101,9 @@ grep -qxF 'staticwebassets/ex-grid-core.min.js.map' <<<"$(entries ExGrid)" || fa
 # ExPivot's, bundled as ExPivot builds (ADR-0370 section 1).
 grep -qxF 'staticwebassets/ex-pivot.min.js' <<<"$(entries ExPivot)" || fail "ExPivot ships no Script Core module"
 grep -qxF 'staticwebassets/ex-pivot.min.js.map' <<<"$(entries ExPivot)" || fail "ExPivot ships no source map for its Script Core module"
+# ExSheet's, bundled as ExSheet builds (ADR-0370 section 1).
+grep -qxF 'staticwebassets/ex-sheet.min.js' <<<"$(entries ExSheet)" || fail "ExSheet ships no Script Core module"
+grep -qxF 'staticwebassets/ex-sheet.min.js.map' <<<"$(entries ExSheet)" || fail "ExSheet ships no source map for its Script Core module"
 # ExChart's, bundled as ExChart builds (ADR-0370 section 1).
 grep -qxF 'staticwebassets/ex-chart-core.min.js' <<<"$(entries ExChart)" || fail "ExChart ships no Script Core module"
 grep -qxF 'staticwebassets/ex-chart-core.min.js.map' <<<"$(entries ExChart)" || fail "ExChart ships no source map for its Script Core module"

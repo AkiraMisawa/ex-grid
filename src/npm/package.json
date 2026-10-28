@@ -30,6 +30,7 @@
     "sheet-xlsx",
     "sheet",
     "sheet-react",
+    "sheet-blazor",
     "sheet-mantine",
     "sheet-mui"
   ],
