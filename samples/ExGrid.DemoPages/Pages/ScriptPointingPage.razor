@@ -1,4 +1,5 @@
 @page "/script-pointing"
+@implements IDisposable
 @using System.Globalization
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
 @using global::ExGrid.Cells
@@ -96,8 +97,20 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || _sheet is null) return;
-        await _sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
+        try
+        {
+            await _sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
+        }
+        catch (ObjectDisposedException) when (_left)
+        {
+            // Left before the Sheet opened in the browser: the Sheet went with the page, and there is nothing to push to.
+        }
     }
+
+    // Whether the page has been left: a push still waiting for the Sheet to open is then refused with it.
+    private bool _left;
+
+    public void Dispose() => _left = true;
 
     // A position as the table's row, in the declared column order: what the page pushes, and what the Scope reads a
     // pressed row's key from.

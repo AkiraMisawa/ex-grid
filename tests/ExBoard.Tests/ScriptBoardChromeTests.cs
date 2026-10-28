@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Bunit;
+using ExChart.Chrome;
 using ExGrid.Chrome;
 using ExGrid.Data;
 using ExPivot.Chrome;
@@ -70,11 +71,20 @@ public sealed class ScriptBoardChromeTests : BunitContext
         public RenderFragment? Menu(PivotMenuView view) => builder => builder.AddContent(0, $"pivot's {view.Name} menu");
     }
 
-    private IRenderedComponent<ScriptBoard> Draw(IGridChrome? chrome, IPivotChrome? pivotChrome) => Render<ScriptBoard>(ps => ps
+    /// <summary>A chart Chrome filling the chart's context menu.</summary>
+    private sealed class ChartChrome : IChartChrome
+    {
+        public ChartScriptSlots ScriptSlots => ChartScriptSlots.Menu;
+
+        public RenderFragment? Menu(ChartMenuView view) => builder => builder.AddContent(0, $"chart's {view.Name} menu");
+    }
+
+    private IRenderedComponent<ScriptBoard> Draw(IGridChrome? chrome, IPivotChrome? pivotChrome, IChartChrome? chartChrome = null) => Render<ScriptBoard>(ps => ps
         .Add(p => p.Board, Board)
         .Add(p => p.Data, new Dictionary<string, Snapshot> { ["trades"] = Board.Input("trades")!.FromJson("""[{"desk": "Rates"}]""") })
         .Add(p => p.Chrome, chrome)
-        .Add(p => p.PivotChrome, pivotChrome));
+        .Add(p => p.PivotChrome, pivotChrome)
+        .Add(p => p.ChartChrome, chartChrome));
 
     private string SlotsSent()
     {
@@ -89,7 +99,7 @@ public sealed class ScriptBoardChromeTests : BunitContext
     public void ADR0410_the_slots_the_Chromes_fill_cross_as_the_Board_attaches()
     {
         Draw(new GridChrome("grid", ScriptSlots.LoadingIndicator), new PivotChrome(new GridChrome("report", ScriptSlots.ContextMenu)));
-        Assert.Equal("""{"grid":["loadingIndicator"],"pivot":["menu"],"pivotGrid":["loadingIndicator"]}""", SlotsSent());
+        Assert.Equal("""{"grid":["loadingIndicator"],"pivot":["menu"],"pivotGrid":["loadingIndicator"],"chart":[]}""", SlotsSent());
     }
 
     [Fact] // ADR-0410: with no grid Chrome, the grids are the Script Core's own and the report grids the pivot Chrome's grid Chrome's, asked with ExPivot's words as the Razor ExBoard asks it
@@ -97,7 +107,7 @@ public sealed class ScriptBoardChromeTests : BunitContext
     {
         var pivotChrome = new PivotChrome(new GridChrome("report", ScriptSlots.ContextMenu));
         Draw(null, pivotChrome);
-        Assert.Equal("""{"grid":[],"pivot":["menu"],"pivotGrid":["contextMenu"]}""", SlotsSent());
+        Assert.Equal("""{"grid":[],"pivot":["menu"],"pivotGrid":["contextMenu"],"chart":[]}""", SlotsSent());
         var label = Assert.IsType<Func<string, string?>>(pivotChrome.CommandLabel);
         Assert.Equal("Move Up", label(global::ExPivot.PivotCommandIds.MoveUp));
         Assert.Equal("Remove \"Desk\"", label(global::ExPivot.PivotCommandIds.RemoveNamedField + ":Desk"));
@@ -127,6 +137,19 @@ public sealed class ScriptBoardChromeTests : BunitContext
 
         await cut.InvokeAsync(() => Bridge().UnmountSlot(1));
         Assert.Equal("pivot's Layout menu", Assert.Single(cut.FindAll(".ex-razor-slot")).TextContent);
+    }
+
+    [Fact] // ADR-0410: a chart's slots cross apart from the pivot's of the same name, and are drawn by the chart Chrome
+    public async Task ADR0410_a_charts_slot_crosses_apart_and_is_drawn_by_the_chart_Chrome()
+    {
+        var cut = Draw(null, new PivotChrome(null), new ChartChrome());
+        Assert.Equal("""{"grid":[],"pivot":["menu"],"pivotGrid":[],"chart":["menu"]}""", SlotsSent());
+
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "chart.menu",
+            """{"name":"P&L","commands":[{"id":"download-csv","label":"CSV","enabled":true,"expanded":null,"title":null}]}"""));
+        await cut.InvokeAsync(() => Bridge().MountSlot(2, 1, "menu",
+            """{"name":"Layout","commands":[{"id":"refresh","label":"Refresh","enabled":true,"checked":null,"heading":null}]}"""));
+        Assert.Equal(["chart's P&L menu", "pivot's Layout menu"], cut.FindAll(".ex-razor-slot").Select(slot => slot.TextContent));
     }
 
     [Fact] // ADR-0410: the slots are read as the Board attaches, so Chromes naming other slots are refused by name, never drawn half
