@@ -24,6 +24,42 @@
     <InternalsVisibleTo Include="ExChart.Components.Tests" />
   </ItemGroup>
 
+  <!-- ExChart's Script Core's module for ExChart.Script.ExChart and ExSurface (ADR-0370 section 1): the bridge and
+       @ex-grid/chart, bundled from their sources in src/npm as this project builds, never committed, as ExPivot's is
+       (ADR-0350 section 7). Named ex-chart-core, since ex-chart.min.js is the Razor component's pointer script. The
+       module goes to wwwroot, where the package serves it; its version and stamp (ADR-0123) are compiled in as
+       ScriptCoreAsset. src/npm's dependencies are ExGrid's build's to install: the bundle is built once the project
+       references are, so the two never run npm in the workspace at once. -->
+  <PropertyGroup>
+    <ScriptCoreWorkspace>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'npm'))</ScriptCoreWorkspace>
+    <ScriptCoreModule>$(MSBuildThisFileDirectory)wwwroot/ex-chart-core.min.js</ScriptCoreModule>
+    <ScriptCoreConstants>$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ScriptCoreAsset.g.cs</ScriptCoreConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)chart/src/**/*.ts;$(ScriptCoreWorkspace)chart-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
+    <Content Remove="wwwroot/ex-chart-core.min.js;wwwroot/ex-chart-core.min.js.map" />
+  </ItemGroup>
+
+  <Target Name="BuildScriptCore" DependsOnTargets="ResolveProjectReferences"
+          Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
+    <Exec Command="node ../scripts/build-blazor.mjs --name ex-chart-core --namespace ExChart.Script --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-chart-core.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+          WorkingDirectory="$(ScriptCoreWorkspace)chart-blazor" />
+  </Target>
+
+  <!-- Apart from the build, which is skipped while its outputs are newer than every source: the items are
+       added on every build, so the static web assets and the compile always hold the module. -->
+  <Target Name="IncludeScriptCore" DependsOnTargets="BuildScriptCore"
+          BeforeTargets="BeforeBuild;CoreCompile;ResolveProjectStaticWebAssets;ResolveStaticWebAssetsConfiguration">
+    <ItemGroup>
+      <Content Remove="wwwroot/ex-chart-core.min.js;wwwroot/ex-chart-core.min.js.map" />
+      <Content Include="wwwroot/ex-chart-core.min.js;wwwroot/ex-chart-core.min.js.map" />
+      <Compile Remove="$(ScriptCoreConstants)" />
+      <Compile Include="$(ScriptCoreConstants)" />
+    </ItemGroup>
+  </Target>
+
   <!-- ExChart depends on exactly the core and engine versions it was built with, as ExPivot does
        (ADR-0042). -->
   <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">

@@ -104,6 +104,9 @@ grep -qxF 'staticwebassets/ex-grid-script.min.js.map' <<<"$(entries ExGrid)" || 
 # ExPivot's, bundled as ExPivot builds (ADR-0370 section 1).
 grep -qxF 'staticwebassets/ex-pivot.min.js' <<<"$(entries ExPivot)" || fail "ExPivot ships no Script Core module"
 grep -qxF 'staticwebassets/ex-pivot.min.js.map' <<<"$(entries ExPivot)" || fail "ExPivot ships no source map for its Script Core module"
+# ExChart's, bundled as ExChart builds (ADR-0370 section 1).
+grep -qxF 'staticwebassets/ex-chart-core.min.js' <<<"$(entries ExChart)" || fail "ExChart ships no Script Core module"
+grep -qxF 'staticwebassets/ex-chart-core.min.js.map' <<<"$(entries ExChart)" || fail "ExChart ships no source map for its Script Core module"
 grep -qxF 'staticwebassets/ex-chart.min.js.map' <<<"$(entries ExChart)" || fail "ExChart ships no source map for its script"
 
 # The Wrapper still takes no ExSheet package: the direction is one-way (SH-47).

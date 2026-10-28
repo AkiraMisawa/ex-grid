@@ -1,7 +1,7 @@
 // Builds the script a Blazor adapter imports (ADR-0350 sections 7 and 9, ADR-0370 section 1, ADR-0411): the
 // product's bridge and Script Core, read from their sources and bundled into one minified ES module with its source
-// map, which the product's NuGet package ships: ExGrid's `ex-grid-core`, from src/npm/blazor, and ExPivot's
-// `ex-pivot`, from src/npm/pivot-blazor. Nothing here is published to npm.
+// map, which the product's NuGet package ships: ExGrid's `ex-grid-core`, from src/npm/blazor, ExPivot's `ex-pivot`,
+// from src/npm/pivot-blazor, and ExChart's `ex-chart-core`, from src/npm/chart-blazor. Nothing here is published to npm.
 //
 // `@ex-grid/core` and `@ex-grid/data` are bundled once, into the Shared Script ExGrid ships beside its bridge
 // (`ex-grid-script.min.js`, from blazor/src/shared.ts), and every product's module imports them from it by one
@@ -53,6 +53,7 @@ const alias = {
     '@ex-grid/core': path.join(workspace, 'core/src/index.ts'),
     '@ex-grid/data': path.join(workspace, 'data/src/index.ts'),
     '@ex-grid/pivot': path.join(workspace, 'pivot/src/index.ts'),
+    '@ex-grid/chart': path.join(workspace, 'chart/src/index.ts'),
     '@ex-grid/pivot-engine': path.join(workspace, 'pivot-engine/src/index.ts'),
 };
 

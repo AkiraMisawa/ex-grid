@@ -56,7 +56,8 @@ built against.
 ### 4. The same for every product that follows
 
 ExSheet's, ExChart's and ExBoard's Blazor modules are built by the same script, and import the core and the data from
-the Shared Script the same way. A package of the family that only one product uses (`@ex-grid/pivot-engine`,
+the Shared Script the same way. ExChart's, `ex-chart-core.min.js`, reached `main` while this was decided, and imports
+them from the Shared Script from the merge on. A package of the family that only one product uses (`@ex-grid/pivot-engine`,
 `@ex-grid/sheet-engine`) stays in that product's module.
 
 ## Consequences
