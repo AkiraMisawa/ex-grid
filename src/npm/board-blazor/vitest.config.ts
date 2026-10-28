@@ -14,6 +14,7 @@ export default defineConfig({
             '@ex-grid/core': at('../core/src/index.ts'),
             '@ex-grid/data': at('../data/src/index.ts'),
             '@ex-grid/pivot': at('../pivot/src/index.ts'),
+            '@ex-grid/pivot-blazor': at('../pivot-blazor/src/dotnet-pivot-source.ts'),
             '@ex-grid/pivot-engine': at('../pivot-engine/src/index.ts'),
         },
     },

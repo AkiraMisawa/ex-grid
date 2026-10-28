@@ -59,6 +59,8 @@ const alias = {
     '@ex-grid/sheet': path.join(workspace, 'sheet/src/index.ts'),
     '@ex-grid/sheet-engine': path.join(workspace, 'sheet-engine/src/index.ts'),
     '@ex-grid/board': path.join(workspace, 'board/src/index.ts'),
+    // ExPivot's bridge for a C# Pivot Source, which ExBoard's asks a pivot over a source through too.
+    '@ex-grid/pivot-blazor': path.join(workspace, 'pivot-blazor/src/dotnet-pivot-source.ts'),
 };
 
 const hashOf = (text) => createHash('sha256').update(text.replace(/\r\n/g, '\n'), 'utf8').digest('hex');

@@ -7,7 +7,7 @@ import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { boardInput, readBoard, type BoardReading } from '@ex-grid/board';
 import type { Snapshot } from '@ex-grid/data';
-import { ExBoard } from '../src/ex-board';
+import { ExBoard, type ExBoardChrome } from '../src/ex-board';
 
 const board: BoardReading = readBoard(`{"version": 1, "title": "Desk review",
   "inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "pnl", "type": "decimal"}, {"name": "day", "type": "date"}]}},
@@ -62,6 +62,32 @@ describe('ExBoard', () => {
         } finally {
             Reflect.deleteProperty(navigator, 'languages');
         }
+    });
+
+    it('ADR-0390: each kind\'s Chrome renders its parts into the views of that kind, and handed again draws them once', async () => {
+        let drawn = 0;
+        const chrome: ExBoardChrome = {
+            pivot: { toolbar: () => createElement('div', { className: 'own-pivot-toolbar' }, 'Pivot tools') },
+            chart: { toolbar: () => { drawn++; return createElement('div', { className: 'own-chart-toolbar' }, 'Chart tools'); } },
+        };
+        const rows = data();
+        const { container, rerender } = render(createElement(ExBoard, { board, data: rows, locale: 'invariant', chrome }));
+        await settled();
+        const root = container.firstElementChild;
+        expect(root?.querySelector('[data-ex-view="byDesk"] .own-pivot-toolbar')?.textContent).toBe('Pivot tools');
+        expect(root?.querySelector('[data-ex-view="curve"] .own-chart-toolbar')?.textContent).toBe('Chart tools');
+        expect(root?.querySelector('[data-ex-view="blotter"] .own-pivot-toolbar')).toBeNull();
+        const once = drawn;
+        rerender(createElement(ExBoard, { board, data: rows, locale: 'invariant', chrome }));
+        // The same kinds' Chromes written inline again, as a Consumer's render does, draw nothing again either.
+        rerender(createElement(ExBoard, { board, data: rows, locale: 'invariant', chrome: { ...chrome } }));
+        await settled();
+        expect(drawn).toBe(once);
+    });
+
+    it('ADR-0390: a kind the Board has not is refused by name', () => {
+        expect(() => render(createElement(ExBoard, { board, data: data(), locale: 'invariant', chrome: { sheet: {} } as unknown as ExBoardChrome })))
+            .toThrow(/no kind 'sheet'/u);
     });
 
     it('ADR-0370 section 1: unmounting destroys the Board, which empties its root', () => {

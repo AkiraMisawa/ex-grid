@@ -110,7 +110,11 @@ rather than two ExSheets sharing one. The section is kept as it was written.)*
 
 - **ADR-0019's open question is closed**, and the package layout gains `ExSheet.Engine` beside
   `ExSheet` (ADR-0047). The reference direction stays one-way: `ExSheet` → `ExSheet.Engine`, and
-  `ExSheet` → `ExGrid`. `ExSheet.Engine` references nothing of ours.
+  `ExSheet` → `ExGrid`. `ExSheet.Engine` references nothing of ours. *(Note of 2026-10-28: `ExSheet`
+  may also take `ExGrid.Data`, which came later and lies under `ExGrid` with no dependency of its own
+  ([ADR-0064](./0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)), so the direction
+  stays one-way. Blazor's ExSheet over its Script Core reads a Selection Summary's figures into
+  `ExGrid.Data`'s `AggregateResult`, as ExGrid hands them.)*
 - **What ExSheet asks of ExGrid's core is listed in one place**, ADR-0050. Each item is an opt-in
   declaration, so a plain ExGrid Consumer sees no change.
 - **Cell formatting starts at number formats and alignment.** Excel's number format codes

@@ -384,6 +384,15 @@ export class Workbook {
         return this.#today;
     }
 
+    /**
+     * The moment `NOW` answers on every Sheet: the one the last recalculation read from `nowSource`, or `undefined`
+     * while none was read (ADR-0124). A copy of the Workbook made in the other engine is given it as its own moment,
+     * so that its `NOW` answers what this one shows.
+     */
+    get moment(): SheetMoment | undefined {
+        return this.#first.moment;
+    }
+
     /** Whether any Formula on any Sheet calls a volatile function, so that moving the clock on can change a Value. */
     get hasVolatileFormulas(): boolean {
         return this.#sheets.some(sheet => sheet.hasVolatileFormulas);

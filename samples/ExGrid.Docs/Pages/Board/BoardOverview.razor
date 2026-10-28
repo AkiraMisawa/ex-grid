@@ -155,8 +155,9 @@
             An input too large to download is bound to a <code>BoardSource</code> in <code>Sources</code>, beside the
             Snapshots in <code>Data</code>. A <code>BoardSource</code> is your own code: it answers the input's shape, which
             is checked against the declaration before anything is drawn; fetches a grid's rows a page at a time, as a
-            Snapshot; and, if it can, makes a pivot's report source. Every fetch and every report source is handed the
-            link conditions narrowing the view (<code>BoardQuery.Narrowing</code>), for the server to execute where the
+            Snapshot; and, if it can, makes a pivot's <code>PivotSource</code> (<code>Pivot</code>), such as a
+            <code>FetchingPivotSource</code> whose server answers Leaf Aggregates, the pivot building its report and totals
+            from them. Every fetch and every Pivot Source is handed the link conditions narrowing the view (<code>BoardQuery.Narrowing</code>), for the server to execute where the
             data lives. When a selection changes them, the view is asked again. The Board JSON is the same either way:
             nothing in it says where an input is held.
         </p>
@@ -256,6 +257,17 @@ const output = bound.confirm('chosen');                         // the values ch
             code under <em>Show code</em>: the server's Example answers its source in a few lines of TypeScript over rows
             in memory, ordering a page with <code>GridSource.from</code>, as a server's query is written to match.
         </p>
+        <p>
+            React's ExBoard has no Wrapper either. Its <code>chrome</code> takes each kind of view's Chrome, as that
+            product's component takes it: <code>grid</code> as ExGrid's, <code>pivot</code> as ExPivot's and
+            <code>chart</code> as ExChart's. The grid's also dresses the pivots' report grids where <code>pivot</code> names
+            no grid of its own, as <code>Chrome</code> does on the Board above. So a Mantine application hands it
+            <code>mantineChrome</code>, <code>mantinePivotChrome</code> and <code>mantineChartChrome</code>, inside an
+            element of the Wrappers' classes, <code>mantine-ex-grid mantine-ex-pivot mantine-ex-chart</code>, which map the
+            views' colours onto the theme; an MUI application does the same with MUI's. Read this site for React and pick
+            Mantine or MUI: the first Example on this page runs so. The Script Core takes the same object as
+            <code>BoardOptions.chrome</code>, with mount functions in place of render functions.
+        </p>
     </DocsSection>
 
     <DocsSection Title="A Board drawn in the browser">
@@ -275,11 +287,14 @@ const output = bound.confirm('chosen');                         // the values ch
         <p>
             It takes <code>Sources</code> too, the same <code>BoardSource</code> objects as the Board above. Each stays in
             .NET: the browser asks it through .NET for the input's shape, for each page a grid fetches with its query and
-            the links' narrowing, and for a chart's thinned points, and a question the Board gives up is cancelled through
-            the token your source is handed. A page crosses back as its Arrow stream and a chart's points with every value
-            exact. An output taken from rows the server held comes back with the version the server answered them at, and
-            <code>Take</code> holds it to that version. Not carried yet: a pivot over a source, which is refused by name
-            when the component is drawn, and the Chromes; use the Board above for those until they arrive.
+            the links' narrowing, for a chart's thinned points and for the values under a pivot's selected cells, and a
+            question the Board gives up is cancelled through the token your source is handed. A pivot reads the
+            <code>PivotSource</code> your <code>Pivot</code> makes over each narrowing through .NET too, as
+            <code>ExPivot.Script.ExPivot</code> reads one: the engine in the browser builds the report and its totals from
+            the Leaf Aggregates it answers. A page crosses back as its Arrow stream and a chart's points and the values
+            under cells with every value exact. An output taken from rows the server held comes back with the version the
+            server answered them at, and <code>Take</code> holds it to that version. Not carried yet: the Chromes; use the
+            Board above for those until they arrive.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreServerBoard)" Files="@(["Examples/Board/ServerBoard.cs"])" />
     </DocsSection>

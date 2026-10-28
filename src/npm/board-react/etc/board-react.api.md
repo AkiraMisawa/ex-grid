@@ -5,12 +5,24 @@
 ```ts
 
 import { BoardOptions } from '@ex-grid/board';
+import { ExChartChrome } from '@ex-grid/chart-react';
+import { ExGridChrome } from '@ex-grid/react';
+import { ExPivotChrome } from '@ex-grid/pivot-react';
 import { ReactElement } from 'react';
 
 // @public
 export function ExBoard(props: ExBoardProps): ReactElement;
 
 // @public
-export type ExBoardProps = BoardOptions;
+export interface ExBoardChrome {
+    readonly chart?: ExChartChrome;
+    readonly grid?: ExGridChrome<unknown>;
+    readonly pivot?: ExPivotChrome;
+}
+
+// @public
+export type ExBoardProps = Omit<BoardOptions, 'chrome'> & {
+    readonly chrome?: ExBoardChrome;
+};
 
 ```

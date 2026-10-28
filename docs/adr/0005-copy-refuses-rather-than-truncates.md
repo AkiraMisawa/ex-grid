@@ -314,10 +314,11 @@ is taken in as ever.
 
 *(Added 2026-10-28.)* **Over the Script Core, every call into .NET too large for a hub's message is
 held the same way, and taken in its turn.** The Blazor adapters over the Script Core (ExGrid's,
-ExPivot's and ExBoard's, ADR-0350 section 7, ADR-0370 section 1) hand .NET a paste's values, a commit's
-text, a filter's values, a slot's view (ADR-0410), a pivot's query, a Board's output or Diff, or a
-question to a source narrowed by a link's values (ADR-0343) as call arguments, and any of them can
-pass the 32 KB a Server hub takes, which closes the circuit with nothing said on the page. So on a
+ExPivot's, ExSheet's and ExBoard's, ADR-0350 section 7, ADR-0370 section 1) hand .NET a paste's values, a
+commit's text, a filter's values, a slot's view (ADR-0410), a pivot's query, a Sheet's documents and a
+save's Workbook, a Board's output or Diff, or a question to a source narrowed by a link's values
+(ADR-0343) as call arguments, and any of them can pass the 32 KB a Server hub takes, which closes the
+circuit with nothing said on the page. So on a
 circuit the browser holds any call whose arguments pass 16 KB as UTF-8 and sends only its method,
 number and length (`Held`); .NET takes the arguments from the module's handle (`take`) as above,
 gzip told by its first two bytes and the length held to the one declared, and makes the call. Every
@@ -326,7 +327,9 @@ the order .NET hands them on, whatever the stream's round trips (the spine's six
 is mounted before the update that names it, and a held Selection reaches the Consumer before the one
 raised after it. A call that declares more than 256 MB is refused without being taken. The browser's
 half is the Shared Script's (ADR-0411), and .NET's one file compiled into each adapter, so every
-product crosses a large call alike; WebAssembly, where no hub limits a message, holds nothing.
+product crosses a large call alike; WebAssembly, where no hub limits a message, holds nothing. An
+answer the browser gives one of .NET's own calls, ExSheet's documents or its Linked Tables, is held
+the same way past 16 KB, and .NET takes it before it reads the answer.
 ExBoard's adapter was added to the list later the same day: until then it streamed each long text
 of its own (an output, a Diff, a source's question) beside the call, and it moved onto this so that
 one mechanism, with one order, carries every product's.

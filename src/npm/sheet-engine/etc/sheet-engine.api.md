@@ -473,6 +473,15 @@ export interface RangeEdgeLines {
 }
 
 // @public
+export function readCellFormatChange(json: string): CellFormatChange;
+
+// @public
+export function readLinkedRows(json: string): (Value | undefined)[][];
+
+// @public
+export function readSheetEdit(json: string): SheetEdit;
+
+// @public
 export interface ReferenceCycle {
     readonly selectionEnd: number;
     readonly selectionStart: number;
@@ -492,6 +501,8 @@ export class RepeatedKeyError extends Error {
     readonly keyColumn: string;
     readonly keyColumns: readonly string[];
     readonly keys: readonly Value[];
+    // @internal
+    readonly repeats: readonly Value[];
     readonly secondRow: number;
     readonly table: string;
 }
@@ -1054,6 +1065,7 @@ export class Workbook {
     inTabOrder(reference: Reference): Reference;
     linkedTableColumns(name: string): readonly (readonly (Value | undefined)[])[] | undefined;
     get linkedTables(): LinkedTable[];
+    get moment(): SheetMoment | undefined;
     // @internal
     move(sheet: Sheet, index: number, rewritten: RewrittenEntry[]): SheetChange;
     // @internal
@@ -1144,5 +1156,14 @@ export class WorkbookStep {
     readonly sheet: Sheet;
     undo(): WorkbookChange;
 }
+
+// @public
+export function writeCellFormat(format: CellFormat): string;
+
+// @public
+export function writeLinkedRows(rows: Iterable<readonly (Value | undefined)[]>): string;
+
+// @public
+export function writeRepeatedKey(error: RepeatedKeyError): string;
 
 ```

@@ -48,7 +48,7 @@ public static class ServerBoard
             return ValueTask.FromResult(new ShapedPage(Copy(through, rows.Skip(start).Take(count).Select(r => r.Position)), start, rows.Count));
         })
         {
-            Report = narrowing => PivotReportSource.From(PivotSource.From(Copy(Through(narrowing)))),
+            Pivot = narrowing => PivotSource.From(Copy(Through(narrowing))),
             // A chart's points are thinned where the trades are, as ChartSource.Thin thins (ADR-0344):
             // each pixel's first, last, lowest and highest row; only those cross to the chart.
             Thin = (query, _) => ValueTask.FromResult(ChartSource.Thin(new SnapshotChartData(Copy(Through(query.Narrowing))), query.Chart, Held.Version)),

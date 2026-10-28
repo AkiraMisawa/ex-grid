@@ -11,6 +11,7 @@
       "@ex-grid/core": ["../core/src/index.ts"],
       "@ex-grid/data": ["../data/src/index.ts"],
       "@ex-grid/pivot": ["../pivot/src/index.ts"],
+      "@ex-grid/pivot-blazor": ["../pivot-blazor/src/dotnet-pivot-source.ts"],
       "@ex-grid/pivot-engine": ["../pivot-engine/src/index.ts"]
     }
   },

@@ -6,5 +6,5 @@
  */
 export { ExPivot } from './ex-pivot';
 export type { ExPivotProps } from './ex-pivot';
-export { layPivotChrome, usePivotMenu, usePivotPanel, usePivotPart } from './chrome';
-export type { ExPivotChrome, PivotMenuHandles, PivotMenuItemProps, PivotPanelHandles } from './chrome';
+export { layPivotChrome, pivotChromeMounts, usePivotMenu, usePivotPanel, usePivotPart } from './chrome';
+export type { ExPivotChrome, PivotMenuHandles, PivotMenuItemProps, PivotMountsMade, PivotPanelHandles } from './chrome';
