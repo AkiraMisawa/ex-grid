@@ -26,6 +26,7 @@ export function stampAgainst(own: string, expected: string): string {
 
 export { crossingCalls, HeldMessages, inlineBytes, mostHeldBytes, type DotNetCalls, type WireHeld } from './held-messages';
 export { HeldSnapshots, type DotNetStream, type SnapshotsRead } from './snapshots';
+export { awaitPointingScope, holdPointingScope, type PagePointingScope } from './pointing-scopes';
 export {
     drawnVersionAttribute, RazorSlotHost, type HostedSlotKind, type RazorSlotData, type RazorSlotHostOptions, type RazorSlotKind,
 } from './razor-slot-host';

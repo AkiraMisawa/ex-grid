@@ -58,6 +58,22 @@ public static class SheetWire
     }
 
     /// <summary>
+    /// One row of a Linked Table as JSON, its Values in the declared columns' order, a blank as <c>null</c>: one row
+    /// of what <see cref="WriteRows"/> writes, as a grid of a Pointing Scope sends each row read as the table's
+    /// (ADR-0430).
+    /// </summary>
+    public static string WriteRow(IReadOnlyList<Value?> row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        return Text(json =>
+        {
+            json.WriteStartArray();
+            foreach (var value in row) WriteValue(json, value);
+            json.WriteEndArray();
+        });
+    }
+
+    /// <summary>
     /// A Linked Table's snapshot read from the JSON <see cref="WriteRows"/> writes and the Script Core's
     /// <c>writeLinkedRows</c> writes: rows of Values, a blank as <c>null</c>, and a refusal a Consumer read from a
     /// refused cell as one, so that pushed again it is refused where it was.

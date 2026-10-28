@@ -26,8 +26,8 @@ namespace ExSheet.Script;
 /// <para>Its parameters are the Razor component's (<see cref="Components.ExSheet"/>), under the same names and with the
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
-/// <para>Not carried yet, and so not offered: a <c>Chrome</c>, <c>ToolbarContent</c>, a <c>PointingScope</c>,
-/// <c>OnLinkedColumnColoursChanged</c> and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
+/// <para>Not carried yet, and so not offered: a <c>Chrome</c>, <c>ToolbarContent</c>,
+/// <c>OnLinkedColumnColoursChanged</c> (ADR-0430 section 3) and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
 /// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>
 /// </remarks>
 public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
@@ -141,6 +141,26 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// nothing, and the Sheet's notice says why.</summary>
     [Parameter] public EventCallback<SheetRefusal> OnFormatKeyRefused { get; set; }
 
+    /// <summary>
+    /// The Pointing Scope this Sheet belongs to (ADR-0058), or null — the default — for none: the same object the Razor
+    /// component takes, held for the components drawn by the Script Core in the browser, which decides there what a press
+    /// on a registered grid writes (ADR-0430). While this Sheet holds the keyboard, has an edit open and is in Point, the
+    /// grids registered in the Scope and drawn by the Script Core (<c>ExGrid.Script.ExGrid</c>, given their
+    /// declaration as <c>PointedAt</c>) are pointed at: a press on a cell writes <c>XLOOKUP(&lt;key&gt;,
+    /// T[&lt;key column&gt;], T[&lt;column&gt;])</c> where Point writes, and a press on a column header
+    /// <c>T[&lt;column&gt;]</c>; after it, the arrow keys point inside the grid pressed. A press that stands for anything
+    /// else writes nothing, and is told through <see cref="OnPointingRefused"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The Scope holds Razor components (ADR-0430).</exception>
+    [Parameter] public PointingScope? PointingScope { get; set; }
+
+    /// <summary>
+    /// Tells the Consumer that a press on a grid of <see cref="PointingScope"/>, or an arrow key after one, wrote
+    /// nothing into the Formula being edited, and why (ADR-0058), as the Razor component tells it. ExSheet shows nothing
+    /// of it itself: show the <see cref="PointingRefusal.Message"/> where the page tells its user things.
+    /// </summary>
+    [Parameter] public EventCallback<PointingRefusal> OnPointingRefused { get; set; }
+
     /// <summary>A fixed Sheet Seed (ADR-0180): what <c>RAND()</c> and <c>RANDBETWEEN</c> draw from. Unless given, the
     /// Sheet chooses one whenever it opens a document.</summary>
     [Parameter] public ulong? Seed { get; set; }
@@ -182,6 +202,8 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private ElementReference _root;
     private IJSObjectReference? _module;
     private IJSObjectReference? _sheet;
+    // The Pointing Scope last given, which knows this Sheet is drawn in the browser.
+    private PointingScope? _claimedScope;
 
     /// <summary>The browser's calls, in the order it made them, a call too large for a circuit's message among them
     /// (ADR-0005, as amended 2026-10-28).</summary>
@@ -205,6 +227,12 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        if (!ReferenceEquals(PointingScope, _claimedScope))
+        {
+            // Refused by name if it holds the Razor components, before the browser is told of it (ADR-0430).
+            PointingScope?.Claim(inBrowser: true, "a Sheet drawn by the Script Core");
+            _claimedScope = PointingScope;
+        }
         // The refusal is worded through CommandLabel, which may have changed (ADR-0203).
         if (_refused)
             _renderOwed = true;
@@ -510,6 +538,9 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             json.WriteString("timeZone", IanaNameOf(zone));
         if (Seed is { } seed)
             json.WriteString("seed", seed.ToString(CultureInfo.InvariantCulture));
+        // The Scope by its name in the page, where the browser holds it (ADR-0430).
+        if (PointingScope is { } scope)
+            json.WriteString("pointingScope", scope.Id);
         json.WriteStartArray("hears");
         if (WorkbookChanged.HasDelegate)
             json.WriteStringValue("workbookChanged");
@@ -527,6 +558,8 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             json.WriteStringValue("selectionSummaryChanged");
         if (OnFormatKeyRefused.HasDelegate)
             json.WriteStringValue("formatKeyRefused");
+        if (OnPointingRefused.HasDelegate)
+            json.WriteStringValue("pointingRefused");
         json.WriteEndArray();
         json.WriteEndObject();
     });
@@ -728,6 +761,11 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             {
                 var refusal = Refusal(payload);
                 return () => OnFormatKeyRefused.InvokeAsync(refusal);
+            }
+            case "pointingRefused":
+            {
+                var refusal = new PointingRefusal(Member<PointingRefusalReason>(Text(payload.GetProperty("reason"))), Text(payload.GetProperty("message")));
+                return () => OnPointingRefused.InvokeAsync(refusal);
             }
             default:
                 throw new InvalidOperationException($"Internal: the Script Core raised an event of the kind '{kind}'.");

@@ -96,6 +96,8 @@ public partial class ExSheet : IPointingSheet, IDisposable
     {
         if (ReferenceEquals(_joinedScope, PointingScope))
             return;
+        // A Scope held in the browser refuses a Razor Sheet by name, before this Sheet leaves or records anything.
+        PointingScope?.Claim(inBrowser: false, "a Razor ExSheet");
         _joinedScope?.Leave(this);
         _scopeHeardPoints = false;
         _joinedScope = PointingScope;

@@ -175,6 +175,13 @@ ADR-0057 decides the colours. This section says how they reach a registered grid
 Two round trips are involved on a Server circuit, and they are treated differently. On WebAssembly
 there is neither.
 
+*(2026-10-28, [ADR-0430](./0430-over-the-script-core-a-pointing-scope-is-held-in-the-browser-and-its-csharp-object-only-names-it.md):
+this section holds for the Razor components. Between Blazor's components over the Script Core the Scope
+is held in the page and decides there, as React's does, so neither gap arises, on a circuit or on
+WebAssembly. That Scope is shared between instances, against the first bullet's reason, because it is
+the Script Core's own object, joined only for what the Consumer put in one Scope; a Scope of Razor and
+Script components together is refused by name.)*
+
 - **From `=` to the grids being pointed at, the gap is accepted.** Whether a Sheet points is decided
   in C#, by the Consumer's predicate (ADR-0051). A registered grid learns it from the render that
   follows. A press within that round trip is an ordinary press: DOM focus goes to that grid, and the
