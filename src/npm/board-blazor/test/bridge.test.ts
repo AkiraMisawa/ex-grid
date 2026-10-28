@@ -86,6 +86,7 @@ class Drawn {
 function attachJson(overrides: Partial<WireAttach> = {}): string {
     const init: WireAttach = {
         options: { width: 1200, locale: 'en-GB', hears: ['output', 'diff'] },
+        circuit: false,
         board: boardJson,
         data: { trades: 1 },
         sent: [1],
@@ -183,8 +184,8 @@ describe('Blazor ExBoard seen from the browser (ADR-0370 section 1, ADR-0065)', 
 
         expect(drawn.last.diff?.sameAs(BoardDiff.empty)).toBe(true);
         expect(dotnet.of('Heard')).toEqual([
-            ['output', { output: '{"output":"chosen","input":"trades","version":1,"on":["desk"],"values":[["FX"]]}', snapshot: 1, source: null }, null],
-            ['diff', { diff: BoardDiff.empty.toJson(), diffsSent: 4 }, null],
+            ['output', { output: '{"output":"chosen","input":"trades","version":1,"on":["desk"],"values":[["FX"]]}', snapshot: 1, source: null }],
+            ['diff', { diff: BoardDiff.empty.toJson(), diffsSent: 4 }],
         ]);
     });
 
