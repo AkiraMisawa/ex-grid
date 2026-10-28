@@ -120,8 +120,8 @@
             <code>NotSupportedException</code> that names what to change, rather than write that value some other
             way: an axis <code>Format</code>, which writes the position under the pointer, and a <code>Format</code>
             on candles, which writes their change and a merged candle's volume, each of which a
-            <code>FormatCode</code> replaces; a series made by <code>ChartSeries.Sampled</code>, which is asked a
-            value at every pixel; a <code>Format</code> on a surface axis placed by value or on a mesh's axis,
+            <code>FormatCode</code> replaces; a series sampled from a .NET function of your own, which is asked a
+            value at every pixel, and a <code>Format</code> on any sampled series; a <code>Format</code> on a surface axis placed by value or on a mesh's axis,
             which writes the ticks between its values, unless it writes them as plainly as a sampled surface's
             axis does; and a <code>ZFormat</code> on a mesh, whose slice reads values between its nodes, each of
             which a <code>FormatCode</code> or <code>ZFormatCode</code> replaces. Two Row
@@ -132,6 +132,14 @@
             keeps a decimal's <code>3.30</code>.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreFormatCodes)" Files="@(["Examples/Chart/ChartData.cs"])" />
+        <p>
+            A curve made by <code>Interpolate</code> or by <code>Fit</code> is the family's own, and the TypeScript core
+            has its twin, held to the same cases. Such a series crosses as the points or the coefficients it was made
+            from, and the browser makes the same curve again and samples it as it draws, so a spline or a fitted line,
+            its Segments and its Note read as they do in .NET. A curve whose function was replaced, or a sampler that
+            wraps one, is your own function, and is refused.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreCurves)" />
     </DocsSection>
 
     <DocsSection Title="WebAssembly, and AOT">

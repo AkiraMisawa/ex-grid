@@ -108,7 +108,7 @@ public class ScriptChartTests : BunitContext
         Assert.Contains("axis has a Format", Assert.Throws<NotSupportedException>(() => ChartWire.Definition(axisFormat)).Message, StringComparison.Ordinal);
 
         var sampled = new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Sampled("f", "Fitted", SeriesKind.Level, 0, 1, x => ChartValue.Of(x))]);
-        Assert.Contains("'Fitted' is a function", Assert.Throws<NotSupportedException>(() => ChartWire.Definition(sampled)).Message, StringComparison.Ordinal);
+        Assert.Contains("'Fitted' is sampled from a .NET function", Assert.Throws<NotSupportedException>(() => ChartWire.Definition(sampled)).Message, StringComparison.Ordinal);
 
         // 3.3 and 3.30 are one number in the browser, and the Format writes them apart.
         var both = new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Of("a", "A", SeriesKind.Level, [new(0, 3.3m), new(1, 3.30m)])]);
@@ -275,6 +275,35 @@ public class ScriptChartTests : BunitContext
 
         var plain = ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Of("a", "A", SeriesKind.Level, [P(0, 1)])])).Json;
         Assert.Equal(JsonValueKind.Null, Parsed(plain).GetProperty("axis").GetProperty("formatCode").ValueKind);
+    }
+
+    [Fact] // ADR-0420 s4: a series sampled from the family's own curve crosses as what it was made from; one whose function was replaced is refused
+    public void A_family_curve_crosses_as_what_it_was_made_from()
+    {
+        var spline = Engine.Interpolation.Interpolate.NaturalCubicSpline([0, 1, 2], [0, 1, 0]);
+        var fitted = Engine.Fitting.Fit.LeastSquares([1, 2, 3, 4], [2, 4, 7, 15], Engine.Fitting.FitSpace.LogY);
+        var (json, _) = ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [spline.Series("s", "Spline"), fitted.Series("f", "Fit")]));
+        var series = Parsed(json).GetProperty("series");
+        Assert.Equal("""{"from":0,"to":2,"madeFrom":{"kind":"naturalCubicSpline","xs":[0,1,2],"ys":[0,1,0]}}""", series[0].GetProperty("sampler").GetRawText());
+        var fit = series[1].GetProperty("sampler").GetProperty("madeFrom");
+        Assert.Equal("fit", fit.GetProperty("kind").GetString());
+        Assert.Equal("logY", fit.GetProperty("space").GetString());
+        Assert.Equal(fitted.Coefficients, fit.GetProperty("coefficients").EnumerateArray().Select(c => c.GetDouble()));
+
+        // The curve's function replaced, or the sampler's: the function is the Consumer's.
+        var replaced = (spline with { Evaluate = x => x }).Series("r", "Replaced");
+        Assert.Contains("'Replaced' is sampled from a .NET function", Assert.Throws<NotSupportedException>(
+            () => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [replaced]))).Message, StringComparison.Ordinal);
+        var linear = Engine.Interpolation.Interpolate.Linear([0, 1, 2], [0, 1, 0]);
+        var straight = Parsed(ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [linear.Series("l", "Linear")])).Json).GetProperty("series")[0];
+        Assert.Equal("linear", straight.GetProperty("sampler").GetProperty("madeFrom").GetProperty("kind").GetString());
+        var renamed = (linear with { Method = "mine" }).Series("n", "Renamed");
+        Assert.Throws<NotSupportedException>(() => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [renamed])));
+        var wrapped = fitted.Series("w", "Wrapped") with { Sampler = new SeriesSampler(1, 4, x => fitted.ValueAt(x)) };
+        Assert.Throws<NotSupportedException>(() => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [wrapped])));
+        var formatted = spline.Series("p", "Formatted") with { Format = v => $"{v}" };
+        Assert.Contains("write the values it samples", Assert.Throws<NotSupportedException>(
+            () => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [formatted]))).Message, StringComparison.Ordinal);
     }
 
     // ---- Read through Chart Sources (ADR-0322, ADR-0344) ----

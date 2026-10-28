@@ -160,6 +160,12 @@ the points in.
   no longer name a grid: a part it does not read is one "which the reader does not take".
 - The wire carries a code as a string and a `ScriptFunction` as `{module, export}`; the adapter's browser
   half imports each module once per chart and refuses before attaching when one fails.
-- `Interpolant1D` and `Interpolant2D` gain the points they were made from; `ChartSeries` and
-  `SurfaceDefinition` keep the interpolant or fitted curve they were made from beside the sampler, so the
-  adapter reads it without inspecting a delegate.
+- `Interpolant1D` gains the points it was made from (`Xs`, `Ys`), which a curve given another method or
+  function by `with` drops. A `FittedCurve` already holds what it was made from.
+- *Changed while implementing (2026-10-28).* The note first said `ChartSeries` and `SurfaceDefinition` would keep
+  the curve beside the sampler. A copy kept beside it goes stale when the sampler is replaced. The adapter
+  instead takes the sampler as the curve's when it is that curve's own `ValueAt`, which delegate equality tells
+  without reading the function. A sampler that wraps a curve is the Consumer's function, and is refused.
+- A sampled surface is sampled in .NET at its nodes before it crosses, and a slice reads those nodes, so it
+  already crosses as its table. `Interpolate.Bilinear` and `Interpolate.Triangles` need nothing more, and only a
+  series' sampler is made again in the browser.

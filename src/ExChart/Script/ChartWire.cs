@@ -178,11 +178,11 @@ internal static class ChartWire
 
     private static void WriteSeries(Utf8JsonWriter w, ChartSeries s, RowKeys rows)
     {
-        if (s.Sampler is not null)
+        if (s.Sampler is not null && s.Format is not null)
         {
             throw new NotSupportedException(
-                $"'{s.Name}' is a function, which the chart in the browser would ask for a value at every pixel and cannot call (ADR-0370 section 1). "
-                + "Draw it with ExChart.Components.ExChart, or hand it in as its points.");
+                $"'{s.Name}' has a Format, a .NET function the chart in the browser would ask to write the values it samples, which it does not hold, "
+                + "and cannot call (ADR-0420). Give the series a FormatCode in its place, or draw it with ExChart.Components.ExChart.");
         }
         if (s.Format is not null && s.Kind == SeriesKind.PriceRange)
         {
@@ -228,6 +228,7 @@ internal static class ChartWire
             w.WriteEndObject();
         }
         w.WriteEndArray();
+        WriteSampler(w, s);
 
         // A Price Range's points are its closes, which the browser makes from its rows, as C# does.
         var bars = s.Kind == SeriesKind.PriceRange;
@@ -358,6 +359,68 @@ internal static class ChartWire
         // equal to them would write: its values are written as the Script Core writes numbers, or by its code
         // (ADR-0370 section 1). A code is written by the Script Core's own reader, so it needs no texts either (ADR-0420).
         WriteTexts(w, "texts", bars || s.FormatCode is not null ? null : Texts(Held(s), s.Write, () => $"'{s.Name}'"));
+        w.WriteEndObject();
+    }
+
+    // A series sampled from one of the family's own curves crosses as what the curve was made from, and the Script Core
+    // makes the same curve again, held to the shared cases (ADR-0420 section 4). The sampler is that curve's when it is
+    // the curve's own ValueAt, which delegate equality tells without reading the function. Any other function is the
+    // Consumer's, which the chart in the browser would ask at every pixel and cannot call.
+    private static void WriteSampler(Utf8JsonWriter w, ChartSeries s)
+    {
+        if (s.Sampler is not { } sampler)
+        {
+            w.WriteNull("sampler");
+            return;
+        }
+        w.WriteStartObject("sampler");
+        w.WritePropertyName("from");
+        WriteNumber(w, sampler.From);
+        w.WritePropertyName("to");
+        WriteNumber(w, sampler.To);
+        w.WriteStartObject("madeFrom");
+        switch (sampler.ValueAt.Target)
+        {
+            case Engine.Interpolation.Interpolant1D curve when sampler.ValueAt.Equals(new Func<double, ChartValue?>(curve.ValueAt)) && curve.Xs.Count > 0:
+                // Only Interpolate's methods give a curve its points, and a curve given another method loses them.
+                w.WriteString("kind", curve.Method switch
+                {
+                    "linear" => "linear",
+                    "natural cubic spline" => "naturalCubicSpline",
+                    var method => throw new InvalidOperationException($"Internal: the interpolation \"{method}\" has no twin in the Script Core."),
+                });
+                w.WriteStartArray("xs");
+                foreach (var x in curve.Xs)
+                    WriteNumber(w, x);
+                w.WriteEndArray();
+                w.WriteStartArray("ys");
+                foreach (var y in curve.Ys)
+                    WriteNumber(w, y);
+                w.WriteEndArray();
+                break;
+            case Engine.Fitting.FittedCurve curve when sampler.ValueAt.Equals(new Func<double, ChartValue?>(curve.ValueAt)):
+                w.WriteString("kind", "fit");
+                w.WriteString("method", curve.Method);
+                w.WriteStartArray("coefficients");
+                foreach (var c in curve.Coefficients)
+                    WriteNumber(w, c);
+                w.WriteEndArray();
+                w.WritePropertyName("rSquared");
+                WriteNumber(w, curve.RSquared);
+                w.WriteNumber("count", curve.Count);
+                w.WritePropertyName("from");
+                WriteNumber(w, curve.From);
+                w.WritePropertyName("to");
+                WriteNumber(w, curve.To);
+                w.WriteString("space", Camel(curve.Space));
+                break;
+            default:
+                throw new NotSupportedException(
+                    $"'{s.Name}' is sampled from a .NET function, which the chart in the browser would ask for a value at every pixel and cannot call "
+                    + "(ADR-0420). Make it with ExChart.Engine.Interpolation.Interpolate or ExChart.Engine.Fitting.Fit, whose curves the chart makes "
+                    + "again from what they were made from, hand it in as its points, or draw it with ExChart.Components.ExChart.");
+        }
+        w.WriteEndObject();
         w.WriteEndObject();
     }
 

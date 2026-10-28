@@ -8,13 +8,15 @@
 // holds through it once and sends the texts that differ from the Script Core's own writing (`texts`), and the chart
 // writes each value by them. .NET refuses, by name, a function the chart would ask of a value it does not hold, such
 // as a tick between the data's positions, rather than send a writer that would answer some values its own way
-// (spine rule 1); an Excel format code crosses as itself in its place, read by the Script Core's own reader (ADR-0420). A Row Key crosses as the JSON value .NET chose for it, which the click hands back.
+// (spine rule 1); an Excel format code crosses as itself in its place, read by the Script Core's own reader (ADR-0420). A series
+// sampled from one of the family's interpolations or fits crosses as what it was made from, and is made again here by the
+// Script Core's twin of its method (ADR-0420 section 4). A Row Key crosses as the JSON value .NET chose for it, which the click hands back.
 
-import { ChartDefinition, SurfaceAxis, SurfaceDefinition } from '@ex-grid/chart';
+import { ChartDefinition, FittedCurve, interpolateLinear, interpolateNaturalCubicSpline, SurfaceAxis, SurfaceDefinition } from '@ex-grid/chart';
 import type {
     AppearanceKeys, AxisScale, AxisValues, CandlePeriod, ChartEdge, ChartPoint, ChartSeriesOptions, ChartValue, IntervalBound, IntervalStyle,
     NamedPosition, PixelSummary, PointColour, PointDetail, PointSize, PriceBar, Segment, SeriesInterval, SeriesKind, StepSide, AxisSide,
-    SurfaceNode, SurfaceTriangle, SurfaceValue,
+    SeriesSampler, SurfaceNode, SurfaceTriangle, SurfaceValue, FitSpace,
 } from '@ex-grid/chart';
 
 /** A number as .NET writes one JSON cannot hold: its name. */
@@ -49,6 +51,24 @@ export interface WireInterval {
     readonly bounds: readonly (readonly [x: WireNumber, lower: WireValue, upper: WireValue])[];
 }
 
+/**
+ * What a series sampled from one of the family's own curves was made from (ADR-0420 section 4): an interpolation's
+ * points, or a fit's members, from which the Script Core makes the same curve again.
+ */
+export type WireMadeFrom =
+    | { readonly kind: 'linear' | 'naturalCubicSpline'; readonly xs: readonly WireNumber[]; readonly ys: readonly WireNumber[] }
+    | {
+        readonly kind: 'fit'; readonly method: string; readonly coefficients: readonly WireNumber[]; readonly rSquared: WireNumber;
+        readonly count: number; readonly from: WireNumber; readonly to: WireNumber; readonly space: FitSpace;
+    };
+
+/** A series' sampler: the range it is asked over, and the curve it asks. */
+export interface WireSampler {
+    readonly from: WireNumber;
+    readonly to: WireNumber;
+    readonly madeFrom: WireMadeFrom;
+}
+
 /** One series. Its points are columns: `x` and `y` one entry a point, `names` and `rows` too where any point has one. */
 export interface WireSeries {
     readonly id: string;
@@ -63,6 +83,8 @@ export interface WireSeries {
     readonly fromZero: boolean | null;
     readonly interpolated: boolean;
     readonly segments: readonly { readonly from: WireNumber; readonly to: WireNumber; readonly method: string; readonly extrapolated: boolean }[];
+    /** The curve it is sampled from, `null` for a series of points. */
+    readonly sampler: WireSampler | null;
     readonly x: readonly WireNumber[];
     readonly y: readonly WireValue[];
     readonly names: readonly (string | null)[] | null;
@@ -236,6 +258,32 @@ function keys(wire: WireSeries['keys']): AppearanceKeys | undefined {
     };
 }
 
+const twins: ReadonlyMap<string, (xs: readonly number[], ys: readonly number[]) => { valueAt(x: number): number | null }> = new Map([
+    ['linear', interpolateLinear],
+    ['naturalCubicSpline', interpolateNaturalCubicSpline],
+]);
+
+// The curve made again from what .NET's was made from, by the Script Core's twin of its method.
+function curve(made: WireMadeFrom): (x: number) => number | null {
+    if (made.kind === 'fit') {
+        const fitted = new FittedCurve({
+            method: made.method, coefficients: made.coefficients.map(wireNumber), rSquared: wireNumber(made.rSquared), count: made.count,
+            from: wireNumber(made.from), to: wireNumber(made.to), space: made.space,
+        });
+        return x => fitted.valueAt(x);
+    }
+    // A kind this side does not know is a writer's defect, said by name, never drawn by another method.
+    const make = twins.get(made.kind);
+    if (make === undefined) throw new Error(`Internal: .NET sent a curve made by "${made.kind}", which has no twin here.`);
+    const interpolant = make(made.xs.map(wireNumber), made.ys.map(wireNumber));
+    return x => interpolant.valueAt(x);
+}
+
+function sampler(wire: WireSampler | null): SeriesSampler | undefined {
+    if (wire === null) return undefined;
+    return { from: wireNumber(wire.from), to: wireNumber(wire.to), valueAt: curve(wire.madeFrom) };
+}
+
 function series(s: WireSeries): ChartSeriesOptions {
     const format = writerOf(s.texts);
     const colourBy: PointColour | undefined = s.colourBy === null ? undefined : {
@@ -247,6 +295,7 @@ function series(s: WireSeries): ChartSeriesOptions {
     const appearance = keys(s.keys);
     const xInterval = interval(s.xInterval);
     const yInterval = interval(s.interval);
+    const sampled = sampler(s.sampler);
     return {
         id: s.id,
         name: s.name,
@@ -259,6 +308,7 @@ function series(s: WireSeries): ChartSeriesOptions {
         ...(s.fromZero === null ? {} : { fromZero: s.fromZero }),
         interpolated: s.interpolated,
         segments: s.segments.map((g): Segment => ({ from: wireNumber(g.from), to: wireNumber(g.to), method: g.method, extrapolated: g.extrapolated })),
+        ...(sampled === undefined ? {} : { sampler: sampled }),
         // A Price Range's points are its closes, which the definition makes from its rows, as C#'s does.
         ...(s.bars === null
             ? { points: points(s) }

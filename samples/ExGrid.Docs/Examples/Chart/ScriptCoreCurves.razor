@@ -1,0 +1,24 @@
+@using ExChart
+@using ExChart.Engine
+@using ExChart.Engine.Fitting
+@using ExChart.Engine.Interpolation
+
+<ExChart.Script.ExChart Definition="Definition" Title="Swap quotes, a spline and a fit" Width="720" Height="360" />
+
+@code {
+    private static readonly double[] Tenors = [0.5, 1, 2, 3, 5, 7, 10];
+    // Quoted in percent, so the fit's Note writes its slope in percent a year.
+    private static readonly double[] Quotes = [3.12, 3.05, 2.98, 3.01, 3.12, 3.21, 3.33];
+
+    // A curve made by Interpolate or Fit crosses to the browser as the points or the coefficients it was made from,
+    // and the Script Core makes the same curve again and samples it at every pixel. A series sampled from a .NET
+    // function of your own would be refused here: the browser cannot call it.
+    private static readonly ChartDefinition Definition = new(
+        ChartAxis.Numbers("Tenor") with { FormatCode = "0.0\"y\"" },
+        [
+            ChartSeries.Of("quotes", "Quoted", SeriesKind.Observation, Tenors.Select((t, i) => new ChartPoint(t, ChartValue.Of(Quotes[i]))))
+                with { FormatCode = "0.00\"%\"" },
+            Interpolate.NaturalCubicSpline(Tenors, Quotes).Series("spline", "Spline") with { FormatCode = "0.000\"%\"", FromZero = false },
+            Fit.LeastSquares(Tenors, Quotes).Series("fit", "Least squares") with { FormatCode = "0.000\"%\"" },
+        ]);
+}

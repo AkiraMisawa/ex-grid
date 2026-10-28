@@ -177,8 +177,9 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             {
                 // An interpolation a Consumer calls (ADR-0257): the interpolant, or its values where `at` names.
                 var interpolant = Interpolant(args, "at");
+                // A curve's points are what it crosses to the browser as (ADR-0420), which the Script Core's twin does not hold.
                 if (!args.TryGetProperty("at", out var at))
-                    return interpolant;
+                    return interpolant is Interpolant1D made ? new { made.Method, made.From, made.To } : interpolant;
                 return interpolant switch
                 {
                     Interpolant1D curve => at.EnumerateArray().Select(x => curve.ValueAt(Position(x))).ToList(),

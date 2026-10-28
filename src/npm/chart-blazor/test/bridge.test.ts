@@ -6,6 +6,7 @@
 // once the component has let go.
 import { afterEach, describe, expect, it } from 'vitest';
 import { attachChart, attachSurface, type DotNetHandle, type WireChart, type WireChartOptions } from '../src/blazor-chart';
+import { interpolateNaturalCubicSpline } from '@ex-grid/chart';
 import { readDefinition, readSurface, wireNumber, type WireDefinition, type WireSeries, type WireSurfaceGrid } from '../src/wire';
 
 class FakeDotNet implements DotNetHandle {
@@ -21,7 +22,7 @@ class FakeDotNet implements DotNetHandle {
 function series(overrides: Partial<WireSeries> = {}): WireSeries {
     return {
         id: 'bonds', name: 'Bonds', kind: 'observation', step: 'following', axis: 'left', panel: '', formatCode: null, keys: null, fromZero: null, interpolated: false,
-        segments: [], x: [0, 10, 5], y: [0, 10, 2], names: ['A', 'B', 'C'], rows: ['a', 7, true], colourBy: null, sizeBy: null, details: [],
+        segments: [], sampler: null, x: [0, 10, 5], y: [0, 10, 2], names: ['A', 'B', 'C'], rows: ['a', 7, true], colourBy: null, sizeBy: null, details: [],
         edges: [], bars: null, mergeTo: null, interval: null, xInterval: null, thinned: [], texts: null,
         ...overrides,
     };
@@ -78,6 +79,29 @@ describe('a definition .NET wrote', () => {
         expect(read.axis.formatCode).toBe('0.0"y"');
         expect(read.series[0]?.formatCode).toBe('#,##0.00');
         expect(readDefinition(definition()).axis.formatCode).toBeUndefined();
+    });
+
+    it('ADR-0420: a series sampled from the family\'s own curve crosses as what it was made from, and is made again', () => {
+        const spline = readDefinition(definition(series({
+            kind: 'level', x: [], y: [], names: null, rows: null, interpolated: true,
+            sampler: { from: 0, to: 2, madeFrom: { kind: 'naturalCubicSpline', xs: [0, 1, 2], ys: [0, 1, 0] } },
+        }))).series[0]?.sampler;
+        expect(spline?.valueAt(0.5)).toBe(interpolateNaturalCubicSpline([0, 1, 2], [0, 1, 0]).valueAt(0.5));
+        expect(spline?.valueAt(3)).toBeNull();
+        const fitted = readDefinition(definition(series({
+            kind: 'level', x: [], y: [], names: null, rows: null,
+            sampler: { from: 1, to: 4, madeFrom: { kind: 'fit', method: 'OLS', coefficients: [1, 2], rSquared: 'NaN', count: 4, from: 1, to: 4, space: 'logY' } },
+        }))).series[0]?.sampler;
+        expect(fitted?.valueAt(2)).toBe(Math.exp(5));
+        const linear = readDefinition(definition(series({
+            kind: 'level', x: [], y: [], names: null, rows: null,
+            sampler: { from: 0, to: 2, madeFrom: { kind: 'linear', xs: [0, 1, 2], ys: [0, 1, 0] } },
+        }))).series[0]?.sampler;
+        expect(linear?.valueAt(0.5)).toBe(0.5);
+        expect(() => readDefinition(definition(series({
+            kind: 'level', x: [], y: [], names: null, rows: null,
+            sampler: { from: 0, to: 2, madeFrom: { kind: 'pchip' as never, xs: [0, 1, 2], ys: [0, 1, 0] } },
+        })))).toThrow(/"pchip", which has no twin/u);
     });
 
     it('ADR-0370: a number JSON cannot hold crosses by its name', () => {
