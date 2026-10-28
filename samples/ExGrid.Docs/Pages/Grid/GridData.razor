@@ -178,6 +178,13 @@
             rows on screen in the source's Window and fetches nothing, and the source fetches when they leave it, as
             without a margin.
         </p>
+        <p>
+            ExGrid for React takes the margin as <code>rangeRequestMargin</code>. Its grid asks its source rather than
+            raising an event: an early request is a call to the source's <code>needRange</code>, naming the rows on screen,
+            so the Example's server is a <code>GridSource</code> of the page's own whose <code>needRange</code> reads
+            ahead, keeps a covering question, and says <code>loading</code> only while rows on screen wait.
+            <code>GridSource.fetch</code> does not act on an early request there either.
+        </p>
         <DocsExample Title="Asked ten rows early" Builtin="typeof(AskEarly)" Mud="typeof(AskEarlyMud)"
                      Files="@(["Examples/Grid/ReadAheadTrades.cs", "Examples/Grid/MillionTrades.cs", "Examples/Data/Trade.cs"])">
             The server answers after 150&nbsp;ms with 50 rows either side of the rows asked for. Click a cell and hold

@@ -1084,7 +1084,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onColumnHidden?: (column: string) => void;
     readonly onColumnOrderChanged?: (order: readonly string[]) => void;
     readonly onColumnWidthChanged?: (change: GridColumnWidthChange) => void;
-    readonly onDeclaredKey?: (press: GridDeclaredKeyPress) => void;
+    readonly onDeclaredKey?: (press: GridDeclaredKeyPress) => void | PromiseLike<void>;
     readonly onEdit?: (intent: GridEditIntent<Row>) => void | PromiseLike<void>;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
@@ -1113,6 +1113,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly pointAt?: (text: string, caret: number) => boolean;
     readonly pointedAt?: GridPointedAt<Row>;
     readonly presentationDefaults?: GridPresentationDefaults;
+    readonly rangeRequestMargin?: number;
     readonly referencesIn?: (text: string) => readonly GridEditorReference[] | undefined;
     readonly referenceText?: (range: SelectionRange) => string;
     readonly rowHeadings?: (row: number) => string;

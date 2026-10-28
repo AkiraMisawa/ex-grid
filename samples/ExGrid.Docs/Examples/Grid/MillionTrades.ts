@@ -15,7 +15,7 @@ const firstDay = Temporal.PlainDate.from('2026-01-02');
 
 // A trade made from its position, the same every time: the generator is seeded with the position, so a million
 // trades are never all in memory.
-function tradeAt(index: number): Trade {
+export function tradeAt(index: number): Trade {
     const next = mulberry32(index);
     const pick = <T>(list: readonly T[]): T => list[Math.floor(next() * list.length)] as T;
     return {
