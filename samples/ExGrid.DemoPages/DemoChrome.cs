@@ -1,5 +1,7 @@
 using global::ExGrid.Chrome;
 using global::ExGrid.MudBlazor;
+using global::ExPivot.Chrome;
+using global::ExPivot.MudBlazor;
 using global::ExSheet.MudBlazor;
 
 namespace ExGrid.DemoPages;
@@ -49,4 +51,9 @@ public static class DemoChrome
     /// (ADR-0071).</summary>
     /// <exception cref="ArgumentException">The name is neither.</exception>
     public static IGridChrome? ForSheet(string? name) => From(name) is null ? null : MudSheetChrome.Default;
+
+    /// <summary>The pivot Chrome <paramref name="name"/> asks for: null for ExPivot's own markup, and
+    /// <see cref="MudPivotChrome.Default"/> for <c>mud</c>, which dresses the report grid too (ADR-0062).</summary>
+    /// <exception cref="ArgumentException">The name is neither.</exception>
+    public static IPivotChrome? ForPivot(string? name) => From(name) is null ? null : MudPivotChrome.Default;
 }

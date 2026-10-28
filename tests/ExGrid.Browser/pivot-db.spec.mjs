@@ -1,14 +1,14 @@
 import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip, dataRowCount, setTicked } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
-import { API_URL, REACT, SERVER } from './hosting.mjs';
+import { API_URL, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
 // /pivot-db (ADR-0065/0066/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // the demo API server's SQLite trades two ways, side by side. "Database → Snapshot" reads the
 // trades over Arrow into a Snapshot the page pivots in its own process; "database → server Pivot
-// Source" asks the server each question: through PivotReportSource.Fetch on the Blazor hosts, where the server
-// computes the report and returns its requested Window, and through FetchingPivotSource on the React host, where
-// the server answers Leaf Aggregates and the page builds the report (ADR-0370 section 3).
+// Source" asks the server each question through a fetching Pivot Source: the server answers Leaf Aggregates and the
+// page builds the report (ADR-0370 section 3). With ?report=windows on the Blazor hosts, the Razor component asks
+// through PivotReportSource.Fetch instead, where the server computes the report and returns the Window asked for.
 // What only a browser can say: that both reach the server from either host, read the same trades
 // and show the same numbers for the same layout; that the server's Details are paged from it as
 // the Details tab scrolls; and that the console stays clean throughout (PV-20).
@@ -34,9 +34,10 @@ async function api(path, init) {
     return response.json();
 }
 
-async function open(page, chrome) {
+/** Opens /pivot-db; `query` such as `&report=windows` puts the server side on the Razor component's report Windows. */
+async function open(page, chrome, query = '') {
     await api('/api/reset', { method: 'POST' });
-    await page.goto(`/pivot-db?chrome=${chrome}`);
+    await page.goto(`/pivot-db?chrome=${chrome}${query}`);
     await expect(rows(page, 'snapshot').first()).toBeVisible();
     await expect(rows(page, 'server').first()).toBeVisible();
     // ExPivot's stylesheet has landed when its root lays the report and the pane out side by
@@ -66,10 +67,12 @@ async function expectSameReports(page) {
     }).toBe('the same');
 }
 
-// The questions that bring PV-20's server pivot its report: a report Window on the Blazor hosts, which ask the
-// server's report through PivotReportSource.Fetch, and the Leaf Aggregates on the React host, whose pivot builds the
-// report from them (ADR-0370 section 3). The report Windows of LV- are the Blazor hosts' alone.
-const REPORT_QUESTION = REACT ? 'aggregate' : 'Window';
+// The question that brings PV-20's server pivot its report: the Leaf Aggregates, from which the pivot builds the
+// report in the browser (ADR-0370 section 3). The report Windows of LV- are the Razor component's, which /pivot-db
+// shows with ?report=windows on the Blazor hosts until it goes (ADR-0370 section 6, step 3; ADR-0412 section 4).
+const REPORT_QUESTION = 'aggregate';
+// The Razor component over the server's report Windows (ADR-0151).
+const WINDOWS = '&report=windows';
 
 /** How many questions of a kind the page has asked the server, as its status line counts them. */
 async function asked(page, kind) {
@@ -78,7 +81,7 @@ async function asked(page, kind) {
 }
 
 test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows', async ({ page }) => {
-    await open(page, 'builtin');
+    await open(page, 'builtin', WINDOWS);
     const grid = report(page, 'server');
     await setTicked(section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }));
     const status = await api('/api/status');
@@ -93,7 +96,7 @@ test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bound
 });
 
 test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows its last rows, and scrolls on', async ({ page }) => {
-    await open(page, 'builtin');
+    await open(page, 'builtin', WINDOWS);
     // Computed in the page over the Snapshot, and on the server: the same Window, asked of each.
     for (const side of ['snapshot', 'server']) {
         const grid = report(page, side);
@@ -135,7 +138,7 @@ test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows i
 // has counted it, so the Window is waited for, not read in passing; and the listener goes with the
 // test, since the page is handed on to the next one (ADR-0056).
 test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it read ahead asking nothing, and asks once ten rows before it runs out', async ({ page }) => {
-    await open(page, 'builtin');
+    await open(page, 'builtin', WINDOWS);
     const windowsAsked = [];
     const askedWindow = (request) => {
         if (request.method() === 'POST' && /\/api\/pivot\/reports\/[0-9a-f]{32}\/window$/.test(request.url())) {
@@ -199,7 +202,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
 // the circuit, so the circuit goes quiet around it.
 test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while the scroll stays in its Window, and the report dims only once rows on screen wait for it', async ({ page }) => {
     // open() resets the API, which opens the gate and forgets the Windows asked before.
-    await open(page, 'builtin');
+    await open(page, 'builtin', WINDOWS);
     const gate = (hold) => api('/api/pivot/window-gate', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ hold }),
     });
@@ -274,7 +277,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
 
 test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await open(page, 'builtin');
+    await open(page, 'builtin', WINDOWS);
     await setTicked(section(page, 'snapshot').getByRole('checkbox', { name: 'Trade ID', exact: true }));
     await expect.poll(() => dataRowCount(report(page, 'snapshot'))).toBeGreaterThan(1000);
     await page.locator('#pivot-db-same-layout').click();
@@ -376,6 +379,6 @@ test('ADR-0069/0065: the code the page shows is the code it runs, the Arrow requ
     expect(code['PivotDbPage.razor#snapshot']).toContain('request.SetBrowserResponseStreamingEnabled(false);');
     expect(code['PivotDbPage.razor#snapshot']).toContain('SnapshotArrow.ReadAsync(');
     expect(code['PivotDbPage.razor#snapshot']).toContain('PivotSource.From(snapshot, fields)');
-    expect(code['DemoServerPivot.cs#fetch']).toContain('PivotReportSource.Fetch(fields, features,');
-    expect(code['DemoServerPivot.cs#fetch']).toContain('MaxDetailsPage = 10_000');
+    expect(code['DemoServerPivot.cs#source']).toContain('PivotSource.Fetch(fields, features,');
+    expect(code['DemoServerPivot.cs#source']).toContain('MaxDetailsPage = 10_000');
 });

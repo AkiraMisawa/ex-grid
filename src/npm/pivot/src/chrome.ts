@@ -455,8 +455,9 @@ export interface PivotFieldListSlotContext extends PivotStandingSlotContext<Pivo
     readonly update: () => void;
     /** Hands in a control: `search`, a field's tick box by its `key`, or an entry's button by its `key`. */
     readonly control: (key: string) => PivotPartRef;
-    /** Hands in the anchor around an entry's button, by the entry's `key`: an element of no position of its own, so
-     * the frame the pivot places in it takes the pane's width (ADR-0061). */
+    /** Hands in the anchor around an entry's button, or beside it, by the entry's `key`: an element of no position of
+     * its own, so the frame the pivot places in it takes the pane's width (ADR-0061). A press or focus on the entry's
+     * button, handed in by `control`, is inside its open menu wherever the anchor stands. */
     readonly anchor: (key: string) => PivotPartRef;
     /** Hands in an Area's box. */
     readonly area: (area: PivotArea) => PivotPartRef;

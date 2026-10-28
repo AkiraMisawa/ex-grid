@@ -49,7 +49,9 @@
         updates on: twenty trades of its database changed four times a second, and one in eight
         ticks a trade cancelled and another booked. Its SignalR hub says each new Source Version,
         and the page passes it on (<code>source.NotifyChanged(version)</code>); ExPivot asks the
-        current report Window through <code>PivotReportSource.Fetch</code>, as on /pivot-db.
+        server's Pivot Source again for the Leaf Aggregates of the report on screen, as on /pivot-db.
+        <code>?report=windows</code> asks the Razor component's report Window through
+        <code>PivotReportSource.Fetch</code> instead.
     </li>
 </ul>
 <p>
@@ -83,7 +85,7 @@
     <section id="pivot-live-server" aria-labelledby="pivot-live-server-title">
         <h2 id="pivot-live-server-title">On a server: its data moves on</h2>
         <p class="demo-status"><DemoStatusLine @ref="_serverLine" Id="pivot-live-server-status" Initial="@_serverInitial" /></p>
-        @if (_server is not null)
+        @if (_server is not null || _serverReport is not null)
         {
             @Framed(ServerPivot)
         }
@@ -126,6 +128,18 @@
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
 
+    /// <summary><c>windows</c> shows the server side through the Razor component's report Windows
+    /// (ADR-0151); absent, through the server's Pivot Source.</summary>
+    [SupplyParameterFromQuery(Name = "report")]
+    public string? Report { get; set; }
+
+    private bool Windows => Report switch
+    {
+        null => false,
+        "windows" => true,
+        _ => throw new ArgumentException($"Unknown report '{Report}': this page runs with ?report=windows or without it.", nameof(Report)),
+    };
+
     [SupplyParameterFromQuery(Name = "trades")]
     public int? TradesAsked { get; set; }
 
@@ -149,7 +163,7 @@
         // The report grids take ExPivot.MudBlazor's grid Chrome through the pivot Chrome, as on
         // /pivot; DemoChrome refuses any name but builtin and mud.
         _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
-        _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
+        _pivotChrome = DemoChrome.ForPivot(ChromeName);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -229,26 +243,32 @@
     #endregion
 
     #region The code: server
-    // The server's report through PivotReportSource.Fetch (DemoServerPivot, as on /pivot-db). Then the
-    // server is asked to keep changing them, and the page passes on what its hub says.
-    private FetchingPivotReportSource? _server;
+    // The server's Pivot Source (DemoServerPivot, as on /pivot-db), or with ?report=windows its
+    // report through PivotReportSource.Fetch. Then the server is asked to keep changing the trades,
+    // and the page passes on what its hub says.
+    private FetchingPivotSource? _server;
+    private FetchingPivotReportSource? _serverReport;
     private HubConnection? _hub;
     private Task? _hubStarting;
     private bool _liveAsked;
 
     // "Cut the server off" stands for a server out of reach: while it is on, each question for the
-    // report's Window fails before it is sent, and ExPivot keeps the last report it could compute as
-    // a Stale Report until Retry, or the next notice, brings an answer (ADR-0067).
+    // report fails before it is sent, and ExPivot keeps the last report it could compute as a Stale
+    // Report until Retry, or the next notice, brings an answer (ADR-0067).
     private bool _cutOff;
 
     private async Task ConnectAsync(CancellationToken token)
     {
         var (fields, features) = await DemoServerPivot.DeclaredAsync(Api.Http, token);
-        var server = _server = DemoServerPivot.Fetch(Api.Http, fields, features, asked: question =>
+        void Asked(string question)
         {
-            if (_cutOff && question == "api/pivot/window")
+            if (_cutOff && question is "api/pivot/aggregate" or "api/pivot/window")
                 throw new HttpRequestException("The page cut the server off.");
-        });
+        }
+        if (Windows)
+            _serverReport = DemoServerPivot.Fetch(Api.Http, fields, features, Asked);
+        else
+            _server = DemoServerPivot.Source(Api.Http, fields, features, Asked);
         StateHasChanged();
         // The hub says each Source Version the data moves on to; the page passes it on, and ExPivot
         // asks the server again for the whole answer (ADR-0067). Neither ExPivot nor ExGrid learns
@@ -256,7 +276,8 @@
         var hub = _hub = new HubConnectionBuilder().WithUrl(Api.Hub).WithAutomaticReconnect().Build();
         hub.On<string>("VersionChanged", version =>
         {
-            server.NotifyChanged(version);
+            _server?.NotifyChanged(version);
+            _serverReport?.NotifyChanged(version);
             _ = InvokeAsync(() => DescribeServer(version));
         });
         // Not cancelled by the page's going: a connection cut off while it opens is an error in the
@@ -282,19 +303,25 @@
     // ExPivot listens to its source's Changed, gathers the changes and redraws at most every
     // RedrawInterval from the newest data, and marks each value whose painted text changed for
     // ChangeHighlightDuration (ADR-0067/0068). Both are the defaults, written out.
-    private RenderFragment LocalPivot => @<ExPivot Source="_local" @bind-Layout="_localLayout"
-                                                    RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
-                                                    PivotChrome="_pivotChrome" Chrome="_gridChrome"
-                                                    Culture="Culture" ViewportHeight="300" />;
+    private RenderFragment LocalPivot => @<ExPivot.Script.ExPivot Source="_local" @bind-Layout="_localLayout"
+                                                                  RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
+                                                                  Chrome="_pivotChrome" Culture="Culture" ViewportHeight="300" />;
 
-    private RenderFragment ServerPivot => @<ExPivot ReportSource="_server" @bind-Layout="_serverLayout"
-                                                     RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
-                                                     PivotChrome="_pivotChrome" Chrome="_gridChrome"
-                                                     Culture="Culture" ViewportHeight="300" />;
+    private RenderFragment ServerPivot => _serverReport is null
+        ? @<ExPivot.Script.ExPivot Source="_server" @bind-Layout="_serverLayout"
+                                   RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
+                                   Chrome="_pivotChrome" Culture="Culture" ViewportHeight="300" />
+        : WindowsPivot;
 
     private static readonly TimeSpan RedrawInterval = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan Highlight = TimeSpan.FromSeconds(1);
     #endregion
+
+    // ?report=windows: the Razor component over the server's report Windows (ADR-0151).
+    private RenderFragment WindowsPivot => @<ExPivot ReportSource="_serverReport" @bind-Layout="_serverLayout"
+                                                      RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
+                                                      PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                                      Culture="Culture" ViewportHeight="300" />;
 
     // P&L by region and desk across products, with the currency to filter by.
     private static PivotLayout FirstLayout() => new()
@@ -396,7 +423,7 @@
         }
         if (_hub is not null)
             await _hub.DisposeAsync();
-        if (_server is not null) await _server.DisposeAsync();
+        if (_serverReport is not null) await _serverReport.DisposeAsync();
     }
     #endregion
 }

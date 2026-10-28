@@ -69,8 +69,8 @@ const reactHost = REACT
 // TypeScript number does not (3.3), so those records change when Blazor draws through the Script Core
 // (ADR-0370, step 2). Of ExPivot's, /pivot and /pivot-risk under their own markup, Find in the report included,
 // /pivot-db's PV-20, whose server pivot asks the Leaf Aggregates, /pivot-csv, and /pivot-live under its own markup;
-// /pivot-db's and /pivot-live's report Windows (LV-) are the Blazor hosts' report source, and /pivot-live's code is
-// the Blazor page's.
+// /pivot-db's and /pivot-live's report Windows (LV-) are the Razor component's, shown with ?report=windows on the
+// Blazor hosts until it goes (ADR-0412 section 4), and /pivot-live's code is the Blazor page's.
 // Of ExSheet's (ADR-0370 section 6, step 1), every spec file the Sheet's pages run, but for DC-60's race held
 // on DotNet's reply to Ctrl+1.
 // A test run once per Chrome claims its built-in run alone: the React host has no MudBlazor Chrome,

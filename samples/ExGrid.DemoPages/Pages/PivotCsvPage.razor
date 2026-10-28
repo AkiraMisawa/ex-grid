@@ -177,7 +177,6 @@
     private string? _refusal;
     private PendingFile? _pending;
     private SnapshotKind[] _kinds = [];
-    private IGridChrome? _gridChrome;
     private IPivotChrome? _pivotChrome;
 
     [SupplyParameterFromQuery(Name = "chrome")]
@@ -189,8 +188,7 @@
     {
         // The report grid takes ExPivot.MudBlazor's grid Chrome through the pivot Chrome
         // (DemoChrome refuses any other name).
-        _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
-        _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
+        _pivotChrome = DemoChrome.ForPivot(ChromeName);
     }
 
     #region The code: choose
@@ -269,9 +267,8 @@
 
     // Another file is a new source, handed in with the layout read with it: ExPivot asks the new
     // source under that layout, in one render.
-    private RenderFragment Pivot(PivotSource source) => @<ExPivot Source="source" @bind-Layout="_layout"
-                                                                   PivotChrome="_pivotChrome" Chrome="_gridChrome"
-                                                                   Culture="Culture" ViewportHeight="460" />;
+    private RenderFragment Pivot(PivotSource source) => @<ExPivot.Script.ExPivot Source="source" @bind-Layout="_layout"
+                                                                                 Chrome="_pivotChrome" Culture="Culture" ViewportHeight="460" />;
     #endregion
 
     #region The code: suggest

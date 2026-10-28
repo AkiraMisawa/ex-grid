@@ -179,11 +179,11 @@ export class RazorBoardSlots {
         }
         const options: RazorSlotHostOptions = {
             hold: slot => hold(views.of(slot), slot),
-            order: (until, slot) => {
+            order: (handling, slot) => {
                 const view = views.of(slot);
-                if (view.kind === 'chart') throw new Error('Internal: a chart\'s Razor slot took the keyboard, which no chart slot takes.');
-                if (view.kind === 'pivot') pivotOrder(until, slot);
-                else void gridOf(view).inOrder(() => until);
+                if (view.kind === 'chart') throw new Error('Internal: a chart\'s Razor slot asked for the Input Order, which no chart slot holds.');
+                if (view.kind === 'pivot') pivotOrder(handling, slot);
+                else void gridOf(view).inOrder(handling);
             },
             // A chart's contents hand the keyboard nowhere as they go, a menu whose command was clicked among them: the
             // chart takes it back from none of its own parts, as ExChart's own adapter has it (ADR-0281).

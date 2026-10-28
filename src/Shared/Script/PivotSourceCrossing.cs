@@ -43,20 +43,53 @@ internal static class PivotSourceCrossing
         switch (kind)
         {
             case "aggregate":
-                var answer = await source.AggregateAsync(PivotJson.ReadQuery(Must(query)), token);
-                return Keyed(source, PivotJson.Write(answer),
-                    answer.IsRefused ? [] : [.. answer.Rows.Concat(answer.Columns).Select(axis => (axis.Field, axis.Items))]);
+                var aggregate = PivotJson.ReadQuery(Must(query));
+                return await FromSourceAsync(() => source.AggregateAsync(aggregate, token), answer => Keyed(source, PivotJson.Write(answer),
+                    answer.IsRefused ? [] : [.. answer.Rows.Concat(answer.Columns).Select(axis => (axis.Field, axis.Items))]), token);
             case "items":
                 var asked = PivotJson.ReadItemsQuery(Must(query));
-                var page = await source.ItemsAsync(asked, token);
-                return Keyed(source, PivotJson.Write(page), page.IsRefused ? [] : [(asked.Field, page.Items)]);
+                return await FromSourceAsync(() => source.ItemsAsync(asked, token),
+                    page => Keyed(source, PivotJson.Write(page), page.IsRefused ? [] : [(asked.Field, page.Items)]), token);
             case "details":
-                return PivotJson.Write(await source.DetailsAsync(PivotJson.ReadDetailsQuery(Must(query)), token));
+                var details = PivotJson.ReadDetailsQuery(Must(query));
+                return await FromSourceAsync(() => source.DetailsAsync(details, token), PivotJson.Write, token);
             case "itemCounts":
-                return PivotJson.Write(await source.ItemCountsAsync(token));
+                return await FromSourceAsync(() => source.ItemCountsAsync(token), PivotJson.Write, token);
             default:
                 throw new InvalidOperationException($"Internal: the browser asked a question of the kind '{kind}'.");
         }
+    }
+
+    // The source's answer written, or the failure it answered with in its own words, which the browser shows as the
+    // reason the report could not be asked, as the Razor pivot shows them: Blazor would cross the exception without
+    // its message. A cancellation the browser asked for is not the source's answer, and a defect in writing the answer
+    // is the crossing's own: both are thrown.
+    private static async Task<string> FromSourceAsync<T>(Func<ValueTask<T>> ask, Func<T, string> write, CancellationToken token)
+    {
+        T answer;
+        try
+        {
+            answer = await ask();
+        }
+        catch (Exception failed) when (failed is not OutOfMemoryException && !(failed is OperationCanceledException && token.IsCancellationRequested))
+        {
+            return Failed(failed.Message);
+        }
+        return write(answer);
+    }
+
+    /// <summary>A question the source failed to answer, as the browser reads it in place of an answer:
+    /// <c>{"failed":"…"}</c>, the failure's message, which the browser throws as the question's error.</summary>
+    public static string Failed(string message)
+    {
+        var buffer = new System.Buffers.ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteString("failed", message);
+            json.WriteEndObject();
+        }
+        return System.Text.Encoding.UTF8.GetString(buffer.WrittenSpan);
     }
 
     // The answer as it is where it names no Item of a field with an Order Key; otherwise after the line of those Items'

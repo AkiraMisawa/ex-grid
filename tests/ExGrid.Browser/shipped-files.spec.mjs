@@ -267,14 +267,16 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
     // The three products' own notices stand in their roots. A Wrapper has no root of its own
     // (ADR-0062): its Chrome declares the stylesheet it brings, and the root of what it dresses renders
     // the notice — the grid's for ExGrid.MudBlazor and for ExSheet.MudBlazor, whose Chrome is the
-    // Sheet's grid's, and ExPivot's for ExPivot.MudBlazor (ADR-0123, 2026-10-11).
+    // Sheet's grid's, and ExPivot's for ExPivot.MudBlazor (ADR-0123, 2026-10-11). ExPivot over the
+    // Script Core draws no stylesheet notice yet, so ExPivot's rows run the Razor component, which
+    // still ships, until it does (ADR-0370 section 6, step 2).
     const products = [
         { product: 'ExGrid', path: '/wide', root: '.ex-grid', name: 'ex-grid' },
         { product: 'ExSheet', path: '/sheet', root: '.ex-sheet', name: 'ex-sheet' },
-        { product: 'ExPivot', path: '/pivot', root: '.ex-pivot', name: 'ex-pivot' },
+        { product: 'ExPivot', path: '/pivot?component=razor', root: '.ex-pivot', name: 'ex-pivot' },
         { product: 'ExGrid.MudBlazor', path: '/mud', root: '.ex-grid', name: 'mud-ex-grid' },
         { product: 'ExSheet.MudBlazor', path: '/sheet?chrome=mud', root: '.ex-sheet .ex-grid', name: 'mud-ex-sheet' },
-        { product: 'ExPivot.MudBlazor', path: '/pivot?chrome=mud', root: '.ex-pivot', name: 'mud-ex-pivot' },
+        { product: 'ExPivot.MudBlazor', path: '/pivot?chrome=mud&component=razor', root: '.ex-pivot', name: 'mud-ex-pivot' },
     ];
 
     for (const { product, path, root, name } of products) {

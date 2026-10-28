@@ -27,6 +27,7 @@
     <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
     <!-- A C# Pivot Source asked by the browser's pivot, as ExPivot's adapter asks one: a pivot over a source. -->
     <Compile Include="..\Shared\Script\PivotSourceCrossing.cs" Link="Script\PivotSourceCrossing.cs" />
+    <Compile Include="..\Shared\Script\PivotRefreshes.cs" Link="Script\PivotRefreshes.cs" />
     <!-- Chrome slots filled with Razor (ADR-0410): the holders every adapter renders, and the grids' and the pivots'
          and the charts' slots, read and drawn as ExGrid's, ExPivot's and ExChart's own adapters read and draw them. -->
     <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
