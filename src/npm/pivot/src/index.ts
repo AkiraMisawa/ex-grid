@@ -8,7 +8,7 @@
 export { browserPivotLocale } from './browser-locale';
 export { createPivot } from './create-pivot';
 export type {
-    PivotChoice, PivotChrome, PivotChromeSlot, PivotDetailsDialogSlotContext, PivotDetailsDialogView, PivotDetailsTabsSlotContext, PivotDetailsTabsView,
+    PivotChoice, PivotChrome, PivotChromeSlot, PivotChromeStylesheet, PivotDetailsDialogSlotContext, PivotDetailsDialogView, PivotDetailsTabsSlotContext, PivotDetailsTabsView,
     PivotDetailsTabView, PivotDragSubject, PivotFieldListAreaView, PivotFieldListEntryView, PivotFieldListFieldView,
     PivotFieldListSlotContext, PivotFieldListView, PivotFieldSettingsSlotContext, PivotFieldSettingsView, PivotItemChoice, PivotItemFilterSlotContext,
     PivotItemFilterView, PivotMenuCommand, PivotMenuSlotContext, PivotMenuView, PivotPanelSlotContext, PivotPartRef, PivotPartSlotContext, PivotReportFilterView,

@@ -69,6 +69,9 @@ export interface BreachCell {
 }
 
 // @public
+export function builtInCommandLabel(id: string): string;
+
+// @public
 export function builtInLabelIds(): readonly string[];
 
 // @public
@@ -1877,6 +1880,11 @@ export const refusalColumnPlaceholder = "{column}";
 
 // @public
 export function refusedCells(cells: readonly GridReplaceRefusedCell[], rowSequenceVersion: number): GridReplaceResult;
+
+// @public
+export const reloadNoticeLabelIds: Readonly<{
+    readonly stylesheet: 'reload-notice-stylesheet';
+}>;
 
 // @public
 export function replacedCells(count: number, rowSequenceVersion: number): GridReplaceResult;

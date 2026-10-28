@@ -517,12 +517,25 @@ export interface PivotDetailsDialogSlotContext extends PivotStandingSlotContext<
     readonly anchor: (name: 'records') => PivotPartRef;
 }
 
+/** A stylesheet a Chrome brings (ADR-0123), as its notice names it: a Wrapper has no root of its own (ADR-0062), so
+ * its Chrome declares the stylesheets it brings, and the pivot's root renders a notice for each beside its own. */
+export interface PivotChromeStylesheet {
+    /** The stylesheet's source file name, as the rules at the end of the shipped stylesheet name it: `mud-ex-pivot.css`. */
+    readonly name: string;
+    /** The SHA-256 of that source, as lower-case hex: the stamp the stylesheet the Chrome was built with hides its
+     * notice for. */
+    readonly stamp: string;
+}
+
 /**
  * The Chrome slots a pivot takes (ADR-0061, ADR-0390): the parts a Wrapper draws, each in place of the built-in
  * markup's. A slot not given is the built-in markup's. A slot is read when its part opens: a part standing keeps the
  * slot it opened with.
  */
 export interface PivotChrome {
+    /** The stylesheets this Chrome brings (ADR-0123): the pivot's root renders a notice for each beside its own, which
+     * only another version's stylesheet shows. The report grid's Chrome declares its own. None where not given. */
+    readonly stylesheets?: readonly PivotChromeStylesheet[];
     /** The report grid's Chrome, and Show Details' grids', so one Chrome dresses the pivot and the grids it draws. The
      * Context Menu's commands are worded by the pivot. */
     readonly grid?: GridChrome<unknown>;
@@ -549,7 +562,7 @@ export interface PivotChrome {
     readonly detailsDialog?: PivotChromeSlot<PivotDetailsDialogSlotContext>;
 }
 
-const slotNames: readonly (keyof PivotChrome)[] = ['grid', 'menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings', 'toolbar', 'reportFilters', 'staleReport', 'fieldList', 'detailsTabs',
+const slotNames: readonly Exclude<keyof PivotChrome, 'stylesheets'>[] = ['grid', 'menu', 'itemFilter', 'fieldSettings', 'valueFieldSettings', 'toolbar', 'reportFilters', 'staleReport', 'fieldList', 'detailsTabs',
     'detailsDialog'];
 
 /** A pivot's `chrome`, checked as a script may hand it: an object whose slots are each a mount function, and whose
@@ -560,6 +573,10 @@ export function checkedPivotChrome(chrome: unknown): PivotChrome | undefined {
         throw new TypeError('An ExPivot\'s chrome is an object of Chrome slots, each a mount function (ADR-0390).');
     }
     for (const [name, slot] of Object.entries(chrome)) {
+        if (name === 'stylesheets') {
+            checkedStylesheets(slot);
+            continue;
+        }
         if (!(slotNames as readonly string[]).includes(name)) {
             throw new TypeError(`An ExPivot's chrome has no slot '${name}': its slots are ${slotNames.join(', ')} (ADR-0390).`);
         }
@@ -572,6 +589,21 @@ export function checkedPivotChrome(chrome: unknown): PivotChrome | undefined {
         }
     }
     return chrome;
+}
+
+/** A Chrome's `stylesheets`, checked as a script may hand them: each a name and a SHA-256 stamp the notice carries. */
+function checkedStylesheets(stylesheets: unknown): void {
+    if (stylesheets === undefined) return;
+    if (!Array.isArray(stylesheets)) throw new TypeError('An ExPivot\'s chrome.stylesheets is an array of { name, stamp } (ADR-0123).');
+    for (const stylesheet of stylesheets as readonly unknown[]) {
+        const name: unknown = typeof stylesheet === 'object' && stylesheet !== null ? Reflect.get(stylesheet, 'name') : undefined;
+        const stamp: unknown = typeof stylesheet === 'object' && stylesheet !== null ? Reflect.get(stylesheet, 'stamp') : undefined;
+        // Any stamp is taken, as C#'s ChromeStylesheet takes it: one no shipped stylesheet carries leaves the notice
+        // showing, which says so, not quietly.
+        if (typeof name !== 'string' || name === '' || typeof stamp !== 'string' || stamp === '') {
+            throw new TypeError('Each of an ExPivot\'s chrome.stylesheets is { name, stamp }: the stylesheet\'s file name, and the stamp its own rule hides the notice for (ADR-0123).');
+        }
+    }
 }
 
 /** Mounts `context` into `slot` by `mount`, and answers the cleanup it returned, checked. */

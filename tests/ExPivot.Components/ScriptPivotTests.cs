@@ -89,6 +89,41 @@ public class ScriptPivotTests : BunitContext
         Assert.Equal(14, options.GetProperty("presentationDefaults").GetProperty("fontSizePx").GetDouble());
     }
 
+    [Fact] // ADR-0123 / ERR-11: the stylesheets the Chrome brings cross with the options, whose notices the browser's pivot renders beside its own
+    public void ERR11_the_stylesheets_the_Chrome_and_its_grid_Chrome_bring_cross_to_the_pivot()
+    {
+        Pivot(PivotTestContext.Bundled(), ps => ps.Add(p => p.Chrome, new BringsOne()));
+
+        var stylesheets = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("options").GetProperty("stylesheets");
+        Assert.Equal([("acme-pivot.css", BringsOne.Stamp), ("acme-grid.css", BringsOne.Stamp)],
+            stylesheets.EnumerateArray().Select(sheet => (sheet.GetProperty("name").GetString(), sheet.GetProperty("stamp").GetString())));
+    }
+
+    /// <summary>A Wrapper's Pivot Chrome, bringing a stylesheet of its own and dressing the report grid with a Chrome
+    /// that brings another, as MudPivotChrome brings mud-ex-pivot.css and its MudGridChrome mud-ex-grid.css; it fills no
+    /// slot with Razor.</summary>
+    private sealed class BringsOne : global::ExPivot.Chrome.IPivotChrome
+    {
+        internal const string Stamp = "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0";
+
+        public IReadOnlyList<global::ExGrid.Chrome.ChromeStylesheet> Stylesheets { get; } = [new("acme-pivot.css", Stamp)];
+
+        public global::ExGrid.Chrome.IGridChrome GridChrome(Func<string, string?> commandLabel) => new GridBringsOne();
+    }
+
+    private sealed class GridBringsOne : global::ExGrid.Chrome.IGridChrome
+    {
+        public IReadOnlyList<global::ExGrid.Chrome.ChromeStylesheet> Stylesheets { get; } = [new("acme-grid.css", BringsOne.Stamp)];
+
+        public RenderFragment? FilterPanel(global::ExGrid.Chrome.FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(global::ExGrid.Chrome.ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(global::ExGrid.Chrome.CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(global::ExGrid.Chrome.LoadingContext context) => null;
+    }
+
     [Fact] // ADR-0060, ADR-0370 section 10: a label whose answers change crosses again though its delegate is the same, and one whose answers stay the same does not
     public void ADR0370_words_cross_again_only_when_the_answers_changed()
     {

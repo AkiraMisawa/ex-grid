@@ -16,7 +16,7 @@ import {
     type CellPosition, type GridCommand, type GridContextMenuContext,
     type FetchingGridSource, type GridRefusal, type ViewportSize, type GridColumn, type GridCopyAnswer, type GridCopyRequest,
     type SelectionSummary, type SummaryFigure,
-    assembleCopy, defaultChangeHighlightMs, defaultSummaryFigures, summaryFigureOrder, systemClock,
+    assembleCopy, builtInCommandLabel, defaultChangeHighlightMs, defaultSummaryFigures, reloadNoticeLabelIds, summaryFigureOrder, systemClock,
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
@@ -38,6 +38,7 @@ import { itemFilterPanel, itemsProblemText } from './item-filter';
 import { ItemListings, pendingFirst, searchItems, type FieldItems, type ItemsUnder } from './items';
 import { PivotMenuFrame, SlottedMenuFrame, type PivotMenu, type PivotMenuCommand } from './menu';
 import { clearStyle, element, writeStyle } from './dom';
+import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { checkedName, PartElements, swap, type PartRefs } from './parts';
@@ -565,6 +566,9 @@ export class PivotView {
     // while none has come since the toggle (spine rule 6).
     #gestures = 0;
     #destroyed = false;
+    // The stylesheets' notices at the top of the root, and what they were drawn from.
+    #notices: readonly HTMLElement[] = [];
+    #noticesDrawn = '';
 
     constructor(root: HTMLElement, options: PivotViewOptions, mountGrid: MountGrid) {
         this.#options = checkedOptions(options);
@@ -694,6 +698,7 @@ export class PivotView {
         this.#builtInFieldList = new FieldListView(scroll, fieldListHandlers);
         this.#slottedFieldList = new SlottedFieldList(document, fieldListHandlers, this.#parts);
         root.append(this.#report, this.#fieldListBox);
+        this.#drawNotices();
         this.#details = new DetailsSheets({
             document,
             mountGrid,
@@ -836,6 +841,7 @@ export class PivotView {
             this.#drawGrid();
         }
         const detailsChromeMoved = options.chrome?.detailsTabs !== before.chrome?.detailsTabs || options.chrome?.detailsDialog !== before.chrome?.detailsDialog;
+        this.#drawNotices();
         this.#consumerDraws = true;
         try {
             if (settingsMoved || metricsGiven || options.rowHeight !== before.rowHeight || gridChromeMoved || detailsChromeMoved) {
@@ -1793,6 +1799,31 @@ export class PivotView {
             if (caption !== undefined) return this.#words.fill(removeNamedFieldId, caption);
             return pivotWordIds.has(id) ? pivotWord(id, undefined) : undefined;
         };
+    }
+
+    // The stylesheets' notices (ADR-0123, ERR-11), as the Razor component draws them: ExPivot's own, and beside it one
+    // for each stylesheet the Chrome brings, each hidden until a stylesheet's rules decide. Every shipped stylesheet
+    // shows a notice of its name and hides it for its own stamp, so another version's shows it, this version's hides
+    // it, and none yet loaded shows nothing, with no script. The report grid draws ExGrid's own.
+    #drawNotices(): void {
+        const brought = this.#chrome?.stylesheets;
+        const sheets = [{ name: stylesheetName, stamp: stylesheetStamp }, ...(brought === undefined ? [] : brought)];
+        const id = reloadNoticeLabelIds.stylesheet;
+        const words = this.#commandLabel(id) ?? builtInCommandLabel(id);
+        const drawn = JSON.stringify([words, sheets.map(sheet => [sheet.name, sheet.stamp])]);
+        if (drawn === this.#noticesDrawn) return;
+        this.#noticesDrawn = drawn;
+        for (const notice of this.#notices) notice.remove();
+        this.#notices = sheets.map(sheet => {
+            const notice = element(this.#root.ownerDocument, 'div');
+            notice.setAttribute('data-ex-notice', 'stylesheet');
+            notice.setAttribute('data-ex-stylesheet', sheet.name);
+            notice.setAttribute('data-ex-stamp', sheet.stamp);
+            notice.style.display = 'none';
+            notice.textContent = words;
+            return notice;
+        });
+        this.#root.prepend(...this.#notices);
     }
 
     // Value Field Settings… from the report opens in the pane, under the Value Field's entry, showing the Field List.

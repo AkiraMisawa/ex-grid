@@ -1,4 +1,4 @@
-import { gridCommandIds, gridLabelIds } from './command-ids';
+import { gridCommandIds, gridLabelIds, reloadNoticeLabelIds } from './command-ids';
 import { filterPanelWords } from './filter-panel-words';
 import { findPanelWords } from './find-panel-labels';
 import { markWords } from './mark-words';
@@ -26,6 +26,7 @@ const words: ReadonlyMap<string, string> = new Map([
     [gridLabelIds.columnMenu, 'Column menu'],
     [gridLabelIds.headerGroupExpand, 'Expand {label}'],
     [gridLabelIds.headerGroupCollapse, 'Collapse {label}'],
+    [reloadNoticeLabelIds.stylesheet, 'This page holds another version\'s stylesheet. Reload the page.'],
     ...findPanelWords,
     ...filterPanelWords,
     ...refusalWords,

@@ -20,6 +20,7 @@ export const japaneseGridWordTable: ReadonlyMap<string, string> = new Map([
     ['column-menu', '列のメニュー'],
     ['header-group-expand', '{label} を展開'],
     ['header-group-collapse', '{label} を折りたたむ'],
+    ['reload-notice-stylesheet', 'このページには別のバージョンのスタイルシートがあります。ページを再読み込みしてください。'],
 
     ['find', '検索'],
     ['find-field', '検索する文字列'],
