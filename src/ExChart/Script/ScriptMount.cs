@@ -303,9 +303,10 @@ internal sealed class ScriptMount(
             if (module is not null)
                 await module.DisposeAsync();
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or OperationCanceledException)
         {
-            // The circuit is gone, and the browser's drawing with it: nothing is left there to stop.
+            // The circuit is gone, or is closing and has called off what it had sent the browser, and the browser's
+            // drawing goes with it: nothing is left there to stop.
         }
     }
 

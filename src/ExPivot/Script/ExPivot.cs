@@ -934,9 +934,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             if (module is not null)
                 await module.DisposeAsync();
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or OperationCanceledException)
         {
-            // The circuit is gone, and the browser's pivot with it: nothing is left there to stop.
+            // The circuit is gone, or is closing and has called off what it had sent the browser, and the browser's
+            // pivot goes with it: nothing is left there to stop.
         }
     }
 }
