@@ -8,8 +8,8 @@ namespace ExSheet;
 /// </summary>
 /// <remarks>
 /// It stands beside the C# core's contexts until the C# core is removed (ADR-0350 section 7, ADR-0410 section 4's
-/// note of 2026-10-28): a Chrome answers both while both cores draw. Format Cells, the Sheet Tabs' menu and the Sheet's
-/// find panel are not carried yet: the Script Core draws its own.
+/// note of 2026-10-28): a Chrome answers both while both cores draw. The Sheet Tabs' menu and the Sheet's find panel
+/// are not carried yet: the Script Core draws its own.
 /// </remarks>
 [Flags]
 public enum SheetScriptSlots
@@ -26,6 +26,11 @@ public enum SheetScriptSlots
 
     /// <summary>The face of the button that adds a Sheet, through <see cref="ISheetChrome.SheetTabAdd"/>.</summary>
     SheetTabAdd = 4,
+
+    /// <summary>Format Cells' contents, through <see cref="ISheetChrome.FormatCells(SheetFormatCellsView)"/>. They stand
+    /// in the grid's popover frame, as the Script Core's own do: where it stands, Escape, a press elsewhere, Tab wrapping
+    /// inside it and the keyboard back on the grid as it closes are the grid's (ADR-0050 item 16).</summary>
+    FormatCells = 8,
 }
 
 /// <summary>
@@ -53,6 +58,36 @@ public static class SheetScriptSlotAttributes
     /// disabled while it cannot be made, takes it out of the Tab order, gives the list's keyboard to it, and makes the
     /// choice on a press.</summary>
     public const string Choice = "data-ex-sheet-choice";
+
+    /// <summary>On the one form holding every tab of Format Cells: its submission is OK. The script checks its fields
+    /// first, on every tab, and shows the tab of one the browser holds invalid; then OK sets what was touched, or the
+    /// view says why it set nothing. OK is a submit button in it, and Enter in a field submits it.</summary>
+    public const string FormatForm = "data-ex-format-form";
+
+    /// <summary>On each of Format Cells' tab controls, the tab's <see cref="SheetFormatCellsChoice.Value"/>. The script
+    /// makes them a tab list's tabs, shows the tab pressed, and moves among them on the arrows, Home and End; the opening's
+    /// keyboard goes to the tab shown.</summary>
+    public const string FormatTab = "data-ex-format-tab";
+
+    /// <summary>On the element holding each tab's controls, the tab's value: the script shows the one of the tab shown,
+    /// and hides the rest, which stay drawn, their fields as typed.</summary>
+    public const string FormatPanel = "data-ex-format-panel";
+
+    /// <summary>On each of Format Cells' controls, the choice it makes: <c>category</c>, <c>negative</c>, <c>type</c>,
+    /// <c>fontStyle</c>, <c>lineStyle</c> and <c>colour</c> on a radio button, each with its
+    /// <see cref="FormatValue"/>; <c>separator</c>, <c>strikethrough</c> and <c>normalFont</c> on a checkbox;
+    /// <c>alignment</c> and <c>underline</c> on a native select, whose options' values are the choices' values and
+    /// <c>none</c> or <c>single</c>; <c>places</c> (a number field, 0 to 30), <c>code</c> and <c>colourText</c> (with the
+    /// palette's <see cref="SheetFormatCellsPalette.Target"/> as its value) on a text field drawn with no value;
+    /// <c>preset</c> and <c>edge</c> on a button, with the value. The script reads each as the browser fires it, never
+    /// through a component's handler, and sets what each holds from the draft.</summary>
+    public const string FormatSet = "data-ex-format-set";
+
+    /// <summary>Beside <see cref="FormatSet"/>, which one of several choices the control makes.</summary>
+    public const string FormatValue = "data-ex-format-value";
+
+    /// <summary>On Format Cells' Cancel: it sets nothing, and closes Format Cells.</summary>
+    public const string FormatCancel = "data-ex-format-cancel";
 }
 
 /// <summary>

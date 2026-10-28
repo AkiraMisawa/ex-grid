@@ -177,8 +177,12 @@
             overloads the Sheet above asks. A Toolbar Item's list is drawn whatever its state; the script shows it
             when its arrow is pressed or the toolbar's keys ask for it, moves among its choices with the arrows,
             swatches ten across, and makes or drops the choice, all in the browser, so the MudBlazor switch shows
-            MudBlazor's toolbar answering its keys at once on Blazor Server too. The find panel stays the Sheet's
-            own, with Within, as it does above under a Chrome that draws none. Not carried yet: Format Cells, the
+            MudBlazor's toolbar answering its keys at once on Blazor Server too. Format Cells is drawn from a
+            <code>SheetFormatCellsView</code> in the grid's popover frame: every tab's controls in one form, each
+            choice a native radio, checkbox, select or field the script reads as the browser fires it and sets through
+            the Sheet's draft, so an OK pressed at once after a choice sets that choice (Ctrl+1 on the Sheet above, with
+            the MudBlazor switch on, shows MudBlazor's). The find panel stays the Sheet's
+            own, with Within, as it does above under a Chrome that draws none. Not carried yet: the
             Sheet Tabs' menu and the find panel of an <code>ISheetChrome</code>, which the Sheet draws itself,
             <code>ToolbarContent</code>, <code>OnLinkedColumnColoursChanged</code>
             and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
