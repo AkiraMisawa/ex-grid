@@ -16,7 +16,7 @@ namespace ExGrid.Docs.Generator;
 /// <summary>
 /// The Docs Site's build step (ADR-0110). Two inputs reach it as additional files:
 /// <list type="bullet">
-/// <item>every <c>.razor</c>, <c>.cs</c>, <c>.html</c>, <c>.sh</c>, <c>.css</c>, <c>.ts</c> and <c>.tsx</c> under the site's <c>Examples/</c> folder, which it
+/// <item>every <c>.razor</c>, <c>.cs</c>, <c>.html</c>, <c>.sh</c>, <c>.css</c>, <c>.ts</c>, <c>.tsx</c> and <c>.js</c> under the site's <c>Examples/</c> folder, and a module under <c>wwwroot/js/</c> an Example imports, which it
 /// emits as <c>ExampleSources</c>: each file's text and its highlighted HTML;</item>
 /// <item>the shipped assemblies' XML documentation files, which it emits as <c>ApiDocs</c>: each
 /// member's summary as HTML, keyed by its documentation id.</item>
@@ -78,10 +78,11 @@ public sealed class DocsGenerator : IIncrementalGenerator
             {
                 var (file, dir) = pair;
                 var relative = Relative(dir, file.Path);
-                if (relative is null || !relative.StartsWith("Examples/", StringComparison.Ordinal))
+                var extension = relative is null ? "" : Path.GetExtension(relative);
+                // A module an Example imports is shown where the site serves it (ADR-0420 section 3).
+                if (relative is null || !(relative.StartsWith("Examples/", StringComparison.Ordinal) || (relative.StartsWith("wwwroot/js/", StringComparison.Ordinal) && extension == ".js")))
                     return null;
-                var extension = Path.GetExtension(relative);
-                if (extension is not (".razor" or ".cs" or ".html" or ".sh" or ".css" or ".ts" or ".tsx"))
+                if (extension is not (".razor" or ".cs" or ".html" or ".sh" or ".css" or ".ts" or ".tsx" or ".js"))
                     return null;
                 var text = file.GetText(cancel)?.ToString().Replace("\r\n", "\n") ?? "";
                 var html = extension switch
@@ -89,7 +90,7 @@ public sealed class DocsGenerator : IIncrementalGenerator
                     ".razor" or ".html" => Highlighter.Razor(text),
                     ".cs" => Highlighter.CSharp(text),
                     ".css" => Highlighter.Css(text),
-                    ".ts" => Highlighter.TypeScript(text, jsx: false),
+                    ".ts" or ".js" => Highlighter.TypeScript(text, jsx: false),
                     ".tsx" => Highlighter.TypeScript(text, jsx: true),
                     _ => Highlighter.Shell(text),
                 };

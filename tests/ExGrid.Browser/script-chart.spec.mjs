@@ -58,3 +58,12 @@ test('ADR-0274, ADR-0370 section 1: a click on the surface reaches .NET as the a
     await expect(slice.locator('.ex-chart-toolbar')).toHaveAttribute('aria-label', /^Volatility at (0\.90|1M)$/);
     await expect(slice.locator('g.ex-chart-series')).toHaveCount(1);
 });
+
+test('ADR-0420 section 3: a chart is written and sampled by the page\'s own module, imported from where the application serves it', async ({ page }) => {
+    await page.goto('/script-chart');
+    const chart = page.locator('#script-functions .ex-chart');
+    await expect(chart.locator('g.ex-chart-series')).toHaveCount(1);
+    await circuitQuiet();
+    // The position as the module's `years` writes it, and the curve's value as its `bp` writes what its `survival` answered.
+    expect(await readingAt(page, chart, 0.5)).toMatch(/^\d+\.\d yrs\n[\s\S]*Survival[\s\S]*\b9\d{3} bp/u);
+});

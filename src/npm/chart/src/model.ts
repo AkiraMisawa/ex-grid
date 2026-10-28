@@ -190,6 +190,12 @@ export interface ChartAxisOptions {
     readonly packed?: boolean;
     /** Writes a position, as the column the positions came from writes it (ADR-0250). */
     readonly format?: (position: number) => string;
+    /**
+     * An Excel number format code in the invariant spelling that writes every position (ADR-0420): a date code
+     * on a Dates axis, a number code on a Numbers axis, written invariantly. A code the reader does not read,
+     * one beside a `format`, and one on a Labels axis are refused.
+     */
+    readonly formatCode?: string;
 }
 
 /** The horizontal axis, its defaults applied. */
@@ -210,6 +216,8 @@ export interface ChartAxis {
     readonly packed: boolean;
     /** The Consumer's writer of a position, if any. */
     readonly format?: (position: number) => string;
+    /** The format code that writes its positions, if any (ADR-0420). */
+    readonly formatCode?: string;
     /** The scale, defaults applied. */
     readonly effectiveScale: AxisScale;
 }
@@ -260,6 +268,11 @@ export interface ChartSeriesOptions {
     readonly sampler?: SeriesSampler;
     /** Writes one of its values, as its column does (ADR-0250, ADR-0251). */
     readonly format?: (value: ChartValue) => string;
+    /**
+     * An Excel number format code in the invariant spelling that writes every value, held or computed (ADR-0420),
+     * written invariantly. A code the reader does not read, a date code, and one beside a `format` are refused.
+     */
+    readonly formatCode?: string;
 }
 
 /** One series, its defaults applied. */
@@ -308,6 +321,8 @@ export interface ChartSeries {
     readonly sampler?: SeriesSampler;
     /** Its writer of values, if any. */
     readonly format?: (value: ChartValue) => string;
+    /** The format code that writes its values, if any (ADR-0420). */
+    readonly formatCode?: string;
     /** The keys its look is chosen by, its id standing for a colour key it does not set. */
     readonly effectiveKeys: AppearanceKeys;
     /** Whether its axis reaches zero, defaults applied. */

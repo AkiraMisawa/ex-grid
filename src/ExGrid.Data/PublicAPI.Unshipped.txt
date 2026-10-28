@@ -25,14 +25,22 @@ ExGrid.Data.DataShapeColumn.Kind.get -> ExGrid.Data.SnapshotKind
 ExGrid.Data.DataShapeColumn.Kind.init -> void
 ExGrid.Data.DataShapeColumn.Name.get -> string!
 ExGrid.Data.DataShapeColumn.Name.init -> void
+ExGrid.Data.FormatCode
+ExGrid.Data.FormatCode.Code.get -> string!
+ExGrid.Data.FormatCode.Equals(ExGrid.Data.FormatCode? other) -> bool
+ExGrid.Data.FormatCode.Format(object! value, System.Globalization.CultureInfo! culture) -> string!
+ExGrid.Data.FormatCode.IsDate.get -> bool
 ExGrid.Data.IShapedSource
 ExGrid.Data.IShapedSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 override ExGrid.Data.DataShapeColumn.GetHashCode() -> int
+override ExGrid.Data.FormatCode.Equals(object? obj) -> bool
+override ExGrid.Data.FormatCode.GetHashCode() -> int
 static ExGrid.Data.BoardInput.KindNames.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
 static ExGrid.Data.BoardInput.NameOf(ExGrid.Data.SnapshotKind kind) -> string!
 static ExGrid.Data.BoardInput.Read(string! name, System.Text.Json.JsonElement declaration, string! path) -> ExGrid.Data.BoardInput!
 static ExGrid.Data.DataShape.Of(ExGrid.Data.Snapshot! snapshot) -> ExGrid.Data.DataShape!
 static ExGrid.Data.DataShapeColumn.operator !=(ExGrid.Data.DataShapeColumn left, ExGrid.Data.DataShapeColumn right) -> bool
 static ExGrid.Data.DataShapeColumn.operator ==(ExGrid.Data.DataShapeColumn left, ExGrid.Data.DataShapeColumn right) -> bool
+static ExGrid.Data.FormatCode.TryParse(string! code, out ExGrid.Data.FormatCode? format, out string? reason) -> bool
 ~override ExGrid.Data.DataShapeColumn.Equals(object obj) -> bool
 ~override ExGrid.Data.DataShapeColumn.ToString() -> string

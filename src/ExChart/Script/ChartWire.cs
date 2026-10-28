@@ -30,8 +30,8 @@ internal static class ChartWire
         if (definition.Axis.Format is not null)
         {
             throw new NotSupportedException(
-                "The chart's axis has a Format, a .NET function the chart in the browser would ask to write every tick, which it cannot call "
-                + "(ADR-0370 section 1). Draw it with ExChart.Components.ExChart, or leave the axis to write its positions itself.");
+                "The chart's axis has a Format, a .NET function the chart in the browser would ask to write the position under the pointer and "
+                + "a range's ends, which it cannot call (ADR-0420). Give the axis a FormatCode or a FormatScript in its place, or draw it with ExChart.Components.ExChart.");
         }
         var rows = new RowKeys();
         var json = Json(w =>
@@ -66,6 +66,10 @@ internal static class ChartWire
                 w.WriteString("yScale", Camel(definition.Y.Scale));
                 WriteWriting(w, "xWriting", Writing(definition.X, x, placedByValue: true));
                 WriteWriting(w, "yWriting", Writing(definition.Y, y, placedByValue: true));
+                WriteOptional(w, "xFormatCode", NumberCode(definition.X));
+                WriteOptional(w, "yFormatCode", NumberCode(definition.Y));
+                WriteScript(w, "xFormatScript", definition.X.FormatScript);
+                WriteScript(w, "yFormatScript", definition.Y.FormatScript);
                 w.WriteStartArray("nodes");
                 foreach (var n in definition.Nodes!)
                 {
@@ -133,11 +137,15 @@ internal static class ChartWire
             {
                 throw new NotSupportedException(
                     $"The surface's Format for {Name(definition.ZTitle, "its values")} would be asked to write the values a slice through its "
-                    + "triangles reads between its nodes, and the surface in the browser cannot call that .NET function (ADR-0370 section 1). "
-                    + "Draw it with ExChart.Components.ExSurface, or leave its values to be written plainly.");
+                    + "triangles reads between its nodes, and the surface in the browser cannot call that .NET function (ADR-0420). "
+                    + "Give the surface a ZFormatCode or a ZFormatScript in its place, or draw it with ExChart.Components.ExSurface.");
             }
-            var zTexts = Texts(HeldZ(definition), definition.WriteZ, () => $"the surface's values ({Name(definition.ZTitle, "z")})");
+            // A code is written by the Script Core's own reader, so it needs no texts (ADR-0420).
+            var zTexts = definition.ZFormatCode is not null || definition.ZFormatScript is not null ? null
+                : Texts(HeldZ(definition), definition.WriteZ, () => $"the surface's values ({Name(definition.ZTitle, "z")})");
             WriteTexts(w, "zTexts", zTexts);
+            WriteOptional(w, "zFormatCode", definition.ZFormatCode);
+            WriteScript(w, "zFormatScript", definition.ZFormatScript);
             WriteStrings(w, "notes", definition.Notes);
             w.WriteEndObject();
         });
@@ -167,22 +175,24 @@ internal static class ChartWire
         w.WriteEndArray();
         w.WriteNumber("daysPerYear", axis.DaysPerYear);
         w.WriteBoolean("packed", axis.Packed);
+        WriteOptional(w, "formatCode", axis.FormatCode);
+        WriteScript(w, "formatScript", axis.FormatScript);
         w.WriteEndObject();
     }
 
     private static void WriteSeries(Utf8JsonWriter w, ChartSeries s, RowKeys rows)
     {
-        if (s.Sampler is not null)
+        if (s.Sampler is not null && s.Format is not null)
         {
             throw new NotSupportedException(
-                $"'{s.Name}' is a function, which the chart in the browser would ask for a value at every pixel and cannot call (ADR-0370 section 1). "
-                + "Draw it with ExChart.Components.ExChart, or hand it in as its points.");
+                $"'{s.Name}' has a Format, a .NET function the chart in the browser would ask to write the values it samples, which it does not hold, "
+                + "and cannot call (ADR-0420). Give the series a FormatCode or a FormatScript in its place, or draw it with ExChart.Components.ExChart.");
         }
         if (s.Format is not null && s.Kind == SeriesKind.PriceRange)
         {
             throw new NotSupportedException(
                 $"'{s.Name}' has a Format, a .NET function the chart in the browser would ask to write a candle's change and a merged candle's volume, "
-                + "values it does not hold, and cannot call (ADR-0370 section 1). Draw it with ExChart.Components.ExChart, or leave its values to be written as they were handed in.");
+                + "values it does not hold, and cannot call (ADR-0420). Give the series a FormatCode or a FormatScript in its place, or draw it with ExChart.Components.ExChart.");
         }
         w.WriteStartObject();
         w.WriteString("id", s.Id);
@@ -191,6 +201,8 @@ internal static class ChartWire
         w.WriteString("step", Camel(s.Step));
         w.WriteString("axis", Camel(s.Axis));
         w.WriteString("panel", s.Panel);
+        WriteOptional(w, "formatCode", s.FormatCode);
+        WriteScript(w, "formatScript", s.FormatScript);
         if (s.Keys is { } keys)
         {
             w.WriteStartObject("keys");
@@ -221,6 +233,7 @@ internal static class ChartWire
             w.WriteEndObject();
         }
         w.WriteEndArray();
+        WriteSampler(w, s);
 
         // A Price Range's points are its closes, which the browser makes from its rows, as C# does.
         var bars = s.Kind == SeriesKind.PriceRange;
@@ -348,8 +361,96 @@ internal static class ChartWire
         }
         w.WriteEndArray();
         // A Price Range's change and a merged candle's volume are values the chart computes, which a text of a held value
-        // equal to them would write: its values are written as the Script Core writes numbers (ADR-0370 section 1).
-        WriteTexts(w, "texts", bars ? null : Texts(Held(s), s.Write, () => $"'{s.Name}'"));
+        // equal to them would write: its values are written as the Script Core writes numbers, or by its code
+        // (ADR-0370 section 1). A code is written by the Script Core's own reader, so it needs no texts either (ADR-0420).
+        WriteTexts(w, "texts", bars || s.FormatCode is not null || s.FormatScript is not null ? null : Texts(Held(s), s.Write, () => $"'{s.Name}'"));
+        w.WriteEndObject();
+    }
+
+    // A series sampled from one of the family's own curves crosses as what the curve was made from, and the Script Core
+    // makes the same curve again, held to the shared cases (ADR-0420 section 4). The sampler is that curve's when it is
+    // the curve's own ValueAt, which delegate equality tells without reading the function. Any other function is the
+    // Consumer's, which the chart in the browser would ask at every pixel and cannot call.
+    private static void WriteSampler(Utf8JsonWriter w, ChartSeries s)
+    {
+        if (s.Sampler is not { } sampler)
+        {
+            w.WriteNull("sampler");
+            return;
+        }
+        w.WriteStartObject("sampler");
+        w.WritePropertyName("from");
+        WriteNumber(w, sampler.From);
+        w.WritePropertyName("to");
+        WriteNumber(w, sampler.To);
+        w.WriteStartObject("madeFrom");
+        if (sampler.Script is { } script)
+        {
+            // The Consumer's own script, which the browser imports and asks (ADR-0420 section 3).
+            w.WriteString("kind", "script");
+            w.WriteString("module", script.Module);
+            w.WriteString("export", script.Export);
+            w.WriteEndObject();
+            w.WriteEndObject();
+            return;
+        }
+        switch (sampler.ValueAt.Target)
+        {
+            case Engine.Interpolation.Interpolant1D curve when sampler.ValueAt.Equals(new Func<double, ChartValue?>(curve.ValueAt)) && curve.Xs.Count > 0:
+                // Only Interpolate's methods give a curve its points, and a curve given another method loses them.
+                w.WriteString("kind", curve.Method switch
+                {
+                    "linear" => "linear",
+                    "natural cubic spline" => "naturalCubicSpline",
+                    var method => throw new InvalidOperationException($"Internal: the interpolation \"{method}\" has no twin in the Script Core."),
+                });
+                w.WriteStartArray("xs");
+                foreach (var x in curve.Xs)
+                    WriteNumber(w, x);
+                w.WriteEndArray();
+                w.WriteStartArray("ys");
+                foreach (var y in curve.Ys)
+                    WriteNumber(w, y);
+                w.WriteEndArray();
+                break;
+            case Engine.Fitting.FittedCurve curve when sampler.ValueAt.Equals(new Func<double, ChartValue?>(curve.ValueAt)):
+                w.WriteString("kind", "fit");
+                w.WriteString("method", curve.Method);
+                w.WriteStartArray("coefficients");
+                foreach (var c in curve.Coefficients)
+                    WriteNumber(w, c);
+                w.WriteEndArray();
+                w.WritePropertyName("rSquared");
+                WriteNumber(w, curve.RSquared);
+                w.WriteNumber("count", curve.Count);
+                w.WritePropertyName("from");
+                WriteNumber(w, curve.From);
+                w.WritePropertyName("to");
+                WriteNumber(w, curve.To);
+                w.WriteString("space", Camel(curve.Space));
+                break;
+            default:
+                throw new NotSupportedException(
+                    $"'{s.Name}' is sampled from a .NET function, which the chart in the browser would ask for a value at every pixel and cannot call "
+                    + "(ADR-0420). Make it with ExChart.Engine.Interpolation.Interpolate or ExChart.Engine.Fitting.Fit, whose curves the chart makes "
+                    + "again from what they were made from, sample a ScriptFunction of your own script, hand it in as its points, or draw it with "
+                    + "ExChart.Components.ExChart.");
+        }
+        w.WriteEndObject();
+        w.WriteEndObject();
+    }
+
+    // A function of the Consumer's own script, which the browser imports from its module and calls (ADR-0420 section 3).
+    private static void WriteScript(Utf8JsonWriter w, string name, ScriptFunction? script)
+    {
+        if (script is null)
+        {
+            w.WriteNull(name);
+            return;
+        }
+        w.WriteStartObject(name);
+        w.WriteString("module", script.Module);
+        w.WriteString("export", script.Export);
         w.WriteEndObject();
     }
 
@@ -483,8 +584,15 @@ internal static class ChartWire
         w.WriteEndArray();
         w.WriteString("scale", Camel(axis.Scale));
         WriteWriting(w, "writing", Writing(axis, values, placedByValue: axis.Scale != AxisScale.Categories));
+        WriteOptional(w, "formatCode", NumberCode(axis));
+        WriteScript(w, "formatScript", axis.FormatScript);
         w.WriteEndObject();
     }
+
+    // A surface axis' number code, which crosses as itself for the Script Core's reader (ADR-0420). A date code's axis
+    // crosses as the texts it writes its dates with, which are the values the browser holds.
+    private static string? NumberCode(SurfaceAxis axis) =>
+        axis.FormatCode is { } code && axis.Values.Count > 0 && IsNumber(axis.Values[0]) ? code : null;
 
     /// <summary>
     /// How an axis writes its values: as the Script Core does (null); plainly (<c>plain</c>); or by the text of every
@@ -495,14 +603,17 @@ internal static class ChartWire
     /// </summary>
     private static object? Writing(SurfaceAxis axis, object[] values, bool placedByValue)
     {
+        // A code or the Consumer's script writes every value in the browser.
+        if (NumberCode(axis) is not null || axis.FormatScript is not null)
+            return null;
         if (axis.Format is not null && placedByValue)
         {
             if (WritesPlainly(axis, values))
                 return "plain";
             throw new NotSupportedException(
                 $"The surface's axis {Name(axis.Title, "")} has a Format, which would be asked to write the ticks between its values, and the surface in "
-                + "the browser cannot call that .NET function (ADR-0370 section 1). Draw it with ExChart.Components.ExSurface, or space the axis evenly "
-                + "as categories.");
+                + "the browser cannot call that .NET function (ADR-0420). Give the axis a FormatCode or a FormatScript in its place, space it evenly as categories, "
+                + "or draw it with ExChart.Components.ExSurface.");
         }
         var texts = new List<(object Value, string Text)>(values.Length);
         var differs = false;

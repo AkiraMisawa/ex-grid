@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 
-namespace ExGrid;
+namespace ExGrid.Data;
 
 /// <summary>
 /// An Excel number format code in the invariant spelling (ADR-0120), as a grid built from a source's
@@ -19,7 +19,7 @@ namespace ExGrid;
 /// subset; a double is formatted through <see cref="decimal"/>, which keeps its 15 significant digits
 /// as Excel does, so 1.005 in <c>0.00</c> is <c>1.01</c>.</para>
 /// </summary>
-internal sealed class FormatCode
+public sealed class FormatCode : IEquatable<FormatCode>
 {
     private readonly string[] sections;
 
@@ -35,6 +35,15 @@ internal sealed class FormatCode
 
     /// <summary>Whether the code formats dates; otherwise it formats numbers.</summary>
     public bool IsDate { get; }
+
+    /// <summary>Whether <paramref name="other"/> is the same code, as written: a code is what it writes.</summary>
+    public bool Equals(FormatCode? other) => other is not null && Code == other.Code;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as FormatCode);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(Code);
 
     /// <summary>Reads <paramref name="code"/>, or says why it cannot be read, as a phrase that
     /// completes "the format code …".</summary>
@@ -76,7 +85,9 @@ internal sealed class FormatCode
     }
 
     /// <summary>The text of <paramref name="value"/>: a number for a number code, a date for a date
-    /// code. A value of the other kind shows its own text, which a checked column never hands it.</summary>
+    /// code.</summary>
+    /// <exception cref="ArgumentException">A value of the other kind, which a checked column never hands
+    /// it: refused rather than shown as some other text, as the Script Core's reader refuses it.</exception>
     public string Format(object value, CultureInfo culture)
     {
         if (IsDate)
@@ -86,7 +97,7 @@ internal sealed class FormatCode
                 DateTime date => date.ToString(sections[0], culture),
                 DateOnly date => date.ToDateTime(TimeOnly.MinValue).ToString(sections[0], culture),
                 DateTimeOffset date => date.DateTime.ToString(sections[0], culture),
-                _ => DisplayText.Of(value),
+                _ => throw new ArgumentException($"The date code \"{Code}\" writes a date, and was given a {value.GetType().Name}.", nameof(value)),
             };
         }
         return value switch
@@ -94,10 +105,12 @@ internal sealed class FormatCode
             decimal number => Number(number, culture),
             long number => Number(number, culture),
             int number => Number(number, culture),
+            short or byte or sbyte or ushort or uint or ulong => Number(Convert.ToDecimal(value, CultureInfo.InvariantCulture), culture),
+            float number => Format((double)number, culture),
             double number when number == 0 || Math.Abs(number) is >= 1e-13 and < 7.9e27 => Number((decimal)number, culture),
             double number when double.IsFinite(number) => NumberOutsideDecimal(number, culture),
             double number => number.ToString(culture),
-            _ => DisplayText.Of(value),
+            _ => throw new ArgumentException($"The number code \"{Code}\" writes a number, and was given a {value.GetType().Name}.", nameof(value)),
         };
     }
 
@@ -204,12 +217,12 @@ internal sealed class FormatCode
 
     private static string? RefusalOf(char c) => c switch
     {
-        '[' => "holds a part in brackets (a colour, a condition or a locale), which a grid does not show",
-        '@' => "holds a text placeholder '@', and a number column holds no text",
-        '_' => "holds '_' spacing, which a grid does not show",
-        '*' => "holds '*' fill, which a grid does not show",
-        '?' => "holds the placeholder '?', which a grid does not show",
-        '/' => "holds a fraction, which a grid does not show",
+        '[' => "holds a part in brackets (a colour, a condition or a locale), which the reader does not take",
+        '@' => "holds a text placeholder '@', which the reader does not take",
+        '_' => "holds '_' spacing, which the reader does not take",
+        '*' => "holds '*' fill, which the reader does not take",
+        '?' => "holds the placeholder '?', which the reader does not take",
+        '/' => "holds a fraction, which the reader does not take",
         _ when char.IsLetter(c) => $"holds the letter '{c}' unquoted; quote text as \"text\"",
         _ => null,
     };
@@ -292,7 +305,7 @@ internal sealed class FormatCode
             }
             if (c == '0' && i > 0 && section[i - 1] is '.' or '0')
             {
-                refused = "holds fractional seconds, which a grid does not show";
+                refused = "holds fractional seconds, which the reader does not take";
                 return false;
             }
             if (RefusalOf(c) is { } why && c != '/')
@@ -339,7 +352,7 @@ internal sealed class FormatCode
                     if (count > 4)
                     {
                         translated = "";
-                        reason = "holds 'mmmmm', which a grid does not show";
+                        reason = "holds 'mmmmm', which the reader does not take";
                         return false;
                     }
                     output.Append(IsMinute(tokens, k) && count <= 2 ? 'm' : 'M', count);

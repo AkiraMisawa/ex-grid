@@ -30,6 +30,13 @@ public sealed record ChartDefinition
     /// <summary>The Consumer's Notes: plain lines shown under the chart and written into its drawing's files (ADR-0257).</summary>
     public IReadOnlyList<string> Notes { get; }
 
+    /// <summary>
+    /// Every function of the Consumer's own script the definition names (ADR-0420 section 3), the axis' first and then
+    /// each series' format and sampler; empty for a definition a chart drawn in .NET can draw.
+    /// </summary>
+    public IEnumerable<ScriptFunction> ScriptFunctions =>
+        new[] { Axis.FormatScript }.Concat(Series.SelectMany(s => new[] { s.FormatScript, s.Sampler?.Script })).OfType<ScriptFunction>();
+
     private void ValidatePacked()
     {
         if (!Axis.Packed) return;
@@ -60,10 +67,12 @@ public sealed record ChartDefinition
         var logarithmic = Axis.EffectiveScale == AxisScale.Logarithmic;
         if (logarithmic && Axis.Values != AxisValues.Numbers)
             throw new ChartRefusedException("Only a number axis can be logarithmic.");
+        ChartCodes.CheckAxis(Axis);
         foreach (var s in Series)
         {
             if (!ids.Add(s.Id))
                 throw new ChartRefusedException($"Two series are named '{s.Id}'; each series needs an identity of its own.");
+            ChartCodes.CheckSeries(s);
             if (s.Kind == SeriesKind.Undeclared)
                 throw new ChartRefusedException($"'{s.Name}' declares no Series Kind: say whether it is a Level, a Rate over an interval or an Amount per period.");
             if (s.Kind == SeriesKind.AmountPerPeriod && s.FromZero == false)

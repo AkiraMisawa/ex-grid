@@ -485,8 +485,8 @@ export class ChartCase {
     // vertical scale and centre where the case names them.
     #surface(given: Json | undefined): SurfaceDefinition {
         const e = allow(this.#named(given), 'a surface', [
-            'x', 'y', 'z', 'zTitle', 'zFormat', 'method', 'interpolated', 'notes', 'points', 'xTitle', 'yTitle', 'nodes', 'triangles',
-            'xScale', 'yScale', 'sampled', 'zScale', 'centre', 'interpolant', 'samples',
+            'x', 'y', 'z', 'zTitle', 'zFormat', 'zFormatCode', 'method', 'interpolated', 'notes', 'points', 'xTitle', 'yTitle', 'nodes', 'triangles',
+            'xScale', 'yScale', 'xFormatCode', 'yFormatCode', 'sampled', 'zScale', 'centre', 'interpolant', 'samples',
         ]);
         const forms = [...surfaceFormKeys.keys()].filter(k => e[k] !== undefined);
         const [form] = forms;
@@ -502,12 +502,17 @@ export class ChartCase {
         const common = {
             ...optionalPart('zTitle', optional(e, 'zTitle', v => string(v, 'zTitle'))),
             ...optionalPart('zFormat', optional(e, 'zFormat', valueFormat)),
+            ...optionalPart('zFormatCode', optional(e, 'zFormatCode', v => string(v, 'zFormatCode'))),
             ...optionalPart('zScale', optional(e, 'zScale', v => oneOf(v, scales, 'AxisScale'))),
             ...optionalPart('centre', optional(e, 'centre', number)),
         };
         const notes = optionalPart('notes', optional(e, 'notes', v => list(v, 'notes').map(n => string(n, 'a note'))));
-        // A grid's axes carry their titles; the other forms name them.
-        const titles = (): { xTitle: string; yTitle: string } => ({ xTitle: string(e['xTitle'], 'xTitle'), yTitle: string(e['yTitle'], 'yTitle') });
+        // A grid's axes carry their titles and codes; the other forms name them.
+        const titles = (): { xTitle: string; yTitle: string; xFormatCode?: string; yFormatCode?: string } => ({
+            xTitle: string(e['xTitle'], 'xTitle'), yTitle: string(e['yTitle'], 'yTitle'),
+            ...optionalPart('xFormatCode', optional(e, 'xFormatCode', v => string(v, 'xFormatCode'))),
+            ...optionalPart('yFormatCode', optional(e, 'yFormatCode', v => string(v, 'yFormatCode'))),
+        });
         switch (form) {
             case 'z':
                 return SurfaceDefinition.grid({
@@ -573,7 +578,7 @@ export class ChartCase {
         }
         const e = allow(given, 'a series', [
             'id', 'name', 'kind', 'step', 'axis', 'panel', 'keys', 'fromZero', 'interpolated', 'segments', 'points', 'colourBy', 'sizeBy',
-            'details', 'edges', 'bars', 'mergeTo', 'interval', 'xInterval', 'thinned', 'sampler', 'format',
+            'details', 'edges', 'bars', 'mergeTo', 'interval', 'xInterval', 'thinned', 'sampler', 'format', 'formatCode',
         ]);
         const id = string(e['id'], 'a series\' id');
         const kind = optional(e, 'kind', v => oneOf(v, ['level', 'rateOverInterval', 'amountPerPeriod', 'observation', 'priceRange'], 'SeriesKind'));
@@ -610,6 +615,7 @@ export class ChartCase {
             ...optionalPart('thinned', optional(e, 'thinned', summaries)),
             ...optionalPart('sampler', optional(e, 'sampler', v => this.#sampler(id, v))),
             ...optionalPart('format', optional(e, 'format', seriesFormat)),
+            ...optionalPart('formatCode', optional(e, 'formatCode', v => string(v, 'formatCode'))),
         };
     }
 
@@ -975,7 +981,7 @@ function run(given: Json | undefined, what: string): number[] {
 }
 
 function axis(given: Json | undefined): ChartAxisOptions {
-    const e = allow(given, 'an axis', ['values', 'title', 'scale', 'labels', 'named', 'daysPerYear', 'packed']);
+    const e = allow(given, 'an axis', ['values', 'title', 'scale', 'labels', 'named', 'daysPerYear', 'packed', 'formatCode']);
     return {
         values: oneOf(e['values'], ['dates', 'numbers', 'labels'], 'AxisValues'),
         ...optionalPart('title', optional(e, 'title', v => string(v, 'title'))),
@@ -987,6 +993,7 @@ function axis(given: Json | undefined): ChartAxisOptions {
         }))),
         ...optionalPart('daysPerYear', optional(e, 'daysPerYear', number)),
         ...optionalPart('packed', optional(e, 'packed', v => boolean(v, 'packed'))),
+        ...optionalPart('formatCode', optional(e, 'formatCode', v => string(v, 'formatCode'))),
     };
 }
 
@@ -1241,21 +1248,22 @@ function view(given: Json | undefined): ChartView {
 }
 
 // What every form of surface may say, and what each form reads besides.
-const surfaceCommonKeys = ['zTitle', 'zFormat', 'zScale', 'centre'];
+const surfaceCommonKeys = ['zTitle', 'zFormat', 'zFormatCode', 'zScale', 'centre'];
 const surfaceFormKeys: ReadonlyMap<string, readonly string[]> = new Map([
     ['z', ['x', 'y', 'z', 'method', 'interpolated', 'notes']],
-    ['points', ['points', 'xTitle', 'yTitle']],
-    ['nodes', ['nodes', 'triangles', 'xTitle', 'yTitle', 'xScale', 'yScale', 'notes']],
-    ['sampled', ['sampled', 'xTitle', 'yTitle']],
-    ['interpolant', ['interpolant', 'xTitle', 'yTitle', 'samples', 'xScale', 'yScale']],
+    ['points', ['points', 'xTitle', 'yTitle', 'xFormatCode', 'yFormatCode']],
+    ['nodes', ['nodes', 'triangles', 'xTitle', 'yTitle', 'xScale', 'yScale', 'xFormatCode', 'yFormatCode', 'notes']],
+    ['sampled', ['sampled', 'xTitle', 'yTitle', 'xFormatCode', 'yFormatCode']],
+    ['interpolant', ['interpolant', 'xTitle', 'yTitle', 'samples', 'xScale', 'yScale', 'xFormatCode', 'yFormatCode']],
 ]);
 
 function surfaceAxis(given: Json | undefined): SurfaceAxisOptions {
-    const e = allow(given, 'a surface axis', ['title', 'values', 'scale', 'format']);
+    const e = allow(given, 'a surface axis', ['title', 'values', 'scale', 'format', 'formatCode']);
     return {
         title: string(e['title'], 'title'),
         values: list(e['values'], 'values').map(surfaceValue),
         ...optionalPart('format', optional(e, 'format', valueFormat)),
+        ...optionalPart('formatCode', optional(e, 'formatCode', v => string(v, 'formatCode'))),
         ...optionalPart('scale', optional(e, 'scale', v => oneOf(v, scales, 'AxisScale'))),
     };
 }
@@ -1271,7 +1279,7 @@ function slice(given: Json | undefined): SurfaceSlice {
 }
 
 // A function sampled over a rectangle: a constant, or a plane [a, b, c], a + b·x + c·y.
-function sampledSurface(given: Json | undefined, titles: { xTitle: string; yTitle: string }, common: SurfaceScaleOptions & {
+function sampledSurface(given: Json | undefined, titles: { xTitle: string; yTitle: string; xFormatCode?: string; yFormatCode?: string }, common: SurfaceScaleOptions & {
     readonly zTitle?: string;
     readonly zFormat?: (value: ChartValue) => string;
 }): SurfaceDefinition {

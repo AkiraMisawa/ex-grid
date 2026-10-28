@@ -12,6 +12,8 @@ numbers are what they check.
 
 **A fitted line is a series the Consumer hands in**: a Level, as points or as a function (ADR-0257).
 No option on a scatter makes the chart compute a line.
+*(2026-10-28, [ADR-0420](./0420-a-chart-drawn-in-the-browser-takes-format-codes-and-the-consumers-own-script-in-place-of-a-dotnet-function.md): drawn by the Script Core in the browser, a fitted curve crosses as its method, space and
+coefficients, and the Script Core's twin makes the same function.)*
 
 **The Engine offers generic fits as helpers**, in `ExChart.Engine.Fitting`, beside the interpolation
 helpers of `ExChart.Engine.Interpolation` (ADR-0257) and in their shape: a helper takes numbers and

@@ -137,13 +137,14 @@ sheetxlsxdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec Ex
 enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.Engine)" | sort)
 [ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
   || fail "ExPivot.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
-# Nothing else the family packs references a data package directly (DA-1), and nothing but the
-# Arrow and xlsx packages themselves reference ExGrid.Data.Arrow or ExGrid.Data.Xlsx. ExBoard, whose
-# Script adapter sends Snapshots as Arrow (ADR-0065's note of 2026-10-28), is held to its exact list below.
+# Nothing else the family packs references a data package directly (DA-1), but for ExChart.Engine, held
+# to ExGrid.Data alone below (ADR-0420), and ExBoard, whose Script adapter sends Snapshots as Arrow
+# (ADR-0065's note of 2026-10-28), held to its exact list below; and nothing but the
+# Arrow and xlsx packages themselves reference ExGrid.Data.Arrow or ExGrid.Data.Xlsx.
 if grep -qE '<dependency id="ExGrid\.Data\.(Arrow|Xlsx)"' <<<"$(nuspec ExGrid)"; then fail "ExGrid references ExGrid.Data.Arrow or ExGrid.Data.Xlsx"; fi
 if grep -q '<dependency id="ExGrid.Data.Arrow"' <<<"$(nuspec ExGrid.Data.Xlsx)"; then fail "ExGrid.Data.Xlsx references ExGrid.Data.Arrow"; fi
 if grep -q '<dependency id="ExGrid.Data.Xlsx"' <<<"$(nuspec ExGrid.Data.Arrow)"; then fail "ExGrid.Data.Arrow references ExGrid.Data.Xlsx"; fi
-for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor; do
+for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor ExChart ExChart.MudBlazor; do
   if grep -qE '<dependency id="ExGrid\.Data(\.Arrow|\.Xlsx)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
 done
 # ExPivot depends on exactly the core and the engine it was built with, and on nothing else.
@@ -156,8 +157,11 @@ muddeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.
 [ "$muddeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExPivot\" version=\"[$version]\"" "$mudblazor" | sort)" ] \
   || fail "ExPivot.MudBlazor's dependencies are not exactly ExPivot and ExGrid.MudBlazor $version and MudBlazor [9.6.0, 10.0.0): $muddeps"
 
-# ExChart's engine depends on nothing at all, ExGrid included: a chart without a grid (ADR-0250, CH-13).
-if grep -q '<dependency ' <<<"$(nuspec ExChart.Engine)"; then fail "ExChart.Engine declares a dependency"; fi
+# ExChart's engine depends on the family's data alone, which holds the format-code reader, and on no grid:
+# a chart without a grid (ADR-0250, ADR-0420, CH-13).
+enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExChart.Engine)" | sort)
+[ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
+  || fail "ExChart.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
 # ExChart depends on exactly the core and the engine it was built with, and on nothing else (CH-13).
 chartdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExChart)" | sort)
 [ "$chartdeps" = "$(printf '%s\n' "<dependency id=\"ExChart.Engine\" version=\"[$version]\"" "<dependency id=\"ExGrid\" version=\"[$version]\"" | sort)" ] \

@@ -464,6 +464,14 @@ its only core, under React and Blazor alike
 [ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
 _Avoid_: JS grid, client grid, headless core (it owns its DOM)
 
+**Script Function**:
+A function exported from a JavaScript module the Consumer's application serves, which a .NET definition
+names by its module and export so that a chart drawn by its Script Core calls it in the browser: what a
+format code cannot say, or a curve to sample. It is the Consumer's code, never the product's, and is never
+evaluated from a string
+([ADR-0420](./docs/adr/0420-a-chart-drawn-in-the-browser-takes-format-codes-and-the-consumers-own-script-in-place-of-a-dotnet-function.md)).
+_Avoid_: JS callback, formatter string, eval
+
 **Framework Adapter**:
 A package that puts a Script Core into one UI framework's component model: `@ex-grid/react` and each
 product's React package, and from 0.3.0 Blazor's ExGrid, ExSheet, ExPivot, ExChart and ExBoard

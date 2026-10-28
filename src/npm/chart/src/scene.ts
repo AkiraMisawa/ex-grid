@@ -17,7 +17,7 @@ import { candlePeriods, candlesOf, periodName, type DrawnCandle } from './price-
 import { drawSeries, seriesDrawing, type Bounds, type DrawnMarker, type DrawnPoint, type DrawnWhisker, type SeriesDrawing } from './series-drawing';
 import { thin, thinnedThrough } from './thinning';
 import { decades, horizontalTicks, logSteps, nice, tenor, type AxisStyle } from './ticks';
-import { toNumber, writePosition, writeValue } from './values';
+import { axisWrites, toNumber, writePosition, writeValue } from './values';
 
 /** Where a panel's legend sits (ADR-0271). */
 export type LegendPosition =
@@ -1302,5 +1302,5 @@ function clipLine(line: readonly DrawnPoint[], lo: number, hi: number, logarithm
 }
 
 function xLabel(axis: ChartAxis, x: number): string {
-    return axis.format === undefined && axis.values === 'numbers' && axis.named.every(n => n[0] !== x) ? tenor(x) : writePosition(axis, x);
+    return !axisWrites(axis) && axis.values === 'numbers' && axis.named.every(n => n[0] !== x) ? tenor(x) : writePosition(axis, x);
 }

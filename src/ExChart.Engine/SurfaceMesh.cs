@@ -210,7 +210,7 @@ public sealed record SurfaceMesh(string XTitle, string YTitle, string ZTitle, IR
         var text = $"{head} of {z} over {Label(x, "x")} from {x.Write(0)} to {x.Write(x.Values.Count - 1)} and {Label(y, "y")} from {y.Write(0)} to {y.Write(y.Values.Count - 1)}"
             + $"; {shape}, from {definition.WriteZ(lo)} to {definition.WriteZ(hi)}"
             + (holes == 0 ? "." : $", with {holes} {hole}.")
-            + (definition.Centre is { } c ? $" Coloured by distance from {Plain(c)}, below and above." : "")
+            + (definition.Centre is { } c ? $" Coloured by distance from {definition.WriteZTick(c)}, below and above." : "")
             + (definition.EffectiveZScale == AxisScale.Logarithmic ? " The vertical scale is logarithmic." : "")
             + (definition.Method is { } m ? $" Interpolated by the Consumer: {m}." : "");
         return string.IsNullOrWhiteSpace(description) ? text : $"{text} {description}";
@@ -309,7 +309,7 @@ public sealed record SurfaceMesh(string XTitle, string YTitle, string ZTitle, IR
             return ticks.Order().Select(t => new SurfaceTick(t, Label(t))).ToArray();
         }
 
-        public string Label(double scaled) => Plain(Logarithmic ? Math.Round(Math.Pow(10, scaled), 12) : scaled);
+        public string Label(double scaled) => _definition.WriteZTick(Logarithmic ? Math.Round(Math.Pow(10, scaled), 12) : scaled);
 
         // Round-number ticks between min and max, never past them.
         private static IEnumerable<double> NiceWithin(double min, double max)

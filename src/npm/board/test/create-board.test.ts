@@ -77,6 +77,8 @@ class StandIns implements BoardMounts {
             writePointedText: unused('write a grid\'s pointed text'),
             takeBackPointedText: unused('take back a grid\'s pointed text'),
             showViewWith: unused('hand a grid a view'),
+            showNewView: unused('hand a grid a new view'),
+            readEditText: unused('read a grid\'s edit text'),
             focus: unused('hand a grid the keyboard'),
             keyName: unused('name a grid\'s keys'),
             openPopover: unused('open a grid\'s popover'),

@@ -3,7 +3,6 @@
 // bar. The core decides all of it — where each value lies on each scale (ADR-0312) and how each face is
 // coloured (ADR-0310) — and the entry only projects, orders and draws it. The port of the C# engine's
 // `SurfaceMesh`, held to it by the shared cases under tests/cases/chart/ (ADR-0370).
-import { tickText } from './invariant-text';
 import { elementAt } from './must';
 import { firstBy, greatest, least, roundToDigits } from './numbers';
 import type { SurfaceAxis, SurfaceDefinition, SurfaceSlice, SurfaceValue } from './surface';
@@ -269,7 +268,7 @@ export function surfaceSummary(definition: SurfaceDefinition, title?: string, de
     const text = `${head} of ${z} over ${axisLabel(x, 'x')} from ${x.write(0)} to ${x.write(x.values.length - 1)} and ${axisLabel(y, 'y')} from ${y.write(0)} to ${y.write(y.values.length - 1)}`
         + `; ${shape}, from ${definition.writeZ(lo)} to ${definition.writeZ(hi)}`
         + (holes === 0 ? '.' : `, with ${String(holes)} ${hole}.`)
-        + (centre === undefined ? '' : ` Coloured by distance from ${tickText(centre)}, below and above.`)
+        + (centre === undefined ? '' : ` Coloured by distance from ${definition.writeZTick(centre)}, below and above.`)
         + (definition.effectiveZScale === 'logarithmic' ? ' The vertical scale is logarithmic.' : '')
         + (method === undefined ? '' : ` Interpolated by the Consumer: ${method}.`);
     return blank(description) ? text : `${text} ${description}`;
@@ -364,7 +363,7 @@ class Frame {
     }
 
     label(scaled: number): string {
-        return tickText(this.logarithmic ? roundToDigits(10 ** scaled, 12) : scaled);
+        return this.#definition.writeZTick(this.logarithmic ? roundToDigits(10 ** scaled, 12) : scaled);
     }
 }
 

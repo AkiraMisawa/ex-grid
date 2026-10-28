@@ -56,6 +56,9 @@ Consumer's — and moved the line from *holds* to *runs*, under the four conditi
 1. **The chart never calls them.** A Consumer calls one explicitly and hands its result in — a curve as
    a sampled series, a surface as a function z(x, y) (ADR-0274). No interpolation sits on the drawing's
    path.
+   *(2026-10-28, [ADR-0420](./0420-a-chart-drawn-in-the-browser-takes-format-codes-and-the-consumers-own-script-in-place-of-a-dotnet-function.md): drawn by the Script Core in the browser, a helper's result crosses as its method
+   and the points it was made from, and the Script Core's twin of the helper makes the same function; the
+   chart still never chooses or calls a method of its own.)*
 2. **The result carries its method's name** — "linear", "natural cubic spline", "bilinear", "linear on
    triangles (P1)" — and handing it in writes that name in the Notes and the tooltip, through the
    series' Segment or the surface's method. A Consumer cannot forget to say it.
