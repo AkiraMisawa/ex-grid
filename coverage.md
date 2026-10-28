@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 94.1% | 87.8% |
-| ExSheet | 94.8% | 87.3% |
+| ExSheet | 94.4% | 87.1% |
 | ExPivot | 88.6% | 82.9% |
 | ExChart | 90% | 84.9% |
 | ExBoard | 70.8% | 64.3% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 13:06:10 |
+| Generated on: | 10/28/2026 - 13:17:11 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1350 |
+| Classes: | 1354 |
 | Files: | 666 |
-| **Line coverage:** | 91.6% (91737 of 100095) |
-| Covered lines: | 91737 |
-| Uncovered lines: | 8358 |
-| Coverable lines: | 100095 |
-| Total lines: | 154602 |
-| **Branch coverage:** | 85.6% (53693 of 62698) |
-| Covered branches: | 53693 |
-| Total branches: | 62698 |
+| **Line coverage:** | 91.5% (91873 of 100348) |
+| Covered lines: | 91873 |
+| Uncovered lines: | 8475 |
+| Coverable lines: | 100348 |
+| Total lines: | 154691 |
+| **Branch coverage:** | 85.5% (53739 of 62798) |
+| Covered branches: | 53739 |
+| Total branches: | 62798 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -1175,14 +1175,18 @@
 |ExPivot.MudBlazor.PivotSlotMarkup|0%||
 
 </details>
-<details><summary>ExSheet - 91.5%</summary>
+<details><summary>ExSheet - 90.5%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**91.5%**|**82.5%**|
+|**ExSheet**|**90.5%**|**81.8%**|
 |ExGrid.Script.CrossedText|92%|72.2%|
 |ExGrid.Script.HeldCalls|80.4%|75%|
 |ExGrid.Script.HeldCalls<T>|80.4%|75%|
+|ExGrid.Script.RazorSlot|33.6%|33.3%|
+|ExGrid.Script.RazorSlotHolders|75.4%|64.2%|
+|ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
+|ExGrid.Script.ScriptJson|44.8%|30%|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -1225,14 +1229,14 @@
 |ExSheet.PointingScope|93.4%|90.3%|
 |ExSheet.PointingScope.Dashed|100%||
 |ExSheet.PointingScope.GridMember|97.7%|92.8%|
-|ExSheet.PointingScope.GridMember<TRow>|97.7%|92.8%|
 |ExSheet.PointingScope.GridMember<TRow>|100%|100%|
+|ExSheet.PointingScope.GridMember<TRow>|97.7%|92.8%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
-|ExSheet.Script.ExSheet|84.6%|76.2%|
+|ExSheet.Script.ExSheet|84.5%|75.6%|
 |ExSheet.Script.ExSheet.Opening|100%||
 |ExSheet.Script.ExSheet.Saving|100%||
-|ExSheet.Script.ScriptBridge|94.7%|50%|
+|ExSheet.Script.ScriptBridge|75.8%|25%|
 |ExSheet.SheetAppearance|97.6%|96%|
 |ExSheet.SheetCellText|94.4%|100%|
 |ExSheet.SheetClipboard|94.1%|77.9%|
