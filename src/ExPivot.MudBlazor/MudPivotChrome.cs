@@ -82,6 +82,23 @@ public sealed class MudPivotChrome : IPivotChrome
     /// <c>MudAlert</c> with a Retry <c>MudButton</c> (ADR-0067).</summary>
     public RenderFragment? StaleReport(PivotStaleReportContext context) => View<MudPivotStaleReport, PivotStaleReportContext>(context);
 
+    /// <summary>The pivot's slots this Chrome fills with Razor when the Script Core draws the pivot (ADR-0410): the
+    /// menus, the Pivot Toolbar and the Stale Report's notice, MudBlazor's as over the C# core. The report grid's are
+    /// <see cref="MudGridChrome"/>'s.</summary>
+    public PivotScriptSlots ScriptSlots => PivotScriptSlots.Menu | PivotScriptSlots.Toolbar | PivotScriptSlots.StaleReport;
+
+    /// <summary>A menu when the Script Core draws the pivot (ADR-0410): the same <c>MudButton</c> items, each marked
+    /// for the script that wires them.</summary>
+    public RenderFragment? Menu(PivotMenuView view) => ScriptView<MudPivotScriptMenu, PivotMenuView>(view);
+
+    /// <summary>The Pivot Toolbar when the Script Core draws the pivot (ADR-0410): the same <c>MudButton</c>s, marked
+    /// for the script that wires them.</summary>
+    public RenderFragment? Toolbar(PivotToolbarView view) => ScriptView<MudPivotScriptToolbar, PivotToolbarView>(view);
+
+    /// <summary>The Stale Report's notice when the Script Core draws the pivot (ADR-0410): the same warning
+    /// <c>MudAlert</c>, its Retry marked for the script that wires it.</summary>
+    public RenderFragment? StaleReport(PivotStaleReportView view) => ScriptView<MudPivotScriptStaleReport, PivotStaleReportView>(view);
+
     /// <summary>The stylesheet this Chrome brings (ADR-0123): <c>mud-ex-pivot.css</c>, with the stamp
     /// this build of ExPivot.MudBlazor ships. ExPivot's root renders its notice beside its own, which
     /// only another version's <c>mud-ex-pivot.css</c> shows. The report grid's
@@ -94,6 +111,18 @@ public sealed class MudPivotChrome : IPivotChrome
     /// <summary>A command's icon: <see cref="Icon"/> first, then ExPivot's Material icons; null
     /// leaves the grid's own commands to the grid Wrapper's.</summary>
     internal string? IconFor(string id) => Icon?.Invoke(id) ?? MudPivotIcons.ForCommand(id);
+
+    private RenderFragment ScriptView<TPart, TView>(TView view) where TPart : IComponent
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenComponent<TPart>(0);
+            builder.AddComponentParameter(1, "View", view);
+            builder.AddComponentParameter(2, "Chrome", this);
+            builder.CloseComponent();
+        };
+    }
 
     private RenderFragment View<TView, TContext>(TContext context) where TView : IComponent
     {

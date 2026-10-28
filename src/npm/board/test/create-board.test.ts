@@ -96,7 +96,10 @@ class StandIns implements BoardMounts {
     readonly pivot = (element: HTMLElement, options: PivotViewOptions): PivotHandle => {
         const made = new Mounted(element, options);
         this.pivots.push(made);
-        return { ...made.handle(), openDetails: unused('open the records of a cell') };
+        return {
+            ...made.handle(), openDetails: unused('open the records of a cell'), gridAround: unused('find a pivot\'s grid'),
+            holdSettled: unused('hold a pivot\'s Settled Mark'),
+        };
     };
 
     readonly chart = (element: HTMLElement, options: ChartOptions): ChartHandle => {

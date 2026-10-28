@@ -1,0 +1,46 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* A menu when the Script Core draws the pivot (ADR-0410): the same text MudButtons as MudPivotMenu,
+   a choice's radio mark among them and a group's heading where one starts, each marked with its
+   command's index and nothing else. Its role, its checked state, what a press runs and which command
+   takes the keyboard are wired by the adapter's script in the browser, so no press waits on the
+   circuit and no handler is drawn here. *@
+<div class="mud-ex-pivot-menu" role="none">
+    @for (var i = 0; i < View.Items.Count; i++)
+    {
+        var item = View.Items[i];
+        @if (item.Heading is { } heading)
+        {
+            <MudText @key="@($"heading {item.Id}")" Typo="Typo.caption" Class="mud-ex-pivot-menu-heading" aria-hidden="true">@heading</MudText>
+        }
+        @* Keyed by the command, as MudPivotMenu keys its buttons: a heading drawn or gone between them would
+           otherwise shift the diff, and the button holding the keyboard would be drawn again under it. *@
+        <MudButton @key="item.Id" Variant="Variant.Text" Size="Size.Small" FullWidth="true" Class="mud-ex-pivot-menu-item"
+                   Disabled="!item.Enabled" StartIcon="@IconOf(item)"
+                   UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.MenuItem, i)">@item.Label</MudButton>
+    }
+</div>
+
+@code {
+    /// <summary>The menu's view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotMenuView View { get; set; } = default!;
+
+    /// <summary>Where the icons come from.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+
+    // A choice is a radio button, checked where it is the current one, as MudPivotMenu draws it.
+    private string? IconOf(PivotMenuItemView item) => item.Checked switch
+    {
+        true => Icons.Material.Filled.RadioButtonChecked,
+        false => Icons.Material.Filled.RadioButtonUnchecked,
+        null => Chrome.IconFor(item.Id),
+    };
+}

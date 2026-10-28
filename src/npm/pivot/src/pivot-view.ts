@@ -1491,8 +1491,15 @@ export class PivotView {
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
         };
-        if (this.#grid === undefined) this.#grid = this.#mountGrid(this.#gridRoot, options);
-        else this.#grid.update(options);
+        if (this.#grid === undefined) {
+            // Made standing in the sheet, inside the pivot's box: the grid reads its Input Root once, as it is made, and
+            // on an element standing nowhere it would hear only itself, not the Field List, the toolbar or the popups
+            // (ADR-0240 section 6). The draw that follows keeps it there, or puts the report's notice in its place.
+            if (this.#gridRoot.parentNode !== this.#sheet) this.#sheet.prepend(this.#gridRoot);
+            this.#grid = this.#mountGrid(this.#gridRoot, options);
+        } else {
+            this.#grid.update(options);
+        }
     }
 
     // A Find step over the report that cannot go on is said on the Pivot Toolbar, while that report is the one shown:

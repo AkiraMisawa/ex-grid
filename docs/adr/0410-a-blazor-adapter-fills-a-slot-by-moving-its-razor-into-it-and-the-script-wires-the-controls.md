@@ -137,6 +137,18 @@ Within (ADR-0332 section 5), and a grid's panel drawn in its place would search 
 `MudSheetChrome` forwards every slot `MudGridChrome` names except `FindPanel`; a Sheet Chrome's own find
 slot over the Script Core is ExSheet's to add.
 
+*Note of 2026-10-28, as ExPivot's first slots were built:* `IPivotChrome` follows the same shape.
+`IPivotChrome.ScriptSlots` names the pivot's slots a Chrome fills (`Menu`, `Toolbar`, `StaleReport` so
+far), each asked for through an overload that takes a view (`Menu(PivotMenuView)`,
+`Toolbar(PivotToolbarView)`, `StaleReport(PivotStaleReportView)`), and the report grid's slots are the
+Grid Chrome's that `IPivotChrome.GridChrome` answers, named by its own `ScriptSlots`.
+`PivotScriptSlotAttributes` holds the pivot's attributes: `MenuItem`, a `Press` that names the
+context's callback, and a `Control` and an `Anchor` that hand an element in by name as a React `ref`
+does, and hand it back when the contents go. An anchor is drawn empty, because the pivot places a
+popup's frame in it and a Razor child beside the frame would be moved by Blazor's diff. The grid's slot
+kinds moved into the Shared Script (`gridRazorSlotKinds`), so ExPivot's adapter fills its report grid's
+slots with the kinds ExGrid's uses.
+
 ### 5. A slot's contents arrive a render later, and the grid is settled only once they stand
 
 On the Server host the contents arrive a round trip after the slot. Meanwhile the core already owes the
@@ -156,6 +168,18 @@ Blazor adapter holds every input made after a part that takes the keyboard is mo
 takes each where the keyboard is, its default done as the held inputs' are. A menu's keys reach its
 drawn items this way on Blazor; the core's answer against the menu's place stays for an adapter that
 holds nothing. A loading indicator, which takes no keyboard, holds no input.
+
+*Note of 2026-10-28, as ExPivot's slots were built:* a product with more than one grid holds the inputs
+and the Settled Mark of the grid the slot stands for, so the host's `hold`, `order` and `keyboardBack`
+are handed the slot: ExPivot answers the grid whose Input Root the slot stands in, a Show Details
+grid's or the report's (`PivotHandle.gridAround`, `holdSettled`). Building it found that the TS pivot
+made its report grid on a root not yet in its box, so the grid took its own root as its Input Root and
+kept an order of its own, against section 6 of ADR-0240; the root now stands in the pivot's box before
+the grid is made. A report that draws no grid has no order to hold inputs in: a key typed before an
+empty report's Layout menu's contents arrive is not held, and the Settled Mark held meanwhile waits for
+the report's next grid. A part a grid mounts before placing it, as a grid's first paint mounts its loading
+indicator, stands in no Input Root yet: its hold takes every grid's mark, and the mark of the grid it comes
+to stand in once that grid is made. This gap stays until the pivot keeps an order of its own beside its grids.
 
 ### 6. Template cells use the same mechanism, and ExGrid takes it first
 

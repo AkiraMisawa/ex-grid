@@ -80,6 +80,27 @@ public interface IPivotChrome
     /// the built-in markup, which brings none. Read on every render of the root: answer the same list
     /// each time.</summary>
     IReadOnlyList<ChromeStylesheet> Stylesheets => [];
+
+    /// <summary>The pivot's slots this Chrome fills with Razor when the Script Core draws the pivot (ADR-0410): each
+    /// is asked for through its view overload. <see cref="PivotScriptSlots.None"/>, the default, leaves every part
+    /// the Script Core's own. The report grid's are its grid Chrome's <c>ScriptSlots</c>. Read once, as the pivot
+    /// attaches: answer the same each time.</summary>
+    PivotScriptSlots ScriptSlots => PivotScriptSlots.None;
+
+    /// <summary>A placed field's menu or the Layout menu when the Script Core draws the pivot (ADR-0410), for a
+    /// Chrome that names <see cref="PivotScriptSlots.Menu"/>: one control per item, each marked with
+    /// <see cref="PivotScriptSlotAttributes.MenuItem"/>, and no handler of its own.</summary>
+    RenderFragment? Menu(PivotMenuView view) => null;
+
+    /// <summary>The Pivot Toolbar when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.Toolbar"/>: its buttons and anchors marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? Toolbar(PivotToolbarView view) => null;
+
+    /// <summary>The Stale Report's notice when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.StaleReport"/>: the sentence and Retry, marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? StaleReport(PivotStaleReportView view) => null;
 }
 
 /// <summary>
@@ -603,7 +624,7 @@ public sealed record PivotReportFilterView(
 /// refused by name ("This layout needs more than 200,000 cells."), or the source's failure — or
 /// null. The report stays as it was, and this says why where the user sees it, as an alert: it
 /// answers what the user just did. Data that could not be shown is not said here but in the Stale
-/// Report's notice under the Pivot Toolbar (<see cref="IPivotChrome.StaleReport"/>).</param>
+/// Report's notice under the Pivot Toolbar (<see cref="IPivotChrome.StaleReport(PivotStaleReportContext)"/>).</param>
 /// <param name="Word">ExPivot's words, by id.</param>
 public sealed record PivotToolbarContext(
     RenderFragment? ReportFilters,

@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet, settled } from './fixtures.mjs';
+import { test, expect, circuitQuiet, settled, setRoundTrip } from './fixtures.mjs';
 
 // Blazor's ExPivot over its Script Core (ADR-0370 section 1), on /script-pivot, on both Blazor hosts: the one path
 // no other layer sees whole. The report is built in the browser from the Leaf Aggregates the C# source answers in
@@ -73,4 +73,34 @@ test('ADR-0060, ADR-0063, ADR-0130, ADR-0201, ADR-0370 section 10: the Consumer\
     await page.keyboard.press('Shift+ArrowRight');
     await expect(page.locator('#script-pivot-summary')).toHaveText(/^Sum: \S+$/);
     await expect(report(page).locator('.ex-summary')).toContainText(await page.locator('#script-pivot-summary').innerText());
+});
+
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s toolbar and Layout menu, and Enter typed as the menu opens over a slow circuit runs its first enabled choice', async ({ page }) => {
+    await open(page, '/script-pivot?chrome=mud');
+    const toolbar = pivot(page).locator('.mud-ex-pivot-toolbar');
+    const layout = toolbar.getByRole('button', { name: 'Layout' });
+    await expect(layout).toHaveClass(/mud-button-root/);
+
+    // Pressed and answered at once, a round trip before the menu's Razor stands in its frame on Server: the Enter
+    // waits in the pivot's order until the first enabled choice holds the keyboard, and presses it.
+    await setRoundTrip(150);
+    try {
+        await layout.click();
+        await page.keyboard.press('Enter');
+        await settled(report(page));
+        await circuitQuiet();
+    } finally {
+        await setRoundTrip(0);
+    }
+    await expect(pivot(page).getByRole('menu')).toHaveCount(0);
+    await expect(layout).toBeFocused();
+
+    // Opened again once it stands: MudBlazor's buttons in the pivot's frame, the choice Enter made marked.
+    await layout.click();
+    await settled(report(page));
+    const choice = pivot(page).getByRole('menuitemradio', { name: 'Do Not Show Subtotals' });
+    await expect(choice).toHaveClass(/mud-ex-pivot-menu-item/);
+    await expect(choice).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
+    await expect(pivot(page).getByRole('menu')).toHaveCount(0);
 });

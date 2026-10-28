@@ -41,14 +41,16 @@ export interface RazorSlotKind<Context, Drawn = undefined, Memo = undefined> {
     standsWhole?(drawn: Drawn): boolean;
 }
 
-/** What the host is handed of the product: each optional where the product has no such thing. */
+/** What the host is handed of the product: each optional where the product has no such thing. Each is handed the
+ * slot it is asked for, so a product of several grids, a pivot's report and its Show Details grids, answers for the
+ * grid the slot stands in. */
 export interface RazorSlotHostOptions {
     /** Holds the product's Settled Mark until the function it answers is called. */
-    readonly hold?: () => (() => void);
+    readonly hold?: (slot: HTMLElement) => (() => void);
     /** Holds every input made in the product after it, in its order, until the promise it is handed settles (ADR-0240). */
-    readonly order?: (until: Promise<void>) => void;
+    readonly order?: (until: Promise<void>, slot: HTMLElement) => void;
     /** Hands the keyboard to the product, from contents that held it as their slot went. */
-    readonly keyboardBack?: () => void;
+    readonly keyboardBack?: (slot: HTMLElement) => void;
 }
 
 /** A kind as the host keeps it, whose types the host does not know: it is handed only the contexts the core mounts its
@@ -94,9 +96,9 @@ interface Standing {
 export class RazorSlotHost {
     readonly #dotnet: DotNetCalls;
     readonly #kinds: ReadonlyMap<string, HostedSlotKind>;
-    readonly #hold: (() => (() => void)) | undefined;
-    readonly #order: ((until: Promise<void>) => void) | undefined;
-    readonly #keyboardBack: (() => void) | undefined;
+    readonly #hold: RazorSlotHostOptions['hold'];
+    readonly #order: RazorSlotHostOptions['order'];
+    readonly #keyboardBack: RazorSlotHostOptions['keyboardBack'];
     readonly #standing = new Map<number, Standing>();
     readonly #bySlot = new Map<HTMLElement, Standing>();
     #ids = 0;
@@ -211,7 +213,7 @@ export class RazorSlotHost {
     // Every input made in the product from now waits, in its order, until the slot's latest contents stand (ADR-0240).
     #holdInputs(standing: Standing): void {
         if (standing.letInputsGo !== undefined || this.#order === undefined) return;
-        this.#order(new Promise<void>(resolve => { standing.letInputsGo = resolve; }));
+        this.#order(new Promise<void>(resolve => { standing.letInputsGo = resolve; }), standing.slot);
     }
 
     #letInputsGo(standing: Standing): void {
@@ -228,7 +230,7 @@ export class RazorSlotHost {
         standing.sent = data.json;
         standing.version += 1;
         standing.views.set(standing.version, data.drawn);
-        standing.release ??= this.#hold?.();
+        standing.release ??= this.#hold?.(standing.slot);
         const asked = call === 'MountSlot'
             ? this.#dotnet.invokeMethodAsync(call, standing.id, standing.version, standing.name, data.json)
             : this.#dotnet.invokeMethodAsync(call, standing.id, standing.version, data.json);
@@ -265,7 +267,7 @@ export class RazorSlotHost {
             this.#takeBack(standing);
             const doc = standing.slot.ownerDocument;
             const active = doc.activeElement;
-            if (held && (active === null || active === doc.body || standing.contents?.contains(active) === true)) this.#keyboardBack?.();
+            if (held && (active === null || active === doc.body || standing.contents?.contains(active) === true)) this.#keyboardBack?.(standing.slot);
             standing.release?.();
             standing.release = undefined;
             this.#letInputsGo(standing);
