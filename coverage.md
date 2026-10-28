@@ -6,7 +6,7 @@
 | ExSheet | 94.9% | 87.4% |
 | ExPivot | 93% | 85.2% |
 | ExChart | 89.8% | 85% |
-| ExBoard | 91.8% | 85.4% |
+| ExBoard | 91.1% | 84.4% |
 | Data | 94.5% | 89.9% |
 
 # Summary
@@ -14,29 +14,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 05:46:24 |
+| Generated on: | 10/28/2026 - 06:18:28 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1243 |
-| Files: | 633 |
-| **Line coverage:** | 93.8% (87349 of 93105) |
-| Covered lines: | 87349 |
-| Uncovered lines: | 5756 |
-| Coverable lines: | 93105 |
-| Total lines: | 148414 |
-| **Branch coverage:** | 87.1% (52279 of 59999) |
-| Covered branches: | 52279 |
-| Total branches: | 59999 |
+| Classes: | 1248 |
+| Files: | 634 |
+| **Line coverage:** | 93.7% (87962 of 93799) |
+| Covered lines: | 87962 |
+| Uncovered lines: | 5837 |
+| Coverable lines: | 93799 |
+| Total lines: | 148805 |
+| **Branch coverage:** | 87% (52532 of 60321) |
+| Covered branches: | 52532 |
+| Total branches: | 60321 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 91.8%</summary>
+<details><summary>ExBoard - 91.1%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**91.8%**|**85.4%**|
+|**ExBoard**|**91.1%**|**84.4%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|100%|
@@ -47,7 +47,7 @@
 |ExBoard.BoardGridChange|92.3%|75%|
 |ExBoard.BoardGridView|75%||
 |ExBoard.BoardLink|100%|100%|
-|ExBoard.BoardOutput|87.6%|76.9%|
+|ExBoard.BoardOutput|90.1%|78.1%|
 |ExBoard.BoardOutputDeclaration|100%||
 |ExBoard.BoardPivotChange|100%|100%|
 |ExBoard.BoardPivotView|88.8%||
@@ -73,9 +73,14 @@
 |ExBoard.DeclaredChartData|100%|87.5%|
 |ExBoard.LinkCondition|90.3%|77.7%|
 |ExBoard.LinkCondition.TupleComparer|86.3%|72.7%|
-|ExBoard.Narrowing|76.7%|59.5%|
-|ExBoard.Script.ExBoard|76.4%|69.7%|
-|ExBoard.Script.ScriptBridge|66.6%||
+|ExBoard.Narrowing|82.1%|65.9%|
+|ExBoard.Script.ExBoard|83.5%|77.1%|
+|ExBoard.Script.ExBoard<T>|83.5%|77.1%|
+|ExBoard.Script.ScriptBridge|87.5%||
+|ExBoard.Script.SourceCrossing|95%|72.7%|
+|ExBoard.Script.SourceCrossing.Held|100%||
+|ExBoard.Script.SourceCrossing.HeldKey|100%|50%|
+|ExBoard.Script.SourcePage|100%||
 |ExGrid.Script.SnapshotCrossing|76.9%|62.5%|
 |ExGrid.Script.SnapshotNaming|100%|100%|
 
@@ -660,7 +665,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1088,12 +1093,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
