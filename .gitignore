@@ -55,6 +55,9 @@ src/ExSheet/wwwroot/ex-sheet.min.js
 src/ExSheet/wwwroot/ex-sheet.min.js.map
 src/ExChart/wwwroot/ex-chart-core.min.js
 src/ExChart/wwwroot/ex-chart-core.min.js.map
+# ExBoard's, bundled from src/npm as ExBoard builds (ADR-0370 section 1)
+src/ExBoard/wwwroot/ex-board.min.js
+src/ExBoard/wwwroot/ex-board.min.js.map
 
 # The Docs Site's React Examples (ADR-0350 section 12): their dependencies, and the frame the Docs project's build
 # writes into the site's static files

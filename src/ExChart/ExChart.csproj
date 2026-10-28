@@ -37,7 +37,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)chart/src/**/*.ts;$(ScriptCoreWorkspace)chart-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)chart/src/**/*.ts;$(ScriptCoreWorkspace)chart-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts;$(ScriptCoreWorkspace)blazor/src/snapshots.ts" />
     <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
     <Content Remove="wwwroot/ex-chart-core.min.js;wwwroot/ex-chart-core.min.js.map" />
   </ItemGroup>

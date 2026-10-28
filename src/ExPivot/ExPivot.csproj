@@ -32,7 +32,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)pivot-engine/src/**/*.ts;$(ScriptCoreWorkspace)pivot/src/**/*.ts;$(ScriptCoreWorkspace)pivot-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)pivot-engine/src/**/*.ts;$(ScriptCoreWorkspace)pivot/src/**/*.ts;$(ScriptCoreWorkspace)pivot-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts;$(ScriptCoreWorkspace)blazor/src/snapshots.ts" />
     <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
     <Content Remove="wwwroot/ex-pivot.min.js;wwwroot/ex-pivot.min.js.map" />
   </ItemGroup>

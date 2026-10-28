@@ -13,11 +13,55 @@
     <ProjectReference Include="..\ExGrid\ExGrid.csproj" />
     <ProjectReference Include="..\ExPivot\ExPivot.csproj" />
     <ProjectReference Include="..\ExChart\ExChart.csproj" />
+    <!-- Blazor's Script ExBoard sends each input's Snapshot to the browser as its Arrow stream (ADR-0065). -->
+    <ProjectReference Include="..\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- How a Snapshot crosses to a Script adapter's module, compiled into each adapter that sends one, so every one
+         crosses them alike (ADR-0065's note of 2026-10-28). -->
+    <Compile Include="..\Shared\Script\SnapshotCrossing.cs" Link="Script\SnapshotCrossing.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="ExBoard.Tests" />
   </ItemGroup>
+
+  <!-- ExBoard's Script Core's module for ExBoard.Script.ExBoard (ADR-0370 section 1): the bridge, @ex-grid/board and
+       the views it lays out, bundled from their sources in src/npm as this project builds, never committed, as
+       ExPivot's is. The grid it draws through, and the data it reads, it imports from the Shared Script ExGrid ships,
+       built against the same sources (ADR-0411). The module goes to wwwroot, where the package serves it; its version
+       and stamp (ADR-0123) are compiled in as ScriptCoreAsset. src/npm's dependencies are ExGrid's build's to install:
+       the bundle is built once the project references are, so the two never run npm in the workspace at once. -->
+  <PropertyGroup>
+    <ScriptCoreWorkspace>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'npm'))</ScriptCoreWorkspace>
+    <ScriptCoreModule>$(MSBuildThisFileDirectory)wwwroot/ex-board.min.js</ScriptCoreModule>
+    <ScriptCoreConstants>$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ScriptCoreAsset.g.cs</ScriptCoreConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)pivot-engine/src/**/*.ts;$(ScriptCoreWorkspace)pivot/src/**/*.ts;$(ScriptCoreWorkspace)chart/src/**/*.ts;$(ScriptCoreWorkspace)board/src/**/*.ts;$(ScriptCoreWorkspace)board-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts;$(ScriptCoreWorkspace)blazor/src/snapshots.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
+    <Content Remove="wwwroot/ex-board.min.js;wwwroot/ex-board.min.js.map" />
+  </ItemGroup>
+
+  <Target Name="BuildScriptCore" DependsOnTargets="ResolveProjectReferences"
+          Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
+    <Exec Command="node ../scripts/build-blazor.mjs --name ex-board --namespace ExBoard.Script --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-board.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+          WorkingDirectory="$(ScriptCoreWorkspace)board-blazor" />
+  </Target>
+
+  <!-- Apart from the build, which is skipped while its outputs are newer than every source: the items are
+       added on every build, so the static web assets and the compile always hold the module. -->
+  <Target Name="IncludeScriptCore" DependsOnTargets="BuildScriptCore"
+          BeforeTargets="BeforeBuild;CoreCompile;ResolveProjectStaticWebAssets;ResolveStaticWebAssetsConfiguration">
+    <ItemGroup>
+      <Content Remove="wwwroot/ex-board.min.js;wwwroot/ex-board.min.js.map" />
+      <Content Include="wwwroot/ex-board.min.js;wwwroot/ex-board.min.js.map" />
+      <Compile Remove="$(ScriptCoreConstants)" />
+      <Compile Include="$(ScriptCoreConstants)" />
+    </ItemGroup>
+  </Target>
 
   <!-- ExBoard depends on exactly the versions it was built with, as ExChart does (ADR-0042). -->
   <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
