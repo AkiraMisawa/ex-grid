@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/27/2026 - 23:21:12 |
+| Generated on: | 10/27/2026 - 23:59:43 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1226 |
 | Files: | 620 |
-| **Line coverage:** | 94.2% (85115 of 90283) |
-| Covered lines: | 85115 |
-| Uncovered lines: | 5168 |
+| **Line coverage:** | 94.2% (85116 of 90283) |
+| Covered lines: | 85116 |
+| Uncovered lines: | 5167 |
 | Coverable lines: | 90283 |
 | Total lines: | 144229 |
-| **Branch coverage:** | 87.4% (51282 of 58648) |
-| Covered branches: | 51282 |
+| **Branch coverage:** | 87.4% (51283 of 58648) |
+| Covered branches: | 51283 |
 | Total branches: | 58648 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -1000,7 +1000,7 @@
 |ExPivot.Engine.PivotReportUpdate|100%||
 |ExPivot.Engine.PivotReportVersion|100%||
 |ExPivot.Engine.PivotReportWindow|100%||
-|ExPivot.Engine.PivotRowKey|98%|82.3%|
+|ExPivot.Engine.PivotRowKey|100%|85.2%|
 |ExPivot.Engine.PivotRowLabel|100%||
 |ExPivot.Engine.PivotServerChangeBatch|100%|83.3%|
 |ExPivot.Engine.PivotSlicing|100%|60%|
