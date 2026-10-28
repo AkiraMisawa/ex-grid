@@ -175,6 +175,10 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
         let gone = false;
         queueMicrotask(() => { if (!gone && made.grid !== undefined) release = made.grid.holdSettled(); });
         return () => { gone = true; release?.(); };
+    }, until => {
+        // Only a part the user opened takes the keyboard, and the user opens nothing before the grid stands.
+        if (made.grid === undefined) throw new Error('Internal: a Razor slot that takes the keyboard was mounted while the grid was being made.');
+        void made.grid.inOrder(() => until);
     });
     const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint, findError, slots));
     made.grid = grid;

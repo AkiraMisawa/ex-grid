@@ -46,3 +46,42 @@ test('ADR-0410: the column menu is MudBlazor\'s, and keys typed as it opens are 
     await expect(page.locator('#script-mud-hidden')).toHaveText('Hidden: Book');
     await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
 });
+
+test('ADR-0410: the filter panel is MudBlazor\'s, and what is typed and chosen in it at machine speed over a slow circuit is what applies', async ({ page }) => {
+    await settled(grid(page));
+    const books = grid(page).locator('.ex-row [id$="c0"]');
+    const notionals = grid(page).locator('.ex-row [id$="c2"]');
+
+    // Book's value list, searched and applied by Enter while the Razor is a round trip from standing on Server: E,
+    // typed as the menu opens, waits for the panel and puts the keyboard in its search box, MudBlazor's field.
+    await setRoundTrip(150);
+    await cell(page, 0, 0).click({ force: true });
+    await page.keyboard.press('Alt+ArrowDown');
+    await page.keyboard.press('e');
+    await page.keyboard.type('-00');
+    await page.keyboard.press('Enter');
+    await settled(grid(page));
+    await circuitQuiet();
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    await expect(books).toHaveCount(9);
+    for (const text of await books.allTextContents()) expect(text).toContain('-00');
+
+    // Notional's conditions: the operator chosen from MudBlazor's outline of a native select, a value typed and Enter,
+    // each at once after the last. Above the largest but one of the rows shown, only the largest stays.
+    const numbers = async () => (await notionals.allTextContents()).map(text => Number(text.replace(/[^0-9.-]/g, '')));
+    const before = (await numbers()).toSorted((a, b) => a - b);
+    const threshold = before.at(-2);
+    await cell(page, 0, 2).click({ force: true });
+    await page.keyboard.press('Alt+ArrowDown');
+    await page.keyboard.press('Tab');
+    const operator = grid(page).locator('.ex-popover select[data-ex-filter-operator="first"]');
+    await expect(operator).toBeFocused();
+    await operator.selectOption('greaterThan');
+    await page.keyboard.press('Tab');
+    await page.keyboard.type(String(threshold));
+    await page.keyboard.press('Enter');
+    await settled(grid(page));
+    await circuitQuiet();
+    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+    expect(await numbers()).toEqual(before.filter(value => value > threshold));
+});

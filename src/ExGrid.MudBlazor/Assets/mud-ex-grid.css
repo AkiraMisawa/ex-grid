@@ -252,6 +252,30 @@
     flex: 1 1 auto;
     overflow-y: auto;
 }
+/* A condition's operator over the Script Core: a native select, whose choice the browser hands the
+   core at once, in MudBlazor's outline, its label above it as a dense outlined field's caption. */
+.mud-ex-grid-filter-native {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.mud-ex-grid-filter-native-label {
+    font-family: var(--mud-typography-caption-family);
+    font-size: var(--mud-typography-caption-size);
+    color: var(--mud-palette-text-secondary);
+}
+.mud-ex-grid-filter-native-select {
+    font: inherit;
+    color: var(--mud-palette-text-primary);
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: var(--mud-default-borderradius);
+    padding: 6px 8px;
+}
+.mud-ex-grid-filter-native-select:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: -1px;
+}
 .mud-ex-grid-filter-actions,
 .mud-ex-grid-find-actions {
     display: flex;

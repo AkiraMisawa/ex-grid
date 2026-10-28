@@ -19,6 +19,16 @@ const ExGrid.Chrome.GridLabelIds.PasteAlreadyLanded = "paste-already-landed" -> 
 const ExGrid.Chrome.GridLabelIds.PasteUnderWay = "paste-under-way" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.RowCommandTargetLeft = "key-refusal-row-command-target-left" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterAddToCurrent = "data-ex-filter-add" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterCancel = "data-ex-filter-cancel" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterFocus = "data-ex-filter-focus" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterJoin = "data-ex-filter-join" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterOperand = "data-ex-filter-operand" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterOperator = "data-ex-filter-operator" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterSearch = "data-ex-filter-search" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterSelectAll = "data-ex-filter-all" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterValue = "data-ex-filter-value" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FilterValues = "data-ex-filter-values" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.MenuItem = "data-ex-menu-item" -> string!
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
@@ -26,6 +36,109 @@ ExGrid.Chrome.FindContext.Deconstruct(out string! Text, out bool MatchCase, out 
 ExGrid.Chrome.FindContext.FindContext(string! Text, bool MatchCase, bool WholeCell, ExGrid.Finding.FindOutcome Outcome, System.Action<string!>! TextChanged, System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, System.Func<System.Threading.Tasks.Task!>! Next, System.Func<System.Threading.Tasks.Task!>! Previous, System.Action! Close, int FocusRequest = 0, System.Action<bool>? InnerPopupChanged = null, System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus = null) -> void
 ExGrid.Chrome.FindContext.MatchCaseChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
 ExGrid.Chrome.FindContext.WholeCellChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
+ExGrid.Chrome.GridFilterConditionsView
+ExGrid.Chrome.GridFilterConditionsView.<Clone>$() -> ExGrid.Chrome.GridFilterConditionsView!
+ExGrid.Chrome.GridFilterConditionsView.Allowed.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridFilterOperatorView!>!
+ExGrid.Chrome.GridFilterConditionsView.Allowed.init -> void
+ExGrid.Chrome.GridFilterConditionsView.Combinator.get -> ExGrid.FilterCombinator
+ExGrid.Chrome.GridFilterConditionsView.Combinator.init -> void
+ExGrid.Chrome.GridFilterConditionsView.Deconstruct(out System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridFilterOperatorView!>! Allowed, out ExGrid.Chrome.GridFilterConditionView! First, out ExGrid.FilterCombinator Combinator, out ExGrid.Chrome.GridFilterConditionView? Second) -> void
+ExGrid.Chrome.GridFilterConditionsView.Equals(ExGrid.Chrome.GridFilterConditionsView? other) -> bool
+ExGrid.Chrome.GridFilterConditionsView.First.get -> ExGrid.Chrome.GridFilterConditionView!
+ExGrid.Chrome.GridFilterConditionsView.First.init -> void
+ExGrid.Chrome.GridFilterConditionsView.GridFilterConditionsView(System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridFilterOperatorView!>! Allowed, ExGrid.Chrome.GridFilterConditionView! First, ExGrid.FilterCombinator Combinator, ExGrid.Chrome.GridFilterConditionView? Second) -> void
+ExGrid.Chrome.GridFilterConditionsView.Second.get -> ExGrid.Chrome.GridFilterConditionView?
+ExGrid.Chrome.GridFilterConditionsView.Second.init -> void
+ExGrid.Chrome.GridFilterConditionView
+ExGrid.Chrome.GridFilterConditionView.<Clone>$() -> ExGrid.Chrome.GridFilterConditionView!
+ExGrid.Chrome.GridFilterConditionView.Deconstruct(out string! Operator, out string! Operand, out bool TakesOperand, out string? Refusal) -> void
+ExGrid.Chrome.GridFilterConditionView.Equals(ExGrid.Chrome.GridFilterConditionView? other) -> bool
+ExGrid.Chrome.GridFilterConditionView.GridFilterConditionView(string! Operator, string! Operand, bool TakesOperand, string? Refusal) -> void
+ExGrid.Chrome.GridFilterConditionView.Operand.get -> string!
+ExGrid.Chrome.GridFilterConditionView.Operand.init -> void
+ExGrid.Chrome.GridFilterConditionView.Operator.get -> string!
+ExGrid.Chrome.GridFilterConditionView.Operator.init -> void
+ExGrid.Chrome.GridFilterConditionView.Refusal.get -> string?
+ExGrid.Chrome.GridFilterConditionView.Refusal.init -> void
+ExGrid.Chrome.GridFilterConditionView.TakesOperand.get -> bool
+ExGrid.Chrome.GridFilterConditionView.TakesOperand.init -> void
+ExGrid.Chrome.GridFilterEntryView
+ExGrid.Chrome.GridFilterEntryView.<Clone>$() -> ExGrid.Chrome.GridFilterEntryView!
+ExGrid.Chrome.GridFilterEntryView.Blank.get -> bool
+ExGrid.Chrome.GridFilterEntryView.Blank.init -> void
+ExGrid.Chrome.GridFilterEntryView.Checked.get -> bool
+ExGrid.Chrome.GridFilterEntryView.Checked.init -> void
+ExGrid.Chrome.GridFilterEntryView.Deconstruct(out string! Text, out bool Blank, out bool Checked) -> void
+ExGrid.Chrome.GridFilterEntryView.Equals(ExGrid.Chrome.GridFilterEntryView? other) -> bool
+ExGrid.Chrome.GridFilterEntryView.GridFilterEntryView(string! Text, bool Blank, bool Checked) -> void
+ExGrid.Chrome.GridFilterEntryView.Text.get -> string!
+ExGrid.Chrome.GridFilterEntryView.Text.init -> void
+ExGrid.Chrome.GridFilterOperatorView
+ExGrid.Chrome.GridFilterOperatorView.<Clone>$() -> ExGrid.Chrome.GridFilterOperatorView!
+ExGrid.Chrome.GridFilterOperatorView.Deconstruct(out string! Id, out string! Label) -> void
+ExGrid.Chrome.GridFilterOperatorView.Equals(ExGrid.Chrome.GridFilterOperatorView? other) -> bool
+ExGrid.Chrome.GridFilterOperatorView.GridFilterOperatorView(string! Id, string! Label) -> void
+ExGrid.Chrome.GridFilterOperatorView.Id.get -> string!
+ExGrid.Chrome.GridFilterOperatorView.Id.init -> void
+ExGrid.Chrome.GridFilterOperatorView.Label.get -> string!
+ExGrid.Chrome.GridFilterOperatorView.Label.init -> void
+ExGrid.Chrome.GridFilterValueListView
+ExGrid.Chrome.GridFilterValueListView.<Clone>$() -> ExGrid.Chrome.GridFilterValueListView!
+ExGrid.Chrome.GridFilterValueListView.AddOffered.get -> bool
+ExGrid.Chrome.GridFilterValueListView.AddOffered.init -> void
+ExGrid.Chrome.GridFilterValueListView.AddToCurrent.get -> bool
+ExGrid.Chrome.GridFilterValueListView.AddToCurrent.init -> void
+ExGrid.Chrome.GridFilterValueListView.Deconstruct(out string! Search, out bool AddOffered, out bool AddToCurrent, out ExGrid.Chrome.SelectAllState SelectAll, out System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridFilterEntryView!>! Entries) -> void
+ExGrid.Chrome.GridFilterValueListView.Entries.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridFilterEntryView!>!
+ExGrid.Chrome.GridFilterValueListView.Entries.init -> void
+ExGrid.Chrome.GridFilterValueListView.Equals(ExGrid.Chrome.GridFilterValueListView? other) -> bool
+ExGrid.Chrome.GridFilterValueListView.GridFilterValueListView(string! Search, bool AddOffered, bool AddToCurrent, ExGrid.Chrome.SelectAllState SelectAll, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridFilterEntryView!>! Entries) -> void
+ExGrid.Chrome.GridFilterValueListView.Search.get -> string!
+ExGrid.Chrome.GridFilterValueListView.Search.init -> void
+ExGrid.Chrome.GridFilterValueListView.SelectAll.get -> ExGrid.Chrome.SelectAllState
+ExGrid.Chrome.GridFilterValueListView.SelectAll.init -> void
+ExGrid.Chrome.GridFilterView
+ExGrid.Chrome.GridFilterView.<Clone>$() -> ExGrid.Chrome.GridFilterView!
+ExGrid.Chrome.GridFilterView.CanApply.get -> bool
+ExGrid.Chrome.GridFilterView.CanApply.init -> void
+ExGrid.Chrome.GridFilterView.Column.get -> string!
+ExGrid.Chrome.GridFilterView.Column.init -> void
+ExGrid.Chrome.GridFilterView.Conditions.get -> ExGrid.Chrome.GridFilterConditionsView?
+ExGrid.Chrome.GridFilterView.Conditions.init -> void
+ExGrid.Chrome.GridFilterView.Deconstruct(out string! Column, out ExGrid.ColumnType Type, out ExGrid.Chrome.GridFilterValueListView? ValueList, out ExGrid.Chrome.GridFilterConditionsView? Conditions, out bool CanApply, out bool Fetching, out ExGrid.Chrome.GridFilterWords! Words) -> void
+ExGrid.Chrome.GridFilterView.Equals(ExGrid.Chrome.GridFilterView? other) -> bool
+ExGrid.Chrome.GridFilterView.Fetching.get -> bool
+ExGrid.Chrome.GridFilterView.Fetching.init -> void
+ExGrid.Chrome.GridFilterView.GridFilterView(string! Column, ExGrid.ColumnType Type, ExGrid.Chrome.GridFilterValueListView? ValueList, ExGrid.Chrome.GridFilterConditionsView? Conditions, bool CanApply, bool Fetching, ExGrid.Chrome.GridFilterWords! Words) -> void
+ExGrid.Chrome.GridFilterView.Type.get -> ExGrid.ColumnType
+ExGrid.Chrome.GridFilterView.Type.init -> void
+ExGrid.Chrome.GridFilterView.ValueList.get -> ExGrid.Chrome.GridFilterValueListView?
+ExGrid.Chrome.GridFilterView.ValueList.init -> void
+ExGrid.Chrome.GridFilterView.Words.get -> ExGrid.Chrome.GridFilterWords!
+ExGrid.Chrome.GridFilterView.Words.init -> void
+ExGrid.Chrome.GridFilterWords
+ExGrid.Chrome.GridFilterWords.<Clone>$() -> ExGrid.Chrome.GridFilterWords!
+ExGrid.Chrome.GridFilterWords.AddToCurrent.get -> string!
+ExGrid.Chrome.GridFilterWords.AddToCurrent.init -> void
+ExGrid.Chrome.GridFilterWords.And.get -> string!
+ExGrid.Chrome.GridFilterWords.And.init -> void
+ExGrid.Chrome.GridFilterWords.Cancel.get -> string!
+ExGrid.Chrome.GridFilterWords.Cancel.init -> void
+ExGrid.Chrome.GridFilterWords.Deconstruct(out string! Ok, out string! Cancel, out string! Search, out string! AddToCurrent, out string! SelectAll, out string! SelectAllSearchResults, out string! And, out string! Or, out string! None) -> void
+ExGrid.Chrome.GridFilterWords.Equals(ExGrid.Chrome.GridFilterWords? other) -> bool
+ExGrid.Chrome.GridFilterWords.GridFilterWords(string! Ok, string! Cancel, string! Search, string! AddToCurrent, string! SelectAll, string! SelectAllSearchResults, string! And, string! Or, string! None) -> void
+ExGrid.Chrome.GridFilterWords.None.get -> string!
+ExGrid.Chrome.GridFilterWords.None.init -> void
+ExGrid.Chrome.GridFilterWords.Ok.get -> string!
+ExGrid.Chrome.GridFilterWords.Ok.init -> void
+ExGrid.Chrome.GridFilterWords.Or.get -> string!
+ExGrid.Chrome.GridFilterWords.Or.init -> void
+ExGrid.Chrome.GridFilterWords.Search.get -> string!
+ExGrid.Chrome.GridFilterWords.Search.init -> void
+ExGrid.Chrome.GridFilterWords.SelectAll.get -> string!
+ExGrid.Chrome.GridFilterWords.SelectAll.init -> void
+ExGrid.Chrome.GridFilterWords.SelectAllSearchResults.get -> string!
+ExGrid.Chrome.GridFilterWords.SelectAllSearchResults.init -> void
 ExGrid.Chrome.GridLoadingView
 ExGrid.Chrome.GridLoadingView.<Clone>$() -> ExGrid.Chrome.GridLoadingView!
 ExGrid.Chrome.GridLoadingView.Deconstruct(out bool IsLoading, out int PlaceholderRowCount) -> void
@@ -59,12 +172,14 @@ ExGrid.Chrome.GridMenuView.Type.get -> ExGrid.ColumnType
 ExGrid.Chrome.GridMenuView.Type.init -> void
 ExGrid.Chrome.IGridChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.Chrome.IGridChrome.FilterPanel(ExGrid.Chrome.GridFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.LoadingIndicator(ExGrid.Chrome.GridLoadingView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlotAttributes
 ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.ColumnMenu = 1 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.ContextMenu = 2 -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.FilterPanel = 8 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.LoadingIndicator = 4 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.None = 0 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Clipboard.GridPasteIntent.CancellationToken.get -> System.Threading.CancellationToken
@@ -547,6 +662,27 @@ ExGrid.Validation.GridRuleset<TRow>.Set(System.Func<System.Collections.Generic.I
 override ExGrid.Chrome.FindPanelRefusedCell.Equals(object? obj) -> bool
 override ExGrid.Chrome.FindPanelRefusedCell.GetHashCode() -> int
 override ExGrid.Chrome.FindPanelRefusedCell.ToString() -> string!
+override ExGrid.Chrome.GridFilterConditionsView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFilterConditionsView.GetHashCode() -> int
+override ExGrid.Chrome.GridFilterConditionsView.ToString() -> string!
+override ExGrid.Chrome.GridFilterConditionView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFilterConditionView.GetHashCode() -> int
+override ExGrid.Chrome.GridFilterConditionView.ToString() -> string!
+override ExGrid.Chrome.GridFilterEntryView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFilterEntryView.GetHashCode() -> int
+override ExGrid.Chrome.GridFilterEntryView.ToString() -> string!
+override ExGrid.Chrome.GridFilterOperatorView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFilterOperatorView.GetHashCode() -> int
+override ExGrid.Chrome.GridFilterOperatorView.ToString() -> string!
+override ExGrid.Chrome.GridFilterValueListView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFilterValueListView.GetHashCode() -> int
+override ExGrid.Chrome.GridFilterValueListView.ToString() -> string!
+override ExGrid.Chrome.GridFilterView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFilterView.GetHashCode() -> int
+override ExGrid.Chrome.GridFilterView.ToString() -> string!
+override ExGrid.Chrome.GridFilterWords.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFilterWords.GetHashCode() -> int
+override ExGrid.Chrome.GridFilterWords.ToString() -> string!
 override ExGrid.Chrome.GridLoadingView.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridLoadingView.GetHashCode() -> int
 override ExGrid.Chrome.GridLoadingView.ToString() -> string!
@@ -624,6 +760,20 @@ override sealed ExGrid.Script.GridRefusal<TRow>.Placement.Equals(ExGrid.Script.G
 static ExGrid.Chrome.FindPanelLabelIds.OutcomeText(ExGrid.Chrome.FindContext! context, System.Func<string!, string!>! words) -> string!
 static ExGrid.Chrome.FindPanelRefusedCell.operator !=(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
 static ExGrid.Chrome.FindPanelRefusedCell.operator ==(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
+static ExGrid.Chrome.GridFilterConditionsView.operator !=(ExGrid.Chrome.GridFilterConditionsView? left, ExGrid.Chrome.GridFilterConditionsView? right) -> bool
+static ExGrid.Chrome.GridFilterConditionsView.operator ==(ExGrid.Chrome.GridFilterConditionsView? left, ExGrid.Chrome.GridFilterConditionsView? right) -> bool
+static ExGrid.Chrome.GridFilterConditionView.operator !=(ExGrid.Chrome.GridFilterConditionView? left, ExGrid.Chrome.GridFilterConditionView? right) -> bool
+static ExGrid.Chrome.GridFilterConditionView.operator ==(ExGrid.Chrome.GridFilterConditionView? left, ExGrid.Chrome.GridFilterConditionView? right) -> bool
+static ExGrid.Chrome.GridFilterEntryView.operator !=(ExGrid.Chrome.GridFilterEntryView? left, ExGrid.Chrome.GridFilterEntryView? right) -> bool
+static ExGrid.Chrome.GridFilterEntryView.operator ==(ExGrid.Chrome.GridFilterEntryView? left, ExGrid.Chrome.GridFilterEntryView? right) -> bool
+static ExGrid.Chrome.GridFilterOperatorView.operator !=(ExGrid.Chrome.GridFilterOperatorView? left, ExGrid.Chrome.GridFilterOperatorView? right) -> bool
+static ExGrid.Chrome.GridFilterOperatorView.operator ==(ExGrid.Chrome.GridFilterOperatorView? left, ExGrid.Chrome.GridFilterOperatorView? right) -> bool
+static ExGrid.Chrome.GridFilterValueListView.operator !=(ExGrid.Chrome.GridFilterValueListView? left, ExGrid.Chrome.GridFilterValueListView? right) -> bool
+static ExGrid.Chrome.GridFilterValueListView.operator ==(ExGrid.Chrome.GridFilterValueListView? left, ExGrid.Chrome.GridFilterValueListView? right) -> bool
+static ExGrid.Chrome.GridFilterView.operator !=(ExGrid.Chrome.GridFilterView? left, ExGrid.Chrome.GridFilterView? right) -> bool
+static ExGrid.Chrome.GridFilterView.operator ==(ExGrid.Chrome.GridFilterView? left, ExGrid.Chrome.GridFilterView? right) -> bool
+static ExGrid.Chrome.GridFilterWords.operator !=(ExGrid.Chrome.GridFilterWords? left, ExGrid.Chrome.GridFilterWords? right) -> bool
+static ExGrid.Chrome.GridFilterWords.operator ==(ExGrid.Chrome.GridFilterWords? left, ExGrid.Chrome.GridFilterWords? right) -> bool
 static ExGrid.Chrome.GridLoadingView.operator !=(ExGrid.Chrome.GridLoadingView? left, ExGrid.Chrome.GridLoadingView? right) -> bool
 static ExGrid.Chrome.GridLoadingView.operator ==(ExGrid.Chrome.GridLoadingView? left, ExGrid.Chrome.GridLoadingView? right) -> bool
 static ExGrid.Chrome.GridMenuItemView.operator !=(ExGrid.Chrome.GridMenuItemView? left, ExGrid.Chrome.GridMenuItemView? right) -> bool

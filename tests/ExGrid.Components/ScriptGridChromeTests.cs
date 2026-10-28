@@ -99,6 +99,45 @@ public class ScriptGridChromeTests : BunitContext
         Assert.Empty(cut.FindAll(".ex-razor-slot"));
     }
 
+    /// <summary>A Chrome that fills the filter panel, writing what its view says.</summary>
+    private sealed class FilterChrome : IGridChrome
+    {
+        public ScriptSlots ScriptSlots => ScriptSlots.FilterPanel;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? FilterPanel(GridFilterView view) => builder => builder.AddContent(0, view.Conditions is { } form
+            ? $"{view.Column} {view.Type}: {form.First.Operator} '{form.First.Operand}' ({form.First.Refusal}) {form.Combinator} {form.Second?.Operator ?? "none"}; "
+                + $"{string.Join(",", form.Allowed.Select(op => $"{op.Id}={op.Label}"))}; OK {(view.CanApply ? "on" : "off")}; {view.Words.None}"
+            : $"{view.Column}: {view.ValueList!.SelectAll} {string.Join(",", view.ValueList.Entries.Select(e => $"{e.Text}{(e.Blank ? "*" : "")}{(e.Checked ? "+" : "-")}"))}");
+    }
+
+    [Fact] // ADR-0410 section 3: a filter panel's view crosses as data, its value list or its condition form, and is drawn from it
+    public async Task ADR0410_a_filter_panels_view_crosses_as_data()
+    {
+        var cut = Grid(new FilterChrome());
+        const string words = "\"words\":{\"ok\":\"OK\",\"cancel\":\"Cancel\",\"search\":\"Search\",\"addToCurrent\":\"Add\",\"selectAll\":\"All\","
+            + "\"selectAllSearchResults\":\"All found\",\"and\":\"And\",\"or\":\"Or\",\"none\":\"(none)\"}";
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "filterPanel",
+            "{\"column\":\"Book\",\"columnType\":\"text\",\"canApply\":true,\"fetching\":false," + words + ",\"valueList\":{\"search\":\"\","
+            + "\"addOffered\":false,\"addToCurrent\":false,\"selectAll\":\"mixed\",\"entries\":[{\"text\":\"FX\",\"blank\":false,\"checked\":true},"
+            + "{\"text\":\"(Blanks)\",\"blank\":true,\"checked\":false}]}}"));
+        Assert.Equal("Book: Mixed FX+,(Blanks)*-", cut.Find(".ex-razor-slot").TextContent);
+
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2,
+            "{\"column\":\"Book\",\"columnType\":\"text\",\"canApply\":false,\"fetching\":false," + words + ",\"conditions\":{"
+            + "\"allowed\":[{\"id\":\"equals\",\"label\":\"Equals\"},{\"id\":\"contains\",\"label\":\"Contains\"}],"
+            + "\"first\":{\"operator\":\"contains\",\"operand\":\"x\",\"takesOperand\":true,\"refusal\":\"no\"},\"combinator\":\"or\",\"second\":null}}"));
+        Assert.Equal("Book Text: contains 'x' (no) Or none; equals=Equals,contains=Contains; OK off; (none)", cut.Find(".ex-razor-slot").TextContent);
+        Assert.Equal("2", cut.Find(".ex-razor-slot").GetAttribute("data-ex-version"));
+    }
+
     [Fact] // ADR-0410: a Chrome that names a slot this adapter does not fill is refused by name, never left out quietly
     public void ADR0410_a_slot_the_adapter_does_not_fill_is_refused()
     {

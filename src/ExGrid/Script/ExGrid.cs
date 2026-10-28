@@ -390,8 +390,10 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             builder.AddAttribute(7, "hidden", true);
             builder.OpenElement(8, "div");
             builder.AddAttribute(9, "class", "ex-razor-slot");
-            builder.AddElementReferenceCapture(10, element => slot.Contents = element);
-            builder.AddContent(11, slot.Fragment(Chrome));
+            // The data the contents are drawn from, by the script's number: a press on them is read against these.
+            builder.AddAttribute(10, RazorSlot.DrawnVersionAttribute, slot.Version);
+            builder.AddElementReferenceCapture(11, element => slot.Contents = element);
+            builder.AddContent(12, slot.Fragment(Chrome));
             builder.CloseElement();
             builder.CloseElement();
         }

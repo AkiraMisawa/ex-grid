@@ -3,8 +3,9 @@
 @using ExGrid.Selection
 
 @* A double click on a cell that does not edit opens that trade's note: the grid hands the keyboard on to the
-   field, and Enter there gives it back. MudGridChrome draws the column menu, the Context Menu and the loading bar
-   with MudBlazor's components inside the grid the browser draws. *@
+   field, and Enter there gives it back. MudGridChrome draws the column menu, the filter panel (a value list on
+   Trader, conditions elsewhere), the Context Menu and the loading bar with MudBlazor's components inside the grid
+   the browser draws. *@
 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
     <label for="trade-note">@(_noteFor is null ? "Double-click a Trader for its note" : $"Note for trade {_noteFor.Id}")</label>
     <input id="trade-note" placeholder="Enter to go back to the grid" style="flex: 1"
@@ -21,7 +22,7 @@
     [
         new("Id", ColumnType.Number, t => t.Id),
         new("Book", ColumnType.Text, t => t.Book, editable: true),
-        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Trader", ColumnType.Text, t => t.Trader, filterUi: global::ExGrid.Chrome.FilterUiMode.ValueList),
         new("Instrument", ColumnType.Text, t => t.Instrument),
         new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
         new("Price", ColumnType.Number, t => t.Price),

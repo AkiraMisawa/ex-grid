@@ -723,4 +723,10 @@ public interface IGridChrome
     /// names <see cref="ScriptSlots.LoadingIndicator"/>. Null draws nothing in the slot; the Placeholder
     /// rows stay the core's (ADR-0004).</summary>
     RenderFragment? LoadingIndicator(GridLoadingView view) => null;
+
+    /// <summary>A column's filter panel when the Script Core draws the grid (ADR-0410), for a Chrome that
+    /// names <see cref="ScriptSlots.FilterPanel"/>: its controls, each marked with
+    /// <see cref="ScriptSlotAttributes"/>' filter attributes, a submit button for OK, and no handler of
+    /// its own.</summary>
+    RenderFragment? FilterPanel(GridFilterView view) => null;
 }

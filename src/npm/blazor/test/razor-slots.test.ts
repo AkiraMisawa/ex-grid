@@ -3,9 +3,9 @@
 // .NET renders beside the root, what crosses to .NET as each slot comes and goes, and that the grid's Settled Mark
 // is held while contents are owed. Wiring a menu's items is the core's (core/test/slot-wiring.test.ts).
 import { describe, expect, it } from 'vitest';
-import type { GridColumnMenuSlotContext, GridLoadingIndicatorSlotContext } from '@ex-grid/core';
+import { filterPanelAttributes, type FilterPanelView, type GridColumnMenuSlotContext, type GridFilterPanelSlotContext, type GridLoadingIndicatorSlotContext } from '@ex-grid/core';
 import type { DotNetHandle } from '../src/dotnet-source';
-import { RazorSlots } from '../src/razor-slots';
+import { drawnVersionAttribute, RazorSlots } from '../src/razor-slots';
 
 class FakeDotNet implements DotNetHandle {
     readonly calls: { readonly method: string; readonly args: readonly unknown[] }[] = [];
@@ -65,15 +65,26 @@ function rendered(markup = ''): HTMLElement {
     return contents;
 }
 
-function made(): { readonly dotnet: FakeDotNet; readonly mark: Mark; readonly slots: RazorSlots; readonly slot: HTMLElement } {
-    const dotnet = new FakeDotNet();
-    const mark = new Mark();
-    const slot = document.createElement('div');
-    document.body.append(slot);
-    return { dotnet, mark, slots: new RazorSlots(dotnet, mark.hold), slot };
+/** The inputs held behind contents owed, as the grid's Input Order holds them. */
+class Order {
+    owed = 0;
+
+    readonly order = (until: Promise<void>): void => {
+        this.owed += 1;
+        void until.then(() => { this.owed -= 1; });
+    };
 }
 
-const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'loadingIndicator') => {
+function made(): { readonly dotnet: FakeDotNet; readonly mark: Mark; readonly order: Order; readonly slots: RazorSlots; readonly slot: HTMLElement } {
+    const dotnet = new FakeDotNet();
+    const mark = new Mark();
+    const order = new Order();
+    const slot = document.createElement('div');
+    document.body.append(slot);
+    return { dotnet, mark, order, slots: new RazorSlots(dotnet, mark.hold, order.order), slot };
+}
+
+const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'filterPanel' | 'loadingIndicator') => {
     const mount = slots.chrome([name])[name];
     if (mount === undefined) throw new Error(`No mount for ${name}.`);
     return mount as (slot: HTMLElement, context: unknown) => () => void;
@@ -179,5 +190,114 @@ describe('a menu filled with Razor', () => {
         slots.rendered(1, 1, contents);
         slots.rendered(1, 1, contents);
         expect(focused.length).toBe(1);
+    });
+});
+
+/** A filter panel's context whose view the test moves, and the values it was asked to tick. */
+function filter(): { readonly context: GridFilterPanelSlotContext; move(view: FilterPanelView): void; readonly ticked: unknown[] } {
+    const listeners = new Set<() => void>();
+    let view: FilterPanelView = valueList(['Novak', 'Osei']);
+    const ticked: unknown[] = [];
+    const context: GridFilterPanelSlotContext = {
+        column: 'Trader', columnType: 'text', dateType: 'dateTime', mode: 'valueList', current: undefined,
+        label: id => `words for ${id}`,
+        view: () => view,
+        subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; },
+        setSearch: () => undefined, setAddToCurrent: () => undefined,
+        setChecked: (value, checked) => { ticked.push([value, checked]); },
+        toggleAll: () => undefined, setOperator: () => undefined, setOperand: () => undefined, setCombinator: () => undefined,
+        setSecond: () => undefined, setSecondOperand: () => undefined, apply: () => undefined, cancel: () => undefined,
+        valueListKey: () => false, focusRequest: 0, focusTarget: undefined, innerPopupChanged: () => undefined, takeFocus: () => undefined,
+    };
+    return {
+        context, ticked,
+        move: next => { view = next; for (const listener of listeners) listener(); },
+    };
+}
+
+function valueList(values: readonly string[]): FilterPanelView {
+    return {
+        kind: 'valueList', search: '', addOffered: false, addToCurrent: false, selectAll: 'checked', canApply: true, fetching: false,
+        entries: values.map(value => ({ value, text: value, blank: false, checked: true })),
+    };
+}
+
+/** The entries of the value list .NET was handed. */
+const entries = (text: unknown): unknown => (JSON.parse(String(text)) as { readonly valueList: { readonly entries: unknown } }).valueList.entries;
+
+/** .NET's render of a filter panel: a checkbox per entry of the view numbered `version`, which the contents carry. */
+function drawnPanel(version: number, view: FilterPanelView, contents = rendered()): HTMLElement {
+    contents.setAttribute(drawnVersionAttribute, String(version));
+    contents.innerHTML = view.kind === 'valueList'
+        ? view.entries.map((_, index) => `<input type="checkbox" checked ${filterPanelAttributes.value}="${String(index)}">`).join('')
+        : '';
+    return contents;
+}
+
+describe('a filter panel filled with Razor', () => {
+    it('ADR-0410 section 3: .NET is handed the view as data, and drawn again at each change the core makes to it', () => {
+        const { dotnet, slots, slot } = made();
+        const panel = filter();
+        mountOf(slots, 'filterPanel')(slot, panel.context);
+        panel.move(valueList(['Osei']));
+        const sent = dotnet.calls.map(call => [call.method, call.args[1], entries(call.args.at(-1))]);
+        expect(sent).toEqual([
+            ['MountSlot', 1, [{ text: 'Novak', blank: false, checked: true }, { text: 'Osei', blank: false, checked: true }]],
+            ['UpdateSlot', 2, [{ text: 'Osei', blank: false, checked: true }]],
+        ]);
+    });
+
+    it('ADR-0410 section 2: a checkbox ticks the value of the entry it was drawn for, in the view whose number the contents carry', () => {
+        const { slots, slot } = made();
+        const panel = filter();
+        mountOf(slots, 'filterPanel')(slot, panel.context);
+        const contents = drawnPanel(1, panel.context.view());
+        slots.rendered(1, 1, contents);
+        panel.move(valueList(['Osei']));
+        const second = contents.querySelector<HTMLInputElement>(`[${filterPanelAttributes.value}="1"]`);
+        if (second === null) throw new Error('No second checkbox.');
+        second.checked = false;
+        second.dispatchEvent(new Event('change', { bubbles: true }));
+        expect(panel.ticked).toEqual([['Osei', false]]);
+    });
+
+    it('ADR-0240 / ADR-0410 section 5: inputs wait in their order while a part the keyboard reaches owes its contents, and not for a loading bar', async () => {
+        const { slots, slot, order } = made();
+        mountOf(slots, 'loadingIndicator')(document.createElement('div'), loading(true));
+        expect(order.owed).toBe(0);
+        const panel = filter();
+        mountOf(slots, 'filterPanel')(slot, panel.context);
+        expect(order.owed).toBe(1);
+        slots.rendered(2, 1, drawnPanel(1, panel.context.view()));
+        await Promise.resolve();
+        expect(order.owed).toBe(0);
+    });
+});
+
+describe('a focus request while a newer drawing is owed', () => {
+    it('ADR-0410 section 5: it waits for the contents drawn from the data last sent, and so does every input after it', async () => {
+        const { slots, slot, order } = made();
+        const panel = filter();
+        const focused: HTMLElement[] = [];
+        const asking = (target: 'first' | undefined, request: number): GridFilterPanelSlotContext =>
+            ({ ...panel.context, focusRequest: request, focusTarget: target, takeFocus: control => { focused.push(control); } });
+        const mount = mountOf(slots, 'filterPanel');
+        const first = drawnPanel(1, panel.context.view());
+        first.querySelector('input')?.setAttribute(filterPanelAttributes.focus, 'first');
+        const leave = mount(slot, asking(undefined, 0));
+        slots.rendered(1, 1, first);
+        await Promise.resolve();
+        expect(order.owed).toBe(0);
+        // The value list moves; before .NET draws it, the core asks the keyboard onto the panel's first control,
+        // taking the slot away and mounting it again in one task.
+        panel.move(valueList(['Osei']));
+        leave();
+        mount(slot, asking('first', 1));
+        expect([focused.length, order.owed]).toEqual([0, 1]);
+        const second = drawnPanel(2, panel.context.view(), first);
+        second.querySelector('input')?.setAttribute(filterPanelAttributes.focus, 'first');
+        slots.rendered(1, 2, second);
+        await Promise.resolve();
+        expect([focused.length, order.owed]).toEqual([1, 0]);
     });
 });

@@ -1,0 +1,178 @@
+@* Written in each file, not in an _Imports.razor, whose class Razor makes public (ADR-0201); and
+   with global::, as this project's root namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using global::ExGrid
+@using global::ExGrid.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudGridChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The filter panel's content when the Script Core draws the grid (ADR-0009, ADR-0410): MudExGridFilterPanel's
+   MudBlazor controls, drawn from the core's view and marked for the adapter's script, which hands each change to
+   the core in the browser. Nothing here decides what a choice means, keeps a working state, or handles a change,
+   a key or a focus: the core's view is drawn again at each change it makes.
+
+   Three things differ from the panel over the C# core, each so that no choice reaches the core later than an
+   Enter or an OK the browser has already handed it (spine rule 6). The operators are native selects, as the MUI
+   Wrapper's are: MudSelect answers a choice in .NET only after closing its list, a round trip behind the browser.
+   A condition's value is a text field for every type, read by the core as ADR-0023 reads it, as the MUI Wrapper's
+   is: a picked date would reach the core from .NET. And no text field is bound to the view, which arrives a round
+   trip behind the typing and would write an older text back (SRV-7): the search box opens empty, and a value field
+   opens with the operand the core holds as it is drawn, and is left to the user after.
+
+   The form is the core's: OK submits it, and so does Enter in a text field. Its default button is a hidden one
+   that is never disabled, so Enter is not dropped while OK, drawn a round trip late, still shows disabled; the
+   core refuses OK while the view it holds says it is unavailable (WR-2). *@
+<div class="mud-ex-grid-filter">
+    @* The form's default button: the first submit button, which implicit submission clicks. *@
+    <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
+    @if (View.Fetching)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mud-ex-grid-filter-loading" />
+    }
+    @if (View.ValueList is { } list)
+    {
+        <MudTextField T="string" Label="@Own(MudExGridWords.Search, View.Words.Search)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mud-ex-grid-filter-search"
+                      UserAttributes="@Marked(ScriptSlotAttributes.FilterSearch, "", ScriptSlotAttributes.FilterFocus, "first search")" />
+        @if (list.AddOffered)
+        {
+            <MudCheckBox T="bool" Value="list.AddToCurrent" Label="@Own(MudExGridWords.AddToFilter, View.Words.AddToCurrent)"
+                         Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-add"
+                         UserAttributes="@Marked(ScriptSlotAttributes.FilterAddToCurrent, "")" />
+        }
+        <div class="mud-ex-grid-filter-values ex-value-list" @attributes="@Marked(ScriptSlotAttributes.FilterValues, "")">
+            @* "(Select All)" over the values shown, with Excel's mixed state (ADR-0009). *@
+            <MudCheckBox T="bool?" TriState="true" Value="@AllValue(list.SelectAll)"
+                         Label="@(list.Search.Length > 0
+                                    ? Own(MudExGridWords.SelectAllSearchResults, View.Words.SelectAllSearchResults)
+                                    : Own(MudExGridWords.SelectAll, View.Words.SelectAll))"
+                         Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-all"
+                         UserAttributes="@Marked(ScriptSlotAttributes.FilterSelectAll, "")" />
+            @for (var i = 0; i < list.Entries.Count; i++)
+            {
+                var entry = list.Entries[i];
+                <MudCheckBox T="bool" Value="entry.Checked" Label="@(entry.Blank ? Own(MudExGridWords.BlankValue, entry.Text) : entry.Text)"
+                             Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-value"
+                             UserAttributes="@Marked(ScriptSlotAttributes.FilterValue, i)" />
+            }
+        </div>
+    }
+    else if (View.Conditions is { } form)
+    {
+        @Operator(form, form.First, "first", Mud("MudDataGrid_Operator"))
+        @if (form.First.TakesOperand)
+        {
+            @Operand(form.First, "first", _firstOpens)
+        }
+        @* A second condition, joined by And or Or, as Excel's Custom AutoFilter (ADR-0009). *@
+        <MudRadioGroup T="FilterCombinator" Value="form.Combinator" Class="mud-ex-grid-filter-join">
+            <MudRadio T="FilterCombinator" Value="FilterCombinator.And" Dense="true" Size="Size.Small"
+                      UserAttributes="@Marked(ScriptSlotAttributes.FilterJoin, "and")">@Own(MudExGridWords.JoinAnd, View.Words.And)</MudRadio>
+            <MudRadio T="FilterCombinator" Value="FilterCombinator.Or" Dense="true" Size="Size.Small"
+                      UserAttributes="@Marked(ScriptSlotAttributes.FilterJoin, "or")">@Own(MudExGridWords.JoinOr, View.Words.Or)</MudRadio>
+        </MudRadioGroup>
+        @Operator(form, form.Second, "second", MudExGridWords.Own(Chrome, MudExGridWords.SecondCondition))
+        @if (form.Second is { TakesOperand: true } second)
+        {
+            @Operand(second, "second", _secondOpens)
+        }
+    }
+    @* OK before Cancel, as Excel orders them; Cancel, never disabled, is the last control Shift+Tab wraps to. *@
+    <div class="mud-ex-grid-filter-actions">
+        <MudButton ButtonType="ButtonType.Submit" Disabled="@(!View.CanApply)" Color="Color.Primary" Size="Size.Small"
+                   Class="mud-ex-grid-filter-apply ex-popover-closes">@Mud("MudDataGrid_Apply")</MudButton>
+        <MudButton Size="Size.Small" Class="mud-ex-grid-filter-cancel ex-popover-closes"
+                   UserAttributes="@Marked(ScriptSlotAttributes.FilterCancel, "", ScriptSlotAttributes.FilterFocus, "last")">@Mud("MudDataGrid_Cancel")</MudButton>
+    </div>
+</div>
+
+@code {
+    // The operand each value field opens with: the core's, given as the field is drawn and not after, so a render a
+    // round trip behind the typing writes nothing back (SRV-7). Null while the field is drawn, or not.
+    private string? _firstOpens;
+    private string? _secondOpens;
+    private bool _firstDrawn;
+    private bool _secondDrawn;
+
+    [Inject] private ILocalizationInterceptor Localizer { get; set; } = default!;
+
+    /// <summary>The panel's view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public GridFilterView View { get; set; } = default!;
+
+    /// <summary>Where the wording comes from.</summary>
+    [Parameter, EditorRequired] public MudGridChrome Chrome { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var form = View.Conditions;
+        (_firstOpens, _firstDrawn) = Opening(form?.First, _firstDrawn);
+        (_secondOpens, _secondDrawn) = Opening(form?.Second, _secondDrawn);
+    }
+
+    private static (string? Opens, bool Drawn) Opening(GridFilterConditionView? condition, bool drawn)
+        => condition is { TakesOperand: true } ? (drawn ? null : condition.Operand, true) : (null, false);
+
+    private string Mud(string key) => MudExGridWords.Mud(Localizer, key);
+
+    /// <summary>The Chrome's own word for <paramref name="id"/>, else the core's.</summary>
+    private string Own(string id, string core) => Chrome.Label?.Invoke(id) ?? core;
+
+    /// <summary>An operator's words: MudBlazor's where it has them for the column's type, the Chrome's own for the
+    /// rest, and the core's for an operator the C# core does not name.</summary>
+    private string OperatorWord(GridFilterOperatorView op)
+    {
+        if (!Enum.TryParse<global::ExGrid.FilterOperator>(op.Id, ignoreCase: true, out var known))
+            return op.Label;
+        return MudExGridWords.MudKeyForOperator(known, View.Type) is { } key ? Mud(key) : Own(MudExGridWords.OwnIdForOperator(known), op.Label);
+    }
+
+    private static bool? AllValue(SelectAllState state) => state switch
+    {
+        SelectAllState.Checked => true,
+        SelectAllState.Unchecked => false,
+        _ => null,
+    };
+
+    private static Dictionary<string, object?> Marked(string attribute, object value) => new() { [attribute] = value };
+
+    private static Dictionary<string, object?> Marked(string attribute, object value, string other, object otherValue)
+        => new() { [attribute] = value, [other] = otherValue };
+
+    /// <summary>A condition's operator: a native select in MudBlazor's outline, whose choice the script reads in the
+    /// browser. The second's empty option is "(none)". The first is the panel's first control.</summary>
+    private RenderFragment Operator(GridFilterConditionsView form, GridFilterConditionView? condition, string which, string label) => __builder =>
+    {
+        <label class="mud-ex-grid-filter-native">
+            <span class="mud-ex-grid-filter-native-label">@label</span>
+            <select class="mud-ex-grid-filter-native-select" @attributes="@(which == "first"
+                        ? Marked(ScriptSlotAttributes.FilterOperator, which, ScriptSlotAttributes.FilterFocus, "first")
+                        : Marked(ScriptSlotAttributes.FilterOperator, which))">
+                @if (which == "second")
+                {
+                    <option value="" selected="@(condition is null)">@Own(MudExGridWords.NoSecondCondition, View.Words.None)</option>
+                }
+                @foreach (var op in form.Allowed)
+                {
+                    <option value="@op.Id" selected="@(condition?.Operator == op.Id)">@OperatorWord(op)</option>
+                }
+            </select>
+        </label>
+    };
+
+    /// <summary>A condition's value, typed as text and read by the core as the column's type (ADR-0023), with the
+    /// core's refusal under it. The first is what E puts the keyboard on where no value list stands.</summary>
+    private RenderFragment Operand(GridFilterConditionView condition, string which, string? opens) => __builder =>
+    {
+        <MudTextField T="string" @attributes="@(opens is null ? NoValue : new Dictionary<string, object> { [nameof(MudTextField<string>.Value)] = opens })"
+                      Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Error="@(condition.Refusal is not null)" ErrorText="@condition.Refusal" Class="mud-ex-grid-filter-operand"
+                      UserAttributes="@(which == "first"
+                          ? Marked(ScriptSlotAttributes.FilterOperand, which, ScriptSlotAttributes.FilterFocus, "search")
+                          : Marked(ScriptSlotAttributes.FilterOperand, which))" />
+    };
+
+    private static readonly IReadOnlyDictionary<string, object> NoValue = new Dictionary<string, object>();
+}

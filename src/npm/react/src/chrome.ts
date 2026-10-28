@@ -8,7 +8,7 @@ import {
     useLayoutEffect, useRef, useState, useSyncExternalStore, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent,
     type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
-import { answerMenuKey, takeMenuFocus } from '@ex-grid/core';
+import { answerMenuKey, answerValueListKey, takeFilterFocus, takeMenuFocus } from '@ex-grid/core';
 import type {
     CellEditorView, FilterPanelView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome,
     GridColumnMenuSlotContext, GridContextMenuSlotContext, GridEditorCompletionSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext,
@@ -180,14 +180,12 @@ export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanel
     const view = useSyncExternalStore(context.subscribe, context.view);
     const controls = useRef<Record<FocusTarget, HTMLElement | null>>({ first: null, last: null, search: null });
     useLayoutEffect(() => {
-        const target = context.focusTarget;
-        if (target === undefined || answeredRequests.has(context)) return;
+        if (context.focusTarget === undefined || answeredRequests.has(context)) return;
         answeredRequests.add(context);
-        const control = controls.current[target];
-        if (control === null) {
-            throw new Error(`The filter panel's ${target} control is not drawn: hand useFilterPanel's \`${target}\` ref to the control the core asks for.`);
-        }
-        context.takeFocus(control);
+        takeFilterFocus(context, target => {
+            const control = controls.current[target];
+            return control === null ? undefined : control;
+        });
     }, [context]);
     // Made once, so a render hands React the same refs and it does not take them away and back.
     const [refs] = useState(() => {
@@ -198,8 +196,7 @@ export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanel
         view,
         ...refs,
         onValueListKeyDown: event => {
-            if (!within(event) || event.nativeEvent.isComposing) return;
-            if (context.valueListKey(event.key, event.ctrlKey || event.altKey || event.metaKey)) event.preventDefault();
+            if (within(event)) answerValueListKey(context, event.nativeEvent);
         },
     };
 }

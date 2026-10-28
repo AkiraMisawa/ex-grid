@@ -67,15 +67,27 @@
             Its <code>Chrome</code> takes the same <code>IGridChrome</code>, and a part your Chrome draws in Razor
             stands inside the grid the browser draws: the component renders it beside the grid, in a hidden holder,
             and the grid's script moves it into its place. <code>MudGridChrome</code> draws the column menu, the
-            Context Menu and the loading bar this way, with the same MudBlazor buttons and bar; switch the Example
-            to MudBlazor and open a column's ▾. The other parts are still the browser's own here, until the Wrapper
-            draws them too. A Chrome of your own names the parts it draws in <code>ScriptSlots</code> and answers
-            each through the overload that takes a view: <code>ColumnMenu(GridMenuView)</code>,
-            <code>ContextMenu(GridMenuView)</code> and <code>LoadingIndicator(GridLoadingView)</code>. A view is data,
-            the commands' ids, words and whether each is enabled, so a menu's Razor draws one control per item, marks
-            each with <code>ScriptSlotAttributes.MenuItem</code> and its index, and handles none of its keys or
-            presses: the grid's script does, in the browser, so a key typed as the menu opens, before your Razor has
-            arrived over a Blazor Server circuit, is still the menu's.
+            filter panel, the Context Menu and the loading bar this way, with the same MudBlazor buttons, checkboxes,
+            fields and bar; switch the Example to MudBlazor and open a column's ▾. The other parts are still the
+            browser's own here, until the Wrapper draws them too. A Chrome of your own names the parts it draws in
+            <code>ScriptSlots</code> and answers each through the overload that takes a view:
+            <code>ColumnMenu(GridMenuView)</code>, <code>ContextMenu(GridMenuView)</code>,
+            <code>FilterPanel(GridFilterView)</code> and <code>LoadingIndicator(GridLoadingView)</code>. A view is
+            data, drawn again each time the grid changes it, so the Razor marks its controls with
+            <code>ScriptSlotAttributes</code> and handles none of their keys, presses or changes: a menu's control
+            for each item carries <code>MenuItem</code> and its index, a filter panel's search box
+            <code>FilterSearch</code>, each value's checkbox <code>FilterValue</code> and its index, and so on. The
+            grid's script hands each to the grid in the browser, so nothing a user does waits on a Blazor Server
+            circuit, and a key typed as a menu opens, before your Razor has arrived, waits for it and is answered
+            there.
+        </p>
+        <p>
+            Two rules keep a choice from arriving after the Enter that applies it. A filter panel's text fields are
+            drawn with no value bound to the view, which arrives a round trip behind the typing and would write an
+            older text back; a value field is given the operand it opens with, and nothing after. And a choice is
+            made with a control the browser hears: the operators are native selects, as in the React MUI version,
+            since a <code>MudSelect</code> tells .NET of a choice only after closing its list, and a condition's
+            value is typed as text for every type, read in the column's culture as the grid's own panel reads it.
         </p>
         <p>
             Not carried yet, and refused by name when a column declares it: Template Columns, Tone and Row Marks.

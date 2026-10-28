@@ -20,6 +20,10 @@ internal sealed class RazorSlot
         Owed = true;
     }
 
+    /// <summary>The attribute the element the fragment is drawn in carries: the number of the data it was drawn from,
+    /// which the script reads a press on the contents against (razor-slots.ts' <c>drawnVersionAttribute</c>).</summary>
+    internal const string DrawnVersionAttribute = "data-ex-version";
+
     internal long Id { get; }
 
     internal ScriptSlots Name { get; }
@@ -27,7 +31,8 @@ internal sealed class RazorSlot
     /// <summary>The number the script gave the data the view was read from, which it is told back once drawn.</summary>
     internal int Version { get; private set; }
 
-    /// <summary>The view the slot's context crossed as: a <see cref="GridMenuView"/> or a <see cref="GridLoadingView"/>.</summary>
+    /// <summary>The view the slot's context crossed as: a <see cref="GridMenuView"/>, a <see cref="GridLoadingView"/> or a
+    /// <see cref="GridFilterView"/>.</summary>
     internal object View { get; private set; }
 
     /// <summary>The element the fragment is drawn in, once rendered.</summary>
@@ -42,6 +47,7 @@ internal sealed class RazorSlot
         (ScriptSlots.ColumnMenu, "columnMenu"),
         (ScriptSlots.ContextMenu, "contextMenu"),
         (ScriptSlots.LoadingIndicator, "loadingIndicator"),
+        (ScriptSlots.FilterPanel, "filterPanel"),
     ];
 
     /// <summary>The script's names of the slots <paramref name="slots"/> names, refusing one this adapter does not fill.</summary>
@@ -85,9 +91,63 @@ internal sealed class RazorSlot
                 [.. json.GetProperty("commands").EnumerateArray().Select(command => new GridMenuItemView(
                     ScriptJson.Text(command, "id"), ScriptJson.Text(command, "label"), command.GetProperty("enabled").GetBoolean()))]),
             ScriptSlots.LoadingIndicator => new GridLoadingView(json.GetProperty("loading").GetBoolean(), json.GetProperty("placeholderRows").GetInt32()),
+            ScriptSlots.FilterPanel => FilterViewOf(json),
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
         };
     }
+
+    private static GridFilterView FilterViewOf(JsonElement json)
+    {
+        var words = json.GetProperty("words");
+        string Word(string name) => ScriptJson.Text(words, name);
+        GridFilterValueListView? valueList = null;
+        GridFilterConditionsView? conditions = null;
+        if (json.TryGetProperty("valueList", out var list))
+        {
+            valueList = new GridFilterValueListView(
+                ScriptJson.Text(list, "search"),
+                list.GetProperty("addOffered").GetBoolean(),
+                list.GetProperty("addToCurrent").GetBoolean(),
+                ScriptJson.Text(list, "selectAll") switch
+                {
+                    "checked" => SelectAllState.Checked,
+                    "unchecked" => SelectAllState.Unchecked,
+                    "mixed" => SelectAllState.Mixed,
+                    var other => throw new InvalidOperationException($"Internal: the script sent '{other}' as the state of (Select All)."),
+                },
+                [.. list.GetProperty("entries").EnumerateArray().Select(entry => new GridFilterEntryView(
+                    ScriptJson.Text(entry, "text"), entry.GetProperty("blank").GetBoolean(), entry.GetProperty("checked").GetBoolean()))]);
+        }
+        else
+        {
+            var form = json.GetProperty("conditions");
+            conditions = new GridFilterConditionsView(
+                [.. form.GetProperty("allowed").EnumerateArray().Select(op => new GridFilterOperatorView(ScriptJson.Text(op, "id"), ScriptJson.Text(op, "label")))],
+                ConditionOf(form.GetProperty("first")),
+                ScriptJson.Text(form, "combinator") switch
+                {
+                    "and" => FilterCombinator.And,
+                    "or" => FilterCombinator.Or,
+                    var other => throw new InvalidOperationException($"Internal: the script sent '{other}' as the join of two conditions."),
+                },
+                form.GetProperty("second") is { ValueKind: JsonValueKind.Object } second ? ConditionOf(second) : null);
+        }
+        return new GridFilterView(
+            ScriptJson.Text(json, "column"),
+            ScriptJson.Member<ColumnType>(json.GetProperty("columnType")),
+            valueList,
+            conditions,
+            json.GetProperty("canApply").GetBoolean(),
+            json.GetProperty("fetching").GetBoolean(),
+            new GridFilterWords(Word("ok"), Word("cancel"), Word("search"), Word("addToCurrent"), Word("selectAll"),
+                Word("selectAllSearchResults"), Word("and"), Word("or"), Word("none")));
+    }
+
+    private static GridFilterConditionView ConditionOf(JsonElement json) => new(
+        ScriptJson.Text(json, "operator"),
+        ScriptJson.Text(json, "operand"),
+        json.GetProperty("takesOperand").GetBoolean(),
+        json.GetProperty("refusal") is { ValueKind: JsonValueKind.String } refusal ? refusal.GetString() : null);
 
     /// <summary>The fragment <paramref name="chrome"/> draws for the view; nothing where no Chrome fills the slot any longer.</summary>
     internal RenderFragment? Fragment(IGridChrome? chrome)
@@ -99,6 +159,7 @@ internal sealed class RazorSlot
             (ScriptSlots.ColumnMenu, GridMenuView menu) => chrome.ColumnMenu(menu),
             (ScriptSlots.ContextMenu, GridMenuView menu) => chrome.ContextMenu(menu),
             (ScriptSlots.LoadingIndicator, GridLoadingView loading) => chrome.LoadingIndicator(loading),
+            (ScriptSlots.FilterPanel, GridFilterView filter) => chrome.FilterPanel(filter),
             _ => throw new InvalidOperationException($"Internal: the slot {Name} holds a view of another slot's."),
         };
     }

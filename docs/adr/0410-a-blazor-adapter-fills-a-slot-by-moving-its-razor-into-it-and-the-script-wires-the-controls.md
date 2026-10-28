@@ -79,6 +79,15 @@ So a key on a MudBlazor menu item is resolved in the browser against the core's 
 focus request is taken in the browser, and the text the core commits is read from the field drawn, never
 from .NET. Nothing a key means waits on the circuit.
 
+*Note of 2026-10-28, as the filter panel was built:* a choice is read in the browser too, from a control
+the browser hears, never from a component's .NET handler. A value's checkbox, the search box, an
+operator's `select`, a condition's value and the join each carry an attribute
+(`ScriptSlotAttributes.Filter…`), and the script hands the change to the core as the browser fires it.
+A checkbox names its entry by index, read against the view the contents were drawn from, whose number the
+element they are drawn in carries (`data-ex-version`): the value the user saw, though the core's list has
+moved since. A text field is drawn with no value bound to the view, which arrives a round trip behind
+the typing (SRV-7); a value field is given the operand it opens with, and nothing after.
+
 ### 3. What crosses the circuit
 
 - **To .NET:** the slot's context as data: words, commands' ids and whether each is enabled, the column,
@@ -88,6 +97,12 @@ from .NET. Nothing a key means waits on the circuit.
   ticked in a MudBlazor checkbox, an operator chosen in a `MudSelect`, a command invoked from a component's
   `OnClick`. Each calls the core's function for it. An input that commits or moves the keyboard is numbered
   in the Input Order by the `data-ex-claims` the contents write, as under the C# core (ADR-0240).
+  *Note of 2026-10-28:* this path is not used for a choice that a commit reads. `MudSelect` tells .NET
+  of a choice only after awaiting the close of its list, so on a circuit the choice reached the core after
+  an Enter typed straight after it, which had applied the panel without it: an outcome that depended on
+  the round trip (spine rule 6). `MudGridChrome`'s filter panel therefore draws its operators as native
+  selects and a condition's value as text for every type, as the MUI Wrapper's does, and section 2's
+  note reads each in the browser.
 - **Never:** a member that must answer synchronously. `ResolveKey`, `TextChanged` and the pull for
   distinct values are not carried; their work is section 2's or the view's.
 
@@ -117,6 +132,14 @@ the place stands on (`focusItem`), so the contents take the keyboard there when 
 Enter typed as the menu opened caught it). The Settled Mark (ADR-0220) is not raised while a mounted
 slot's contents have not been moved in, so a test reads a part only once it stands, and a reading never
 depends on the round trip's length (spine rule 6).
+
+*Note of 2026-10-28, as the filter panel was built:* keys typed before a panel's contents arrive have no
+place the core keeps to be answered against (a Space on a value, letters in the search box), so the
+Blazor adapter holds every input made after a part that takes the keyboard is mounted, in its order
+(ADR-0240's `inOrder`), until that part's contents stand and have taken the keyboard, and the core then
+takes each where the keyboard is, its default done as the held inputs' are. A menu's keys reach its
+drawn items this way on Blazor; the core's answer against the menu's place stays for an adapter that
+holds nothing. A loading indicator, which takes no keyboard, holds no input.
 
 ### 6. Template cells use the same mechanism, and ExGrid takes it first
 

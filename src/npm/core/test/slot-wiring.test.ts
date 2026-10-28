@@ -5,8 +5,11 @@
 // contents take the keyboard where that place then stands.
 import { afterEach, describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
-import type { GridChromeSlot, GridColumnMenuSlotContext } from '../src/dom/grid-chrome';
-import { menuItemAttribute, wireMenuItems } from '../src/dom/slot-wiring';
+import type { FilterPanelView } from '../src/chrome/filter-panel-model';
+import type { GridChromeSlot, GridColumnMenuSlotContext, GridFilterPanelSlotContext } from '../src/dom/grid-chrome';
+import { filterPanelAttributes, menuItemAttribute, wireFilterPanel, wireMenuItems } from '../src/dom/slot-wiring';
+import type { FilterSpec } from '../src/query/filter';
+import { GridSource } from '../src/source/grid-source';
 import { columns, mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
 
 afterEach(unmountAll);
@@ -149,5 +152,184 @@ describe('keys typed before a menu slot\'s contents arrive', () => {
         expect(q(root, '.ex-popover .ex-popover-filter').contains(search)).toBe(true);
         late.draw();
         expect(active()).toBe(search);
+    });
+});
+
+interface Seller {
+    readonly trader: string | null;
+    readonly id: number;
+}
+
+const traders: readonly (string | null)[] = ['Novak', 'Osei', null, 'Ishikawa'];
+const sellers: readonly Seller[] = Array.from({ length: 40 }, (_, i) => ({ trader: defined(traders.at(i % traders.length), 'a trader'), id: i }));
+
+/** A filter panel whose contents are drawn when the test draws them, from the view the test names, marked with the
+ * attributes and wired by {@link wireFilterPanel}, as a Blazor adapter's are a round trip after the mount. */
+interface LateFilter {
+    readonly contexts: GridFilterPanelSlotContext[];
+    readonly slots: HTMLElement[];
+    /** Draws the latest mount's contents from `view` (the view standing, unless given) and wires them. */
+    draw(view?: FilterPanelView): HTMLElement;
+}
+
+function lateFilterGrid(): { readonly root: HTMLElement; readonly source: GridSource<Seller>; readonly late: LateFilter } {
+    const late: LateFilter = {
+        contexts: [],
+        slots: [],
+        draw: given => {
+            const slot = defined(late.slots.at(-1), 'a mounted slot');
+            const context = defined(late.contexts.at(-1), 'its context');
+            const view = given ?? context.view();
+            const contents = document.createElement('div');
+            const marked = (tag: string, attribute: string, value: string, extra: Record<string, string> = {}): HTMLElement => {
+                const element = document.createElement(tag);
+                element.setAttribute(attribute, value);
+                for (const [name, each] of Object.entries(extra)) element.setAttribute(name, each);
+                contents.append(element);
+                return element;
+            };
+            const box = (attribute: string, value: string, checked: boolean): void => {
+                const input = marked('input', attribute, value) as HTMLInputElement;
+                input.type = 'checkbox';
+                input.checked = checked;
+            };
+            if (view.kind === 'valueList') {
+                marked('input', filterPanelAttributes.search, '', { [filterPanelAttributes.focus]: 'first search' });
+                const list = marked('div', filterPanelAttributes.values, '');
+                const all = document.createElement('input');
+                all.type = 'checkbox';
+                all.setAttribute(filterPanelAttributes.selectAll, '');
+                list.append(all);
+                view.entries.forEach((entry, index) => {
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.checked = entry.checked;
+                    input.setAttribute(filterPanelAttributes.value, String(index));
+                    list.append(input);
+                });
+            } else {
+                const select = (which: string): void => {
+                    const element = marked('select', filterPanelAttributes.operator, which) as HTMLSelectElement;
+                    if (which === 'second') element.append(option('(none)', ''));
+                    for (const operator of view.allowed) element.append(option(operator, operator));
+                };
+                select('first');
+                const operand = marked('input', filterPanelAttributes.operand, 'first', { [filterPanelAttributes.focus]: 'search' }) as HTMLInputElement;
+                operand.value = view.first.operand;
+                for (const join of ['and', 'or']) {
+                    const radio = marked('input', filterPanelAttributes.join, join) as HTMLInputElement;
+                    radio.type = 'radio';
+                    radio.name = 'join';
+                }
+                select('second');
+                marked('input', filterPanelAttributes.operand, 'second');
+            }
+            const ok = document.createElement('button');
+            ok.type = 'submit';
+            contents.append(ok);
+            marked('button', filterPanelAttributes.cancel, '', { [filterPanelAttributes.focus]: 'last', type: 'button' });
+            box('data-unmarked', '', false);
+            slot.replaceChildren(contents);
+            wireFilterPanel(contents, context, () => view);
+            return contents;
+        },
+    };
+    const filterPanel: GridChromeSlot<GridFilterPanelSlotContext> = (element, context) => {
+        late.slots.push(element);
+        late.contexts.push(context);
+        return () => { element.replaceChildren(); };
+    };
+    const source = GridSource.from(sellers);
+    const { root } = mount<Seller>({
+        columns: [
+            { name: 'Trader', type: 'text', value: seller => seller.trader, width: 120, filterUi: 'valueList' },
+            { name: 'Id', type: 'number', value: seller => seller.id, width: 80 },
+        ],
+        source, rowHeight: 24, viewportHeight: 480, viewportWidth: 720, chrome: { filterPanel },
+    });
+    return { root, source, late };
+}
+
+function option(text: string, value: string): HTMLOptionElement {
+    const element = document.createElement('option');
+    element.textContent = text;
+    element.value = value;
+    return element;
+}
+function changed(control: Element, value?: string | boolean): void {
+    if (control instanceof HTMLSelectElement && typeof value === 'string') control.value = value;
+    if (control instanceof HTMLInputElement && typeof value === 'boolean') control.checked = value;
+    control.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function typed(control: Element, text: string): void {
+    (control as HTMLInputElement).value = text;
+    control.dispatchEvent(new Event('input', { bubbles: true }));
+}
+function submitted(contents: HTMLElement): void {
+    q(contents, 'button[type=submit]').click();
+}
+/** The value list the source answers, a few frames after the panel asked for it. */
+async function arrived(): Promise<void> {
+    for (let i = 0; i < 5; i++) await painted();
+}
+const filterOf = (source: GridSource<Seller>, column: string): FilterSpec | undefined => source.snapshot().filter?.columns[column];
+
+describe('a filter panel slot\'s contents wired from their attributes', () => {
+    it('ADR-0410 section 2: a value\'s checkbox ticks the entry it was drawn for, though a search typed since has moved the list, and OK applies', async () => {
+        const { root, source, late } = lateFilterGrid();
+        await painted();
+        openColumnMenu(root, 0);
+        await arrived();
+        const drawn = defined(late.contexts.at(-1), 'the panel').view();
+        const contents = late.draw(drawn);
+        // The search moves the core's list to Osei and Ishikawa; the checkbox the user pressed was drawn for Ishikawa.
+        typed(q(contents, `[${filterPanelAttributes.search}]`), 'i');
+        changed(q(contents, `[${filterPanelAttributes.value}="3"]`), false);
+        submitted(contents);
+        await painted();
+        expect([filterOf(source, 'Trader'), root.querySelector('.ex-popover')]).toEqual([{ clauses: [{ operator: 'in', values: ['Osei'] }] }, null]);
+    });
+
+    it('ADR-0410 section 2: the condition form\'s operators, values and join are read from the controls drawn, and the second\'s empty option is none', async () => {
+        const { root, source, late } = lateFilterGrid();
+        await painted();
+        openColumnMenu(root, 1);
+        const contents = late.draw();
+        changed(q(contents, `[${filterPanelAttributes.operator}="first"]`), 'greaterThan');
+        typed(q(contents, `[${filterPanelAttributes.operand}="first"]`), '30');
+        changed(q(contents, `[${filterPanelAttributes.join}="or"]`), true);
+        changed(q(contents, `[${filterPanelAttributes.operator}="second"]`), 'lessThan');
+        typed(q(contents, `[${filterPanelAttributes.operand}="second"]`), '2');
+        changed(q(contents, `[${filterPanelAttributes.operator}="second"]`), '');
+        submitted(contents);
+        await painted();
+        expect(filterOf(source, 'Id')).toEqual({ clauses: [{ operator: 'greaterThan', value: 30 }] });
+    });
+
+    it('ADR-0044: a letter on the value list is the core\'s, and E asks the contents again for the search box, which takes the keyboard', async () => {
+        const { root, late } = lateFilterGrid();
+        await painted();
+        openColumnMenu(root, 0);
+        await arrived();
+        const contents = late.draw();
+        const value = q(contents, `[${filterPanelAttributes.value}="0"]`);
+        expect(key(value, 'e').defaultPrevented).toBe(true);
+        const asked = defined(late.contexts.at(-1), 'the panel asked again');
+        expect([asked.focusRequest, asked.focusTarget]).toEqual([1, 'search']);
+        const again = late.draw();
+        expect(active()).toBe(q(again, `[${filterPanelAttributes.search}]`));
+    });
+
+    it('ADR-0009: Cancel closes the panel and applies nothing, and an operator the column does not offer is refused by name', async () => {
+        const { root, source, late } = lateFilterGrid();
+        await painted();
+        openColumnMenu(root, 1);
+        const contents = late.draw();
+        const operator = q(contents, `[${filterPanelAttributes.operator}="first"]`) as HTMLSelectElement;
+        operator.append(option('forged', 'forged'));
+        expect(() => { changed(operator, 'forged'); }).toThrow("'forged' is not an operator this column's filter offers.");
+        q(contents, `[${filterPanelAttributes.cancel}]`).click();
+        await painted();
+        expect([filterOf(source, 'Id'), root.querySelector('.ex-popover')]).toEqual([undefined, null]);
     });
 });

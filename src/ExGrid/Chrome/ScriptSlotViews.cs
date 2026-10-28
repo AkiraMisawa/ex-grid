@@ -23,6 +23,10 @@ public enum ScriptSlots
 
     /// <summary>The loading indicator, through <see cref="IGridChrome.LoadingIndicator(GridLoadingView)"/>.</summary>
     LoadingIndicator = 4,
+
+    /// <summary>A column's filter panel, under the column menu's commands, through
+    /// <see cref="IGridChrome.FilterPanel(GridFilterView)"/>.</summary>
+    FilterPanel = 8,
 }
 
 /// <summary>
@@ -40,6 +44,46 @@ public static class ScriptSlotAttributes
     /// asks.
     /// </summary>
     public const string MenuItem = "data-ex-menu-item";
+
+    /// <summary>On the filter panel's search box: its text is the search, read in the browser as it is typed.
+    /// Draw the field with no value bound to the view, which arrives a round trip behind the typing.</summary>
+    public const string FilterSearch = "data-ex-filter-search";
+
+    /// <summary>On the checkbox "Add current selection to filter".</summary>
+    public const string FilterAddToCurrent = "data-ex-filter-add";
+
+    /// <summary>On the element holding the value list: a letter typed on its checkboxes is Excel's, S, O
+    /// and C running their command and E moving to the search box (ADR-0044).</summary>
+    public const string FilterValues = "data-ex-filter-values";
+
+    /// <summary>On the checkbox "(Select All)".</summary>
+    public const string FilterSelectAll = "data-ex-filter-all";
+
+    /// <summary>On a value's checkbox, the entry's index in <see cref="GridFilterValueListView.Entries"/>:
+    /// the script ticks the value of the entry the checkbox was drawn for.</summary>
+    public const string FilterValue = "data-ex-filter-value";
+
+    /// <summary>On a condition's operator, <c>first</c> or <c>second</c>: a native <c>select</c> whose
+    /// options' values are the <see cref="GridFilterOperatorView.Id"/>s, with an empty option for the
+    /// second's "(none)". A component that answers its choice in .NET would reach the core a round trip
+    /// after an Enter that applies the panel, so the choice is read in the browser.</summary>
+    public const string FilterOperator = "data-ex-filter-operator";
+
+    /// <summary>On a condition's value field, <c>first</c> or <c>second</c>: its text is the operand, read
+    /// in the browser as it is typed. Draw it with the operand it opens with, and no value bound after.</summary>
+    public const string FilterOperand = "data-ex-filter-operand";
+
+    /// <summary>On the radio button that joins the conditions, <c>and</c> or <c>or</c>.</summary>
+    public const string FilterJoin = "data-ex-filter-join";
+
+    /// <summary>On Cancel. OK is a submit button, which submits the form the panel stands in, as Enter in a
+    /// text field does.</summary>
+    public const string FilterCancel = "data-ex-filter-cancel";
+
+    /// <summary>On the controls a focus request may name, separated by spaces: <c>first</c>, the panel's
+    /// first control; <c>last</c>, its last; and <c>search</c>, the search box, or the first condition's
+    /// value where no value list stands. A control's element, or one holding it.</summary>
+    public const string FilterFocus = "data-ex-filter-focus";
 }
 
 /// <summary>One command of a menu, as the Script Core hands it (ADR-0010, ADR-0036).</summary>
@@ -67,3 +111,94 @@ public sealed record GridMenuView(string Column, ColumnType Type, IReadOnlyList<
 /// <param name="IsLoading">Whether rows are on their way.</param>
 /// <param name="PlaceholderRowCount">How many of the painted rows are Placeholders, which stay the core's.</param>
 public sealed record GridLoadingView(bool IsLoading, int PlaceholderRowCount);
+
+/// <summary>
+/// A column's filter panel when the Script Core draws the grid (ADR-0009, ADR-0044, ADR-0410 section 3):
+/// data only, drawn again at each change the core makes to it. Exactly one of
+/// <see cref="ValueList"/> and <see cref="Conditions"/> stands. The Razor draws its controls marked with
+/// <see cref="ScriptSlotAttributes"/>' filter attributes and handles none of their changes, keys or focus:
+/// the script hands each to the core in the browser, and the core decides what a choice means.
+/// </summary>
+/// <param name="Column">The <c>Name</c> of the column the panel filters.</param>
+/// <param name="Type">That column's type.</param>
+/// <param name="ValueList">The value list, where it stands.</param>
+/// <param name="Conditions">The condition form, Excel's Custom AutoFilter, where it stands.</param>
+/// <param name="CanApply">Whether OK is available: not while a value list keeps nothing. The core
+/// refuses OK while it is not, so a button drawn a round trip late applies nothing.</param>
+/// <param name="Fetching">Whether the value list is still on its way; the condition form stands
+/// meanwhile.</param>
+/// <param name="Words">The panel's words.</param>
+public sealed record GridFilterView(
+    string Column,
+    ColumnType Type,
+    GridFilterValueListView? ValueList,
+    GridFilterConditionsView? Conditions,
+    bool CanApply,
+    bool Fetching,
+    GridFilterWords Words);
+
+/// <summary>The value list as it stands (ADR-0009).</summary>
+/// <param name="Search">The search the core holds, a round trip behind the typing: draw the search box
+/// with no value bound to it.</param>
+/// <param name="AddOffered">Whether "Add current selection to filter" is offered: while a search stands
+/// over a column filtered by its values.</param>
+/// <param name="AddToCurrent">Whether it is ticked.</param>
+/// <param name="SelectAll">"(Select All)" over the values the search shows.</param>
+/// <param name="Entries">The values the search shows, in the domain's order.</param>
+public sealed record GridFilterValueListView(
+    string Search,
+    bool AddOffered,
+    bool AddToCurrent,
+    SelectAllState SelectAll,
+    IReadOnlyList<GridFilterEntryView> Entries);
+
+/// <summary>A value the list shows.</summary>
+/// <param name="Text">The text its cells show, or the Blank's words.</param>
+/// <param name="Blank">Whether it is the Blank.</param>
+/// <param name="Checked">Whether it is ticked.</param>
+public sealed record GridFilterEntryView(string Text, bool Blank, bool Checked);
+
+/// <summary>The condition form as it stands (ADR-0009).</summary>
+/// <param name="Allowed">The operators the core offers the column, and no other (FN-18).</param>
+/// <param name="First">The first condition.</param>
+/// <param name="Combinator">How the two conditions are joined.</param>
+/// <param name="Second">The second condition; null until one is chosen ("(none)").</param>
+public sealed record GridFilterConditionsView(
+    IReadOnlyList<GridFilterOperatorView> Allowed,
+    GridFilterConditionView First,
+    FilterCombinator Combinator,
+    GridFilterConditionView? Second);
+
+/// <summary>An operator the condition form offers.</summary>
+/// <param name="Id">The script's name for it: the value of its option.</param>
+/// <param name="Label">Its words.</param>
+public sealed record GridFilterOperatorView(string Id, string Label);
+
+/// <summary>One condition of the condition form.</summary>
+/// <param name="Operator">The <see cref="GridFilterOperatorView.Id"/> of its operator.</param>
+/// <param name="Operand">The text typed for its value, a round trip behind the typing.</param>
+/// <param name="TakesOperand">Whether the operator takes a value; where it takes none, draw no field.</param>
+/// <param name="Refusal">Why the typed text does not read as the column's type, in the core's words;
+/// null where it reads or nothing is typed (ADR-0023).</param>
+public sealed record GridFilterConditionView(string Operator, string Operand, bool TakesOperand, string? Refusal);
+
+/// <summary>The filter panel's words, the Consumer's <c>commandLabel</c> else the built-in English.</summary>
+/// <param name="Ok">OK.</param>
+/// <param name="Cancel">Cancel.</param>
+/// <param name="Search">The search box's name.</param>
+/// <param name="AddToCurrent">"Add current selection to filter".</param>
+/// <param name="SelectAll">"(Select All)".</param>
+/// <param name="SelectAllSearchResults">"(Select All Search Results)", while a search stands.</param>
+/// <param name="And">The join where both conditions must hold.</param>
+/// <param name="Or">The join where either may.</param>
+/// <param name="None">The second condition's operator, unset.</param>
+public sealed record GridFilterWords(
+    string Ok,
+    string Cancel,
+    string Search,
+    string AddToCurrent,
+    string SelectAll,
+    string SelectAllSearchResults,
+    string And,
+    string Or,
+    string None);

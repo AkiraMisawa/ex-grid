@@ -3,7 +3,9 @@
 // whose contents arrive later than their slot, Blazor's on a circuit, wires them in the browser from attributes the
 // contents write: nothing a key means waits on a round trip.
 
-import type { GridMenuSlotContext } from './grid-chrome';
+import type { FilterPanelView } from '../chrome/filter-panel-model';
+import type { FilterOperator } from '../query/filter';
+import type { GridFilterPanelSlotContext, GridMenuSlotContext } from './grid-chrome';
 
 /** The attribute a menu slot's contents write on the control of each command, its index in `commands`: the control
  * {@link wireMenuItems} wires. */
@@ -97,4 +99,163 @@ export function wireMenuItems(contents: HTMLElement, context: GridMenuSlotContex
     }
     if (!answered) takeMenuFocus(context, item);
     return () => { for (const each of unwire) each(); };
+}
+
+/**
+ * The attributes a filter panel slot's contents write on their controls, which {@link wireFilterPanel} wires
+ * (ADR-0410 section 2). Each is written on the control itself or on an element holding it, as a component library
+ * places its attributes.
+ */
+export const filterPanelAttributes = Object.freeze({
+    /** The search box: its text is the search. */
+    search: 'data-ex-filter-search',
+    /** "Add current selection to filter": a checkbox. */
+    addToCurrent: 'data-ex-filter-add',
+    /** The value list, whose keys are Excel's letters (ADR-0044). */
+    values: 'data-ex-filter-values',
+    /** "(Select All)": a checkbox. */
+    selectAll: 'data-ex-filter-all',
+    /** A value's checkbox, naming its index among the entries of the view the contents drew. */
+    value: 'data-ex-filter-value',
+    /** A condition's operator, `first` or `second`: a `select` whose options' values are the view's operators, and
+     * the second's empty option "(none)". */
+    operator: 'data-ex-filter-operator',
+    /** A condition's value, `first` or `second`: a text field whose text is the operand. */
+    operand: 'data-ex-filter-operand',
+    /** How the conditions are joined, `and` or `or`: a radio button. */
+    join: 'data-ex-filter-join',
+    /** Cancel: a button. OK is a submit button, which submits the panel's form. */
+    cancel: 'data-ex-filter-cancel',
+    /** The controls a focus request may name, separated by spaces: `first`, `last` and `search`. */
+    focus: 'data-ex-filter-focus',
+} as const);
+
+/** A key on a filter panel's value list, as a DOM or a framework's event carries it. */
+export interface ValueListKeyEvent extends MenuItemKeyEvent {
+    /** Whether an IME is composing: such a key is the IME's. */
+    readonly isComposing: boolean;
+}
+
+/** Answers a key on a filter panel's value list (ADR-0044): one of Excel's letters is the core's, its default
+ * prevented. A key composing is the IME's. */
+export function answerValueListKey(context: GridFilterPanelSlotContext, event: ValueListKeyEvent): void {
+    if (event.isComposing) return;
+    if (context.valueListKey(event.key, event.ctrlKey || event.altKey || event.metaKey)) event.preventDefault();
+}
+
+/**
+ * Answers a filter panel slot's focus request: the control it names takes the keyboard (ADR-0044, ADR-0204). `control`
+ * answers the control drawn for a target, or `undefined` where none is: the search target has none in a condition form
+ * whose first operator takes no value, and asks nothing then, as the built-in panel does; a first or last control not
+ * drawn is refused by name.
+ */
+export function takeFilterFocus(context: GridFilterPanelSlotContext, control: (target: 'first' | 'last' | 'search') => HTMLElement | undefined): void {
+    const target = context.focusTarget;
+    if (target === undefined) return;
+    const found = control(target);
+    if (found !== undefined) context.takeFocus(found);
+    else if (target !== 'search') throw new Error(`The filter panel's ${target} control is not drawn: the core asks the keyboard onto it.`);
+}
+
+/**
+ * Wires the filter panel a slot's contents drew in `contents` from {@link filterPanelAttributes} (ADR-0410 section
+ * 2): each change made in a control goes to the core at once, in the browser, a value's checkbox naming the value of
+ * the entry it was drawn for in `drawn`, the view the contents show; Cancel cancels, and the value list's letters are
+ * {@link answerValueListKey}'s. The control the context's focus request names takes the keyboard, unless `answered`
+ * says an earlier wiring of the same contents answered it. Answers the function that takes the wiring off again.
+ */
+export function wireFilterPanel(contents: HTMLElement, context: GridFilterPanelSlotContext, drawn: () => FilterPanelView, answered = false): () => void {
+    const marked = (target: EventTarget | null, attribute: string): { readonly element: Element; readonly value: string } | undefined => {
+        if (!(target instanceof Element)) return undefined;
+        const element = target.closest(`[${attribute}]`);
+        if (element === null || !contents.contains(element)) return undefined;
+        // oxlint-disable-next-line ex-grid/no-stand-in-default -- the element was found by the attribute, so it carries one
+        return { element, value: element.getAttribute(attribute) ?? '' };
+    };
+    const input = (event: Event): void => {
+        const field = event.target;
+        if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
+        if (marked(field, filterPanelAttributes.search) !== undefined) {
+            context.setSearch(field.value);
+            return;
+        }
+        const operand = marked(field, filterPanelAttributes.operand);
+        if (operand === undefined) return;
+        if (which(operand.value, filterPanelAttributes.operand) === 'first') context.setOperand(field.value);
+        else context.setSecondOperand(field.value);
+    };
+    const change = (event: Event): void => {
+        const control = event.target;
+        if (control instanceof HTMLSelectElement) {
+            const operator = marked(control, filterPanelAttributes.operator);
+            if (operator === undefined) return;
+            const view = drawn();
+            if (view.kind !== 'conditions') throw new Error('A filter panel\'s operator changed while the value list stands.');
+            const chosen = control.value;
+            if (which(operator.value, filterPanelAttributes.operator) === 'first') context.setOperator(allowedOperator(chosen, view.allowed));
+            else context.setSecond(chosen === '' ? undefined : allowedOperator(chosen, view.allowed));
+            return;
+        }
+        if (!(control instanceof HTMLInputElement)) return;
+        if (marked(control, filterPanelAttributes.selectAll) !== undefined) {
+            context.toggleAll();
+            return;
+        }
+        if (marked(control, filterPanelAttributes.addToCurrent) !== undefined) {
+            context.setAddToCurrent(control.checked);
+            return;
+        }
+        const join = marked(control, filterPanelAttributes.join);
+        if (join !== undefined) {
+            if (!control.checked) return;
+            if (join.value !== 'and' && join.value !== 'or') throw new RangeError(`A filter panel's radio button is marked ${filterPanelAttributes.join}="${join.value}": it joins with and or or.`);
+            context.setCombinator(join.value);
+            return;
+        }
+        const value = marked(control, filterPanelAttributes.value);
+        if (value === undefined) return;
+        // The entry the checkbox was drawn for: the value the user saw, though the core's list may have moved since.
+        const view = drawn();
+        const index = Number(value.value);
+        const entry = view.kind === 'valueList' && Number.isSafeInteger(index) ? view.entries[index] : undefined;
+        if (entry === undefined) throw new RangeError(`A filter panel's checkbox is marked ${filterPanelAttributes.value}="${value.value}", which names no entry of the value list it was drawn with.`);
+        context.setChecked(entry.value, control.checked);
+    };
+    const click = (event: MouseEvent): void => {
+        if (marked(event.target, filterPanelAttributes.cancel) !== undefined) context.cancel();
+    };
+    const keydown = (event: KeyboardEvent): void => {
+        const target = event.target;
+        if (target instanceof HTMLInputElement && target.type !== 'checkbox' && target.type !== 'radio') return;
+        if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
+        if (marked(target, filterPanelAttributes.values) !== undefined) answerValueListKey(context, event);
+    };
+    contents.addEventListener('input', input);
+    contents.addEventListener('change', change);
+    contents.addEventListener('click', click);
+    contents.addEventListener('keydown', keydown);
+    if (!answered) {
+        takeFilterFocus(context, target => [...contents.querySelectorAll<HTMLElement>(`[${filterPanelAttributes.focus}]`)]
+            // oxlint-disable-next-line ex-grid/no-stand-in-default -- the element was found by the attribute, so it carries one
+            .find(each => (each.getAttribute(filterPanelAttributes.focus) ?? '').split(' ').includes(target)));
+    }
+    return () => {
+        contents.removeEventListener('input', input);
+        contents.removeEventListener('change', change);
+        contents.removeEventListener('click', click);
+        contents.removeEventListener('keydown', keydown);
+    };
+}
+
+/** Which condition a control marked `attribute` is for. */
+function which(value: string, attribute: string): 'first' | 'second' {
+    if (value === 'first' || value === 'second') return value;
+    throw new RangeError(`A filter panel's control is marked ${attribute}="${value}": it is the first condition's or the second's.`);
+}
+
+/** The operator an option names: one the core offered, never one a changed option claims (ADR-0009, FN-18). */
+function allowedOperator(value: string, allowed: readonly FilterOperator[]): FilterOperator {
+    const found = allowed.find(operator => operator === value);
+    if (found === undefined) throw new RangeError(`'${value}' is not an operator this column's filter offers.`);
+    return found;
 }

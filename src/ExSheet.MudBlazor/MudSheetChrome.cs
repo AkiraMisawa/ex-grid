@@ -101,6 +101,9 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <summary>The Grid Chrome's loading bar over the Script Core (ADR-0410).</summary>
     public RenderFragment? LoadingIndicator(GridLoadingView view) => GridSeams.LoadingIndicator(view);
 
+    /// <summary>The Grid Chrome's filter panel over the Script Core (ADR-0410).</summary>
+    public RenderFragment? FilterPanel(GridFilterView view) => GridSeams.FilterPanel(view);
+
     /// <summary>The Formula Bar's Name Box: <see cref="Grid"/>'s.</summary>
     public RenderFragment? NameBox(NameBoxContext context) => GridSeams.NameBox(context);
 

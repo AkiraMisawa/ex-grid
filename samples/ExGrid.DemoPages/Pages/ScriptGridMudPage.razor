@@ -17,9 +17,10 @@
 
 <p>
     The grid below is <code>ExGrid.Script.ExGrid</code> handed <code>MudGridChrome</code> (ADR-0410): its
-    column menu, its Context Menu and its loading bar are MudBlazor's components, rendered in .NET beside the
-    grid and moved into the Script Core's slots by the adapter's script, which wires each item in the browser.
-    A key on a menu item never waits on the circuit. The other parts are still the Script Core's own.
+    column menu, its filter panel, its Context Menu and its loading bar are MudBlazor's components, rendered in
+    .NET beside the grid and moved into the Script Core's slots by the adapter's script, which wires each control
+    in the browser. A key on a menu item, a value ticked or a condition typed never waits on the circuit. Book
+    filters by its values, Notional by conditions. The other parts are still the Script Core's own.
 </p>
 
 <ExGrid.Script.ExGrid TRow="DemoTrade"
@@ -35,7 +36,7 @@
 @code {
     private static readonly GridColumn<DemoTrade>[] Columns =
     [
-        new("Book", ColumnType.Text, r => r.Book),
+        new("Book", ColumnType.Text, r => r.Book, filterUi: global::ExGrid.Chrome.FilterUiMode.ValueList),
         new("Trader", ColumnType.Text, r => r.Trader),
         new("Notional", ColumnType.Number, r => r.Notional),
     ];
