@@ -126,6 +126,13 @@
         <p>
             The DOM does not grow with the row count — a million rows paint the same few dozen elements as a hundred.
         </p>
+        <p>
+            ExGrid for React takes its rows from a source, so there the same million come through
+            <code>GridSource.fetch</code>, whose fetch answers a page of rows and the result's count, with the Row Key as
+            <code>rowKey</code> and the read-ahead as <code>readAheadRows</code>. The source itself drops an answer a newer
+            request overtook, and aborts the <code>AbortSignal</code> it handed that fetch so the call can stop early. This Example's server neither
+            sorts nor filters, so its columns say <code>queryable: false</code>, and the grid offers neither.
+        </p>
         <DocsExample Title="A million rows, made on demand" Builtin="typeof(MillionRows)" Mud="typeof(MillionRowsMud)"
                      Files="@(["Examples/Grid/MillionTrades.cs", "Examples/Data/Trade.cs"])">
             Press <kbd>Ctrl</kbd>+<kbd>End</kbd>, or drag the scrollbar to the bottom.
@@ -170,6 +177,13 @@
             <code>GridSource.Fetch</code> does not use a margin. If you set one on its grid, an early request finds the
             rows on screen in the source's Window and fetches nothing, and the source fetches when they leave it, as
             without a margin.
+        </p>
+        <p>
+            ExGrid for React takes the margin as <code>rangeRequestMargin</code>. Its grid asks its source rather than
+            raising an event: an early request is a call to the source's <code>needRange</code>, naming the rows on screen,
+            so the Example's server is a <code>GridSource</code> of the page's own whose <code>needRange</code> reads
+            ahead, keeps a covering question, and says <code>loading</code> only while rows on screen wait.
+            <code>GridSource.fetch</code> does not act on an early request there either.
         </p>
         <DocsExample Title="Asked ten rows early" Builtin="typeof(AskEarly)" Mud="typeof(AskEarlyMud)"
                      Files="@(["Examples/Grid/ReadAheadTrades.cs", "Examples/Grid/MillionTrades.cs", "Examples/Data/Trade.cs"])">

@@ -708,3 +708,14 @@ The same window, looked for on `main` with the page's animation frames held back
 `holdFrames`): a Tab typed once Find's field held the keyboard was refused too, under both Chromes. Keys a
 held replay reproduces — a menu's Tab, a tab's arrows — and the toolbar band after F10, which the wait
 hands the keyboard to itself, were only delayed, with the same outcome.
+
+## The Script Core's row commands and declared key, 2026-10-27
+
+The Script Core held a row Action or row Mark click behind earlier input as the click event itself, and took it at its
+turn on whatever stood at its point then, so a command whose row had left the Window and come back acted on it. It now
+follows the 2026-10-19 rule above. The click is noted with its row, and a Mark with its painted state, as it is held.
+The row is followed on every new Window while the command waits, and at its turn the command acts on that row, or is
+refused as `rowLeftTheWindow` where the row left meanwhile. Its press and release mean nothing of their own, and no
+target is looked for again in the DOM. The asynchronous Consumer key the rule speaks of is an `onDeclaredKey` that
+answers with a promise: it takes its place in the order as `inOrder` work does, and every input made after the key is
+held until it settles, as Blazor's awaited `OnDeclaredKey` holds them. Nothing new is decided here.

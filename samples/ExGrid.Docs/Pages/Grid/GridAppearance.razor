@@ -123,7 +123,10 @@
             A tone is derived from the value. A <strong>Cell State</strong> is what only your application knows
             about a cell — <code>Stale</code>, <code>Missing</code>, <code>Error</code> or <code>Modified</code> —
             asked for through the <code>CellState</code> delegate, once per painted cell. Keep it in a field and keep
-            it to a lookup; hand over a new delegate when the answers change.
+            it to a lookup; hand over a new delegate when the answers change. In ExGrid for React it is
+            <code>cellState</code>, answering <code>'stale'</code>, <code>'missing'</code>, <code>'error'</code>,
+            <code>'modified'</code> or <code>'normal'</code>. Under <code>MantineExGrid</code> or <code>MuiExGrid</code>,
+            a token in the Wrapper's <code>style</code> overrides the one its stylesheet maps onto the theme.
         </p>
         <DocsExample Title="A theme, tones and a stale price" Builtin="typeof(ThemedGrid)" Mud="typeof(ThemedGridMud)"
                      Files="@(["Examples/Grid/Position.cs"])" />

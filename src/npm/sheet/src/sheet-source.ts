@@ -3,10 +3,15 @@
 // places, and its columns are not queryable. Its Row Sequence Version moves only when another Sheet is shown,
 // since that is the only time a position comes to mean another row (ADR-0011).
 
-import type { DistinctValues, GridFilter, GridFindRequest, GridFindResult, GridSource, GridSourceState, QueryColumn, RowRange, SortSpec } from '@ex-grid/core';
+import {
+    GridSummaryCells, type DistinctValues, type GridFilter, type GridFindRequest, type GridFindResult, type GridSource, type GridSourceState,
+    type GridSummaryRequest, type GridSummaryResult, type QueryColumn, type RowRange, type SortSpec,
+} from '@ex-grid/core';
 import { Sheet, type SheetChange } from '@ex-grid/sheet-engine';
 import { sheetFindStep } from './sheet-find';
 import { SheetRow } from './sheet-row';
+import { sheetSummaryDeclined, walkSheetSummary } from './sheet-summary';
+import type { SheetWords } from './sheet-words';
 
 /** A Grid Source over the Sheet shown. */
 export class SheetSource implements GridSource<SheetRow> {
@@ -17,12 +22,16 @@ export class SheetSource implements GridSource<SheetRow> {
     #before: { readonly version: number; readonly sheet: Sheet } | undefined;
     #state: GridSourceState<SheetRow>;
 
+    // The Sheet's words as they stand, which say why a Selection Summary is declined over a refused cell.
+    readonly #words: () => SheetWords;
     // One step's answer over the Sheet the step was asked of: the Sheet's own walk unless one is given, as a Sheet
     // searching Within the Workbook gives (ADR-0332 §5).
     readonly #step: (sheet: Sheet, request: GridFindRequest) => Promise<GridFindResult>;
 
-    constructor(sheet: Sheet, step: (sheet: Sheet, request: GridFindRequest) => Promise<GridFindResult> = (over, request) => Promise.resolve(sheetFindStep(over, request))) {
+    constructor(sheet: Sheet, words: () => SheetWords,
+        step: (sheet: Sheet, request: GridFindRequest) => Promise<GridFindResult> = (over, request) => Promise.resolve(sheetFindStep(over, request))) {
         this.#sheet = sheet;
+        this.#words = words;
         this.#step = step;
         this.#state = SheetSource.#stateOf([], 0, 0);
     }
@@ -89,6 +98,25 @@ export class SheetSource implements GridSource<SheetRow> {
             : request.rowSequenceVersion === before?.version ? before.sheet : undefined;
         if (sheet === undefined) return Promise.reject(new DOMException('The step was asked of a Sheet shown before the last one.', 'AbortError'));
         return this.#step(sheet, request);
+    }
+
+    /** A Selection Summary over the Sheet its Row Sequence Version names (ADR-0130), as C#'s `SheetSummary` answers
+     * one: the Values of the selected cells in Excel's doubles, the figures that read numbers written in the Focus
+     * cell's Number Format, or the summary declined over the first refused cell. Asked under an older version, the
+     * selection named rows of a Sheet no longer shown: given up, never answered about cells nobody read. */
+    summarize(request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult> {
+        signal.throwIfAborted();
+        const before = this.#before;
+        const sheet = request.rowSequenceVersion === this.#version ? this.#sheet
+            : request.rowSequenceVersion === before?.version ? before.sheet : undefined;
+        if (sheet === undefined) return Promise.reject(new DOMException('The summary was asked of a Sheet shown before the last one.', 'AbortError'));
+        const cells = new GridSummaryCells();
+        const read = walkSheetSummary(sheet, request, cells);
+        if (read.kind === 'refused') return Promise.resolve(sheetSummaryDeclined(read, this.#words()));
+        // Average, Min, Max and Sum are shown in the Focus cell's Number Format, as Excel's status bar shows them in
+        // the active cell's; the counts are whole numbers (read in the Windows run of 2026-10-11).
+        const { focus } = read;
+        return Promise.resolve(cells.answer(request.figures, focus === undefined ? undefined : figure => sheet.formatAs(focus, figure)));
     }
 
     distinctValues(_column: string, _signal: AbortSignal): Promise<DistinctValues> {

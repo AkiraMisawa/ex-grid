@@ -11,9 +11,8 @@
 // figure stands over a refused cell, and the line says why). A partial summary is never shown (ADR-0130), so
 // Count goes with the rest.
 //
-// The figures are folded by the family's one definition of them, C#'s GridSummaryCells. Its TypeScript
-// counterpart, and the accumulator under it, are not part of @ex-grid/core's public surface yet, so this module
-// reads the cells and declines; folding `SheetSummaryCells` into figures waits on that surface.
+// The Sheet Source's `summarize` folds the cells straight into the family's one definition of the figures,
+// `GridSummaryCells`, as they are walked.
 
 import type { GridSummaryRequest, GridSummaryResult } from '@ex-grid/core';
 import { CellAddress, type Sheet } from '@ex-grid/sheet-engine';
@@ -38,17 +37,28 @@ export type SheetSummaryCells =
         readonly focus: CellAddress | undefined;
     };
 
-/** The cells a request names over a Sheet, as a Selection Summary reads them (ADR-0130). */
-export function sheetSummaryCells(sheet: Sheet, request: GridSummaryRequest): SheetSummaryCells {
+/** What a walk of the selected cells folds each cell into: a number, an Error Value, or text or a Boolean. */
+export interface SheetSummarySink {
+    addNumber(value: number): void;
+    addError(): void;
+    addOther(): void;
+}
+
+/**
+ * Walks the cells a request names over a Sheet (ADR-0130), folding each into `sink`, and answers the first refused
+ * cell in reading order and what it shows, or the Focus cell whose Number Format the figures are shown in (Excel's
+ * status bar shows them in the active cell's, read in the Windows run of 2026-10-11). Over a refused cell what the
+ * sink holds is no summary.
+ */
+export function walkSheetSummary(sheet: Sheet, request: GridSummaryRequest, sink: SheetSummarySink):
+    | { readonly kind: 'refused'; readonly at: CellAddress; readonly shown: string }
+    | { readonly kind: 'cells'; readonly focus: CellAddress | undefined } {
     // Where each sheet column stands in the request's order; a column it does not name is not summarised.
     const positions = new Map<number, number>();
     request.columns.forEach((name, position) => {
         const column = CellAddress.tryParseColumn(name);
         if (column !== undefined) positions.set(column, position);
     });
-    const numbers: number[] = [];
-    let errors = 0;
-    let others = 0;
     let firstRefused: CellAddress | undefined;
     for (const address of sheet.valueAddresses) {
         const position = positions.get(address.column);
@@ -60,11 +70,11 @@ export function sheetSummaryCells(sheet: Sheet, request: GridSummaryRequest): Sh
             continue;
         }
         switch (value.kind) {
-            case 'number': numbers.push(value.number); break;
-            case 'error': errors++; break;
+            case 'number': sink.addNumber(value.number); break;
+            case 'error': sink.addError(); break;
             case 'text':
             case 'boolean':
-                others++;
+                sink.addOther();
                 break;
             default: throw new Error(`Internal: a Value of kind ${String(value.kind)}.`);
         }
@@ -77,13 +87,21 @@ export function sheetSummaryCells(sheet: Sheet, request: GridSummaryRequest): Sh
     const focus = request.focus;
     const focusName = focus === undefined ? undefined : request.columns[focus.column];
     const focusColumn = focusName === undefined ? undefined : CellAddress.tryParseColumn(focusName);
-    return Object.freeze({
-        kind: 'cells',
-        numbers: Object.freeze(numbers),
-        errors,
-        others,
-        focus: focus === undefined || focusColumn === undefined ? undefined : new CellAddress(focus.row, focusColumn),
+    return Object.freeze({ kind: 'cells', focus: focus === undefined || focusColumn === undefined ? undefined : new CellAddress(focus.row, focusColumn) });
+}
+
+/** The cells a request names over a Sheet, as a Selection Summary reads them (ADR-0130). */
+export function sheetSummaryCells(sheet: Sheet, request: GridSummaryRequest): SheetSummaryCells {
+    const numbers: number[] = [];
+    let errors = 0;
+    let others = 0;
+    const walked = walkSheetSummary(sheet, request, {
+        addNumber: number => { numbers.push(number); },
+        addError: () => { errors++; },
+        addOther: () => { others++; },
     });
+    if (walked.kind === 'refused') return walked;
+    return Object.freeze({ kind: 'cells', numbers: Object.freeze(numbers), errors, others, focus: walked.focus });
 }
 
 /** The Selection Summary declined over a refused cell, with the reason in the Sheet's words (2026-10-13,

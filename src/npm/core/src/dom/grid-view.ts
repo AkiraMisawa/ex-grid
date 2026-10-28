@@ -315,8 +315,10 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      */
     readonly declaredKeys?: readonly string[];
     /** Hears a declared key pressed (ADR-0050, item 14). Required with `declaredKeys`: a key taken from the page
-     * for nobody would be taken for nothing. */
-    readonly onDeclaredKey?: (press: GridDeclaredKeyPress) => void;
+     * for nobody would be taken for nothing. It may answer later, as Blazor's ExGrid awaits its `OnDeclaredKey`
+     * (ADR-0240's note of 2026-10-19): while the promise is out, every input made in the grid after the key, a row
+     * Action or Mark click among them, is held in its order and taken once it settles, as behind `inOrder`. */
+    readonly onDeclaredKey?: (press: GridDeclaredKeyPress) => void | PromiseLike<void>;
     /** Paints a Row Stripe on every second row of the result (ADR-0038), appearance only and off unless given.
      * Counted by the row's position in the whole result, so a stripe stays with its row while scrolling and on a
      * Placeholder; Row Kind and Cell State paint over it, and the overlays above it. The colour is
@@ -329,6 +331,18 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * raises the same Range Request a scroll does. At least one.
      */
     readonly pageSize?: number;
+    /**
+     * The Range Request Margin (ADR-0183): how many rows short of the Window's edge the grid asks its source for rows.
+     * At M, the source's `needRange` is called as soon as the rows on screen plus M rows either side, clamped into the
+     * total, are not all in the Window, while the rows on screen may still be held, so a source that reads ahead is
+     * asked before the Viewport reaches rows it does not hold. The request still names the rows on screen, and the
+     * same rows are not asked for again until the Window moves: a scroll within the margin asks for the rows it shows
+     * then. 0, the default, asks once the rows on screen are not all held. Set it only
+     * where the source's answer reads ahead at least this far: one that answers exactly the rows asked for would be
+     * asked again at every move near the edge. `GridSource.fetch` does not act on an early request, since its Window
+     * still covers the rows on screen. A whole number of at least 0.
+     */
+    readonly rangeRequestMargin?: number;
     /** What role each row plays, detail, group or total (ADR-0024): none, and every row is a detail row. Asked once
      * per row painted, and by the Row Marks of every row of the result when they count or mark all, so it is a cheap
      * read of the row; its identity is the change signal: a new function paints the rows again, and the same one
@@ -688,6 +702,12 @@ function headerOf<Row>(column: ResolvedColumn<Row>): string {
 }
 
 /** Whether a Consumer answered later rather than now. */
+// A commit's gesture that will not be taken again, as its commit did not land: a held row command it was stops being
+// followed (ADR-0240's note of 2026-10-19).
+function dropTrigger(trigger: HeldInput | undefined): void {
+    if (trigger?.kind === 'turn') trigger.dropped?.();
+}
+
 function isThenable<T>(value: T | PromiseLike<T>): value is PromiseLike<T> {
     return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
 }
@@ -869,9 +889,10 @@ interface Taken<Row> {
     readonly highlightHoverRow: boolean;
     readonly cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>) | undefined;
     readonly declaredKeys: ReadonlySet<string>;
-    readonly onDeclaredKey: ((press: GridDeclaredKeyPress) => void) | undefined;
+    readonly onDeclaredKey: ((press: GridDeclaredKeyPress) => void | PromiseLike<void>) | undefined;
     readonly stripeRows: boolean;
     readonly pageSize: number | undefined;
+    readonly rangeRequestMargin: number;
     readonly rowKind: ((row: Row) => RowKind) | undefined;
     readonly pasteByteCap: number;
     readonly onClear: ((intent: GridClearIntent) => void) | undefined;
@@ -980,6 +1001,14 @@ interface PressedRow<Row> {
     readonly index: number;
     readonly sequence: number;
     readonly source: unknown;
+}
+
+/** A row Action or row Mark click held behind earlier input (ADR-0240's note of 2026-10-19): the row it was made
+ * on, whether that row has left the Window while it waited, and what it does at its turn. */
+interface HeldRowCommand<Row> {
+    readonly pressed: PressedRow<Row>;
+    left: boolean;
+    readonly act: (pressed: PressedRow<Row>, left: boolean) => void;
 }
 
 /** A press on an action's button, from its mousedown until its click (ADR-0142): what the button stood for
@@ -1174,7 +1203,7 @@ interface PendingCommit<Row> {
      * its editor away. */
     readonly phase: 'verdict' | 'intent' | 'work';
     /** The input whose handler made the commit, taken again once it lands: its gesture keeps its meaning. */
-    readonly trigger: Event | undefined;
+    readonly trigger: HeldInput | undefined;
     /** The inputs made meanwhile, in the order they were made. */
     readonly held: HeldInput[];
     /** What a cancel says, and what it takes back. */
@@ -1418,6 +1447,10 @@ export class GridView<Row> {
     readonly #rowMarks: GridMarks<Row>;
     readonly #markBoxes = new WeakMap<Element, boolean>();
     #markPress: { readonly box: Element; readonly pressed: PressedRow<Row> } | undefined;
+    // Row Action and row Mark clicks held behind earlier input, each with the row it was made on, noted at the click,
+    // and whether that row has left the Window since: one that left is refused at its turn, though it came back
+    // (ADR-0240's note of 2026-10-19).
+    readonly #heldRowCommands = new Set<HeldRowCommand<Row>>();
     // The order and source a press on the header's checkbox was made under, and, while a pager stood, the page it
     // named: `paged` with no `page` is a page that held no row (ADR-0043, ADR-0015).
     #headerMarkPress: HeaderMarkPress | undefined;
@@ -1459,6 +1492,8 @@ export class GridView<Row> {
     // scroll offset is. The geometry runs over that page alone. The pager's buttons and count, the status line's offer
     // of the whole result, and the Mark Column's, one each for the grid's life.
     #pageSize: number | undefined;
+    // The Range Request Margin (ADR-0183): rows either side of those on screen the Window must hold for no request.
+    #rangeRequestMargin = 0;
     #pageIndex = 0;
     readonly #pager: HTMLElement;
     readonly #pageBack: HTMLButtonElement;
@@ -1484,7 +1519,7 @@ export class GridView<Row> {
     // The cell a message is asked about while its answer is out, until it comes or the question goes with the Focus.
     #messageAsked: { readonly cell: CellPosition } | undefined;
     #declaredKeys: ReadonlySet<string> = declareKeys();
-    #onDeclaredKey: ((press: GridDeclaredKeyPress) => void) | undefined;
+    #onDeclaredKey: ((press: GridDeclaredKeyPress) => void | PromiseLike<void>) | undefined;
     #cancelMessage: (() => void) | undefined;
     #cancelRest: (() => void) | undefined;
     #restAt: { readonly x: number; readonly y: number; readonly movedAt: number } | undefined;
@@ -1734,7 +1769,7 @@ export class GridView<Row> {
     #input: Event | undefined;
     // The input a Chrome slot's callback last counted (ADR-0220).
     #inputAnswered: Event | undefined;
-    #retaking: Event | undefined;
+    #retaking: HeldInput | undefined;
     // An Escape cancelled a commit, and its repeats are its own.
     #escapeCancelled = false;
     #findCurrent: { readonly cell: CellPosition; readonly version: number } | undefined;
@@ -2187,6 +2222,7 @@ export class GridView<Row> {
         // A commit pending as the grid goes is cancelled: nothing is to be written, and its held inputs go with it.
         this.#pending?.controller.abort();
         this.#pending = undefined;
+        this.#heldRowCommands.clear();
         // Work of the Consumer's is cancelled, and work still waiting never runs (ADR-0240 section 12).
         const works = this.#works;
         this.#works = [];
@@ -2395,6 +2431,10 @@ export class GridView<Row> {
         if (pageSize !== undefined && (typeof pageSize !== 'number' || !Number.isInteger(pageSize) || pageSize < 1)) {
             throw new RangeError('A page holds at least one row; continuous scrolling is pageSize left unset (ADR-0015).');
         }
+        const { rangeRequestMargin }: { readonly rangeRequestMargin?: unknown } = options;
+        if (rangeRequestMargin !== undefined && (typeof rangeRequestMargin !== 'number' || !Number.isSafeInteger(rangeRequestMargin) || rangeRequestMargin < 0)) {
+            throw new RangeError('rangeRequestMargin is a whole number of rows, at least 0 (ADR-0183).');
+        }
         if (rowKind !== undefined && typeof rowKind !== 'function') throw new TypeError('rowKind is a function of the row (ADR-0024).');
         if (onClear !== undefined && typeof onClear !== 'function') {
             throw new TypeError('onClear is a function of the clear\'s intent.');
@@ -2528,6 +2568,8 @@ export class GridView<Row> {
             highlightHoverRow: (options.highlightHoverRow ?? options.presentationDefaults?.highlightHoverRow) === true,
             cellMessage: options.cellMessage, declaredKeys, onDeclaredKey: options.onDeclaredKey,
             stripeRows: (options.stripeRows ?? options.presentationDefaults?.stripeRows) === true, pageSize: options.pageSize, rowKind: options.rowKind,
+            // oxlint-disable-next-line ex-grid/no-stand-in-default -- ADR-0183: the margin is 0 until whoever reads ahead sets it
+            rangeRequestMargin: options.rangeRequestMargin ?? 0,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick, onLeave: options.onLeave,
@@ -2709,6 +2751,7 @@ export class GridView<Row> {
         this.#onRefused = taken.onRefused;
         this.#onAction = taken.onAction;
         this.#rowMarks.bind(taken.marks, taken.rowKind);
+        this.#rangeRequestMargin = taken.rangeRequestMargin;
         if (taken.pageSize !== this.#pageSize) {
             // A new size shows the first row shown before — the page's first, or the first painted without a pager —
             // at the top of the page that holds it, kept inside the pages there are as the geometry is made.
@@ -2871,6 +2914,7 @@ export class GridView<Row> {
         const previous = this.#state;
         const { window, windowStart } = previous;
         this.#state = this.#source.snapshot();
+        this.#noteRowsLeft();
         this.#noteRowsForSummary(previous);
         this.#userWritesTakenIn(window, windowStart);
         this.#invalidate();
@@ -3164,7 +3208,10 @@ export class GridView<Row> {
         const range = this.#visible;
         if (this.#placeholderMode) return;
         const { window, windowStart } = this.#state;
-        if (range === undefined || (range.start >= windowStart && range.start + range.count <= windowStart + window.length)) {
+        // With a margin, the Window must hold the rows either side of those on screen too, or they are asked for now,
+        // while those on screen may still be held. The request names the rows on screen all the same (ADR-0183).
+        const needed = range === undefined ? undefined : this.#withMargin(range);
+        if (range === undefined || needed === undefined || (needed.start >= windowStart && needed.start + needed.count <= windowStart + window.length)) {
             this.#lastRaised = undefined;
             return;
         }
@@ -3179,6 +3226,20 @@ export class GridView<Row> {
         // A source whose fetch fails says so through its own rejection, which reaches the page unheard as
         // any unhandled error does: nothing here makes it go away (ADR-0025).
         void this.#source.needRange(rowRange(range.start, range.count));
+    }
+
+    // The rows on screen and the Range Request Margin either side, clamped into the total (ADR-0183): what the Window
+    // must hold for no request to be made. Never short of the rows on screen, whatever the total says: a Window that
+    // does not hold them is uncovered at any margin.
+    #withMargin(onScreen: RowRange): RowRange {
+        const margin = this.#rangeRequestMargin;
+        if (margin === 0) return onScreen;
+        const end = onScreen.start + onScreen.count;
+        const start = Math.max(0, onScreen.start - margin);
+        // A total not known yet bounds nothing: the margin reaches past the Window's end however far it ends.
+        const total = this.#state.totalCount;
+        const last = total === undefined ? end + margin : Math.max(end, Math.min(total, end + margin));
+        return rowRange(start, last - start);
     }
 
     // ---- The Selection, the keys and the press (ADR-0011, ADR-0012, ADR-0052) ----------------------------
@@ -3718,7 +3779,7 @@ export class GridView<Row> {
     // a source since replaced painted, or on a row the Window no longer holds, or that only a position under a
     // moved order names, it marks nothing and is refused once, and said as an action's refusal is (ADR-0043's
     // note of 2026-10-09, MK-9; ADR-0142, ADR-0160).
-    #pressRowMark(pressed: PressedRow<Row>, marked: boolean): void {
+    #pressRowMark(pressed: PressedRow<Row>, marked: boolean, left = false): void {
         // Pointed at from outside, a press on the rows or the header is handed over instead (ADR-0058): the
         // stylesheet lets it through to them, and this is the guard behind it, for a click no press came before.
         if (this.#pointedAtNow()) return;
@@ -3730,7 +3791,8 @@ export class GridView<Row> {
         }
         this.#source.publishGathered?.();
         this.#reconcileSelection();
-        const now = this.#pressedRowNow(pressed);
+        // Held behind earlier input, as an action's (#pressAction).
+        const now = left ? { refused: 'rowLeftTheWindow' as const } : this.#pressedRowNow(pressed);
         if ('refused' in now) {
             this.#refuseRowMark(now.refused);
             return;
@@ -3805,7 +3867,7 @@ export class GridView<Row> {
     // (ADR-0142, LV-12), or refused. Acted on the newest rows the source holds: one that gathers live changes
     // puts them out first (D5). Nothing else is done, not even to the keyboard (ADR-0037, amended): a press
     // never focused the button, and what the handler opens is the Consumer's.
-    #pressAction(pressed: PressedRow<Row>, resolved: ResolvedColumn<Row>, action: GridAction): void {
+    #pressAction(pressed: PressedRow<Row>, resolved: ResolvedColumn<Row>, action: GridAction, left = false): void {
         // Pointed at from outside, a press on the rows or the header is handed over instead (ADR-0058): the
         // stylesheet lets it through to them, and this is the guard behind it, for a click no press came before.
         if (this.#pointedAtNow()) return;
@@ -3818,7 +3880,9 @@ export class GridView<Row> {
         }
         this.#source.publishGathered?.();
         this.#reconcileSelection();
-        const now = this.#pressedRowNow(pressed);
+        // A press held behind earlier input whose row left the Window meanwhile has lost it, though it came back
+        // (ADR-0240's note of 2026-10-19).
+        const now = left ? { refused: 'rowLeftTheWindow' as const } : this.#pressedRowNow(pressed);
         if ('refused' in now) {
             // The refusal names the row only while the Window holds it (ADR-0160).
             this.#refuseAction({
@@ -3904,11 +3968,9 @@ export class GridView<Row> {
         if (stands === undefined || !(button instanceof Element)) return;
         const pressed = press !== undefined && press.button === button ? press.pressed : this.#pressedRowOf(button);
         if (pressed === undefined) return;
-        this.#answered += 1;
-        this.#invalidate();
         // A press past an open editor commits it first, as any click away does; a Reject or a refusal holds it,
         // and the press keeps no meaning of its own (ADR-0034).
-        if (!this.#commitEdit()) return;
+        if (!this.#answerRowCommand()) return;
         this.#pressAction(pressed, stands.column, stands.action);
     };
 
@@ -3968,9 +4030,7 @@ export class GridView<Row> {
         if (!(box instanceof Element) || !this.#markBoxes.has(box)) return;
         const pressed = press !== undefined && press.box === box ? press.pressed : this.#pressedRowOf(box);
         if (pressed === undefined) return;
-        this.#answered += 1;
-        this.#invalidate();
-        if (!this.#commitEdit()) return;
+        if (!this.#answerRowCommand()) return;
         this.#pressRowMark(pressed, this.#markBoxes.get(box) !== true);
     };
 
@@ -4441,9 +4501,14 @@ export class GridView<Row> {
         const key = canonicalKey(press);
         if (heard === undefined || !this.#declaredKeys.has(key)) return false;
         this.#taken(event);
-        heard(Object.freeze({
+        const pressed: GridDeclaredKeyPress = Object.freeze({
             key, editOpen: this.#edit !== undefined, selection: this.#held.selection, rowSequenceVersion: this.#handedVersion(),
-        }));
+        });
+        // An answer still out takes the key's place in the Input Order: every input made after the key is held until it
+        // settles, as behind Blazor's awaited OnDeclaredKey (ADR-0240's note of 2026-10-19). A failure the handler throws
+        // is thrown here, and one its promise rejects with reaches the page as that rejection, unheard.
+        const answer = heard(pressed);
+        if (isThenable(answer)) void this.#placeWork(() => answer, undefined);
         return true;
     }
 
@@ -4664,7 +4729,8 @@ export class GridView<Row> {
     #pend<T>(answer: PromiseLike<T>, pending: Pick<PendingCommit<Row>, 'controller' | 'edit' | 'phase' | 'cancelled'>, retake: boolean,
         answered: (value: T) => boolean, failed?: () => void): void {
         const input = this.#input;
-        const trigger = retake ? this.#retaking ?? (input !== undefined && input.eventPhase !== Event.NONE ? input : undefined) : undefined;
+        const trigger: HeldInput | undefined = !retake ? undefined
+            : this.#retaking ?? (input !== undefined && input.eventPhase !== Event.NONE ? { kind: 'event', event: input } : undefined);
         // The field that holds the keyboard takes no input of its own either, so no IME starts in it meanwhile.
         const holder = typedField(this.#keyboardHolder());
         const stilled = holder === undefined || (pending.edit !== undefined && this.#inEditor(pending.edit, holder)) ? undefined : holder;
@@ -4727,9 +4793,11 @@ export class GridView<Row> {
         const next = this.#pending;
         if (next !== undefined) {
             next.held.push(...out.held);
+            if (next.trigger !== out.trigger) dropTrigger(out.trigger);
             return;
         }
-        this.#takeAgain(landed && out.trigger !== undefined ? [{ kind: 'event', event: out.trigger }, ...out.held] : out.held);
+        if (!landed) dropTrigger(out.trigger);
+        this.#takeAgain(landed && out.trigger !== undefined ? [out.trigger, ...out.held] : out.held);
     }
 
     // The held inputs taken in their order. One that makes another commit pending holds the rest behind it. Those that
@@ -4880,8 +4948,96 @@ export class GridView<Row> {
             return;
         }
         if (event.cancelable && !isClipboardKey(event)) event.preventDefault();
+        if (event instanceof MouseEvent && this.#holdRowCommand(event, pending)) return;
         pending.held.push(heldInputOf(event));
     };
+
+    // A row Action or row Mark click held behind earlier input (ADR-0240's note of 2026-10-19): its row is noted now,
+    // at the click, with a Mark's painted state, as is the row of its press, and followed while it waits; at its turn it
+    // acts on that row, or is refused where the row left the Window meanwhile. Never looked for again in the DOM,
+    // where another row's button may stand by then. Its press and release are held as any are, and mean nothing more
+    // at their turn. True where the click was one of these, and is taken care of.
+    #holdRowCommand(event: MouseEvent, pending: PendingCommit<Row>): boolean {
+        const target = event.target;
+        if (!(target instanceof Element)) return false;
+        const action = this.#actionButtons.get(target);
+        const box = this.#markBoxes.has(target);
+        if (action === undefined && !box) return false;
+        if (event.type === 'mousedown') {
+            if (action !== undefined) this.#onActionPress(event);
+            else this.#onMarkPress(event);
+            return false;
+        }
+        if (event.type !== 'click') return false;
+        let press: PressedRow<Row> | undefined;
+        let act: (pressed: PressedRow<Row>, left: boolean) => void;
+        if (action !== undefined) {
+            press = this.#actionPress?.button === target ? this.#actionPress.pressed : undefined;
+            act = (pressed, left) => { this.#pressAction(pressed, action.column, action.action, left); };
+        } else {
+            press = this.#markPress?.box === target ? this.#markPress.pressed : undefined;
+            const marked = this.#markBoxes.get(target) !== true;
+            act = (pressed, left) => { this.#pressRowMark(pressed, marked, left); };
+        }
+        this.#actionPress = undefined;
+        this.#markPress = undefined;
+        const pressed = press ?? this.#pressedRowOf(target);
+        if (pressed === undefined) return true;
+        // A row the Window no longer holds at the click is lost already, though its button is still painted.
+        const command: HeldRowCommand<Row> = { pressed, left: this.#leftTheWindow(pressed), act };
+        this.#heldRowCommands.add(command);
+        pending.held.push(this.#rowCommandTurn(command));
+        return true;
+    }
+
+    // A held row command's turn. An open edit is committed first, as for a click made now: a commit whose answer is out
+    // keeps the command, followed still, as the gesture it takes again once it lands.
+    #rowCommandTurn(command: HeldRowCommand<Row>): HeldInput {
+        const turn: HeldInput = {
+            kind: 'turn',
+            take: () => {
+                const retaking = this.#retaking;
+                this.#retaking = turn;
+                let committed: boolean;
+                try {
+                    committed = this.#answerRowCommand();
+                } finally {
+                    this.#retaking = retaking;
+                }
+                // A commit whose answer is out takes this turn again once it lands; one held by a Reject or a refusal
+                // ends the command, which keeps no meaning of its own.
+                if (!committed && this.#pending?.trigger === turn) return;
+                this.#heldRowCommands.delete(command);
+                if (!committed) return;
+                command.act(command.pressed, command.left);
+            },
+            dropped: () => { this.#heldRowCommands.delete(command); },
+        };
+        return turn;
+    }
+
+    // A click on a row command, answered: the stamp counts it, and an open edit is committed first, as any click away
+    // does. False where a Reject, a refusal or an answer still out holds the edit, and the click keeps no meaning of its
+    // own, or waits for that answer.
+    #answerRowCommand(): boolean {
+        this.#answered += 1;
+        this.#invalidate();
+        return this.#commitEdit();
+    }
+
+    // Whether a row command's row is gone from the Window, where the source it was made on is still bound: one a
+    // replaced source painted is refused as that at its turn.
+    #leftTheWindow(pressed: PressedRow<Row>): boolean {
+        return pressed.source === this.#source && !this.#windowHolds(pressed.row);
+    }
+
+    // A new Window: a held row command whose row it no longer holds has lost it for good (ADR-0240's note of
+    // 2026-10-19). One made on what a replaced source painted is refused as that at its turn.
+    #noteRowsLeft(): void {
+        for (const command of this.#heldRowCommands) {
+            if (!command.left && this.#leftTheWindow(command.pressed)) command.left = true;
+        }
+    }
 
     // Whether an input is in this grid's order (ADR-0240 ticket 04): any made in the grid; on the product's surfaces
     // around it, in its Input Root and not inside another grid's or another Input Root, a key, typed text or a
@@ -4916,6 +5072,7 @@ export class GridView<Row> {
         if (!this.#unpend(pending)) return;
         pending.controller.abort();
         pending.cancelled();
+        dropTrigger(pending.trigger);
         this.#takeAgain(pending.held);
     }
 

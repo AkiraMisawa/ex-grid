@@ -218,7 +218,7 @@ export function SheetDemo(): ReactElement {
                     pinnedColumnCount={pinned} japanese={japanese} showToolbar={toolbarShown} onShowToolbarChanged={setToolbarShown}
                     toolbar={toolbar} timeZone={zone} today={today}
                     pointingScope={inScope ? scope : undefined} onPointingRefused={(refusal: PointingRefusal) => { setPointing(refusal.message); }}
-                    onWorkbookChanged={count}
+                    onWorkbookChanged={count} onFormatKeyRefused={refusal => { setStatus(refusal.message); }}
                     onEditingChanged={open => { setEditing(open); setPointing(''); }}
                     onSelectionChanged={changed => { selection.current = changed; readFocus(); }} />
                 <div id="sheet-positions">

@@ -1,11 +1,12 @@
 // A Sheet's Selection Summary cells beside Excel's status bar, as the seventeenth Windows run read them
 // (verification/2026-10-11-windows-17/report.md, Part B's b5 to b7; ADR-0130, SM-7), ported from the cell facts of
-// tests/ExSheet.Components/SheetSummaryTests.cs. The figures themselves are folded by the family's one definition,
-// which @ex-grid/core does not export yet, so these hold which cells are read and how a refused one declines.
+// tests/ExSheet.Components/SheetSummaryTests.cs: which cells are read, how a refused one declines, and the figures
+// the Sheet Source answers, folded by the family's one definition and written in the Focus cell's Number Format.
 import { describe, expect, it } from 'vitest';
-import type { GridSummaryRequest } from '@ex-grid/core';
-import { CellAddress, Culture, SheetEdit, Workbook, type Sheet } from '@ex-grid/sheet-engine';
+import type { GridSummaryRequest, GridSummaryResult } from '@ex-grid/core';
+import { CellAddress, Culture, NumberFormat, SheetEdit, Workbook, type Sheet } from '@ex-grid/sheet-engine';
 import { sheetSummaryCells, sheetSummaryDeclined, sheetWords, SheetWords } from '../src/index';
+import { SheetSource } from '../src/sheet-source';
 
 // A Formula ExSheet refuses because it cannot answer it as Excel does (MROUND-001): its cell is #VALUE!.
 const refusing = '=MROUND(6.05,0.1)';
@@ -17,18 +18,86 @@ function sheetOf(...cells: readonly (readonly [string, string])[]): Sheet {
 }
 
 /** A request over columns A and B, rows `top` to `bottom` from 1, its Focus at the first cell. */
-function request(range: string, columns: readonly string[] = ['A', 'B']): GridSummaryRequest {
+function request(range: string, columns: readonly string[] = ['A', 'B'], focusAt?: string): GridSummaryRequest {
     const [first = '', last = first] = range.split(':');
     const a = CellAddress.parse(first);
     const b = CellAddress.parse(last);
+    const focus = focusAt === undefined ? a : CellAddress.parse(focusAt);
     return {
-        ranges: [{ topRow: a.row, leftColumn: a.column, rowCount: b.row - a.row + 1, columnCount: b.column - a.column + 1 }],
+        ranges: [{ topRow: Math.min(a.row, b.row), leftColumn: a.column, rowCount: Math.abs(b.row - a.row) + 1, columnCount: b.column - a.column + 1 }],
         columns,
         rowSequenceVersion: 0,
         figures: ['average', 'count', 'numericalCount', 'min', 'max', 'sum'],
-        focus: { row: a.row, column: a.column },
+        focus: { row: focus.row, column: focus.column },
     };
 }
+
+// Each figure as the status line shows it: the Sheet's text where it wrote one, else the count's whole number.
+function shown(result: GridSummaryResult): readonly string[] {
+    if (result.kind !== 'answered') return [`declined: ${result.reason}`];
+    return Object.entries(result.figures).flatMap(([figure, answer]) => {
+        if (answer.kind !== 'number') return [];
+        const text = (result.texts as Readonly<Record<string, string | undefined>>)[figure];
+        return [`${figure}: ${text ?? String(answer.number)}`];
+    });
+}
+
+async function summarised(sheet: Sheet, asked: GridSummaryRequest): Promise<readonly string[]> {
+    const source = new SheetSource(sheet, () => SheetWords.english);
+    return shown(await source.summarize(asked, new AbortController().signal));
+}
+
+describe('SheetSource.summarize (ADR-0130), beside Excel\'s status bar in the seventeenth Windows run', () => {
+    it('ADR-0130 / SM-7: an Error Value among the cells leaves Count and Numerical Count, and no other figure (run 17, b5)', async () => {
+        const sheet = sheetOf(['A1', '1'], ['A2', '2'], ['A3', '=1/0'], ['A4', 'x']);
+        // Excel: "Count: 4    Numerical Count: 2", and nothing else.
+        expect(await summarised(sheet, request('A1:A5'))).toEqual(['count: 4', 'numericalCount: 2']);
+    });
+
+    it('ADR-0130 / SM-7: the error cleared, every figure is back, in General (run 17, b6)', async () => {
+        const sheet = sheetOf(['A1', '1'], ['A2', '2'], ['A4', 'x']);
+        // Excel: "Average: 1.5    Count: 3    Numerical Count: 2    Min.: 1    Max.: 2    Sum: 3".
+        expect(await summarised(sheet, request('A1:A5'))).toEqual(['average: 1.5', 'count: 3', 'numericalCount: 2', 'min: 1', 'max: 2', 'sum: 3']);
+    });
+
+    it('ADR-0130: a Boolean is counted and not numerically; a date is a number (run 17, b7)', async () => {
+        const sheet = sheetOf(['A1', '1'], ['A2', 'TRUE'], ['A3', '2026-10-11'], ['A4', 'x']);
+        // Excel: "Average: 23153.5    Count: 4    Numerical Count: 2    Min.: 1    Max.: 46306    Sum: 46307".
+        expect(await summarised(sheet, request('A1:A4'))).toEqual(['average: 23153.5', 'count: 4', 'numericalCount: 2', 'min: 1', 'max: 46306', 'sum: 46307']);
+    });
+
+    it('ADR-0130 / SM-9: every figure but the counts wears the Focus cell\'s format, whatever the other\'s (run 17, b8)', async () => {
+        const sheet = sheetOf();
+        sheet.workbook.do('Sheet1', SheetEdit.setNumberFormatOf([CellAddress.parse('A1')], NumberFormat.parse('#,##0.00')));
+        sheet.workbook.do('Sheet1', SheetEdit.setNumberFormatOf([CellAddress.parse('A2')], NumberFormat.parse('0%')));
+        sheet.workbook.do('Sheet1', SheetEdit.enter(CellAddress.parse('A1'), '1000'));
+        sheet.workbook.do('Sheet1', SheetEdit.enter(CellAddress.parse('A2'), '2000'));
+        // Excel: "Average: 510.00    Count: 2    Numerical Count: 2    Min.: 20.00    Max.: 1,000.00    Sum: 1,020.00".
+        expect(await summarised(sheet, request('A1:A2', ['A', 'B'], 'A1')))
+            .toEqual(['average: 510.00', 'count: 2', 'numericalCount: 2', 'min: 20.00', 'max: 1,000.00', 'sum: 1,020.00']);
+        // Excel: "Average: 51000%    Count: 2    Numerical Count: 2    Min.: 2000%    Max.: 100000%    Sum: 102000%".
+        expect(await summarised(sheet, request('A1:A2', ['A', 'B'], 'A2')))
+            .toEqual(['average: 51000%', 'count: 2', 'numericalCount: 2', 'min: 2000%', 'max: 100000%', 'sum: 102000%']);
+    });
+
+    it('ADR-0130 (2026-10-13, decided with the user): a refused cell declines the whole summary in the Sheet\'s words', async () => {
+        const sheet = sheetOf(['A1', '1'], ['A2', refusing]);
+        expect(await summarised(sheet, request('A1:A2'))).toEqual([
+            'declined: No figures: ExSheet refused the Formula in A2 with #VALUE! because it cannot answer it as Excel does, so a figure over it would not be Excel\'s.',
+        ]);
+    });
+
+    it('ADR-0130: a summary asked of a Sheet shown before the last one is given up, never answered over cells nobody read', async () => {
+        const sheet = sheetOf(['A1', '1'], ['A2', '2']);
+        const source = new SheetSource(sheet, () => SheetWords.english);
+        source.show(sheetOf());
+        source.show(sheet);
+        await expect(source.summarize(request('A1:A2'), new AbortController().signal)).rejects.toMatchObject({ name: 'AbortError' });
+        expect(shown(await source.summarize({ ...request('A1:A2'), rowSequenceVersion: 2 }, new AbortController().signal))).toEqual([
+            'average: 1.5', 'count: 2', 'numericalCount: 2', 'min: 1', 'max: 2', 'sum: 3',
+        ]);
+    });
+});
 
 describe('sheetSummaryCells', () => {
     it('ADR-0130 / SM-7: an Error Value among the cells is counted apart from the numbers (run 17, b5)', () => {

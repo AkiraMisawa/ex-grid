@@ -264,6 +264,13 @@
             On Blazor Server, a row click made while the connection is down is refused when the
             next input after reconnection exposes the loss; later input can continue.
         </p>
+        <p>
+            In ExGrid for React the earlier input is a handler that answers with a promise: an
+            <code>onDeclaredKey</code> that returns one holds every input made after the key until it settles, as
+            <code>inOrder</code> work does, and a waiting Action or Mark whose row left the Window meanwhile reaches
+            <code>onRefused</code> with the reason <code>'rowLeftTheWindow'</code>. In the Example, rows the source is handed
+            back come after the others.
+        </p>
         <DocsExample Title="Row commands behind an asynchronous Consumer" Builtin="typeof(QueuedRowCommands)"
                      Mud="typeof(QueuedRowCommandsMud)" Files="@(["Examples/Grid/QueuedRowCommands.razor"])">
             Focus the grid and press <kbd>Control+B</kbd> (Command+B on macOS), then click Open on row 0
