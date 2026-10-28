@@ -122,6 +122,9 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <summary>The Grid Chrome's Name Box over the Script Core (ADR-0410).</summary>
     public RenderFragment? NameBox(GridNameBoxView view) => GridSeams.NameBox(view);
 
+    /// <summary>The Grid Chrome's completion list over the Script Core (ADR-0410), beneath the Sheet's own editor.</summary>
+    public RenderFragment? EditorCompletion(GridEditorCompletionView view) => GridSeams.EditorCompletion(view);
+
     /// <summary>The Sheet's own slots this Chrome fills over the Script Core (ADR-0410): the Toolbar Items, Format Cells,
     /// and the Sheet Tabs' faces and the + button's, drawn as they are over the C# core.</summary>
     public SheetScriptSlots SheetScriptSlots

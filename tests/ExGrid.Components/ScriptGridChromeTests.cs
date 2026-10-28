@@ -277,6 +277,61 @@ public class ScriptGridChromeTests : BunitContext
         Assert.Equal(["bar text", "name box"], cut.FindAll(".ex-razor-slot").Select(slot => slot.TextContent));
     }
 
+    private sealed class CompletionChrome : IGridChrome
+    {
+        public ScriptSlots ScriptSlots => ScriptSlots.EditorCompletion;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? EditorCompletion(GridEditorCompletionView view) => builder => builder.AddContent(0,
+            $"{string.Join(",", view.Labels)} / {view.Hint?.Parts().Emphasis}");
+    }
+
+    [Fact] // ADR-0410 section 3 / ADR-0051: the completion's labels and hint cross as data, drawn for each answer
+    public async Task ADR0410_the_completions_labels_and_hint_cross_as_data()
+    {
+        var cut = Grid(new CompletionChrome());
+        using (var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2])))
+            Assert.Equal("""["editorCompletion"]""", document.RootElement.GetProperty("options").GetProperty("razorSlots").GetRawText());
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "editorCompletion",
+            """{"labels":["SUM","SUMIF"],"hint":{"text":"SUM(number1)","emphasisStart":4,"emphasisLength":7}}"""));
+        Assert.Equal("SUM,SUMIF / number1", cut.Find(".ex-razor-slot").TextContent);
+
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2, """{"labels":[],"hint":null}"""));
+        Assert.Equal(" / ", cut.Find(".ex-razor-slot").TextContent);
+    }
+
+    [Fact] // ADR-0051: the editor's text and caret are handed to CompleteEditorText, and its answer crosses as the core reads it
+    public async Task ADR0051_completion_is_asked_of_CompleteEditorText()
+    {
+        var asked = new List<(string, int)>();
+        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Rows, TestRows.Window())
+            .Add(g => g.Columns, Columns)
+            .Add(g => g.CompleteEditorText, (text, caret) =>
+            {
+                asked.Add((text, caret));
+                return ValueTask.FromResult<Cells.EditorCompletion?>(text == "=SU"
+                    ? new Cells.EditorCompletion([new Cells.CompletionCandidate("SUM", 1, 2, "SUM(")], new Cells.EditorHint("SUM(number1)", 4, 7))
+                    : null);
+            }));
+        using (var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2])))
+            Assert.True(document.RootElement.GetProperty("options").GetProperty("completesText").GetBoolean());
+
+        var answer = await cut.InvokeAsync(() => Bridge().Complete("=SU", 3));
+        var none = await cut.InvokeAsync(() => Bridge().Complete("=", 1));
+
+        Assert.Equal("""{"candidates":[{"label":"SUM","start":1,"length":2,"insert":"SUM("}],"hint":{"text":"SUM(number1)","emphasisStart":4,"emphasisLength":7}}""", answer);
+        Assert.Null(none);
+        Assert.Equal([("=SU", 3), ("=", 1)], asked);
+    }
+
     [Fact] // ADR-0051 / ADR-0050 item 4: Enter in the Name Box is heard only where handled, and hands the Consumer the typed text
     public async Task ADR0051_enter_in_the_name_box_reaches_OnNameBoxEntered()
     {

@@ -31,6 +31,38 @@ internal static class ScriptJson
         return member;
     }
 
+    /// <summary>A Consumer's completion as the Script Core builds its <c>EditorCompletion</c> from it (ADR-0051).</summary>
+    internal static string Completion(Cells.EditorCompletion completion)
+    {
+        ArgumentNullException.ThrowIfNull(completion);
+        var buffer = new System.Buffers.ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteStartArray("candidates");
+            foreach (var candidate in completion.Candidates)
+            {
+                json.WriteStartObject();
+                json.WriteString("label", candidate.Label);
+                json.WriteNumber("start", candidate.Start);
+                json.WriteNumber("length", candidate.Length);
+                json.WriteString("insert", candidate.Insert);
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+            if (completion.Hint is { } hint)
+            {
+                json.WriteStartObject("hint");
+                json.WriteString("text", hint.Text);
+                json.WriteNumber("emphasisStart", hint.EmphasisStart);
+                json.WriteNumber("emphasisLength", hint.EmphasisLength);
+                json.WriteEndObject();
+            }
+            json.WriteEndObject();
+        }
+        return System.Text.Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
+
     internal static CellPosition Cell(JsonElement json) => new(json.GetProperty("row").GetInt32(), json.GetProperty("column").GetInt32());
 
     internal static SelectionRange Range(JsonElement json) => new(

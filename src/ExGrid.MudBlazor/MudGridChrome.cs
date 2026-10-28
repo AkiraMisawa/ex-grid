@@ -137,10 +137,11 @@ public sealed class MudGridChrome : IGridChrome
     }
 
     /// <summary>The slots this Chrome fills when the Script Core draws the grid (ADR-0410): the column
-    /// menu, the filter panel, the find panel, the Context Menu, the loading bar, the Cell Editor and the Formula
-    /// Bar's two fields so far. Every other part is the Script Core's own there until this Wrapper fills it too.</summary>
+    /// menu, the filter panel, the find panel, the Context Menu, the loading bar, the Cell Editor, the Formula
+    /// Bar's two fields and the completion list so far. Every other part is the Script Core's own there until this
+    /// Wrapper fills it too.</summary>
     public ScriptSlots ScriptSlots => ScriptSlots.ColumnMenu | ScriptSlots.ContextMenu | ScriptSlots.LoadingIndicator | ScriptSlots.FilterPanel
-        | ScriptSlots.FindPanel | ScriptSlots.CellEditor | ScriptSlots.FormulaBarText | ScriptSlots.NameBox;
+        | ScriptSlots.FindPanel | ScriptSlots.CellEditor | ScriptSlots.FormulaBarText | ScriptSlots.NameBox | ScriptSlots.EditorCompletion;
 
     /// <summary>The column menu when the Script Core draws the grid (ADR-0410): the same
     /// <c>MudButton</c> items, each marked for the script that wires them.</summary>
@@ -221,6 +222,20 @@ public sealed class MudGridChrome : IGridChrome
     {
         ArgumentNullException.ThrowIfNull(view);
         return BarField("mud-ex-name-box", ScriptSlotAttributes.NameBoxField);
+    }
+
+    /// <summary>The completion list and the argument hint when the Script Core draws the grid (ADR-0410): the same
+    /// Material list, each candidate marked for the script, which marks the chosen one and accepts a click in the
+    /// browser, and the hint beneath it in the caption type.</summary>
+    public RenderFragment? EditorCompletion(GridEditorCompletionView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenComponent<MudExGridScriptCompletion>(0);
+            builder.AddComponentParameter(1, nameof(MudExGridScriptCompletion.View), view);
+            builder.CloseComponent();
+        };
     }
 
     private static RenderFragment BarField(string className, string mark) => builder =>

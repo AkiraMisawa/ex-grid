@@ -1,4 +1,8 @@
 #nullable enable
+ExGrid.MudBlazor.MudExGridScriptCompletion
+ExGrid.MudBlazor.MudExGridScriptCompletion.MudExGridScriptCompletion() -> void
+ExGrid.MudBlazor.MudExGridScriptCompletion.View.get -> ExGrid.Chrome.GridEditorCompletionView!
+ExGrid.MudBlazor.MudExGridScriptCompletion.View.set -> void
 ExGrid.MudBlazor.MudExGridScriptFilterPanel
 ExGrid.MudBlazor.MudExGridScriptFilterPanel.Chrome.get -> ExGrid.MudBlazor.MudGridChrome!
 ExGrid.MudBlazor.MudExGridScriptFilterPanel.Chrome.set -> void
@@ -20,6 +24,7 @@ ExGrid.MudBlazor.MudExGridScriptMenu.View.set -> void
 ExGrid.MudBlazor.MudGridChrome.CellEditor(ExGrid.Chrome.GridCellEditorView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.MudBlazor.MudGridChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.MudBlazor.MudGridChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.EditorCompletion(ExGrid.Chrome.GridEditorCompletionView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.MudBlazor.MudGridChrome.FilterPanel(ExGrid.Chrome.GridFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.MudBlazor.MudGridChrome.FindPanel(ExGrid.Chrome.GridFindView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.MudBlazor.MudGridChrome.FormulaBarText(ExGrid.Chrome.GridFormulaBarTextView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
@@ -28,6 +33,7 @@ ExGrid.MudBlazor.MudGridChrome.NameBox(ExGrid.Chrome.GridNameBoxView! view) -> M
 ExGrid.MudBlazor.MudGridChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
 override ExGrid.MudBlazor.MudExGridScriptFilterPanel.OnParametersSet() -> void
 override ExGrid.MudBlazor.MudExGridScriptFindPanel.OnParametersSet() -> void
+~override ExGrid.MudBlazor.MudExGridScriptCompletion.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExGrid.MudBlazor.MudExGridScriptFilterPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExGrid.MudBlazor.MudExGridScriptFindPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExGrid.MudBlazor.MudExGridScriptMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

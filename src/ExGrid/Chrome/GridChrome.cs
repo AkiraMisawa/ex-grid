@@ -750,4 +750,10 @@ public interface IGridChrome
     /// <see cref="ScriptSlots.NameBox"/>: one <c>input</c> marked with <see cref="ScriptSlotAttributes.NameBoxField"/>,
     /// with no value and no handler of its own.</summary>
     RenderFragment? NameBox(GridNameBoxView view) => null;
+
+    /// <summary>The completion list and the argument hint when the Script Core draws the grid (ADR-0410), for a Chrome
+    /// that names <see cref="ScriptSlots.EditorCompletion"/>: the candidates in an element marked
+    /// <see cref="ScriptSlotAttributes.CompletionList"/>, each marked <see cref="ScriptSlotAttributes.CompletionCandidate"/>,
+    /// then the hint, with no handler and no choice of its own.</summary>
+    RenderFragment? EditorCompletion(GridEditorCompletionView view) => null;
 }

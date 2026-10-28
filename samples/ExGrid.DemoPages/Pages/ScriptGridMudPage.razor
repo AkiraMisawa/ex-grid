@@ -22,7 +22,7 @@
     rendered in .NET beside the grid and moved into the Script Core's slots by the adapter's script, which wires
     each control in the browser. A key on a menu item, a value ticked, a condition, a search or a Trader typed never
     waits on the circuit. Book filters by its values, Notional by conditions, Ctrl+F asks the rows' source in .NET,
-    and Trader is editable. The
+    and Trader is editable, offering the desk's traders whose names begin with what is typed in a MudBlazor list. The
     other parts are still the Script Core's own. It stands in a striped <code>MudExGridPaper</code>, whose Roboto
     widths, Density and Row Stripes the grid takes as the C# core's does (ADR-0030).
 </p>
@@ -37,7 +37,8 @@
                          Chrome="MudGridChrome.Default"
                          OnColumnHidden="OnColumnHidden"
                          OnEdit="OnEdit"
-                         OnNameBoxEntered="OnNameBoxEntered" />
+                         OnNameBoxEntered="OnNameBoxEntered"
+                         CompleteEditorText="CompleteTrader" />
 </MudExGridPaper>
 
 <p><span id="script-mud-hidden" role="status">Hidden: @_hidden</span></p>
@@ -63,6 +64,19 @@
 
     // What the editor committed, as the core read it from MudBlazor's field in the browser.
     private void OnEdit(GridEditIntent<DemoTrade> intent) => _edited = $"{intent.Column} = {intent.Value}";
+
+    private static readonly string[] Desk = ["Ito", "Marsh", "Martens", "Mira Holt", "Okafor", "Petrov", "Silva"];
+
+    // The desk's traders whose names begin with the text, each replacing it whole. The grid knows no trader: what is
+    // offered and what accepting it writes are the page's (ADR-0051).
+    private static ValueTask<EditorCompletion?> CompleteTrader(string text, int caret)
+    {
+        if (text.Length == 0)
+            return ValueTask.FromResult<EditorCompletion?>(null);
+        var candidates = Desk.Where(name => name.StartsWith(text, StringComparison.OrdinalIgnoreCase))
+            .Select(name => new CompletionCandidate(name, 0, text.Length, name)).ToList();
+        return ValueTask.FromResult<EditorCompletion?>(candidates.Count == 0 ? null : new EditorCompletion(candidates));
+    }
 
     // What was typed in MudBlazor's Name Box as Enter was pressed there; resolving it is the Consumer's (ADR-0051).
     private void OnNameBoxEntered(string typed) => _named = typed;

@@ -22,6 +22,9 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
         => Calls.InOrder(() => grid.ValidateAsync(number, columnsVersion, row, column, text));
 
     [JSInvokable]
+    public Task<string?> Complete(string text, int caret) => Calls.InOrder(() => grid.CompleteAsync(text, caret));
+
+    [JSInvokable]
     public Task<string?> Message(long row, string column) => Calls.InOrder(() => grid.MessageAsync(row, column));
 
     [JSInvokable]
@@ -89,6 +92,8 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
                 return await grid.FindAsync(At(0).GetInt64(), At(1).GetInt32(), At(2));
             case nameof(ContextCommands):
                 return await grid.ContextCommandsAsync(At(0).GetInt64(), At(1).GetInt32(), At(2).GetInt32(), At(3).GetInt64(), Text(4), At(5), At(6).GetInt32());
+            case nameof(Complete):
+                return await grid.CompleteAsync(Text(0), At(1).GetInt32());
             case nameof(FindError):
                 return await grid.FindErrorAsync(At(0).GetInt64(), At(1).GetInt32(), At(2));
             case nameof(SetSorts):

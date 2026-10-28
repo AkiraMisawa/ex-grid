@@ -4,16 +4,16 @@
 // so every product that draws a grid fills its slots alike: ExGrid's own, and a pivot's report grid.
 
 import {
-    filterPanelLabelIds, findPanelLabelIds, operatorLabelId, wireCellEditor, wireFilterPanel, wireFindPanel, wireFormulaBarText, wireMenuItems, wireNameBox,
+    filterPanelLabelIds, findPanelLabelIds, operatorLabelId, wireCellEditor, wireEditorCompletion, wireFilterPanel, wireFindPanel, wireFormulaBarText, wireMenuItems, wireNameBox,
     type FilterPanelCondition, type FilterPanelView, type FindPanelView, type GridCellEditorSlotContext, type GridColumnMenuSlotContext,
-    type GridContextMenuSlotContext, type GridFilterPanelSlotContext, type GridFormulaBarTextSlotContext, type GridNameBoxSlotContext,
+    type GridContextMenuSlotContext, type GridEditorCompletionSlotContext, type GridFilterPanelSlotContext, type GridFormulaBarTextSlotContext, type GridNameBoxSlotContext,
     type GridFindPanelSlotContext, type GridLoadingIndicatorSlotContext,
 } from '@ex-grid/core';
 import type { HostedSlotKind, RazorSlotKind } from './razor-slot-host';
 
 /** The grid's slots a Razor Chrome fills, as the core names them. */
 export type GridRazorSlotName =
-    'cellEditor' | 'columnMenu' | 'contextMenu' | 'filterPanel' | 'findPanel' | 'formulaBarText' | 'loadingIndicator' | 'nameBox';
+    'cellEditor' | 'columnMenu' | 'contextMenu' | 'editorCompletion' | 'filterPanel' | 'findPanel' | 'formulaBarText' | 'loadingIndicator' | 'nameBox';
 
 /** A menu's kind: the commands as data, and the keys wired on the items, which take the keyboard. */
 const menuKind: RazorSlotKind<GridColumnMenuSlotContext | GridContextMenuSlotContext<unknown>> = {
@@ -104,10 +104,35 @@ const nameBoxKind: RazorSlotKind<GridNameBoxSlotContext> = {
     wire: (contents, box) => wireNameBox(contents, box),
 };
 
+/** The completion list's kind: the candidates' labels and the hint as data, drawn again for each answer that shows
+ * otherwise, and the ids, roles and the chosen candidate set on the marked contents in the browser, so ↑ and ↓, which
+ * mount the slot again with the same answer, never wait on the circuit. A click accepts a candidate only on contents
+ * drawn from what the answer shows. */
+const completionKind: RazorSlotKind<GridEditorCompletionSlotContext, string> = {
+    takesKeyboard: false,
+    data: completion => {
+        const json = completionJson(completion);
+        return { json, drawn: json, memo: undefined };
+    },
+    wire: (contents, completion, _answered, drawn) => {
+        const json = completionJson(completion);
+        return wireEditorCompletion(contents, completion, () => drawn() === json);
+    },
+};
+
+/** What the completion's contents show: the labels and the hint, nothing a choice or an accept needs. */
+function completionJson(completion: GridEditorCompletionSlotContext): string {
+    const { hint } = completion;
+    return JSON.stringify({
+        labels: completion.candidates.map(candidate => candidate.label),
+        hint: hint === undefined ? null : { text: hint.text, emphasisStart: hint.emphasisStart, emphasisLength: hint.emphasisLength },
+    });
+}
+
 // Every slot a Razor Chrome fills has its kind: a name added to GridRazorSlotName without one does not compile.
 const gridKindsByName = {
     cellEditor: editorKind, columnMenu: menuKind, contextMenu: menuKind, loadingIndicator: loadingKind, filterPanel: filterKind, findPanel: findKind,
-    formulaBarText: barTextKind, nameBox: nameBoxKind,
+    formulaBarText: barTextKind, nameBox: nameBoxKind, editorCompletion: completionKind,
 } satisfies Record<GridRazorSlotName, HostedSlotKind>;
 
 /** The kinds of the grid's slots a Razor Chrome fills, by the core's slot names, for a RazorSlotHost. */
