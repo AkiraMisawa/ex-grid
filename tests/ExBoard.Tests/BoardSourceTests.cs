@@ -82,10 +82,10 @@ public sealed class BoardSourceTests : BunitContext
             return ValueTask.FromResult(new ShapedPage(Narrowing.Copy(Held, through.GetRange(start, count)), start, through.Count));
         })
         {
-            Report = reports ? narrowing =>
+            Pivot = reports ? narrowing =>
             {
                 Reports.Add(narrowing);
-                return PivotReportSource.From(PivotSource.From(Narrowing.Copy(Held, Narrowing.Positions(Held, narrowing))));
+                return PivotSource.From(Narrowing.Copy(Held, Narrowing.Positions(Held, narrowing)));
             } : null,
             Thin = thins ? async (query, _) =>
             {
@@ -449,8 +449,8 @@ public sealed class BoardSourceTests : BunitContext
         Assert.True(condition());
     }
 
-    [Fact] // ADR-0343: a pivot over a source that makes no report source is refused by path
-    public async Task A_pivot_over_a_source_making_no_report_is_refused()
+    [Fact] // ADR-0343: a pivot over a source that makes no Pivot Source is refused by path
+    public async Task A_pivot_over_a_source_making_no_Pivot_Source_is_refused()
     {
         var refused = await Assert.ThrowsAsync<BoardRefusedException>(() => Bind(Board(Pivot), new Server(), reports: false));
         Assert.Equal("views[0].pivot", refused.Path);

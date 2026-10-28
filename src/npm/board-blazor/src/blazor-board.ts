@@ -14,7 +14,8 @@ import { BoardDiff, createBoard, readBoard, type BoardHandle, type BoardOptions,
 import { crossingCalls, HeldMessages, HeldSnapshots, type DotNetStream } from '@ex-grid/blazor-shared';
 import type { TemporalLike } from '@ex-grid/core';
 import type { BoardInput, Snapshot } from '@ex-grid/data';
-import { dotNetBoardSource, type WireSource } from './dotnet-board-source';
+import type { DotNetPivotSource } from '@ex-grid/pivot-blazor';
+import { dotNetBoardSource, type PivotMaking, type WireSource } from './dotnet-board-source';
 
 export type { DotNetStream } from '@ex-grid/blazor-shared';
 export type { WireSource } from './dotnet-board-source';
@@ -72,6 +73,9 @@ export interface WireUpdate {
 export interface BlazorBoard {
     /** Takes a {@link WireUpdate}, after every update before it. */
     update(json: string, streams: readonly DotNetStream[]): Promise<void>;
+    /** Passes on what .NET heard the C# Pivot Source made under `pivot` say, a `PivotSourceChanged` in PivotJson, to
+     * the one made here under that number while the browser holds it. */
+    pivotChanged(pivot: number, json: string): void;
     /** The arguments of the call .NET was handed `held` in place of, as the stream it reads them from. Taken once. */
     take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the Board and empties its element. */
@@ -80,7 +84,18 @@ export interface BlazorBoard {
 
 /** The calls .NET's `Held` makes: each one that can carry what the Board or the Consumer made, an output, a Diff or a
  * link's narrowing of thousands of values. */
-const heldBoardCalls: ReadonlySet<string> = new Set(['Heard', 'Fetch', 'Thin']);
+const heldBoardCalls: ReadonlySet<string> = new Set(['Heard', 'Fetch', 'Thin', 'Under', 'MakePivot', 'PivotAggregate', 'PivotItems', 'PivotDetails']);
+
+/** What tells .NET that the browser let a Pivot Source made over a source go. */
+export interface PivotCollector {
+    register(source: DotNetPivotSource, pivot: number): void;
+}
+
+/** The browser's collector, unless a test hands its own. */
+export function browserCollector(collected: (pivot: number) => void): PivotCollector {
+    const registry = new FinalizationRegistry<number>(collected);
+    return { register: (source, pivot) => { registry.register(source, pivot); } };
+}
 
 /** How the Board is drawn: ExBoard's Script Core, unless a test hands its own. */
 export type DrawBoard = (element: HTMLElement, options: BoardOptions) => BoardHandle;
@@ -91,7 +106,7 @@ export type DrawBoard = (element: HTMLElement, options: BoardOptions) => BoardHa
  * Snapshots are read, is the component's handle on the Board.
  */
 export async function attach(
-    root: HTMLElement, dotnet: DotNetHandle, json: string, streams: readonly DotNetStream[], draw: DrawBoard = createBoard,
+    root: HTMLElement, dotnet: DotNetHandle, json: string, streams: readonly DotNetStream[], draw: DrawBoard = createBoard, makeCollector = browserCollector,
 ): Promise<BlazorBoard> {
     const init = parsed<WireAttach>(json);
     let stopped = false;
@@ -125,13 +140,30 @@ export async function attach(
     };
     // An abort after the Board is stopped tells .NET nothing: .NET cancels what is still out as it lets the Board go.
     const cancel = (call: number): void => { send('Cancel', call); };
+    // Each Pivot Source a pivot over a source made, by its number while the browser holds it: its questions cross as
+    // the pivot's (`PivotAggregate`, …), numbered apart from the sources' own, and .NET lets go of the C# one once the
+    // browser has let go of it.
+    const pivotsMade = new Map<number, WeakRef<DotNetPivotSource>>();
+    const collector = makeCollector(pivot => {
+        pivotsMade.delete(pivot);
+        send('ReleasePivot', pivot);
+    });
+    let lastPivot = 0;
+    const pivots: PivotMaking = {
+        next: () => ++lastPivot,
+        calls: { invokeMethodAsync: (method, ...args) => bridge.invokeMethodAsync(`Pivot${method}`, ...args) },
+        made: source => {
+            pivotsMade.set(source.generation, new WeakRef(source));
+            collector.register(source, source.generation);
+        },
+    };
     const sourcesOf = (wire: Readonly<Record<string, WireSource>>): Readonly<Record<string, BoardSource>> | undefined => {
         const entries = Object.entries(wire);
         if (entries.length === 0) return undefined;
         return Object.freeze(Object.fromEntries(entries.map(([input, source]) => {
             let made = asked.get(source.number);
             if (made === undefined) {
-                made = dotNetBoardSource(bridge, cancel, declared(input), source);
+                made = dotNetBoardSource(bridge, cancel, declared(input), source, pivots);
                 asked.set(source.number, made);
             }
             return [input, made];
@@ -193,6 +225,9 @@ export async function attach(
             queue = applied.then(ended, ended); // oxlint-disable-line ex-grid/no-catch -- the failure is answered to .NET by `applied`; the queue waits only for it to end
             return applied;
         },
+        pivotChanged: (pivot: number, text: string) => {
+            if (!stopped) pivotsMade.get(pivot)?.deref()?.hear(text);
+        },
         take: (number: number) => messages.take(number),
         dispose: () => {
             stopped = true;
@@ -200,6 +235,7 @@ export async function attach(
             held.clear();
             messages.clear();
             asked.clear();
+            pivotsMade.clear();
         },
     });
 }

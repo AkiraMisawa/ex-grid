@@ -373,7 +373,7 @@ public sealed class BoundBoard
                 LetGo(grid, id);
                 break;
             case BoundPivotView { ReportSource: not null } pivot:
-                pivot.ReportSource = Sources[pivot.Input].Report!(conditions);
+                pivot.ReportSource = PivotReportSource.From(Sources[pivot.Input].Pivot!(conditions));
                 // Its report changed, so its selection is dropped, with an answer still on its way for it,
                 // and what it narrowed is let go now (ADR-0345).
                 pivot.Selected++;
@@ -446,8 +446,8 @@ public sealed class BoundBoard
     /// (ADR-0343), and makes each view. Each source is asked its shape, and checked against the input's
     /// declaration, before any view is made or any row is fetched (ADR-0341). Nothing is drawn unless
     /// every input binds and every view can be made. Over a source, a grid's rows are fetched a page at a
-    /// time, each fetch handed the narrowing the Board's links put on it; a pivot's report source is made
-    /// by the source, given that narrowing; a chart is read through the source's <see cref="BoardSource.Thin"/>
+    /// time, each fetch handed the narrowing the Board's links put on it; a pivot's Pivot Source is made
+    /// by the source, given that narrowing, and its report built over it; a chart is read through the source's <see cref="BoardSource.Thin"/>
     /// (ADR-0344); and a link from a pivot asks its <see cref="BoardSource.Under"/> (ADR-0345). A chart or
     /// such a link over a source that answers no such question is refused by path.
     /// </summary>
@@ -601,9 +601,9 @@ public sealed class BoundBoard
             {
                 BoardGridView grid when held.TryGetValue(grid.Grid.Data, out var source) => FetchedGrid(grid, source, culture),
                 BoardGridView grid => new BoundGridView(grid, GridOf(bound[grid.Grid.Data], grid.Grid, culture)),
-                BoardPivotView pivot when held.TryGetValue(pivot.Input, out var source) => source.Report is { } report
-                    ? new BoundPivotView(pivot, report([]), inputs[pivot.Input].Shape)
-                    : throw new BoardRefusedException($"{path}.pivot", $"Input '{pivot.Input}' is held on a server, and its source makes no report source for a pivot."),
+                BoardPivotView pivot when held.TryGetValue(pivot.Input, out var source) => source.Pivot is { } over
+                    ? new BoundPivotView(pivot, PivotReportSource.From(over([])), inputs[pivot.Input].Shape)
+                    : throw new BoardRefusedException($"{path}.pivot", $"Input '{pivot.Input}' is held on a server, and its source makes no Pivot Source for a pivot (BoardSource.Pivot)."),
                 BoardPivotView pivot => new BoundPivotView(pivot, PivotSource.From(bound[pivot.Input]), inputs[pivot.Input].Shape),
                 BoardChartView chart when chart.Data.FirstOrDefault(d => held.TryGetValue(d, out var s) && s.Thin is null) is { } unthinned => throw new BoardRefusedException($"{path}.chart",
                     $"Input '{unthinned}' is held on a server, and its source thins no chart's points (BoardSource.Thin)."),

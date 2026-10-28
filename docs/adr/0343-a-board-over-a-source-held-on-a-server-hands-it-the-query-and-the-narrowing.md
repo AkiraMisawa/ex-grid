@@ -22,7 +22,7 @@ view that cannot yet be drawn over a server source does.
 
 - **A host binds an input to a `BoardSource`**, beside the Snapshots it binds others to. A `BoardSource`
   is the host's own code: it says the input's shape, fetches a grid's rows, and, if it can, makes a
-  pivot's report source. The Board never talks to a server itself. Its host does, in whatever protocol
+  pivot's source (a report source until 2026-10-28; see the note of that date). The Board never talks to a server itself. Its host does, in whatever protocol
   the host already speaks, as the bundled fetching sources leave the protocol to their Consumer
   ([ADR-0025](0025-what-the-bundled-fetching-source-promises.md)). Binding is asynchronous
   (`BoundBoard.BindAsync`): each source's shape is asked and checked
@@ -53,7 +53,7 @@ view that cannot yet be drawn over a server source does.
   - **a chart**, until [ADR-0322](0322-a-chart-reads-its-data-through-a-chart-source-that-thins-where-the-data-lives.md)'s
     Chart Source exists. A chart reads every row it draws, and a series over a million rows needs the
     thinning done where the data lives;
-  - **a pivot whose `BoardSource` makes no report source**;
+  - **a pivot whose `BoardSource` makes no report source** (no Pivot Source, since the note of 2026-10-28);
   - **a link from a pivot over a server source.** The rows under a cell are on the server, so the
     values of the link's columns among them cannot be read in the client. A link whose columns are the
     pivot's own row and column fields could be read from the cells. It waits for a host that needs it.
@@ -76,7 +76,7 @@ view that cannot yet be drawn over a server source does.
 - ~~Open: the chart over a Chart Source, and a link from a server pivot. Each waits on its own decision.~~
   Settled by ADR-0344 and ADR-0345 (2026-10-21).
 
-## Note of 2026-10-28: the Script Core's Board makes a Pivot Source, not a report source
+## Note of 2026-10-28: a Board's source makes a Pivot Source, not a report source
 
 `@ex-grid/board` binds a Board over sources too (`bindBoardThrough`, and `createBoard`'s `sources`), held to
 the C# Board by the same tests, ported. One member differs in what it makes, because the Script Core's
@@ -87,6 +87,18 @@ narrowing lets through, where C#'s `Report` makes a `PivotReportSource`. It is c
 narrowing, and is refused by path when the source has none, as `Report` is. The rest of the decision
 holds in both: the shape asked first, the narrowing handed to every question, `Unread`, the page's
 version on an output, the date-time default, `thin` and `under` (ADR-0344, ADR-0345).
+
+*Later the same day, decided with the user: C# makes a Pivot Source too.* The difference above left
+Blazor's Script Core adapter (`ExBoard.Script.ExBoard`, ADR-0370 section 1) unable to draw a pivot over a
+C# source at all: the pivot in the browser reads Leaf Aggregates, and `Report` hands it a whole report.
+So C#'s `BoardSource.Report` is replaced by `BoardSource.Pivot(narrowing)`, which makes a `PivotSource`
+over the rows the narrowing lets through, as TypeScript's does. The Razor component builds its report
+over it itself (`PivotReportSource.From`); the Script Core adapter hands it to the browser's pivot
+through .NET, as `ExPivot.Script.ExPivot` hands its `Source`, the two adapters sharing the code that
+describes and answers one (`src/Shared/Script/PivotSourceCrossing.cs`). One source now serves both
+components and both languages. What is given up is a server that computes the whole report for a Board's
+pivot (ADR-0151's report windows), which ADR-0370 section 3 already ends with the C# pivot; ExBoard had
+not shipped, so no Consumer's source changes.
 
 One thing is said that the C# Board leaves unsaid. A fetched grid whose source fails a question says
 so under the grid ("The source did not answer the grid: …"), and keeps the rows it had, as a chart
