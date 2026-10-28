@@ -304,7 +304,10 @@ public class ScriptChartTests : BunitContext
         // Heard although the Consumer does not, so the user's range is asked for.
         Assert.Contains("rangeChanged", Attached(_module, "attachChart").GetProperty("options").GetProperty("hears").EnumerateArray().Select(e => e.GetString()));
 
+        var updates = _chart.Invocations["update"].Count;
         cut.Render(ps => ps.Add(c => c.Range, new ChartRange(1000, 2000)));
+        // The range crosses with the points read over it, never before them.
+        Assert.Equal(updates, _chart.Invocations["update"].Count);
         // Handled without waiting on the source: the ask it makes is not awaited, so no later event waits on it.
         await Bridge("attachChart").Value.Heard("rangeChanged", Parsed("""{"from":3000,"to":4000}"""));
         Assert.Equal(3, source.Asks.Count);
@@ -329,8 +332,32 @@ public class ScriptChartTests : BunitContext
         cut.Render(ps => ps.Add(c => c.Range, new ChartRange(6000, 8000)));
         source.Answer(1, version: 4);
         cut.WaitForAssertion(() => Assert.Contains("version 4 of 'ticks', older than version 5", cut.Find(".ex-chart-source-refusal").TextContent, StringComparison.Ordinal));
-        Assert.True(cut.Find("div").HasAttribute("hidden"));
+        // The drawing beside it is hidden.
+        Assert.Single(cut.FindAll("div[hidden]"));
         Assert.Single(DefinitionsSent());
+    }
+
+    [Fact] // ADR-0344, spine rule 1: a spec refused as it is read is said in the chart's place, in the chart's box, from the first render
+    public void A_spec_refused_at_once_is_said_in_the_charts_place()
+    {
+        var cut = Render<ScriptChart>(ps => ps
+            .Add(c => c.Spec, TicksSpec.Replace("\"ticks\"", "\"quotes\"", StringComparison.Ordinal))
+            .Add(c => c.Sources, _ => null)
+            .Add(c => c.Width, 600)
+            .Add(c => c.Height, 300));
+        var refusal = cut.Find(".ex-chart-source-refusal");
+        Assert.StartsWith("series[0].data \"quotes\" is not known", refusal.TextContent, StringComparison.Ordinal);
+        Assert.Equal("width:600px;min-height:300px", refusal.ParentElement!.GetAttribute("style"));
+    }
+
+    [Fact] // ADR-0254, ADR-0344: a chart made wider asks its source again for its new pixels
+    public void A_wider_chart_asks_its_source_again()
+    {
+        var source = new Gated(Ticks());
+        var cut = FromSpec(source);
+        source.Answer(0);
+        cut.Render(ps => ps.Add(c => c.Width, 900));
+        Assert.Equal(1800, source.Asks[^1].Query.Pixels);
     }
 
     [Fact] // ADR-0344, spine rule 6: a Definition handed while an ask is out is drawn, and the ask's failure is dropped

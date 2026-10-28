@@ -133,17 +133,19 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
         (_rangeParameter, _rangeTaken) = (Range, true);
         // Compared by value: a spec built again on each render, or a method group's new delegate, is the same ask and is
         // not read again.
+        var ask = false;
         if (Spec is not null && (!string.Equals(_askedSpec, Spec, StringComparison.Ordinal) || !Equals(_askedSources, Sources)))
         {
             // Another spec or other sources: what was read from the last is not drawn under the new.
             _read = null;
             _versions = new Dictionary<string, long>();
             SetRefusal(null);
-            _ = AskObservedAsync();
+            ask = true;
         }
-        else if (Spec is not null && _askedRange != _range)
+        else if (Spec is not null && (_askedRange != _range || _askedPixels != SourcePixels))
         {
-            _ = AskObservedAsync();
+            // Another range, or another width, whose pixels the source thins to.
+            ask = true;
         }
         else if (Spec is null)
         {
@@ -153,7 +155,7 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
                 _asked++;
                 _renderOwed = true;
             }
-            (_read, _askedSpec, _askedSources, _asking) = (null, null, null, false);
+            (_read, _askedSpec, _askedSources, _asking, _held) = (null, null, null, false, null);
             SetRefusal(null);
         }
         if (Definition is { } definition)
@@ -161,6 +163,9 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
         else if (!_asking || _read is null)
             // Read through a source, the definition drawn stays until the newest ask is answered (ADR-0344).
             Take(_read?.Definition ?? Unread);
+        // Asked once a definition is held: an ask a spec refuses at once answers before this method returns.
+        if (ask)
+            _ = AskObservedAsync();
     }
 
     // Checked before anything moves: a definition this adapter cannot carry leaves the chart on the one it had.
@@ -184,6 +189,10 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     private string? _askedSpec;
     private Func<string, IChartSource?>? _askedSources;
     private ChartRange? _askedRange;
+    private int _askedPixels;
+    // What crossed last, and, while an ask is out over a reading drawn, what stays drawn until it is answered.
+    private DrawingState? _lastState;
+    private DrawingState? _held;
     private ChartSpecReading? _read;
     private IReadOnlyDictionary<string, long> _versions = new Dictionary<string, long>();
     private string? _refusal;
@@ -216,8 +225,12 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     private async Task AskAsync()
     {
         var asked = ++_asked;
-        var (spec, sources, range) = (Spec!, Sources!, _range);
-        (_askedSpec, _askedSources, _askedRange) = (spec, sources, range);
+        var (spec, sources, range, pixels) = (Spec!, Sources!, _range, SourcePixels);
+        (_askedSpec, _askedSources, _askedRange, _askedPixels) = (spec, sources, range, pixels);
+        // The points of another range, drawn at this one, are not what this range holds: the drawing, its options with
+        // it, stays as it crossed until the answer (ADR-0344).
+        if (_read is not null && !_asking)
+            _held = _lastState;
         _asking = true;
         _renderOwed = true;
         ChartSourceReading? read = null;
@@ -225,7 +238,7 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
         try
         {
             // Resumed where the ask was made: the reading is the renderer's.
-            read = await ChartSpec.ReadAsync(spec, sources, SourcePixels, range?.From, range?.To);
+            read = await ChartSpec.ReadAsync(spec, sources, pixels, range?.From, range?.To);
         }
         catch (ChartSpecRefusedException e)
         {
@@ -241,6 +254,7 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
         if (asked != _asked || _disposed)
             return;
         _asking = false;
+        _held = null;
         _renderOwed = true;
         if (read?.Versions.FirstOrDefault(v => _versions.TryGetValue(v.Key, out var shown) && v.Value < shown) is { Key: not null } older)
         {
@@ -294,7 +308,7 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         _renderOwed = false;
-        _mount?.Render(builder, element => _root = element, _refusal, _asking);
+        _mount?.Render(builder, element => _root = element, _refusal, _asking, Width, Height);
     }
 
     /// <inheritdoc />
@@ -318,7 +332,14 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
         _mount is { } mount ? mount.AskAsync("download", false, ChartWire.Camel(format)) : Task.FromResult(false);
 
     // The options as they stand, and the definition the component holds.
-    private DrawingState State() => new(OptionsJson(), _definitionJson ?? throw new InvalidOperationException("Internal: the chart has no definition."), _generation);
+    private DrawingState State()
+    {
+        if (_held is { } held)
+            return held;
+        var state = new DrawingState(OptionsJson(), _definitionJson ?? throw new InvalidOperationException("Internal: the chart has no definition."), _generation);
+        _lastState = state;
+        return state;
+    }
 
     private string OptionsJson() => ChartWire.Json(json =>
     {
@@ -402,14 +423,14 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
                     : new ChartRange(End(payload, "from"), End(payload, "to"), End(payload, "yFrom"), End(payload, "yTo"));
                 return async () =>
                 {
+                    var handed = Range;
                     await OnRangeChanged.InvokeAsync(range);
-                    // A Consumer that hands the range back has asked already, as its parameter changed.
+                    // A Consumer that handed a range back, the user's or one of its own, has had it asked for.
+                    if (Spec is null || handed != Range || _range == range)
+                        return;
+                    _range = range;
                     // Not awaited: the events after it are not held behind a source's answer.
-                    if (Spec is not null && _range != range)
-                    {
-                        _range = range;
-                        _ = AskObservedAsync();
-                    }
+                    _ = AskObservedAsync();
                 };
             }
             case "scaleChanged":

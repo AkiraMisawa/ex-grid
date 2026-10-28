@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using global::ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
@@ -56,31 +57,37 @@ internal sealed class ScriptMount(
     /// <summary>
     /// Renders the root: an element the Script Core draws in, or, once the script was refused, the notice in the
     /// built-in words, as the Razor component says it (ADR-0123). A <paramref name="refusal"/> is said in the chart's
-    /// place, and the root is hidden under it, as a spec its sources cannot answer is (ADR-0344): beside the root, whose
-    /// children are the Script Core's. <paramref name="busy"/> marks the root Busy while an answer is awaited.
+    /// place, in a box of the chart's own <paramref name="width"/> and <paramref name="height"/> under its tokens, and
+    /// the root is hidden beside it, as a spec its sources cannot answer is (ADR-0344): beside the root, whose children
+    /// are the Script Core's. <paramref name="busy"/> marks the root Busy while an answer is awaited.
     /// </summary>
-    public void Render(RenderTreeBuilder builder, Action<ElementReference> capture, string? refusal = null, bool busy = false)
+    public void Render(RenderTreeBuilder builder, Action<ElementReference> capture, string? refusal = null, bool busy = false,
+        double width = 0, double height = 0)
     {
         if (refusal is not null && !Refused)
         {
-            builder.OpenElement(0, "p");
-            builder.AddAttribute(1, "class", "ex-chart-source-refusal");
-            builder.AddAttribute(2, "role", "alert");
-            builder.AddContent(3, refusal);
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "ex-chart");
+            builder.AddAttribute(2, "style", string.Create(CultureInfo.InvariantCulture, $"width:{width}px;min-height:{height}px"));
+            builder.OpenElement(3, "p");
+            builder.AddAttribute(4, "class", "ex-chart-source-refusal");
+            builder.AddAttribute(5, "role", "alert");
+            builder.AddContent(6, refusal);
+            builder.CloseElement();
             builder.CloseElement();
         }
-        builder.OpenElement(4, "div");
+        builder.OpenElement(7, "div");
         if (Refused)
-            builder.AddAttribute(5, "class", "ex-chart");
-        builder.AddAttribute(6, "hidden", refusal is not null && !Refused);
-        builder.AddAttribute(7, "aria-busy", busy && !Refused ? "true" : null);
-        builder.AddElementReferenceCapture(8, capture);
+            builder.AddAttribute(8, "class", "ex-chart");
+        builder.AddAttribute(9, "hidden", refusal is not null && !Refused);
+        builder.AddAttribute(10, "aria-busy", busy && !Refused ? "true" : null);
+        builder.AddElementReferenceCapture(11, capture);
         if (Refused)
         {
-            builder.OpenElement(9, "p");
-            builder.AddAttribute(10, "class", "ex-chart-script-notice");
-            builder.AddAttribute(11, "role", "alert");
-            builder.AddContent(12, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
+            builder.OpenElement(12, "p");
+            builder.AddAttribute(13, "class", "ex-chart-script-notice");
+            builder.AddAttribute(14, "role", "alert");
+            builder.AddContent(15, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
             builder.CloseElement();
         }
         builder.CloseElement();
