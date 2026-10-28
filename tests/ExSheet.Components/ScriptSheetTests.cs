@@ -203,7 +203,9 @@ public class ScriptSheetTests : BunitContext
         var bridge = Bridge().Value;
 
         var opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(_ => Task.FromResult(opened)));
-        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["open"]).Arguments[0]);
+        // Each opening reaches the browser once the Sheet is ready, after the InvokeAsync returns: wait for its call.
+        cut.WaitForAssertion(() => Assert.Single(_sheet.Invocations["open"]));
+        var id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
         Assert.Equal(opened.ToJson(), Parsed(await bridge.Read(id)).GetProperty("document").GetString());
         answers.SetResult(Parsed("""{"done":true}"""));
         Assert.True(await opening);
@@ -212,6 +214,7 @@ public class ScriptSheetTests : BunitContext
         answers = _sheet.Setup<JsonElement>("open", _ => true);
         var failure = new IOException("The file is not an .xlsx workbook.");
         opening = cut.InvokeAsync(() => cut.Instance.OpenAsync(_ => Task.FromException<WorkbookDocument>(failure)));
+        cut.WaitForAssertion(() => Assert.Equal(2, _sheet.Invocations["open"].Count));
         id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
         Assert.Equal("""{"failed":"The file is not an .xlsx workbook."}""", await bridge.Read(id));
         answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The file is not an .xlsx workbook."}}"""));
@@ -224,6 +227,7 @@ public class ScriptSheetTests : BunitContext
             await Task.Delay(Timeout.Infinite, token);
             return opened;
         }));
+        cut.WaitForAssertion(() => Assert.Equal(3, _sheet.Invocations["open"].Count));
         id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
         var read = bridge.Read(id);
         Assert.False(read.IsCompleted);
@@ -266,7 +270,8 @@ public class ScriptSheetTests : BunitContext
             written = workbook;
             return Task.CompletedTask;
         }));
-        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
+        cut.WaitForAssertion(() => Assert.Single(_sheet.Invocations["save"]));
+        var id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
         Assert.Equal("""{"done":true}""", await Bridge().Value.Write(id, Parsed(saved)));
         answers.SetResult(Parsed("""{"done":null}"""));
         await saving;
@@ -281,6 +286,7 @@ public class ScriptSheetTests : BunitContext
         answers = _sheet.Setup<JsonElement>("save", _ => true);
         var failure = new IOException("The disk is full.");
         saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(_ => Task.FromException(failure)));
+        cut.WaitForAssertion(() => Assert.Equal(2, _sheet.Invocations["save"].Count));
         id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
         Assert.Equal("""{"failed":"The disk is full."}""", await Bridge().Value.Write(id, Parsed(saved)));
         answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The disk is full."}}"""));
@@ -327,7 +333,8 @@ public class ScriptSheetTests : BunitContext
             written = workbook;
             return Task.CompletedTask;
         }));
-        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
+        cut.WaitForAssertion(() => Assert.Single(_sheet.Invocations["save"]));
+        var id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
         var writeJson = JsonSerializer.Serialize(new object[]
         {
             id,
