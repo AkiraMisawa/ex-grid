@@ -5,4 +5,4 @@
  * @packageDocumentation
  */
 export { ExBoard } from './ex-board';
-export type { ExBoardProps } from './ex-board';
+export type { ExBoardChrome, ExBoardProps } from './ex-board';

@@ -14,11 +14,12 @@ import { Entry } from '../src/entry';
 import { FormatError } from '../src/format-error';
 import { FormulaSyntaxError } from '../src/formula-syntax-error';
 import { NumberFormat } from '../src/number-format';
-import type { FillDirection, Sheet, SheetCopy } from '../src/sheet';
+import type { Sheet, SheetCopy } from '../src/sheet';
 import { RepeatedKeyError, SheetRefusedError, type SheetChange, type SheetRefusal } from '../src/sheet-change';
 import { SheetDocumentError, type SheetDocumentAxisFormat } from '../src/sheet-document-parts';
 import { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
+import { readLinkedRows, readSheetEdit, writeCellFormat, writeLinkedRows, writeRepeatedKey } from '../src/sheet-wire';
 import { parseWrittenError, Value } from '../src/value';
 import { Workbook, type WorkbookChange, type WorkbookStep } from '../src/workbook';
 import { WorkbookDocument } from '../src/workbook-document';
@@ -168,8 +169,9 @@ function borders(of: CellBorders): JsonObject {
     return { top: line(of.top), bottom: line(of.bottom), left: line(of.left), right: line(of.right) };
 }
 
+/** A Cell Format as Blazor's adapter hands one to .NET (ADR-0370 section 1), so every case holds that writer to the shape. */
 export function cellFormatJson(of: CellFormat): JsonObject {
-    return { numberFormat: of.numberFormat.code, alignment: of.alignment, font: font(of.font), fill: fill(of.fill), borders: borders(of.borders) };
+    return object(JSON.parse(writeCellFormat(of)) as Json, 'a Cell Format');
 }
 
 /** Nodes in the code-unit order of their JSON's text, so that a set reads the same from both runners. */
@@ -343,7 +345,7 @@ export function cultureOf(name: string): Culture {
 }
 
 const verbs = new Set([
-    'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
+    'enter', 'enterAll', 'enterRun', 'do', 'doWire', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
     'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat', 'show',
     'doAll', 'readTable', 'setColumnWidth', 'setAutomaticColumnWidth', 'rename', 'retype',
 ]);
@@ -404,9 +406,13 @@ export function thrown(e: unknown): JsonObject {
     if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', reason: e.reason, beyondLimit: e.isBeyondLimit, saying: e.message };
     if (e instanceof SheetRefusedError) return { refusal: 'refused', reason: e.refusal.reason, saying: e.refusal.message };
     if (e instanceof RepeatedKeyError) {
+        // Read as Blazor's adapter hands it to .NET (ADR-0370 section 1), so every case holds that writer to what it says.
+        const handed = object(JSON.parse(writeRepeatedKey(e)) as Json, 'a refused snapshot');
+        const keys = list(handed['keys'], 'keys');
         return {
-            refusal: 'repeatedKey', saying: e.message, table: e.table, keyColumn: e.keyColumn, key: encode(e.key), keyColumns: [...e.keyColumns], keys: e.keys.map(encode),
-            firstRow: e.firstRow, secondRow: e.secondRow, valueChanges: addresses(e.change.valueChanges),
+            refusal: 'repeatedKey', saying: e.message, table: orNull(handed['table']), keyColumn: e.keyColumn, key: orNull(keys[0]),
+            keyColumns: orNull(handed['keyColumns']), keys, firstRow: orNull(handed['firstRow']), secondRow: orNull(handed['secondRow']),
+            valueChanges: orNull(object(handed['change'], 'a change')['valueChanges']),
         };
     }
     if (e instanceof SheetDocumentError) return { refusal: 'document', saying: e.message, documentVersion: orNull(e.documentVersion) };
@@ -503,8 +509,10 @@ export class Run {
                     [a, typed.replaceAll('{row-1}', String(a.row)).replaceAll('{row}', String(a.row + 1))] as const));
                 break;
             }
-            case 'do': {
-                const step = this.workbook.do(sheet.name, this.#edit(argument));
+            case 'do':
+            case 'doWire': {
+                // An edit's text exactly as .NET's SheetWire writes it, read as Blazor's adapter reads it (ADR-0370 section 1).
+                const step = this.workbook.do(sheet.name, verb === 'do' ? this.#edit(argument) : readSheetEdit(text(argument, 'doWire')));
                 this.#done.push(step);
                 outcome.step = step;
                 outcome.sheet = step.sheet;
@@ -621,7 +629,13 @@ export class Run {
             case 'pushTable': {
                 const table = object(argument, 'pushTable');
                 const rows = list(table['rows'], 'rows').map(r => list(r, 'a row').map(decode));
-                outcome.workbookChange = this.workbook.pushLinkedTable(text(table['name'], 'name'), rows);
+                // The rows as an adapter's wire carries them (ADR-0370 section 1): the case's own text read by
+                // readLinkedRows, which must read what the case means and write what it reads.
+                const wired = readLinkedRows(JSON.stringify(table['rows']));
+                if (writeLinkedRows(wired) !== writeLinkedRows(rows)) {
+                    throw new CaseError(`readLinkedRows reads the rows ${JSON.stringify(table['rows'])} as ${writeLinkedRows(wired)}.`);
+                }
+                outcome.workbookChange = this.workbook.pushLinkedTable(text(table['name'], 'name'), wired);
                 outcome.change = outcome.workbookChange.for(sheet);
                 break;
             }
@@ -696,96 +710,32 @@ export class Run {
         return step;
     }
 
-    /** A Sheet Edit as a case writes one: an object of one key, the factory, and its arguments. */
+    /**
+     * A Sheet Edit as a case writes one: an object of one key, the factory, and its arguments. It is read by the reader
+     * Blazor's adapter reads .NET's edits with (ADR-0370 section 1), so every case holds that reader to the vocabulary;
+     * only what a case alone writes is read here: a paste of a `copy` the case took, a text built from `parts`, and an
+     * alignment cast in from outside the vocabulary to be refused.
+     */
     #edit(node: Json): SheetEdit {
         const edit = object(node, 'an edit');
         const keys = Object.keys(edit);
         const name = keys[0];
         if (keys.length !== 1 || name === undefined) throw new CaseError(`An edit names one operation: ${JSON.stringify(edit)}.`);
         const argument = orNull(edit[name]);
-        const args = (): JsonObject => object(argument, name);
-        switch (name) {
-            case 'enter':
-                return SheetEdit.enterMany(Object.entries(args()).map(([a, t]) => [CellAddress.parse(a), typedText(t, a)] as const));
-            case 'setEntries':
-                return SheetEdit.setEntries(Object.entries(args()).map(([a, e]) => [CellAddress.parse(a), entryOf(e)] as const));
-            case 'setNumberFormat': {
-                const code = args()['format'];
-                const format = code === undefined || code === null ? undefined : NumberFormat.parse(text(code, 'format'));
-                const at = args()['at'];
-                return Array.isArray(at)
-                    ? SheetEdit.setNumberFormatOf(list(at, 'at').map(c => CellAddress.parse(text(c, 'a cell'))), format)
-                    : SheetEdit.setNumberFormat(CellRange.parse(text(at, 'at')), format);
-            }
-            case 'setAlignment': {
-                const alignment = text(args()['alignment'], 'alignment') as HorizontalAlignment;
-                const at = args()['at'];
-                return Array.isArray(at)
-                    ? SheetEdit.setAlignmentOf(list(at, 'at').map(c => CellAddress.parse(text(c, 'a cell'))), alignment)
-                    : SheetEdit.setAlignment(CellRange.parse(text(at, 'at')), alignment);
-            }
-            case 'setCellFormat':
-                return SheetEdit.setCellFormat(list(args()['ranges'], 'ranges').map(r => CellRange.parse(text(r, 'a range'))), changeOf(args()['change']));
-            case 'insertRows':
-                return SheetEdit.insertRows(...placeAndCount(argument));
-            case 'deleteRows':
-                return SheetEdit.deleteRows(...placeAndCount(argument));
-            case 'insertColumns':
-                return SheetEdit.insertColumns(...placeAndCount(argument));
-            case 'deleteColumns':
-                return SheetEdit.deleteColumns(...placeAndCount(argument));
-            case 'setColumnWidth': {
-                const width = args()['width'];
-                return SheetEdit.setColumnWidth(CellRange.parse(text(args()['columns'], 'columns')), width === undefined || width === null ? undefined : caseNumber(width, 'width'));
-            }
-            case 'setAutomaticColumnWidth':
-                return SheetEdit.setAutomaticColumnWidth(CellRange.parse(text(args()['columns'], 'columns')), caseNumber(args()['width'], 'width'));
-            case 'fill':
-            case 'fillCopy': {
-                const source = CellRange.parse(text(args()['source'], 'source'));
-                const target = CellRange.parse(text(args()['target'], 'target'));
-                const direction = text(args()['direction'], 'direction') as FillDirection;
-                return name === 'fill' ? SheetEdit.fill(source, target, direction) : SheetEdit.fillCopy(source, target, direction);
-            }
-            case 'paste': {
-                const copy = this.#copies.get(text(args()['copy'], 'copy'));
-                const block = copy?.block;
-                if (block === undefined) throw new CaseError('The copy pasted was refused, or never taken.');
-                const at = args()['at'];
-                if (Array.isArray(at)) return SheetEdit.paste(block, list(at, 'at').map(t => CellRange.parse(text(t, 'a target'))));
-                const target = text(at, 'at');
-                return SheetEdit.paste(block, target.includes(':') ? CellRange.parse(target) : CellAddress.parse(target));
-            }
-            case 'pasteText':
-                return SheetEdit.pasteText(list(args()['fields'], 'fields').map(r => list(r, 'a row').map(f => text(f, 'a field'))),
-                    CellAddress.parse(text(args()['at'], 'at')));
-            case 'pasteFields': {
-                const typed = Object.entries(object(args()['typed'], 'typed')).map(([at, field]) => [CellAddress.parse(at), text(field, 'a field')] as const);
-                const entries = args()['entries'];
-                return SheetEdit.pasteFields(typed, entries === undefined
-                    ? undefined
-                    : Object.entries(object(entries, 'entries')).map(([at, entry]) => [CellAddress.parse(at), entryOf(entry)] as const));
-            }
-            case 'enterInto':
-                return SheetEdit.enterInto(list(args()['targets'], 'targets').map(t => CellRange.parse(text(t, 'a target'))),
-                    CellAddress.parse(text(args()['at'], 'at')), text(args()['typed'], 'typed'));
-            case 'rename':
-                return SheetEdit.rename(text(argument, 'rename'));
-            case 'insertSheet': {
-                const sheetName = args()['name'];
-                return SheetEdit.insertSheet(sheetName === undefined || sheetName === null ? undefined : text(sheetName, 'name'), args()['before'] === true);
-            }
-            case 'deleteSheet':
-                return SheetEdit.deleteSheet();
-            case 'moveSheet':
-                return SheetEdit.moveSheet(integer(argument, 'moveSheet'));
-            case 'copySheet':
-                return SheetEdit.copySheet(typeof argument === 'number' ? argument : undefined);
-            default:
-                throw new CaseError(`'${name}' is no Sheet Edit.`);
+        if (name === 'paste' && isObject(argument) && argument['copy'] !== undefined) {
+            const copy = this.#copies.get(text(argument['copy'], 'copy'));
+            const block = copy?.block;
+            if (block === undefined) throw new CaseError('The copy pasted was refused, or never taken.');
+            const at = argument['at'];
+            if (Array.isArray(at)) return SheetEdit.paste(block, list(at, 'at').map(t => CellRange.parse(text(t, 'a target'))));
+            const target = text(at, 'at');
+            return SheetEdit.paste(block, target.includes(':') ? CellRange.parse(target) : CellAddress.parse(target));
         }
+        if (name === 'setCellFormat' && isObject(argument) && isObject(argument['change']) && typeof argument['change']['alignment'] === 'number') {
+            return SheetEdit.setCellFormat(list(argument['ranges'], 'ranges').map(r => CellRange.parse(text(r, 'a range'))), changeOf(argument['change']));
+        }
+        return readSheetEdit(JSON.stringify({ [name]: withTexts(name, argument) }));
     }
-
     /** Everything the Workbook records and shows: its document, and every held cell's Value on every Sheet. */
     #picture(): string {
         const values = this.workbook.sheets.flatMap(s => s.entryAddresses.map(a => `${s.name}!${a.toString()}=${valueText(s.getValue(a))}`));
@@ -1032,23 +982,20 @@ function valueText(value: Value | undefined): string {
     return value === undefined ? '' : value.toString();
 }
 
-function entryOf(node: Json | undefined): Entry | undefined {
-    if (node === null || node === undefined) return undefined;
-    const entry = object(node, 'an Entry');
-    if (typeof entry['formula'] === 'string') return Entry.fromFormula(entry['formula']);
-    if ('constant' in entry) {
-        const constant = decode(entry['constant']);
-        if (constant === undefined) throw new CaseError('A constant is not blank.');
-        return Entry.fromValue(constant);
+/** An edit's argument with each text a case builds from `parts` written out, as .NET sends the text itself. */
+function withTexts(name: string, argument: Json): Json {
+    const typedCells = (cells: Json | undefined): Json =>
+        Object.fromEntries(Object.entries(object(cells, 'typed cells')).map(([a, t]) => [a, typedText(t, a)]));
+    switch (name) {
+        case 'enter':
+            return typedCells(argument);
+        case 'pasteFields':
+            return { ...object(argument, name), typed: typedCells(object(argument, name)['typed']) };
+        case 'enterInto':
+            return { ...object(argument, name), typed: typedText(object(argument, name)['typed'], 'typed') };
+        default:
+            return argument;
     }
-    throw new CaseError(`${JSON.stringify(node)} is no Entry.`);
-}
-
-/** A row or column and a count, as `[2]` or `[2, 3]`; the count left out is one. */
-function placeAndCount(argument: Json): [number, number] {
-    const pair = list(argument, 'a place and count');
-    if (pair.length < 1 || pair.length > 2) throw new CaseError(`${JSON.stringify(argument)} is no place and count.`);
-    return [integer(pair[0], 'a place'), pair.length === 2 ? integer(pair[1], 'a count') : 1];
 }
 
 /** Runs the case, and answers every way the engine differs from what it expects; empty when it agrees. */

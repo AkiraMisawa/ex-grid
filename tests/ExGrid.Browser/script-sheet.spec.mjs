@@ -7,7 +7,7 @@ import { sheet, cell, enter } from './sheet-helpers.mjs';
 // document of the page's own cross to the Sheet again. What the Sheet does with a key is the Script Core's, held by its
 // own specs; what crosses is held member for member by the bridge's tests in layers 1 and 2.
 
-test('ADR-0370 section 1, ADR-0048: the Sheet Document crosses both ways between .NET and the Sheet in the browser, and .NET\'s Undo and its own document reach the Sheet', async ({ page }) => {
+test('ADR-0370 section 1, ADR-0048, ADR-0005: the Sheet Document crosses both ways between .NET and the Sheet in the browser, and .NET\'s Undo, its own document, its own edit, a save and an opening reach the Sheet, a document too large for a circuit\'s message included', async ({ page }) => {
     await page.goto('/script-sheet');
     const grid = sheet(page);
     const document = page.locator('#script-sheet-document');
@@ -29,4 +29,26 @@ test('ADR-0370 section 1, ADR-0048: the Sheet Document crosses both ways between
     await page.locator('#script-sheet-reset').click();
     await expect(cell(grid, 'B1')).toHaveText('');
     await expect(document).toHaveText('Cells in the document: 3');
+
+    // An edit .NET made, as SheetWire writes it, done by the Sheet in the browser.
+    await page.locator('#script-sheet-enter').click();
+    await expect(cell(grid, 'A3')).toHaveText('9');
+    await expect(cell(grid, 'A2')).toHaveText('7');
+
+    // A save and an opening, each taking its turn among the Sheet's inputs and calling back into .NET (ADR-0330
+    // section 10): .NET's copy of the Workbook computes what the browser shows, and the file opens over a later change.
+    await page.locator('#script-sheet-save').click();
+    await expect(page.locator('#script-sheet-file')).toHaveText('Saved, A3 = 9');
+    await enter(page, grid, 'A1', '100');
+    await expect(cell(grid, 'A3')).toHaveText('107');
+    await page.locator('#script-sheet-open').click();
+    await expect(page.locator('#script-sheet-file')).toHaveText('Opened');
+    await expect(cell(grid, 'A3')).toHaveText('9');
+
+    // A document larger than a Server circuit's message carries crosses back as a stream, and so does the Workbook a
+    // save hands over: sent whole, either would close the circuit, and nothing after it would cross.
+    await page.locator('#script-sheet-long').click();
+    await expect(document).toHaveText('Cells in the document: 4');
+    await page.locator('#script-sheet-save').click();
+    await expect(page.locator('#script-sheet-file')).toHaveText('Saved, A3 = 9');
 });

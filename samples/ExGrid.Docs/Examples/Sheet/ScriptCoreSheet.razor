@@ -1,28 +1,67 @@
 @using ExSheet.Engine
+@using ExGrid.Data
+@using ExGrid.Summarizing
 
 <p>
     <button class="btn btn-sm btn-outline-secondary" @onclick="UndoAsync">Undo</button>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="ThreeMoreTaxisAsync">Three more taxis</button>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="KeepACopyAsync">Keep a copy</button>
+    <button class="btn btn-sm btn-outline-secondary" disabled="@(_copy is null)" @onclick="BackToTheCopyAsync">Back to the copy</button>
     <button class="btn btn-sm btn-outline-secondary" @onclick="() => _document = Expenses.Document()">Start again</button>
 </p>
 
-<ExSheet.Script.ExSheet @ref="_sheet" @bind-Document="_document" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+<ExSheet.Script.ExSheet @ref="_sheet" @bind-Document="_document" OnSelectionSummaryChanged="Summarised"
+                        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
 
 @* Never empty, so the line is there before the first answer and the Sheet does not move under the pointer. *@
-<p class="mt-3" role="status">The document holds @_document.Cells.Count cells. @_undone</p>
+<p class="mt-3" role="status">The document holds @_document.Cells.Count cells.@_selected @_undone</p>
 
 @code {
     // The same document as ExSheet.Components.ExSheet's: it crosses to the browser as JSON, and every change comes back.
     private SheetDocument _document = Expenses.Document();
     private ExSheet.Script.ExSheet? _sheet;
     private string _undone = "";
+    private string _selected = "";
+
+    // The Selection Summary the Sheet in the browser answered, as the Razor component raises it: here its Sum, shown
+    // outside the Sheet as an application's own status bar would, in the Sheet's words when it has them, and an error
+    // said as one rather than left out.
+    private void Summarised(SelectionSummary summary)
+        => _selected = summary is { Status: SelectionSummaryStatus.Answered, Result: { } result } && result[SummaryFigures.Sum] is { IsEmpty: false } sum
+            ? sum.Error != AggregateError.None
+                ? " The selection's sum is an error."
+                : $" The selection sums to {result.TextOf(SummaryFigures.Sum) ?? sum.Number.ToString("#,##0.##")}."
+            : "";
+
+    // An edit made in .NET, done by the Sheet in the browser as the Razor component's DoAsync does it.
+    private Task ThreeMoreTaxisAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("B5"), "12"));
+
+    // A save and an opening, each in its turn among the Sheet's inputs: the write is handed .NET's copy of the
+    // browser's Workbook, its Values computed again in .NET, and the read runs in .NET. A file's writer and reader,
+    // such as ExSheet.Xlsx's, go where these keep the document in memory.
+    private WorkbookDocument? _copy;
+
+    private Task KeepACopyAsync() => Sheet().SaveAsync(workbook =>
+    {
+        _copy = workbook.ToDocument();
+        _undone = $"Copy kept, totalling {workbook.Sheets[0].GetValue(CellAddress.Parse("D7"))?.Number:#,##0.00}.";
+        return Task.CompletedTask;
+    });
+
+    private async Task BackToTheCopyAsync()
+    {
+        var copy = _copy ?? throw new InvalidOperationException("The button is offered once a copy is kept.");
+        _undone = await Sheet().OpenAsync(_ => Task.FromResult(copy)) ? "Back to the copy." : "Nothing opened.";
+    }
+
+    private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
 
     // A command asked from .NET of the Sheet in the browser; its refusal comes back as the Razor component's does.
     private async Task UndoAsync()
     {
-        var sheet = _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
         try
         {
-            _undone = await sheet.UndoAsync() ? "Undone." : "Nothing to undo.";
+            _undone = await Sheet().UndoAsync() ? "Undone." : "Nothing to undo.";
         }
         catch (SheetRefusedException refused)
         {

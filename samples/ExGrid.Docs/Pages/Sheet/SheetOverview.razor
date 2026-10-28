@@ -151,13 +151,27 @@
             <code>IsEditing</code>, <code>OnFormatKeyRefused</code>, <code>Seed</code>, <code>Today</code>,
             <code>TimeZone</code> and <code>CommandLabel</code>, which is asked for every id once each time the
             parameters are set, its words crossing only when they changed. <code>UndoAsync</code>,
-            <code>RedoAsync</code> and <code>OpenFormatCellsAsync</code> are asked of the Sheet in the browser and
-            throw its refusal as the Sheet above does; the Sheet's documents are read with <code>ToDocumentAsync</code>
-            and <code>ToWorkbookDocumentAsync</code>. Not carried yet: a <code>Chrome</code>,
-            <code>ToolbarContent</code>, a <code>PointingScope</code>, <code>OnLinkedColumnColoursChanged</code>,
-            <code>OnSelectionSummaryChanged</code>, and the commands that edit, format, open and save, or declare and
-            push a Linked Table; use the Sheet above for those until they arrive. The script it runs is bundled into
-            the package, at an address that changes with its content.
+            <code>RedoAsync</code>, <code>OpenFormatCellsAsync</code>, <code>DoAsync</code>,
+            <code>SetCellFormatAsync</code>, <code>SetNumberFormatAsync</code>, <code>SetAlignmentAsync</code>,
+            <code>DeclareLinkedTableAsync</code> and <code>PushLinkedTableAsync</code> are asked of the Sheet in the
+            browser and throw what it refused or threw as the Sheet above does: a <code>SheetEdit</code> crosses as
+            <code>SheetWire</code> writes it, the text the TypeScript engine reads. What the Sheet above answers at
+            once is asked here, so it is awaited: <code>CellFormatAtAsync</code> and <code>LinkedTablesAsync</code>
+            read the Sheet in the browser, and its documents are read with <code>ToDocumentAsync</code> and
+            <code>ToWorkbookDocumentAsync</code>. <code>OpenAsync</code> and <code>SaveAsync</code> take their place
+            among the Sheet's inputs in the browser, as the Sheet above's do, and call back into .NET in their turn:
+            your read runs in .NET, and an Escape that cancels the opening cancels its token; your write is handed
+            .NET's own copy of the browser's Workbook, made from its document, its Linked Tables' rows, its seed and
+            its day, so that it computes the Values the browser shows. <code>OnSelectionSummaryChanged</code> hands
+            you the Selection Summary the Sheet in the browser answered, as the Sheet above's does. A document, or
+            anything else the browser hands .NET, that is larger than a message of a Server circuit carries crosses as
+            a stream, so the hub's 32 KB limit need not be raised for it. Not carried yet: a <code>Chrome</code>,
+            <code>ToolbarContent</code>, a <code>PointingScope</code>, <code>OnLinkedColumnColoursChanged</code>
+            and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
+            for those until they arrive. Its engine holds the data of
+            five cultures, en-US, en-GB, de-DE, ja-JP and fr-FR, and the invariant culture: a Sheet under another is
+            refused by name when it opens, where the Sheet above takes any. The script it runs is bundled
+            into the package, at an address that changes with its content.
         </p>
         <p>
             The grid core under the Sheet is the Shared Script the ExGrid package ships,

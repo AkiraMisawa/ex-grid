@@ -10,10 +10,13 @@ export default defineConfig({
         alias: {
             '@ex-grid/board': source('board'),
             '@ex-grid/chart': source('chart'),
+            '@ex-grid/chart-react': source('chart-react'),
             '@ex-grid/core': source('core'),
             '@ex-grid/data': source('data'),
             '@ex-grid/pivot': source('pivot'),
             '@ex-grid/pivot-engine': source('pivot-engine'),
+            '@ex-grid/pivot-react': source('pivot-react'),
+            '@ex-grid/react': source('react'),
         },
     },
 });

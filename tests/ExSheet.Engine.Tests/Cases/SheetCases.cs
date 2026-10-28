@@ -438,7 +438,7 @@ internal sealed class Run(CultureInfo culture)
 
     private static readonly string[] Verbs =
     [
-        "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
+        "enter", "enterAll", "enterRun", "do", "doWire", "check", "undo", "redo", "reopen", "remember", "read", "copy",
         "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat", "show",
         "doAll", "readTable", "setColumnWidth", "setAutomaticColumnWidth", "rename", "retype",
     ];
@@ -604,7 +604,8 @@ internal sealed class Run(CultureInfo culture)
                 break;
             }
             case "do":
-                var step = Workbook.Do(sheet.Name, Edit(argument));
+            case "doWire":
+                var step = Workbook.Do(sheet.Name, verb == "do" ? Edit(argument) : WiredEdit((string)argument!));
                 _done.Add(step);
                 outcome.Step = step;
                 outcome.Sheet = step.Sheet;
@@ -741,7 +742,12 @@ internal sealed class Run(CultureInfo culture)
             {
                 var table = argument.AsObject();
                 var rows = table["rows"]!.AsArray().Select(r => (IReadOnlyList<Value?>)[.. r!.AsArray().Select(SheetCases.Decode)]).ToList();
-                outcome.WorkbookChange = Workbook.PushLinkedTable((string)table["name"]!, rows);
+                // The rows as an adapter's wire carries them (ADR-0370 section 1): the case's own text read by
+                // SheetWire, which must read what the case means and write what it reads.
+                var wired = SheetWire.ReadRows(table["rows"]!.ToJsonString());
+                if (SheetWire.WriteRows(wired) != SheetWire.WriteRows(rows))
+                    throw new InvalidDataException($"SheetWire reads the rows {table["rows"]!.ToJsonString()} as {SheetWire.WriteRows(wired)}.");
+                outcome.WorkbookChange = Workbook.PushLinkedTable((string)table["name"]!, wired);
                 outcome.Change = outcome.WorkbookChange.For(sheet);
                 break;
             }
@@ -799,8 +805,31 @@ internal sealed class Run(CultureInfo culture)
         return index >= 0 && index < _done.Count ? _done[index] : throw new InvalidDataException($"No step {index} has been done.");
     }
 
-    /// <summary>A Sheet Edit as a case writes one: an object of one key, the factory, and its arguments.</summary>
+    /// <summary>
+    /// A Sheet Edit as a case writes one: an object of one key, the factory, and its arguments, done as the edit
+    /// <see cref="SheetWire"/> writes it reads back. The Script Core reads that text, so every case holds the writer
+    /// to the vocabulary: an edit whose text left out what it was made with would do something else here and fail
+    /// its expectations (ADR-0370 section 1).
+    /// </summary>
     private SheetEdit Edit(JsonNode node)
+    {
+        var wire = SheetWire.Write(EditAsWritten(node));
+        var again = EditAsWritten(JsonNode.Parse(wire)!);
+        var rewritten = SheetWire.Write(again);
+        if (rewritten != wire) throw new InvalidDataException($"The edit's text {wire} reads back as {rewritten}.");
+        return again;
+    }
+
+    /// <summary>An edit's text exactly as <see cref="SheetWire"/> writes it: the case says the text, and the Script Core reads that text.</summary>
+    private SheetEdit WiredEdit(string wire)
+    {
+        var edit = EditAsWritten(JsonNode.Parse(wire)!);
+        var written = SheetWire.Write(edit);
+        if (written != wire) throw new InvalidDataException($"SheetWire writes the edit as {written}, not as the case's {wire}.");
+        return edit;
+    }
+
+    private SheetEdit EditAsWritten(JsonNode node)
     {
         var edit = node.AsObject();
         if (edit.Count != 1)
@@ -850,8 +879,8 @@ internal sealed class Run(CultureInfo culture)
             }
             case "paste":
             {
-                var copy = _copies[(string)argument["copy"]!];
-                var block = copy.Block ?? throw new InvalidDataException("The copy pasted was refused.");
+                var block = argument["block"] is { } written ? Block(written)
+                    : _copies[(string)argument["copy"]!].Block ?? throw new InvalidDataException("The copy pasted was refused.");
                 return argument["at"] switch
                 {
                     JsonArray targets => SheetEdit.Paste(block, [.. targets.Select(t => CellRange.Parse((string)t!))]),
@@ -887,6 +916,27 @@ internal sealed class Run(CultureInfo culture)
             default:
                 throw new InvalidDataException($"'{name}' is no Sheet Edit.");
         }
+    }
+
+    /// <summary>A block copied inside ExSheet as its text writes one: the range it came from, and each cell as copied, rows of columns.</summary>
+    private SheetBlock Block(JsonNode node)
+    {
+        var source = CellRange.Parse((string)node["source"]!);
+        var rows = node["cells"]!.AsArray();
+        if (rows.Count != source.RowCount || rows.Any(r => r!.AsArray().Count != source.ColumnCount))
+            throw new InvalidDataException($"{node.ToJsonString()} is no block of {source}'s shape.");
+        return new SheetBlock(source, [.. rows.SelectMany(r => r!.AsArray()).Select(c => c!.AsObject()).Select(cell => new CellState(
+            cell.ContainsKey("entry") ? Entry(cell["entry"]) : null,
+            null,
+            cell["numberFormat"] is { } code ? NumberFormat.Parse((string)code!) : null,
+            cell["alignment"] is { } alignment ? SheetCases.Enum<HorizontalAlignment>(alignment) : null,
+            cell["font"] is JsonObject font
+                ? new CellFont(SheetCases.ColourOf(font["colour"]!), (bool)font["bold"]!, (bool)font["italic"]!, (bool)font["underline"]!, (bool)font["strikethrough"]!)
+                : null,
+            cell["fill"] is { } fill ? SheetCases.FillOf(fill) : null,
+            cell["borders"] is JsonObject sides
+                ? new CellBorders(SheetCases.LineOf(sides["top"]!), SheetCases.LineOf(sides["bottom"]!), SheetCases.LineOf(sides["left"]!), SheetCases.LineOf(sides["right"]!))
+                : null))]);
     }
 
     /// <summary>A row or column and a count, as <c>[2]</c> or <c>[2, 3]</c>; the count left out is one.</summary>
@@ -955,7 +1005,10 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "cellFormats":
                 // The Cell Formats a range shows, each once, in the order of their JSON's text, as the TS runner orders them.
-                actual = PerRange(expected, r => SheetCases.Sorted(sheet.GetCellFormats(r).Select(SheetCases.CellFormatJson)));
+                // Each is read back through SheetWire first, which reads a Cell Format the Script Core writes in this shape
+                // (ADR-0370 section 1), so every case holds that reader to it.
+                actual = PerRange(expected, r => SheetCases.Sorted(sheet.GetCellFormats(r)
+                    .Select(f => SheetCases.CellFormatJson(SheetWire.ReadCellFormat(SheetCases.CellFormatJson(f).ToJsonString())))));
                 break;
             case "edgeLines":
                 // The lines along each of a range's outer edges, each once, in the order of their JSON's text.
