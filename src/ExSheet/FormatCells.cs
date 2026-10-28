@@ -286,7 +286,9 @@ public interface ISheetChrome : IGridChrome
     /// <summary>A Toolbar Item when the Script Core draws the Sheet (ADR-0410), for a Chrome that names
     /// <see cref="SheetScriptSlots.ToolbarItem"/>: its buttons and its list marked with
     /// <see cref="SheetScriptSlotAttributes"/>, and no handler of its own. The list is drawn whatever its state: the
-    /// script shows it while it is open, moves among its choices and closes it.</summary>
+    /// script shows it while it is open, moves among its choices and closes it. A Chrome that names the slot answers
+    /// a fragment for every view: null is refused, as is a null from <see cref="SheetTab(SheetTabContext)"/> or
+    /// <see cref="SheetTabAdd"/> for a slot named.</summary>
     RenderFragment? ToolbarItem(SheetToolbarItemView view) => null;
 }
 

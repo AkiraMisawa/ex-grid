@@ -6,7 +6,7 @@
 
 import { gridRazorSlotKinds, type HostedSlotKind, type RazorSlotKind } from '@ex-grid/blazor-shared';
 import {
-    toolbarChoiceMovedTo, toolbarChoiceStart, type SheetTabSlotContext, type SheetToolbarItemSlotContext, type SheetToolbarItemView,
+    toolbarChoiceMovedTo, toolbarChoiceRows, toolbarChoiceStart, type SheetTabSlotContext, type SheetToolbarItemSlotContext, type SheetToolbarItemView,
 } from '@ex-grid/sheet';
 
 /** The attributes the Razor of a Sheet slot writes on its controls (ADR-0410 section 2), as `SheetScriptSlotAttributes`
@@ -30,9 +30,11 @@ interface ItemList {
     open: boolean;
     seenOpen: number;
     seenClose: number;
-    /** The contents as last wired, and what they show. */
+    /** The contents as last wired, what they show, the list they draw and the buttons that open it. */
     contents: HTMLElement | undefined;
     drawn: (() => SheetToolbarItemView) | undefined;
+    holder: HTMLElement | undefined;
+    openers: readonly HTMLElement[];
     /** Stops hearing presses outside the item, while the list is open. */
     outside: (() => void) | undefined;
 }
@@ -42,7 +44,7 @@ const itemLists = new WeakMap<SheetToolbarItemSlotContext, ItemList>();
 function listOf(item: SheetToolbarItemSlotContext): ItemList {
     const known = itemLists.get(item);
     if (known !== undefined) return known;
-    const made: ItemList = { open: false, seenOpen: 0, seenClose: 0, contents: undefined, drawn: undefined, outside: undefined };
+    const made: ItemList = { open: false, seenOpen: 0, seenClose: 0, contents: undefined, drawn: undefined, holder: undefined, openers: [], outside: undefined };
     itemLists.set(item, made);
     return made;
 }
@@ -61,6 +63,8 @@ const toolbarItemKind: RazorSlotKind<SheetToolbarItemSlotContext, SheetToolbarIt
                 choices: view.choices.map(choice => ({
                     label: choice.label, swatch: crossed(choice.swatch), selected: choice.selected, disabledReason: crossed(choice.disabledReason),
                 })),
+                // Laid out as the keys move, so the Razor draws the rows the keys walk and keeps no count of its own.
+                rows: toolbarChoiceRows(view.choices).map(row => (typeof row === 'number' ? [row] : row)),
             }),
             drawn: view,
             memo: undefined,
@@ -72,11 +76,15 @@ const toolbarItemKind: RazorSlotKind<SheetToolbarItemSlotContext, SheetToolbarIt
             answerRequests(item, list);
             again();
         });
+        // The item gone takes its list with it, as the React hook's state goes: mounted again, it stands closed.
         return () => {
             stop();
+            list.open = false;
             list.outside?.();
             list.outside = undefined;
             list.contents = undefined;
+            list.holder = undefined;
+            list.openers = [];
         };
     },
     wire: (contents, item, _answered, drawn) => wireToolbarItem(contents, item, drawn),
@@ -158,6 +166,7 @@ function wireToolbarItem(contents: HTMLElement, item: SheetToolbarItemSlotContex
     list.drawn = drawn;
     const view = drawn();
     const unwire: (() => void)[] = [];
+    const openers: HTMLElement[] = [];
     const listen = (element: HTMLElement, type: string, handler: (event: Event) => void): void => {
         element.addEventListener(type, handler);
         unwire.push(() => { element.removeEventListener(type, handler); });
@@ -169,12 +178,23 @@ function wireToolbarItem(contents: HTMLElement, item: SheetToolbarItemSlotContex
         button.tabIndex = -1;
         button.setAttribute('data-ex-claims', 'click');
         listen(button, 'mousedown', keepKeyboard);
-        listen(button, 'click', value === 'invoke' ? () => { item.invoke(); } : () => {
+        if (value === 'invoke') {
+            listen(button, 'click', () => { item.invoke(); });
+            continue;
+        }
+        button.setAttribute('aria-haspopup', 'menu');
+        openers.push(button);
+        // A press opens the list only where it can open, as the React hook's toggle: one that cannot does nothing, and
+        // tells the Sheet nothing, which asked for nothing.
+        listen(button, 'click', () => {
             if (list.open) dismiss(item, list);
-            else openList(item, list);
+            else if (canOpen(item, list)) openList(item, list);
         });
     }
     const { list: holder, choices } = listParts(contents, view);
+    list.holder = holder;
+    list.openers = openers;
+    expanded(list);
     if (holder !== undefined) {
         holder.setAttribute('role', 'menu');
         holder.setAttribute('aria-label', view.name);
@@ -223,17 +243,29 @@ function answerRequests(item: SheetToolbarItemSlotContext, list: ItemList): void
     openList(item, list);
 }
 
+/** Whether the item's list can open now: it stands, the item can be used, and it has choices. */
+function canOpen(item: SheetToolbarItemSlotContext, list: ItemList): boolean {
+    const view = list.drawn?.();
+    return view !== undefined && list.contents !== undefined && item.view().disabledReason === undefined && view.choices.length > 0;
+}
+
+/** Tells assistive technology whether the list is open, on the buttons that open it. */
+function expanded(list: ItemList): void {
+    for (const button of list.openers) button.setAttribute('aria-expanded', String(list.open));
+}
+
 /** Opens the list, the keyboard on the choice the Focus cell has; an item that cannot open it says so at once. */
 function openList(item: SheetToolbarItemSlotContext, list: ItemList): void {
     const view = list.drawn?.();
     const contents = list.contents;
-    if (view === undefined || contents === undefined || item.view().disabledReason !== undefined || view.choices.length === 0) {
+    if (view === undefined || contents === undefined || !canOpen(item, list)) {
         item.choicesClosed(undefined, false);
         return;
     }
     const { list: holder, choices } = listParts(contents, view);
     if (holder === undefined) throw new Error('Internal: a Toolbar Item with choices stands with no list.');
     list.open = true;
+    expanded(list);
     holder.hidden = false;
     place(contents, holder);
     const start = toolbarChoiceStart(view.choices);
@@ -248,7 +280,7 @@ function openList(item: SheetToolbarItemSlotContext, list: ItemList): void {
         };
         const moved = (event: Event): void => {
             const standing = list.contents;
-            const shown = standing === undefined ? undefined : shownList(list);
+            const shown = list.open ? list.holder : undefined;
             if (standing === undefined || shown === undefined || (event.target instanceof Node && shown.contains(event.target))) return;
             place(standing, shown);
         };
@@ -263,14 +295,6 @@ function openList(item: SheetToolbarItemSlotContext, list: ItemList): void {
             win?.removeEventListener('resize', moved);
         };
     }
-}
-
-/** The list the contents now draw, while it is open. */
-function shownList(list: ItemList): HTMLElement | undefined {
-    const contents = list.contents;
-    const view = list.drawn?.();
-    if (!list.open || contents === undefined || view === undefined) return undefined;
-    return listParts(contents, view).list;
 }
 
 /**
@@ -295,19 +319,14 @@ function closeList(list: ItemList): void {
     list.open = false;
     list.outside?.();
     list.outside = undefined;
-    const contents = list.contents;
-    const view = list.drawn?.();
-    if (contents === undefined || view === undefined) return;
-    const { list: holder } = listParts(contents, view);
-    if (holder !== undefined) holder.hidden = true;
+    expanded(list);
+    if (list.holder !== undefined) list.holder.hidden = true;
 }
 
 /** A press elsewhere closes the list; the Sheet hears it only while the list holds the keyboard, which then goes back
  * to it, and a control pressed outside keeps the keyboard it took. */
 function dismiss(item: SheetToolbarItemSlotContext, list: ItemList): void {
-    const contents = list.contents;
-    const view = list.drawn?.();
-    const holder = contents === undefined || view === undefined ? undefined : listParts(contents, view).list;
+    const holder = list.holder;
     const held = holder?.contains(holder.ownerDocument.activeElement) === true;
     if (held) item.choicesClosed(undefined, false);
     closeList(list);

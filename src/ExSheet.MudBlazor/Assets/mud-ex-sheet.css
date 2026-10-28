@@ -171,6 +171,10 @@ button.mud-ex-sheet-swatch { padding: 0; }
 .mud-ex-sheet-script-choice:focus { background-color: var(--mud-palette-action-default-hover); }
 .mud-ex-sheet-script-choice-disabled { cursor: default; color: var(--mud-palette-text-disabled); }
 .mud-ex-sheet-script-toolbar-list .mud-ex-sheet-swatch:focus { outline: 2px solid var(--mud-palette-primary); outline-offset: 1px; }
+/* A run of colours is one row the script's keys walk, cut ten across where the Sheet cuts it: the rows are the
+   Sheet's, so no column count is written here. */
+.mud-ex-sheet-script-swatches { display: flex; gap: 4px; padding: 3px 10px; }
+.mud-ex-sheet-script-swatch-disabled { opacity: 0.38; cursor: default; }
 
 /* ADR-0039: the frame holds opening keys until the dialog root can hear Escape.
    Do not inherit visibility: MudTabs transitions all properties on its tab wrapper,

@@ -205,7 +205,7 @@ ExSheet.SheetToolbarItemView
 ExSheet.SheetToolbarItemView.<Clone>$() -> ExSheet.SheetToolbarItemView!
 ExSheet.SheetToolbarItemView.Choices.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetToolbarChoiceView!>!
 ExSheet.SheetToolbarItemView.Choices.init -> void
-ExSheet.SheetToolbarItemView.Deconstruct(out string! Id, out ExSheet.ToolbarItemKind Kind, out string! Name, out string! Tooltip, out ExSheet.ToolbarIcon Icon, out string? Text, out string? Swatch, out string? MoreName, out bool Pressed, out string? DisabledReason, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetToolbarChoiceView!>! Choices) -> void
+ExSheet.SheetToolbarItemView.Deconstruct(out string! Id, out ExSheet.ToolbarItemKind Kind, out string! Name, out string! Tooltip, out ExSheet.ToolbarIcon Icon, out string? Text, out string? Swatch, out string? MoreName, out bool Pressed, out string? DisabledReason, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetToolbarChoiceView!>! Choices, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>! Rows) -> void
 ExSheet.SheetToolbarItemView.DisabledReason.get -> string?
 ExSheet.SheetToolbarItemView.DisabledReason.init -> void
 ExSheet.SheetToolbarItemView.Enabled.get -> bool
@@ -222,7 +222,9 @@ ExSheet.SheetToolbarItemView.Name.get -> string!
 ExSheet.SheetToolbarItemView.Name.init -> void
 ExSheet.SheetToolbarItemView.Pressed.get -> bool
 ExSheet.SheetToolbarItemView.Pressed.init -> void
-ExSheet.SheetToolbarItemView.SheetToolbarItemView(string! Id, ExSheet.ToolbarItemKind Kind, string! Name, string! Tooltip, ExSheet.ToolbarIcon Icon, string? Text, string? Swatch, string? MoreName, bool Pressed, string? DisabledReason, System.Collections.Generic.IReadOnlyList<ExSheet.SheetToolbarChoiceView!>! Choices) -> void
+ExSheet.SheetToolbarItemView.Rows.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>!
+ExSheet.SheetToolbarItemView.Rows.init -> void
+ExSheet.SheetToolbarItemView.SheetToolbarItemView(string! Id, ExSheet.ToolbarItemKind Kind, string! Name, string! Tooltip, ExSheet.ToolbarIcon Icon, string? Text, string? Swatch, string? MoreName, bool Pressed, string? DisabledReason, System.Collections.Generic.IReadOnlyList<ExSheet.SheetToolbarChoiceView!>! Choices, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>! Rows) -> void
 ExSheet.SheetToolbarItemView.Swatch.get -> string?
 ExSheet.SheetToolbarItemView.Swatch.init -> void
 ExSheet.SheetToolbarItemView.Text.get -> string?

@@ -92,7 +92,10 @@ export function slotHostOptionsOf(made: () => SlotHostProduct | undefined, named
                 void standing.inOrder(() => until);
                 return;
             }
-            queueMicrotask(() => { void product('that takes the keyboard was mounted').inOrder(() => until); });
+            // Each adapter names its product as its making returns, before the task ends; a making that threw has said
+            // so, and leaves no product whose inputs could wait. A slot that leaves first lets `until` go, which the
+            // product then takes at once.
+            queueMicrotask(() => { void made()?.inOrder(() => until); });
         },
         keyboardBack: () => { product('held the keyboard').focus(); },
     };

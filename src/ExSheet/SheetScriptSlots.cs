@@ -75,6 +75,9 @@ public static class SheetScriptSlotAttributes
 /// <param name="DisabledReason">Why it cannot be pressed now, or null where it can: while an edit is open, every item
 /// says so.</param>
 /// <param name="Choices">For a menu or a split control, its list's choices, in the Sheet's order; none otherwise.</param>
+/// <param name="Rows">The list's rows, as the list's keys move among them: each the indices in <paramref name="Choices"/>
+/// of one choice that is no colour, or of a run of colours drawn together, ten across, as Excel's palette lays them out.
+/// None where there are no choices.</param>
 public sealed record SheetToolbarItemView(
     string Id,
     ToolbarItemKind Kind,
@@ -86,7 +89,8 @@ public sealed record SheetToolbarItemView(
     string? MoreName,
     bool Pressed,
     string? DisabledReason,
-    IReadOnlyList<SheetToolbarChoiceView> Choices)
+    IReadOnlyList<SheetToolbarChoiceView> Choices,
+    IReadOnlyList<IReadOnlyList<int>> Rows)
 {
     /// <summary>Whether it can be pressed now.</summary>
     public bool Enabled => DisabledReason is null;

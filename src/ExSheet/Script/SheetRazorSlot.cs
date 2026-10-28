@@ -64,7 +64,8 @@ internal static class SheetRazorSlot
                 Nullable(json, "disabledReason"),
                 [.. json.GetProperty("choices").EnumerateArray().Select(choice => new SheetToolbarChoiceView(
                     ScriptJson.Text(choice, "label"), Nullable(choice, "swatch"), choice.GetProperty("selected").GetBoolean(),
-                    Nullable(choice, "disabledReason")))]),
+                    Nullable(choice, "disabledReason")))],
+                [.. json.GetProperty("rows").EnumerateArray().Select(row => (IReadOnlyList<int>)[.. row.EnumerateArray().Select(at => at.GetInt32())])]),
             SheetScriptSlots.SheetTab => new SheetTabContext(ScriptJson.Text(json, "name"), json.GetProperty("selected").GetBoolean()),
             SheetScriptSlots.SheetTabAdd => AddFace.Instance,
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
@@ -84,13 +85,16 @@ internal static class SheetRazorSlot
             return RazorSlot.Fragment(chrome, slot, view);
         if (chrome is not ISheetChrome sheet || !sheet.SheetScriptSlots.HasFlag(name))
             return null;
-        return (name, view) switch
+        var fragment = (name, view) switch
         {
             (SheetScriptSlots.ToolbarItem, SheetToolbarItemView item) => sheet.ToolbarItem(item),
             (SheetScriptSlots.SheetTab, SheetTabContext tab) => sheet.SheetTab(tab),
             (SheetScriptSlots.SheetTabAdd, AddFace) => sheet.SheetTabAdd(),
             _ => throw new InvalidOperationException($"Internal: the slot {name} holds a view of another slot's."),
         };
+        // A slot the Chrome names is the Chrome's alone: drawn as nothing, it would stand empty and say nothing.
+        return fragment ?? throw new InvalidOperationException(
+            $"{sheet.GetType().Name} names {name} in its SheetScriptSlots but draws nothing for it: answer a fragment for every view of a slot it names, or leave the slot out of SheetScriptSlots.");
     }
 
     /// <summary>The add button's face, which is drawn from nothing.</summary>

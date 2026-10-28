@@ -68,18 +68,25 @@
     // choice, document data painted as recorded (ADR-0071).
     private string? SwatchStyle => View.Swatch is { } colour ? $"border-bottom: 3px solid {colour}; border-radius: 0" : null;
 
-    // The list, in the Sheet's order: each choice that is no colour on a row of its own, as a MudBlazor list item,
-    // and each run of colours ten across, as Excel's palette lays them out and as the list's keys move among them.
-    // A lone colour stands in a run of its own.
+    // The view drawn last: a slot's view is a new one whenever the Sheet changes what it shows, and the same one on
+    // every other render of the Sheet, which would otherwise redraw every item and every palette (ADR-0003).
+    private SheetToolbarItemView? _drawn;
+
+    protected override bool ShouldRender() => !ReferenceEquals(_drawn, View);
+
+    protected override void OnAfterRender(bool firstRender) => _drawn = View;
+
+    // The list, in the Sheet's order and in the rows its keys walk: each choice that is no colour on a row of its
+    // own, and each run of colours on one row. A lone colour stands in a run of its own.
     private RenderFragment? List => View.Choices.Count == 0 ? null : __builder =>
     {
         <MudPaper Elevation="8" Class="mud-ex-sheet-script-toolbar-list" data-ex-sheet-list="">
-            @foreach (var row in Rows())
+            @foreach (var row in View.Rows)
             {
                 if (row is [var only] && View.Choices[only].Swatch is null)
                 {
                     var choice = View.Choices[only];
-                    <div class="@ChoiceClass(choice)" data-ex-sheet-choice="@only" title="@(choice.DisabledReason is { } why ? $"{choice.Label}: {why}" : choice.Label)">
+                    <div class="@ChoiceClass(choice)" data-ex-sheet-choice="@only" title="@ChoiceTitle(choice)">
                         <MudText Typo="Typo.body2" Style="@(choice.Selected ? "font-weight: 600" : null)">@choice.Label</MudText>
                         @if (choice.DisabledReason is { } reason)
                         {
@@ -89,13 +96,12 @@
                 }
                 else
                 {
-                    <div class="mud-ex-sheet-swatches" role="group">
+                    <div class="mud-ex-sheet-script-swatches" role="group">
                         @foreach (var at in row)
                         {
                             var swatch = View.Choices[at];
-                            <button type="button" class="@(swatch.Selected ? "mud-ex-sheet-swatch mud-ex-sheet-swatch-selected" : "mud-ex-sheet-swatch")"
-                                    title="@swatch.Label" aria-label="@swatch.Label" style="background-color: @swatch.Swatch"
-                                    data-ex-sheet-choice="@at"></button>
+                            <button type="button" class="@SwatchClass(swatch)" title="@ChoiceTitle(swatch)" aria-label="@swatch.Label"
+                                    style="background-color: @swatch.Swatch" data-ex-sheet-choice="@at"></button>
                         }
                     </div>
                 }
@@ -106,25 +112,12 @@
     private static string ChoiceClass(SheetToolbarChoiceView choice)
         => choice.DisabledReason is null ? "mud-ex-sheet-script-choice" : "mud-ex-sheet-script-choice mud-ex-sheet-script-choice-disabled";
 
-    // The rows: one choice that is no colour, or a run of colours, which the palette's grid lays ten across.
-    private IEnumerable<int[]> Rows()
-    {
-        var swatches = new List<int>();
-        for (var at = 0; at < View.Choices.Count; at++)
-        {
-            if (View.Choices[at].Swatch is not null)
-            {
-                swatches.Add(at);
-                continue;
-            }
-            if (swatches.Count > 0)
-            {
-                yield return [.. swatches];
-                swatches.Clear();
-            }
-            yield return [at];
-        }
-        if (swatches.Count > 0)
-            yield return [.. swatches];
-    }
+    private static string SwatchClass(SheetToolbarChoiceView swatch)
+        => "mud-ex-sheet-swatch"
+           + (swatch.Selected ? " mud-ex-sheet-swatch-selected" : "")
+           + (swatch.DisabledReason is null ? "" : " mud-ex-sheet-script-swatch-disabled");
+
+    // A choice's label, with why it cannot be made while it cannot.
+    private static string ChoiceTitle(SheetToolbarChoiceView choice)
+        => choice.DisabledReason is { } why ? $"{choice.Label}: {why}" : choice.Label;
 }
