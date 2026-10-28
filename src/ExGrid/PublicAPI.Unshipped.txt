@@ -498,6 +498,10 @@ ExGrid.Script.ExGrid<TRow>.Chrome.get -> ExGrid.Chrome.IGridChrome?
 ExGrid.Script.ExGrid<TRow>.Chrome.set -> void
 ExGrid.Script.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<TRow!>!>!
 ExGrid.Script.ExGrid<TRow>.Columns.set -> void
+ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.get -> System.Func<string!, string?>?
+ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.set -> void
+ExGrid.Script.ExGrid<TRow>.ContextCommands.get -> System.Func<ExGrid.Chrome.ContextMenuContext<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Chrome.GridCommand!>!>?
+ExGrid.Script.ExGrid<TRow>.ContextCommands.set -> void
 ExGrid.Script.ExGrid<TRow>.CopyCellCap.get -> long?
 ExGrid.Script.ExGrid<TRow>.CopyCellCap.set -> void
 ExGrid.Script.ExGrid<TRow>.Density.get -> ExGrid.GridDensity?
@@ -574,6 +578,7 @@ ExGrid.Script.ExGrid<TRow>.RowHeight.get -> double?
 ExGrid.Script.ExGrid<TRow>.RowHeight.set -> void
 ExGrid.Script.ExGrid<TRow>.Rows.get -> System.Collections.Generic.IReadOnlyList<TRow!>?
 ExGrid.Script.ExGrid<TRow>.Rows.set -> void
+ExGrid.Script.ExGrid<TRow>.RowSource.get -> ExGrid.IGridSource<TRow!>?
 ExGrid.Script.ExGrid<TRow>.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
 ExGrid.Script.ExGrid<TRow>.SelectionChanged.set -> void
 ExGrid.Script.ExGrid<TRow>.ShowFillHandle.get -> bool

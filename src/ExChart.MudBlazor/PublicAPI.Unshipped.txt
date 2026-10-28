@@ -27,6 +27,8 @@ ExChart.MudBlazor.MudChartDock<TRow>.MudChartDock() -> void
 ExChart.MudBlazor.MudChartDock<TRow>.OpenAsync(ExChart.GridChart! chart) -> System.Threading.Tasks.Task!
 ExChart.MudBlazor.MudChartDock<TRow>.Placement.get -> ExChart.MudBlazor.ChartDockPlacement
 ExChart.MudBlazor.MudChartDock<TRow>.Placement.set -> void
+ExChart.MudBlazor.MudChartDock<TRow>.ScriptCore.get -> bool
+ExChart.MudBlazor.MudChartDock<TRow>.ScriptCore.set -> void
 ExChart.MudBlazor.MudChartMenu
 ExChart.MudBlazor.MudChartMenu.Chrome.get -> ExChart.MudBlazor.MudChartChrome!
 ExChart.MudBlazor.MudChartMenu.Chrome.set -> void
