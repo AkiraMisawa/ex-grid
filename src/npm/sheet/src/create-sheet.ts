@@ -49,7 +49,7 @@ import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes
 import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
-import { linkedColumnsOf, sameLinkedColumns, sheetCompletion, sheetCycleReference, sheetPointAt, sheetReferences, sheetReferenceText } from './sheet-formula-aids';
+import { linkedColumnsOf, sameLinkedColumns, sheetCompletion, sheetCycleReference, sheetPointAt, sheetReferences, sheetReferenceTextOn } from './sheet-formula-aids';
 import { PointingScope, type LinkedColumnColour, type PointingSheet } from './pointing-scope';
 import type { PointingRefusal } from './pointing-refusal';
 
@@ -796,7 +796,7 @@ class SheetView {
         const declared = before !== this.#workbook.changes;
         this.#changed([change], declared, false);
         if (declared) {
-            this.#referencesIn = text => sheetReferences(this.#source.sheet, text);
+            this.#referencesIn = this.#referencesOnSheetShown();
             this.#grid?.update(this.#gridOptions());
         }
     }
@@ -1018,13 +1018,13 @@ class SheetView {
             onColumnWidthChanged: this.#onColumnWidthChanged,
             onSelectionChanged: this.#onSelectionChanged,
             onEditingChanged: this.#onEditingChanged,
-            // The References in the Formula being edited are coloured and outlined (ADR-0057). While an edit is open
-            // no other Sheet is shown, so they are the shown Sheet's.
+            // The References in the Formula being edited are coloured and outlined (ADR-0057): on the Sheet the
+            // Formula is typed on, all of them; on another shown to point at its cells, those naming it (ADR-0331 §5).
             referencesIn: this.#referencesIn,
             onReferenceKeyColoursChanged: this.#onKeyColoursChanged,
             // Point: the arrows and a press write a Reference where one can go, and F4 cycles its forms (ADR-0051).
             pointAt: sheetPointAt,
-            referenceText: sheetReferenceText,
+            referenceText: this.#referenceText,
             cycleReference: sheetCycleReference,
             onPointStateChanged: this.#onPointStateChanged,
             onPointArrowFromOutside: this.#onPointArrow,
@@ -1368,13 +1368,27 @@ class SheetView {
     readonly #onEditingChanged = (open: boolean): void => {
         this.#editing = open;
         if (this.#destroyed) return;
+        // An edit ended while another Sheet than its own is shown, cancelled or discarded, shows its own again, where
+        // its cell is (ADR-0331 §5). A commit has shown it already (#onEdit).
+        if (!open) this.#returnToEditHome();
         this.#paintToolbar();
         this.#options.onEditingChanged?.(open);
     };
 
-    // Made again when the declared tables change: a Reference to a column is coloured only once its table is
-    // declared, and the grid asks again of a new function (ADR-0057).
-    #referencesIn = (text: string): readonly GridEditorReference[] => sheetReferences(this.#source.sheet, text);
+    // Made again when the declared tables change, a Reference to a column being coloured only once its table is
+    // declared, and with each Sheet shown: the grid asks again of a new function (ADR-0057, ADR-0331 §5).
+    #referencesIn = this.#referencesOnSheetShown();
+
+    #referencesOnSheetShown(): (text: string) => readonly GridEditorReference[] {
+        return text => sheetReferences(this.#source.sheet, text, this.#editHome);
+    }
+
+    // The Reference Point writes: bare on the Sheet the Formula is typed on, named with its Sheet on another (ADR-0331 §5).
+    readonly #referenceText = (range: SelectionRange): string => sheetReferenceTextOn(range, this.#source.sheet, this.#editHome);
+
+    // The Sheet the open edit was opened on, once another Sheet has been shown while it is typed (ADR-0331 §5): its
+    // Formula is committed there, and the edit's end shows it again.
+    #editHome: Sheet | undefined;
     // While an edit is open no other Sheet is shown, so the Linked Tables offered are the shown Sheet's Workbook's.
     readonly #completeEditorText = (text: string, caret: number): EditorCompletion | undefined => sheetCompletion(this.#source.sheet, text, caret);
 
@@ -1789,7 +1803,7 @@ class SheetView {
     // A press on a tab shows its Sheet; the keyboard stays in the grid, where the next key acts on it. A name being
     // edited on another tab is committed first, and a menu closes.
     readonly #onTabPressed = (sheet: Sheet): void => {
-        if (!this.#workbook.sheets.includes(sheet) || this.#refusedSwitch()) return;
+        if (!this.#workbook.sheets.includes(sheet) || this.#refusedSwitch(true)) return;
         if (this.#tabs.renaming === sheet) return;
         this.#leaveTabGestures('grid');
         this.#sayLeftOrClear();
@@ -1860,7 +1874,7 @@ class SheetView {
             this.#addSheet(true);
             return;
         }
-        if (this.#refusedSwitch()) return;
+        if (this.#refusedSwitch(true)) return;
         const sheets = this.#workbook.sheets;
         const sheet = sheets[sheets.indexOf(this.#source.sheet) + step];
         if (sheet === undefined) return;
@@ -2280,12 +2294,34 @@ class SheetView {
         }
     }
 
-    // While an edit is open no other Sheet is shown, and the notice says why: the edit is typed on this one. Showing
-    // another to point at its cells, as Excel does for a Formula, waits on Pointing across Sheets (ADR-0331 §5).
-    #refusedSwitch(): boolean {
-        if (!this.#editing) return false;
+    // While an edit is open another Sheet is shown only to point at its cells: with `pointing`, while the edit's text is
+    // a Formula, as Excel shows one (ADR-0331 §5), noting the Sheet the edit is typed on. Otherwise it is not, and the
+    // notice says why. The text is read from the grid, as the key or press being answered left it. Whether it refused.
+    #refusedSwitch(pointing = false): boolean {
+        const text = this.#grid?.readEditText();
+        if (text === undefined && !this.#editing) return false;
+        if (pointing && text?.startsWith('=') === true) {
+            this.#editHome ??= this.#source.sheet;
+            return false;
+        }
         this.#tell(this.#words.sheetSwitchWhileEditing);
         return true;
+    }
+
+    // The edit has ended: where another Sheet than the one it was typed on is shown, that one is shown again, where its
+    // cell is (ADR-0331 §5).
+    #returnToEditHome(): void {
+        const home = this.#editHome;
+        if (home === undefined) return;
+        this.#editHome = undefined;
+        if (home !== this.#source.sheet && this.#workbook.sheets.includes(home)) {
+            this.#showSheet(home);
+            this.#raiseDocument();
+        } else {
+            // The References on the Sheet shown are all its own again.
+            this.#referencesIn = this.#referencesOnSheetShown();
+            this.#grid?.update(this.#gridOptions());
+        }
     }
 
     // A new, empty Sheet beside the one shown, named as Excel names it, and shown, as Excel shows the Sheet it adds:
@@ -2767,14 +2803,19 @@ class SheetView {
         this.#columns.read(sheet);
         this.#appearance = appearanceLookup(++this.#reading);
         this.#source.show(sheet);
-        // The view it was left with comes with its rows, under the version they are shown with.
+        this.#referencesIn = this.#referencesOnSheetShown();
+        // The view it was left with comes with its rows, under the version they are shown with; a Sheet shown for the
+        // first time opens on A1, scrolled to it, as Excel's does. Either is rows of their own, so an edit open stays
+        // with the Sheet it was typed on (ADR-0331 §5).
         const view = this.#views.get(sheet);
-        if (grid !== undefined && view !== undefined) grid.showViewWith(view, this.#source.snapshot().rowSequenceVersion);
+        const version = this.#source.snapshot().rowSequenceVersion;
+        if (grid !== undefined) {
+            if (view !== undefined) grid.showViewWith(view, version);
+            else grid.showNewView(version, { range: { topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }, focus: { row: 0, column: 0 } });
+        }
         grid?.update(this.#gridOptions());
         this.#paintFrame();
-        if (match !== undefined) grid?.placeMatch(match, this.#source.snapshot().rowSequenceVersion);
-        // A Sheet shown for the first time opens on A1, scrolled to it, as Excel's does.
-        else if (view === undefined) this.#select(new CellRange(new CellAddress(0, 0)));
+        if (match !== undefined) grid?.placeMatch(match, version);
     }
 
     // The document, then a change to the Sheets where the names moved. The names are taken as heard before either

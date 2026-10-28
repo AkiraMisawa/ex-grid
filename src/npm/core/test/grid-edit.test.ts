@@ -608,6 +608,27 @@ describe('an IME composing on the Keyboard Field', () => {
     });
 });
 
+/** A grid over a fetching source answered at once, scrolled far enough that its Window leaves the first rows. */
+async function scrolledAway(open: (root: HTMLElement) => void): Promise<{ readonly root: HTMLElement; readonly listener: ReturnType<typeof heard> }> {
+    const all = trades(1000);
+    const source = GridSource.fetch<Trade>(({ range }) => Promise.resolve({ rows: all.slice(range.start, range.start + range.count), start: range.start, totalCount: 1000 }), { readAheadRows: 0 });
+    const listener = heard();
+    const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options });
+    await painted();
+    await settle();
+    press(root, book, rowY(2));
+    await painted();
+    open(root);
+    await painted();
+    await scrollTo(root, 20_000);
+    // The fling lands, the rows it landed on are asked for, and the answer comes in.
+    told.clock.advance(150);
+    await painted();
+    await settle();
+    await painted();
+    return { root, listener };
+}
+
 describe('an edit under rows and columns that move', () => {
     it('ADR-0142 LV-20: without a Row Key, a commit after the order moved is refused, and the editor stays with the typing', async () => {
         const listener = heard();
@@ -682,27 +703,6 @@ describe('an edit under rows and columns that move', () => {
         await painted();
         expect([hasEditor(root), listener.discards, listener.edits.length]).toEqual([false, ['columnNoLongerEditable'], 0]);
     });
-
-    /** A grid over a fetching source answered at once, scrolled far enough that its Window leaves the first rows. */
-    async function scrolledAway(open: (root: HTMLElement) => void): Promise<{ readonly root: HTMLElement; readonly listener: ReturnType<typeof heard> }> {
-        const all = trades(1000);
-        const source = GridSource.fetch<Trade>(({ range }) => Promise.resolve({ rows: all.slice(range.start, range.start + range.count), start: range.start, totalCount: 1000 }), { readAheadRows: 0 });
-        const listener = heard();
-        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options });
-        await painted();
-        await settle();
-        press(root, book, rowY(2));
-        await painted();
-        open(root);
-        await painted();
-        await scrollTo(root, 20_000);
-        // The fling lands, the rows it landed on are asked for, and the answer comes in.
-        told.clock.advance(150);
-        await painted();
-        await settle();
-        await painted();
-        return { root, listener };
-    }
 
     it('ST-2 (ADR-0007): an edit opened with F2 and not typed into closes when the Window leaves its row, and the keyboard comes back', async () => {
         const { root, listener } = await scrolledAway(() => { key('F2'); });

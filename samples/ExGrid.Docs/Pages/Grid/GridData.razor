@@ -110,7 +110,11 @@
             opened among: its editor keeps the keyboard unseen, the Formula Bar shows its text, Point points at the
             rows shown, and its commit raises <code>OnEdit</code> with the row it was opened on. A view you read of its
             rows, handed back, brings the editor back over its cell. <code>ReadEditText()</code> reads the open
-            edit's text from a handler, to decide what a declared key means while an edit is open.
+            edit's text from a handler, to decide what a declared key means while an edit is open. Under React the grid's
+            ref has the same: <code>readView()</code>, <code>showViewWith(view, rowSequenceVersion)</code>,
+            <code>showNewView(rowSequenceVersion, place)</code> for rows the grid has never shown, scrolled to the
+            start with <code>place</code> selected, and <code>readEditText()</code>; an edit open as either is taken
+            stays away in the same way.
         </p>
         <p>
             <strong>Name your rows by a Row Key</strong> when you make them afresh — fetched again, or rebuilt from a
