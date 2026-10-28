@@ -9,6 +9,7 @@
 // again half up, under a custom format, as .NET does. A decimal's are its own, rounded half away from zero.
 
 import type { SnapshotDecimal } from '@ex-grid/data';
+import type { PivotNumber } from '../cube/answer';
 import { cultureOf, type NumberCulture } from '../culture/culture-data';
 import { PivotFormatError } from '../errors';
 
@@ -734,4 +735,14 @@ export function formatPivotCount(count: number, locale: string): string {
  */
 export function formatPivotNumber(value: number, format: string, locale: string): string {
     return formatDouble(value, format, cultureOf(locale).data.number);
+}
+
+/**
+ * A figure written in a number format in `locale`, as C#'s `ToString(format, culture)` writes the decimal or the
+ * double it is: a Selection Summary's figure in the Focus value's format, as the report shows that value (ADR-0130).
+ * A format .NET cannot format a number with throws a `PivotFormatError`.
+ */
+export function formatPivotFigure(value: PivotNumber, format: string, locale: string): string {
+    const culture = cultureOf(locale).data.number;
+    return value.kind === 'exact' ? formatDecimal(value.value, format, culture) : formatDouble(value.value, format, culture);
 }

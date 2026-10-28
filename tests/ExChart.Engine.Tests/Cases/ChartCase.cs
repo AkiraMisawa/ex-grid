@@ -19,7 +19,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 {
     private static readonly string[] Operations =
         ["scene", "drawing", "thin", "through", "tenor", "nice", "steps", "decades", "logSteps", "fit", "horizontal", "candles", "legendMembers", "format", "appearance", "mesh", "slice", "slicePath",
-         "reading", "summary", "csv", "surfaceSummary", "curve", "interpolate"];
+         "reading", "summary", "csv", "surfaceSummary", "curve", "interpolate", "sourceThin"];
 
     // What a scene is laid out with, which the tooltip and the summary read their scene by.
     private static readonly string[] SceneKeys = ["metrics", "view", "style", "independentScales", "legend"];
@@ -34,8 +34,13 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     private string Name => entry.GetProperty("name").GetString()!;
 
-    public void Run()
+    public async Task Run()
     {
+        if (entry.TryGetProperty("sources", out _))
+        {
+            await RunThrough();
+            return;
+        }
         if (IsSpecCase)
         {
             RunSpec();
@@ -62,6 +67,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
     private static string Refusal(Exception e) => e switch
     {
         ChartRefusedException => "chartRefused",
+        ChartSpecRefusedException => "chartSpecRefused",
         ArgumentOutOfRangeException => "outOfRange",
         ArgumentException => "argument",
         InvalidOperationException => "invalidOperation",
@@ -107,6 +113,17 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             case "scene":
                 Allow(args, "scene", SceneKeys);
                 return Scene(Definition(op.GetProperty("definition")), args);
+            case "sourceThin":
+            {
+                // The reference Chart Source (ADR-0344) over one of the file's tables: what it keeps, each row by its
+                // position across and its height, and what each thinned pixel held.
+                Allow(args, "sourceThin", "table", "query", "version");
+                var handle = args.GetProperty("table").GetString()!;
+                var table = SpecTables(includeCase: false).GetValueOrDefault(handle)
+                    ?? throw new InvalidOperationException($"\"{Name}\" thins the table \"{handle}\", which the file does not hold.");
+                var query = SourceQuery(args.GetProperty("query"));
+                return AnswerRows(ChartSource.Thin(table, query, args.GetProperty("version").GetInt64()), query);
+            }
             case "reading":
             {
                 // The tooltip of the scene the case lays out, at a position, over a mark or over an edge.
@@ -1225,10 +1242,10 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
     private ChartMetrics? SpecMetrics() => entry.TryGetProperty("metrics", out var metrics) ? Metrics(metrics) : null;
 
     // The file's tables by handle, a case's own taking the place of the file's of the same handle.
-    private Dictionary<string, IChartData> SpecTables()
+    private Dictionary<string, IChartData> SpecTables(bool includeCase = true)
     {
         var tables = new Dictionary<string, IChartData>(StringComparer.Ordinal);
-        foreach (var source in new[] { file, entry })
+        foreach (var source in includeCase ? new[] { file, entry } : [file])
             if (source.TryGetProperty("tables", out var named))
                 foreach (var table in named.EnumerateObject())
                     tables[table.Name] = ChartData.Of(table.Value.EnumerateObject()
@@ -1274,6 +1291,96 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 return Number(form.Value);
             default:
                 throw new InvalidOperationException($"{e} is not a value a table holds.");
+        }
+    }
+
+    // ---- The Chart Source (ADR-0322, ADR-0344) ----
+
+    private static readonly string[] ThroughCaseKeys = ["name", "spec", "tables", "sources", "refused", "expect"];
+
+    // A Chart Source query as a case writes it, every key given.
+    private static ChartSourceQuery SourceQuery(JsonElement q)
+    {
+        Allow(q, "query", "data", "x", "y", "values", "from", "to", "pixels");
+        double? End(string key) => q.GetProperty(key).ValueKind == JsonValueKind.Null ? null : Number(q.GetProperty(key));
+        return new ChartSourceQuery(q.GetProperty("data").GetString()!, q.GetProperty("x").GetString()!, q.GetProperty("y").GetString()!,
+            Enum<AxisValues>(q.GetProperty("values")), End("from"), End("to"), q.GetProperty("pixels").GetInt32());
+    }
+
+    // An answer as a case reads it: its version, each kept row as its position across and its height (null for a gap),
+    // and what each thinned pixel held.
+    private static Dictionary<string, object?> AnswerRows(ChartSourceAnswer answer, ChartSourceQuery query) => new()
+    {
+        ["version"] = answer.Version,
+        ["rows"] = Enumerable.Range(0, answer.Points.RowCount).Select(r => new Dictionary<string, object?>
+        {
+            ["x"] = Placed(answer.Points.Value(query.X, r)),
+            ["y"] = answer.Points.Value(query.Y, r) is { } y ? Placed(y) : null,
+        }).ToList(),
+        ["thinned"] = answer.Thinned,
+    };
+
+    // A value kept as a number: a date as its day number, a whole number, a decimal or a double as a double.
+    private static double Placed(object? value) => value switch
+    {
+        DateOnly d => d.DayNumber,
+        DateTime t => DateOnly.FromDateTime(t).DayNumber,
+        double or long or decimal => Convert.ToDouble(value, CultureInfo.InvariantCulture),
+        _ => throw new InvalidOperationException($"A Chart Source kept {value}, which is no position or height."),
+    };
+
+    // A Chart Spec read through Chart Sources over the case's tables (ADR-0344), each answering the versions
+    // sources.versions lists for its handle in turn: the reading, the questions asked and the versions held to the
+    // checks, or the refusal to its path and to how many questions were asked before it.
+    private async Task RunThrough()
+    {
+        Allow(entry, "the sources case", ThroughCaseKeys);
+        var text = entry.GetProperty("spec").GetRawText();
+        var through = entry.GetProperty("sources");
+        Allow(through, "sources", "pixels", "from", "to", "versions");
+        var tables = SpecTables();
+        var versions = through.GetProperty("versions");
+        Allow(versions, "versions", [.. tables.Keys]);
+        var asked = new List<ChartSourceQuery>();
+        var sources = new Dictionary<string, IChartSource>(StringComparer.Ordinal);
+        foreach (var listed in versions.EnumerateObject())
+            sources[listed.Name] = new Answering(tables[listed.Name], new Queue<long>(listed.Value.EnumerateArray().Select(v => v.GetInt64())), asked, Name, listed.Name);
+        double? from = through.TryGetProperty("from", out var f) ? Number(f) : null;
+        double? to = through.TryGetProperty("to", out var t) ? Number(t) : null;
+        Task<ChartSourceReading> Read() => ChartSpec.ReadAsync(text, h => sources.GetValueOrDefault(h), through.GetProperty("pixels").GetInt32(), from, to,
+            TestContext.Current.CancellationToken);
+        if (entry.TryGetProperty("refused", out var refused) == entry.TryGetProperty("expect", out var checks))
+            throw new InvalidOperationException($"\"{Name}\" is either refused or expects a reading.");
+        if (entry.TryGetProperty("refused", out _))
+        {
+            Allow(refused, "refused", "path", "message", "asked");
+            var e = await Assert.ThrowsAsync<ChartSpecRefusedException>(Read);
+            var path = refused.GetProperty("path").GetString()!;
+            Assert.True(e.Path == path, $"\"{Name}\": refused at \"{e.Path}\", not \"{path}\": {e.Message}");
+            Assert.True(e.Message == refused.GetProperty("message").GetString(), $"\"{Name}\": the refusal says \"{e.Message}\".");
+            Assert.True(asked.Count == refused.GetProperty("asked").GetInt32(), $"\"{Name}\": {asked.Count} questions were asked before the refusal.");
+            return;
+        }
+        var read = await Read();
+        var answer = new JsonObject
+        {
+            ["title"] = read.Reading.Title, ["definition"] = Serialise(read.Reading.Definition),
+            ["asked"] = Serialise(asked), ["versions"] = Serialise(read.Versions),
+        };
+        Assert.True(checks.GetArrayLength() > 0, $"\"{Name}\" checks nothing.");
+        foreach (var check in checks.EnumerateArray())
+            Check(answer, answer, check);
+    }
+
+    // A Chart Source over a case's table, answering the versions listed for it in turn.
+    private sealed class Answering(IChartData table, Queue<long> versions, List<ChartSourceQuery> asked, string name, string handle) : IChartSource
+    {
+        public ValueTask<ChartSourceAnswer> ThinAsync(ChartSourceQuery query, CancellationToken cancellationToken = default)
+        {
+            asked.Add(query);
+            if (!versions.TryDequeue(out var version))
+                throw new InvalidOperationException($"\"{name}\": \"{handle}\" was asked more often than its versions say.");
+            return ValueTask.FromResult(ChartSource.Thin(table, query, version));
         }
     }
 }

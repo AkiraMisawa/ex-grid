@@ -13,7 +13,7 @@
 // margin on either side, and rest cells merging the siblings beyond each margin, one a shown column group.
 
 import type { SnapshotDecimal } from '@ex-grid/data';
-import { decimalCanonical, decimalEquals, decimalToNumber } from '../aggregates/exact-decimal';
+import { decimalCanonical, decimalDivide, decimalEquals, decimalToNumber } from '../aggregates/exact-decimal';
 import { PartColumns, partsText } from '../aggregates/parts';
 import { itemKeyText, pivotItemKey, publicKeyId, type PivotItemKey } from '../items/item-key';
 import { aggregationTitle, type PivotAggregation } from '../layout/pivot-enums';
@@ -73,6 +73,21 @@ export type PivotNumber =
 /** The number as a double: the exact one converted as C# converts a decimal. */
 export function pivotNumberValue(number: PivotNumber): number {
     return number.kind === 'exact' ? decimalToNumber(number.value) : number.value;
+}
+
+/** The number without trailing zeros where it is exact, as C#'s accumulator finishes a figure (`AggregateArithmetic.Canonical`). */
+export function pivotNumberCanonical(number: PivotNumber): PivotNumber {
+    if (number.kind !== 'exact') return number;
+    const value = decimalCanonical(number.value);
+    return value === number.value ? number : Object.freeze({ kind: 'exact', value });
+}
+
+/** The Average of `count` numbers whose sum is `sum`: exact where the sum is, divided as C#'s decimal divides by a
+ * whole count, and a double otherwise, as a Selection Summary's Average over the report reads it (ADR-0130). */
+export function pivotNumberAverage(sum: PivotNumber, count: number): PivotNumber {
+    return sum.kind === 'exact'
+        ? Object.freeze({ kind: 'exact', value: decimalDivide(sum.value, count) })
+        : Object.freeze({ kind: 'double', value: sum.value / count });
 }
 
 /** Whether two numbers are one: both exact and equal, or both doubles with the same bits. */

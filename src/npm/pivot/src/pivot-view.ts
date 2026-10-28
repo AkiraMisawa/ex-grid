@@ -14,7 +14,8 @@ import {
     gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions, type GridSelection, type GridTextGeometry,
     type CellPosition, type GridCommand, type GridContextMenuContext,
     type FetchingGridSource, type GridRefusal, type ViewportSize, type GridColumn, type GridCopyAnswer, type GridCopyRequest,
-    assembleCopy, defaultChangeHighlightMs, systemClock,
+    type SelectionSummary, type SummaryFigure,
+    assembleCopy, defaultChangeHighlightMs, defaultSummaryFigures, summaryFigureOrder, systemClock,
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
@@ -155,6 +156,17 @@ export interface PivotViewOptions {
     /** Where the records open when nobody hears `onShowDetails`: a tab at the report's foot, which covers the report
      * while it is selected, or a dialog; `tab` unless given. */
     readonly detailsView?: PivotDetailsView;
+    /** Whether the Selection Summary is shown under the report (ADR-0130): Excel's status-bar figures over the cells
+     * selected, summed by the report source over the whole report, rows not drawn included. On unless given. */
+    readonly showSelectionSummary?: boolean;
+    /** The Selection Summary's figures, Excel's Average, Count and Sum unless given (ADR-0130). The report holds the
+     * choice made in the figures menu from then on; figures handed in that differ from the ones last handed replace
+     * it. */
+    readonly summaryFigures?: readonly SummaryFigure[];
+    /** Raised when the figures menu changes the figures shown (ADR-0130). */
+    readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
+    /** Hears the Selection Summary as it now stands (ADR-0130), for an application that shows the figures elsewhere. */
+    readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
     /** The parts a Wrapper's Chrome, or the Consumer's own, draws in place of the built-in markup (ADR-0061, ADR-0390),
      * its `grid` dressing the report's grid and Show Details' grids. A part standing keeps the slot it opened with. */
     readonly chrome?: PivotChrome;
@@ -329,7 +341,14 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
     }
     const slicing = given['slicing'];
     if (slicing !== undefined && (typeof slicing !== 'object' || slicing === null)) throw new TypeError('slicing is an object.');
-    for (const name of ['onLayoutChanged', 'onRefused', 'onFailed', 'onShowFieldListChanged', 'onSelectionChanged', 'onShowDetails', 'label']) {
+    const showSummary = given['showSelectionSummary'];
+    if (showSummary !== undefined && typeof showSummary !== 'boolean') throw new TypeError('showSelectionSummary is true or false.');
+    const figures: unknown = given['summaryFigures'];
+    if (figures !== undefined && (!Array.isArray(figures) || !figures.every(figure => (summaryFigureOrder as readonly unknown[]).includes(figure)))) {
+        throw new TypeError(`summaryFigures is a list of the figures ${summaryFigureOrder.join(', ')} (ADR-0130).`);
+    }
+    for (const name of ['onLayoutChanged', 'onRefused', 'onFailed', 'onShowFieldListChanged', 'onSelectionChanged', 'onShowDetails', 'label',
+        'onSummaryFiguresChanged', 'onSelectionSummaryChanged']) {
         const handler = given[name];
         if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
     }
@@ -354,6 +373,14 @@ function wordsRecord(label: PivotLabel | undefined): Readonly<Record<string, str
         if (word !== undefined) words[id] = word;
     }
     return Object.freeze(words);
+}
+
+// Two lists of figures that name the same figures, whatever their order: the grid shows them in Excel's.
+function sameFigures(a: readonly SummaryFigure[] | undefined, b: readonly SummaryFigure[] | undefined): boolean {
+    if (a === b) return true;
+    if (a === undefined || b === undefined) return false;
+    const named = new Set(b);
+    return new Set(a).size === named.size && a.every(figure => named.has(figure));
 }
 
 // A copy refused, in the sentence the grid says.
@@ -415,6 +442,10 @@ export class PivotView {
     readonly #slicing: PivotSlicing | undefined;
     #options: PivotViewOptions;
     #words: PivotScreenWords;
+    // The Selection Summary's figures shown, and the ones last handed in (ADR-0130), as the Razor component's
+    // `HeldSummaryFigures`: the figures menu's choice stands until the Consumer hands in different ones.
+    #summaryFigures: readonly SummaryFigure[];
+    #summaryFiguresHanded: readonly SummaryFigure[] | undefined;
     // The words of the grid's commands, made again when the Consumer's words change.
     #commandLabel: (id: string) => string | undefined;
     // The text geometry of the report grid's density: what its label widths are estimated under, and a level's indent.
@@ -495,6 +526,8 @@ export class PivotView {
         this.#mountGrid = mountGrid;
         this.#slicing = options.slicing;
         this.#words = new PivotScreenWords(options.label);
+        this.#summaryFiguresHanded = options.summaryFigures;
+        this.#summaryFigures = options.summaryFigures ?? defaultSummaryFigures;
         this.#commandLabel = this.#commandLabelOf(options.label);
         this.#geometry = gridTextGeometry(options.density === undefined ? {} : { density: options.density });
         this.#columns = this.#columnsOf(options);
@@ -743,7 +776,8 @@ export class PivotView {
             this.#ask(this.#layoutAhead, 'consumer', []);
         }
         const gridChromeMoved = options.chrome?.grid !== before.chrome?.grid;
-        if (highlightMoved || options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
+        const summaryMoved = this.#adoptSummaryFigures(options.summaryFigures) || options.showSelectionSummary !== before.showSelectionSummary;
+        if (summaryMoved || highlightMoved || options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
             || options.viewportWidth !== before.viewportWidth || gridChromeMoved) {
             this.#drawGrid();
         }
@@ -1340,6 +1374,7 @@ export class PivotView {
             nextRequestId: () => this.#nextRequestId(),
             moved: () => { this.#reportMoved(answer); },
             findGivenUp: why => { this.#findGivenUp(answer, why); },
+            words: () => this.#words,
         });
         this.#drawGrid();
         if (question.toggled !== undefined) this.#placeToggled(question.toggled);
@@ -1389,6 +1424,32 @@ export class PivotView {
         this.#scheduleRedraw();
     }
 
+    // Figures handed in replace the ones shown only when they differ from the ones handed before: an update that hands
+    // the same again keeps the figures menu's choice. True when the figures shown moved.
+    #adoptSummaryFigures(handed: readonly SummaryFigure[] | undefined): boolean {
+        if (sameFigures(handed, this.#summaryFiguresHanded)) return false;
+        this.#summaryFiguresHanded = handed;
+        const shown = handed ?? defaultSummaryFigures;
+        if (sameFigures(shown, this.#summaryFigures)) return false;
+        this.#summaryFigures = shown;
+        return true;
+    }
+
+    // The figures menu's choice, which the report holds and raises (ADR-0130). Held in a field: its identity reaches the
+    // grid.
+    readonly #summaryFiguresChosen = (figures: readonly SummaryFigure[]): void => {
+        if (this.#destroyed) return;
+        this.#summaryFigures = figures;
+        this.#drawGrid();
+        this.#options.onSummaryFiguresChanged?.(figures);
+    };
+
+    // The Selection Summary as it stands, raised to the Consumer's handler as the options now hold it. Held in a field,
+    // so a handler that is a new function at each update does not draw the grid again.
+    readonly #selectionSummaryChanged = (summary: SelectionSummary): void => {
+        this.#options.onSelectionSummaryChanged?.(summary);
+    };
+
     #drawGrid(): void {
         const answer = this.#shown.answer;
         const rows = this.#rows;
@@ -1422,6 +1483,10 @@ export class PivotView {
             commandLabel: this.#commandLabel,
             cellChangedAt: this.#cellChangedAt,
             changeHighlightDuration: this.#changeHighlightMs,
+            showSelectionSummary: this.#options.showSelectionSummary !== false,
+            summaryFigures: this.#summaryFigures,
+            onSummaryFiguresChanged: this.#summaryFiguresChosen,
+            onSelectionSummaryChanged: this.#selectionSummaryChanged,
             ...(gridChrome === undefined ? {} : { chrome: gridChrome }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),

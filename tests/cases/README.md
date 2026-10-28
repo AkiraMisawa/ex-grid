@@ -448,6 +448,7 @@ answer is the definition or the surface itself:
 | `"summary": {metrics, view, style, independentScales, legend, title, description}` | What a screen reader says of that scene (`ChartSummary.Of`, `chartSummary`, ADR-0275) |
 | `"curve": {method, x, y, degree, space, at}` | A fit a Consumer calls (ADR-0291): `method` `leastSquares`, `theilSen` or `polynomial`, which alone reads a `degree` (`Fit.LeastSquares`/`TheilSen`/`Polynomial`, `fitLeastSquares`/`fitTheilSen`/`fitPolynomial`), over the points `x` and `y`, each a list of numbers or a run `{"run": {count, from, step}}`, in the `space` `linear`, `logY` or `logLog`, the method's default where it names none. Answers the fitted curve, or, with `at`, a list of positions, its value at each (`null` outside the range it was fitted on) |
 | `"interpolate": {method, x, y, z, points, triangles, at}` | An interpolation a Consumer calls (ADR-0257): `method` `linear` or `naturalCubicSpline`, through the points `x` and `y`; `bilinear`, on the grid `x`, `y` and its rows `z` (`null` a missing value); or `triangles`, on the `points` `[x, y, z]` and the `triangles` `[a, b, c]` (`Interpolate.Linear`/`NaturalCubicSpline`/`Bilinear`/`Triangles`, `interpolateLinear`/`interpolateNaturalCubicSpline`/`interpolateBilinear`/`interpolateTriangles`). Each method reads only its own keys. Answers the interpolant, or, with `at`, its value at each position (a curve) or each point `[x, y]` (a surface), `null` where it has none |
+| `"sourceThin": {table, query, version}` | The reference Chart Source over one of the file's `tables` (ADR-0344; `ChartSource.Thin`, `thinChartData`): `query` is `{data, x, y, values, from, to, pixels}`, every key written, `from` and `to` `null` for the data's own ends. Answers `{version, rows, thinned}`, each kept row `{x, y}` as numbers, a date by its day number and `y` `null` for a gap, and what each thinned pixel held. A refusal of a row's value is `chartSpecRefused` |
 | `"csv": {form, metrics, view}` | The files (ticket 07): `form` `long` or `wide` answers the CSV, byte-order mark first (`ChartCsv.Long`/`Wide`, `chartCsvLong`/`chartCsvWide`), and `table` the `{header, rows}` "View as table" shows (`WideTable`, `chartTable`) |
 
 A definition, an axis and a series are written as the Script Core's options objects name them, each key
@@ -510,6 +511,16 @@ in the `spec*.json` files of `chart/`. A spec case is one of its own, with no ot
 | `tables` | Tables by Data Handle, each an object of its columns in order, each column a list of values. The file's `tables` are every case's; a case's own take the place of the file's of the same handle |
 | `refused` | `{path, message}`: the spec is refused at that path in exactly those words. A message that quotes the platform's own JSON parser, which .NET and JavaScript word differently, is held to `{path, startsWith}`, the spec's own words before it |
 | `expect` | The checks above, on `{title, definition, surface}`: the one the spec is not is `null`, and a surface's `definition`, which throws, is `{"refused": "invalidOperation"}` |
+
+A case with `sources` reads its spec through Chart Sources instead (ADR-0344; `ChartSpec.ReadAsync`,
+`readChartSpecThrough`), each over one of the tables and answering as the reference does; it takes `spec`,
+`tables`, `refused` and `expect` as above:
+
+| Key | Meaning |
+|---|---|
+| `sources` | `{pixels, from, to, versions}`: the pixels asked for, the range's ends where the case narrows it, and for each table asked, the versions its source answers with, one a question, in turn |
+| `refused` | `{path, message, asked}`: the refusal, and how many questions were asked before it, 0 for one refused before any source is asked |
+| `expect` | The checks above, on `{title, definition, asked, versions}`: each question asked, written as `sourceThin`'s `query`, and the version each Data Handle was read at |
 
 A table's value is `null`, a text, `true` or `false`, a number (C#'s `double`), or `{"decimal": "1.25"}`
 (C#'s `decimal`; TypeScript's Snapshot decimal, so it is written without a trailing zero after the point),

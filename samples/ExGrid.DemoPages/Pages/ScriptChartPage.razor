@@ -1,0 +1,101 @@
+@page "/script-chart"
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+
+<DemoChromeAssets Name="builtin">
+    <Head>
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<DemoNav />
+
+<h1>ExChart over the Script Core</h1>
+
+<p>
+    The chart and the surface below are <code>ExChart.Script.ExChart</code> and <code>ExChart.Script.ExSurface</code>:
+    Blazor's Framework Adapter over <code>@@ex-grid/chart</code> (ADR-0370 section 1). The drawing, the tooltip, the
+    legend, Chart Filters and the turning are the Script Core's, in the browser, on both hosting models. The data is
+    /chart's, in .NET, and its Format crosses as the texts it writes each value; what the user changes comes back to
+    .NET and is handed in again, as on /chart.
+</p>
+
+<section id="script-exposure">
+    <h2>Exposure profile</h2>
+    <button type="button" id="script-chart-next-run" @onclick="NextRun">Next run</button>
+    <ExChart.Script.ExChart Definition="_exposure"
+                            Title="Exposure profile"
+                            Width="760"
+                            Height="420"
+                            HiddenSeries="_hidden"
+                            OnSeriesVisibilityChanged="SeriesChanged"
+                            Range="_range"
+                            OnRangeChanged="RangeChanged" />
+    <p id="script-chart-events" role="status">@_events</p>
+</section>
+
+<section id="script-surface">
+    <h2>Volatility surface</h2>
+    <ExChart.Script.ExSurface Definition="Volatility"
+                              Title="Volatility"
+                              Width="520"
+                              Height="360"
+                              SliceWidth="360"
+                              Slice="_slice"
+                              OnSliceChanged="SliceChanged" />
+    <p id="script-surface-events" role="status">@_sliceEvent</p>
+</section>
+
+@code {
+    private ChartDefinition _exposure = ChartPage.Exposure(0);
+    private int _run;
+    private IReadOnlySet<string> _hidden = new HashSet<string>();
+    private ChartRange? _range;
+    private string _events = "";
+    private SurfaceSlice? _slice;
+    private string _sliceEvent = "";
+
+    // Strikes as decimals, written as they were handed in (0.90, not 0.9), and tenors as text: a slice comes back to
+    // .NET as the axis' own value, of its own type.
+    private static readonly SurfaceDefinition Volatility = new(
+        SurfaceAxis.Of("Strike", new[] { 0.90m, 0.95m, 1.00m, 1.05m, 1.10m }),
+        SurfaceAxis.Of("Tenor", new[] { "1M", "3M", "6M", "1Y" }),
+        [
+            [12.4, 11.6, 11.1, 11.3, 11.9],
+            [12.0, 11.3, 10.9, 11.0, 11.5],
+            [11.7, 11.1, 10.7, 10.8, 11.2],
+            [11.4, 10.9, 10.6, 10.7, 11.0],
+        ],
+        "Volatility",
+        v => ((double)v).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + "%");
+
+    private void NextRun()
+    {
+        _run++;
+        _exposure = ChartPage.Exposure(_run);
+    }
+
+    private void SeriesChanged(SeriesVisibility change)
+    {
+        var hidden = new HashSet<string>(_hidden);
+        if (change.Hidden) hidden.Add(change.Key);
+        else hidden.Remove(change.Key);
+        _hidden = hidden;
+        _events = $"{change.Key} {(change.Hidden ? "hidden" : "shown")}";
+    }
+
+    private void RangeChanged(ChartRange? range)
+    {
+        _range = range;
+        _events = range is null ? "range: all" : "range narrowed";
+    }
+
+    private void SliceChanged(SurfaceSlice slice)
+    {
+        _slice = slice;
+        var axis = slice.Axis == SurfaceSliceAxis.X ? Volatility.X : Volatility.Y;
+        _sliceEvent = $"Slice: {axis.Title} = {axis.Write(slice.Value)} ({slice.Value.GetType().Name})";
+    }
+}

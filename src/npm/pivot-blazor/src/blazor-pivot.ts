@@ -4,14 +4,15 @@
 // computes nothing: the report, the Field List and what each input means are the Script Core's, and the data
 // is the Consumer's, in .NET.
 
-import { builtInLabelIds, type GridSelection } from '@ex-grid/core';
+import { builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary } from '@ex-grid/core';
+import { decimalText } from '@ex-grid/data';
 import { createPivot, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import { PivotJson, pivotWordIdList, readPivotLayoutJson, writePivotLayoutJson, type PivotLabel, type PivotLayout } from '@ex-grid/pivot-engine';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from './dotnet-pivot-source';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. The layout is always heard,
  * since the one the pivot raised is the one it is handed back. */
-export type HeardKind = 'layoutChanged' | 'showFieldListChanged' | 'showDetails' | 'selectionChanged';
+export type HeardKind = 'layoutChanged' | 'showFieldListChanged' | 'showDetails' | 'selectionChanged' | 'summaryFiguresChanged' | 'selectionSummaryChanged';
 
 /** Every id the pivot and the grid it draws through have words for: its own, a date part's, and the grid's. .NET
  * cannot hand a function across, so it answers each of them once and sends the words (ADR-0370 section 10). */
@@ -22,11 +23,11 @@ export function labelIds(): readonly string[] {
 /** The options .NET sets as they are, with no function or object of the browser's in them. */
 type PassedOption =
     | 'showFieldList' | 'fieldListWidth' | 'viewportHeight' | 'viewportWidth' | 'rowHeight' | 'density' | 'maxLeaves' | 'maxRows' | 'maxColumns'
-    | 'redrawInterval' | 'changeHighlightDuration' | 'detailsView';
+    | 'redrawInterval' | 'changeHighlightDuration' | 'detailsView' | 'showSelectionSummary' | 'summaryFigures' | 'slicing';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'showFieldList', 'fieldListWidth', 'viewportHeight', 'viewportWidth', 'rowHeight', 'density', 'maxLeaves', 'maxRows', 'maxColumns',
-    'redrawInterval', 'changeHighlightDuration', 'detailsView',
+    'redrawInterval', 'changeHighlightDuration', 'detailsView', 'showSelectionSummary', 'summaryFigures', 'slicing',
 ]);
 
 /** The component's parameters, as the Script Core's options are spelt. .NET sends only what the Consumer set, and
@@ -149,7 +150,8 @@ export function parsed<T>(json: string): T {
     return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExPivot.Script writes; each reader checks what it reads
 }
 
-type Handlers = Required<Pick<PivotViewOptions, 'onLayoutChanged' | 'onShowFieldListChanged' | 'onShowDetails' | 'onSelectionChanged'>>;
+type Handlers = Required<Pick<PivotViewOptions,
+    'onLayoutChanged' | 'onShowFieldListChanged' | 'onShowDetails' | 'onSelectionChanged' | 'onSummaryFiguresChanged' | 'onSelectionSummaryChanged'>>;
 
 // One function per event, made once, so the pivot sees the same handler on every update. The layout raised is kept
 // whether or not .NET listens, since it is the layout on screen.
@@ -163,6 +165,10 @@ function handlers(
             void send('layoutChanged', { layout: writePivotLayoutJson(event.layout), layoutsSent: layoutsSent() });
         },
         onShowFieldListChanged: event => { void send('showFieldListChanged', event.shown); },
+        // The figures menu's choice, which the pivot holds; .NET raises it as SummaryFigures.
+        onSummaryFiguresChanged: figures => { void send('summaryFiguresChanged', figures); },
+        // The Selection Summary as it stands, which .NET reads back as a SelectionSummary.
+        onSelectionSummaryChanged: summary => { void send('selectionSummaryChanged', wireSummary(summary)); },
         // The report grid's Selection, which .NET reads back as a GridSelection; what its cells stand for is the
         // report's, in the browser, and is not carried yet.
         onSelectionChanged: event => { void send('selectionChanged', wireSelection(event.selection)); },
@@ -196,6 +202,35 @@ export function wireSelection(selection: Pick<GridSelection, 'ranges' | 'focus' 
     return { ranges: selection.ranges, focus, focusRangeIndex };
 }
 
+/** A Selection Summary as .NET reads it back: its status, the question and the answer, an exact figure as its
+ * decimal's digits, which no JSON number holds. */
+export function wireSummary(summary: SelectionSummary): unknown {
+    return { status: summary.status, request: summary.request === undefined ? null : wireRequest(summary.request), result: summary.result === undefined ? null : wireResult(summary.result) };
+}
+
+function wireRequest(request: GridSummaryRequest): unknown {
+    return {
+        ranges: request.ranges,
+        columns: request.columns,
+        rowSequenceVersion: request.rowSequenceVersion,
+        figures: request.figures,
+        focus: request.focus === undefined ? null : request.focus,
+    };
+}
+
+function wireResult(result: GridSummaryResult): unknown {
+    if (result.kind === 'declined') return { reason: result.reason };
+    return {
+        figures: Object.fromEntries(Object.entries(result.figures).map(([figure, answer]) => [figure, wireFigure(answer)])),
+        texts: result.texts,
+    };
+}
+
+function wireFigure(answer: AggregateResult): unknown {
+    if (answer.kind !== 'number') return answer;
+    return answer.exact === undefined ? { kind: 'number', number: answer.number } : { kind: 'number', exact: decimalText(answer.exact) };
+}
+
 // The label the Consumer's words make, or none to keep the English.
 function labelOf(words: WireWords): PivotLabel | undefined {
     if (words === null) return undefined;
@@ -219,5 +254,7 @@ function pivotOptions(
         ...(hears.has('showFieldListChanged') ? { onShowFieldListChanged: heard.onShowFieldListChanged } : {}),
         ...(hears.has('showDetails') ? { onShowDetails: heard.onShowDetails } : {}),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
+        ...(hears.has('summaryFiguresChanged') ? { onSummaryFiguresChanged: heard.onSummaryFiguresChanged } : {}),
+        ...(hears.has('selectionSummaryChanged') ? { onSelectionSummaryChanged: heard.onSelectionSummaryChanged } : {}),
     };
 }

@@ -51,6 +51,8 @@ src/ExPivot/wwwroot/ex-pivot.min.js.map
 # ExSheet's, bundled from src/npm as ExSheet builds (ADR-0370 section 1)
 src/ExSheet/wwwroot/ex-sheet.min.js
 src/ExSheet/wwwroot/ex-sheet.min.js.map
+src/ExChart/wwwroot/ex-chart-core.min.js
+src/ExChart/wwwroot/ex-chart-core.min.js.map
 
 # The Docs Site's React Examples (ADR-0350 section 12): their dependencies, and the frame the Docs project's build
 # writes into the site's static files
