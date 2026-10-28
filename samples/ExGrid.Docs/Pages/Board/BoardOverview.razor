@@ -258,10 +258,28 @@ const output = bound.confirm('chosen');                         // the values ch
         </p>
     </DocsSection>
 
+    <DocsSection Title="A Board drawn in the browser">
+        <p>
+            Blazor's ExBoard is moving onto the same TypeScript core as React's, as ExGrid and ExPivot are.
+            <code>ExBoard.Script.ExBoard</code> is that Board, beside the one above while the move is under way: binding,
+            layout, links, the confirm and the Board Diff run in the browser on both hosting models, so on Blazor Server
+            a selection, a narrowing or a sort no longer crosses the circuit. It takes the same <code>BoardReading</code>,
+            <code>Data</code>, <code>Width</code>, <code>Culture</code>, <code>OnOutput</code>, <code>Diff</code> and
+            <code>OnDiff</code>. The Board crosses as its JSON. Each Snapshot crosses once, as the Arrow stream
+            <code>ExGrid.Data.Arrow</code> writes; a new <code>Data</code> holding the same Snapshot sends nothing again. An
+            output comes back to .NET read against the very Snapshot it was taken from, so <code>Take</code> holds it to
+            that data's version, and a Diff the Board raised and you hand back binds nothing again. Not carried yet:
+            <code>Sources</code>, the Board over a server, and the Chromes; use the Board above for those until they
+            arrive. The script it runs is bundled into the package, at an address that changes with its content.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreBoard)" Files="@(["Examples/Board/DeskBoard.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="The package">
         <p>
             ExBoard is one package, <code>ExBoard</code>, published at the family's one version with exact references
-            to the ExGrid, ExPivot and ExChart it was built with. It has no MudBlazor Wrapper: each view already takes
+            to the ExGrid, ExPivot and ExChart it was built with, and to <code>ExGrid.Data.Arrow</code>, in which
+            <code>ExBoard.Script.ExBoard</code> sends each Snapshot to the browser. It has no MudBlazor Wrapper: each view already takes
             its product's Chrome, and the Board passes <code>Chrome</code>, <code>PivotChrome</code> and
             <code>ChartChrome</code> through, so a MudBlazor application hands it the Wrappers' Chromes, as the
             Examples above do under the MudBlazor switch.

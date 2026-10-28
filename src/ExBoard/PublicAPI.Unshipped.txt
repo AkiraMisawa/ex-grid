@@ -276,6 +276,23 @@ ExBoard.LinkCondition.LinkCondition(System.Collections.Generic.IReadOnlyList<str
 ExBoard.LinkCondition.Matches(object?[]! tuple) -> bool
 ExBoard.LinkCondition.On.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExBoard.LinkCondition.Values.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<object?>!>!
+ExBoard.Script.ExBoard
+ExBoard.Script.ExBoard.Board.get -> ExBoard.BoardReading!
+ExBoard.Script.ExBoard.Board.set -> void
+ExBoard.Script.ExBoard.Culture.get -> System.Globalization.CultureInfo?
+ExBoard.Script.ExBoard.Culture.set -> void
+ExBoard.Script.ExBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
+ExBoard.Script.ExBoard.Data.set -> void
+ExBoard.Script.ExBoard.Diff.get -> ExBoard.BoardDiff?
+ExBoard.Script.ExBoard.Diff.set -> void
+ExBoard.Script.ExBoard.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExBoard.Script.ExBoard.ExBoard() -> void
+ExBoard.Script.ExBoard.OnDiff.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardDiff!>
+ExBoard.Script.ExBoard.OnDiff.set -> void
+ExBoard.Script.ExBoard.OnOutput.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardOutput!>
+ExBoard.Script.ExBoard.OnOutput.set -> void
+ExBoard.Script.ExBoard.Width.get -> double
+ExBoard.Script.ExBoard.Width.set -> void
 override ExBoard.BoardCell.Equals(object? obj) -> bool
 override ExBoard.BoardCell.GetHashCode() -> int
 override ExBoard.BoardCell.ToString() -> string!

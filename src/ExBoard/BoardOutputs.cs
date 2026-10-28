@@ -34,6 +34,53 @@ public sealed class BoardOutput
         Condition = condition;
     }
 
+    /// <summary>
+    /// The output <paramref name="json"/> holds, as <see cref="ToJson"/> writes it and ExBoard's Script Core does too,
+    /// taken against <paramref name="takenFrom"/>, the Snapshot the browser took it from (ADR-0370 section 1). Each value
+    /// is read as its column of <paramref name="takenFrom"/> holds it, as a Board Input reads a row
+    /// (<see cref="BoardInput.FromJson(string)"/>), so the values are the ones a Board bound in .NET would have handed on.
+    /// </summary>
+    internal static BoardOutput Read(string json, Snapshot takenFrom)
+    {
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        var name = Text(root.GetProperty("output"));
+        var input = Text(root.GetProperty("input"));
+        var version = root.GetProperty("version").GetInt64();
+        if (version != takenFrom.Version)
+            throw new InvalidOperationException($"Internal: output '{name}' was taken against version {version}, and the Snapshot it names is version {takenFrom.Version}.");
+        string[] on = [.. root.GetProperty("on").EnumerateArray().Select(Text)];
+        var columns = on.Select(column => takenFrom.TryGetColumn(column, out var held)
+            ? new DataShapeColumn(column, held.Kind)
+            : throw new InvalidOperationException($"Internal: output '{name}' hands on column '{column}', which the Snapshot it was taken from does not have.")).ToArray();
+        // The values as rows of the output's columns, read back as a Board Input reads its rows.
+        var rows = new System.Buffers.ArrayBufferWriter<byte>();
+        using (var writer = new Utf8JsonWriter(rows))
+        {
+            writer.WriteStartArray();
+            foreach (var tuple in root.GetProperty("values").EnumerateArray())
+            {
+                if (tuple.GetArrayLength() != on.Length)
+                    throw new InvalidOperationException($"Internal: output '{name}' holds a tuple of {tuple.GetArrayLength()} values on {on.Length} columns.");
+                writer.WriteStartObject();
+                var c = 0;
+                foreach (var value in tuple.EnumerateArray())
+                {
+                    writer.WritePropertyName(on[c++]);
+                    value.WriteTo(writer);
+                }
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+        }
+        var read = new BoardInput(input, columns).FromJson(System.Text.Encoding.UTF8.GetString(rows.WrittenSpan));
+        var held = columns.Select(column => read[column.Name]).ToArray();
+        var tuples = read.Rows.Select(row => (IReadOnlyList<object?>)[.. held.Select(column => read.ValueAt(row, column))]);
+        return new BoardOutput(name, input, takenFrom, new LinkCondition(on, tuples), [.. columns.Select(column => column.Kind)]);
+    }
+
+    private static string Text(JsonElement json) => json.GetString() ?? throw new InvalidOperationException("Internal: an output names nothing where it names a text.");
+
     /// <summary>The output's name, as the Board declares it.</summary>
     public string Name { get; }
 

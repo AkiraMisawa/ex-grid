@@ -54,6 +54,7 @@ public class BoardSpecCaseTests
             Assert.True(JsonNode.DeepEquals(entry[key], held[key]), $"{key}: expected {entry[key]!.ToJsonString()}, read {held[key]!.ToJsonString()}.");
         if (keys is null)
             Assert.True(JsonNode.DeepEquals(entry["expect"], held), $"Expected {entry["expect"]!.ToJsonString()}, read {held.ToJsonString()}.");
+        BoardSpecWritingTests.AssertWrittenWhole(board);
     }
 
     private static JsonArray Names(IEnumerable<string> names) => new([.. names.Select(n => (JsonNode)n)]);

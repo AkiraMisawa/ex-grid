@@ -1,0 +1,23 @@
+{
+  "name": "@ex-grid/board-blazor",
+  "private": true,
+  "version": "0.0.0-dev",
+  "description": "Blazor's ExBoard, the browser's half: ExBoard's Script Core and its bridge to .NET, bundled into the script the ExBoard NuGet package ships (ADR-0370 section 1, ADR-0411). Never published to npm.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build": "node ../scripts/build-blazor.mjs --name ex-board",
+    "api": "node ../scripts/build-blazor.mjs --name ex-board",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ex-grid/board": "0.0.0-dev",
+    "@ex-grid/chart": "0.0.0-dev",
+    "@ex-grid/core": "0.0.0-dev",
+    "@ex-grid/data": "0.0.0-dev",
+    "@ex-grid/pivot": "0.0.0-dev",
+    "@ex-grid/pivot-engine": "0.0.0-dev"
+  }
+}

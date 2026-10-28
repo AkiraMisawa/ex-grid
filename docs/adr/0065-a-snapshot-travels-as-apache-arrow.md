@@ -145,6 +145,29 @@ their tests, all kept by us for ever and readable by nothing outside the family.
   distinct texts decoded and kept, and 85 ms is the Record Key's index, which the shape measured
   above did not have. The shape without a unique key still reads in about 70 ms.
 
+## Note of 2026-10-28: a Snapshot crosses to a Blazor Script adapter as this stream
+
+ADR-0370 section 1 moves each product's drawing into the browser, and a Blazor component whose data is a
+Snapshot now has to send that Snapshot there, over the circuit on Server. It sends it as this stream, for
+the reasons measured above: JSON records were rejected here for exactly this trip. `ExBoard.Script.ExBoard`
+is the first to do it, and ExPivot's adapter will take the same path for a Snapshot it hands the browser.
+
+- **Each Snapshot crosses once.** .NET numbers it, sends it as a `DotNetStreamReference` over this stream,
+  and names it by its number in every later message. The browser reads it with `@ex-grid/data`'s reader.
+- **A number is let go only by the browser.** It says which numbers no message it has applied still names,
+  after anything it raised from them, and .NET lets them go then. An event raised from a Snapshot, such as
+  a Board's output, is so read in .NET against the very Snapshot it was raised from.
+- **A Snapshot is named by its number again only while the message before named it.** One dropped and
+  named again later crosses again, under a new number. So a number the browser let go is never named
+  again, in whichever order the browser's release and .NET's next message cross (spine rule 6).
+- **One implementation of each half.** The browser's is the Shared Script's `HeldSnapshots`
+  (ADR-0411, `src/npm/blazor/src/snapshots.ts`); .NET's is `SnapshotCrossing`
+  (`src/Shared/Script/SnapshotCrossing.cs`), compiled into each adapter that sends Snapshots rather than
+  made public in a package, because it is the adapters' wire and no Consumer's API.
+
+The first consequence below changes with it: the `ExBoard` package now references `ExGrid.Data.Arrow`, and
+so takes `Apache.Arrow`, and ExPivot's will when its adapter sends a Snapshot.
+
 ## Considered options
 
 - **Our own binary format in `ExGrid.Data`**, with or without Arrow beside it (Q51, options a and
@@ -160,7 +183,7 @@ their tests, all kept by us for ever and readable by nothing outside the family.
 ## Consequences
 
 - **`ExGrid.Data.Arrow` references `ExGrid.Data` exactly and `Apache.Arrow` within a stated
-  range.** Nothing in the family references it except the demo and its tests. It ships beside
+  range.** Nothing in the family references it except the demo and its tests *(until 2026-10-28: ExBoard does, to send its Snapshots to the browser; see the note above)*. It ships beside
   `ExGrid.Data` (ADR-0064).
 - **Its tests** round-trip every kind with a Blank in each, read streams written the way other
   producers write them, and pin every refusal. §30 of the Definition of Done states them.
