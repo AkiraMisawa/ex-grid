@@ -56,14 +56,17 @@
             removed <code>OnShowDetails</code> was still on its way to the browser open as if nobody had listened.
             <code>Chrome</code> takes a Pivot Chrome, and the parts it draws in Razor stand inside the pivot the
             browser draws: <code>MudPivotChrome</code> draws the Pivot Toolbar, the report filter band, the Layout menu, a
-            placed field's menu, Filter…, Field Settings…, Value Field Settings… and the Stale Report's notice with
-            MudBlazor's components, and dresses the report grid as
+            placed field's menu, Filter…, Field Settings…, Value Field Settings…, the Stale Report's notice, the
+            PivotTable Fields pane, the sheet tabs Show Details opens and its dialog with MudBlazor's components, and
+            dresses the report grid as
             <code>MudGridChrome</code> dresses <code>ExGrid.Script.ExGrid</code>. A key typed as a menu opens is its
             first item's, on Blazor Server too, where the menu's Razor arrives a round trip later; a report with no
             values yet draws no grid to hold such a key in, and there it is not held yet. A panel's choices
             are native selects in MudBlazor's outline and its text fields are read in the browser as they are typed,
-            so an OK pressed straight after a choice applies that choice on Blazor Server too. The PivotTable Fields
-            pane and Show Details are still drawn by the pivot itself under any Chrome. A Chrome of your
+            so an OK pressed straight after a choice applies that choice on Blazor Server too. In the Fields pane a
+            field's box, the Defer Layout Update box and a drag between Areas are the browser's, read where they
+            happen, and a press or a drop made against Areas that have changed since they were drawn is refused, not
+            applied to the entry now in its place. A Chrome of your
             own names its parts in <code>IPivotChrome.ScriptSlots</code> and marks its controls with
             <code>PivotScriptSlotAttributes</code>. Not carried yet:
             <code>OrderKeyPolicies</code>, <code>Clock</code>, <code>CellMetrics</code> and <code>ReportSource</code>;

@@ -11,7 +11,7 @@ import {
 } from './chrome';
 import { detailCellType, DetailsSheet, type DetailsProblem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
 import { element } from './dom';
-import { checkedName, swap, type PartElements } from './parts';
+import { checkedName, keyboardIsThePivots, swap, type PartElements } from './parts';
 import type { PivotScreenWords } from './words';
 
 /** Draws a grid into an element: ExGrid's `createGrid`, or a layer-2 test's own. */
@@ -265,9 +265,13 @@ export class DetailsSheets {
             shown = records;
             const dialog = this.#dialogOf(records);
             this.#dialog = dialog;
-            // Its contents are drawn once its frame stands, so Close is there to take the keyboard.
+            // Its contents are drawn once its frame stands, so Close is there to take the keyboard. Until a Chrome's
+            // Close is drawn, a round trip later on a circuit, the frame holds it: the report it covers is inert, and a
+            // key typed meanwhile is then the pivot's, never the page's (ADR-0240 section 6, ADR-0410 section 5).
             this.#host.changed();
             this.#drawDialog(dialog);
+            const root = dialog.frame.parentElement;
+            if (root !== null && keyboardIsThePivots(root)) dialog.frame.focus();
             parts.focus(dialogClose);
             return;
         }

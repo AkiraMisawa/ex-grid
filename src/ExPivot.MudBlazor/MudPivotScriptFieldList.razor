@@ -1,0 +1,109 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The PivotTable Fields pane when the Script Core draws the pivot (ADR-0410): MudPivotFieldList's look, a
+   MudTextField to search, a MudCheckBox per field, the four Areas with an outlined MudButton per entry, and Defer
+   Layout Update with Update, each marked for the adapter's script, which hands every tick, press and drag to the pivot
+   in the browser. The search opens with the text the script sends as it is mounted and is never written by a render
+   after (SRV-7). The fields and the entries are keyed, so the element the browser drags stays through a render; each
+   entry's anchor is drawn empty, below its button, where the pivot places the entry's menu and panels. Update that
+   would apply nothing is marked aria-disabled, never disabled, as a panel's OK is. *@
+<div class="mud-ex-pivot-pane">
+    <div class="mud-ex-pivot-pane-heading">
+        <MudText Typo="Typo.subtitle1" Class="mud-ex-pivot-pane-title" title="@View.Title">@View.Title</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mud-ex-pivot-pane-close"
+                       UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Press, "close").With("aria-label", View.HideLabel).With("title", View.HideLabel)" />
+    </div>
+    <div class="mud-ex-pivot-pane-body">
+        <MudText Typo="Typo.caption" Class="mud-ex-pivot-pane-caption">@View.ChooseCaption</MudText>
+        <MudTextField T="string" Value="View.Search" Label="@View.SearchLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mud-ex-pivot-search"
+                      UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Text, "search", PivotScriptSlotAttributes.Control, "search")" />
+        <div class="@(View.DropRemoves ? "mud-ex-pivot-fields mud-ex-pivot-drop-remove" : "mud-ex-pivot-fields")" role="list" aria-label="@View.Title"
+             @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Fields, "")">
+            @foreach (var field in View.Fields)
+            {
+                <div @key="field.Name" role="listitem" draggable="true" class="@(field.Dragging ? "mud-ex-pivot-field mud-ex-pivot-dragging" : "mud-ex-pivot-field")"
+                     @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Field, field.Name)">
+                    <MudCheckBox T="bool" Value="field.Placed" Label="@field.Caption" Dense="true" Size="Size.Small" Color="Color.Primary"
+                                 Class="mud-ex-pivot-field-check" UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Control, field.Key)" />
+                    @if (field.Filtered)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-filtered-mark" aria-hidden="true" />
+                    }
+                    @if (field.Count is { } count)
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-ex-pivot-field-count" title="@field.CountLabel" aria-label="@field.CountLabel">@count</MudText>
+                    }
+                </div>
+            }
+        </div>
+        <MudText Typo="Typo.caption" Class="mud-ex-pivot-pane-caption">@View.DragCaption</MudText>
+        <div class="mud-ex-pivot-areas">
+            @foreach (var area in View.Areas)
+            {
+                <div @key="area.Name" class="@(area.DropTarget ? "mud-ex-pivot-area mud-ex-pivot-drop-target" : "mud-ex-pivot-area")"
+                     @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Area, area.Name)">
+                    <div class="mud-ex-pivot-area-title">
+                        <MudIcon Icon="@MudPivotIcons.ForArea(area.Area)" Size="Size.Small" Class="mud-ex-pivot-area-icon" />
+                        <MudText Typo="Typo.body2" Class="mud-ex-pivot-area-name">@area.Title</MudText>
+                    </div>
+                    @if (area.OverCap is { } overCap)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Error" Class="mud-ex-pivot-over-cap" role="status">@overCap</MudText>
+                    }
+                    <div class="mud-ex-pivot-area-entries" role="list" aria-label="@area.Title">
+                        @foreach (var entry in area.Entries)
+                        {
+                            <div @key="entry.Key" role="listitem" draggable="true" class="@EntryClass(entry)"
+                                 @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Entry, entry.Key)">
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" FullWidth="true"
+                                           Color="@(entry.Filtered ? Color.Primary : Color.Default)" EndIcon="@Icons.Material.Filled.ArrowDropDown"
+                                           Class="mud-ex-pivot-entry-button"
+                                           UserAttributes="@(PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Press, entry.Key, PivotScriptSlotAttributes.Control, entry.Key)
+                                               .With("aria-label", entry.MenuLabel).With("aria-haspopup", "menu").With("aria-expanded", entry.MenuOpen ? "true" : "false"))">
+                                    <span class="mud-ex-pivot-entry-caption">@entry.Caption</span>
+                                    @if (entry.Filtered)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Size="Size.Small" Class="mud-ex-pivot-filtered-mark" />
+                                    }
+                                </MudButton>
+                                <div class="mud-ex-pivot-entry-anchor" @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Anchor, entry.Key)"></div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="mud-ex-pivot-defer">
+            <MudCheckBox T="bool" Value="View.Deferred" Label="@View.DeferLabel" Dense="true" Size="Size.Small" Color="Color.Primary"
+                         Class="mud-ex-pivot-defer-check" UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Defer, "")" />
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-update"
+                       UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Press, "update").With("aria-disabled", View.CanUpdate ? null : "true")">@View.UpdateLabel</MudButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>The Field List's view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotFieldListView View { get; set; } = default!;
+
+    private static string EntryClass(PivotFieldListEntryView entry)
+    {
+        var classes = "mud-ex-pivot-entry";
+        if (entry.Values)
+            classes += " mud-ex-pivot-entry-values";
+        if (entry.Dragging)
+            classes += " mud-ex-pivot-dragging";
+        if (entry.DropBefore)
+            classes += " mud-ex-pivot-drop-before";
+        return classes;
+    }
+}

@@ -347,3 +347,10 @@
     gap: 8px;
     flex-shrink: 0;
 }
+
+/* Over the Script Core (ADR-0410): an entry's anchor stands below its button with no position of its own, so the
+   frame the pivot places there takes the pane's width; the sheet tabs are text buttons in a tab list. */
+.mud-ex-pivot-entry-anchor { display: block; }
+.mud-ex-pivot-script-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 2px 4px; }
+.mud-ex-pivot-script-tabs .mud-ex-pivot-tab-selected { background: var(--ex-pivot-tab-selected-background); }
+.mud-ex-pivot-update[aria-disabled="true"] { opacity: 0.5; cursor: default; }
