@@ -6,7 +6,8 @@
 import { describe, expect, it } from 'vitest';
 import { gridCommandIds } from '@ex-grid/core';
 import {
-    PivotJson, PivotSourceFeatures, RecordPivotSource, pivotQuery, pivotRecordField, pivotWordIdList, type PivotSourceChanged,
+    LocalPivotReportSource, PivotJson, PivotSourceFeatures, RecordPivotSource, createPivotLayout, pivotQuery, pivotRecordField, pivotWordIdList,
+    type PivotSourceChanged,
 } from '@ex-grid/pivot-engine';
 import { labelIds, wireSelection } from '../src/blazor-pivot';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from '../src/dotnet-pivot-source';
@@ -29,7 +30,7 @@ const trades: readonly Trade[] = [
  * a C# source would, unless `hold` keeps it waiting. */
 class FakeDotNet implements DotNetHandle {
     readonly calls: { readonly method: string; readonly args: readonly unknown[] }[] = [];
-    readonly inner = new RecordPivotSource(trades, fields);
+    inner = new RecordPivotSource(trades, fields);
     hold: Promise<void> | undefined;
     refreshed: (() => void) | undefined;
     refreshFailed: ((error: Error) => void) | undefined;
@@ -57,8 +58,8 @@ class FakeDotNet implements DotNetHandle {
 const wire: WireSource = {
     generation: 1,
     fields: [
-        { name: 'Region', type: 'text', caption: 'Region', format: null, itemOrder: ['West'], column: null, datePart: null },
-        { name: 'Amount', type: 'number', caption: 'Amount', format: '#,##0.00', itemOrder: [], column: null, datePart: null },
+        { name: 'Region', type: 'text', caption: 'Region', orderKey: false, format: null, itemOrder: ['West'], column: null, datePart: null },
+        { name: 'Amount', type: 'number', caption: 'Amount', orderKey: false, format: '#,##0.00', itemOrder: [], column: null, datePart: null },
     ],
     aggregations: new RecordPivotSource([], fields).features.aggregations,
     canRefresh: true,
@@ -142,7 +143,7 @@ describe('a C# Pivot Source seen from the browser (ADR-0370 sections 1 and 3)', 
     it('declares a date part with the format and the order .NET gave it', () => {
         const source = new DotNetPivotSource(new FakeDotNet(), {
             ...wire,
-            fields: [{ name: 'Month', type: 'date', caption: 'Month', format: 'MMM', itemOrder: [], column: 'Date', datePart: 'month' }],
+            fields: [{ name: 'Month', type: 'date', caption: 'Month', orderKey: false, format: 'MMM', itemOrder: [], column: 'Date', datePart: 'month' }],
         });
         expect(source.fields.map(field => [field.name, field.column, field.datePart, field.format])).toEqual([['Month', 'Date', 'month', 'MMM']]);
     });
@@ -177,5 +178,83 @@ describe('the report\'s Selection as .NET reads it (ADR-0201\'s note of 2026-10-
         expect(wireSelection({ ranges: [first, second], focus: { row: 1, column: 1 }, focusRange: second })).toEqual({
             ranges: [first, second], focus: { row: 1, column: 1 }, focusRangeIndex: 1,
         });
+    });
+});
+
+/** .NET answering a field's Order Key as PivotSourceCrossing writes it (ADR-0412): each answer that names Items comes
+ * after a line of their keys, here the given entry for each Region, and the next answers' keys as `then` gives them. */
+class KeyedDotNet extends FakeDotNet {
+    readonly answers: Readonly<Record<string, unknown>>[];
+
+    constructor(...answers: Readonly<Record<string, unknown>>[]) {
+        super();
+        this.answers = answers;
+    }
+
+    override async invokeMethodAsync(method: string, ...args: readonly unknown[]): Promise<unknown> {
+        const answer = await super.invokeMethodAsync(method, ...args);
+        if (method !== 'Aggregate') return answer;
+        const keys = this.answers.length > 1 ? this.answers.shift() : this.answers[0];
+        if (keys === undefined) throw new Error('The test gave no keys.');
+        const items = Object.entries(keys).map(([region, key]) => [{ kind: 'text', value: region }, key]);
+        return `${JSON.stringify({ orderKeys: [{ field: 'Region', items }] })}\n${String(answer)}`;
+    }
+}
+
+const keyedWire: WireSource = {
+    ...wire,
+    fields: wire.fields.map(field => (field.name === 'Region' ? { ...field, orderKey: true, itemOrder: [] } : field)),
+};
+
+const byRegionReport = {
+    layout: createPivotLayout({ rows: ['Region'], values: [{ field: 'Amount', aggregation: 'sum' }], grandTotalRow: false }),
+    settings: { locale: 'en-US', words: {}, changeHighlightMs: 0 },
+    window: { start: 0, count: 100 },
+};
+
+// The regions as the report orders them, or why it refused, each answer's keys as given in turn.
+async function regionsOrdered(...answers: Readonly<Record<string, unknown>>[]): Promise<readonly string[] | string> {
+    const dotnet = new KeyedDotNet(...answers);
+    const source = new DotNetPivotSource(dotnet, keyedWire);
+    const reports = new LocalPivotReportSource(source);
+    let update = await reports.window({ requestId: 'r1', ...byRegionReport });
+    for (let next = 2; next <= answers.length; next++) {
+        // Asked afresh, under the version .NET answers next.
+        dotnet.inner = new RecordPivotSource([...trades], fields);
+        source.hear(PivotJson.writeSourceChanged({ sourceVersion: `v${next}` }));
+        update = await reports.window({ requestId: `r${next}`, ...byRegionReport });
+    }
+    reports.dispose();
+    if (update.refusal !== undefined) return update.refusal.message;
+    return update.rows.map(row => String(row.items.at(-1)?.value));
+}
+
+const int = (value: number): unknown => ({ type: 'System.Int32', bigint: String(value) });
+
+describe('a C# Order Key, answered with its Items (ADR-0412)', () => {
+    it('ADR-0412: the report orders a field\'s Items by the keys .NET answered with them', async () => {
+        expect(await regionsOrdered({ East: int(2), West: int(1) })).toEqual(['West', 'East']);
+        expect(await regionsOrdered({ East: null, West: { type: 'System.Double', number: '-0.5' } })).toEqual(['West', 'East']);
+    });
+
+    it('ADR-0412: an answer under another version of the data is ordered by the keys it came with', async () => {
+        expect(await regionsOrdered({ East: int(2), West: int(1) }, { East: int(1), West: int(2) })).toEqual(['East', 'West']);
+    });
+
+    it('ADR-0412, ADR-0060: a key .NET failed to give is refused only as the report orders by it, naming the field and the Item', async () => {
+        expect(await regionsOrdered({ East: { threw: 'no rank for East' }, West: null })).toBe('The Order Key of Region failed on \'East\'.');
+        expect(await regionsOrdered({ East: { refused: 'The Order Key of Region gave \'East\' a key of type Version.' }, West: null }))
+            .toBe('The Order Key of Region gave \'East\' a key of type Version.');
+    });
+
+    it('ADR-0412: keys of two .NET types that cross alike are refused, whichever answer brought them', async () => {
+        const answers = [{ East: int(2) }, { West: { type: 'System.Decimal', bigint: '10000000000000000000000000000' } }];
+        const dotnet = new KeyedDotNet(...answers);
+        const source = new DotNetPivotSource(dotnet, keyedWire);
+        await source.aggregate(byRegion);
+        await source.aggregate(byRegion);
+        const regionKey = source.fields[0]?.orderKey;
+        expect(regionKey?.('East')).toBe(2n);
+        expect(() => regionKey?.('West')).toThrow('The Order Key of Region gave \'West\' a key of type System.Decimal after keys of type System.Int32');
     });
 });

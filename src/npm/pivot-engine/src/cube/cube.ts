@@ -4,7 +4,7 @@
 // leaf into its row's ancestors and its column's, so a double total agrees with C#'s to the last bit.
 
 import { PartColumns, emptyValue, type AggregateValue } from '../aggregates/parts';
-import { fromPublicKey, type ItemKey, type PivotItemKey } from '../items/item-key';
+import { fromPublicKey, itemValueOf, type ItemKey, type PivotItemKey } from '../items/item-key';
 import type { FieldMeta, PivotOrderKeyValue } from '../fields/pivot-field';
 import { sameKeys, hidingFilters, levelQueryForLayout, levelsOfLayout, placedFields, sameLevels, type PivotQuery, type PivotQueryField } from './query';
 import { answerColumns, type PivotAnswer, type PivotAnswerAxis, type PivotRestSide } from './answer';
@@ -28,14 +28,7 @@ export class ItemRef {
     constructor(key: ItemKey, publicKey: PivotItemKey) {
         this.key = key;
         this.publicKey = publicKey;
-        switch (key.kind) {
-            case 'text': this.firstValue = key.text; break;
-            case 'number': this.firstValue = key.number; break;
-            case 'date': this.firstValue = key.ticks; break;
-            case 'boolean': this.firstValue = key.ticks === 1n; break;
-            case 'error':
-            case 'blank': this.firstValue = undefined; break;
-        }
+        this.firstValue = itemValueOf(key);
     }
 
     /** The Item a public key names. */

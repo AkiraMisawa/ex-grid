@@ -215,8 +215,8 @@ describe('a source held where the data lives, asked through .NET (ADR-0343, ADR-
         };
         const pivot: WireSource['pivot'] = {
             fields: [
-                { name: 'desk', type: 'text', caption: 'desk', format: null, itemOrder: [], column: null, datePart: null },
-                { name: 'pnl', type: 'number', caption: 'pnl', format: null, itemOrder: [], column: null, datePart: null },
+                { name: 'desk', type: 'text', caption: 'desk', orderKey: false, format: null, itemOrder: [], column: null, datePart: null },
+                { name: 'pnl', type: 'number', caption: 'pnl', orderKey: false, format: null, itemOrder: [], column: null, datePart: null },
             ],
             aggregations: inner.features.aggregations,
             canRefresh: false,
