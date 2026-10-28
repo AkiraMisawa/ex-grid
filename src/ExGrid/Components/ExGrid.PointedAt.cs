@@ -128,6 +128,9 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
     {
         if (ReferenceEquals(_boundPointedAt, PointedAt))
             return;
+        // A Scope held in the browser refuses a Razor grid by name, before the grid lets go of the declaration it
+        // answers for, or answers for this one.
+        PointedAt?.InBrowser?.Take(inBrowser: false);
         UnbindPointedAt();
         _boundPointedAt = PointedAt;
         if (_boundPointedAt is not null)

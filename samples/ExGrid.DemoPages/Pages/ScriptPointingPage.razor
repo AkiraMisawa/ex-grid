@@ -1,0 +1,106 @@
+@page "/script-pointing"
+@using System.Globalization
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Cells
+@using global::ExGrid.Columns
+@using global::ExGrid.Data
+@using global::ExSheet
+@using global::ExSheet.Engine
+
+<DemoNav />
+
+<h1>Pointing over the Script Core</h1>
+
+<p>
+    The Sheet and the positions grid below are Blazor's components over the Script Core
+    (<code>ExSheet.Script.ExSheet</code> and <code>ExGrid.Script.ExGrid</code>), put in one
+    <code>PointingScope</code> exactly as the Razor components are (ADR-0430): the Sheet is given the Scope, and the
+    grid the declaration <code>RegisterGrid</code> made. The Scope is held in the browser. Type <code>=</code> in a cell
+    and press a cell of the grid: the Sheet writes <code>XLOOKUP</code> by the pressed row's key, which .NET read from
+    the position as the table's row. A press on a column header writes the column. A press on a blank key writes
+    nothing, and the status line says why.
+</p>
+
+<p class="demo-status">
+    <span id="script-pointing-refused" role="status">@_refused</span>
+</p>
+
+<div class="demo-side-by-side">
+    <ExSheet.Script.ExSheet @ref="_sheet"
+                            Document="Opening"
+                            Culture="EnUs"
+                            PointingScope="_scope"
+                            OnPointingRefused="_pointingRefused"
+                            ViewportHeight="320"
+                            ViewportWidth="520" />
+    <div id="script-pointing-positions">
+        <ExGrid.Script.ExGrid TRow="Position" Source="_positions" Columns="PositionColumns" RowHeight="28"
+                              ViewportHeight="320" ViewportWidth="330" PointedAt="_pointedAt" />
+    </div>
+</div>
+
+@code {
+    private static readonly CultureInfo EnUs = CultureInfo.GetCultureInfo("en-US");
+
+    private const string Table = "Positions";
+    private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+    private const string TableKey = "Id";
+
+    private sealed record Position(string Id, string Book, double PV);
+
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, p => p.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)),
+            format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
+    ];
+
+    // The last row has a blank key, which no Formula can name: a press on it is refused.
+    private static readonly Position[] Positions =
+    [
+        new("R-1102", "Rates", 1_250),
+        new("R-2210", "Rates", -420.5),
+        new("R-4471", "FX", 318.25),
+        new("", "FX", -55.75),
+    ];
+
+    private static readonly SheetDocument Opening = OpeningDocument();
+
+    private readonly IGridSource<Position> _positions = GridSource.From(Positions);
+    private readonly PointingScope _scope = new();
+    private GridPointedAt<Position>? _pointedAt;
+    private EventCallback<PointingRefusal> _pointingRefused;
+    private ExSheet.Script.ExSheet? _sheet;
+    // Never empty: a line that appeared with the first refusal would move the page under the pointer.
+    private string _refused = "Nothing refused yet";
+
+    private static SheetDocument OpeningDocument()
+    {
+        var workbook = new Workbook(EnUs);
+        var sheet = workbook.Sheets[0].Name;
+        // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
+        workbook.DeclareLinkedTable(Table, TableColumns, TableKey);
+        workbook.Do(sheet, SheetEdit.Enter(CellAddress.Parse("A1"), "PV of a position"));
+        return workbook.ToDocument(sheet);
+    }
+
+    protected override void OnInitialized()
+    {
+        // Registered once, as the page is made: the grid takes the declaration as it is made (ADR-0430).
+        _pointedAt = _scope.RegisterGrid<Position>(Table, TableRow);
+        // Held in a field: a method group would be a new delegate on every render (AGENTS.md, the Blazor traps).
+        _pointingRefused = EventCallback.Factory.Create<PointingRefusal>(this, refusal => _refused = refusal.Message);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _sheet is null) return;
+        await _sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
+    }
+
+    // A position as the table's row, in the declared column order: what the page pushes, and what the Scope reads a
+    // pressed row's key from.
+    private static IReadOnlyList<Value?> TableRow(Position p) =>
+        [p.Id.Length == 0 ? null : Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
+}

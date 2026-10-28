@@ -50,12 +50,16 @@ ExSheet.Script.ExSheet.IsEditing.get -> bool
 ExSheet.Script.ExSheet.LinkedTablesAsync() -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!>!
 ExSheet.Script.ExSheet.OnFormatKeyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetRefusal!>
 ExSheet.Script.ExSheet.OnFormatKeyRefused.set -> void
+ExSheet.Script.ExSheet.OnPointingRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.PointingRefusal!>
+ExSheet.Script.ExSheet.OnPointingRefused.set -> void
 ExSheet.Script.ExSheet.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SelectionSummary!>
 ExSheet.Script.ExSheet.OnSelectionSummaryChanged.set -> void
 ExSheet.Script.ExSheet.OpenAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!>! read) -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.OpenFormatCellsAsync() -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.PinnedColumnCount.get -> int
 ExSheet.Script.ExSheet.PinnedColumnCount.set -> void
+ExSheet.Script.ExSheet.PointingScope.get -> ExSheet.PointingScope?
+ExSheet.Script.ExSheet.PointingScope.set -> void
 ExSheet.Script.ExSheet.PushLinkedTableAsync(string! name, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> System.Threading.Tasks.Task!
 ExSheet.Script.ExSheet.RedoAsync() -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.RowHeight.get -> double

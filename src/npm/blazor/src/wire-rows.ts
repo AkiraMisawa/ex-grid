@@ -22,6 +22,9 @@ export interface BlazorRow {
     /** The Cell State of each column, in the columns' order, where .NET answers one other than Normal for any of
      * them (ADR-0006): a row whose states change is another object, so the core paints it again (ADR-0003). */
     readonly states: readonly CellState[] | undefined;
+    /** The row read as the table's row, for a grid of a Pointing Scope (ADR-0430): its Values as .NET's `SheetWire`
+     * writes a Linked Table's row, which the Scope reads. */
+    readonly table: readonly unknown[] | undefined;
 }
 
 /** A row as .NET sends it: its id, its Row Key where the source has one, its cells, for each column .NET
@@ -33,6 +36,7 @@ export interface WireRow {
     readonly c: readonly unknown[];
     readonly t?: readonly (string | null)[];
     readonly s?: readonly CellState[];
+    readonly p?: readonly unknown[];
 }
 
 /** A column as .NET declares it. `format`, where .NET formats the column's values and sends each cell's text with
@@ -365,7 +369,7 @@ export class RowSet {
         if (wire.c.length !== columns.count) throw new TypeError(`.NET sent a row of ${wire.c.length} cells for ${columns.count} columns.`);
         if (wire.s !== undefined && wire.s.length !== columns.count) throw new TypeError(`.NET sent ${wire.s.length} Cell States for ${columns.count} columns.`);
         const cells = Object.freeze(wire.c.map(valueOf));
-        const signature = JSON.stringify([wire.k, wire.c, wire.s]);
+        const signature = JSON.stringify([wire.k, wire.c, wire.s, wire.p]);
         const held = this.#held.get(wire.i);
         const kept = held?.signature === signature ? held.row.deref() : undefined;
         if (kept !== undefined) {
@@ -379,6 +383,7 @@ export class RowSet {
         columns.holdTexts(cells, wire.t, holding);
         const row: BlazorRow = Object.freeze({
             id: wire.i, key: wire.k === undefined ? undefined : rowKeyOf(wire.k), cells, states: wire.s === undefined ? undefined : Object.freeze([...wire.s]),
+            table: wire.p === undefined ? undefined : Object.freeze(wire.p.slice()),
         });
         this.#held.set(wire.i, { row: new WeakRef(row), signature });
         this.#live.set(wire.i, (this.#live.get(wire.i) ?? 0) + 1); // oxlint-disable-line ex-grid/no-stand-in-default -- an id not yet live has no objects

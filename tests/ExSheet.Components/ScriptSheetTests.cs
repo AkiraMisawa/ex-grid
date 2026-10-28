@@ -508,4 +508,58 @@ public class ScriptSheetTests : BunitContext
         cut.Render(ps => ps.Add(p => p.CommandLabel, label));
         Assert.Empty(Assert.Single(Updates()).GetProperty("words").EnumerateObject());
     }
+
+    private sealed class Keyed(string id)
+    {
+        public string Id { get; } = id;
+    }
+
+    [Fact] // ADR-0430 section 1: the Scope crosses by its name in the page, and a refusal decided there reaches the handler
+    public async Task ADR0430_the_Scope_crosses_by_name_and_a_refusal_reaches_the_handler()
+    {
+        var scope = new PointingScope();
+        PointingRefusal? refusal = null;
+        var cut = Sheet(ps => ps
+            .Add(p => p.PointingScope, scope)
+            .Add(p => p.OnPointingRefused, (PointingRefusal refused) => refusal = refused));
+
+        var options = Attach().GetProperty("options");
+        Assert.Equal(scope.Id, options.GetProperty("pointingScope").GetString());
+        Assert.Contains("pointingRefused", options.GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
+
+        await cut.InvokeAsync(() => Bridge().Value.Heard("pointingRefused", Parsed("""{"reason":"blankKey","message":"m"}""")));
+        Assert.Equal(new PointingRefusal(PointingRefusalReason.BlankKey, "m"), refusal);
+    }
+
+    [Fact] // ADR-0430 section 2: a Scope's declaration reads a row as the table's row, written as a Linked Table's rows are
+    public void ADR0430_a_declaration_reads_a_row_as_SheetWire_writes_a_Linked_Tables_row()
+    {
+        var scope = new PointingScope();
+        IReadOnlyList<Value?> Read(Keyed row) => [Value.FromText(row.Id), null];
+
+        var inBrowser = scope.RegisterGrid<Keyed>("Positions", Read).InBrowser
+            ?? throw new InvalidOperationException("A Scope's declaration says where it stands in the page.");
+
+        Assert.Equal(scope.Id, inBrowser.Scope);
+        Assert.Equal("Positions", inBrowser.Table);
+        Assert.Equal(SheetWire.WriteRows([Read(new Keyed("R-1"))]), $"[{inBrowser.TableRow(new Keyed("R-1"))}]");
+    }
+
+    [Fact] // ADR-0430 section 3: a Scope holding a Razor grid refuses a Script Sheet, and one holding a Script Sheet a Razor grid
+    public void ADR0430_a_Scope_of_both_kinds_is_refused_by_name()
+    {
+        var razor = new PointingScope();
+        var razorGrid = razor.RegisterGrid<Keyed>("Positions", row => [Value.FromText(row.Id)]).InBrowser
+            ?? throw new InvalidOperationException("A Scope's declaration says where it stands in the page.");
+        razorGrid.Take(inBrowser: false);
+        var thrown = Assert.Throws<InvalidOperationException>(() => Sheet(ps => ps.Add(p => p.PointingScope, razor)));
+        Assert.Contains("a Sheet drawn by the Script Core cannot join it", thrown.Message, StringComparison.Ordinal);
+
+        var script = new PointingScope();
+        var scriptGrid = script.RegisterGrid<Keyed>("Positions", row => [Value.FromText(row.Id)]).InBrowser
+            ?? throw new InvalidOperationException("A Scope's declaration says where it stands in the page.");
+        Sheet(ps => ps.Add(p => p.PointingScope, script));
+        thrown = Assert.Throws<InvalidOperationException>(() => scriptGrid.Take(inBrowser: false));
+        Assert.Contains("a Razor ExGrid cannot join it", thrown.Message, StringComparison.Ordinal);
+    }
 }
