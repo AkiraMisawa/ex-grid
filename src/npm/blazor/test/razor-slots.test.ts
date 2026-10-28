@@ -78,13 +78,26 @@ class Order {
     };
 }
 
-function made(): { readonly dotnet: FakeDotNet; readonly mark: Mark; readonly order: Order; readonly slots: RazorSlots; readonly slot: HTMLElement } {
+/** The grid's root, which `keyboardBack` hands the keyboard to. */
+interface Made {
+    readonly dotnet: FakeDotNet;
+    readonly mark: Mark;
+    readonly order: Order;
+    readonly slots: RazorSlots;
+    readonly slot: HTMLElement;
+    readonly root: HTMLElement;
+}
+
+function made(): Made {
     const dotnet = new FakeDotNet();
     const mark = new Mark();
     const order = new Order();
+    const root = document.createElement('div');
+    root.tabIndex = 0;
     const slot = document.createElement('div');
-    document.body.append(slot);
-    return { dotnet, mark, order, slots: new RazorSlots(dotnet, mark.hold, order.order), slot };
+    root.append(slot);
+    document.body.append(root);
+    return { dotnet, mark, order, slots: new RazorSlots(dotnet, mark.hold, order.order, () => { root.focus(); }), slot, root };
 }
 
 const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'filterPanel' | 'findPanel' | 'loadingIndicator') => {
@@ -111,17 +124,45 @@ describe('a slot filled with Razor', () => {
         expect(mark.held).toBe(0);
     });
 
-    it('ADR-0410 section 1: the cleanup moves the contents back at once, and .NET is told at the end of the task', async () => {
+    it('ADR-0410 section 1: the cleanup moves the contents back, and tells .NET, at the end of the task', async () => {
         const { dotnet, mark, slots, slot } = made();
         const cleanup = mountOf(slots, 'loadingIndicator')(slot, loading(true));
         const contents = rendered();
         const holder = contents.parentElement;
         slots.rendered(1, 1, contents);
         cleanup();
-        expect([contents.parentElement, dotnet.methods()]).toEqual([holder, ['MountSlot']]);
+        expect(dotnet.methods()).toEqual(['MountSlot']);
         await Promise.resolve();
-        expect(dotnet.methods()).toEqual(['MountSlot', 'UnmountSlot']);
+        expect([contents.parentElement, dotnet.methods()]).toEqual([holder, ['MountSlot', 'UnmountSlot']]);
         expect(mark.held).toBe(0);
+    });
+
+    it('ADR-0410, ADR-0240: contents that hold the keyboard as their slot goes hand it to the grid, never to the page\'s body', async () => {
+        const { slots, slot, root } = made();
+        const cleanup = mountOf(slots, 'loadingIndicator')(slot, loading(true));
+        const contents = rendered('<button>Filter</button>');
+        slots.rendered(1, 1, contents);
+        contents.querySelector('button')?.focus();
+        cleanup();
+        slot.remove();
+        await Promise.resolve();
+        expect(document.activeElement).toBe(root);
+    });
+
+    it('ADR-0410: contents mounted again in the task, as for a focus request, never move, and keep the keyboard they hold', async () => {
+        const { slots, slot } = made();
+        const mount = mountOf(slots, 'loadingIndicator');
+        const cleanup = mount(slot, loading(true));
+        const contents = rendered('<button>Filter</button>');
+        slots.rendered(1, 1, contents);
+        const button = contents.querySelector('button');
+        button?.focus();
+        let blurred = false;
+        button?.addEventListener('blur', () => { blurred = true; });
+        cleanup();
+        mount(slot, loading(true));
+        await Promise.resolve();
+        expect([contents.parentElement, document.activeElement, blurred]).toEqual([slot, button, false]);
     });
 
     it('ADR-0410 section 1: the same slot mounted again in the task keeps its contents, and .NET draws them for the new context', async () => {
@@ -302,6 +343,33 @@ describe('a focus request while a newer drawing is owed', () => {
         slots.rendered(1, 2, second);
         await Promise.resolve();
         expect([focused.length, order.owed]).toEqual([1, 0]);
+    });
+});
+
+describe('a filter panel whose value list is on its way', () => {
+    it('spine rule 6, ADR-0410 section 5: a search asked for waits with every input after it until the list is drawn, never landing in the form it replaces', async () => {
+        const { slots, slot, order } = made();
+        const panel = filter();
+        const conditions: FilterPanelView = {
+            kind: 'conditions', allowed: ['equals', 'contains'], first: { operator: 'equals', operand: '', takesOperand: true, refusal: undefined },
+            combinator: 'and', second: undefined, canApply: true, fetching: true,
+        };
+        panel.move(conditions);
+        const focused: HTMLElement[] = [];
+        const context: GridFilterPanelSlotContext = { ...panel.context, focusRequest: 1, focusTarget: 'search', takeFocus: control => { focused.push(control); } };
+        mountOf(slots, 'filterPanel')(slot, context);
+        const form = rendered(`<input ${filterPanelAttributes.operand}="first" ${filterPanelAttributes.focus}="search">`);
+        form.setAttribute(drawnVersionAttribute, '1');
+        slots.rendered(1, 1, form);
+        await Promise.resolve();
+        expect([focused.length, order.owed]).toEqual([0, 1]);
+
+        panel.move(valueList(['Novak', 'Osei']));
+        form.innerHTML = `<input ${filterPanelAttributes.search}="" ${filterPanelAttributes.focus}="first search">`;
+        form.setAttribute(drawnVersionAttribute, '2');
+        slots.rendered(1, 2, form);
+        await Promise.resolve();
+        expect([focused.map(control => control.hasAttribute(filterPanelAttributes.search)), order.owed]).toEqual([[true], 0]);
     });
 });
 

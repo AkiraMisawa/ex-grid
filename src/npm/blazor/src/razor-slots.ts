@@ -72,6 +72,7 @@ export class RazorSlots {
     readonly #dotnet: DotNetHandle;
     readonly #hold: () => (() => void);
     readonly #order: (until: Promise<void>) => void;
+    readonly #keyboardBack: () => void;
     readonly #standing = new Map<number, Standing>();
     readonly #bySlot = new Map<HTMLElement, Standing>();
     #ids = 0;
@@ -79,11 +80,13 @@ export class RazorSlots {
     #chrome: { readonly names: string; readonly chrome: GridChrome<BlazorRow> } | undefined;
 
     /** `hold` holds the grid's Settled Mark until the function it answers is called; `order` holds every input made in
-     * the grid after it, in its order, until the promise it is handed settles (ADR-0240). */
-    constructor(dotnet: DotNetHandle, hold: () => (() => void), order: (until: Promise<void>) => void) {
+     * the grid after it, in its order, until the promise it is handed settles (ADR-0240); `keyboardBack` hands the
+     * keyboard to the grid. */
+    constructor(dotnet: DotNetHandle, hold: () => (() => void), order: (until: Promise<void>) => void, keyboardBack: () => void) {
         this.#dotnet = dotnet;
         this.#hold = hold;
         this.#order = order;
+        this.#keyboardBack = keyboardBack;
     }
 
     /** The core's Chrome for the slots .NET fills: each a mount function that asks .NET for the slot's contents. The
@@ -115,7 +118,7 @@ export class RazorSlots {
             if (contents.parentElement !== standing.slot) standing.slot.append(contents);
             this.#wire(standing);
             // The inputs held wait for the contents drawn from the data last sent, which take the keyboard.
-            if (standing.drawn === standing.version) this.#letInputsGo(standing);
+            if (standsWhole(standing)) this.#letInputsGo(standing);
         }
         for (const drawn of standing.views.keys()) if (drawn < version) standing.views.delete(drawn);
         if (version !== standing.version) return;
@@ -147,7 +150,9 @@ export class RazorSlots {
             this.#hear(again);
             this.#send(again, 'UpdateSlot');
             if (again.contents !== undefined) {
-                again.slot.append(again.contents);
+                // Still in the slot, since they go back to their holder only at the end of the task: moved, they would
+                // drop the keyboard they hold.
+                if (again.contents.parentElement !== again.slot) again.slot.append(again.contents);
                 this.#wire(again);
             }
             return () => { this.#leave(again); };
@@ -208,14 +213,22 @@ export class RazorSlots {
             : undefined;
     }
 
-    // The core takes the slot away: the contents go back to their holder at once, before the slot leaves the page,
-    // and .NET is told at the end of the task, unless the core mounted the slot again meanwhile.
+    // The core takes the slot away: the contents stop answering at once, and go back to their holder at the end of the
+    // task, as .NET is told, unless the core mounted the slot again meanwhile, as a focus request does: contents moved
+    // out and back would drop the keyboard they hold. Contents that held it as the slot went, a menu whose command
+    // opened a panel in its place, hand it to the grid where it fell on nothing: the panel's field takes it only once
+    // its own Razor stands, and the keys typed meanwhile wait for it in the grid (ADR-0240), never reaching the page.
     #leave(standing: Standing): void {
         if (standing.leaving || this.#disposed) return;
         standing.leaving = true;
-        this.#takeBack(standing);
+        const held = standing.contents?.contains(standing.contents.ownerDocument.activeElement) === true;
+        this.#unwire(standing);
         queueMicrotask(() => {
             if (!standing.leaving || this.#disposed) return;
+            this.#takeBack(standing);
+            const doc = standing.slot.ownerDocument;
+            const active = doc.activeElement;
+            if (held && (active === null || active === doc.body || standing.contents?.contains(active) === true)) this.#keyboardBack();
             standing.release?.();
             standing.release = undefined;
             this.#letInputsGo(standing);
@@ -225,22 +238,27 @@ export class RazorSlots {
         });
     }
 
-    #takeBack(standing: Standing): void {
+    #unwire(standing: Standing): void {
         standing.unwire?.();
         standing.unwire = undefined;
         standing.unsubscribe?.();
         standing.unsubscribe = undefined;
+    }
+
+    #takeBack(standing: Standing): void {
+        this.#unwire(standing);
         if (standing.contents !== undefined && standing.holder !== undefined) standing.holder.append(standing.contents);
     }
 
     // A focus request is answered on contents drawn from the data last sent, never on older ones a drawing still owed
-    // would take away under the keyboard: until those stand, the request waits, and so does every input after it.
+    // would take away under the keyboard, nor on a filter panel whose value list is on its way: until the contents
+    // stand whole, the request waits, and so does every input after it.
     #wire(standing: Standing): void {
         standing.unwire?.();
         standing.unwire = undefined;
         const { contents, context } = standing;
         if (contents === undefined) return;
-        const current = standing.drawn === standing.version;
+        const current = standsWhole(standing);
         const answered = standing.answered === context || !current;
         if (standing.name === 'columnMenu' || standing.name === 'contextMenu') {
             // Wired again as .NET renders the contents again, the request already answered is not answered again: a
@@ -264,6 +282,13 @@ const filterContext = (context: SlotContext): GridFilterPanelSlotContext => cont
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the find slot is handed the find panel's context, as the core mounts it
 const findContext = (context: SlotContext): GridFindPanelSlotContext => context as GridFindPanelSlotContext;
+
+/** Whether the contents .NET drew from the data last sent stand whole: a filter panel's only once its value list has
+ * arrived, since the list takes the place of the condition form shown meanwhile, and of anything typed or chosen in it.
+ * Until then the keyboard is not handed to the panel, and every input waits (spine rule 6). */
+function standsWhole(standing: Standing): boolean {
+    return standing.drawn === standing.version && standing.views.get(standing.version)?.fetching !== true;
+}
 
 /** The view a filter panel's contents show: the one .NET drew them from, whose number they carry. */
 function drawnView(standing: Standing, contents: HTMLElement): FilterPanelView {

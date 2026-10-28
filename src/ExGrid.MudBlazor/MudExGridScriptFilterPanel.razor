@@ -27,11 +27,13 @@
 <div class="mud-ex-grid-filter">
     @* The form's default button: the first submit button, which implicit submission clicks. *@
     <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
+    @* While the value list is on its way, the bar alone, as over the C# core: the list takes the condition form's place
+       as it arrives, and the adapter's script hands the panel no input until it has (spine rule 6). *@
     @if (View.Fetching)
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mud-ex-grid-filter-loading" />
     }
-    @if (View.ValueList is { } list)
+    else if (View.ValueList is { } list)
     {
         <MudTextField T="string" Label="@Own(MudExGridWords.Search, View.Words.Search)" Variant="Variant.Outlined" Margin="Margin.Dense"
                       Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mud-ex-grid-filter-search"
@@ -107,7 +109,7 @@
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
-        var form = View.Conditions;
+        var form = View.Fetching ? null : View.Conditions;
         (_firstOpens, _firstDrawn) = Opening(form?.First, _firstDrawn);
         (_secondOpens, _secondDrawn) = Opening(form?.Second, _secondDrawn);
     }
