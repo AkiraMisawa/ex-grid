@@ -1,0 +1,14 @@
+@* A Script ExSheet whose toolbar holds a component of the Consumer's own, which renders on its own (ADR-0100). *@
+@namespace ScriptSheetSupport
+@using global::ExSheet
+
+<ExSheet.Script.ExSheet ShowToolbar="true">
+    <ToolbarContent>
+        <ToolbarRow Label="Review"><ScriptReviewButton @ref="Button" /></ToolbarRow>
+    </ToolbarContent>
+</ExSheet.Script.ExSheet>
+
+@code {
+    /// <summary>The Consumer's component holding the button.</summary>
+    public ScriptReviewButton? Button { get; private set; }
+}

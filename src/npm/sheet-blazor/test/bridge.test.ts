@@ -825,3 +825,74 @@ describe('Format Cells filled with Razor (ADR-0410, ADR-0071)', () => {
     });
 });
 
+
+/** A Chrome's Toolbar Item, which draws the place of a button's content where the item has some. */
+function chromeItemWithContent(_name: string, json: string): HTMLElement {
+    const contents = document.createElement('span');
+    contents.innerHTML = (JSON.parse(json) as { readonly content: boolean }).content
+        ? '<button data-ex-sheet-press="invoke"><span data-ex-sheet-content></span></button>'
+        : '<button data-ex-sheet-press="invoke"></button>';
+    return contents;
+}
+
+describe('the Consumer\'s ToolbarContent across the bridge (ADR-0100)', () => {
+    it('lays out the rows .NET declared, runs a button\'s OnClick in .NET in its turn, draws its content from Razor, and says a refusal', async () => {
+        const { element, sheet, dotnet } = await razorSheet([], {
+            showToolbar: true,
+            toolbar: [
+                { label: null, items: ['bold', 'separator', { button: 1, text: 'Mark reviewed', keyTip: 'M', content: false }] },
+                { label: 'Review', keyTip: 'R', items: [{ button: 2, text: 'Flag for query', content: true }] },
+            ],
+        });
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        // The items that stand in no row are one row, named as the Sheet's own default row.
+        expect([...element.querySelectorAll('.ex-sheet-toolbar-row')].map(row => row.getAttribute('aria-label'))).toEqual(['Home', 'Review']);
+
+        // The content is drawn by .NET from the button's markup, and moved into the button the Sheet draws.
+        const drawn = render(sheet, dotnet, () => {
+            const icon = document.createElement('b');
+            icon.textContent = '⚑';
+            return icon;
+        });
+        expect(drawn.map(slot => [slot.name, slot.json])).toEqual([['toolbarContent', '{"button":2}']]);
+        const flag = band?.querySelector<HTMLElement>('[aria-label="Flag for query"]');
+        const content = drawn[0]?.contents;
+        if (content === undefined) throw new Error('No content was drawn.');
+        expect(flag?.contains(content)).toBe(true);
+
+        // A press runs OnClick in .NET, and the Sheet's inputs made after it wait until it has run.
+        const onClick = new Deferred();
+        dotnet.answers.set('ToolbarPressed', () => onClick.promise);
+        press(element, 0, 0);
+        band?.querySelector<HTMLElement>('[aria-label="Mark reviewed"]')?.click();
+        await vi.waitFor(() => { expect(dotnet.called.filter(call => call.method === 'ToolbarPressed').map(call => call.args)).toEqual([[1]]); });
+        // An opening asked for after the press, which reads in its turn, reads only once OnClick has run.
+        dotnet.answers.set('Read', () => new Deferred().promise);
+        dotnet.answers.set('CancelRead', () => Promise.resolve(null));
+        void sheet.open(7);
+        await Promise.resolve();
+        expect(dotnet.called.some(call => call.method === 'Read')).toBe(false);
+        onClick.resolve(null);
+        await vi.waitFor(() => { expect(dotnet.called.filter(call => call.method === 'Read').map(call => call.args)).toEqual([[7]]); });
+        key('Escape');
+
+        // A refusal .NET met running it is said where the Sheet says its own.
+        sheet.tell('An edit is open.');
+        expect(element.querySelector('.ex-sheet-notice')?.textContent).toBe('An edit is open.');
+    });
+
+    it('moves a button\'s content into the place a Chrome\'s item drew for it', async () => {
+        const { element, sheet, dotnet } = await razorSheet(['toolbarItem'], {
+            showToolbar: true, toolbar: [{ label: 'Review', items: [{ button: 4, text: 'Flag for query', content: true }] }],
+        });
+        render(sheet, dotnet, chromeItemWithContent);
+        // The item's contents stood, and asked for the content's own slot, which .NET draws from the button's markup.
+        const mounted = dotnet.called.filter(call => call.method === 'MountSlot' && call.args[2] === 'toolbarContent');
+        expect(mounted.map(call => call.args[3])).toEqual(['{"button":4}']);
+        const icon = document.createElement('b');
+        icon.textContent = '⚑';
+        document.body.append(icon);
+        sheet.slotRendered(Number(mounted[0]?.args[0]), 1, icon);
+        expect(element.querySelector('[data-ex-sheet-content]')?.firstElementChild).toBe(icon);
+    });
+});

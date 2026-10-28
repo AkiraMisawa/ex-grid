@@ -28,7 +28,7 @@ namespace ExSheet.Script;
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
 /// <para>Not carried yet, and so not offered: the Sheet Tabs' menu and the find panel of an
-/// <see cref="ISheetChrome"/>, <c>ToolbarContent</c>,
+/// <see cref="ISheetChrome"/>,
 /// <c>OnLinkedColumnColoursChanged</c> (ADR-0430 section 3) and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
 /// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>
 /// </remarks>
@@ -106,6 +106,21 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <summary>Raised with the other value when the user asks to hide or show the Sheet Toolbar with Ctrl+F1 (ADR-0100).
     /// Unbound, Ctrl+F1 is not claimed and stays the browser's.</summary>
     [Parameter] public EventCallback<bool> ShowToolbarChanged { get; set; }
+
+    /// <summary>
+    /// What the Sheet Toolbar holds, in order (ADR-0100), declared as on the Razor component: <see cref="ToolbarRow"/>s
+    /// of ExSheet's Toolbar Items and the Consumer's <see cref="ToolbarButton"/>s, <see cref="DefaultToolbarRow"/>, or
+    /// Toolbar Items alone, which are one row. The Script Core draws them; a button's <c>OnClick</c> runs in its place in
+    /// the Sheet's Input Order, and its <c>ChildContent</c> is drawn beside the Sheet's root and moved into the button.
+    /// Null shows the default row.
+    /// </summary>
+    /// <remarks>A Toolbar Item of the Consumer's own, derived from <see cref="ToolbarItemBase"/>, is refused: the Script
+    /// Core has no such item. So is a KeyTip on one of ExSheet's items, which carry Excel's, and a row without a
+    /// <see cref="ToolbarRow.Label"/>. <see cref="OpenAsync"/> and <see cref="SaveAsync"/> called from a button's
+    /// <c>OnClick</c> are refused too: each waits for its place in the Input Order, which the press holds until the
+    /// handler returns, where the Razor component runs it as part of the press. A button's <c>GivesKeyboardBack</c>
+    /// needs nothing here: the keyboard goes back to the Sheet before <c>OnClick</c> runs, so what it opens takes it.</remarks>
+    [Parameter] public RenderFragment? ToolbarContent { get; set; }
 
     /// <summary>The Selection Summary's figures (ADR-0130): Excel's Average, Count and Sum by default. The Sheet holds
     /// the choice made in the figures menu from then on; a new value handed here replaces it.</summary>
@@ -237,12 +252,32 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private bool _renderOwed = true;
     // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1), and the Chrome they
     // were last drawn by.
-    private readonly RazorSlotHolders _slots = new(SheetRazorSlot.ViewOf);
+    private readonly RazorSlotHolders _slots = new(ViewOfSlot);
     private IGridChrome? _renderedChrome;
+    // What ToolbarContent declares, and whether it was rendered: once it was, it is rendered again on every set of the
+    // parameters, which may change what it declares, and once more when it goes.
+    private readonly ScriptToolbar _toolbar;
+    private bool _toolbarRendered;
+
+    /// <summary>A Sheet the Script Core will draw once it is rendered.</summary>
+    public ExSheet() => _toolbar = new ScriptToolbar(ToolbarDeclared);
+
+    // A row or an item declared itself, as the Sheet rendered them or as a component of the Consumer's around them
+    // rendered on its own: the Sheet renders again, drawing each button's content as it now stands, and sends the
+    // toolbar after it.
+    private void ToolbarDeclared()
+    {
+        if (_disposed)
+            return;
+        _renderOwed = true;
+        StateHasChanged();
+    }
 
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        if (ToolbarContent is not null || _toolbarRendered)
+            _renderOwed = true;
         if (!ReferenceEquals(Chrome, _renderedChrome))
         {
             // Another Chrome draws the slots standing, and the script wires what it drew.
@@ -331,8 +366,25 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
-        _slots.Render(builder, 6, (name, view) => SheetRazorSlot.Fragment(Chrome, name, view));
+        _slots.Render(builder, 6, (name, view) => view is ToolbarContentView content
+            ? _toolbar.Button(content.Button)?.ChildContent
+            : SheetRazorSlot.Fragment(Chrome, name, view));
+        // The toolbar's rows and items declare themselves and draw nothing: the Script Core draws the toolbar.
+        _toolbarRendered = ToolbarContent is not null;
+        if (ToolbarContent is { } toolbar)
+        {
+            builder.OpenComponent<ScriptToolbarHost>(20);
+            builder.AddComponentParameter(21, nameof(ScriptToolbarHost.Toolbar), _toolbar);
+            builder.AddComponentParameter(22, nameof(ScriptToolbarHost.Content), toolbar);
+            builder.CloseComponent();
+        }
     }
+
+    // A slot's view: a ToolbarButton's ChildContent, which the Consumer's markup draws, by the button's number; else the
+    // Chrome's, for one of its slots.
+    private static object ViewOfSlot(string name, string context) => name == ToolbarContentView.SlotName
+        ? ToolbarContentView.Of(context)
+        : SheetRazorSlot.ViewOf(name, context);
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -340,6 +392,9 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         if (!firstRender)
         {
             await ReportSlotsAsync();
+            // What the toolbar's rows and items declared as they rendered, after the parameters were sent.
+            if (_attached && _toolbarRendered)
+                await SendUpdateAsync();
             return;
         }
         // The script this build was made with, by an address that changes with its content (ADR-0123), and refused
@@ -571,6 +626,9 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         // The Scope by its name in the page, where the browser holds it (ADR-0430).
         if (PointingScope is { } scope)
             json.WriteString("pointingScope", scope.Id);
+        // What ToolbarContent declares; the default row where it declares nothing.
+        if (ToolbarContent is not null && _toolbar.Any)
+            _toolbar.Write(json);
         // The slots the Chrome fills with Razor: the grid's, but the find panel, a Sheet's being its own (ADR-0332
         // section 5), and the Sheet's.
         var gridSlots = Chrome is { } chrome ? chrome.ScriptSlots & ~ScriptSlots.FindPanel : ScriptSlots.None;
@@ -698,6 +756,66 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     // The Sheet's events, handed to the Consumer one at a time in the order the browser raised them: a handler that
     // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do.
     internal Task HeardAsync(string kind, JsonElement payload) => InvokeAsync(() => HearAsync(Prepared(kind, payload)));
+
+    /// <summary>
+    /// The Consumer's <see cref="ToolbarButton"/> numbered <paramref name="number"/> was pressed (ADR-0100): its
+    /// <c>OnClick</c> runs, and the Sheet's inputs made after the press wait until it has, as on the Razor component
+    /// (ADR-0240 section 6). A refusal of a command it runs is said in the Sheet's notice, as the Razor component's
+    /// toolbar says one; anything else it throws fails the component, as a handler's exception does. A button gone since
+    /// the press does nothing.
+    /// </summary>
+    internal Task ToolbarPressedAsync(int number) => InvokeAsync(() => PressAsync(number));
+
+    // The press of a ToolbarButton whose OnClick this flow runs in, while it runs: a flow it started that outlives it
+    // carries an ended press, and is free.
+    private static readonly AsyncLocal<Press?> PressingOn = new();
+
+    private sealed class Press(ExSheet sheet)
+    {
+        public ExSheet Sheet { get; } = sheet;
+        public bool Ended { get; set; }
+    }
+
+    /// <summary>
+    /// Refuses <paramref name="command"/>, work placed in the browser's Input Order, called from a ToolbarButton's
+    /// <c>OnClick</c>: the press holds that order until the handler returns, so the work would wait for it forever,
+    /// where the Razor component runs it as part of the press. Refused by name rather than left to hang.
+    /// </summary>
+    private void RefuseInsidePress(string command)
+    {
+        if (PressingOn.Value is { Ended: false } press && ReferenceEquals(press.Sheet, this))
+        {
+            throw new InvalidOperationException(
+                $"{command} takes its place in the Sheet's Input Order, which a ToolbarButton's OnClick holds until it returns on ExSheet.Script.ExSheet (ADR-0240 section 6): " +
+                "called while the OnClick runs, it would wait for the press it is part of. Call it from a control outside the Sheet Toolbar.");
+        }
+    }
+
+    private async Task PressAsync(int number)
+    {
+        if (_disposed || _toolbar.Button(number) is not { } button)
+            return;
+        var press = new Press(this);
+        PressingOn.Value = press;
+        try
+        {
+            await button.OnClick.InvokeAsync();
+        }
+        catch (SheetRefusedException refused)
+        {
+            // Disposed meanwhile, there is no notice left to say it in.
+            if (!_disposed && _sheet is { } sheet)
+                await sheet.InvokeVoidAsync("tell", refused.Refusal.Message);
+        }
+        catch (Exception ex) when (!_disposed)
+        {
+            await DispatchExceptionAsync(ex);
+        }
+        finally
+        {
+            press.Ended = true;
+        }
+    }
 
     /// <summary>The script mounted slot <paramref name="id"/> for the Chrome, with its context as data (ADR-0410).</summary>
     internal void MountSlot(long id, int version, string name, string context)

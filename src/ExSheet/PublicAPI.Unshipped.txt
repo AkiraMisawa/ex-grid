@@ -24,6 +24,7 @@ ExSheet.Components.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
 ExSheet.Components.ExSheet.Workbook.set -> void
 ExSheet.Components.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
 ExSheet.Components.ExSheet.WorkbookChanged.set -> void
+ExSheet.DefaultToolbarRow.Dispose() -> void
 ExSheet.FormatCellsContext.HandKeyboardToFrame.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference?, System.Threading.Tasks.Task!>?
 ExSheet.FormatCellsContext.HandKeyboardToFrame.init -> void
 ExSheet.FormatCellsContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
@@ -111,6 +112,8 @@ ExSheet.Script.ExSheet.TimeZone.set -> void
 ExSheet.Script.ExSheet.Today.get -> System.DateOnly?
 ExSheet.Script.ExSheet.Today.set -> void
 ExSheet.Script.ExSheet.ToDocumentAsync() -> System.Threading.Tasks.Task<ExSheet.Engine.SheetDocument!>!
+ExSheet.Script.ExSheet.ToolbarContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.Script.ExSheet.ToolbarContent.set -> void
 ExSheet.Script.ExSheet.ToWorkbookDocumentAsync() -> System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!
 ExSheet.Script.ExSheet.UndoAsync() -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.ViewportHeight.get -> ExGrid.ViewportSize
@@ -461,6 +464,7 @@ ExSheet.ToolbarItemContext.JoinSurface.init -> void
 ExSheet.ToolbarItemContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
 ExSheet.ToolbarItemContext.TakeKeyboard.init -> void
 ExSheet.ToolbarItemContext.ToolbarItemContext(string! Id, ExSheet.ToolbarItemKind Kind, string! Name, string? Shortcut, ExSheet.ToolbarIcon Icon, string? Text, bool Pressed, bool Enabled, string? DisabledReason, System.Func<System.Threading.Tasks.Task!>! Invoke, System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, ExSheet.Engine.CellColour? Colour, bool Active, int OpenRequest, int CloseRequest, System.Func<ExSheet.ToolbarChoice?, bool, System.Threading.Tasks.Task!>! ChoicesClosed, Microsoft.AspNetCore.Components.RenderFragment? Content, string? KeyTip, bool ShowKeyTip) -> void
+override ExSheet.DefaultToolbarRow.OnParametersSet() -> void
 override ExSheet.SheetFindContext.Equals(object? obj) -> bool
 override ExSheet.SheetFindContext.GetHashCode() -> int
 override ExSheet.SheetFindContext.ToString() -> string!
@@ -558,3 +562,6 @@ static ExSheet.SheetToolbarChoiceView.operator !=(ExSheet.SheetToolbarChoiceView
 static ExSheet.SheetToolbarChoiceView.operator ==(ExSheet.SheetToolbarChoiceView? left, ExSheet.SheetToolbarChoiceView? right) -> bool
 static ExSheet.SheetToolbarItemView.operator !=(ExSheet.SheetToolbarItemView? left, ExSheet.SheetToolbarItemView? right) -> bool
 static ExSheet.SheetToolbarItemView.operator ==(ExSheet.SheetToolbarItemView? left, ExSheet.SheetToolbarItemView? right) -> bool
+const ExSheet.SheetScriptSlotAttributes.Content = "data-ex-sheet-content" -> string!
+ExSheet.SheetToolbarItemView.HasContent.get -> bool
+ExSheet.SheetToolbarItemView.HasContent.init -> void
