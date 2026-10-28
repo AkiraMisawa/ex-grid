@@ -4,7 +4,7 @@
 // stack (ADR-0048), hands back new instances only for the rows a change names (ADR-0003), and says in its own words
 // what it refuses (ADR-0370 section 10).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CellAddress, CellFormatChange, Culture, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
+import { CellAddress, CellFormatChange, Culture, type CellFormat, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
 import { createGrid, type GridHandle } from '@ex-grid/core';
 import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
 import type { SheetToolbarContent, SheetToolbarItemSlotContext } from '../src/sheet-toolbar-slot';
@@ -1579,6 +1579,12 @@ describe('the fill handle (ADR-0050, item 5)', () => {
     });
 });
 
+/** A value the test needs to be there. */
+function defined<T>(value: T | undefined): T {
+    if (value === undefined) throw new Error('Expected a value, and there was none.');
+    return value;
+}
+
 /** The refusal's reason a command throws, or none where it does not throw one. */
 function refusalOf(command: () => unknown): string | undefined {
     try {
@@ -1635,6 +1641,48 @@ describe("the Consumer's commands (ADR-0048, ADR-0331 §6, ADR-0071)", () => {
         expect(sheet.cellFormatAt(CellAddress.parse('A2')).font.bold).toBe(false);
     });
 
+    it('ADR-0100: setCellFormatFromFocus makes its change from the Focus cell as it shows when it runs, and answers false over no Selection without asking', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1', A2: '2' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        const asked: boolean[] = [];
+        const toggle = (focus: CellFormat): CellFormatChange => {
+            asked.push(focus.font.bold);
+            return new CellFormatChange({ bold: !focus.font.bold });
+        };
+        expect(sheet.setCellFormatFromFocus(toggle)).toBe(false);
+        expect(asked).toEqual([]);
+        press(element, 0, 0);
+        key('ArrowDown', { shiftKey: true });
+        expect(sheet.setCellFormatFromFocus(toggle)).toBe(true);
+        expect(sheet.setCellFormatFromFocus(toggle)).toBe(true);
+        expect(asked).toEqual([false, true]);
+        expect(sheet.cellFormatAt(CellAddress.parse('A2')).font.bold).toBe(false);
+    });
+
+    it('ADR-0100 (decided 2026-10-28): a change made from a Focus reading is refused, and said, once the Selection, the Sheet shown or the Focus format is not what it was read from', async () => {
+        const { element, sheet } = sheetOf({ document: documentOf({ A1: '1', A2: '2' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        expect(sheet.readFocusFormat()).toBeUndefined();
+        press(element, 0, 0);
+        const bold = new CellFormatChange({ bold: true });
+        const moved = defined(sheet.readFocusFormat());
+        key('ArrowDown');
+        expect(refusalOf(() => sheet.setCellFormatFrom(moved, bold))).toBe('selectionMoved');
+        expect(noticeOf(element)).toMatch(/the selection moved/u);
+        const changed = defined(sheet.readFocusFormat());
+        expect(changed.format.font.bold).toBe(false);
+        expect(sheet.setCellFormat(new CellFormatChange({ italic: true }))).toBe(true);
+        expect(refusalOf(() => sheet.setCellFormatFrom(changed, bold))).toBe('focusFormatChanged');
+        expect(noticeOf(element)).toMatch(/format changed/u);
+        expect(sheet.cellFormatAt(CellAddress.parse('A2')).font.bold).toBe(false);
+        const standing = defined(sheet.readFocusFormat());
+        expect(sheet.setCellFormatFrom(standing, bold)).toBe(true);
+        expect(sheet.cellFormatAt(CellAddress.parse('A2')).font.bold).toBe(true);
+        // A reading is taken by its set, and one this Sheet never made is no reading.
+        expect(() => sheet.setCellFormatFrom(standing, bold)).toThrow(TypeError);
+        expect(() => sheet.setCellFormatFrom({ format: standing.format }, bold)).toThrow(TypeError);
+    });
+
     it('ADR-0048: while a cell is edited every command is refused by name and the reads answer; onEditingChanged hears the edit open and end', async () => {
         const heard: boolean[] = [];
         const { element, sheet } = sheetOf({ document: documentOf({ A1: '1' }), onEditingChanged: open => { heard.push(open); } });
@@ -1644,6 +1692,8 @@ describe("the Consumer's commands (ADR-0048, ADR-0331 §6, ADR-0071)", () => {
         expect([sheet.isEditing, heard]).toEqual([true, [true]]);
         expect(refusalOf(() => { sheet.do(SheetEdit.insertRows(0)); })).toBe('editIsOpen');
         expect(refusalOf(() => sheet.setCellFormat(new CellFormatChange({ bold: true })))).toBe('editIsOpen');
+        expect(refusalOf(() => sheet.setCellFormatFromFocus(() => new CellFormatChange({ bold: true })))).toBe('editIsOpen');
+        expect(refusalOf(() => sheet.readFocusFormat())).toBe('editIsOpen');
         expect(refusalOf(() => sheet.openFormatCells())).toBe('editIsOpen');
         expect(sheet.cellFormatAt(CellAddress.parse('A1')).font.bold).toBe(false);
         key('Escape');

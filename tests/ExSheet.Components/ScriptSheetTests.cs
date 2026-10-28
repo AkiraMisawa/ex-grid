@@ -441,6 +441,56 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(SheetWire.Write(new CellFormatChange { NumberFormat = NumberFormat.General }), Assert.Single(_sheet.Invocations["setCellFormat"]).Arguments[0]);
     }
 
+    [Fact] // ADR-0100 (decided 2026-10-28): SetCellFormatFromFocusAsync makes its change from the Focus cell the browser read, sets it against that reading, and lets the reading go when the change throws
+    public async Task ADR0100_a_change_from_the_focus_cell_is_set_against_the_reading_it_was_made_from()
+    {
+        var cut = Sheet();
+        _sheet.Setup<JsonElement>("readFocusFormat").SetResult(Parsed("""
+            {"done":{"reading":7,"format":"{\"numberFormat\":\"General\",\"alignment\":\"general\",\"font\":{\"colour\":\"Automatic\",\"bold\":true,\"italic\":false,\"underline\":false,\"strikethrough\":false},\"fill\":\"none\",\"borders\":{\"top\":\"none\",\"bottom\":\"none\",\"left\":\"none\",\"right\":\"none\"}}"}}
+            """));
+        _sheet.Setup<JsonElement>("setCellFormatFrom", _ => true).SetResult(Parsed("""{"done":true}"""));
+        _sheet.SetupVoid("forgetFocusFormat", _ => true).SetVoidResult();
+
+        Assert.True(await cut.InvokeAsync(() => cut.Instance.SetCellFormatFromFocusAsync(focus => new() { Bold = !focus.Font.Bold })));
+        var set = Assert.Single(_sheet.Invocations["setCellFormatFrom"]);
+        Assert.Equal([7, SheetWire.Write(new CellFormatChange { Bold = false })], set.Arguments);
+
+        // A change that sets nothing is the caller's error, and the reading is let go.
+        await Assert.ThrowsAsync<ArgumentException>(() => cut.InvokeAsync(() => cut.Instance.SetCellFormatFromFocusAsync(_ => new CellFormatChange())));
+        Assert.Equal([7], Assert.Single(_sheet.Invocations["forgetFocusFormat"]).Arguments);
+        Assert.Single(_sheet.Invocations["setCellFormatFrom"]);
+
+        // The Selection moved between the read and the set: refused as the browser refused it.
+        _sheet.Setup<JsonElement>("setCellFormatFrom", _ => true).SetResult(Parsed("""{"refused":{"reason":"selectionMoved","message":"The selection moved."}}"""));
+        var refused = await Assert.ThrowsAsync<SheetRefusedException>(() => cut.InvokeAsync(() => cut.Instance.SetCellFormatFromFocusAsync(_ => new() { Italic = true })));
+        Assert.Equal(SheetRefusalReason.SelectionMoved, refused.Refusal.Reason);
+    }
+
+    [Fact] // ADR-0100, ADR-0048: over no Selection SetCellFormatFromFocusAsync answers false, and under an open edit it is refused, and neither asks for the change
+    public async Task ADR0100_a_change_from_the_focus_cell_is_not_asked_for_over_no_selection_or_an_open_edit()
+    {
+        var cut = Sheet();
+        _sheet.Setup<JsonElement>("readFocusFormat").SetResult(Parsed("""{"done":null}"""));
+        var asked = false;
+        Assert.False(await cut.InvokeAsync(() => cut.Instance.SetCellFormatFromFocusAsync(_ =>
+        {
+            asked = true;
+            return new() { Bold = true };
+        })));
+        Assert.False(asked);
+
+        // While an edit is open the read is refused, before the change is asked for, as on the Razor component.
+        _sheet.Setup<JsonElement>("readFocusFormat").SetResult(Parsed("""{"refused":{"reason":"editIsOpen","message":"Finish the edit first."}}"""));
+        var refused = await Assert.ThrowsAsync<SheetRefusedException>(() => cut.InvokeAsync(() => cut.Instance.SetCellFormatFromFocusAsync(_ =>
+        {
+            asked = true;
+            return new() { Bold = true };
+        })));
+        Assert.Equal(SheetRefusalReason.EditIsOpen, refused.Refusal.Reason);
+        Assert.False(asked);
+        Assert.Empty(_sheet.Invocations["setCellFormatFrom"]);
+    }
+
     [Fact] // ADR-0130, ADR-0048, ADR-0071, ADR-0331: the Sheet's events reach the handlers as the Razor component raises them
     public async Task ADR0370_the_sheets_events_reach_the_handlers()
     {

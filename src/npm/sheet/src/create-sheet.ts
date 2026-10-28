@@ -17,7 +17,7 @@ import {
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
-    Sheet, SheetRefusal, WorkbookDocument, referenceText, type LinkedTable, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookStep,
+    Sheet, SheetRefusal, WorkbookDocument, referenceText, type LinkedTable, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type SheetRefusalReason, type WorkbookChange, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { elementAt, unreachable } from './must';
 import { browserTimeZone, checkTimeZone, dayOf, momentIn, sameDay, untilTheDayIsReadAgainMs, untilTheMinuteTurnsMs } from './sheet-moment';
@@ -283,6 +283,15 @@ export interface SheetsChange {
     readonly shown: string;
 }
 
+/**
+ * The Focus cell's Cell Format, as `SheetHandle.readFocusFormat` read it: a change is made from it away from the Sheet,
+ * and set with `SheetHandle.setCellFormatFrom`, which knows what it was read against (ADR-0100).
+ */
+export interface FocusFormatReading {
+    /** The Focus cell's Cell Format as it showed. */
+    readonly format: CellFormat;
+}
+
 /** A Sheet drawn into an element, handed back by {@link createSheet}. */
 export interface SheetHandle {
     /** The Workbook the Sheet edits. Change it only through the Sheet, or what is shown falls behind it. */
@@ -332,6 +341,36 @@ export interface SheetHandle {
      * @throws SheetRefusedError An edit is open; nothing changed.
      */
     setCellFormat(change: CellFormatChange): boolean;
+    /**
+     * Sets on the Selection a change made from the Focus cell's Cell Format as it shows now, as a toggle key reads it
+     * (ADR-0071, ADR-0100): Bold on over a Focus cell that is not bold, off over one that is. It widens as Excel's Home
+     * tab buttons do: as the formatting keys do, and for a Font colour too. Otherwise it acts, refuses and answers as
+     * `setCellFormat`; false when nothing is selected, and then `changeOf` is not called.
+     *
+     * @throws RangeError The change it makes sets no part of a Cell Format.
+     * @throws SheetRefusedError An edit is open; nothing changed.
+     */
+    setCellFormatFromFocus(changeOf: (focus: CellFormat) => CellFormatChange): boolean;
+    /**
+     * The Focus cell's Cell Format as it shows now, read for a change made from it away from the Sheet, over a round
+     * trip, and set with `setCellFormatFrom` (ADR-0100); undefined when nothing is selected. It is read for a change,
+     * so it is refused while an edit is open, before the change is made.
+     *
+     * @throws SheetRefusedError An edit is open.
+     */
+    readFocusFormat(): FocusFormatReading | undefined;
+    /**
+     * Sets `change`, made from `reading`, on the Selection, as `setCellFormatFromFocus` sets the change it makes: only
+     * while the Selection, the Sheet shown and the Focus cell's Cell Format are what `reading` was read from.
+     * Otherwise the change would be set on cells it was not made for, or undo what it was made to do, so it is refused,
+     * and the notice says so (ADR-0100, decided 2026-10-28). A reading is taken by its set, whatever comes of it.
+     *
+     * @throws TypeError `reading` was not read from this Sheet, or was set already.
+     * @throws RangeError The change sets no part of a Cell Format.
+     * @throws SheetRefusedError An edit is open; the Selection or the Sheet shown moved (`selectionMoved`); the Focus
+     * cell's Cell Format changed (`focusFormatChanged`). Nothing changed.
+     */
+    setCellFormatFrom(reading: FocusFormatReading, change: CellFormatChange): boolean;
     /**
      * Opens Format Cells over the Selection the grid holds now, from the Consumer's own button (ADR-0071): on the Focus
      * cell's Cell Format, and on the tab shown last. OK sets the parts the user touched as one undo step; Cancel or
@@ -496,6 +535,9 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
         update: (next: SheetOptions) => { view.update(next); },
         do: (sheetOrEdit: string | SheetEdit, edit?: SheetEdit) => { view.do(sheetOrEdit, edit); },
         setCellFormat: (change: CellFormatChange) => view.setCellFormat(change),
+        setCellFormatFromFocus: (changeOf: (focus: CellFormat) => CellFormatChange) => view.setCellFormatFromFocus(changeOf),
+        readFocusFormat: () => view.readFocusFormat(),
+        setCellFormatFrom: (reading: FocusFormatReading, change: CellFormatChange) => view.setCellFormatFrom(reading, change),
         openFormatCells: () => view.openFormatCells(),
         cellFormatAt: (sheetOrAddress: string | CellAddress, address?: CellAddress) => view.cellFormatAt(sheetOrAddress, address),
         undo: () => view.undo(),
@@ -563,6 +605,8 @@ class SheetView {
     #faceBorder: SheetToolbarBorder = 'bottom';
     // The Selection a toolbar list a Chrome draws stands over: one moved from it ends the list.
     #chromeListsOver: GridSelection | undefined;
+    // What each Focus format reading was read against: the Sheet shown and the Selection (ADR-0100).
+    readonly #readings = new WeakMap<FocusFormatReading, { readonly sheet: Sheet; readonly selection: GridSelection }>();
     // The grid's slots made from the chrome last given.
     #gridChromeOf: { readonly given: SheetChrome | undefined; readonly made: GridChrome<SheetRow> } | undefined;
     // A Toolbar Item's list while it stands in the grid's popover frame, and the Selection it was opened over.
@@ -757,6 +801,61 @@ class SheetView {
         const cells = selection.ranges.map(rangeOf);
         this.#perform(SheetEdit.setCellFormat(cells, change), undefined, widensAsAKeyDoes(change) ? cells : undefined);
         return true;
+    }
+
+    setCellFormatFromFocus(changeOf: (focus: CellFormat) => CellFormatChange): boolean {
+        if (typeof changeOf !== 'function') throw new TypeError('setCellFormatFromFocus takes the change as a function of the Focus cell\'s Cell Format.');
+        this.#alive();
+        this.#refuseWhileEditing();
+        return this.#formatFromFocus(changeOf, widensAsAHomeTabButtonDoes);
+    }
+
+    readFocusFormat(): FocusFormatReading | undefined {
+        this.#alive();
+        // Read for a change, which an open edit refuses: refused here, before the change is made from it.
+        this.#refuseWhileEditing();
+        // The Selection as the grid holds it now, which a Selection notice still on its way may not have said yet.
+        const selection = this.#grid?.readView().selection;
+        const focus = selection?.focus;
+        if (selection === undefined || focus === undefined) return undefined;
+        const sheet = this.#source.sheet;
+        const reading: FocusFormatReading = Object.freeze({ format: sheet.getCellFormat(new CellAddress(focus.row, focus.column)) });
+        this.#readings.set(reading, { sheet, selection });
+        return reading;
+    }
+
+    setCellFormatFrom(reading: FocusFormatReading, change: CellFormatChange): boolean {
+        this.#alive();
+        const against = this.#readings.get(reading);
+        if (against === undefined) throw new TypeError('setCellFormatFrom takes a reading this Sheet\'s readFocusFormat made, once.');
+        // A reading is taken by its set, whatever comes of it: set again, it would be a change made from a state the
+        // user may have left and come back to.
+        this.#readings.delete(reading);
+        if (change.isEmpty) throw new RangeError('The change sets no part of a Cell Format.');
+        this.#refuseWhileEditing();
+        // What the change was made from, which must still stand: set on another Selection, or over a format that has
+        // changed since, it would be a plausible change to cells, or in a direction, it was not made for (ADR-0100).
+        // Cells moved under a Selection that stands, their Focus format unchanged, take the change a call made now would
+        // make.
+        const selection = this.#grid?.readView().selection;
+        const focus = selection?.focus;
+        if (selection === undefined || focus === undefined || this.#source.sheet !== against.sheet || !selection.equals(against.selection)) {
+            this.#refuseAndTell('selectionMoved', this.#words.selectionMoved);
+        }
+        if (!against.sheet.getCellFormat(new CellAddress(focus.row, focus.column)).equals(reading.format)) {
+            this.#refuseAndTell('focusFormatChanged', this.#words.focusFormatChanged);
+        }
+        const cells = selection.ranges.map(rangeOf);
+        this.#perform(SheetEdit.setCellFormat(cells, change), undefined, widensAsAHomeTabButtonDoes(change) ? cells : undefined);
+        return true;
+    }
+
+    // A refusal of a change made away from the Sheet, said in the notice too: the user moved what it was made from, and
+    // sees it come to nothing.
+    #refuseAndTell(reason: SheetRefusalReason, sentence: string): never {
+        // The move it names may be heard after it, and that Selection notice must not take the sentence away.
+        this.#tell(sentence, { outlivesMove: true });
+        throw new SheetRefusedError(new SheetRefusal(reason, sentence));
     }
 
     openFormatCells(): boolean {
@@ -2059,14 +2158,17 @@ class SheetView {
     }
 
     // The change `changeOf` makes of the Focus cell's format, set on every range of the Selection as one step, widening
-    // the columns a number no longer fits where `widens` says the gesture does (ADR-0071, ADR-0100).
-    #formatFromFocus(changeOf: (focus: CellFormat) => CellFormatChange, widens: (change: CellFormatChange) => boolean): void {
+    // the columns a number no longer fits where `widens` says the gesture does (ADR-0071, ADR-0100); false over no
+    // Selection, where `changeOf` is not asked.
+    #formatFromFocus(changeOf: (focus: CellFormat) => CellFormatChange, widens: (change: CellFormatChange) => boolean): boolean {
         const selection = this.#grid?.readView().selection;
         const focus = selection?.focus;
-        if (selection === undefined || focus === undefined) return;
+        if (selection === undefined || focus === undefined) return false;
         const change = changeOf(this.#source.sheet.getCellFormat(new CellAddress(focus.row, focus.column)));
+        if (change.isEmpty) throw new RangeError('The change sets no part of a Cell Format.');
         const cells = selection.ranges.map(rangeOf);
         this.#perform(SheetEdit.setCellFormat(cells, change), undefined, widens(change) ? cells : undefined);
+        return true;
     }
 
     // Format Cells over the Selection the grid holds, in the grid's popover frame (ADR-0071, ADR-0050 item 16), opening

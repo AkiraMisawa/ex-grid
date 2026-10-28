@@ -134,8 +134,9 @@
             the Sheet, <code>CellFormatAt("Claim", address)</code> (<a href="exsheet/workbook#commands-name-their-sheet">Commands name their Sheet</a>).
             Like every command, these are refused while an edit is open. Under React they are on the component's ref:
             <code>setCellFormat(new CellFormatChange({ bold: true }))</code>, <code>cellFormatAt(address)</code>,
-            <code>cellFormatAt("Claim", address)</code> and <code>openFormatCells()</code>, and
-            <code>onSelectionChanged</code> hears the Selection move.
+            <code>cellFormatAt("Claim", address)</code>, <code>openFormatCells()</code> and
+            <code>setCellFormatFromFocus(focus =&gt; new CellFormatChange({ bold: !focus.font.bold }))</code>, the
+            toggle the Sheet Toolbar's items set through, and <code>onSelectionChanged</code> hears the Selection move.
         </p>
         <DocsExample Builtin="typeof(FormatFromCode)" Mud="typeof(FormatFromCodeMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
             Select a range, then press a button. Ctrl+Z undoes each press.

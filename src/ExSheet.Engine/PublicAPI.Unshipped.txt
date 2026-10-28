@@ -112,3 +112,5 @@ static ExSheet.Engine.WorkbookDocument.FromJson(string! json) -> ExSheet.Engine.
 *REMOVED*ExSheet.Engine.Sheet.Seed.get -> ulong?
 *REMOVED*ExSheet.Engine.Sheet.SetSeed(ulong? seed) -> ExSheet.Engine.SheetChange!
 *REMOVED*ExSheet.Engine.Sheet.SetSeed(ulong? seed, long changes) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.SheetRefusalReason.SelectionMoved = 9 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusalReason.FocusFormatChanged = 10 -> ExSheet.Engine.SheetRefusalReason
