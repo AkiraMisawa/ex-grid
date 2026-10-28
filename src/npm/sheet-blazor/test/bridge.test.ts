@@ -735,3 +735,93 @@ describe('the Sheet\'s own slots filled with Razor (ADR-0410)', () => {
         expect([list?.hidden, document.activeElement]).toEqual([true, grid]);
     });
 });
+
+interface WireFormatCells {
+    readonly tabs: readonly { readonly value: string; readonly label: string }[];
+    readonly refusal: string | null;
+    readonly number: { readonly categories: readonly { readonly value: string; readonly selected: boolean }[]; readonly takesDecimalPlaces: boolean };
+    readonly swatches: readonly (readonly { readonly index: number; readonly name: string }[])[];
+}
+
+/** A tab's panel, as a Razor Chrome marks it. */
+function panel(tab: string, inside: string): string {
+    return `<div data-ex-format-panel="${tab}">${inside}</div>`;
+}
+
+/** What a Razor Chrome draws for Format Cells: every tab in one form, a category's radios, the places field, the Fill's
+ * swatches and its More Colours field, OK and Cancel. */
+function formatCellsContents(view: WireFormatCells): HTMLElement {
+    const contents = document.createElement('div');
+    const tabs = view.tabs.map(tab => `<button type="button" data-ex-format-tab="${tab.value}">${tab.label}</button>`).join('');
+    const categories = view.number.categories.map(each => `<input type="radio" name="category" data-ex-format-set="category" data-ex-format-value="${each.value}">`).join('');
+    const places = view.number.takesDecimalPlaces ? '<input type="number" min="0" max="30" required data-ex-format-set="places">' : '';
+    const swatches = view.swatches.flat().map(swatch => `<input type="radio" name="fill" aria-label="${swatch.name}" data-ex-format-set="colour" data-ex-format-value="fill:${String(swatch.index)}">`).join('');
+    contents.innerHTML = `<form novalidate data-ex-format-form>${tabs}${panel('number', categories + places)}${panel('alignment', '')}${panel('font', '')}`
+        + `${panel('border', '')}${panel('fill', `${swatches}<input type="text" data-ex-format-set="colourText" data-ex-format-value="fill">`)}`
+        + `${view.refusal === null ? '' : `<p class="refusal">${view.refusal}</p>`}<button type="submit">OK</button><button type="button" data-ex-format-cancel>Cancel</button></form>`;
+    return contents;
+}
+
+describe('Format Cells filled with Razor (ADR-0410, ADR-0071)', () => {
+    it('reads every choice in the browser, sets it through the draft, sends the view again, and OK sets what was touched', async () => {
+        const { element, sheet, dotnet } = await razorSheet(['formatCells']);
+        select(element, 'B2');
+        expect(sheet.openFormatCells()).toEqual({ done: true });
+        const slot = (): HTMLElement => {
+            const [drawn] = render(sheet, dotnet, (_name, json) => formatCellsContents(JSON.parse(json) as WireFormatCells));
+            if (drawn === undefined) throw new Error('Format Cells was not mounted.');
+            return drawn.contents;
+        };
+        let contents = slot();
+        const control = (selector: string): HTMLInputElement => {
+            const found = contents.querySelector<HTMLInputElement>(selector);
+            if (found === null) throw new Error(`Format Cells drew no ${selector}.`);
+            return found;
+        };
+        // The opening's keyboard is on the tab it opens on, and the other tabs' panels are hidden.
+        const numberTab = contents.querySelector('[data-ex-format-tab="number"]');
+        await vi.waitFor(() => { expect(document.activeElement).toBe(numberTab); });
+        expect([numberTab?.getAttribute('aria-selected'), contents.querySelector<HTMLElement>('[data-ex-format-panel="fill"]')?.hidden]).toEqual(['true', true]);
+        expect(control('[data-ex-format-value="general"]').checked).toBe(true);
+
+        // Number chosen: the draft takes it, the view is sent again, and the places field, drawn from it, shows the draft's.
+        const sent = dotnet.called.filter(call => call.method === 'UpdateSlot').length;
+        control('[data-ex-format-value="number"]').click();
+        await vi.waitFor(() => { expect(dotnet.called.filter(call => call.method === 'UpdateSlot').length).toBeGreaterThan(sent); });
+        contents = slot();
+        expect(control('[data-ex-format-set="places"]').value).toBe('2');
+        const places = control('[data-ex-format-set="places"]');
+        places.value = '3';
+        places.dispatchEvent(new Event('input', { bubbles: true }));
+
+        // A swatch on another tab, shown by its tab; then OK, at once, sets both.
+        contents.querySelector<HTMLElement>('[data-ex-format-tab="fill"]')?.click();
+        expect(contents.querySelector<HTMLElement>('[data-ex-format-panel="fill"]')?.hidden).toBe(false);
+        control('[aria-label="Red"]').click();
+        contents.querySelector<HTMLElement>('button[type="submit"]')?.click();
+        const format = sheet.cellFormatAt('Sheet1', 'B2');
+        if (!('done' in format)) throw new Error(`The Cell Format was not read: ${JSON.stringify(format)}`);
+        expect(JSON.parse(format.done)).toMatchObject({ numberFormat: '0.000', fill: '#FF0000' });
+    });
+
+    it('keeps Format Cells open on an OK it refuses, and says why in the view', async () => {
+        const { element, sheet, dotnet } = await razorSheet(['formatCells']);
+        select(element, 'B2');
+        sheet.openFormatCells();
+        const [drawn] = render(sheet, dotnet, (_name, json) => formatCellsContents(JSON.parse(json) as WireFormatCells));
+        if (drawn === undefined) throw new Error('Format Cells was not mounted.');
+        await vi.waitFor(() => { expect(document.activeElement?.getAttribute('data-ex-format-tab')).toBe('number'); });
+        const hex = drawn.contents.querySelector<HTMLInputElement>('[data-ex-format-set="colourText"]');
+        if (hex === null) throw new Error('No More Colours field was drawn.');
+        hex.value = 'teal-ish';
+        hex.dispatchEvent(new Event('input', { bubbles: true }));
+        drawn.contents.querySelector<HTMLElement>('button[type="submit"]')?.click();
+        await vi.waitFor(() => {
+            const last = dotnet.called.findLast(call => call.method === 'UpdateSlot' && call.args[0] === drawn.id);
+            if (last === undefined) throw new Error("Format Cells was not sent again.");
+            expect((JSON.parse(String(last.args[2])) as WireFormatCells).refusal).toContain('teal-ish');
+        });
+        expect(element.contains(drawn.contents)).toBe(true);
+    });
+});
+

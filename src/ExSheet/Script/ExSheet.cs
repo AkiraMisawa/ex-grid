@@ -27,7 +27,7 @@ namespace ExSheet.Script;
 /// <para>Its parameters are the Razor component's (<see cref="Components.ExSheet"/>), under the same names and with the
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
-/// <para>Not carried yet, and so not offered: Format Cells, the Sheet Tabs' menu and the find panel of an
+/// <para>Not carried yet, and so not offered: the Sheet Tabs' menu and the find panel of an
 /// <see cref="ISheetChrome"/>, <c>ToolbarContent</c>,
 /// <c>OnLinkedColumnColoursChanged</c> (ADR-0430 section 3) and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
 /// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>

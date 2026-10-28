@@ -3,6 +3,12 @@ const ExSheet.SheetFindLabelIds.Within = "exsheet.find-within" -> string!
 const ExSheet.SheetFindLabelIds.WithinSheet = "exsheet.find-within-sheet" -> string!
 const ExSheet.SheetFindLabelIds.WithinWorkbook = "exsheet.find-within-workbook" -> string!
 const ExSheet.SheetScriptSlotAttributes.Choice = "data-ex-sheet-choice" -> string!
+const ExSheet.SheetScriptSlotAttributes.FormatCancel = "data-ex-format-cancel" -> string!
+const ExSheet.SheetScriptSlotAttributes.FormatForm = "data-ex-format-form" -> string!
+const ExSheet.SheetScriptSlotAttributes.FormatPanel = "data-ex-format-panel" -> string!
+const ExSheet.SheetScriptSlotAttributes.FormatSet = "data-ex-format-set" -> string!
+const ExSheet.SheetScriptSlotAttributes.FormatTab = "data-ex-format-tab" -> string!
+const ExSheet.SheetScriptSlotAttributes.FormatValue = "data-ex-format-value" -> string!
 const ExSheet.SheetScriptSlotAttributes.List = "data-ex-sheet-list" -> string!
 const ExSheet.SheetScriptSlotAttributes.Press = "data-ex-sheet-press" -> string!
 ExSheet.Components.ExSheet.CellFormatAt(string! sheet, ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellFormat!
@@ -24,6 +30,7 @@ ExSheet.FormatCellsContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKin
 ExSheet.FormatCellsContext.InOrder.init -> void
 ExSheet.FormatCellsContext.JoinSurface.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, string?, System.Func<System.Threading.Tasks.Task!>?, System.Threading.Tasks.Task<System.IAsyncDisposable!>!>?
 ExSheet.FormatCellsContext.JoinSurface.init -> void
+ExSheet.ISheetChrome.FormatCells(ExSheet.SheetFormatCellsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.SheetScriptSlots.get -> ExSheet.SheetScriptSlots
 ExSheet.ISheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
@@ -135,12 +142,226 @@ ExSheet.SheetFindLabelIds
 ExSheet.SheetFindWithin
 ExSheet.SheetFindWithin.Sheet = 0 -> ExSheet.SheetFindWithin
 ExSheet.SheetFindWithin.Workbook = 1 -> ExSheet.SheetFindWithin
+ExSheet.SheetFormatCellsBorder
+ExSheet.SheetFormatCellsBorder.<Clone>$() -> ExSheet.SheetFormatCellsBorder!
+ExSheet.SheetFormatCellsBorder.Deconstruct(out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsLineStyle!>!>! LineStyles, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Presets, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsEdge!>! Edges, out ExSheet.SheetFormatCellsPalette! Palette) -> void
+ExSheet.SheetFormatCellsBorder.Edges.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsEdge!>!
+ExSheet.SheetFormatCellsBorder.Edges.init -> void
+ExSheet.SheetFormatCellsBorder.Equals(ExSheet.SheetFormatCellsBorder? other) -> bool
+ExSheet.SheetFormatCellsBorder.LineStyles.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsLineStyle!>!>!
+ExSheet.SheetFormatCellsBorder.LineStyles.init -> void
+ExSheet.SheetFormatCellsBorder.Palette.get -> ExSheet.SheetFormatCellsPalette!
+ExSheet.SheetFormatCellsBorder.Palette.init -> void
+ExSheet.SheetFormatCellsBorder.Presets.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>!
+ExSheet.SheetFormatCellsBorder.Presets.init -> void
+ExSheet.SheetFormatCellsBorder.SheetFormatCellsBorder(System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsLineStyle!>!>! LineStyles, System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Presets, System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsEdge!>! Edges, ExSheet.SheetFormatCellsPalette! Palette) -> void
+ExSheet.SheetFormatCellsChoice
+ExSheet.SheetFormatCellsChoice.<Clone>$() -> ExSheet.SheetFormatCellsChoice!
+ExSheet.SheetFormatCellsChoice.Deconstruct(out string! Value, out string! Label, out bool Selected, out bool Enabled, out string? Note) -> void
+ExSheet.SheetFormatCellsChoice.Enabled.get -> bool
+ExSheet.SheetFormatCellsChoice.Enabled.init -> void
+ExSheet.SheetFormatCellsChoice.Equals(ExSheet.SheetFormatCellsChoice? other) -> bool
+ExSheet.SheetFormatCellsChoice.Label.get -> string!
+ExSheet.SheetFormatCellsChoice.Label.init -> void
+ExSheet.SheetFormatCellsChoice.Note.get -> string?
+ExSheet.SheetFormatCellsChoice.Note.init -> void
+ExSheet.SheetFormatCellsChoice.Selected.get -> bool
+ExSheet.SheetFormatCellsChoice.Selected.init -> void
+ExSheet.SheetFormatCellsChoice.SheetFormatCellsChoice(string! Value, string! Label, bool Selected, bool Enabled, string? Note) -> void
+ExSheet.SheetFormatCellsChoice.Value.get -> string!
+ExSheet.SheetFormatCellsChoice.Value.init -> void
+ExSheet.SheetFormatCellsEdge
+ExSheet.SheetFormatCellsEdge.<Clone>$() -> ExSheet.SheetFormatCellsEdge!
+ExSheet.SheetFormatCellsEdge.Deconstruct(out string! Value, out string! Label, out string! Pressed, out bool Enabled, out bool InPreview, out ExSheet.SheetFormatCellsLine? Line) -> void
+ExSheet.SheetFormatCellsEdge.Enabled.get -> bool
+ExSheet.SheetFormatCellsEdge.Enabled.init -> void
+ExSheet.SheetFormatCellsEdge.Equals(ExSheet.SheetFormatCellsEdge? other) -> bool
+ExSheet.SheetFormatCellsEdge.InPreview.get -> bool
+ExSheet.SheetFormatCellsEdge.InPreview.init -> void
+ExSheet.SheetFormatCellsEdge.Label.get -> string!
+ExSheet.SheetFormatCellsEdge.Label.init -> void
+ExSheet.SheetFormatCellsEdge.Line.get -> ExSheet.SheetFormatCellsLine?
+ExSheet.SheetFormatCellsEdge.Line.init -> void
+ExSheet.SheetFormatCellsEdge.Pressed.get -> string!
+ExSheet.SheetFormatCellsEdge.Pressed.init -> void
+ExSheet.SheetFormatCellsEdge.SheetFormatCellsEdge(string! Value, string! Label, string! Pressed, bool Enabled, bool InPreview, ExSheet.SheetFormatCellsLine? Line) -> void
+ExSheet.SheetFormatCellsEdge.Value.get -> string!
+ExSheet.SheetFormatCellsEdge.Value.init -> void
+ExSheet.SheetFormatCellsFont
+ExSheet.SheetFormatCellsFont.<Clone>$() -> ExSheet.SheetFormatCellsFont!
+ExSheet.SheetFormatCellsFont.Deconstruct(out System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Styles, out bool Underline, out bool Strikethrough, out bool NormalFont, out ExSheet.SheetFormatCellsPalette! Palette) -> void
+ExSheet.SheetFormatCellsFont.Equals(ExSheet.SheetFormatCellsFont? other) -> bool
+ExSheet.SheetFormatCellsFont.NormalFont.get -> bool
+ExSheet.SheetFormatCellsFont.NormalFont.init -> void
+ExSheet.SheetFormatCellsFont.Palette.get -> ExSheet.SheetFormatCellsPalette!
+ExSheet.SheetFormatCellsFont.Palette.init -> void
+ExSheet.SheetFormatCellsFont.SheetFormatCellsFont(System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Styles, bool Underline, bool Strikethrough, bool NormalFont, ExSheet.SheetFormatCellsPalette! Palette) -> void
+ExSheet.SheetFormatCellsFont.Strikethrough.get -> bool
+ExSheet.SheetFormatCellsFont.Strikethrough.init -> void
+ExSheet.SheetFormatCellsFont.Styles.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>!
+ExSheet.SheetFormatCellsFont.Styles.init -> void
+ExSheet.SheetFormatCellsFont.Underline.get -> bool
+ExSheet.SheetFormatCellsFont.Underline.init -> void
+ExSheet.SheetFormatCellsLabels
+ExSheet.SheetFormatCellsLabels.<Clone>$() -> ExSheet.SheetFormatCellsLabels!
+ExSheet.SheetFormatCellsLabels.BorderEdges.get -> string!
+ExSheet.SheetFormatCellsLabels.BorderEdges.init -> void
+ExSheet.SheetFormatCellsLabels.Cancel.get -> string!
+ExSheet.SheetFormatCellsLabels.Cancel.init -> void
+ExSheet.SheetFormatCellsLabels.Category.get -> string!
+ExSheet.SheetFormatCellsLabels.Category.init -> void
+ExSheet.SheetFormatCellsLabels.Colour.get -> string!
+ExSheet.SheetFormatCellsLabels.Colour.init -> void
+ExSheet.SheetFormatCellsLabels.DecimalPlaces.get -> string!
+ExSheet.SheetFormatCellsLabels.DecimalPlaces.init -> void
+ExSheet.SheetFormatCellsLabels.Deconstruct(out string! Tabs, out string! Category, out string! DecimalPlaces, out string! ThousandsSeparator, out string! NegativeNumbers, out string! Type, out string! Horizontal, out string! FontStyle, out string! Underline, out string! UnderlineNone, out string! UnderlineSingle, out string! Strikethrough, out string! NormalFont, out string! Colour, out string! LineStyle, out string! Presets, out string! BorderEdges, out string! Preview, out string! MoreColours, out string! Ok, out string! Cancel) -> void
+ExSheet.SheetFormatCellsLabels.Equals(ExSheet.SheetFormatCellsLabels? other) -> bool
+ExSheet.SheetFormatCellsLabels.FontStyle.get -> string!
+ExSheet.SheetFormatCellsLabels.FontStyle.init -> void
+ExSheet.SheetFormatCellsLabels.Horizontal.get -> string!
+ExSheet.SheetFormatCellsLabels.Horizontal.init -> void
+ExSheet.SheetFormatCellsLabels.LineStyle.get -> string!
+ExSheet.SheetFormatCellsLabels.LineStyle.init -> void
+ExSheet.SheetFormatCellsLabels.MoreColours.get -> string!
+ExSheet.SheetFormatCellsLabels.MoreColours.init -> void
+ExSheet.SheetFormatCellsLabels.NegativeNumbers.get -> string!
+ExSheet.SheetFormatCellsLabels.NegativeNumbers.init -> void
+ExSheet.SheetFormatCellsLabels.NormalFont.get -> string!
+ExSheet.SheetFormatCellsLabels.NormalFont.init -> void
+ExSheet.SheetFormatCellsLabels.Ok.get -> string!
+ExSheet.SheetFormatCellsLabels.Ok.init -> void
+ExSheet.SheetFormatCellsLabels.Presets.get -> string!
+ExSheet.SheetFormatCellsLabels.Presets.init -> void
+ExSheet.SheetFormatCellsLabels.Preview.get -> string!
+ExSheet.SheetFormatCellsLabels.Preview.init -> void
+ExSheet.SheetFormatCellsLabels.SheetFormatCellsLabels(string! Tabs, string! Category, string! DecimalPlaces, string! ThousandsSeparator, string! NegativeNumbers, string! Type, string! Horizontal, string! FontStyle, string! Underline, string! UnderlineNone, string! UnderlineSingle, string! Strikethrough, string! NormalFont, string! Colour, string! LineStyle, string! Presets, string! BorderEdges, string! Preview, string! MoreColours, string! Ok, string! Cancel) -> void
+ExSheet.SheetFormatCellsLabels.Strikethrough.get -> string!
+ExSheet.SheetFormatCellsLabels.Strikethrough.init -> void
+ExSheet.SheetFormatCellsLabels.Tabs.get -> string!
+ExSheet.SheetFormatCellsLabels.Tabs.init -> void
+ExSheet.SheetFormatCellsLabels.ThousandsSeparator.get -> string!
+ExSheet.SheetFormatCellsLabels.ThousandsSeparator.init -> void
+ExSheet.SheetFormatCellsLabels.Type.get -> string!
+ExSheet.SheetFormatCellsLabels.Type.init -> void
+ExSheet.SheetFormatCellsLabels.Underline.get -> string!
+ExSheet.SheetFormatCellsLabels.Underline.init -> void
+ExSheet.SheetFormatCellsLabels.UnderlineNone.get -> string!
+ExSheet.SheetFormatCellsLabels.UnderlineNone.init -> void
+ExSheet.SheetFormatCellsLabels.UnderlineSingle.get -> string!
+ExSheet.SheetFormatCellsLabels.UnderlineSingle.init -> void
+ExSheet.SheetFormatCellsLine
+ExSheet.SheetFormatCellsLine.<Clone>$() -> ExSheet.SheetFormatCellsLine!
+ExSheet.SheetFormatCellsLine.Dashes.get -> string?
+ExSheet.SheetFormatCellsLine.Dashes.init -> void
+ExSheet.SheetFormatCellsLine.Deconstruct(out bool None, out string! Paint, out string! Width, out string? Dashes) -> void
+ExSheet.SheetFormatCellsLine.Equals(ExSheet.SheetFormatCellsLine? other) -> bool
+ExSheet.SheetFormatCellsLine.None.get -> bool
+ExSheet.SheetFormatCellsLine.None.init -> void
+ExSheet.SheetFormatCellsLine.Paint.get -> string!
+ExSheet.SheetFormatCellsLine.Paint.init -> void
+ExSheet.SheetFormatCellsLine.SheetFormatCellsLine(bool None, string! Paint, string! Width, string? Dashes) -> void
+ExSheet.SheetFormatCellsLine.Width.get -> string!
+ExSheet.SheetFormatCellsLine.Width.init -> void
+ExSheet.SheetFormatCellsLineStyle
+ExSheet.SheetFormatCellsLineStyle.<Clone>$() -> ExSheet.SheetFormatCellsLineStyle!
+ExSheet.SheetFormatCellsLineStyle.Dashes.get -> string?
+ExSheet.SheetFormatCellsLineStyle.Dashes.init -> void
+ExSheet.SheetFormatCellsLineStyle.Deconstruct(out string! Value, out string! Label, out bool Selected, out string! Width, out string? Dashes) -> void
+ExSheet.SheetFormatCellsLineStyle.Equals(ExSheet.SheetFormatCellsLineStyle? other) -> bool
+ExSheet.SheetFormatCellsLineStyle.Label.get -> string!
+ExSheet.SheetFormatCellsLineStyle.Label.init -> void
+ExSheet.SheetFormatCellsLineStyle.Selected.get -> bool
+ExSheet.SheetFormatCellsLineStyle.Selected.init -> void
+ExSheet.SheetFormatCellsLineStyle.SheetFormatCellsLineStyle(string! Value, string! Label, bool Selected, string! Width, string? Dashes) -> void
+ExSheet.SheetFormatCellsLineStyle.Value.get -> string!
+ExSheet.SheetFormatCellsLineStyle.Value.init -> void
+ExSheet.SheetFormatCellsLineStyle.Width.get -> string!
+ExSheet.SheetFormatCellsLineStyle.Width.init -> void
+ExSheet.SheetFormatCellsNumber
+ExSheet.SheetFormatCellsNumber.<Clone>$() -> ExSheet.SheetFormatCellsNumber!
+ExSheet.SheetFormatCellsNumber.Categories.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>!
+ExSheet.SheetFormatCellsNumber.Categories.init -> void
+ExSheet.SheetFormatCellsNumber.CodeRefusal.get -> string?
+ExSheet.SheetFormatCellsNumber.CodeRefusal.init -> void
+ExSheet.SheetFormatCellsNumber.CurrencySymbol.get -> string?
+ExSheet.SheetFormatCellsNumber.CurrencySymbol.init -> void
+ExSheet.SheetFormatCellsNumber.Deconstruct(out System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Categories, out string? Hint, out bool TakesDecimalPlaces, out bool? ThousandsSeparator, out string? CurrencySymbol, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! NegativeNumbers, out bool TakesCode, out string? CodeRefusal, out string? TypesLegend, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Types) -> void
+ExSheet.SheetFormatCellsNumber.Equals(ExSheet.SheetFormatCellsNumber? other) -> bool
+ExSheet.SheetFormatCellsNumber.Hint.get -> string?
+ExSheet.SheetFormatCellsNumber.Hint.init -> void
+ExSheet.SheetFormatCellsNumber.NegativeNumbers.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>!
+ExSheet.SheetFormatCellsNumber.NegativeNumbers.init -> void
+ExSheet.SheetFormatCellsNumber.SheetFormatCellsNumber(System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Categories, string? Hint, bool TakesDecimalPlaces, bool? ThousandsSeparator, string? CurrencySymbol, System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! NegativeNumbers, bool TakesCode, string? CodeRefusal, string? TypesLegend, System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Types) -> void
+ExSheet.SheetFormatCellsNumber.TakesCode.get -> bool
+ExSheet.SheetFormatCellsNumber.TakesCode.init -> void
+ExSheet.SheetFormatCellsNumber.TakesDecimalPlaces.get -> bool
+ExSheet.SheetFormatCellsNumber.TakesDecimalPlaces.init -> void
+ExSheet.SheetFormatCellsNumber.ThousandsSeparator.get -> bool?
+ExSheet.SheetFormatCellsNumber.ThousandsSeparator.init -> void
+ExSheet.SheetFormatCellsNumber.Types.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>!
+ExSheet.SheetFormatCellsNumber.Types.init -> void
+ExSheet.SheetFormatCellsNumber.TypesLegend.get -> string?
+ExSheet.SheetFormatCellsNumber.TypesLegend.init -> void
+ExSheet.SheetFormatCellsPalette
+ExSheet.SheetFormatCellsPalette.<Clone>$() -> ExSheet.SheetFormatCellsPalette!
+ExSheet.SheetFormatCellsPalette.Deconstruct(out string! Target, out string! Legend, out string! First, out bool FirstSelected, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsSwatch!>!>! Rows) -> void
+ExSheet.SheetFormatCellsPalette.Equals(ExSheet.SheetFormatCellsPalette? other) -> bool
+ExSheet.SheetFormatCellsPalette.First.get -> string!
+ExSheet.SheetFormatCellsPalette.First.init -> void
+ExSheet.SheetFormatCellsPalette.FirstSelected.get -> bool
+ExSheet.SheetFormatCellsPalette.FirstSelected.init -> void
+ExSheet.SheetFormatCellsPalette.FirstValue.get -> string!
+ExSheet.SheetFormatCellsPalette.Legend.get -> string!
+ExSheet.SheetFormatCellsPalette.Legend.init -> void
+ExSheet.SheetFormatCellsPalette.Rows.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsSwatch!>!>!
+ExSheet.SheetFormatCellsPalette.Rows.init -> void
+ExSheet.SheetFormatCellsPalette.SheetFormatCellsPalette(string! Target, string! Legend, string! First, bool FirstSelected, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsSwatch!>!>! Rows) -> void
+ExSheet.SheetFormatCellsPalette.Target.get -> string!
+ExSheet.SheetFormatCellsPalette.Target.init -> void
+ExSheet.SheetFormatCellsPalette.ValueOf(ExSheet.SheetFormatCellsSwatch! swatch) -> string!
+ExSheet.SheetFormatCellsSwatch
+ExSheet.SheetFormatCellsSwatch.<Clone>$() -> ExSheet.SheetFormatCellsSwatch!
+ExSheet.SheetFormatCellsSwatch.Deconstruct(out int Index, out string! Name, out string! Paint, out bool Selected) -> void
+ExSheet.SheetFormatCellsSwatch.Equals(ExSheet.SheetFormatCellsSwatch? other) -> bool
+ExSheet.SheetFormatCellsSwatch.Index.get -> int
+ExSheet.SheetFormatCellsSwatch.Index.init -> void
+ExSheet.SheetFormatCellsSwatch.Name.get -> string!
+ExSheet.SheetFormatCellsSwatch.Name.init -> void
+ExSheet.SheetFormatCellsSwatch.Paint.get -> string!
+ExSheet.SheetFormatCellsSwatch.Paint.init -> void
+ExSheet.SheetFormatCellsSwatch.Selected.get -> bool
+ExSheet.SheetFormatCellsSwatch.Selected.init -> void
+ExSheet.SheetFormatCellsSwatch.SheetFormatCellsSwatch(int Index, string! Name, string! Paint, bool Selected) -> void
+ExSheet.SheetFormatCellsView
+ExSheet.SheetFormatCellsView.<Clone>$() -> ExSheet.SheetFormatCellsView!
+ExSheet.SheetFormatCellsView.Alignments.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>!
+ExSheet.SheetFormatCellsView.Alignments.init -> void
+ExSheet.SheetFormatCellsView.Border.get -> ExSheet.SheetFormatCellsBorder!
+ExSheet.SheetFormatCellsView.Border.init -> void
+ExSheet.SheetFormatCellsView.Deconstruct(out string! Title, out ExSheet.SheetFormatCellsLabels! Labels, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Tabs, out string? Refusal, out ExSheet.SheetFormatCellsNumber! Number, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Alignments, out ExSheet.SheetFormatCellsFont! Font, out ExSheet.SheetFormatCellsBorder! Border, out ExSheet.SheetFormatCellsPalette! Fill) -> void
+ExSheet.SheetFormatCellsView.Equals(ExSheet.SheetFormatCellsView? other) -> bool
+ExSheet.SheetFormatCellsView.Fill.get -> ExSheet.SheetFormatCellsPalette!
+ExSheet.SheetFormatCellsView.Fill.init -> void
+ExSheet.SheetFormatCellsView.Font.get -> ExSheet.SheetFormatCellsFont!
+ExSheet.SheetFormatCellsView.Font.init -> void
+ExSheet.SheetFormatCellsView.Labels.get -> ExSheet.SheetFormatCellsLabels!
+ExSheet.SheetFormatCellsView.Labels.init -> void
+ExSheet.SheetFormatCellsView.Number.get -> ExSheet.SheetFormatCellsNumber!
+ExSheet.SheetFormatCellsView.Number.init -> void
+ExSheet.SheetFormatCellsView.Refusal.get -> string?
+ExSheet.SheetFormatCellsView.Refusal.init -> void
+ExSheet.SheetFormatCellsView.SheetFormatCellsView(string! Title, ExSheet.SheetFormatCellsLabels! Labels, System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Tabs, string? Refusal, ExSheet.SheetFormatCellsNumber! Number, System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>! Alignments, ExSheet.SheetFormatCellsFont! Font, ExSheet.SheetFormatCellsBorder! Border, ExSheet.SheetFormatCellsPalette! Fill) -> void
+ExSheet.SheetFormatCellsView.Tabs.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetFormatCellsChoice!>!
+ExSheet.SheetFormatCellsView.Tabs.init -> void
+ExSheet.SheetFormatCellsView.Title.get -> string!
+ExSheet.SheetFormatCellsView.Title.init -> void
 ExSheet.SheetsChange
 ExSheet.SheetsChange.After.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.SheetsChange.Before.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.SheetsChange.Shown.get -> string!
 ExSheet.SheetScriptSlotAttributes
 ExSheet.SheetScriptSlots
+ExSheet.SheetScriptSlots.FormatCells = 8 -> ExSheet.SheetScriptSlots
 ExSheet.SheetScriptSlots.None = 0 -> ExSheet.SheetScriptSlots
 ExSheet.SheetScriptSlots.SheetTab = 2 -> ExSheet.SheetScriptSlots
 ExSheet.SheetScriptSlots.SheetTabAdd = 4 -> ExSheet.SheetScriptSlots
@@ -243,6 +464,39 @@ ExSheet.ToolbarItemContext.ToolbarItemContext(string! Id, ExSheet.ToolbarItemKin
 override ExSheet.SheetFindContext.Equals(object? obj) -> bool
 override ExSheet.SheetFindContext.GetHashCode() -> int
 override ExSheet.SheetFindContext.ToString() -> string!
+override ExSheet.SheetFormatCellsBorder.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsBorder.GetHashCode() -> int
+override ExSheet.SheetFormatCellsBorder.ToString() -> string!
+override ExSheet.SheetFormatCellsChoice.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsChoice.GetHashCode() -> int
+override ExSheet.SheetFormatCellsChoice.ToString() -> string!
+override ExSheet.SheetFormatCellsEdge.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsEdge.GetHashCode() -> int
+override ExSheet.SheetFormatCellsEdge.ToString() -> string!
+override ExSheet.SheetFormatCellsFont.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsFont.GetHashCode() -> int
+override ExSheet.SheetFormatCellsFont.ToString() -> string!
+override ExSheet.SheetFormatCellsLabels.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsLabels.GetHashCode() -> int
+override ExSheet.SheetFormatCellsLabels.ToString() -> string!
+override ExSheet.SheetFormatCellsLine.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsLine.GetHashCode() -> int
+override ExSheet.SheetFormatCellsLine.ToString() -> string!
+override ExSheet.SheetFormatCellsLineStyle.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsLineStyle.GetHashCode() -> int
+override ExSheet.SheetFormatCellsLineStyle.ToString() -> string!
+override ExSheet.SheetFormatCellsNumber.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsNumber.GetHashCode() -> int
+override ExSheet.SheetFormatCellsNumber.ToString() -> string!
+override ExSheet.SheetFormatCellsPalette.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsPalette.GetHashCode() -> int
+override ExSheet.SheetFormatCellsPalette.ToString() -> string!
+override ExSheet.SheetFormatCellsSwatch.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsSwatch.GetHashCode() -> int
+override ExSheet.SheetFormatCellsSwatch.ToString() -> string!
+override ExSheet.SheetFormatCellsView.Equals(object? obj) -> bool
+override ExSheet.SheetFormatCellsView.GetHashCode() -> int
+override ExSheet.SheetFormatCellsView.ToString() -> string!
 override ExSheet.SheetTabCommand.Equals(object? obj) -> bool
 override ExSheet.SheetTabCommand.GetHashCode() -> int
 override ExSheet.SheetTabCommand.ToString() -> string!
@@ -261,6 +515,28 @@ override ExSheet.SheetToolbarItemView.ToString() -> string!
 static ExSheet.SheetFindContext.operator !=(ExSheet.SheetFindContext? left, ExSheet.SheetFindContext? right) -> bool
 static ExSheet.SheetFindContext.operator ==(ExSheet.SheetFindContext? left, ExSheet.SheetFindContext? right) -> bool
 static ExSheet.SheetFindLabelIds.EnglishFor(string! id) -> string?
+static ExSheet.SheetFormatCellsBorder.operator !=(ExSheet.SheetFormatCellsBorder? left, ExSheet.SheetFormatCellsBorder? right) -> bool
+static ExSheet.SheetFormatCellsBorder.operator ==(ExSheet.SheetFormatCellsBorder? left, ExSheet.SheetFormatCellsBorder? right) -> bool
+static ExSheet.SheetFormatCellsChoice.operator !=(ExSheet.SheetFormatCellsChoice? left, ExSheet.SheetFormatCellsChoice? right) -> bool
+static ExSheet.SheetFormatCellsChoice.operator ==(ExSheet.SheetFormatCellsChoice? left, ExSheet.SheetFormatCellsChoice? right) -> bool
+static ExSheet.SheetFormatCellsEdge.operator !=(ExSheet.SheetFormatCellsEdge? left, ExSheet.SheetFormatCellsEdge? right) -> bool
+static ExSheet.SheetFormatCellsEdge.operator ==(ExSheet.SheetFormatCellsEdge? left, ExSheet.SheetFormatCellsEdge? right) -> bool
+static ExSheet.SheetFormatCellsFont.operator !=(ExSheet.SheetFormatCellsFont? left, ExSheet.SheetFormatCellsFont? right) -> bool
+static ExSheet.SheetFormatCellsFont.operator ==(ExSheet.SheetFormatCellsFont? left, ExSheet.SheetFormatCellsFont? right) -> bool
+static ExSheet.SheetFormatCellsLabels.operator !=(ExSheet.SheetFormatCellsLabels? left, ExSheet.SheetFormatCellsLabels? right) -> bool
+static ExSheet.SheetFormatCellsLabels.operator ==(ExSheet.SheetFormatCellsLabels? left, ExSheet.SheetFormatCellsLabels? right) -> bool
+static ExSheet.SheetFormatCellsLine.operator !=(ExSheet.SheetFormatCellsLine? left, ExSheet.SheetFormatCellsLine? right) -> bool
+static ExSheet.SheetFormatCellsLine.operator ==(ExSheet.SheetFormatCellsLine? left, ExSheet.SheetFormatCellsLine? right) -> bool
+static ExSheet.SheetFormatCellsLineStyle.operator !=(ExSheet.SheetFormatCellsLineStyle? left, ExSheet.SheetFormatCellsLineStyle? right) -> bool
+static ExSheet.SheetFormatCellsLineStyle.operator ==(ExSheet.SheetFormatCellsLineStyle? left, ExSheet.SheetFormatCellsLineStyle? right) -> bool
+static ExSheet.SheetFormatCellsNumber.operator !=(ExSheet.SheetFormatCellsNumber? left, ExSheet.SheetFormatCellsNumber? right) -> bool
+static ExSheet.SheetFormatCellsNumber.operator ==(ExSheet.SheetFormatCellsNumber? left, ExSheet.SheetFormatCellsNumber? right) -> bool
+static ExSheet.SheetFormatCellsPalette.operator !=(ExSheet.SheetFormatCellsPalette? left, ExSheet.SheetFormatCellsPalette? right) -> bool
+static ExSheet.SheetFormatCellsPalette.operator ==(ExSheet.SheetFormatCellsPalette? left, ExSheet.SheetFormatCellsPalette? right) -> bool
+static ExSheet.SheetFormatCellsSwatch.operator !=(ExSheet.SheetFormatCellsSwatch? left, ExSheet.SheetFormatCellsSwatch? right) -> bool
+static ExSheet.SheetFormatCellsSwatch.operator ==(ExSheet.SheetFormatCellsSwatch? left, ExSheet.SheetFormatCellsSwatch? right) -> bool
+static ExSheet.SheetFormatCellsView.operator !=(ExSheet.SheetFormatCellsView? left, ExSheet.SheetFormatCellsView? right) -> bool
+static ExSheet.SheetFormatCellsView.operator ==(ExSheet.SheetFormatCellsView? left, ExSheet.SheetFormatCellsView? right) -> bool
 static ExSheet.SheetTabCommand.operator !=(ExSheet.SheetTabCommand? left, ExSheet.SheetTabCommand? right) -> bool
 static ExSheet.SheetTabCommand.operator ==(ExSheet.SheetTabCommand? left, ExSheet.SheetTabCommand? right) -> bool
 static ExSheet.SheetTabContext.operator !=(ExSheet.SheetTabContext? left, ExSheet.SheetTabContext? right) -> bool

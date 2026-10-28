@@ -110,9 +110,26 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <see cref="ScriptSlots"/> leaves the slot to it (ADR-0410 section 4's note of 2026-10-28).</summary>
     public RenderFragment? FindPanel(GridFindView view) => null;
 
-    /// <summary>The Sheet's own slots this Chrome fills over the Script Core (ADR-0410): the Toolbar Items, and the
-    /// Sheet Tabs' faces and the + button's, drawn as they are over the C# core.</summary>
-    public SheetScriptSlots SheetScriptSlots => SheetScriptSlots.ToolbarItem | SheetScriptSlots.SheetTab | SheetScriptSlots.SheetTabAdd;
+    /// <summary>The Sheet's own slots this Chrome fills over the Script Core (ADR-0410): the Toolbar Items, Format Cells,
+    /// and the Sheet Tabs' faces and the + button's, drawn as they are over the C# core.</summary>
+    public SheetScriptSlots SheetScriptSlots
+        => SheetScriptSlots.ToolbarItem | SheetScriptSlots.FormatCells | SheetScriptSlots.SheetTab | SheetScriptSlots.SheetTabAdd;
+
+    /// <summary>
+    /// Format Cells over the Script Core (ADR-0071, ADR-0410): the tabs <see cref="FormatCells(FormatCellsContext)"/>'s
+    /// dialog holds, in MudBlazor's type and buttons, standing in the grid's popover frame. Every choice is a native
+    /// control the script reads, so a choice made at once before OK is the one OK sets.
+    /// </summary>
+    public RenderFragment? FormatCells(SheetFormatCellsView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenComponent<MudScriptFormatCells>(0);
+            builder.AddComponentParameter(1, nameof(MudScriptFormatCells.View), view);
+            builder.CloseComponent();
+        };
+    }
 
     /// <summary>
     /// A Toolbar Item over the Script Core (ADR-0100, ADR-0410), in the MudBlazor controls <see cref="ToolbarItem(ToolbarItemContext)"/>

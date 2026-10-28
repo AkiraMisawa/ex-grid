@@ -693,4 +693,41 @@ public class ScriptSheetTests : BunitContext
         var refused = Assert.IsType<InvalidOperationException>(await Renderer.UnhandledException);
         Assert.Contains("BlankToolbarChrome names ToolbarItem", refused.Message);
     }
+
+    /// <summary>A Sheet Chrome that draws Format Cells as a line of what its view says.</summary>
+    private sealed class FormatCellsChrome : ISheetChrome
+    {
+        public SheetScriptSlots SheetScriptSlots => SheetScriptSlots.FormatCells;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? FormatCells(SheetFormatCellsView view) => builder => builder.AddContent(0, string.Join(" | ",
+            view.Title, view.Labels.Ok, string.Join(",", view.Tabs.Select(tab => tab.Value)),
+            string.Join(",", view.Number.Categories.Select(each => $"{each.Value}{(each.Selected ? "*" : "")}{(each.Enabled ? "" : "!")}")),
+            view.Number.Categories[^1].Note ?? "no note",
+            string.Join(",", view.Border.Edges.Select(edge => $"{edge.Value}:{edge.Pressed}:{(edge.Line is null ? "differs" : "line")}")),
+            string.Join(",", view.Fill.Rows.SelectMany(row => row).Select(swatch => $"{view.Fill.ValueOf(swatch)}={swatch.Name}{(swatch.Selected ? "*" : "")}")),
+            view.Font.Palette.FirstValue));
+    }
+
+    [Fact] // ADR-0410, ADR-0071: an ISheetChrome draws Format Cells from the view the script sends, its choices' values as the script reads them
+    public async Task ADR0410_a_sheet_chrome_draws_format_cells_from_the_view()
+    {
+        _sheet.SetupVoid("slotRendered", _ => true).SetVoidResult();
+        var cut = Sheet(ps => ps.Add(p => p.Chrome, new FormatCellsChrome()));
+        Assert.Equal("""["formatCells"]""", Attach().GetProperty("options").GetProperty("razorSlots").GetRawText());
+
+        await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "formatCells", """{"title":"Format Cells","labels":{"tabs":"Format Cells","category":"Category","generalHint":"General cells have no specific number format.","textHint":"Text cells show what is typed, as typed.","decimalPlaces":"Decimal places","thousandsSeparator":"Use 1000 Separator (,)","negativeNumbers":"Negative numbers","type":"Type","codes":"Codes","horizontal":"Horizontal","fontStyle":"Font style","underline":"Underline","underlineNone":"None","underlineSingle":"Single","strikethrough":"Strikethrough","normalFont":"Normal font","colour":"Colour","lineStyle":"Style","presets":"Presets","border":"Border","preview":"Preview","backgroundColour":"Background Colour","automatic":"Automatic","noColour":"No Colour","moreColours":"More Colours","ok":"OK","cancel":"Cancel"},"tabs":[{"value":"number","label":"Number"},{"value":"alignment","label":"Alignment"},{"value":"font","label":"Font"},{"value":"border","label":"Border"},{"value":"fill","label":"Fill"}],"refusal":null,"swatches":[[{"index":0,"name":"White, Background 1","paint":"#FFFFFF"}]],"number":{"categories":[{"value":"general","label":"General","selected":true,"enabled":true,"note":null},{"value":"number","label":"Number","selected":false,"enabled":true,"note":null},{"value":"accounting","label":"Accounting","selected":false,"enabled":false,"note":"Accounting pads each value with * to fill its column, which ExSheet does not read. Use Currency, or type a code under Custom."}],"hint":"General cells have no specific number format.","takesDecimalPlaces":false,"thousandsSeparator":null,"currencySymbol":null,"negativeNumbers":[],"takesCode":false,"codeRefusal":null,"typesLegend":null,"types":[]},"alignments":[{"value":"general","label":"General","selected":true,"enabled":true,"note":null},{"value":"left","label":"Left","selected":false,"enabled":true,"note":null}],"font":{"styles":[{"value":"regular","label":"Regular","selected":true,"enabled":true,"note":null},{"value":"italic","label":"Italic","selected":false,"enabled":true,"note":null}],"underline":false,"strikethrough":false,"normalFont":true,"palette":{"target":"font","legend":"Colour","first":"Automatic","firstSelected":true,"selected":null}},"border":{"lineStyles":[[{"value":"none","label":"None","selected":false,"width":"1","dashes":null},{"value":"hair","label":"Hair","selected":false,"width":"1","dashes":"1 1"}]],"presets":[{"value":"none","label":"None","selected":false,"enabled":true,"note":null}],"edges":[{"value":"top","label":"Top","pressed":"mixed","enabled":true,"inPreview":true,"line":null},{"value":"insideHorizontal","label":"Horizontal","pressed":"false","enabled":false,"inPreview":false,"line":{"none":true,"paint":"currentColor","width":"1","dashes":null}}],"palette":{"target":"border","legend":"Colour","first":"Automatic","firstSelected":true,"selected":null}},"fill":{"target":"fill","legend":"Background Colour","first":"No Colour","firstSelected":false,"selected":0}}"""));
+        Assert.Equal(
+            "Format Cells | OK | number,alignment,font,border,fill | general*,number,accounting! | "
+            + "Accounting pads each value with * to fill its column, which ExSheet does not read. Use Currency, or type a code under Custom. | "
+            + "top:mixed:differs,insideHorizontal:false:line | fill:0=White, Background 1* | font:none",
+            cut.Find("div[hidden] > .ex-razor-slot").TextContent);
+    }
 }
