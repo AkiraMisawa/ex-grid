@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 15:00:03 |
+| Generated on: | 10/28/2026 - 15:29:01 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1372 |
-| Files: | 672 |
-| **Line coverage:** | 90.6% (92043 of 101543) |
-| Covered lines: | 92043 |
-| Uncovered lines: | 9500 |
-| Coverable lines: | 101543 |
-| Total lines: | 155721 |
-| **Branch coverage:** | 85.4% (53799 of 62979) |
-| Covered branches: | 53799 |
-| Total branches: | 62979 |
+| Classes: | 1376 |
+| Files: | 674 |
+| **Line coverage:** | 90.6% (92284 of 101805) |
+| Covered lines: | 92284 |
+| Uncovered lines: | 9521 |
+| Coverable lines: | 101805 |
+| Total lines: | 156180 |
+| **Branch coverage:** | 85.4% (53913 of 63113) |
+| Covered branches: | 53913 |
+| Total branches: | 63113 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -715,7 +715,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1175,11 +1175,11 @@
 |ExPivot.MudBlazor.PivotSlotMarkup|0%||
 
 </details>
-<details><summary>ExSheet - 90.2%</summary>
+<details><summary>ExSheet - 90.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**90.2%**|**81.9%**|
+|**ExSheet**|**90.3%**|**82%**|
 |ExGrid.Script.CrossedText|92%|72.2%|
 |ExGrid.Script.HeldCalls|80.4%|75%|
 |ExGrid.Script.HeldCalls<T>|80.4%|75%|
@@ -1205,7 +1205,7 @@
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
-|ExSheet.DefaultToolbarRow|100%|50%|
+|ExSheet.DefaultToolbarRow|100%|83.3%|
 |ExSheet.FillItem|100%|50%|
 |ExSheet.FontColourItem|100%|100%|
 |ExSheet.FontToggleItem|100%||
@@ -1233,12 +1233,16 @@
 |ExSheet.PointingScope.GridMember<TRow>|100%|100%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
-|ExSheet.Script.ExSheet|84.6%|75.8%|
+|ExSheet.Script.ExSheet|85.6%|77.2%|
 |ExSheet.Script.ExSheet.Opening|100%||
+|ExSheet.Script.ExSheet.Press|100%||
 |ExSheet.Script.ExSheet.Saving|100%||
-|ExSheet.Script.ScriptBridge|75.8%|25%|
-|ExSheet.Script.SheetRazorSlot|96.8%|88.8%|
+|ExSheet.Script.ScriptBridge|76.6%|25%|
+|ExSheet.Script.ScriptToolbar|89.5%|82.8%|
+|ExSheet.Script.ScriptToolbarHost|100%|50%|
+|ExSheet.Script.SheetRazorSlot|96.9%|88.8%|
 |ExSheet.Script.SheetRazorSlot.AddFace|100%||
+|ExSheet.Script.ToolbarContentView|100%||
 |ExSheet.SheetAppearance|97.6%|96%|
 |ExSheet.SheetCellText|94.4%|100%|
 |ExSheet.SheetClipboard|94.1%|77.9%|
@@ -1281,7 +1285,7 @@
 |ExSheet.SheetToolbarChoiceView|100%||
 |ExSheet.SheetToolbarContext|93.5%|79.5%|
 |ExSheet.SheetToolbarContext.NotJoined|0%||
-|ExSheet.SheetToolbarItemView|50%||
+|ExSheet.SheetToolbarItemView|53.3%||
 |ExSheet.SheetWidening|100%|97.5%|
 |ExSheet.SheetWords|94.8%|89.4%|
 |ExSheet.StrikethroughItem|100%|100%|
@@ -1289,11 +1293,11 @@
 |ExSheet.ToolbarChoice|100%||
 |ExSheet.ToolbarChoicesPanel|83.3%|68%|
 |ExSheet.ToolbarIcons|100%|100%|
-|ExSheet.ToolbarItemBase|95.8%|90%|
+|ExSheet.ToolbarItemBase|96.1%|91.1%|
 |ExSheet.ToolbarItemContext|94.1%|98.2%|
 |ExSheet.ToolbarItemFace|100%||
 |ExSheet.ToolbarOrder|100%|83.3%|
-|ExSheet.ToolbarRow|90.9%|81.8%|
+|ExSheet.ToolbarRow|93.1%|86.6%|
 |ExSheet.ToolbarSeparator|50%||
 |ExSheet.UnderlineItem|100%|100%|
 
@@ -1454,11 +1458,11 @@
 |ExSheet.Engine.WorkbookStep|100%|100%|
 
 </details>
-<details><summary>ExSheet.MudBlazor - 63.7%</summary>
+<details><summary>ExSheet.MudBlazor - 63.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.MudBlazor**|**63.7%**|**62.5%**|
+|**ExSheet.MudBlazor**|**63.6%**|**62.3%**|
 |ExSheet.MudBlazor.MudExSheetStylesheet|100%||
 |ExSheet.MudBlazor.MudFormatCellsDialog|97.9%|80.9%|
 |ExSheet.MudBlazor.MudFormatCellsFrame|82.4%|68.5%|
