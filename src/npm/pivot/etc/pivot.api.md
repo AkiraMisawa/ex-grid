@@ -6,6 +6,7 @@
 
 import type { GridChrome } from '@ex-grid/core';
 import { GridDensity } from '@ex-grid/core';
+import { GridHandle } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
 import type { PivotAggregation } from '@ex-grid/pivot-engine';
 import type { PivotArea } from '@ex-grid/pivot-engine';
@@ -218,6 +219,8 @@ export interface PivotFieldSettingsView {
 // @public
 export interface PivotHandle {
     destroy(): void;
+    gridAround(element: Element): GridHandle<unknown> | undefined;
+    holdSettled(element: Element): () => void;
     openDetails(event: PivotShowDetailsEvent): void;
     update(options: PivotViewOptions): void;
 }

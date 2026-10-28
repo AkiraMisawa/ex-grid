@@ -111,6 +111,8 @@ class GridStandIn {
     readonly placed: Placed[] = [];
     /** The element the report's grid was mounted into. */
     element: HTMLElement | undefined;
+    /** The Input Root the report's grid found as it was mounted, as the real grid looks for it once. */
+    inputRoot: Element | null | undefined;
 
     readonly mount = <Row>(element: HTMLElement, options: GridOptions<Row>): GridHandle<Row> => {
         const handle = (update: (next: GridOptions<Row>) => void, destroy: () => void): GridHandle<Row> => ({
@@ -152,6 +154,7 @@ class GridStandIn {
         }
         this.mounts++;
         this.element = element;
+        this.inputRoot = element.parentElement?.closest('[data-ex-input-root]');
         // The grid's root holds the keyboard on a grid that does not edit (ADR-0080).
         element.tabIndex = 0;
         this.options = options as unknown as GridOptions<PivotDisplayRow>;
@@ -285,6 +288,13 @@ describe('ExPivot\'s report', () => {
         expect(grid.current.pinnedColumnCount).toBe(1);
         expect(grid.current.hideColumnMenu).toBe(true);
         expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
+    });
+
+    it('ADR-0240 section 6: the report\'s grid is made standing in the pivot\'s box, so it hears the pivot\'s parts in its order', async () => {
+        const { root, grid } = mount({ source: local(), layout: byRegion });
+        await settled();
+        // The real grid reads its Input Root once, as it is made: made on a detached element it would hear only itself.
+        expect(grid.inputRoot).toBe(root);
     });
 
     it('ADR-0059: the column Items stand as Header Groups over the value columns, never over the labels', async () => {

@@ -37,9 +37,25 @@ internal sealed class ScriptBridge(ExPivot pivot)
     [JSInvokable]
     public Task Cancel(long call) => Calls.InOrder(() => pivot.Cancel(call));
 
+    [JSInvokable]
+    public Task MountSlot(long id, int version, string name, string context) => Calls.InOrder(() => pivot.MountSlot(id, version, name, context));
+
+    [JSInvokable]
+    public Task UpdateSlot(long id, int version, string context) => Calls.InOrder(() => pivot.UpdateSlot(id, version, context));
+
+    [JSInvokable]
+    public Task UnmountSlot(long id) => Calls.InOrder(() => pivot.UnmountSlot(id));
+
+    // A held call that answers nothing, made.
+    private static object? Done(Action call)
+    {
+        call();
+        return null;
+    }
+
     /// <summary>A call the browser held, too large for a message of its own: <paramref name="method"/>, with the
     /// arguments taken from the browser by <paramref name="crossed"/>'s number, made in its turn. Only a call that can
-    /// carry what the user or the Consumer made, an event or a query over a layout's items, is held.</summary>
+    /// carry what the user or the Consumer made, an event, a query over a layout's items or a slot's view, is held.</summary>
     [JSInvokable]
     public Task<object?> Held(string method, JsonElement crossed) => Calls.Held(crossed, async arguments =>
     {
@@ -52,6 +68,8 @@ internal sealed class ScriptBridge(ExPivot pivot)
             nameof(Items) => await pivot.AskAsync("items", At(0).GetInt32(), At(1).GetInt64(), Text(2)),
             nameof(Details) => await pivot.AskAsync("details", At(0).GetInt32(), At(1).GetInt64(), Text(2)),
             nameof(ItemCounts) => await pivot.AskAsync("itemCounts", At(0).GetInt32(), At(1).GetInt64(), At(2).GetString()),
+            nameof(MountSlot) => Done(() => pivot.MountSlot(At(0).GetInt64(), At(1).GetInt32(), Text(2), Text(3))),
+            nameof(UpdateSlot) => Done(() => pivot.UpdateSlot(At(0).GetInt64(), At(1).GetInt32(), Text(2))),
             _ => throw new InvalidOperationException($"Internal: the browser held a call to {method}, which carries nothing that large."),
         };
     });

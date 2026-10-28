@@ -8,9 +8,9 @@ import {
     createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridErrorStepRequest, type GridFindResult,
     type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
-import { awaitPointingScope, crossingCalls, HeldMessages } from '@ex-grid/blazor-shared';
+import { awaitPointingScope, crossingCalls, HeldMessages, isGridRazorSlotName, type GridRazorSlotName } from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
-import { RazorSlots, isRazorSlotName, type RazorSlotName } from './razor-slots';
+import { RazorSlots } from './razor-slots';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
 import { WriteGate } from './write-gate';
 
@@ -37,7 +37,7 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     /** Whether the Consumer answers the error step, F8 and Shift+F8, which .NET is asked as it is taken (ADR-0381). */
     readonly findsErrors?: true;
     /** The Chrome slots the Consumer's Chrome fills with Razor, which .NET renders as each is mounted (ADR-0410). */
-    readonly razorSlots?: readonly RazorSlotName[];
+    readonly razorSlots?: readonly GridRazorSlotName[];
     /** The Pointing Scope's declaration the grid took as it was made, which it joins in the page (ADR-0430). */
     readonly pointedAt?: WirePointedAt;
 }
@@ -394,7 +394,7 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
     const hears = new Set(wire.hears);
     const razorSlots = wire.razorSlots;
     for (const name of razorSlots === undefined ? [] : razorSlots) {
-        if (!isRazorSlotName(name)) throw new TypeError(`Internal: .NET named '${String(name)}' as a slot its Chrome fills.`);
+        if (!isGridRazorSlotName(name)) throw new TypeError(`Internal: .NET named '${String(name)}' as a slot its Chrome fills.`);
     }
     const temporal: unknown = Reflect.get(globalThis, 'Temporal');
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));

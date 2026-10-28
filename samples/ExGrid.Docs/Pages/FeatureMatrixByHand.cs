@@ -74,5 +74,6 @@ internal static class FeatureMatrixByHand
         new("IPivotChrome.DetailsDialog", "Show Details' dialog", ["ADR-0059"]),
         new("IPivotChrome.StaleReport", "The Stale Report's notice", ["ADR-0067"]),
         new("IPivotChrome.Stylesheets", "The notice that the page holds another version of the Wrapper's stylesheet", ["ADR-0123"]),
+        new("IPivotChrome.ScriptSlots", "The parts the Wrapper draws when the TypeScript core draws the pivot", ["ADR-0410"]),
     ];
 }

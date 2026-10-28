@@ -7,7 +7,9 @@ using System.Text.Json;
 using ExGrid;
 using ExGrid.Chrome;
 using ExGrid.Selection;
+using ExGrid.Script;
 using ExGrid.Summarizing;
+using ExPivot.Chrome;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -132,6 +134,24 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     /// yield, how often a clock is read) and cannot reach the browser, so one that sets any of it is refused by name.</summary>
     [Parameter] public PivotSlicing? Slicing { get; set; }
 
+    /// <summary>
+    /// The Chrome that fills the Script Core's slots with Razor (ADR-0410): each of the pivot's slots its
+    /// <see cref="IPivotChrome.ScriptSlots"/> names is drawn by its view overload, and each of the report grid's slots
+    /// its grid Chrome's (<see cref="IPivotChrome.GridChrome"/>) <c>ScriptSlots</c> names, rendered beside the pivot's
+    /// root and moved into the slot by the script, which wires their controls in the browser. Null, the default, leaves
+    /// every part the Script Core's own. Which slots are filled is read as the pivot attaches; another Chrome naming
+    /// the same slots draws them from then on.
+    /// </summary>
+    [Parameter] public IPivotChrome? Chrome { get; set; }
+
+    // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1).
+    private readonly RazorSlotHolders _slots = new(PivotRazorSlot.ViewOf);
+    // The Chrome the slots are drawn by, and the report grid's Chrome it answered, asked once per Chrome.
+    private IPivotChrome? _renderedChrome;
+    private IGridChrome? _gridChrome;
+    // The slots the pivot attached with: another Chrome must name the same.
+    private (PivotScriptSlots Pivot, ScriptSlots Grid)? _attachedSlots;
+
     // The Slicing the pivot attached with, as the parameter was first set, and as it was last set.
     private bool _slicingRead;
     private PivotSlicing? _attachedSlicing;
@@ -200,6 +220,21 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
                 "ExPivot's Slicing is read once, when the pivot attaches, as the Script Core reads it (ADR-0370 section 1): make a new ExPivot for another.");
         }
         _slicingGiven = Slicing;
+        if (!ReferenceEquals(Chrome, _renderedChrome))
+        {
+            var gridChrome = Chrome?.GridChrome(id => Label?.Invoke(id));
+            var slots = SlotsOf(Chrome, gridChrome);
+            if (_attachedSlots is { } attached && attached != slots)
+            {
+                throw new NotSupportedException(
+                    "ExPivot's Chrome fills the slots it named as the pivot attached (ADR-0410): a Chrome naming other slots needs a new ExPivot.");
+            }
+            // Another Chrome draws the slots standing, and the script wires what it drew.
+            _renderedChrome = Chrome;
+            _gridChrome = gridChrome;
+            _slots.Redrawn();
+            _renderOwed |= _slots.Any;
+        }
         if (!ReferenceEquals(Source, _source))
         {
             // Checked before anything moves: a source this adapter cannot carry leaves the pivot on the one it had.
@@ -257,13 +292,17 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
+        _slots.Render(builder, 6, (name, view) => PivotRazorSlot.Fragment(_renderedChrome, _gridChrome, name, view));
     }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
+        {
+            await ReportSlotsAsync();
             return;
+        }
         // The script this build was made with, by an address that changes with its content (ADR-0123), and refused
         // when the browser holds another version's: nothing is attached, and the root says so.
         var address = "./" + AddressOf(Assets, ScriptPath, ScriptCoreAsset.Version);
@@ -352,6 +391,8 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         _pivot = pivot;
         _attached = true;
         Calls.Attached(pivot);
+        // A slot the pivot mounted as it attached may have been drawn already, before there was a pivot to hand it to.
+        await ReportSlotsAsync();
         await SendUpdateAsync();
         if (_noticeOwed is var (generation, notice))
         {
@@ -425,8 +466,32 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         json.WriteRawValue(words);
         // Across a circuit, Blazor Server's, a call larger than its hub takes would close it: the browser holds one.
         json.WriteBoolean("circuit", !OperatingSystem.IsBrowser());
+        // The slots the Chrome fills with Razor, for the pivot's life (ADR-0410).
+        var (pivotSlots, gridSlots) = SlotsOf(_renderedChrome, _gridChrome);
+        _attachedSlots = (pivotSlots, gridSlots);
+        if (pivotSlots == PivotScriptSlots.None && gridSlots == ScriptSlots.None)
+        {
+            json.WriteNull("razorSlots");
+        }
+        else
+        {
+            json.WriteStartObject("razorSlots");
+            json.WriteStartArray("pivot");
+            foreach (var name in PivotRazorSlot.NamesOf(pivotSlots))
+                json.WriteStringValue(name);
+            json.WriteEndArray();
+            json.WriteStartArray("grid");
+            foreach (var name in RazorSlot.NamesOf(gridSlots))
+                json.WriteStringValue(name);
+            json.WriteEndArray();
+            json.WriteEndObject();
+        }
         json.WriteEndObject();
     });
+
+    // The slots a Chrome fills with Razor: the pivot's, and its grid Chrome's.
+    private static (PivotScriptSlots Pivot, ScriptSlots Grid) SlotsOf(IPivotChrome? chrome, IGridChrome? gridChrome)
+        => (chrome?.ScriptSlots ?? PivotScriptSlots.None, gridChrome?.ScriptSlots ?? ScriptSlots.None);
 
     // Each word the Consumer gives, asked here, since a .NET function cannot cross (ADR-0370 section 10); null keeps
     // the English.
@@ -697,6 +762,40 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             _asked.TryRemove(call, out _);
         }
     }
+
+    /// <summary>The script mounted slot <paramref name="id"/> for the Chrome, with its context as data (ADR-0410).</summary>
+    internal void MountSlot(long id, int version, string name, string context)
+    {
+        if (_disposed)
+            return;
+        _slots.Mount(id, version, name, context);
+        RenderSlots();
+    }
+
+    /// <summary>The slot <paramref name="id"/> was mounted again in place, or its context changed.</summary>
+    internal void UpdateSlot(long id, int version, string context)
+    {
+        if (_disposed || !_slots.Update(id, version, context))
+            return;
+        RenderSlots();
+    }
+
+    /// <summary>The pivot took the slot <paramref name="id"/> away; the script has moved its contents back.</summary>
+    internal void UnmountSlot(long id)
+    {
+        if (_disposed || !_slots.Unmount(id))
+            return;
+        RenderSlots();
+    }
+
+    private void RenderSlots()
+    {
+        _renderOwed = true;
+        StateHasChanged();
+    }
+
+    // Each slot drawn again is handed to the script, which moves it in, or wires it for the context it now holds.
+    private Task ReportSlotsAsync() => _slots.ReportAsync(_pivot, () => _disposed);
 
     internal async Task RefreshAsync(int generation)
     {
