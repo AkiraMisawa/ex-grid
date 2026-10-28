@@ -4,9 +4,9 @@
 |---|---|---|
 | ExGrid | 94% | 87.7% |
 | ExSheet | 94.9% | 87.4% |
-| ExPivot | 92.7% | 85% |
+| ExPivot | 92.8% | 85.1% |
 | ExChart | 90% | 85% |
-| ExBoard | 90.2% | 83.9% |
+| ExBoard | 87.6% | 80.6% |
 | Data | 94.5% | 89.9% |
 
 # Summary
@@ -14,29 +14,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 07:59:15 |
+| Generated on: | 10/28/2026 - 08:35:04 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1275 |
-| Files: | 642 |
-| **Line coverage:** | 93.5% (89129 of 95226) |
-| Covered lines: | 89129 |
-| Uncovered lines: | 6097 |
-| Coverable lines: | 95226 |
-| Total lines: | 150170 |
-| **Branch coverage:** | 86.9% (52720 of 60616) |
-| Covered branches: | 52720 |
-| Total branches: | 60616 |
+| Classes: | 1278 |
+| Files: | 643 |
+| **Line coverage:** | 93.4% (89380 of 95613) |
+| Covered lines: | 89380 |
+| Uncovered lines: | 6233 |
+| Coverable lines: | 95613 |
+| Total lines: | 150465 |
+| **Branch coverage:** | 86.8% (52795 of 60772) |
+| Covered branches: | 52795 |
+| Total branches: | 60772 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 90.2%</summary>
+<details><summary>ExBoard - 87.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**90.2%**|**83.9%**|
+|**ExBoard**|**87.6%**|**80.6%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|100%|
@@ -74,16 +74,18 @@
 |ExBoard.LinkCondition|90.3%|77.7%|
 |ExBoard.LinkCondition.TupleComparer|86.3%|72.7%|
 |ExBoard.Narrowing|82.1%|65.9%|
-|ExBoard.Script.ExBoard|82.9%|77.2%|
-|ExBoard.Script.ExBoard<T>|82.9%|77.2%|
-|ExBoard.Script.ScriptBridge|88.4%|50%|
-|ExBoard.Script.SourceCrossing|95%|72.7%|
+|ExBoard.Script.ExBoard|77.1%|68.3%|
+|ExBoard.Script.ExBoard.HeldPivot|100%||
+|ExBoard.Script.ExBoard<T>|77.1%|68.3%|
+|ExBoard.Script.ScriptBridge|71.7%|33.3%|
+|ExBoard.Script.SourceCrossing|96.2%|77.2%|
 |ExBoard.Script.SourceCrossing.Held|100%||
 |ExBoard.Script.SourceCrossing.HeldKey|100%|50%|
 |ExBoard.Script.SourcePage|100%||
 |ExGrid.Script.CrossedText|52%|38.8%|
-|ExGrid.Script.HeldCalls|77.5%|71.4%|
-|ExGrid.Script.HeldCalls<T>|77.5%|71.4%|
+|ExGrid.Script.HeldCalls|83.1%|71.4%|
+|ExGrid.Script.HeldCalls<T>|83.1%|71.4%|
+|ExGrid.Script.PivotSourceCrossing|59.3%|35.2%|
 |ExGrid.Script.SnapshotCrossing|94.8%|81.2%|
 |ExGrid.Script.SnapshotNaming|100%|100%|
 
@@ -92,7 +94,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84%**|**75.8%**|
+|**ExChart**|**84%**|**75.9%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -131,7 +133,7 @@
 |ExChart.RowSeries|100%||
 |ExChart.Script.ChartWire|80.7%|75.1%|
 |ExChart.Script.DrawingState|100%||
-|ExChart.Script.ExChart|86.9%|86.3%|
+|ExChart.Script.ExChart|86.9%|87.1%|
 |ExChart.Script.ExSurface|78.3%|61.1%|
 |ExChart.Script.RowKeys|77.5%|71.6%|
 |ExChart.Script.ScriptBridge|100%||
@@ -685,7 +687,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -840,14 +842,15 @@
 |ExGrid.MudBlazor.ScriptSlotMarkup|100%|100%|
 
 </details>
-<details><summary>ExPivot - 86.9%</summary>
+<details><summary>ExPivot - 87%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**86.9%**|**78.5%**|
+|**ExPivot**|**87%**|**78.7%**|
 |ExGrid.Script.CrossedText|52%|38.8%|
 |ExGrid.Script.HeldCalls|71.9%|71.4%|
 |ExGrid.Script.HeldCalls<T>|71.9%|71.4%|
+|ExGrid.Script.PivotSourceCrossing|56.2%|32.3%|
 |ExPivot.Chrome.IPivotChrome|41.6%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
@@ -903,7 +906,7 @@
 |ExPivot.PivotCommandIds|95%|93.3%|
 |ExPivot.PivotDetailItem|100%||
 |ExPivot.PivotDetails|100%||
-|ExPivot.Script.ExPivot|52.8%|38.4%|
+|ExPivot.Script.ExPivot|52.9%|40.9%|
 |ExPivot.Script.ScriptBridge|50%|21.4%|
 
 </details>
