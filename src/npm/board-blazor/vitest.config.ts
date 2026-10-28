@@ -11,6 +11,7 @@ export default defineConfig({
             '@ex-grid/blazor-shared': at('../blazor/src/shared.ts'),
             '@ex-grid/board': at('../board/src/index.ts'),
             '@ex-grid/chart': at('../chart/src/index.ts'),
+            '@ex-grid/chart-blazor': at('../chart-blazor/src/razor-slots.ts'),
             '@ex-grid/core': at('../core/src/index.ts'),
             '@ex-grid/data': at('../data/src/index.ts'),
             '@ex-grid/pivot': at('../pivot/src/index.ts'),

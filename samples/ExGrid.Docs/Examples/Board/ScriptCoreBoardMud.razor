@@ -1,13 +1,15 @@
 @using ExBoard
+@using ExChart.MudBlazor
 @using ExGrid.Data
 @using ExPivot.MudBlazor
 
 @* The same Board drawn by ExBoard's Script Core, dressed by the MudBlazor Wrappers' Chromes: MudGridChrome draws the
    grids' and the pivots' report grids' menus, filter and find panels and loading bar with MudBlazor's components inside
-   the views the browser draws, and MudPivotChrome the pivots' toolbar, menus and panels. The charts are the Script
-   Core's own for now. *@
+   the views the browser draws, MudPivotChrome the pivots' toolbar, menus and panels, and MudChartChrome the charts'
+   toolbar and context menu. *@
 <MudExGridPaper Elevation="0" Outlined="true">
-    <ExBoard.Script.ExBoard Board="Board" Data="Data" Width="900" Chrome="_chrome" PivotChrome="MudPivotChrome.Default" OnOutput="Raised" Diff="_laid"
+    <ExBoard.Script.ExBoard Board="Board" Data="Data" Width="900" Chrome="_chrome" PivotChrome="MudPivotChrome.Default"
+                            ChartChrome="MudChartChrome.Default" OnOutput="Raised" Diff="_laid"
                             OnDiff="Changed" />
 </MudExGridPaper>
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="my-2">

@@ -284,14 +284,14 @@ const output = bound.confirm('chosen');                         // the values ch
             bundled into the package, at an address that changes with its content.
         </p>
         <p>
-            It takes <code>Chrome</code> and <code>PivotChrome</code> as the Board above does: the grid Chrome dresses the
-            grids and the pivots' report grids, the pivot Chrome the pivots, and its grid Chrome the report grids where no
-            <code>Chrome</code> is given. Each part a Chrome names in its <code>ScriptSlots</code> is drawn by its Razor
-            inside the view the browser draws, as on <code>ExGrid.Script.ExGrid</code> and
-            <code>ExPivot.Script.ExPivot</code>, so the MudBlazor switch below dresses the same Board with
-            <code>MudGridChrome</code> and <code>MudPivotChrome</code>. Which parts are filled is read as the Board
-            attaches: Chromes naming other slots need a new ExBoard. The charts' Chrome is not carried yet; use the Board
-            above for a chart dressed by <code>ChartChrome</code> until it arrives.
+            It takes <code>Chrome</code>, <code>PivotChrome</code> and <code>ChartChrome</code> as the Board above does:
+            the grid Chrome dresses the grids and the pivots' report grids, the pivot Chrome the pivots, its grid Chrome
+            the report grids where no <code>Chrome</code> is given, and the chart Chrome the charts. Each part a Chrome
+            names in its <code>ScriptSlots</code> is drawn by its Razor inside the view the browser draws, as on
+            <code>ExGrid.Script.ExGrid</code>, <code>ExPivot.Script.ExPivot</code> and <code>ExChart.Script.ExChart</code>,
+            so the MudBlazor switch below dresses the same Board with <code>MudGridChrome</code>,
+            <code>MudPivotChrome</code> and <code>MudChartChrome</code>. Which parts are filled is read as the Board
+            attaches: Chromes naming other slots need a new ExBoard.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreBoard)" Mud="typeof(ScriptCoreBoardMud)" Files="@(["Examples/Board/DeskBoard.cs"])" />
         <p>
