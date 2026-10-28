@@ -85,6 +85,9 @@ export interface WireAttach {
     /** How many of the Consumer's documents .NET has sent, this one included. */
     readonly documentsSent: number;
     readonly words: WireWords;
+    /** Whether .NET is across a circuit, Blazor Server's, whose hub limits the size of a message: only then is a
+     * message larger than {@link inlineBytes} held. WebAssembly's .NET takes any message as it is. */
+    readonly circuit: boolean;
 }
 
 /** What `update` is handed: the parameters again, whole; a document of the Consumer's own making, if it handed one
@@ -158,36 +161,100 @@ export interface WireDocuments {
     readonly sheet: string | null;
 }
 
+/** An answer as it crosses to .NET: itself, or held (`WireHeld`) when it is too large for a message of its own. */
+export type Crossing<T> = T | WireHeld;
+
 /** What the component asks of the Sheet it attached. */
 export interface BlazorSheet {
     /** Takes a {@link WireUpdate}, as the JSON text .NET wrote. */
     update(json: string): void;
-    undo(): WireAnswer;
-    redo(): WireAnswer;
-    openFormatCells(): WireAnswer;
+    undo(): Crossing<WireAnswer>;
+    redo(): Crossing<WireAnswer>;
+    openFormatCells(): Crossing<WireAnswer>;
     /** Does an edit .NET's `SheetWire` wrote, on the Sheet named, or with none named while the Workbook holds one. */
-    do(sheet: string | null, edit: string): WireAnswer<null>;
+    do(sheet: string | null, edit: string): Crossing<WireAnswer<null>>;
     /** Sets a change .NET's `SheetWire` wrote on the Selection as the grid holds it; false when nothing is selected. */
-    setCellFormat(change: string): WireAnswer;
+    setCellFormat(change: string): Crossing<WireAnswer>;
     /** A cell's Cell Format as it shows, as `writeCellFormat` writes it. */
-    cellFormatAt(sheet: string | null, address: string): WireAnswer<string>;
+    cellFormatAt(sheet: string | null, address: string): Crossing<WireAnswer<string>>;
     /** The Linked Tables declared, in the order they were declared. */
-    linkedTables(): WireLinkedTable[];
-    declareLinkedTable(name: string, columns: readonly string[], key: readonly string[]): WireAnswer<null>;
+    linkedTables(): Crossing<WireLinkedTable[]>;
+    declareLinkedTable(name: string, columns: readonly string[], key: readonly string[]): Crossing<WireAnswer<null>>;
     /** Pushes a snapshot .NET's `SheetWire` wrote. */
-    pushLinkedTable(name: string, rows: string): WireAnswer<null>;
+    pushLinkedTable(name: string, rows: string): Crossing<WireAnswer<null>>;
     /**
      * Opens a file at this call's place in the Input Order (ADR-0330 §10): in its turn the Sheet asks .NET to read the
      * opening numbered `id`, and an Escape that cancels it tells .NET so.
      */
-    open(id: number): Promise<WireAnswer>;
+    open(id: number): Promise<Crossing<WireAnswer>>;
     /** Saves at this call's place in the Input Order (ADR-0330 §10): in its turn the Sheet hands .NET the Workbook as a
      * {@link WireSaved}, for the write of the save numbered `id`. */
-    save(id: number): Promise<WireAnswer<null>>;
+    save(id: number): Promise<Crossing<WireAnswer<null>>>;
     /** The Workbook as it stands, as documents. */
-    documents(): WireDocuments;
+    documents(): Crossing<WireDocuments>;
+    /** A message held for .NET (`WireHeld`), as the stream .NET reads it from: gzip-compressed where the browser can
+     * compress, and as it is where it cannot. Taken once. */
+    take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the Sheet and empties its element. */
     dispose(): void;
+}
+
+/**
+ * The most a message to .NET carries in itself, in UTF-8 bytes. Blazor Server closes the circuit on a message larger
+ * than its hub takes, 32 KB unless the application raises it, so a message larger than this, a Workbook's document or
+ * a selection of many ranges, is held here and .NET takes it as a stream, as the grid's paste crosses (ADR-0005, as
+ * amended 2026-10-20).
+ */
+export const inlineBytes = 16 * 1024;
+
+/** What .NET is handed in place of a message larger than {@link inlineBytes}: the number it takes the message by,
+ * with `take`, and the message's JSON's length in UTF-8 bytes. */
+export interface WireHeld {
+    readonly held: number;
+    readonly bytes: number;
+}
+
+// The messages held for .NET until it takes them, by number: none, where no circuit limits a message.
+class Held {
+    #last = 0;
+    readonly #messages = new Map<number, Uint8Array<ArrayBuffer>>();
+    readonly #circuit: boolean;
+
+    constructor(circuit: boolean) {
+        this.#circuit = circuit;
+    }
+
+    /** The message as it crosses: held, or nothing when it fits in a message of its own. */
+    crossing(value: unknown): WireHeld | undefined {
+        if (!this.#circuit) return undefined;
+        const json = JSON.stringify(value);
+        // A UTF-16 unit is at most three bytes of UTF-8: most messages are found small without encoding them.
+        if (json.length * 3 <= inlineBytes) return undefined;
+        const bytes = new TextEncoder().encode(json);
+        if (bytes.byteLength <= inlineBytes) return undefined;
+        this.#last += 1;
+        this.#messages.set(this.#last, bytes);
+        return { held: this.#last, bytes: bytes.byteLength };
+    }
+
+    take(held: number): Promise<Uint8Array<ArrayBuffer>> {
+        const bytes = this.#messages.get(held);
+        if (bytes === undefined) throw new Error(`Internal: .NET took the message ${String(held)}, which the bridge does not hold.`);
+        this.#messages.delete(held);
+        return packed(bytes);
+    }
+
+    clear(): void {
+        this.#messages.clear();
+    }
+}
+
+// Compressed where the browser can, since a stream crosses a circuit at about one chunk per round trip; .NET tells
+// the two apart by gzip's first two bytes, which no UTF-8 text begins with.
+async function packed(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+    if (typeof CompressionStream !== 'function') return bytes;
+    const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 /** What the bridge calls in .NET. */
@@ -202,10 +269,17 @@ export interface DotNetHandle {
 export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): BlazorSheet {
     const init = parsed<WireAttach>(json);
     let stopped = false;
-    // Once the Sheet is stopped .NET has let go of the bridge, and nothing more crosses.
+    const held = new Held(init.circuit);
+    // Once the Sheet is stopped .NET has let go of the bridge, and nothing more crosses. An event too large for a
+    // message of its own is held, and .NET takes it in its turn.
     const send = (kind: HeardKind | 'editingChanged', payload: unknown): void => {
-        if (!stopped) void dotnet.invokeMethodAsync('Heard', kind, payload);
+        if (stopped) return;
+        const crossing = held.crossing(payload);
+        if (crossing === undefined) void dotnet.invokeMethodAsync('Heard', kind, payload);
+        else void dotnet.invokeMethodAsync('HeardHeld', kind, crossing);
     };
+    // A command's answer as it crosses: itself, or held when it is too large for a message of its own.
+    const answer = <T>(value: T): T | WireHeld => held.crossing(value) ?? value;
     // The document the Sheet is handed on every update: the Consumer's, read once, or the one the Sheet raised last,
     // the same object, so handing it back opens nothing.
     let document = init.document === null ? undefined : WorkbookDocument.fromJson(init.document);
@@ -232,39 +306,41 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): B
             document = nextDocument;
             words = nextWords;
         },
-        undo: () => answered(() => made.undo()),
-        redo: () => answered(() => made.redo()),
-        openFormatCells: () => answered(() => made.openFormatCells()),
-        do: (sheet: string | null, edit: string) => answered(() => {
+        undo: () => answer(answered(() => made.undo())),
+        redo: () => answer(answered(() => made.redo())),
+        openFormatCells: () => answer(answered(() => made.openFormatCells())),
+        do: (sheet: string | null, edit: string) => answer(answered(() => {
             const read = readSheetEdit(edit);
             if (sheet === null) made.do(read);
             else made.do(sheet, read);
             return null;
-        }),
-        setCellFormat: (change: string) => answered(() => made.setCellFormat(readCellFormatChange(change))),
-        cellFormatAt: (sheet: string | null, address: string) => answered(() => {
+        })),
+        setCellFormat: (change: string) => answer(answered(() => made.setCellFormat(readCellFormatChange(change)))),
+        cellFormatAt: (sheet: string | null, address: string) => answer(answered(() => {
             const at = CellAddress.parse(address);
             return writeCellFormat(sheet === null ? made.cellFormatAt(at) : made.cellFormatAt(sheet, at));
-        }),
-        linkedTables: () => made.workbook.linkedTables.map(table => ({
-            name: table.name, columns: table.columns, keyColumns: table.keyColumns, isWaiting: table.isWaiting, rowCount: table.rowCount,
         })),
-        declareLinkedTable: (name: string, columns: readonly string[], key: readonly string[]) => answered(() => {
+        linkedTables: () => answer(made.workbook.linkedTables.map(table => ({
+            name: table.name, columns: table.columns, keyColumns: table.keyColumns, isWaiting: table.isWaiting, rowCount: table.rowCount,
+        }))),
+        declareLinkedTable: (name: string, columns: readonly string[], key: readonly string[]) => answer(answered(() => {
             made.declareLinkedTable(name, columns, key);
             return null;
-        }),
-        pushLinkedTable: (name: string, rows: string) => answered(() => {
+        })),
+        pushLinkedTable: (name: string, rows: string) => answer(answered(() => {
             made.pushLinkedTable(name, readLinkedRows(rows));
             return null;
-        }),
-        open: (id: number) => answeredLater(() => made.open(signal => readInDotNet(dotnet, id, signal, () => stopped))),
-        save: (id: number) => answeredLater(async () => {
-            await made.save(workbook => writeInDotNet(dotnet, id, workbook));
+        })),
+        open: async (id: number) => answer(await answeredLater(() => made.open(signal => readInDotNet(dotnet, id, signal, () => stopped)))),
+        save: async (id: number) => answer(await answeredLater(async () => {
+            await made.save(workbook => writeInDotNet(dotnet, id, workbook, held));
             return null;
-        }),
-        documents: () => ({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
+        })),
+        documents: () => answer({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
+        take: (number: number) => held.take(number),
         dispose: () => {
             stopped = true;
+            held.clear();
             made.destroy();
         },
     });
@@ -317,10 +393,10 @@ async function readInDotNet(dotnet: DotNetHandle, id: number, signal: AbortSigna
 }
 
 // The write of a save, in its turn: the Workbook read whole before anything is awaited, as it is lent for the call
-// only, and handed to .NET, which makes its own of it.
-function writeInDotNet(dotnet: DotNetHandle, id: number, workbook: Workbook): Promise<void> {
-    const saved = JSON.stringify(savedOf(workbook));
-    return dotnet.invokeMethodAsync('Write', id, saved).then(answer => {
+// only, and handed to .NET, which makes its own of it: held, when it is too large for a message of its own.
+function writeInDotNet(dotnet: DotNetHandle, id: number, workbook: Workbook, held: Held): Promise<void> {
+    const saved = savedOf(workbook);
+    return dotnet.invokeMethodAsync('Write', id, held.crossing(saved) ?? saved).then(answer => {
         const written = parsed<WireWritten>(textOf(answer));
         if ('failed' in written) throw new Error(written.failed);
     });

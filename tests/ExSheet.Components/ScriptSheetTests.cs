@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Bunit;
+using ExGrid.Components.Tests.Support;
 using ExGrid;
 using ExGrid.Chrome;
 using ExGrid.Selection;
@@ -87,6 +88,8 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(["documentChanged"], options.GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
         Assert.Equal(JsonValueKind.Null, attach.GetProperty("document").ValueKind);
         Assert.Equal(0, attach.GetProperty("documentsSent").GetInt32());
+        // Not in a browser, so across a circuit: a message too large for one is held (ADR-0005 as amended 2026-10-20).
+        Assert.True(attach.GetProperty("circuit").GetBoolean());
     }
 
     [Fact] // ADR-0048, ADR-0331: a document raised and bound back crosses no more; the Consumer's own does, and null after one opens an empty Sheet
@@ -264,7 +267,7 @@ public class ScriptSheetTests : BunitContext
             return Task.CompletedTask;
         }));
         var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
-        Assert.Equal("""{"done":true}""", await Bridge().Value.Write(id, saved));
+        Assert.Equal("""{"done":true}""", await Bridge().Value.Write(id, Parsed(saved)));
         answers.SetResult(Parsed("""{"done":null}"""));
         await saving;
 
@@ -279,10 +282,49 @@ public class ScriptSheetTests : BunitContext
         var failure = new IOException("The disk is full.");
         saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(_ => Task.FromException(failure)));
         id = Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[0]);
-        Assert.Equal("""{"failed":"The disk is full."}""", await Bridge().Value.Write(id, saved));
+        Assert.Equal("""{"failed":"The disk is full."}""", await Bridge().Value.Write(id, Parsed(saved)));
         answers.SetResult(Parsed("""{"thrown":{"kind":"invalidOperation","message":"The disk is full."}}"""));
         Assert.Same(failure, await Assert.ThrowsAsync<IOException>(() => saving));
     }
+
+    [Fact] // ADR-0005 as amended 2026-10-20: an event, an answer and a save too large for a circuit's message are taken as streams, in their turn
+    public async Task ADR0005_messages_held_in_the_browser_are_taken_as_streams_in_their_turn()
+    {
+        WorkbookDocument? raised = null;
+        var heard = new List<string>();
+        var cut = Sheet(ps => ps
+            .Add(p => p.WorkbookChanged, (WorkbookDocument document) => { heard.Add("workbook"); raised = document; })
+            .Add(p => p.EditingChanged, (bool _) => heard.Add("editing")));
+        var large = WorkbookOf(new string('x', 20_000));
+        var raisedJson = JsonSerializer.Serialize(new { workbook = large.ToDocument().ToJson(), sheet = (string?)null, documentsSent = 0 });
+        var taking = new TaskCompletionSource();
+        _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 1))
+            .SetResult(FakeJSStream.Gated(raisedJson, taking.Task));
+
+        // The held event, and one after it: the second waits for the first to be taken.
+        var first = cut.InvokeAsync(() => Bridge().Value.HeardHeld("workbookChanged", Held(1, raisedJson)));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("editingChanged", Parsed("true")));
+        Assert.Empty(heard);
+        taking.SetResult();
+        await first;
+        cut.WaitForAssertion(() => Assert.Equal(["workbook", "editing"], heard));
+        Assert.Equal(large.ToDocument().ToJson(), raised?.ToJson());
+
+        // An answer, held as the event was, and gzip-compressed.
+        var documentsJson = JsonSerializer.Serialize(new { workbook = large.ToDocument().ToJson(), sheet = (string?)null });
+        _sheet.Setup<JsonElement>("documents").SetResult(Held(2, documentsJson));
+        _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 2)).SetResult(FakeJSStream.Gzipped(documentsJson));
+        Assert.Equal(large.ToDocument().ToJson(), (await cut.InvokeAsync(() => cut.Instance.ToWorkbookDocumentAsync())).ToJson());
+
+        // A stream that is not the length declared is refused, never read as an answer.
+        _sheet.Setup<JsonElement>("linkedTables").SetResult(Held(3, "[ ]"));
+        _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 3)).SetResult(FakeJSStream.Of("[]"));
+        await Assert.ThrowsAsync<InvalidDataException>(() => cut.InvokeAsync(() => cut.Instance.LinkedTablesAsync()));
+    }
+
+    // What the browser hands .NET in place of a message too large for one: its number and length.
+    private static JsonElement Held(int held, string json)
+        => Parsed(JsonSerializer.Serialize(new { held, bytes = System.Text.Encoding.UTF8.GetByteCount(json) }));
 
     [Fact] // ADR-0048, ADR-0071: a command answers as the browser's Sheet did, and its refusal is thrown as the Razor component throws it
     public async Task ADR0048_a_refusal_in_the_browser_is_thrown_as_a_SheetRefusedException()

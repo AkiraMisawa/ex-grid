@@ -66,7 +66,7 @@ public sealed partial class ExSheet
             var sheet = await ReadyAsync();
             // The read may wait behind the user's inputs and take as long as the file does: no timeout of the
             // circuit's cuts it short.
-            var answer = await sheet.InvokeAsync<JsonElement>("open", CancellationToken.None, [id]);
+            var answer = await AskAsync(sheet, "open", CancellationToken.None, [id]);
             // Disposed meanwhile: whatever the browser answered, nothing landed that anyone will see.
             if (_disposed)
                 return false;
@@ -110,7 +110,7 @@ public sealed partial class ExSheet
         _savings[id] = saving;
         try
         {
-            var answer = await sheet.InvokeAsync<JsonElement>("save", CancellationToken.None, [id]);
+            var answer = await AskAsync(sheet, "save", CancellationToken.None, [id]);
             if (answer.TryGetProperty("thrown", out _) && saving.Failure is { } failure)
                 ExceptionDispatchInfo.Throw(failure);
             Answered(answer);
@@ -171,14 +171,17 @@ public sealed partial class ExSheet
 
     /// <summary>The write of a save, in its turn in the browser: the Workbook rebuilt from what the browser handed over,
     /// lent to the application's write.</summary>
-    internal async Task<string> WriteAsync(int id, string saved)
+    internal async Task<string> WriteAsync(int id, JsonElement saved)
     {
         if (!_savings.TryGetValue(id, out var saving))
             throw new InvalidOperationException($"Internal: the browser asked for the write of a save {id} that is not under way.");
         try
         {
+            // Taken first, when it was held; a failure to take it is the save's, thrown as it was. One handed over whole
+            // is written even when the Sheet is being disposed, as it was handed over before.
+            var root = CrossedMessage.IsHeld(saved) ? await CrossedMessage.OfAsync(await ReadyAsync(), saved) : saved;
             saving.Written = true;
-            await saving.Write(WorkbookOf(saved));
+            await saving.Write(WorkbookOf(root));
             return """{"done":true}""";
         }
         catch (Exception failed)
@@ -191,10 +194,8 @@ public sealed partial class ExSheet
     // The browser's Workbook in .NET: opened from its document, then given each Linked Table's rows, the moment NOW
     // reads, the Sheet Day, and last the seed and the count of changes the draws of RAND are made from (ADR-0180), so
     // that every Value is the one the browser shows.
-    private static global::ExSheet.Engine.Workbook WorkbookOf(string saved)
+    private static global::ExSheet.Engine.Workbook WorkbookOf(JsonElement root)
     {
-        using var document = JsonDocument.Parse(saved);
-        var root = document.RootElement;
         var workbook = global::ExSheet.Engine.Workbook.Open(WorkbookDocument.FromJson(Text(root.GetProperty("document"))));
         foreach (var table in root.GetProperty("tables").EnumerateArray())
         {

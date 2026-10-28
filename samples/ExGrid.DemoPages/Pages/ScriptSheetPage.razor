@@ -18,6 +18,8 @@
     <i>Reset</i> hands the first document back; <i>Undo</i> is a command asked from .NET, and <i>Enter 7 in A2</i> an
     edit .NET makes, which crosses as <code>SheetWire</code> writes it. <i>Save</i> and <i>Open what was saved</i> take
     their place among the Sheet's inputs, which call back into .NET for the write and the read in their turn.
+    <i>Enter a long note</i> makes the document larger than a message of the Server circuit carries, so it crosses back,
+    and to the write of a save, as a stream.
 </p>
 
 <div class="demo-toolbar">
@@ -26,6 +28,7 @@
     <button id="script-sheet-enter" disabled="@_editing" @onclick="EnterAsync">Enter 7 in A2</button>
     <button id="script-sheet-save" disabled="@_editing" @onclick="SaveAsync">Save</button>
     <button id="script-sheet-open" disabled="@(_editing || _saved is null)" @onclick="OpenAsync">Open what was saved</button>
+    <button id="script-sheet-long" disabled="@_editing" @onclick="LongNoteAsync">Enter a long note in B1</button>
 </div>
 
 <p class="demo-status">
@@ -97,6 +100,9 @@
     }
 
     private Task EnterAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("A2"), "7"));
+
+    // Larger than the 32 KB a Server circuit's message carries, so the document the Sheet raises crosses as a stream.
+    private Task LongNoteAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("B1"), new string('n', 40_000)));
 
     private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the page.");
 }

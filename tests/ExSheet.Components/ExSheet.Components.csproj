@@ -38,6 +38,8 @@
     <!-- What a coloured-text layer colours, read off what the core writes on it (ADR-0057, note of
          2026-10-01): its text is one run, coloured by highlights. -->
     <Compile Include="..\ReferenceText\ColouredText.cs" Link="ReferenceText\ColouredText.cs" />
+    <!-- The stream a held message crosses as, as the grid's paste tests stand it in. -->
+    <Compile Include="..\ExGrid.Components\Support\FakeJSStream.cs" Link="Support\FakeJSStream.cs" />
   </ItemGroup>
 
 </Project>

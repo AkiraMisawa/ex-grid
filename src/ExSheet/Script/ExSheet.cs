@@ -439,6 +439,8 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         json.WriteNumber("documentsSent", _documentsSent);
         json.WritePropertyName("words");
         json.WriteRawValue(words);
+        // Across a circuit, Blazor Server's, a message larger than its hub takes would close it: the browser holds one.
+        json.WriteBoolean("circuit", !OperatingSystem.IsBrowser());
         json.WriteEndObject();
     });
 
@@ -614,19 +616,31 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
 
     // The Sheet's events, handed to the Consumer one at a time in the order the browser raised them: a handler that
     // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do.
-    internal Task HeardAsync(string kind, JsonElement payload) => InvokeAsync(async () =>
+    internal Task HeardAsync(string kind, JsonElement payload) => InvokeAsync(() => HearAsync(Prepared(kind, payload)));
+
+    // An event too large for a message of its own, taken from the browser in its turn: the events after it wait for it.
+    internal Task HeardHeldAsync(string kind, JsonElement held) => InvokeAsync(() => HearAsync(async () =>
     {
-        // Read in the component's turn, against the parameters as they stand when the event arrives.
-        Func<Task> hand;
+        var payload = await CrossedMessage.OfAsync(await ReadyAsync(), held);
+        await Prepared(kind, payload)();
+    }));
+
+    // Read in the component's turn, against the parameters as they stand when the event arrives.
+    private Func<Task> Prepared(string kind, JsonElement payload)
+    {
         try
         {
-            hand = Prepare(kind, payload);
+            return Prepare(kind, payload);
         }
         catch (Exception ex)
         {
             // An event .NET cannot read fails the component in its turn, as a handler's exception does.
-            hand = () => Task.FromException(ex);
+            return () => Task.FromException(ex);
         }
+    }
+
+    private async Task HearAsync(Func<Task> hand)
+    {
         _heard.Enqueue(hand);
         if (_hearing)
             return;
@@ -651,7 +665,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         {
             _hearing = false;
         }
-    });
+    }
 
     private Func<Task> Prepare(string kind, JsonElement payload)
     {
@@ -832,7 +846,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     public async Task<IReadOnlyList<LinkedTable>> LinkedTablesAsync()
     {
         var sheet = await ReadyAsync();
-        var tables = await sheet.InvokeAsync<JsonElement>("linkedTables");
+        var tables = await AskAsync(sheet, "linkedTables");
         return [.. tables.EnumerateArray().Select(table =>
         {
             IReadOnlyList<string> key = Names(table.GetProperty("keyColumns"));
@@ -908,7 +922,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private async Task<JsonElement> DocumentsAsync()
     {
         var sheet = await ReadyAsync();
-        return await sheet.InvokeAsync<JsonElement>("documents");
+        return await AskAsync(sheet, "documents");
     }
 
     private async Task<bool> CommandAsync(string command) => (await AnswerAsync(command)).GetBoolean();
@@ -919,7 +933,29 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private async Task<JsonElement> AnswerAsync(string command, params object?[] args)
     {
         var sheet = await ReadyAsync();
-        return Answered(await sheet.InvokeAsync<JsonElement>(command, args));
+        return Answered(await AskAsync(sheet, command, args));
+    }
+
+    // What the browser answers: in the answer itself, or held when it is too large for a message of its own. Asked
+    // under the circuit's timeout, unless a token is given, which none cuts short.
+    private Task<JsonElement> AskAsync(IJSObjectReference sheet, string method, params object?[] args)
+        => TakenAsync(sheet, sheet.InvokeAsync<JsonElement>(method, args));
+
+    private Task<JsonElement> AskAsync(IJSObjectReference sheet, string method, CancellationToken cancel, object?[] args)
+        => TakenAsync(sheet, sheet.InvokeAsync<JsonElement>(method, cancel, args));
+
+    private async Task<JsonElement> TakenAsync(IJSObjectReference sheet, ValueTask<JsonElement> answer)
+    {
+        var crossed = await answer;
+        try
+        {
+            return await CrossedMessage.OfAsync(sheet, crossed);
+        }
+        catch (JSException) when (_disposed)
+        {
+            // Disposed between the answer and its taking: the browser let go of what it held.
+            throw new ObjectDisposedException(GetType().Name);
+        }
     }
 
     private static JsonElement Answered(JsonElement answer)

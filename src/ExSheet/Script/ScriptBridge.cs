@@ -13,6 +13,10 @@ internal sealed class ScriptBridge(ExSheet sheet)
     [JSInvokable]
     public Task Heard(string kind, JsonElement payload) => sheet.HeardAsync(kind, payload);
 
+    /// <summary>An event too large for a message of its own: its number and length, to take it by (<see cref="CrossedMessage"/>).</summary>
+    [JSInvokable]
+    public Task HeardHeld(string kind, JsonElement held) => sheet.HeardHeldAsync(kind, held);
+
     [JSInvokable]
     public Task<string> Read(int id) => sheet.ReadAsync(id);
 
@@ -20,5 +24,5 @@ internal sealed class ScriptBridge(ExSheet sheet)
     public void CancelRead(int id) => sheet.CancelRead(id);
 
     [JSInvokable]
-    public Task<string> Write(int id, string saved) => sheet.WriteAsync(id, saved);
+    public Task<string> Write(int id, JsonElement saved) => sheet.WriteAsync(id, saved);
 }
