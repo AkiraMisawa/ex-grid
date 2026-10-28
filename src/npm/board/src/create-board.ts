@@ -8,8 +8,10 @@ import { BoardRefusedError, type Snapshot } from '@ex-grid/data';
 import { createPivot, type PivotHandle, type PivotSelectionChangedEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import type { BoardDiff } from './board-diff';
 import type { BoardOutput } from './board-output';
+import type { BoardSource } from './board-source';
 import type { BoardCell, BoardReading, BoardRow } from './board-spec';
-import { bindBoard, type BoundBoard, type BoundChartView, type BoundGridView, type BoundPivotView } from './bound-board';
+import { bindBoard, bindBoardThrough, type BoundBoard, type BoundChartView, type BoundGridView, type BoundPivotView } from './bound-board';
+import { messageOf } from './must';
 import type { ShapedRow } from './shaped-grid';
 
 /** The gap between views and between rows, in CSS pixels. */
@@ -22,9 +24,16 @@ export const boardTitleHeight = 28;
 export interface BoardOptions {
     /** The Board, as {@link readBoard} reads it. A new one binds again. */
     readonly board: BoardReading;
-    /** The Snapshot each input is bound to, by the input's name. A new record binds again; the same one is not read
-     * twice. */
+    /** The Snapshot each input held in memory is bound to, by the input's name. A new record binds again; the same one
+     * is not read twice. */
     readonly data: Readonly<Record<string, Snapshot>>;
+    /**
+     * The source each input held where the data lives is bound to, by the input's name (ADR-0343): asked its shape
+     * before anything is drawn, while the Board says so, and then asked for each view's rows, points and the values
+     * under a pivot's cells, handed the narrowing the Board's links put on it ({@link bindBoardThrough}). An input
+     * named here and in `data` is refused. A new record binds again.
+     */
+    readonly sources?: Readonly<Record<string, BoardSource>> | undefined;
     /** The Board's width in CSS pixels, from which a chart's width is its share of its row (a chart is drawn at a
      * width it is told); grids and pivots stretch to their share. 1200 unless given. */
     readonly width?: number;
@@ -107,6 +116,9 @@ export class BoardDrawing {
     // Set while a binding is under way, and left set by one that threw, so the next update binds again rather than
     // keep the emptied Board.
     #binding = false;
+    // Each binding's number: a binding over sources answered after another began is dropped, never drawn over it
+    // (spine rule 6).
+    #generation = 0;
     #destroyed = false;
 
     constructor(element: HTMLElement, options: BoardOptions, mounts: BoardMounts) {
@@ -135,8 +147,8 @@ export class BoardDrawing {
         const newDiff = options.diff !== this.#handedDiff;
         this.#handedDiff = options.diff;
         const shown = () => bound !== undefined && (options.diff === undefined ? bound.diff.isEmpty : options.diff.sameAs(bound.diff));
-        if (!this.#binding && options.board === was.board && options.data === was.data && options.locale === was.locale
-            && options.temporal === was.temporal && (!newDiff || shown())) {
+        if (!this.#binding && options.board === was.board && options.data === was.data && options.sources === was.sources
+            && options.locale === was.locale && options.temporal === was.temporal && (!newDiff || shown())) {
             if (options.width !== was.width) for (const mounted of this.#mounted) mounted.redraw();
             return;
         }
@@ -154,39 +166,77 @@ export class BoardDrawing {
     }
 
     #clear(): void {
+        // A binding over sources still on its way is dropped when it comes.
+        this.#generation++;
         for (const unsubscribe of this.#unsubscribe) unsubscribe();
         this.#unsubscribe = [];
         for (const mounted of this.#mounted) mounted.destroy();
         this.#mounted = [];
         this.#element.replaceChildren();
+        // The Board shown lets go of its questions to its sources.
+        this.#bound?.dispose();
         this.#bound = undefined;
     }
 
     #bind(laid: BoardDiff | undefined): void {
         this.#clear();
         this.#binding = true;
-        const { board, data, locale = 'invariant' } = this.#options;
+        const { board, data, sources, locale = 'invariant' } = this.#options;
         const root = this.#element;
         if (board.title !== '') root.append(made('h2', 'ex-board-title', board.title));
-        const refuse = (error: BoardRefusedError) => {
-            const refusal = made('div', 'ex-board-refusal', error.path === '' ? error.message : `${error.path}: ${error.message}`);
-            refusal.setAttribute('role', 'alert');
-            root.append(refusal);
-        };
+        const options = laid === undefined ? { locale } : { locale, diff: laid };
+        if (sources !== undefined && Object.keys(sources).length > 0) {
+            // Its sources are asked their shapes before anything is drawn (ADR-0341), and the Board says so meanwhile.
+            const generation = this.#generation;
+            const asking = made('div', 'ex-board-binding', 'Asking the sources for their shapes.');
+            asking.setAttribute('role', 'status');
+            root.append(asking);
+            this.#binding = false;
+            // A Board that does not bind is drawn as its refusal, and sources that do not answer say so in its place.
+            bindBoardThrough(board, data, sources, options).then(bound => { // oxlint-disable-line ex-grid/no-catch -- the failure is said in the Board's place
+                if (generation !== this.#generation || this.#destroyed) {
+                    bound.dispose();
+                    return;
+                }
+                asking.remove();
+                this.#adopt(bound);
+            }, (error: unknown) => {
+                if (generation !== this.#generation || this.#destroyed) return;
+                asking.remove();
+                this.#refuse(error instanceof BoardRefusedError ? error
+                    : new BoardRefusedError('', `The sources did not answer: ${messageOf(error)}`, { cause: error }));
+            });
+            return;
+        }
         let bound: BoundBoard;
         try {
-            bound = bindBoard(board, data, laid === undefined ? { locale } : { locale, diff: laid });
+            bound = bindBoard(board, data, options);
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a Board that does not bind is drawn as its refusal, naming the path
             if (!(error instanceof BoardRefusedError)) throw error;
-            refuse(error);
+            this.#refuse(error);
             this.#binding = false;
             return;
         }
+        this.#adopt(bound);
+    }
+
+    #refuse(error: BoardRefusedError): void {
+        const refusal = made('div', 'ex-board-refusal', error.path === '' ? error.message : `${error.path}: ${error.message}`);
+        refusal.setAttribute('role', 'alert');
+        this.#element.append(refusal);
+    }
+
+    // Draws a bound Board's views and hears them.
+    #adopt(bound: BoundBoard): void {
+        this.#binding = true;
+        const { board } = this.#options;
+        const root = this.#element;
         // A grid the core would refuse is the Board's refusal, said before any view is drawn: a part drawn beside it
         // would look like the whole.
         const undrawable = this.#undrawable(bound);
         if (undrawable !== undefined) {
-            refuse(undrawable);
+            bound.dispose();
+            this.#refuse(undrawable);
             this.#binding = false;
             return;
         }
@@ -290,6 +340,11 @@ export class BoardDrawing {
     #grid(bound: BoundBoard, view: BoundGridView, row: BoardRow, host: HTMLElement, section: HTMLElement): Mounted {
         const id = view.view.id;
         const statuses: HTMLElement[] = [];
+        // Over a source held on a server, what a selection could not read and what the source did not answer are said
+        // under the grid (ADR-0343; spine rule 1).
+        const linkStatus = made('span', 'ex-board-link-status');
+        linkStatus.setAttribute('role', 'status');
+        const say = () => { linkStatus.textContent = statusOf(view); };
         // A gesture the view takes redraws the grid with what it now shows; one it refuses, a round trip behind a
         // hide, changes nothing (spine rule 6).
         const taken = (took: boolean) => {
@@ -312,6 +367,7 @@ export class BoardDrawing {
                 // narrowing away with it (ADR-0011).
                 bound.select(id, next);
                 for (const status of statuses) status.textContent = '';
+                say();
             },
             onColumnWidthChanged: change => { taken(view.resize(change.column, change.widthPx)); },
             onColumnOrderChanged: order => { taken(view.reorder(order)); },
@@ -319,6 +375,10 @@ export class BoardDrawing {
             onPinnedCountChanged: count => { taken(view.pin(count)); },
         });
         const grid = this.#mounts.grid(host, options());
+        if (view.fetched !== undefined) {
+            section.append(linkStatus);
+            this.#unsubscribe.push(view.fetched.subscribe(say));
+        }
         for (const output of bound.board.outputs.filter(o => o.from === id)) {
             // Never disabled: with nothing selected, a press says so (spine rule 6).
             const line = made('div', 'ex-board-confirm-row');
@@ -335,7 +395,8 @@ export class BoardDrawing {
                 // dispatches the next event, so a press reads the selection it was made against.
                 const raised = bound.confirm(output.name);
                 if (raised === undefined) {
-                    status.textContent = 'Select the rows to hand on first.';
+                    // Over a server, a selection reaching rows not fetched says so, rather than that none was made.
+                    status.textContent = view.unread === undefined ? 'Select the rows to hand on first.' : view.unread;
                     return;
                 }
                 status.textContent = '';
@@ -344,8 +405,8 @@ export class BoardDrawing {
             line.append(button, status);
             section.append(line);
         }
-        // Its source tells it of the rows a link lets through.
-        return { destroy: () => { grid.destroy(); }, redraw: () => { /* Nothing of the grid's own moves. */ } };
+        // Its source tells it of the rows a link lets through; a narrowing lets go of what was said of its selection.
+        return { destroy: () => { grid.destroy(); }, redraw: say };
     }
 
     #pivot(bound: BoundBoard, view: BoundPivotView, row: BoardRow, host: HTMLElement, section: HTMLElement): Mounted {
@@ -369,7 +430,16 @@ export class BoardDrawing {
                     if (this.#bound !== bound) return;
                     const cells = event.selection.ranges.length === 0 ? [] : event.items;
                     status.textContent = cells === undefined ? 'The selection cannot be read from the report as drawn, so it narrows nothing.' : '';
-                    bound.selectCells(id, cells);
+                    if (!view.served) {
+                        bound.selectCells(id, cells);
+                        return;
+                    }
+                    // Over a server, the source is asked for the values under the cells (ADR-0345); one that does not
+                    // answer says so here, and the views it reached are let go.
+                    bound.selectCellsThrough(id, cells).catch((error: unknown) => { // oxlint-disable-line ex-grid/no-catch -- the source's failure is said in the pivot's place
+                        if (this.#bound !== bound) return;
+                        status.textContent = `The source did not answer for the cells selected, so they narrow nothing: ${messageOf(error)}`;
+                    });
                 },
             } : {}),
             onLayoutChanged: ({ layout }) => {
@@ -377,7 +447,8 @@ export class BoardDrawing {
                 // A new layout is a new report, so what its cells narrowed is let go now, as a narrowing of it lets go
                 // (ADR-0011).
                 view.changeLayout(layout);
-                bound.selectCells(id, []);
+                // An empty selection asks no source, so it is done here and now.
+                void bound.selectCellsThrough(id, []);
                 pivot.update(options());
                 this.#changed();
             },
@@ -451,6 +522,13 @@ export class BoardDrawing {
         const { locale = 'invariant' } = this.#options;
         return locale;
     }
+}
+
+// What is said under a grid: why its selection narrows nothing, or why its source did not answer; nothing otherwise.
+function statusOf(view: BoundGridView): string {
+    if (view.unread !== undefined) return view.unread;
+    if (view.failure !== undefined) return view.failure;
+    return '';
 }
 
 function made<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
