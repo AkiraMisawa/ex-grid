@@ -1,9 +1,9 @@
 import { test, expect, circuitQuiet, settled, setRoundTrip } from './fixtures.mjs';
 
 // A Chrome written in Razor over the Script Core (ADR-0410), on /script-grid-mud, on both Blazor hosts:
-// ExGrid.MudBlazor's column menu rendered in .NET, moved into the Script Core's slot by the adapter's script, and
-// wired there. Only a browser shows the Razor standing in the slot and a key typed before it arrives; the wiring's
-// logic is layer 2's (src/npm/core/test/slot-wiring.test.ts, src/npm/blazor/test/razor-slots.test.ts).
+// ExGrid.MudBlazor's column menu, filter panel and find panel rendered in .NET, moved into the Script Core's slots by
+// the adapter's script, and wired there. Only a browser shows the Razor standing in the slot and a key typed before it
+// arrives; the wiring's logic is layer 2's (src/npm/core/test/slot-wiring.test.ts, src/npm/blazor/test/razor-slots.test.ts).
 
 test.beforeEach(async ({ page }) => {
     await page.goto('/script-grid-mud');
@@ -84,4 +84,27 @@ test('ADR-0410: the filter panel is MudBlazor\'s, and what is typed and chosen i
     await circuitQuiet();
     await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
     expect(await numbers()).toEqual(before.filter(value => value > threshold));
+});
+
+test('ADR-0410 / ADR-0055: Ctrl+F opens MudBlazor\'s find panel, and a text typed and entered at machine speed over a slow circuit is what the source finds', async ({ page }) => {
+    await settled(grid(page));
+    const books = (await grid(page).locator('.ex-row [id$="c0"]').allTextContents()).map(text => text.trim());
+    const target = books[4];
+    // The step from the first row finds the first row after it whose Book holds the text.
+    const found = books.findIndex((text, index) => index > 0 && text.includes(target));
+
+    // Typed and entered as the panel opens, while its Razor is a round trip from standing on Server: the keys wait for
+    // MudBlazor's field, which takes the keyboard, and the step is the source's, answered in .NET.
+    await setRoundTrip(150);
+    await cell(page, 0, 0).click({ force: true });
+    await page.keyboard.press('Control+f');
+    await page.keyboard.type(target);
+    await page.keyboard.press('Enter');
+    await settled(grid(page));
+    await circuitQuiet();
+    const field = grid(page).locator('.ex-popover input[data-ex-find-field="find"]');
+    await expect(field).toHaveClass(/mud-input/);
+    await expect(field).toBeFocused();
+    await expect(field).toHaveValue(target);
+    await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(new RegExp(`r${found}c0$`));
 });

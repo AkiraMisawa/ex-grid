@@ -31,8 +31,8 @@ internal sealed class RazorSlot
     /// <summary>The number the script gave the data the view was read from, which it is told back once drawn.</summary>
     internal int Version { get; private set; }
 
-    /// <summary>The view the slot's context crossed as: a <see cref="GridMenuView"/>, a <see cref="GridLoadingView"/> or a
-    /// <see cref="GridFilterView"/>.</summary>
+    /// <summary>The view the slot's context crossed as: a <see cref="GridMenuView"/>, a <see cref="GridLoadingView"/>, a
+    /// <see cref="GridFilterView"/> or a <see cref="GridFindView"/>.</summary>
     internal object View { get; private set; }
 
     /// <summary>The element the fragment is drawn in, once rendered.</summary>
@@ -48,6 +48,7 @@ internal sealed class RazorSlot
         (ScriptSlots.ContextMenu, "contextMenu"),
         (ScriptSlots.LoadingIndicator, "loadingIndicator"),
         (ScriptSlots.FilterPanel, "filterPanel"),
+        (ScriptSlots.FindPanel, "findPanel"),
     ];
 
     /// <summary>The script's names of the slots <paramref name="slots"/> names, refusing one this adapter does not fill.</summary>
@@ -92,6 +93,7 @@ internal sealed class RazorSlot
                     ScriptJson.Text(command, "id"), ScriptJson.Text(command, "label"), command.GetProperty("enabled").GetBoolean()))]),
             ScriptSlots.LoadingIndicator => new GridLoadingView(json.GetProperty("loading").GetBoolean(), json.GetProperty("placeholderRows").GetInt32()),
             ScriptSlots.FilterPanel => FilterViewOf(json),
+            ScriptSlots.FindPanel => FindViewOf(json),
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
         };
     }
@@ -143,6 +145,22 @@ internal sealed class RazorSlot
                 Word("selectAllSearchResults"), Word("and"), Word("or"), Word("none")));
     }
 
+    private static GridFindView FindViewOf(JsonElement json)
+    {
+        var words = json.GetProperty("words");
+        string Word(string name) => ScriptJson.Text(words, name);
+        return new GridFindView(
+            ScriptJson.Text(json, "text"),
+            json.GetProperty("matchCase").GetBoolean(),
+            json.GetProperty("wholeCell").GetBoolean(),
+            json.GetProperty("replaceShown").GetBoolean(),
+            ScriptJson.Text(json, "replaceText"),
+            json.GetProperty("replaceWaiting").GetBoolean(),
+            ScriptJson.Text(json, "outcome"),
+            new GridFindWords(Word("field"), Word("matchCase"), Word("wholeCell"), Word("next"), Word("previous"),
+                Word("replaceField"), Word("replace"), Word("replaceAll")));
+    }
+
     private static GridFilterConditionView ConditionOf(JsonElement json) => new(
         ScriptJson.Text(json, "operator"),
         ScriptJson.Text(json, "operand"),
@@ -160,6 +178,7 @@ internal sealed class RazorSlot
             (ScriptSlots.ContextMenu, GridMenuView menu) => chrome.ContextMenu(menu),
             (ScriptSlots.LoadingIndicator, GridLoadingView loading) => chrome.LoadingIndicator(loading),
             (ScriptSlots.FilterPanel, GridFilterView filter) => chrome.FilterPanel(filter),
+            (ScriptSlots.FindPanel, GridFindView find) => chrome.FindPanel(find),
             _ => throw new InvalidOperationException($"Internal: the slot {Name} holds a view of another slot's."),
         };
     }

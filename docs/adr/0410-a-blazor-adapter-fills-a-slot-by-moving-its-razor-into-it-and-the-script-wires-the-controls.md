@@ -121,6 +121,12 @@ each is asked for through an overload that takes a view (`ColumnMenu(GridMenuVie
 Chrome breaks before the C# core goes, and the C# contexts go with it. A slot a Chrome does not name
 stays the Script Core's own. `ScriptSlotAttributes` holds section 2's attributes, `MenuItem` first.
 
+*Note of 2026-10-28, as the find panel was built:* a product that draws a part of its own in a grid
+slot keeps it where a Wrapper forwards the Grid Chrome's slots. ExSheet's find panel is its own, with
+Within (ADR-0332 section 5), and a grid's panel drawn in its place would search the Sheet shown alone, so
+`MudSheetChrome` forwards every slot `MudGridChrome` names except `FindPanel`; a Sheet Chrome's own find
+slot over the Script Core is ExSheet's to add.
+
 ### 5. A slot's contents arrive a render later, and the grid is settled only once they stand
 
 On the Server host the contents arrive a round trip after the slot. Meanwhile the core already owes the

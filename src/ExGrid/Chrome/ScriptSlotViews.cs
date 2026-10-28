@@ -27,6 +27,10 @@ public enum ScriptSlots
     /// <summary>A column's filter panel, under the column menu's commands, through
     /// <see cref="IGridChrome.FilterPanel(GridFilterView)"/>.</summary>
     FilterPanel = 8,
+
+    /// <summary>The find panel and its Replace, inside the core's popover and form, through
+    /// <see cref="IGridChrome.FindPanel(GridFindView)"/>.</summary>
+    FindPanel = 16,
 }
 
 /// <summary>
@@ -84,6 +88,19 @@ public static class ScriptSlotAttributes
     /// first control; <c>last</c>, its last; and <c>search</c>, the search box, or the first condition's
     /// value where no value list stands. A control's element, or one holding it.</summary>
     public const string FilterFocus = "data-ex-filter-focus";
+
+    /// <summary>On the find panel's text fields, <c>find</c> or <c>replace</c>: its text is what to look for, or
+    /// what Replace writes, read in the browser as it is typed. The <c>find</c> field takes the keyboard at each
+    /// request of the core's. Draw each with the text it opens with, and no value bound after.</summary>
+    public const string FindField = "data-ex-find-field";
+
+    /// <summary>On the find panel's options, <c>matchCase</c> or <c>wholeCell</c>: a checkbox.</summary>
+    public const string FindOption = "data-ex-find-option";
+
+    /// <summary>On the find panel's buttons, <c>next</c>, <c>previous</c>, <c>replace</c> or <c>replaceAll</c>: a
+    /// press steps or writes. Enter in a field submits the core's form, which steps, backward with Shift, so no
+    /// button need be a submit button.</summary>
+    public const string FindStep = "data-ex-find-step";
 }
 
 /// <summary>One command of a menu, as the Script Core hands it (ADR-0010, ADR-0036).</summary>
@@ -202,3 +219,53 @@ public sealed record GridFilterWords(
     string And,
     string Or,
     string None);
+
+/// <summary>
+/// The find panel when the Script Core draws the grid (ADR-0055, ADR-0332, ADR-0410 section 3): data only, drawn
+/// again at each change the core makes to it. The Razor draws its controls marked with
+/// <see cref="ScriptSlotAttributes"/>' find attributes and handles none of their changes, presses or focus: the
+/// script hands each to the core in the browser. The search, the Focus it moves and the Replace are the core's.
+/// </summary>
+/// <param name="Text">What the find field opens with: the text the core held as the panel opened. What is typed after
+/// is the field's, read by the script, and not sent again; draw the field with this as it opens, and no value bound
+/// after.</param>
+/// <param name="MatchCase">Match case.</param>
+/// <param name="WholeCell">Match entire cell contents.</param>
+/// <param name="ReplaceShown">Whether the panel offers Replace (ADR-0332 section 2): while it does, draw the Replace
+/// field and the two writes.</param>
+/// <param name="ReplaceText">What the Replace field opens with: the replacement the core held as Replace was last
+/// shown, drawn as <paramref name="Text"/> is.</param>
+/// <param name="ReplaceWaiting">Whether a Replace All is out with the Consumer: show Replace and Replace All
+/// unavailable meanwhile (ADR-0332 section 3). The core does nothing for either while it is.</param>
+/// <param name="Outcome">What the last step or Replace came to, for a live region; empty when it says nothing
+/// (ADR-0033). It is a sentence the core made, in the grid's <c>commandLabel</c> words else the built-in English: a
+/// Chrome's own words for the panel's labels do not reach it.</param>
+/// <param name="Words">The panel's words.</param>
+public sealed record GridFindView(
+    string Text,
+    bool MatchCase,
+    bool WholeCell,
+    bool ReplaceShown,
+    string ReplaceText,
+    bool ReplaceWaiting,
+    string Outcome,
+    GridFindWords Words);
+
+/// <summary>The find panel's words, the Consumer's <c>commandLabel</c> else the built-in English.</summary>
+/// <param name="Field">The find field's name.</param>
+/// <param name="MatchCase">Match case.</param>
+/// <param name="WholeCell">Match entire cell contents.</param>
+/// <param name="Next">Find next.</param>
+/// <param name="Previous">Find previous.</param>
+/// <param name="ReplaceField">The Replace field's name.</param>
+/// <param name="Replace">Replace.</param>
+/// <param name="ReplaceAll">Replace All.</param>
+public sealed record GridFindWords(
+    string Field,
+    string MatchCase,
+    string WholeCell,
+    string Next,
+    string Previous,
+    string ReplaceField,
+    string Replace,
+    string ReplaceAll);

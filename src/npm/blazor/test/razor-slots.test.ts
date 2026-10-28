@@ -3,7 +3,10 @@
 // .NET renders beside the root, what crosses to .NET as each slot comes and goes, and that the grid's Settled Mark
 // is held while contents are owed. Wiring a menu's items is the core's (core/test/slot-wiring.test.ts).
 import { describe, expect, it } from 'vitest';
-import { filterPanelAttributes, type FilterPanelView, type GridColumnMenuSlotContext, type GridFilterPanelSlotContext, type GridLoadingIndicatorSlotContext } from '@ex-grid/core';
+import {
+    filterPanelAttributes, findPanelAttributes, type FilterPanelView, type FindPanelView, type GridColumnMenuSlotContext, type GridFilterPanelSlotContext,
+    type GridFindPanelSlotContext, type GridLoadingIndicatorSlotContext,
+} from '@ex-grid/core';
 import type { DotNetHandle } from '../src/dotnet-source';
 import { drawnVersionAttribute, RazorSlots } from '../src/razor-slots';
 
@@ -84,7 +87,7 @@ function made(): { readonly dotnet: FakeDotNet; readonly mark: Mark; readonly or
     return { dotnet, mark, order, slots: new RazorSlots(dotnet, mark.hold, order.order), slot };
 }
 
-const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'filterPanel' | 'loadingIndicator') => {
+const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'filterPanel' | 'findPanel' | 'loadingIndicator') => {
     const mount = slots.chrome([name])[name];
     if (mount === undefined) throw new Error(`No mount for ${name}.`);
     return mount as (slot: HTMLElement, context: unknown) => () => void;
@@ -299,5 +302,40 @@ describe('a focus request while a newer drawing is owed', () => {
         slots.rendered(1, 2, second);
         await Promise.resolve();
         expect([focused.length, order.owed]).toEqual([1, 0]);
+    });
+});
+
+describe('a find panel filled with Razor', () => {
+    it('ADR-0410 sections 2 and 3: .NET is handed the panel as data and draws it again as a step\'s outcome is said; the field takes the keyboard, and what is typed is the core\'s', () => {
+        const { dotnet, slots, slot } = made();
+        const listeners = new Set<() => void>();
+        let view: FindPanelView = { text: 'Osei', matchCase: false, wholeCell: true, replaceShown: false, replaceText: '', replaceWaiting: false, outcome: '' };
+        const typed: string[] = [];
+        const focused: HTMLElement[] = [];
+        const context: GridFindPanelSlotContext = {
+            view: () => view,
+            subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; },
+            label: id => `words for ${id}`,
+            setText: text => { typed.push(text); }, setMatchCase: () => undefined, setWholeCell: () => undefined, setReplaceText: () => undefined,
+            next: () => undefined, previous: () => undefined, replace: () => undefined, replaceAll: () => undefined, close: () => undefined,
+            focusRequest: 1, innerPopupChanged: () => undefined, takeFocus: control => { focused.push(control); },
+        };
+        mountOf(slots, 'findPanel')(slot, context);
+        // What is typed is the field's own, and asks nothing of .NET; what the step came to is drawn.
+        view = { ...view, text: 'Osei Lee' };
+        for (const listener of listeners) listener();
+        view = { ...view, outcome: 'No match' };
+        for (const listener of listeners) listener();
+        const sent = dotnet.calls.map(call => ({ method: call.method, version: call.args[1], json: JSON.parse(String(call.args.at(-1))) as Record<string, unknown> }));
+        expect(sent.map(each => [each.method, each.version, each.json['outcome']])).toEqual([['MountSlot', 1, ''], ['UpdateSlot', 2, 'No match']]);
+        expect(sent[0]?.json).toMatchObject({ text: 'Osei', wholeCell: true, replaceShown: false, words: { next: 'words for find-next', replaceAll: 'words for find-replace-all' } });
+        expect(sent[1]?.json['text']).toBe('Osei');
+        const contents = rendered(`<input ${findPanelAttributes.field}="find">`);
+        slots.rendered(1, 2, contents);
+        const field = contents.querySelector('input');
+        if (field === null) throw new Error('No field.');
+        field.value = 'Novak';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        expect([focused, typed]).toEqual([[field], ['Novak']]);
     });
 });

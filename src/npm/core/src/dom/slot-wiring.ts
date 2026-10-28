@@ -5,7 +5,7 @@
 
 import type { FilterPanelView } from '../chrome/filter-panel-model';
 import type { FilterOperator } from '../query/filter';
-import type { GridFilterPanelSlotContext, GridMenuSlotContext } from './grid-chrome';
+import type { GridFilterPanelSlotContext, GridFindPanelSlotContext, GridMenuSlotContext } from './grid-chrome';
 
 /** The attribute a menu slot's contents write on the control of each command, its index in `commands`: the control
  * {@link wireMenuItems} wires. */
@@ -165,13 +165,7 @@ export function takeFilterFocus(context: GridFilterPanelSlotContext, control: (t
  * says an earlier wiring of the same contents answered it. Answers the function that takes the wiring off again.
  */
 export function wireFilterPanel(contents: HTMLElement, context: GridFilterPanelSlotContext, drawn: () => FilterPanelView, answered = false): () => void {
-    const marked = (target: EventTarget | null, attribute: string): { readonly element: Element; readonly value: string } | undefined => {
-        if (!(target instanceof Element)) return undefined;
-        const element = target.closest(`[${attribute}]`);
-        if (element === null || !contents.contains(element)) return undefined;
-        // oxlint-disable-next-line ex-grid/no-stand-in-default -- the element was found by the attribute, so it carries one
-        return { element, value: element.getAttribute(attribute) ?? '' };
-    };
+    const marked = (target: EventTarget | null, attribute: string): Marked | undefined => markedIn(contents, target, attribute);
     const input = (event: Event): void => {
         const field = event.target;
         if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
@@ -247,6 +241,21 @@ export function wireFilterPanel(contents: HTMLElement, context: GridFilterPanelS
     };
 }
 
+/** A control found by the attribute it, or an element holding it, carries, and the attribute's value. */
+interface Marked {
+    readonly element: Element;
+    readonly value: string;
+}
+
+/** The element at or around `target`, inside `contents`, that carries `attribute`. */
+function markedIn(contents: HTMLElement, target: EventTarget | null, attribute: string): Marked | undefined {
+    if (!(target instanceof Element)) return undefined;
+    const element = target.closest(`[${attribute}]`);
+    if (element === null || !contents.contains(element)) return undefined;
+    // oxlint-disable-next-line ex-grid/no-stand-in-default -- the element was found by the attribute, so it carries one
+    return { element, value: element.getAttribute(attribute) ?? '' };
+}
+
 /** Which condition a control marked `attribute` is for. */
 function which(value: string, attribute: string): 'first' | 'second' {
     if (value === 'first' || value === 'second') return value;
@@ -258,4 +267,74 @@ function allowedOperator(value: string, allowed: readonly FilterOperator[]): Fil
     const found = allowed.find(operator => operator === value);
     if (found === undefined) throw new RangeError(`'${value}' is not an operator this column's filter offers.`);
     return found;
+}
+
+/**
+ * The attributes a find panel slot's contents write on their controls, which {@link wireFindPanel} wires (ADR-0410
+ * section 2). Each is written on the control itself or on an element holding it, as a component library places its
+ * attributes.
+ */
+export const findPanelAttributes = Object.freeze({
+    /** A text field, `find` or `replace`: its text is what to look for, or what Replace writes. The `find` field is
+     * the one each focus request puts the keyboard on. */
+    field: 'data-ex-find-field',
+    /** An option's checkbox, `matchCase` or `wholeCell`. */
+    option: 'data-ex-find-option',
+    /** A button that steps or writes, `next`, `previous`, `replace` or `replaceAll`. Enter in a field submits the
+     * core's form, which steps, so no button need be a submit button. */
+    step: 'data-ex-find-step',
+} as const);
+
+/** Answers a find panel slot's focus request: the find field takes the keyboard, its text selected where the request
+ * selects it (ADR-0055, FD-1). A find field not drawn is refused by name. */
+export function takeFindFocus(context: GridFindPanelSlotContext, field: HTMLElement | null | undefined): void {
+    if (field === null || field === undefined) throw new Error("The find panel's field is not drawn: each request of the core's puts the keyboard on it.");
+    context.takeFocus(field);
+}
+
+/**
+ * Wires the find panel a slot's contents drew in `contents` from {@link findPanelAttributes} (ADR-0410 section 2):
+ * each text typed and option ticked goes to the core at once, in the browser, and each button steps or writes. The
+ * find field takes the keyboard for the context's focus request, unless `answered` says an earlier wiring of the
+ * same contents answered it. Answers the function that takes the wiring off again.
+ */
+export function wireFindPanel(contents: HTMLElement, context: GridFindPanelSlotContext, answered = false): () => void {
+    const input = (event: Event): void => {
+        const field = event.target;
+        if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
+        const marked = markedIn(contents, field, findPanelAttributes.field);
+        if (marked === undefined) return;
+        if (marked.value === 'find') context.setText(field.value);
+        else if (marked.value === 'replace') context.setReplaceText(field.value);
+        else throw new RangeError(`A find panel's field is marked ${findPanelAttributes.field}="${marked.value}": it is find or replace.`);
+    };
+    const change = (event: Event): void => {
+        const control = event.target;
+        if (!(control instanceof HTMLInputElement)) return;
+        const marked = markedIn(contents, control, findPanelAttributes.option);
+        if (marked === undefined) return;
+        if (marked.value === 'matchCase') context.setMatchCase(control.checked);
+        else if (marked.value === 'wholeCell') context.setWholeCell(control.checked);
+        else throw new RangeError(`A find panel's option is marked ${findPanelAttributes.option}="${marked.value}": it is matchCase or wholeCell.`);
+    };
+    const click = (event: MouseEvent): void => {
+        const marked = markedIn(contents, event.target, findPanelAttributes.step);
+        if (marked === undefined) return;
+        switch (marked.value) {
+            case 'next': context.next(); break;
+            case 'previous': context.previous(); break;
+            case 'replace': context.replace(); break;
+            case 'replaceAll': context.replaceAll(); break;
+            default: throw new RangeError(`A find panel's button is marked ${findPanelAttributes.step}="${marked.value}": it is next, previous, replace or replaceAll.`);
+        }
+    };
+    contents.addEventListener('input', input);
+    contents.addEventListener('change', change);
+    contents.addEventListener('click', click);
+    if (!answered) takeFindFocus(context, contents.querySelector<HTMLElement>(`[${findPanelAttributes.field}="find"]`));
+    return () => {
+        contents.removeEventListener('input', input);
+        contents.removeEventListener('change', change);
+        contents.removeEventListener('click', click);
+    };
 }

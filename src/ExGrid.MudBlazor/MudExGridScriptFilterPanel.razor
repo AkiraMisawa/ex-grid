@@ -113,7 +113,7 @@
     }
 
     private static (string? Opens, bool Drawn) Opening(GridFilterConditionView? condition, bool drawn)
-        => condition is { TakesOperand: true } ? (drawn ? null : condition.Operand, true) : (null, false);
+        => condition is { TakesOperand: true } taking ? ScriptSlotMarkup.Opening(true, taking.Operand, drawn) : (null, false);
 
     private string Mud(string key) => MudExGridWords.Mud(Localizer, key);
 
@@ -136,10 +136,10 @@
         _ => null,
     };
 
-    private static Dictionary<string, object?> Marked(string attribute, object value) => new() { [attribute] = value };
+    private static Dictionary<string, object?> Marked(string attribute, object value) => ScriptSlotMarkup.Marked(attribute, value);
 
     private static Dictionary<string, object?> Marked(string attribute, object value, string other, object otherValue)
-        => new() { [attribute] = value, [other] = otherValue };
+        => ScriptSlotMarkup.Marked(attribute, value, other, otherValue);
 
     /// <summary>A condition's operator: a native select in MudBlazor's outline, whose choice the script reads in the
     /// browser. The second's empty option is "(none)". The first is the panel's first control.</summary>
@@ -166,13 +166,11 @@
     /// core's refusal under it. The first is what E puts the keyboard on where no value list stands.</summary>
     private RenderFragment Operand(GridFilterConditionView condition, string which, string? opens) => __builder =>
     {
-        <MudTextField T="string" @attributes="@(opens is null ? NoValue : new Dictionary<string, object> { [nameof(MudTextField<string>.Value)] = opens })"
+        <MudTextField T="string" @attributes="@ScriptSlotMarkup.ValueOnce(opens)"
                       Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                       Error="@(condition.Refusal is not null)" ErrorText="@condition.Refusal" Class="mud-ex-grid-filter-operand"
                       UserAttributes="@(which == "first"
                           ? Marked(ScriptSlotAttributes.FilterOperand, which, ScriptSlotAttributes.FilterFocus, "search")
                           : Marked(ScriptSlotAttributes.FilterOperand, which))" />
     };
-
-    private static readonly IReadOnlyDictionary<string, object> NoValue = new Dictionary<string, object>();
 }

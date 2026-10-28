@@ -284,4 +284,25 @@ public class ScriptGridAnswerTests : BunitContext
             .Add(g => g.OnFindError, (_, _) => Task.FromResult(GridFindResult.NotFound))));
         Assert.Contains("OnFindError", refused.Message);
     }
+
+    private static JsonElement FindStep(string text, int rowSequenceVersion) => Payload(
+        $$"""{"text":"{{text}}","matchCase":false,"wholeCell":false,"backward":false,"from":{"row":0,"column":0},"columns":["Book","Amount"],"rowSequenceVersion":{{rowSequenceVersion}}}""");
+
+    [Fact] // ADR-0055: Ctrl+F is answered by the source in .NET, by the browser's number, where it searches, and said of the source as it attaches
+    public async Task ADR0055_a_find_step_is_answered_by_the_source_in_dotnet()
+    {
+        var source = GridSource.From(_rows);
+        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns(new("Book", ColumnType.Text, r => r.Book))));
+        Assert.True(Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("source").GetProperty("finds").GetBoolean());
+
+        var answer = await cut.InvokeAsync(() => Bridge().Find(1, 1, FindStep("gam", source.RowSequenceVersion)));
+        Assert.Equal("""{"found":true,"row":2,"column":"Book"}""", answer);
+
+        // Under an order the source has left, the step is not run, and the browser is answered that the rows moved.
+        var version = source.RowSequenceVersion;
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Book", SortDirection.Descending)]));
+        Assert.Equal("""{"moved":true}""", await cut.InvokeAsync(() => Bridge().Find(2, 1, FindStep("gam", version))));
+    }
 }

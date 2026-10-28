@@ -269,9 +269,9 @@ public interface ISheetChrome : IGridChrome
 
     /// <summary>
     /// The find panel's contents in this Chrome's controls (ADR-0332 §5): the grid's panel, drawn from
-    /// <see cref="SheetFindContext.Find"/> as <see cref="IGridChrome.FindPanel"/> draws it, with a control for
+    /// <see cref="SheetFindContext.Find"/> as <see cref="IGridChrome.FindPanel(FindContext)"/> draws it, with a control for
     /// <see cref="SheetFindContext.Within"/> added. ExSheet always draws the Sheet's find panel itself, through
-    /// the grid's own seam; this is asked in place of <see cref="IGridChrome.FindPanel"/>, which a Sheet does not
+    /// the grid's own seam; this is asked in place of <see cref="IGridChrome.FindPanel(FindContext)"/>, which a Sheet does not
     /// ask. Null draws ExSheet's built-in panel.
     /// </summary>
     RenderFragment? SheetFindPanel(SheetFindContext context) => null;

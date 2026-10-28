@@ -584,6 +584,13 @@ export type FindOutcome = {
 export function findOutcomeText(outcome: FindOutcome, words: (id: string) => string): string;
 
 // @public
+export const findPanelAttributes: Readonly<{
+    readonly field: 'data-ex-find-field';
+    readonly option: 'data-ex-find-option';
+    readonly step: 'data-ex-find-step';
+}>;
+
+// @public
 export const findPanelLabelIds: Readonly<{
     readonly title: 'find';
     readonly field: 'find-field';
@@ -2054,6 +2061,9 @@ export const systemClock: GridClock;
 export function takeFilterFocus(context: GridFilterPanelSlotContext, control: (target: 'first' | 'last' | 'search') => HTMLElement | undefined): void;
 
 // @public
+export function takeFindFocus(context: GridFindPanelSlotContext, field: HTMLElement | null | undefined): void;
+
+// @public
 export function takeMenuFocus(context: GridMenuSlotContext, item: (index: number) => HTMLElement): void;
 
 // @public
@@ -2137,6 +2147,9 @@ export type ViewStateOperand = {
 
 // @public
 export function wireFilterPanel(contents: HTMLElement, context: GridFilterPanelSlotContext, drawn: () => FilterPanelView, answered?: boolean): () => void;
+
+// @public
+export function wireFindPanel(contents: HTMLElement, context: GridFindPanelSlotContext, answered?: boolean): () => void;
 
 // @public
 export function wireMenuItems(contents: HTMLElement, context: GridMenuSlotContext, answered?: boolean): () => void;

@@ -126,7 +126,7 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
     columns.take(init.options.columns, init.options.columnsVersion);
     const rows = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen); });
     const sourceOf = (traits: WireSourceTraits, state: WireState): DotNetSource => {
-        const made = new DotNetSource(dotnet, rows, columns, traits);
+        const made = new DotNetSource(dotnet, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal));
         made.take(state);
         return made;
     };
@@ -154,19 +154,22 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
     // Asked of the source the grid holds now, by its number. .NET sends what its source owes before it answers, and
     // answers a step asked of a source or an order it no longer holds as moved: once what a write of the user's holds
     // meanwhile is taken in, the core holds the newer one, and says the rows moved (ADR-0381, ADR-0142).
-    const findError: FindErrorOf = (request, signal) => asking(signal, async number => {
-        const askedOf = source;
-        const answer = await dotnet.invokeMethodAsync('FindError', number, askedOf.generation, request);
-        signal.throwIfAborted();
-        const found = findResultOf(answer);
-        if (found !== 'moved') return found;
-        await gate.released();
-        // A "none found" the core would read as said of the rows it shows: .NET moved without sending what moved.
-        if (source === askedOf && source.snapshot().rowSequenceVersion === request.rowSequenceVersion) {
-            throw new Error('Internal: .NET answered the error step as moved, and sent no other source or order.');
-        }
-        return { found: false };
-    });
+    // A Find step and an error step alike (ADR-0055, ADR-0381).
+    const askedFind = (method: 'Find' | 'FindError', generation: number, request: { readonly rowSequenceVersion: number }, signal: AbortSignal): Promise<GridFindResult> =>
+        asking(signal, async number => {
+            const askedOf = source;
+            const answer = await dotnet.invokeMethodAsync(method, number, generation, request);
+            signal.throwIfAborted();
+            const found = findResultOf(answer);
+            if (found !== 'moved') return found;
+            await gate.released();
+            // A "none found" the core would read as said of the rows it shows: .NET moved without sending what moved.
+            if (source === askedOf && source.snapshot().rowSequenceVersion === request.rowSequenceVersion) {
+                throw new Error(`Internal: .NET answered the ${method === 'Find' ? 'Find' : 'error'} step as moved, and sent no other source or order.`);
+            }
+            return { found: false };
+        });
+    const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
     const made: { grid?: GridHandle<BlazorRow> } = {};
     const slots = new RazorSlots(dotnet, () => {

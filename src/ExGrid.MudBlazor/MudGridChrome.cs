@@ -137,9 +137,10 @@ public sealed class MudGridChrome : IGridChrome
     }
 
     /// <summary>The slots this Chrome fills when the Script Core draws the grid (ADR-0410): the column
-    /// menu, the filter panel, the Context Menu and the loading bar so far. Every other part is the Script Core's own
-    /// there until this Wrapper fills it too.</summary>
-    public ScriptSlots ScriptSlots => ScriptSlots.ColumnMenu | ScriptSlots.ContextMenu | ScriptSlots.LoadingIndicator | ScriptSlots.FilterPanel;
+    /// menu, the filter panel, the find panel, the Context Menu and the loading bar so far. Every other part is the
+    /// Script Core's own there until this Wrapper fills it too.</summary>
+    public ScriptSlots ScriptSlots => ScriptSlots.ColumnMenu | ScriptSlots.ContextMenu | ScriptSlots.LoadingIndicator | ScriptSlots.FilterPanel
+        | ScriptSlots.FindPanel;
 
     /// <summary>The column menu when the Script Core draws the grid (ADR-0410): the same
     /// <c>MudButton</c> items, each marked for the script that wires them.</summary>
@@ -167,6 +168,20 @@ public sealed class MudGridChrome : IGridChrome
             builder.OpenComponent<MudExGridScriptFilterPanel>(0);
             builder.AddComponentParameter(1, nameof(MudExGridScriptFilterPanel.View), view);
             builder.AddComponentParameter(2, nameof(MudExGridScriptFilterPanel.Chrome), this);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The find panel when the Script Core draws the grid (ADR-0410): MudBlazor's controls, drawn
+    /// from the core's view and marked for the script, which hands each change and press to the core.</summary>
+    public RenderFragment? FindPanel(GridFindView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenComponent<MudExGridScriptFindPanel>(0);
+            builder.AddComponentParameter(1, nameof(MudExGridScriptFindPanel.View), view);
+            builder.AddComponentParameter(2, nameof(MudExGridScriptFindPanel.Chrome), this);
             builder.CloseComponent();
         };
     }

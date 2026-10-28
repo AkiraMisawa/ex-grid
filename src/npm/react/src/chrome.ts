@@ -8,7 +8,7 @@ import {
     useLayoutEffect, useRef, useState, useSyncExternalStore, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent,
     type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
-import { answerMenuKey, answerValueListKey, takeFilterFocus, takeMenuFocus } from '@ex-grid/core';
+import { answerMenuKey, answerValueListKey, takeFilterFocus, takeFindFocus, takeMenuFocus } from '@ex-grid/core';
 import type {
     CellEditorView, FilterPanelView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome,
     GridColumnMenuSlotContext, GridContextMenuSlotContext, GridEditorCompletionSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext,
@@ -226,9 +226,8 @@ export function useFindPanel(context: GridFindPanelSlotContext): FindPanelHandle
     useLayoutEffect(() => {
         if (answeredFinds.has(context)) return;
         answeredFinds.add(context);
-        const field = control.current;
-        if (field === null) throw new Error("The find panel's field is not drawn: hand useFindPanel's `field` ref to the find field.");
-        context.takeFocus(field);
+        if (control.current === null) throw new Error("The find panel's field is not drawn: hand useFindPanel's `field` ref to the find field.");
+        takeFindFocus(context, control.current);
     }, [context]);
     const [field] = useState(() => (element: HTMLElement | null): void => { control.current = element; });
     return { view, field };

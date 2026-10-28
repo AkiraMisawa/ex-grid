@@ -78,18 +78,20 @@ const credit: WireRow = { i: 2, c: ['Credit', 2500], t: [null, '2,500.00'] };
 
 const attached: BlazorGrid[] = [];
 
+const noFind = (): never => { throw new Error('No Find step is asked here.'); };
+
 function sourceOf(dotnet: FakeDotNet): DotNetSource {
     const columns = new ColumnSet();
     columns.take([book, notional], 1);
     return new DotNetSource(dotnet, new RowSet(new FakeCollector().make, () => { throw new Error('Nothing is collected here.'); }), columns,
-        { generation: 1, rowKey: false, vouchesDistinctRows: false });
+        { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false }, noFind);
 }
 
 function mount(init: Partial<WireAttach> = {}, dotnet = new FakeDotNet(), collector = new FakeCollector()): { root: HTMLElement; grid: BlazorGrid } {
     const root = document.createElement('div');
     document.body.append(root);
     const grid = attach(root, dotnet, JSON.stringify({
-        options: options(), source: { generation: 1, rowKey: false, vouchesDistinctRows: false }, state: state(1, [rates, credit]), ...init,
+        options: options(), source: { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false }, state: state(1, [rates, credit]), ...init,
     }), collector.make);
     attached.push(grid);
     return { root, grid };
@@ -211,7 +213,7 @@ describe('rows let go', () => {
         const columns = new ColumnSet();
         columns.take([book, notional], 1);
         const source = new DotNetSource(dotnet, new RowSet(new FakeCollector().make, () => { /* collected rows are not this test's */ }), columns,
-            { generation: 1, rowKey: false, vouchesDistinctRows: false });
+            { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false }, noFind);
         let asked = 0;
         dotnet.answer = method => {
             if (method !== 'Rows') return null;
@@ -314,7 +316,7 @@ describe('questions', () => {
         const columns = new ColumnSet();
         columns.take([book, notional], 1);
         const source = new DotNetSource(dotnet, new RowSet(new FakeCollector().make, () => { /* collected rows are not this test's */ }), columns,
-            { generation: 1, rowKey: false, vouchesDistinctRows: false });
+            { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false }, noFind);
         dotnet.answer = method => (method === 'Rows' ? JSON.stringify({ seq: 1, cv: 2, rows: [{ i: 1, c: ['Rates'] }] }) : null);
         const answered = source.rows({ start: 0, count: 1 }, new AbortController().signal);
         await new Promise(resolve => { setTimeout(resolve, 0); });
@@ -329,7 +331,7 @@ describe('questions', () => {
         const columns = new ColumnSet();
         columns.take([book, notional], 1);
         const source = new DotNetSource(dotnet, new RowSet(new FakeCollector().make, () => { /* collected rows are not this test's */ }), columns,
-            { generation: 1, rowKey: false, vouchesDistinctRows: false });
+            { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false }, noFind);
         dotnet.answer = method => (method === 'DistinctValues' ? JSON.stringify({ cv: 2, kind: 'gone' }) : null);
         const asked = new AbortController();
         const values = source.distinctValues('Notional', asked.signal);
@@ -371,7 +373,7 @@ describe('the grid', () => {
     it('ADR-0142: another source .NET sends replaces the one the grid reads, with its own state', async () => {
         const { root, grid } = mount();
         grid.update(JSON.stringify({
-            options: options(), source: { generation: 2, rowKey: false, vouchesDistinctRows: false }, state: state(2, [{ i: 3, c: ['FX', 10], t: [null, '10.00'] }]),
+            options: options(), source: { generation: 2, rowKey: false, vouchesDistinctRows: false, finds: false }, state: state(2, [{ i: 3, c: ['FX', 10], t: [null, '10.00'] }]),
         }));
         await Promise.resolve();
         expect(root.getAttribute('aria-rowcount')).toBe('2');
@@ -455,10 +457,10 @@ function type(text: string): void {
     }
 }
 
-function key(name: string): void {
+function key(name: string, init: KeyboardEventInit = {}): void {
     const target = document.activeElement;
     if (target === null) throw new Error('Nothing holds the keyboard.');
-    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init }));
 }
 
 const turns = async (): Promise<void> => {
@@ -638,5 +640,37 @@ describe('the error step .NET answers (ADR-0381 section 3)', () => {
         await turns();
         expect(root.querySelector('.ex-announce')?.textContent)
             .toBe('The rows moved while the next error was looked for, so the step was set aside. Press F8 again.');
+    });
+});
+
+describe('a Find step .NET\'s source answers (ADR-0055)', () => {
+    it('ADR-0055: Ctrl+F is refused where .NET\'s source does not search, and a step is asked of .NET by number where it does', async () => {
+        const refusing = new FakeDotNet();
+        const refused = mount({ options: options({ rowHeight: 24, hears: ['refused'] }) }, refusing);
+        await turns();
+        press(refused.root, 10, 5);
+        key('f', { ctrlKey: true });
+        await turns();
+        expect([refused.root.querySelector('.ex-popover-find'), refusing.calls.filter(call => call.method === 'Heard' && call.args[0] === 'refused').length]).toEqual([null, 1]);
+        refused.grid.dispose();
+
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'Find' ? '{"found":true,"row":1,"column":"Book"}' : null);
+        const { root } = mount({
+            options: options({ rowHeight: 24, hears: ['selectionChanged'] }), source: { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: true },
+        }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        key('f', { ctrlKey: true });
+        const field = root.querySelector<HTMLInputElement>('.ex-popover-find input.ex-find-field');
+        if (field === null) throw new Error('No find field.');
+        field.value = 'Credit';
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.form?.requestSubmit();
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Find').map(call => call.args)).toEqual([
+            [1, 1, { text: 'Credit', matchCase: false, wholeCell: false, backward: false, from: { row: 0, column: 0 }, columns: ['Book', 'Notional'], rowSequenceVersion: 0 }],
+        ]);
+        expect(focusHeard(dotnet)).toEqual({ row: 1, column: 0 });
     });
 });

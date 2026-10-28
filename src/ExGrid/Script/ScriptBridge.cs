@@ -25,6 +25,9 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     public Task<string?> FindError(long number, int generation, JsonElement request) => grid.FindErrorAsync(number, generation, request);
 
     [JSInvokable]
+    public Task<string?> Find(long number, int generation, JsonElement request) => grid.FindAsync(number, generation, request);
+
+    [JSInvokable]
     public void CancelAnswer(long number) => grid.CancelAnswer(number);
 
     [JSInvokable]

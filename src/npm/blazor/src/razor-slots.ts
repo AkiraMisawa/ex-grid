@@ -6,20 +6,20 @@
 // the contents of a part the keyboard reaches first stand, every input waits in its order and is taken in them.
 
 import {
-    filterPanelLabelIds, operatorLabelId, wireFilterPanel, wireMenuItems, type FilterPanelCondition, type FilterPanelView, type GridChrome,
-    type GridColumnMenuSlotContext, type GridContextMenuSlotContext, type GridFilterPanelSlotContext, type GridLoadingIndicatorSlotContext,
-    type GridMenuSlotContext,
+    filterPanelLabelIds, findPanelLabelIds, operatorLabelId, wireFilterPanel, wireFindPanel, wireMenuItems, type FilterPanelCondition,
+    type FilterPanelView, type FindPanelView, type GridChrome, type GridColumnMenuSlotContext, type GridContextMenuSlotContext, type GridFilterPanelSlotContext,
+    type GridFindPanelSlotContext, type GridLoadingIndicatorSlotContext, type GridMenuSlotContext,
 } from '@ex-grid/core';
 import type { DotNetHandle } from './dotnet-source';
 import type { BlazorRow } from './wire-rows';
 
 /** The slots a Razor Chrome fills, as the core names them. */
-export type RazorSlotName = 'columnMenu' | 'contextMenu' | 'filterPanel' | 'loadingIndicator';
+export type RazorSlotName = 'columnMenu' | 'contextMenu' | 'filterPanel' | 'findPanel' | 'loadingIndicator';
 
-const razorSlotNames: readonly RazorSlotName[] = Object.freeze(['columnMenu', 'contextMenu', 'filterPanel', 'loadingIndicator']);
+const razorSlotNames: readonly RazorSlotName[] = Object.freeze(['columnMenu', 'contextMenu', 'filterPanel', 'findPanel', 'loadingIndicator']);
 
 /** The slots whose contents take the keyboard: until the contents the core mounted stand, every input waits. */
-const keyboardSlots: ReadonlySet<RazorSlotName> = new Set(['columnMenu', 'contextMenu', 'filterPanel']);
+const keyboardSlots: ReadonlySet<RazorSlotName> = new Set(['columnMenu', 'contextMenu', 'filterPanel', 'findPanel']);
 
 /** The attribute the element a slot's contents are drawn in carries: the number of the data .NET drew them from. */
 export const drawnVersionAttribute = 'data-ex-version';
@@ -29,7 +29,8 @@ export function isRazorSlotName(name: unknown): name is RazorSlotName {
     return typeof name === 'string' && (razorSlotNames as readonly string[]).includes(name);
 }
 
-type SlotContext = GridColumnMenuSlotContext | GridContextMenuSlotContext<BlazorRow> | GridFilterPanelSlotContext | GridLoadingIndicatorSlotContext;
+type SlotContext = GridColumnMenuSlotContext | GridContextMenuSlotContext<BlazorRow> | GridFilterPanelSlotContext | GridFindPanelSlotContext
+    | GridLoadingIndicatorSlotContext;
 
 /** A slot the core mounted, and its contents once .NET has rendered them. */
 interface Standing {
@@ -44,7 +45,10 @@ interface Standing {
     drawn: number;
     /** A filter panel's views by the number .NET was handed each under, from the one its contents may still show. */
     readonly views: Map<number, FilterPanelView>;
-    /** Stops hearing the panel's view. */
+    /** The texts a find panel's fields open with, as .NET is handed them: what the core held as the panel was mounted,
+     * and the replacement as Replace was last shown. Typed after, a text is the field's own and crosses nothing. */
+    findOpens: FindOpens | undefined;
+    /** Stops hearing a panel's view. */
     unsubscribe: (() => void) | undefined;
     /** Lets the inputs held behind the contents go, while a part the keyboard reaches owes them. */
     letInputsGo: (() => void) | undefined;
@@ -150,7 +154,7 @@ export class RazorSlots {
         }
         this.#ids += 1;
         const standing: Standing = {
-            id: this.#ids, name, slot, context, sent: '', version: 0, drawn: 0, views: new Map(), unsubscribe: undefined, letInputsGo: undefined,
+            id: this.#ids, name, slot, context, sent: '', version: 0, drawn: 0, views: new Map(), findOpens: undefined, unsubscribe: undefined, letInputsGo: undefined,
             contents: undefined, holder: undefined, unwire: undefined, answered: undefined, release: undefined, leaving: false,
         };
         this.#standing.set(standing.id, standing);
@@ -176,7 +180,8 @@ export class RazorSlots {
     // they are drawn. Where .NET fails to take them, nothing it would draw holds the grid: the failure is said.
     #send(standing: Standing, call: 'MountSlot' | 'UpdateSlot'): void {
         const view = standing.name === 'filterPanel' ? filterContext(standing.context).view() : undefined;
-        const sent = contextJson(standing.name, standing.context, view);
+        if (standing.name === 'findPanel') standing.findOpens = findOpensOf(findContext(standing.context).view(), standing.findOpens);
+        const sent = contextJson(standing.name, standing.context, view, standing.findOpens);
         if (sent === standing.sent) return;
         standing.sent = sent;
         standing.version += 1;
@@ -193,11 +198,13 @@ export class RazorSlots {
         });
     }
 
-    // A filter panel's view changes under its contents, a choice made or the value list arrived: .NET draws it again.
+    // A panel's view changes under its contents, a choice made, the value list arrived or a step's outcome said: .NET
+    // draws it again.
     #hear(standing: Standing): void {
         standing.unsubscribe?.();
-        standing.unsubscribe = standing.name === 'filterPanel'
-            ? filterContext(standing.context).subscribe(() => { if (!standing.leaving && !this.#disposed) this.#send(standing, 'UpdateSlot'); })
+        const again = (): void => { if (!standing.leaving && !this.#disposed) this.#send(standing, 'UpdateSlot'); };
+        standing.unsubscribe = standing.name === 'filterPanel' ? filterContext(standing.context).subscribe(again)
+            : standing.name === 'findPanel' ? findContext(standing.context).subscribe(again)
             : undefined;
     }
 
@@ -242,6 +249,8 @@ export class RazorSlots {
             standing.unwire = wireMenuItems(contents, context as GridMenuSlotContext, answered);
         } else if (standing.name === 'filterPanel') {
             standing.unwire = wireFilterPanel(contents, filterContext(context), () => drawnView(standing, contents), answered);
+        } else if (standing.name === 'findPanel') {
+            standing.unwire = wireFindPanel(contents, findContext(context), answered);
         } else {
             return;
         }
@@ -252,6 +261,9 @@ export class RazorSlots {
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the filter slot is handed the filter panel's context, as the core mounts it
 const filterContext = (context: SlotContext): GridFilterPanelSlotContext => context as GridFilterPanelSlotContext;
+
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the find slot is handed the find panel's context, as the core mounts it
+const findContext = (context: SlotContext): GridFindPanelSlotContext => context as GridFindPanelSlotContext;
 
 /** The view a filter panel's contents show: the one .NET drew them from, whose number they carry. */
 function drawnView(standing: Standing, contents: HTMLElement): FilterPanelView {
@@ -267,8 +279,24 @@ function conditionJson(condition: FilterPanelCondition): object {
     return { operator: condition.operator, operand: condition.operand, takesOperand: condition.takesOperand, refusal: condition.refusal === undefined ? null : condition.refusal };
 }
 
+/** The texts a find panel's fields open with. */
+interface FindOpens {
+    readonly text: string;
+    readonly replaceText: string;
+    readonly replaceShown: boolean;
+}
+
+/** The texts a find panel's fields open with, for the view standing: the find field's as the panel was mounted, and
+ * the Replace field's as Replace was last shown. A text typed changes nothing .NET draws, and is not sent again for
+ * each key; one the core holds as its field is drawn is. */
+function findOpensOf(view: FindPanelView, before: FindOpens | undefined): FindOpens {
+    if (before === undefined) return { text: view.text, replaceText: view.replaceText, replaceShown: view.replaceShown };
+    if (view.replaceShown === before.replaceShown) return before;
+    return { text: before.text, replaceText: view.replaceShown ? view.replaceText : before.replaceText, replaceShown: view.replaceShown };
+}
+
 /** What .NET is handed of a slot's context: data, never a function (ADR-0410 section 3). */
-function contextJson(name: RazorSlotName, context: SlotContext, filterView: FilterPanelView | undefined): string {
+function contextJson(name: RazorSlotName, context: SlotContext, filterView: FilterPanelView | undefined, findOpens: FindOpens | undefined): string {
     switch (name) {
         case 'columnMenu':
         case 'contextMenu': {
@@ -306,6 +334,22 @@ function contextJson(name: RazorSlotName, context: SlotContext, filterView: Filt
                     },
                 };
             return JSON.stringify({ column: panel.column, columnType: panel.columnType, canApply: view.canApply, fetching: view.fetching, words, ...form });
+        }
+        case 'findPanel': {
+            const panel = findContext(context);
+            const view = panel.view();
+            if (findOpens === undefined) throw new Error('Internal: a find panel\'s data were asked for without the texts its fields open with.');
+            const words = {
+                field: panel.label(findPanelLabelIds.field), matchCase: panel.label(findPanelLabelIds.matchCase),
+                wholeCell: panel.label(findPanelLabelIds.wholeCell), next: panel.label(findPanelLabelIds.next),
+                previous: panel.label(findPanelLabelIds.previous), replaceField: panel.label(findPanelLabelIds.replaceField),
+                replace: panel.label(findPanelLabelIds.replace), replaceAll: panel.label(findPanelLabelIds.replaceAll),
+            };
+            // Not the focus request, which the script answers: a request is the same panel, drawn as it stands.
+            return JSON.stringify({
+                text: findOpens.text, matchCase: view.matchCase, wholeCell: view.wholeCell, replaceShown: view.replaceShown,
+                replaceText: findOpens.replaceText, replaceWaiting: view.replaceWaiting, outcome: view.outcome, words,
+            });
         }
         case 'loadingIndicator': {
             // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the loading slot is handed the loading context, as the core mounts it

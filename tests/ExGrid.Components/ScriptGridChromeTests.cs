@@ -138,6 +138,40 @@ public class ScriptGridChromeTests : BunitContext
         Assert.Equal("2", cut.Find(".ex-razor-slot").GetAttribute("data-ex-version"));
     }
 
+    private sealed class FindChrome : IGridChrome
+    {
+        public ScriptSlots ScriptSlots => ScriptSlots.FindPanel;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? FindPanel(GridFindView view) => builder => builder.AddContent(0,
+            $"'{view.Text}' case {view.MatchCase} whole {view.WholeCell}; replace {(view.ReplaceShown ? $"'{view.ReplaceText}'" : "off")}"
+            + $"{(view.ReplaceWaiting ? " waiting" : "")}; {view.Words.Next}/{view.Words.ReplaceAll}; said '{view.Outcome}'");
+    }
+
+    [Fact] // ADR-0410 section 3 / ADR-0332: the find panel's view crosses as data, its Replace and its outcome included, and is drawn from it
+    public async Task ADR0410_a_find_panels_view_crosses_as_data()
+    {
+        var cut = Grid(new FindChrome());
+        const string words = "\"words\":{\"field\":\"Find what\",\"matchCase\":\"Match case\",\"wholeCell\":\"Whole\",\"next\":\"Next\","
+            + "\"previous\":\"Previous\",\"replaceField\":\"Replace with\",\"replace\":\"Replace\",\"replaceAll\":\"All\"}";
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "findPanel",
+            "{\"text\":\"Osei\",\"matchCase\":true,\"wholeCell\":false,\"replaceShown\":false,\"replaceText\":\"\",\"replaceWaiting\":false,"
+            + "\"outcome\":\"\"," + words + "}"));
+        Assert.Equal("'Osei' case True whole False; replace off; Next/All; said ''", cut.Find(".ex-razor-slot").TextContent);
+
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2,
+            "{\"text\":\"Osei\",\"matchCase\":true,\"wholeCell\":true,\"replaceShown\":true,\"replaceText\":\"Lee\",\"replaceWaiting\":true,"
+            + "\"outcome\":\"No match\"," + words + "}"));
+        Assert.Equal("'Osei' case True whole True; replace 'Lee' waiting; Next/All; said 'No match'", cut.Find(".ex-razor-slot").TextContent);
+    }
+
     [Fact] // ADR-0410: a Chrome that names a slot this adapter does not fill is refused by name, never left out quietly
     public void ADR0410_a_slot_the_adapter_does_not_fill_is_refused()
     {

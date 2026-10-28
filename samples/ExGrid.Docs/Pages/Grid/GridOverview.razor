@@ -67,12 +67,14 @@
             Its <code>Chrome</code> takes the same <code>IGridChrome</code>, and a part your Chrome draws in Razor
             stands inside the grid the browser draws: the component renders it beside the grid, in a hidden holder,
             and the grid's script moves it into its place. <code>MudGridChrome</code> draws the column menu, the
-            filter panel, the Context Menu and the loading bar this way, with the same MudBlazor buttons, checkboxes,
-            fields and bar; switch the Example to MudBlazor and open a column's ▾. The other parts are still the
+            filter panel, the find panel, the Context Menu and the loading bar this way, with the same MudBlazor
+            buttons, checkboxes, fields and bar; switch the Example to MudBlazor and open a column's ▾, or press
+            <kbd>Ctrl</kbd>+<kbd>F</kbd>. The other parts are still the
             browser's own here, until the Wrapper draws them too. A Chrome of your own names the parts it draws in
             <code>ScriptSlots</code> and answers each through the overload that takes a view:
             <code>ColumnMenu(GridMenuView)</code>, <code>ContextMenu(GridMenuView)</code>,
-            <code>FilterPanel(GridFilterView)</code> and <code>LoadingIndicator(GridLoadingView)</code>. A view is
+            <code>FilterPanel(GridFilterView)</code>, <code>FindPanel(GridFindView)</code> and
+            <code>LoadingIndicator(GridLoadingView)</code>. A view is
             data, drawn again each time the grid changes it, so the Razor marks its controls with
             <code>ScriptSlotAttributes</code> and handles none of their keys, presses or changes: a menu's control
             for each item carries <code>MenuItem</code> and its index, a filter panel's search box
@@ -82,18 +84,20 @@
             there.
         </p>
         <p>
-            Two rules keep a choice from arriving after the Enter that applies it. A filter panel's text fields are
-            drawn with no value bound to the view, which arrives a round trip behind the typing and would write an
+            Two rules keep a choice from arriving after the Enter that applies it. A filter or find panel's text
+            fields are drawn with no value bound to the view, which arrives a round trip behind the typing and would write an
             older text back; a value field is given the operand it opens with, and nothing after. And a choice is
             made with a control the browser hears: the operators are native selects, as in the React MUI version,
             since a <code>MudSelect</code> tells .NET of a choice only after closing its list, and a condition's
             value is typed as text for every type, read in the column's culture as the grid's own panel reads it.
         </p>
         <p>
+            Find is the source's, as on the grid above: <kbd>Ctrl</kbd>+<kbd>F</kbd> asks its
+            <code>FindAsync</code> in .NET, and is refused where the source does not search. Replace is not carried
+            yet, so <kbd>Ctrl</kbd>+<kbd>H</kbd> is refused.
             Not carried yet, and refused by name when a column declares it: Template Columns, Tone and Row Marks.
-            Find and the
-            Selection Summary are not offered yet either: Ctrl+F is refused, and no summary is drawn. Use the grid
-            above for those until they arrive. The browser is sent the rows around the ones in view, a few
+            The Selection Summary is not offered yet either, and no summary is drawn. Use the grid above for those
+            until they arrive. The browser is sent the rows around the ones in view, a few
             screens either side, and asks for more as it scrolls, so a source that holds a million rows sends a
             few hundred. The script it runs is bundled into the package, at an address that changes with its
             content, as ExGrid's own script is, and the core under it is the Shared Script beside it,

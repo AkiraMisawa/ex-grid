@@ -729,4 +729,9 @@ public interface IGridChrome
     /// <see cref="ScriptSlotAttributes"/>' filter attributes, a submit button for OK, and no handler of
     /// its own.</summary>
     RenderFragment? FilterPanel(GridFilterView view) => null;
+
+    /// <summary>The find panel when the Script Core draws the grid (ADR-0410), for a Chrome that names
+    /// <see cref="ScriptSlots.FindPanel"/>: its controls, each marked with <see cref="ScriptSlotAttributes"/>'
+    /// find attributes, and no form or handler of its own; the slot stands inside the core's form.</summary>
+    RenderFragment? FindPanel(GridFindView view) => null;
 }

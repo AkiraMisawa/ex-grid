@@ -6,8 +6,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
 import type { FilterPanelView } from '../src/chrome/filter-panel-model';
-import type { GridChromeSlot, GridColumnMenuSlotContext, GridFilterPanelSlotContext } from '../src/dom/grid-chrome';
-import { filterPanelAttributes, menuItemAttribute, wireFilterPanel, wireMenuItems } from '../src/dom/slot-wiring';
+import type { GridChromeSlot, GridColumnMenuSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext } from '../src/dom/grid-chrome';
+import { filterPanelAttributes, findPanelAttributes, menuItemAttribute, wireFilterPanel, wireFindPanel, wireMenuItems } from '../src/dom/slot-wiring';
+import type { GridSelection } from '../src/selection/selection';
 import type { FilterSpec } from '../src/query/filter';
 import { GridSource } from '../src/source/grid-source';
 import { columns, mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
@@ -331,5 +332,82 @@ describe('a filter panel slot\'s contents wired from their attributes', () => {
         q(contents, `[${filterPanelAttributes.cancel}]`).click();
         await painted();
         expect([filterOf(source, 'Id'), root.querySelector('.ex-popover')]).toEqual([undefined, null]);
+    });
+});
+
+/** A find panel whose contents arrive when the test draws them, as a Blazor adapter's do, wired by
+ * {@link wireFindPanel}: a field, Match case, and the two steps. */
+function lateFindGrid(): { readonly root: HTMLElement; readonly contexts: GridFindPanelSlotContext[]; readonly selections: GridSelection[]; readonly draw: () => HTMLElement } {
+    const contexts: GridFindPanelSlotContext[] = [];
+    const slots: HTMLElement[] = [];
+    const selections: GridSelection[] = [];
+    const findPanel: GridChromeSlot<GridFindPanelSlotContext> = (element, context) => {
+        slots.push(element);
+        contexts.push(context);
+        return () => { element.replaceChildren(); };
+    };
+    const { root } = mount<Seller>({
+        columns: [
+            { name: 'Trader', type: 'text', value: seller => seller.trader, width: 120 },
+            { name: 'Id', type: 'number', value: seller => seller.id, width: 80 },
+        ],
+        rows: sellers, rowHeight: 24, viewportHeight: 480, viewportWidth: 720, findsHeaders: false,
+        onSelectionChanged: next => { selections.push(next); }, chrome: { findPanel },
+    });
+    const draw = (): HTMLElement => {
+        const slot = defined(slots.at(-1), 'a mounted slot');
+        const context = defined(contexts.at(-1), 'its context');
+        const contents = document.createElement('div');
+        const field = document.createElement('input');
+        field.setAttribute(findPanelAttributes.field, 'find');
+        const matchCase = document.createElement('label');
+        matchCase.setAttribute(findPanelAttributes.option, 'matchCase');
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        matchCase.append(box);
+        const steps = ['previous', 'next'].map(step => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.setAttribute(findPanelAttributes.step, step);
+            button.append(document.createElement('span'));
+            return button;
+        });
+        contents.append(field, matchCase, ...steps);
+        slot.replaceChildren(contents);
+        wireFindPanel(contents, context);
+        return contents;
+    };
+    return { root, contexts, selections, draw };
+}
+
+describe('a find panel slot\'s contents wired from their attributes', () => {
+    it('ADR-0410 section 2 / ADR-0055: the find field takes the keyboard as the contents arrive, and what is typed, ticked and pressed is the core\'s', async () => {
+        const { root, contexts, selections, draw } = lateFindGrid();
+        await painted();
+        root.focus();
+        key(root, 'f', { ctrlKey: true });
+        const contents = draw();
+        expect(active()).toBe(q(contents, `[${findPanelAttributes.field}="find"]`));
+        typed(q(contents, `[${findPanelAttributes.field}]`), 'osei');
+        changed(q(contents, `[${findPanelAttributes.option}] input`), true);
+        // A press on what the button holds is the button's.
+        q(contents, `[${findPanelAttributes.step}="next"] span`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await painted();
+        const panel = defined(contexts.at(-1), 'the panel').view();
+        expect([panel.text, panel.matchCase, panel.outcome]).toEqual(['osei', true, 'No match']);
+        typed(q(contents, `[${findPanelAttributes.field}]`), 'Osei');
+        q(contents, `[${findPanelAttributes.step}="next"]`).click();
+        await painted();
+        expect(defined(selections.at(-1), 'the Selection heard').focus).toEqual({ row: 1, column: 0 });
+    });
+
+    it('ADR-0410 section 2: a control marked with a value the panel does not know is refused by name', async () => {
+        const { root, draw } = lateFindGrid();
+        await painted();
+        root.focus();
+        key(root, 'f', { ctrlKey: true });
+        const contents = draw();
+        q(contents, `[${findPanelAttributes.step}="next"]`).setAttribute(findPanelAttributes.step, 'skip');
+        expect(() => { q(contents, `[${findPanelAttributes.step}="skip"]`).click(); }).toThrow(`A find panel's button is marked ${findPanelAttributes.step}="skip"`);
     });
 });

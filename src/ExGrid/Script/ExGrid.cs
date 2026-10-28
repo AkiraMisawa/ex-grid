@@ -26,8 +26,10 @@ namespace ExGrid.Script;
 /// <remarks>
 /// It stands beside <see cref="Components.ExGrid{TRow}"/>, the C# core, until every product that draws through
 /// that one has moved (ADR-0350 section 7). What this adapter does not carry yet is refused by name as its
-/// parameters are set, never left out quietly; Find and the Selection Summary, which no column declares, are not
-/// offered: Ctrl+F is refused as a Find with nothing to answer it, and no summary is drawn.
+/// parameters are set, never left out quietly. Find is the source's: Ctrl+F asks
+/// <see cref="IGridSource{TRow}.FindAsync"/> where the source <see cref="IGridSource{TRow}.CanFind"/>, and is refused as
+/// a Find with nothing to answer it where it does not; Replace is not carried, so Ctrl+H is refused as Replace unavailable. The Selection
+/// Summary, which no column declares, is not offered: no summary is drawn.
 /// </remarks>
 /// <typeparam name="TRow">The Consumer's row type.</typeparam>
 public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
@@ -731,6 +733,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteNumber("generation", _generation);
         json.WriteBoolean("rowKey", source.RowKey is not null);
         json.WriteBoolean("vouchesDistinctRows", source.VouchesDistinctRows);
+        json.WriteBoolean("finds", source.CanFind);
         json.WriteEndObject();
     }
 
@@ -1168,29 +1171,70 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 found = await find(asked, cancelled);
                 cancelled.ThrowIfCancellationRequested();
             }
-            // The browser judges the answer against the source it holds when the answer lands: what changed before
-            // it, or while the Consumer read, crosses ahead of it.
-            if (_attached)
-                await SendUpdateAsync();
-            return Json(json =>
-            {
-                json.WriteStartObject();
-                if (found is null)
-                {
-                    json.WriteBoolean("moved", true);
-                }
-                else
-                {
-                    json.WriteBoolean("found", found.IsFound);
-                    if (found.IsFound)
-                    {
-                        json.WriteNumber("row", found.Row);
-                        json.WriteString("column", found.Column);
-                    }
-                }
-                json.WriteEndObject();
-            });
+            return await FoundJsonAsync(found);
         }), Answers: true, SendsState: false));
+    }
+
+    /// <summary>The Find step the browser numbered <paramref name="number"/> (ADR-0055), asked of the source's
+    /// <see cref="IGridSource{TRow}.FindAsync"/> in its turn among the events, as an error step is asked of
+    /// <see cref="OnFindError"/>: one asked of a source since replaced, or under another order, is answered as moved,
+    /// after what the source owes the browser. <see cref="IGridSource{TRow}.CanFind"/> is read once for each source, as
+    /// it is handed to the browser.</summary>
+    internal Task<string?> FindAsync(long number, int generation, JsonElement request)
+    {
+        var asked = new Finding.GridFindRequest
+        {
+            Text = ScriptJson.Text(request, "text"),
+            MatchCase = request.GetProperty("matchCase").GetBoolean(),
+            WholeCell = request.GetProperty("wholeCell").GetBoolean(),
+            Backward = request.GetProperty("backward").GetBoolean(),
+            From = ScriptJson.Present(request, "from", out var from) ? ScriptJson.Cell(from) : null,
+            Scope = ScriptJson.Present(request, "scope", out var scope) ? ScriptJson.Ranges(scope) : null,
+            Columns = ScriptJson.Texts(request.GetProperty("columns")),
+            RowSequenceVersion = request.GetProperty("rowSequenceVersion").GetInt32(),
+        };
+        return InTurnAsync(new Heard(Answered(number, async cancelled =>
+        {
+            Finding.GridFindResult? found = null;
+            if (SourceOf(generation) is { } source && source.RowSequenceVersion == asked.RowSequenceVersion)
+            {
+                // The browser was told CanFind once, as the source was handed over: a source that stops searching
+                // while it stands is said, never answered as "none found" or as rows that moved.
+                if (!source.CanFind)
+                    throw new InvalidOperationException($"{source.GetType().Name} stopped answering Find (CanFind is false) after the grid was told it searches: "
+                        + "ExGrid over the Script Core reads CanFind once for each source it is handed (ADR-0055).");
+                found = await source.FindAsync(asked, cancelled);
+                cancelled.ThrowIfCancellationRequested();
+            }
+            return await FoundJsonAsync(found);
+        }), Answers: true, SendsState: false));
+    }
+
+    /// <summary>A step's answer as the core reads a Find result, or moved where it was not asked. The browser judges
+    /// the answer against the source it holds when the answer lands: what changed before it, or while the source or
+    /// the Consumer read, crosses ahead of it.</summary>
+    private async Task<string?> FoundJsonAsync(Finding.GridFindResult? found)
+    {
+        if (_attached)
+            await SendUpdateAsync();
+        return Json(json =>
+        {
+            json.WriteStartObject();
+            if (found is null)
+            {
+                json.WriteBoolean("moved", true);
+            }
+            else
+            {
+                json.WriteBoolean("found", found.IsFound);
+                if (found.IsFound)
+                {
+                    json.WriteNumber("row", found.Row);
+                    json.WriteString("column", found.Column);
+                }
+            }
+            json.WriteEndObject();
+        });
     }
 
     /// <summary>The user cancelled the commit numbered <paramref name="number"/> with Escape (ADR-0380 section 3).

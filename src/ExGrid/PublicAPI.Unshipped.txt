@@ -29,6 +29,9 @@ const ExGrid.Chrome.ScriptSlotAttributes.FilterSearch = "data-ex-filter-search" 
 const ExGrid.Chrome.ScriptSlotAttributes.FilterSelectAll = "data-ex-filter-all" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.FilterValue = "data-ex-filter-value" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.FilterValues = "data-ex-filter-values" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FindField = "data-ex-find-field" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FindOption = "data-ex-find-option" -> string!
+const ExGrid.Chrome.ScriptSlotAttributes.FindStep = "data-ex-find-step" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.MenuItem = "data-ex-menu-item" -> string!
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
@@ -139,6 +142,48 @@ ExGrid.Chrome.GridFilterWords.SelectAll.get -> string!
 ExGrid.Chrome.GridFilterWords.SelectAll.init -> void
 ExGrid.Chrome.GridFilterWords.SelectAllSearchResults.get -> string!
 ExGrid.Chrome.GridFilterWords.SelectAllSearchResults.init -> void
+ExGrid.Chrome.GridFindView
+ExGrid.Chrome.GridFindView.<Clone>$() -> ExGrid.Chrome.GridFindView!
+ExGrid.Chrome.GridFindView.Deconstruct(out string! Text, out bool MatchCase, out bool WholeCell, out bool ReplaceShown, out string! ReplaceText, out bool ReplaceWaiting, out string! Outcome, out ExGrid.Chrome.GridFindWords! Words) -> void
+ExGrid.Chrome.GridFindView.Equals(ExGrid.Chrome.GridFindView? other) -> bool
+ExGrid.Chrome.GridFindView.GridFindView(string! Text, bool MatchCase, bool WholeCell, bool ReplaceShown, string! ReplaceText, bool ReplaceWaiting, string! Outcome, ExGrid.Chrome.GridFindWords! Words) -> void
+ExGrid.Chrome.GridFindView.MatchCase.get -> bool
+ExGrid.Chrome.GridFindView.MatchCase.init -> void
+ExGrid.Chrome.GridFindView.Outcome.get -> string!
+ExGrid.Chrome.GridFindView.Outcome.init -> void
+ExGrid.Chrome.GridFindView.ReplaceShown.get -> bool
+ExGrid.Chrome.GridFindView.ReplaceShown.init -> void
+ExGrid.Chrome.GridFindView.ReplaceText.get -> string!
+ExGrid.Chrome.GridFindView.ReplaceText.init -> void
+ExGrid.Chrome.GridFindView.ReplaceWaiting.get -> bool
+ExGrid.Chrome.GridFindView.ReplaceWaiting.init -> void
+ExGrid.Chrome.GridFindView.Text.get -> string!
+ExGrid.Chrome.GridFindView.Text.init -> void
+ExGrid.Chrome.GridFindView.WholeCell.get -> bool
+ExGrid.Chrome.GridFindView.WholeCell.init -> void
+ExGrid.Chrome.GridFindView.Words.get -> ExGrid.Chrome.GridFindWords!
+ExGrid.Chrome.GridFindView.Words.init -> void
+ExGrid.Chrome.GridFindWords
+ExGrid.Chrome.GridFindWords.<Clone>$() -> ExGrid.Chrome.GridFindWords!
+ExGrid.Chrome.GridFindWords.Deconstruct(out string! Field, out string! MatchCase, out string! WholeCell, out string! Next, out string! Previous, out string! ReplaceField, out string! Replace, out string! ReplaceAll) -> void
+ExGrid.Chrome.GridFindWords.Equals(ExGrid.Chrome.GridFindWords? other) -> bool
+ExGrid.Chrome.GridFindWords.Field.get -> string!
+ExGrid.Chrome.GridFindWords.Field.init -> void
+ExGrid.Chrome.GridFindWords.GridFindWords(string! Field, string! MatchCase, string! WholeCell, string! Next, string! Previous, string! ReplaceField, string! Replace, string! ReplaceAll) -> void
+ExGrid.Chrome.GridFindWords.MatchCase.get -> string!
+ExGrid.Chrome.GridFindWords.MatchCase.init -> void
+ExGrid.Chrome.GridFindWords.Next.get -> string!
+ExGrid.Chrome.GridFindWords.Next.init -> void
+ExGrid.Chrome.GridFindWords.Previous.get -> string!
+ExGrid.Chrome.GridFindWords.Previous.init -> void
+ExGrid.Chrome.GridFindWords.Replace.get -> string!
+ExGrid.Chrome.GridFindWords.Replace.init -> void
+ExGrid.Chrome.GridFindWords.ReplaceAll.get -> string!
+ExGrid.Chrome.GridFindWords.ReplaceAll.init -> void
+ExGrid.Chrome.GridFindWords.ReplaceField.get -> string!
+ExGrid.Chrome.GridFindWords.ReplaceField.init -> void
+ExGrid.Chrome.GridFindWords.WholeCell.get -> string!
+ExGrid.Chrome.GridFindWords.WholeCell.init -> void
 ExGrid.Chrome.GridLoadingView
 ExGrid.Chrome.GridLoadingView.<Clone>$() -> ExGrid.Chrome.GridLoadingView!
 ExGrid.Chrome.GridLoadingView.Deconstruct(out bool IsLoading, out int PlaceholderRowCount) -> void
@@ -173,6 +218,7 @@ ExGrid.Chrome.GridMenuView.Type.init -> void
 ExGrid.Chrome.IGridChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.FilterPanel(ExGrid.Chrome.GridFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.Chrome.IGridChrome.FindPanel(ExGrid.Chrome.GridFindView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.LoadingIndicator(ExGrid.Chrome.GridLoadingView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlotAttributes
@@ -180,6 +226,7 @@ ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.ColumnMenu = 1 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.ContextMenu = 2 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.FilterPanel = 8 -> ExGrid.Chrome.ScriptSlots
+ExGrid.Chrome.ScriptSlots.FindPanel = 16 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.LoadingIndicator = 4 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Chrome.ScriptSlots.None = 0 -> ExGrid.Chrome.ScriptSlots
 ExGrid.Clipboard.GridPasteIntent.CancellationToken.get -> System.Threading.CancellationToken
@@ -683,6 +730,12 @@ override ExGrid.Chrome.GridFilterView.ToString() -> string!
 override ExGrid.Chrome.GridFilterWords.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridFilterWords.GetHashCode() -> int
 override ExGrid.Chrome.GridFilterWords.ToString() -> string!
+override ExGrid.Chrome.GridFindView.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFindView.GetHashCode() -> int
+override ExGrid.Chrome.GridFindView.ToString() -> string!
+override ExGrid.Chrome.GridFindWords.Equals(object? obj) -> bool
+override ExGrid.Chrome.GridFindWords.GetHashCode() -> int
+override ExGrid.Chrome.GridFindWords.ToString() -> string!
 override ExGrid.Chrome.GridLoadingView.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridLoadingView.GetHashCode() -> int
 override ExGrid.Chrome.GridLoadingView.ToString() -> string!
@@ -774,6 +827,10 @@ static ExGrid.Chrome.GridFilterView.operator !=(ExGrid.Chrome.GridFilterView? le
 static ExGrid.Chrome.GridFilterView.operator ==(ExGrid.Chrome.GridFilterView? left, ExGrid.Chrome.GridFilterView? right) -> bool
 static ExGrid.Chrome.GridFilterWords.operator !=(ExGrid.Chrome.GridFilterWords? left, ExGrid.Chrome.GridFilterWords? right) -> bool
 static ExGrid.Chrome.GridFilterWords.operator ==(ExGrid.Chrome.GridFilterWords? left, ExGrid.Chrome.GridFilterWords? right) -> bool
+static ExGrid.Chrome.GridFindView.operator !=(ExGrid.Chrome.GridFindView? left, ExGrid.Chrome.GridFindView? right) -> bool
+static ExGrid.Chrome.GridFindView.operator ==(ExGrid.Chrome.GridFindView? left, ExGrid.Chrome.GridFindView? right) -> bool
+static ExGrid.Chrome.GridFindWords.operator !=(ExGrid.Chrome.GridFindWords? left, ExGrid.Chrome.GridFindWords? right) -> bool
+static ExGrid.Chrome.GridFindWords.operator ==(ExGrid.Chrome.GridFindWords? left, ExGrid.Chrome.GridFindWords? right) -> bool
 static ExGrid.Chrome.GridLoadingView.operator !=(ExGrid.Chrome.GridLoadingView? left, ExGrid.Chrome.GridLoadingView? right) -> bool
 static ExGrid.Chrome.GridLoadingView.operator ==(ExGrid.Chrome.GridLoadingView? left, ExGrid.Chrome.GridLoadingView? right) -> bool
 static ExGrid.Chrome.GridMenuItemView.operator !=(ExGrid.Chrome.GridMenuItemView? left, ExGrid.Chrome.GridMenuItemView? right) -> bool
