@@ -121,6 +121,21 @@ public interface IPivotChrome
     /// <see cref="PivotScriptSlots.ValueFieldSettings"/>: its controls marked with
     /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
     RenderFragment? ValueFieldSettings(PivotValueFieldSettingsView view) => null;
+
+    /// <summary>The PivotTable Fields pane when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.FieldList"/>: its fields, Areas and controls marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own, the drags' included.</summary>
+    RenderFragment? FieldList(PivotFieldListView view) => null;
+
+    /// <summary>Show Details' sheet tabs when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.DetailsTabs"/>: each tab and close marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? DetailsTabs(PivotDetailsTabsView view) => null;
+
+    /// <summary>Show Details' dialog when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.DetailsDialog"/>: its title, the records' anchor and Close marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? DetailsDialog(PivotDetailsDialogView view) => null;
 }
 
 /// <summary>

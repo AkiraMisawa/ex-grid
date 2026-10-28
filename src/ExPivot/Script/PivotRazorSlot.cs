@@ -2,6 +2,7 @@ using System.Text.Json;
 using ExGrid.Chrome;
 using ExGrid.Script;
 using ExPivot.Chrome;
+using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 
 namespace ExPivot.Script;
@@ -24,6 +25,9 @@ internal static class PivotRazorSlot
         (PivotScriptSlots.ItemFilter, "itemFilter"),
         (PivotScriptSlots.FieldSettings, "fieldSettings"),
         (PivotScriptSlots.ValueFieldSettings, "valueFieldSettings"),
+        (PivotScriptSlots.FieldList, "fieldList"),
+        (PivotScriptSlots.DetailsTabs, "detailsTabs"),
+        (PivotScriptSlots.DetailsDialog, "detailsDialog"),
     ];
 
     /// <summary>The script's names of the slots <paramref name="slots"/> names, refusing one this adapter does not fill.</summary>
@@ -83,8 +87,60 @@ internal static class PivotRazorSlot
             PivotScriptSlots.ItemFilter => ItemFilterViewOf(json),
             PivotScriptSlots.FieldSettings => FieldSettingsViewOf(json),
             PivotScriptSlots.ValueFieldSettings => ValueFieldSettingsViewOf(json),
+            PivotScriptSlots.FieldList => FieldListViewOf(json),
+            PivotScriptSlots.DetailsTabs => new PivotDetailsTabsView(
+                ScriptJson.Text(json, "name"),
+                [.. json.GetProperty("tabs").EnumerateArray().Select(tab => new PivotDetailsTabView(
+                    ScriptJson.Text(tab, "key"),
+                    ScriptJson.Text(tab, "title"),
+                    tab.GetProperty("selected").GetBoolean(),
+                    TextOrNull(tab, "panelId"),
+                    TextOrNull(tab, "closeLabel")))]),
+            PivotScriptSlots.DetailsDialog => new PivotDetailsDialogView(ScriptJson.Text(json, "title"), ScriptJson.Text(json, "closeLabel")),
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
         };
+    }
+
+    private static PivotFieldListView FieldListViewOf(JsonElement json)
+    {
+        var defer = json.GetProperty("defer");
+        var update = json.GetProperty("update");
+        return new PivotFieldListView(
+            ScriptJson.Text(json, "title"),
+            ScriptJson.Text(json, "hideLabel"),
+            ScriptJson.Text(json, "chooseCaption"),
+            ScriptJson.Text(json, "searchLabel"),
+            ScriptJson.Text(json, "search"),
+            [.. json.GetProperty("fields").EnumerateArray().Select(field => new PivotFieldListFieldView(
+                ScriptJson.Text(field, "name"),
+                ScriptJson.Text(field, "key"),
+                ScriptJson.Text(field, "caption"),
+                field.GetProperty("placed").GetBoolean(),
+                field.GetProperty("filtered").GetBoolean(),
+                TextOrNull(field, "count"),
+                TextOrNull(field, "countLabel"),
+                field.GetProperty("dragging").GetBoolean()))],
+            ScriptJson.Text(json, "dragCaption"),
+            [.. json.GetProperty("areas").EnumerateArray().Select(area => new PivotFieldListAreaView(
+                ScriptJson.Member<PivotArea>(area.GetProperty("area")),
+                ScriptJson.Text(area, "area"),
+                ScriptJson.Text(area, "title"),
+                [.. area.GetProperty("entries").EnumerateArray().Select(entry => new PivotFieldListEntryView(
+                    ScriptJson.Text(entry, "key"),
+                    ScriptJson.Text(entry, "caption"),
+                    ScriptJson.Text(entry, "menuLabel"),
+                    entry.GetProperty("filtered").GetBoolean(),
+                    entry.GetProperty("values").GetBoolean(),
+                    entry.GetProperty("menuOpen").GetBoolean(),
+                    entry.GetProperty("dragging").GetBoolean(),
+                    entry.GetProperty("dropBefore").GetBoolean()))],
+                area.GetProperty("dropTarget").GetBoolean(),
+                TextOrNull(area, "overCap")))],
+            json.GetProperty("dropRemoves").GetBoolean(),
+            ScriptJson.Text(defer, "label"),
+            defer.GetProperty("ticked").GetBoolean(),
+            ScriptJson.Text(update, "label"),
+            update.GetProperty("enabled").GetBoolean());
     }
 
     private static PivotItemFilterView ItemFilterViewOf(JsonElement json)
@@ -189,6 +245,9 @@ internal static class PivotRazorSlot
             (PivotScriptSlots.ItemFilter, PivotItemFilterView filter) => chrome.ItemFilter(filter),
             (PivotScriptSlots.FieldSettings, PivotFieldSettingsView settings) => chrome.FieldSettings(settings),
             (PivotScriptSlots.ValueFieldSettings, PivotValueFieldSettingsView settings) => chrome.ValueFieldSettings(settings),
+            (PivotScriptSlots.FieldList, PivotFieldListView list) => chrome.FieldList(list),
+            (PivotScriptSlots.DetailsTabs, PivotDetailsTabsView tabs) => chrome.DetailsTabs(tabs),
+            (PivotScriptSlots.DetailsDialog, PivotDetailsDialogView dialog) => chrome.DetailsDialog(dialog),
             _ => throw new InvalidOperationException($"Internal: the slot {name} holds a view of another slot's."),
         };
     }

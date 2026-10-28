@@ -147,3 +147,62 @@ test('ADR-0410: MudPivotChrome draws the Script pivot\'s Value Field Settings…
     await expect(panel).toHaveCount(0);
     await expect(pane(page).getByRole('button', { name: 'Options for Count of P&L', exact: true })).toBeVisible();
 });
+
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s Fields pane, where a field ticked and an entry dragged to another Area reach the pivot', async ({ page }) => {
+    await open(page, '/script-pivot?chrome=mud');
+    const book = pane(page).getByRole('checkbox', { name: 'Book', exact: true });
+    await expect(book).toHaveClass(/mud-checkbox-input/);
+    await book.check();
+    await expect(page.locator('#script-pivot-layout')).toHaveText('Rows: Region, Desk, Book');
+
+    // Dropped on the Columns Area past its entries: the browser's own drag, read in the browser.
+    await pane(page).getByRole('button', { name: 'Options for Desk', exact: true })
+        .dragTo(pane(page).getByRole('list', { name: 'Columns', exact: true }).locator('xpath=..'), { targetPosition: { x: 12, y: 8 } });
+    await expect(page.locator('#script-pivot-layout')).toHaveText('Rows: Region, Book');
+    await expect(pane(page).getByRole('list', { name: 'Columns', exact: true }).getByRole('button', { name: 'Options for Desk', exact: true })).toBeVisible();
+});
+
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s sheet tabs: Show Details opens one that takes a key typed as it opens over a slow circuit, the report\'s tab brings the report back, and its close takes it away', async ({ page }) => {
+    await open(page, '/script-pivot?chrome=mud');
+    const tabs = pivot(page).getByRole('tablist');
+    const details = tabs.getByRole('tab', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
+    await setRoundTrip(150);
+    try {
+        await firstValue(page).dblclick({ force: true });
+        // Typed a round trip before the tabs' Razor stands on Server: the key waits in the pivot's order until the new
+        // tab holds the keyboard, and is taken there, never by the report the records now cover.
+        await page.keyboard.press('ArrowDown');
+        await settled(report(page));
+        await circuitQuiet();
+    } finally {
+        await setRoundTrip(0);
+    }
+    await expect(details).toHaveAttribute('aria-selected', 'true');
+    await expect(details).toHaveClass(/mud-button-root/);
+    await expect(details).toBeFocused();
+    await expect(page.locator('#script-pivot-selection')).toHaveText('Focus: row 1, column 1; 1 range(s)');
+
+    await tabs.getByRole('tab', { name: 'PivotTable', exact: true }).click();
+    await expect(details).toHaveAttribute('aria-selected', 'false');
+    await expect(rows(page).first()).toBeVisible();
+    await tabs.getByRole('button', { name: /^Close Details: Americas/ }).click();
+    await expect(pivot(page).getByRole('tablist')).toHaveCount(0);
+});
+
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s Show Details dialog, and Enter typed as it opens over a slow circuit presses its Close', async ({ page }) => {
+    await open(page, '/script-pivot?chrome=mud&details=dialog');
+    const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
+    await setRoundTrip(150);
+    try {
+        await firstValue(page).dblclick({ force: true });
+        // Typed a round trip before the dialog's Razor stands on Server: the key waits in the pivot's order until Close
+        // holds the keyboard, and presses it.
+        await expect(dialog).toBeVisible();
+        await page.keyboard.press('Enter');
+        await settled(report(page));
+        await circuitQuiet();
+    } finally {
+        await setRoundTrip(0);
+    }
+    await expect(dialog).toHaveCount(0);
+});

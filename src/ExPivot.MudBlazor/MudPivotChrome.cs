@@ -82,11 +82,11 @@ public sealed class MudPivotChrome : IPivotChrome
     /// <c>MudAlert</c> with a Retry <c>MudButton</c> (ADR-0067).</summary>
     public RenderFragment? StaleReport(PivotStaleReportContext context) => View<MudPivotStaleReport, PivotStaleReportContext>(context);
 
-    /// <summary>The pivot's slots this Chrome fills with Razor when the Script Core draws the pivot (ADR-0410): the
-    /// menus, the Pivot Toolbar and the Stale Report's notice, MudBlazor's as over the C# core. The report grid's are
-    /// <see cref="MudGridChrome"/>'s.</summary>
+    /// <summary>The pivot's slots this Chrome fills with Razor when the Script Core draws the pivot (ADR-0410): every
+    /// part, MudBlazor's as over the C# core. The report grid's are <see cref="MudGridChrome"/>'s.</summary>
     public PivotScriptSlots ScriptSlots => PivotScriptSlots.Menu | PivotScriptSlots.Toolbar | PivotScriptSlots.StaleReport
-        | PivotScriptSlots.ReportFilters | PivotScriptSlots.ItemFilter | PivotScriptSlots.FieldSettings | PivotScriptSlots.ValueFieldSettings;
+        | PivotScriptSlots.ReportFilters | PivotScriptSlots.ItemFilter | PivotScriptSlots.FieldSettings | PivotScriptSlots.ValueFieldSettings
+        | PivotScriptSlots.FieldList | PivotScriptSlots.DetailsTabs | PivotScriptSlots.DetailsDialog;
 
     /// <summary>A menu when the Script Core draws the pivot (ADR-0410): the same <c>MudButton</c> items, each marked
     /// for the script that wires them.</summary>
@@ -116,6 +116,19 @@ public sealed class MudPivotChrome : IPivotChrome
     /// native selects in its outline, marked for the script that hands each change to the pivot in the browser.</summary>
     public RenderFragment? ValueFieldSettings(PivotValueFieldSettingsView view)
         => ScriptView<MudPivotScriptValueFieldSettings, PivotValueFieldSettingsView>(view, chrome: false);
+
+    /// <summary>The PivotTable Fields pane when the Script Core draws the pivot (ADR-0410): the same MudBlazor search,
+    /// checkboxes and entry buttons, marked for the script that hands each tick, press and drag to the pivot in the
+    /// browser.</summary>
+    public RenderFragment? FieldList(PivotFieldListView view) => ScriptView<MudPivotScriptFieldList, PivotFieldListView>(view, chrome: false);
+
+    /// <summary>Show Details' sheet tabs when the Script Core draws the pivot (ADR-0410): text MudButtons in a tab list,
+    /// each with its close MudIconButton, marked for the script that selects and closes in the browser.</summary>
+    public RenderFragment? DetailsTabs(PivotDetailsTabsView view) => ScriptView<MudPivotScriptDetailsTabs, PivotDetailsTabsView>(view, chrome: false);
+
+    /// <summary>Show Details' dialog when the Script Core draws the pivot (ADR-0410): its title, the records' anchor and
+    /// Close as a MudButton, marked for the script.</summary>
+    public RenderFragment? DetailsDialog(PivotDetailsDialogView view) => ScriptView<MudPivotScriptDetailsDialog, PivotDetailsDialogView>(view, chrome: false);
 
     /// <summary>The stylesheet this Chrome brings (ADR-0123): <c>mud-ex-pivot.css</c>, with the stamp
     /// this build of ExPivot.MudBlazor ships. ExPivot's root renders its notice beside its own, which

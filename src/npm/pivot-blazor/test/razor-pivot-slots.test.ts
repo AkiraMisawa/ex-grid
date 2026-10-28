@@ -6,11 +6,11 @@ import { describe, expect, it } from 'vitest';
 import { drawnVersionAttribute } from '@ex-grid/blazor-shared';
 import { pivotItemKeyId, textItemKey } from '@ex-grid/pivot-engine';
 import type {
-    PivotFieldSettingsSlotContext, PivotItemFilterSlotContext, PivotItemFilterView, PivotMenuSlotContext, PivotMenuView, PivotPartRef, PivotReportFiltersSlotContext,
+    PivotDetailsDialogSlotContext, PivotDetailsTabsSlotContext, PivotFieldListSlotContext, PivotFieldListView, PivotFieldSettingsSlotContext, PivotItemFilterSlotContext, PivotItemFilterView, PivotMenuSlotContext, PivotMenuView, PivotPartRef, PivotReportFiltersSlotContext,
     PivotToolbarSlotContext, PivotToolbarView, PivotValueFieldSettingsSlotContext, PivotValueFieldSettingsView,
 } from '@ex-grid/pivot';
 import type { DotNetHandle } from '../src/dotnet-pivot-source';
-import { RazorPivotSlots, type PivotGrids } from '../src/razor-pivot-slots';
+import { RazorPivotSlots, type PivotGrids, type PivotRazorSlotName } from '../src/razor-pivot-slots';
 
 class FakeDotNet implements DotNetHandle {
     readonly calls: { readonly method: string; readonly args: readonly unknown[] }[] = [];
@@ -41,7 +41,7 @@ function slotted(): HTMLElement {
     return slot;
 }
 
-function mountOf(slots: RazorPivotSlots, name: 'menu' | 'toolbar' | 'staleReport' | 'reportFilters' | 'fieldSettings' | 'valueFieldSettings' | 'itemFilter'): (slot: HTMLElement, context: unknown) => () => void {
+function mountOf(slots: RazorPivotSlots, name: PivotRazorSlotName): (slot: HTMLElement, context: unknown) => () => void {
     const chrome = slots.chrome();
     const mount: unknown = chrome?.[name];
     if (typeof mount !== 'function') throw new Error(`No mount for the ${name}.`);
@@ -73,6 +73,14 @@ function menuOf(invoked: string[], focused: HTMLElement[], focusRequest: number)
     return {
         view: () => view, subscribe: () => () => undefined, close: () => undefined, label: id => id,
         focusRequest, takeFocus: control => { focused.push(control); },
+    };
+}
+
+/** An entry of the Field List's view, named by its place. */
+function entryOf(area: 'rows' | 'values', index: number, caption: string, menuOpen = false): PivotFieldListView['areas'][number]['entries'][number] {
+    return {
+        entry: { area, index }, key: `entry:${area}:${String(index)}`, caption, menuLabel: `Options for ${caption}`, filtered: false, values: false,
+        menuOpen, dragging: false, dropBefore: false, dropIndex: index,
     };
 }
 
@@ -138,8 +146,8 @@ describe('ExPivot\'s Razor slots', () => {
     });
 
     it('ADR-0410 section 1: a slot .NET names that the pivot has not is refused by name', () => {
-        expect(() => new RazorPivotSlots(new FakeDotNet(), { pivot: ['fieldList'], grid: [] }, noGrids))
-            .toThrow('.NET named \'fieldList\' as a pivot slot its Chrome fills.');
+        expect(() => new RazorPivotSlots(new FakeDotNet(), { pivot: ['chart'], grid: [] }, noGrids))
+            .toThrow('.NET named \'chart\' as a pivot slot its Chrome fills.');
         expect(() => new RazorPivotSlots(new FakeDotNet(), { pivot: [], grid: ['toolbar'] }, noGrids))
             .toThrow('.NET named \'toolbar\' as a grid slot its Chrome fills.');
     });
@@ -290,5 +298,129 @@ describe('ExPivot\'s Razor slots', () => {
         expect(pressed).toEqual(['layout']);
         expect(contents.querySelector('[data-ex-pivot-press="Desk"]')?.hasAttribute('data-ex-claims')).toBe(false);
         slots.dispose();
+    });
+    it('ADR-0410 section 2, ADR-0061: the Field List\'s search, ticks, presses and drags reach the pane in the browser, against the entries drawn', () => {
+        const heard: string[] = [];
+        const listeners = new Set<() => void>();
+        let view: PivotFieldListView = {
+            title: 'PivotTable Fields', hideLabel: 'Hide', chooseCaption: 'Choose', searchLabel: 'Search', search: '',
+            fields: [{ name: 'Region', key: 'field:Region', caption: 'Region', placed: true, filtered: false, dragging: false }],
+            dragCaption: 'Drag',
+            areas: [
+                { area: 'rows', title: 'Rows', entries: [entryOf('rows', 0, 'Region'), entryOf('rows', 1, 'Desk', true)], end: 2, dropTarget: false },
+                { area: 'values', title: 'Values', entries: [entryOf('values', 0, 'Sum of P&L')], end: 1, dropTarget: false },
+            ],
+            dropRemoves: false, defer: { label: 'Defer', ticked: false }, update: { label: 'Update', enabled: false },
+        };
+        const handed = new Map<string, HTMLElement | null>();
+        const list: PivotFieldListSlotContext = {
+            view: () => view, subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; }, label: id => id,
+            setSearch: text => { heard.push(`search ${text}`); view = { ...view, search: text }; },
+            toggle: field => { heard.push(`toggle ${field}`); }, openMenu: entry => { heard.push(`menu ${entry.area} ${String(entry.index)}`); },
+            close: () => { heard.push('close'); }, update: () => { heard.push('update'); },
+            startDrag: (_event, subject) => { heard.push(`start ${JSON.stringify(subject)}`); }, dragOver: () => { heard.push('over'); },
+            dragEnter: (area, index) => { heard.push(`enter ${area} ${String(index)}`); }, drop: (_event, area, index) => { heard.push(`drop ${area} ${String(index)}`); },
+            dropOnList: () => { heard.push('drop on list'); }, endDrag: () => { heard.push('end'); }, setDeferred: deferred => { heard.push(`defer ${String(deferred)}`); },
+            control: key => element => { handed.set(`control ${key}`, element); }, anchor: key => element => { handed.set(`anchor ${key}`, element); },
+            area: area => element => { handed.set(`area ${area}`, element); },
+        };
+        const slots = new RazorPivotSlots(new FakeDotNet(), { pivot: ['fieldList'], grid: [] }, noGrids);
+        mountOf(slots, 'fieldList')(slotted(), list);
+        const contents = rendered(
+            '<button data-ex-pivot-press="close">Hide</button><div data-ex-pivot-text="search" data-ex-pivot-control="search"><input></div>'
+            + '<div data-ex-pivot-fields=""><div data-ex-pivot-field="Region" draggable="true"><input type="checkbox" checked data-ex-pivot-control="field:Region"></div></div>'
+            + '<div data-ex-pivot-area="rows">'
+            + '<div data-ex-pivot-entry="entry:rows:0" draggable="true"><button data-ex-pivot-press="entry:rows:0" data-ex-pivot-control="entry:rows:0">Region</button><span data-ex-pivot-anchor="entry:rows:0"></span></div>'
+            + '<div data-ex-pivot-entry="entry:rows:1" draggable="true"><button data-ex-pivot-press="entry:rows:1" data-ex-pivot-control="entry:rows:1">Desk</button><span data-ex-pivot-anchor="entry:rows:1"><input type="checkbox" class="placed"></span></div>'
+            + '</div><div data-ex-pivot-area="values"><div data-ex-pivot-entry="entry:values:0" draggable="true"><button data-ex-pivot-press="entry:values:0">Sum</button><span data-ex-pivot-anchor="entry:values:0"></span></div></div>'
+            + '<span data-ex-pivot-defer=""><input type="checkbox"></span><button data-ex-pivot-press="update">Update</button>', 1);
+        slots.rendered(1, 1, contents);
+        const at = (selector: string): HTMLElement => {
+            const found = contents.querySelector<HTMLElement>(selector);
+            if (found === null) throw new Error(`No ${selector}.`);
+            return found;
+        };
+        expect([...handed.keys()].toSorted()).toEqual([
+            'anchor entry:rows:0', 'anchor entry:rows:1', 'anchor entry:values:0', 'area rows', 'area values',
+            'control entry:rows:0', 'control entry:rows:1', 'control field:Region', 'control search',
+        ]);
+        expect(handed.get('control search')).toBe(at('[data-ex-pivot-text] input'));
+        // The entry whose menu stands open is not draggable, as the pane is now.
+        expect(at('[data-ex-pivot-entry="entry:rows:1"]').draggable).toBe(false);
+        expect(at('[data-ex-pivot-field] input').getAttribute('data-ex-claims')).toBe('click');
+
+        const search = at('[data-ex-pivot-text] input');
+        if (!(search instanceof HTMLInputElement)) throw new Error('No search.');
+        search.value = 'Re';
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+        // Unticked, the field leaves the layout; ticked again while the pane still shows it placed, nothing is asked.
+        at('[data-ex-pivot-field] input').click();
+        at('[data-ex-pivot-field] input').click();
+        at('[data-ex-pivot-defer] input').click();
+        at('[data-ex-pivot-press="entry:rows:0"]').click();
+        at('[data-ex-pivot-press="close"]').click();
+        // A tick in what the pivot placed in an entry's anchor is that part's, not the pane's.
+        at('.placed').click();
+        at('[data-ex-pivot-entry="entry:values:0"]').dispatchEvent(new DragEvent('dragstart', { bubbles: true }));
+        at('[data-ex-pivot-entry="entry:rows:0"]').dispatchEvent(new DragEvent('dragenter', { bubbles: true }));
+        at('[data-ex-pivot-area="rows"]').dispatchEvent(new DragEvent('dragover', { bubbles: true }));
+        at('[data-ex-pivot-area="rows"]').dispatchEvent(new DragEvent('drop', { bubbles: true }));
+        at('[data-ex-pivot-fields]').dispatchEvent(new DragEvent('drop', { bubbles: true }));
+        expect(heard).toEqual([
+            'search Re', 'toggle Region', 'defer true', 'menu rows 0', 'close',
+            'start {"entry":{"area":"values","index":0}}', 'enter rows 0', 'over', 'drop rows 2', 'drop on list',
+        ]);
+
+        // The Areas changed under the contents, a round trip before .NET draws them again: an entry's place now names
+        // another field, so a press or a drag on it does nothing, and a drop ends the drag.
+        heard.length = 0;
+        view = { ...view, areas: [{ ...view.areas[0] ?? (() => { throw new Error('No Rows.'); })(), entries: [entryOf('rows', 0, 'Book')] }, ...view.areas.slice(1)] };
+        for (const listener of listeners) listener();
+        at('[data-ex-pivot-press="entry:rows:0"]').click();
+        at('[data-ex-pivot-entry="entry:rows:0"]').dispatchEvent(new DragEvent('dragstart', { bubbles: true }));
+        at('[data-ex-pivot-area="values"]').dispatchEvent(new DragEvent('drop', { bubbles: true }));
+        expect(heard).toEqual(['end']);
+        slots.dispose();
+    });
+
+    it('ADR-0410 section 2, ADR-0059: a sheet tab and its close are pressed in the browser by the tab\'s key, and each tab is handed in by it', () => {
+        const heard: string[] = [];
+        const handed = new Map<string, HTMLElement | null>();
+        const tabs: PivotDetailsTabsSlotContext = {
+            view: () => ({ name: 'Sheets', tabs: [{ key: 'report', title: 'PivotTable', selected: false }, { key: 'd1', title: 'Rates', selected: true, panelId: 'p1', closeLabel: 'Rates' }] }),
+            subscribe: () => () => undefined, label: id => id,
+            select: key => { heard.push(`select ${key}`); }, close: key => { heard.push(`close ${key}`); },
+            control: key => element => { handed.set(key, element); },
+        };
+        const slots = new RazorPivotSlots(new FakeDotNet(), { pivot: ['detailsTabs'], grid: [] }, noGrids);
+        mountOf(slots, 'detailsTabs')(slotted(), tabs);
+        const contents = rendered(
+            '<button data-ex-pivot-tab="report" data-ex-pivot-control="report">PivotTable</button>'
+            + '<span><button data-ex-pivot-tab="d1" data-ex-pivot-control="d1">Rates</button><button data-ex-pivot-close-tab="d1">x</button></span>', 1);
+        slots.rendered(1, 1, contents);
+        contents.querySelector<HTMLButtonElement>('[data-ex-pivot-tab="report"]')?.click();
+        contents.querySelector<HTMLButtonElement>('[data-ex-pivot-close-tab="d1"]')?.click();
+        expect(heard).toEqual(['select report', 'close d1']);
+        expect([...handed.keys()].toSorted()).toEqual(['d1', 'report']);
+        slots.dispose();
+    });
+
+    it('ADR-0410 section 2, ADR-0059: Show Details\' dialog presses Close in the browser, and hands in Close and the records\' anchor', () => {
+        const heard: string[] = [];
+        const handed = new Map<string, HTMLElement | null>();
+        const dialog: PivotDetailsDialogSlotContext = {
+            view: () => ({ title: 'Rates', closeLabel: 'Close' }), subscribe: () => () => undefined, label: id => id,
+            close: () => { heard.push('close'); },
+            control: name => element => { handed.set(`control ${name}`, element); }, anchor: name => element => { handed.set(`anchor ${name}`, element); },
+        };
+        const slots = new RazorPivotSlots(new FakeDotNet(), { pivot: ['detailsDialog'], grid: [] }, noGrids);
+        mountOf(slots, 'detailsDialog')(slotted(), dialog);
+        const contents = rendered('<div data-ex-pivot-anchor="records"></div><button data-ex-pivot-press="close" data-ex-pivot-control="close">Close</button>', 1);
+        slots.rendered(1, 1, contents);
+        contents.querySelector<HTMLButtonElement>('button')?.click();
+        expect(heard).toEqual(['close']);
+        expect([...handed.keys()].toSorted()).toEqual(['anchor records', 'control close']);
+        slots.dispose();
+        expect([...handed.values()]).toEqual([null, null]);
     });
 });

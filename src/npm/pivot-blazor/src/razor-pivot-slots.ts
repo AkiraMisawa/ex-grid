@@ -10,7 +10,10 @@ import type {
     PivotChoice, PivotChrome, PivotFieldSettingsSlotContext, PivotFieldSettingsView, PivotItemFilterSlotContext, PivotItemFilterView, PivotMenuSlotContext,
     PivotMenuView, PivotPanelSlotContext, PivotPartRef, PivotReportFiltersSlotContext, PivotReportFiltersView, PivotStaleReportSlotContext,
     PivotStaleReportView, PivotToolbarSlotContext, PivotToolbarView, PivotValueFieldSettingsSlotContext, PivotValueFieldSettingsView,
+    PivotDetailsDialogSlotContext, PivotDetailsDialogView, PivotDetailsTabsSlotContext, PivotDetailsTabsView, PivotFieldListEntryView,
+    PivotFieldListSlotContext, PivotFieldListView,
 } from '@ex-grid/pivot';
+import type { PivotArea } from '@ex-grid/pivot-engine';
 import { pivotItemKeyId } from '@ex-grid/pivot-engine';
 import type { DotNetHandle } from './dotnet-pivot-source';
 
@@ -38,10 +41,25 @@ export const pivotSlotAttributes = Object.freeze({
     all: 'data-ex-pivot-all',
     /** On a panel's first control, or an element holding it: the one each request for the keyboard is for. */
     first: 'data-ex-pivot-first',
+    /** On a field of the Field List, the element dragged: the field's name. Its checkbox ticks the field in or out. */
+    field: 'data-ex-pivot-field',
+    /** On an entry of an Area, the element dragged and dropped on: the entry's key. */
+    entry: 'data-ex-pivot-entry',
+    /** On an Area's box, which a drag is dropped on past its entries: the Area. */
+    area: 'data-ex-pivot-area',
+    /** On the Field List's list of fields, where an entry dropped is taken out of the layout. */
+    fields: 'data-ex-pivot-fields',
+    /** On Defer Layout Update's checkbox, or an element holding it. */
+    defer: 'data-ex-pivot-defer',
+    /** On a sheet tab: its key; a press selects its sheet. */
+    tab: 'data-ex-pivot-tab',
+    /** On a sheet tab's close button: the tab's key; a press closes its sheet. */
+    closeTab: 'data-ex-pivot-close-tab',
 });
 
 /** The pivot's slots a Razor Chrome fills, as the pivot names them. */
-export type PivotRazorSlotName = 'menu' | 'toolbar' | 'staleReport' | 'reportFilters' | 'fieldSettings' | 'valueFieldSettings' | 'itemFilter';
+export type PivotRazorSlotName = 'menu' | 'toolbar' | 'staleReport' | 'reportFilters' | 'fieldSettings' | 'valueFieldSettings' | 'itemFilter' | 'fieldList'
+    | 'detailsTabs' | 'detailsDialog';
 
 /** A menu's kind: its commands as data, each control taking its command's role and running the command drawn under its
  * index; the first enabled one takes the keyboard at each request of the pivot's. */
@@ -226,10 +244,87 @@ const itemFilterKind: RazorSlotKind<PivotItemFilterSlotContext, PivotItemFilterV
     }),
 };
 
+/** The Field List's kind: the pane as data; the search typed, a field ticked, an entry's button pressed, Defer Layout
+ * Update ticked and every drag in the browser, each against the pane as drawn. */
+const fieldListKind: RazorSlotKind<PivotFieldListSlotContext, PivotFieldListView, PanelOpens> = {
+    takesKeyboard: false,
+    data: (list, before) => {
+        const view = list.view();
+        const opens = before ?? { search: view.search };
+        return {
+            json: JSON.stringify({
+                title: view.title, hideLabel: view.hideLabel, chooseCaption: view.chooseCaption, searchLabel: view.searchLabel, search: opens['search'],
+                fields: view.fields.map(field => ({
+                    name: field.name, key: field.key, caption: field.caption, placed: field.placed, filtered: field.filtered,
+                    count: field.count === undefined ? null : field.count, countLabel: field.countLabel === undefined ? null : field.countLabel, dragging: field.dragging,
+                })),
+                dragCaption: view.dragCaption,
+                areas: view.areas.map(area => ({
+                    area: area.area, title: area.title, dropTarget: area.dropTarget, overCap: area.overCap === undefined ? null : area.overCap,
+                    entries: area.entries.map(entry => ({
+                        key: entry.key, caption: entry.caption, menuLabel: entry.menuLabel, filtered: entry.filtered, values: entry.values,
+                        menuOpen: entry.menuOpen, dragging: entry.dragging, dropBefore: entry.dropBefore,
+                    })),
+                })),
+                dropRemoves: view.dropRemoves, defer: view.defer, update: view.update,
+            }),
+            drawn: view,
+            memo: opens,
+        };
+    },
+    subscribe: (list, again) => list.subscribe(again),
+    wire: (contents, list, _answered, drawn) => wireFieldList(contents, list, drawn),
+};
+
+/** The sheet tabs' kind: the tabs as data, a tab and its close pressed in the browser, each tab handed in by its key. The
+ * tab Show Details opens takes the keyboard, so the inputs made as the first one opens wait for the tabs to stand. */
+const detailsTabsKind: RazorSlotKind<PivotDetailsTabsSlotContext, PivotDetailsTabsView> = {
+    takesKeyboard: true,
+    data: tabs => {
+        const view = tabs.view();
+        return {
+            json: JSON.stringify({
+                name: view.name,
+                tabs: view.tabs.map(tab => ({
+                    key: tab.key, title: tab.title, selected: tab.selected,
+                    panelId: tab.panelId === undefined ? null : tab.panelId, closeLabel: tab.closeLabel === undefined ? null : tab.closeLabel,
+                })),
+            }),
+            drawn: view,
+            memo: undefined,
+        };
+    },
+    subscribe: (tabs, again) => tabs.subscribe(again),
+    wire: (contents, tabs, _answered, drawn) => {
+        const keys = drawn().tabs.map(tab => tab.key);
+        const closes = drawn().tabs.filter(tab => tab.closeLabel !== undefined).map(tab => tab.key);
+        const unstanding = wireStanding(contents, {}, key => tabs.control(namedOf(key, keys, 'sheet tabs')));
+        const unselect = wirePresses(contents, pivotSlotAttributes.tab, key => { tabs.select(namedOf(key, keys, 'sheet tabs')); });
+        const unclose = wirePresses(contents, pivotSlotAttributes.closeTab, key => { tabs.close(namedOf(key, closes, 'sheet tabs\' closes')); });
+        return () => { unclose(); unselect(); unstanding(); };
+    },
+};
+
+/** Show Details' dialog's kind: its title as data, Close pressed in the browser and handed in, and the anchor the records
+ * stand in. Close takes the keyboard as the dialog opens, so the inputs made meanwhile wait for it. */
+const detailsDialogKind: RazorSlotKind<PivotDetailsDialogSlotContext, PivotDetailsDialogView> = {
+    takesKeyboard: true,
+    data: dialog => {
+        const view = dialog.view();
+        return { json: JSON.stringify({ title: view.title, closeLabel: view.closeLabel }), drawn: view, memo: undefined };
+    },
+    subscribe: (dialog, again) => dialog.subscribe(again),
+    // Close takes the keyboard the frame held while the contents were on their way as it is handed in, and the keys
+    // typed meanwhile, held in the pivot's order, are taken there.
+    wire: (contents, dialog) => wireStanding(contents, { close: dialog.close }, name => dialog.control(namedOf(name, ['close'], 'Show Details dialog')),
+        name => dialog.anchor(namedOf(name, ['records'], 'Show Details dialog'))),
+};
+
 // Every pivot slot a Razor Chrome fills has its kind: a name added to PivotRazorSlotName without one does not compile.
 const pivotKindsByName = {
     menu: menuKind, toolbar: toolbarKind, staleReport: staleReportKind, reportFilters: reportFiltersKind,
-    fieldSettings: fieldSettingsKind, valueFieldSettings: valueFieldSettingsKind, itemFilter: itemFilterKind,
+    fieldSettings: fieldSettingsKind, valueFieldSettings: valueFieldSettingsKind, itemFilter: itemFilterKind, fieldList: fieldListKind,
+    detailsTabs: detailsTabsKind, detailsDialog: detailsDialogKind,
 } satisfies Record<PivotRazorSlotName, HostedSlotKind>;
 
 /** The kinds of the pivot's slots a Razor Chrome fills, by name: for a host of a product that draws pivots, beside the
@@ -356,18 +451,15 @@ function marked(contents: HTMLElement, attribute: string): (readonly [HTMLElemen
  */
 function wireStanding(contents: HTMLElement, presses: Readonly<Record<string, () => void>>,
     control: (name: string) => PivotPartRef, anchor?: (name: string) => PivotPartRef): () => void {
-    const unwire: (() => void)[] = [];
-    for (const [button, name] of marked(contents, pivotSlotAttributes.press)) {
+    const unwire: (() => void)[] = [wirePresses(contents, pivotSlotAttributes.press, name => {
         const press = presses[name];
         if (press === undefined) throw new RangeError(`A button is marked ${pivotSlotAttributes.press}="${name}": the part presses ${Object.keys(presses).join(', ')}.`);
-        button.setAttribute('data-ex-claims', 'click');
-        const click = (): void => { press(); };
-        button.addEventListener('click', click);
-        unwire.push(() => { button.removeEventListener('click', click); });
-    }
+        press();
+    })];
     for (const [element, name] of marked(contents, pivotSlotAttributes.control)) {
         const ref = control(name);
-        ref(element);
+        // A component library may write the mark on a wrapper around the control.
+        ref(focusable(element, pivotSlotAttributes.control));
         unwire.push(() => { ref(null); });
     }
     for (const [element, name] of marked(contents, pivotSlotAttributes.anchor)) {
@@ -376,6 +468,171 @@ function wireStanding(contents: HTMLElement, presses: Readonly<Record<string, ()
         ref(element);
         unwire.push(() => { ref(null); });
     }
+    return () => { for (const each of unwire) each(); };
+}
+
+/** Wires each button `attribute` marks: a press runs `press` with the mark's value, in the pivot's Input Order. A mark no
+ * part has is refused by `press` as the button is pressed. */
+function wirePresses(contents: HTMLElement, attribute: string, press: (value: string) => void): () => void {
+    const unwire: (() => void)[] = [];
+    for (const [button, value] of marked(contents, attribute)) {
+        button.setAttribute('data-ex-claims', 'click');
+        const click = (): void => { press(value); };
+        button.addEventListener('click', click);
+        unwire.push(() => { button.removeEventListener('click', click); });
+    }
+    return () => { for (const each of unwire) each(); };
+}
+
+/** An entry of the Field List as the contents drew it, with the Area it stands in. */
+interface DrawnEntry {
+    readonly area: PivotArea;
+    readonly entry: PivotFieldListEntryView;
+}
+
+/** What the Areas show, by which a gesture taken on contents drawn from one view is told from one the pane shows now. */
+function entriesOf(view: PivotFieldListView): string {
+    return JSON.stringify(view.areas.map(area => [area.area, area.entries.map(entry => [entry.key, entry.caption, entry.values])]));
+}
+
+/**
+ * Wires the Field List's contents (ADR-0410 section 2, ADR-0061): the search typed, a field's checkbox and Defer Layout
+ * Update ticked, Hide, Update and each entry's button pressed, and every drag and drop, in the browser. An entry is
+ * pressed, dragged or dropped on as it was drawn, and only while the Areas the pane shows are the ones drawn: an entry
+ * is named by its place, and a gesture on a place a newer layout gave another field does nothing (spine rule 6). An
+ * entry is draggable while no menu or panel of its stands under it, as the pane is now.
+ */
+function wireFieldList(contents: HTMLElement, list: PivotFieldListSlotContext, drawn: () => PivotFieldListView): () => void {
+    // Each gesture reads the view the contents show as it is taken, never the one they showed when wired: a render
+    // .NET has patched in stands before its wiring does.
+    // An Area the Razor names, as one the pane was drawn with, and the index past its entries.
+    const areaAt = (name: string): readonly [PivotArea, number] => {
+        const drawnArea = drawn().areas.find(area => area.area === name);
+        if (drawnArea === undefined) throw new RangeError(`An element is marked ${pivotSlotAttributes.area}="${name}", which is none of the pane's Areas.`);
+        return [drawnArea.area, drawnArea.end];
+    };
+    const entryAt = (key: string): DrawnEntry => {
+        for (const area of drawn().areas) {
+            const entry = area.entries.find(each => each.key === key);
+            if (entry !== undefined) return { area: area.area, entry };
+        }
+        throw new RangeError(`An element is marked ${pivotSlotAttributes.entry}="${key}", which names no entry the pane was drawn with.`);
+    };
+    const asDrawn = (): boolean => entriesOf(list.view()) === entriesOf(drawn());
+    const presses: Record<string, () => void> = { close: list.close, update: list.update };
+    for (const area of drawn().areas) {
+        for (const { key } of area.entries) {
+            if (Object.hasOwn(presses, key)) throw new Error(`Internal: the Field List's entry '${key}' takes a press's name.`);
+            presses[key] = () => { if (asDrawn()) list.openMenu(entryAt(key).entry.entry); };
+        }
+    }
+    const unstanding = wireStanding(contents, presses, key => list.control(key), key => list.anchor(key));
+    const unwire: (() => void)[] = [unstanding];
+    for (const [element, name] of marked(contents, pivotSlotAttributes.area)) {
+        const ref = list.area(areaAt(name)[0]);
+        ref(element);
+        unwire.push(() => { ref(null); });
+    }
+    for (const [element] of [...marked(contents, pivotSlotAttributes.field), ...marked(contents, pivotSlotAttributes.defer)]) {
+        for (const box of [element, ...element.querySelectorAll('input')]) if (box instanceof HTMLInputElement && box.type === 'checkbox') box.setAttribute('data-ex-claims', 'click');
+    }
+    for (const [element] of marked(contents, pivotSlotAttributes.text)) element.setAttribute('data-ex-claims', '');
+    // What a target stands for in this pane, never in a part the pivot placed in an entry's anchor.
+    const around = (target: EventTarget | null, attribute: string): readonly [HTMLElement, string] | undefined => {
+        if (!(target instanceof Element)) return undefined;
+        const anchor = target.closest(`[${pivotSlotAttributes.anchor}]`);
+        if (anchor !== null && contents.contains(anchor)) return undefined;
+        const element = target.closest<HTMLElement>(`[${attribute}]`);
+        if (element === null || !contents.contains(element)) return undefined;
+        const value = element.getAttribute(attribute);
+        if (value === null) throw new Error(`Internal: an element found by ${attribute} carries none.`);
+        return [element, value];
+    };
+    const listeners: Record<string, (event: Event) => void> = {
+        input: event => {
+            const text = around(event.target, pivotSlotAttributes.text);
+            if (text === undefined || !(event.target instanceof HTMLInputElement)) return;
+            if (text[1] !== 'search') throw new RangeError(`The Field List has no text field '${text[1]}'.`);
+            list.setSearch(event.target.value);
+        },
+        change: event => {
+            const box = event.target;
+            if (!(box instanceof HTMLInputElement) || box.type !== 'checkbox') return;
+            if (around(box, pivotSlotAttributes.defer) !== undefined) {
+                list.setDeferred(box.checked);
+                return;
+            }
+            // The box says what the user made it, so a field the pane placed meanwhile is not taken out by a tick.
+            const field = around(box, pivotSlotAttributes.field);
+            if (field !== undefined && list.view().fields.find(each => each.name === field[1])?.placed !== box.checked) list.toggle(field[1]);
+        },
+        dragstart: event => {
+            if (!(event instanceof DragEvent)) return;
+            const entry = around(event.target, pivotSlotAttributes.entry);
+            if (entry !== undefined) {
+                // Taken on a place a newer layout moved: the browser's drag is refused, and nothing is dragged.
+                if (asDrawn()) list.startDrag(event, { entry: entryAt(entry[1]).entry.entry });
+                else event.preventDefault();
+                return;
+            }
+            const field = around(event.target, pivotSlotAttributes.field);
+            if (field !== undefined) list.startDrag(event, { field: field[1] });
+        },
+        dragend: event => {
+            if (around(event.target, pivotSlotAttributes.entry) !== undefined || around(event.target, pivotSlotAttributes.field) !== undefined) list.endDrag();
+        },
+        dragover: event => {
+            if (!(event instanceof DragEvent)) return;
+            if ([pivotSlotAttributes.entry, pivotSlotAttributes.area, pivotSlotAttributes.fields].some(attribute => around(event.target, attribute) !== undefined)) list.dragOver(event);
+        },
+        dragenter: event => {
+            const entry = around(event.target, pivotSlotAttributes.entry);
+            if (entry !== undefined) {
+                const { area, entry: drawnEntry } = entryAt(entry[1]);
+                list.dragEnter(area, drawnEntry.dropIndex);
+                return;
+            }
+            const area = around(event.target, pivotSlotAttributes.area);
+            if (area !== undefined) list.dragEnter(...areaAt(area[1]));
+        },
+        drop: event => {
+            if (!(event instanceof DragEvent)) return;
+            const entry = around(event.target, pivotSlotAttributes.entry);
+            const area = around(event.target, pivotSlotAttributes.area);
+            if (entry === undefined && area === undefined) {
+                if (around(event.target, pivotSlotAttributes.fields) !== undefined) list.dropOnList(event);
+                return;
+            }
+            // Dropped on a place a newer layout moved: the drag ends, and nothing is dropped.
+            if (!asDrawn()) {
+                event.preventDefault();
+                list.endDrag();
+                return;
+            }
+            if (entry !== undefined) {
+                const { area: at, entry: drawnEntry } = entryAt(entry[1]);
+                list.drop(event, at, drawnEntry.dropIndex);
+            } else if (area !== undefined) {
+                list.drop(event, ...areaAt(area[1]));
+            }
+        },
+    };
+    for (const [type, listener] of Object.entries(listeners)) contents.addEventListener(type, listener);
+    unwire.push(() => { for (const [type, listener] of Object.entries(listeners)) contents.removeEventListener(type, listener); });
+    // The search the pane narrows by stays the one the field shows, though the field is drawn again; an entry under
+    // which a menu or panel stands is not draggable, so a press that moves a little on it is the menu's.
+    const follow = (): void => {
+        const now = list.view();
+        for (const [field] of marked(contents, pivotSlotAttributes.text)) {
+            const box = field instanceof HTMLInputElement ? field : field.querySelector('input');
+            if (box === null) throw new Error('The Field List\'s search is drawn with no field to type in.');
+            if (box.value !== now.search) box.value = now.search;
+        }
+        const open = new Set(now.areas.flatMap(area => area.entries.filter(entry => entry.menuOpen).map(entry => entry.key)));
+        for (const [element, key] of marked(contents, pivotSlotAttributes.entry)) element.draggable = !open.has(key);
+    };
+    follow();
+    unwire.push(list.subscribe(follow));
     return () => { for (const each of unwire) each(); };
 }
 
@@ -552,9 +809,10 @@ function markedAround(contents: HTMLElement, target: Element, attribute: string)
 
 // The control a mark stands for: the element itself where it takes the keyboard, else the first control inside it, as
 // a component library places its attributes on a wrapper.
-function focusable(element: HTMLElement): HTMLElement {
-    if (element.matches('input, select, textarea, button, [tabindex]')) return element;
-    const inside = element.querySelector<HTMLElement>('input, select, textarea, button, [tabindex]');
-    if (inside === null) throw new Error(`The element marked ${pivotSlotAttributes.first} holds no control to take the keyboard.`);
+function focusable(element: HTMLElement, attribute: string = pivotSlotAttributes.first): HTMLElement {
+    const controls = 'input, select, textarea, button, a[href], [tabindex], [contenteditable]';
+    if (element.matches(controls)) return element;
+    const inside = element.querySelector<HTMLElement>(controls);
+    if (inside === null) throw new Error(`The element marked ${attribute} holds no control to take the keyboard.`);
     return inside;
 }

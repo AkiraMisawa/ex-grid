@@ -1,6 +1,9 @@
 #nullable enable
 ExPivot.MudBlazor.MudPivotButton.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
 ExPivot.MudBlazor.MudPivotButton.InOrder.set -> void
+ExPivot.MudBlazor.MudPivotChrome.DetailsDialog(ExPivot.Chrome.PivotDetailsDialogView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.MudBlazor.MudPivotChrome.DetailsTabs(ExPivot.Chrome.PivotDetailsTabsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.MudBlazor.MudPivotChrome.FieldList(ExPivot.Chrome.PivotFieldListView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.MudBlazor.MudPivotChrome.FieldSettings(ExPivot.Chrome.PivotFieldSettingsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.MudBlazor.MudPivotChrome.ItemFilter(ExPivot.Chrome.PivotItemFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.MudBlazor.MudPivotChrome.Menu(ExPivot.Chrome.PivotMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
@@ -21,6 +24,18 @@ ExPivot.MudBlazor.MudPivotScriptActions.Cancel.set -> void
 ExPivot.MudBlazor.MudPivotScriptActions.MudPivotScriptActions() -> void
 ExPivot.MudBlazor.MudPivotScriptActions.Ok.get -> string!
 ExPivot.MudBlazor.MudPivotScriptActions.Ok.set -> void
+ExPivot.MudBlazor.MudPivotScriptDetailsDialog
+ExPivot.MudBlazor.MudPivotScriptDetailsDialog.MudPivotScriptDetailsDialog() -> void
+ExPivot.MudBlazor.MudPivotScriptDetailsDialog.View.get -> ExPivot.Chrome.PivotDetailsDialogView!
+ExPivot.MudBlazor.MudPivotScriptDetailsDialog.View.set -> void
+ExPivot.MudBlazor.MudPivotScriptDetailsTabs
+ExPivot.MudBlazor.MudPivotScriptDetailsTabs.MudPivotScriptDetailsTabs() -> void
+ExPivot.MudBlazor.MudPivotScriptDetailsTabs.View.get -> ExPivot.Chrome.PivotDetailsTabsView!
+ExPivot.MudBlazor.MudPivotScriptDetailsTabs.View.set -> void
+ExPivot.MudBlazor.MudPivotScriptFieldList
+ExPivot.MudBlazor.MudPivotScriptFieldList.MudPivotScriptFieldList() -> void
+ExPivot.MudBlazor.MudPivotScriptFieldList.View.get -> ExPivot.Chrome.PivotFieldListView!
+ExPivot.MudBlazor.MudPivotScriptFieldList.View.set -> void
 ExPivot.MudBlazor.MudPivotScriptFieldSettings
 ExPivot.MudBlazor.MudPivotScriptFieldSettings.MudPivotScriptFieldSettings() -> void
 ExPivot.MudBlazor.MudPivotScriptFieldSettings.View.get -> ExPivot.Chrome.PivotFieldSettingsView!
@@ -56,6 +71,9 @@ ExPivot.MudBlazor.MudPivotScriptValueFieldSettings.MudPivotScriptValueFieldSetti
 ExPivot.MudBlazor.MudPivotScriptValueFieldSettings.View.get -> ExPivot.Chrome.PivotValueFieldSettingsView!
 ExPivot.MudBlazor.MudPivotScriptValueFieldSettings.View.set -> void
 ~override ExPivot.MudBlazor.MudPivotScriptActions.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptDetailsDialog.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptDetailsTabs.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptFieldList.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExPivot.MudBlazor.MudPivotScriptFieldSettings.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExPivot.MudBlazor.MudPivotScriptItemFilter.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExPivot.MudBlazor.MudPivotScriptMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

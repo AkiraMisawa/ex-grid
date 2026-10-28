@@ -1,3 +1,5 @@
+using ExPivot.Engine;
+
 namespace ExPivot.Chrome;
 
 /// <summary>
@@ -37,6 +39,15 @@ public enum PivotScriptSlots
     /// <summary>Value Field Settings…, through
     /// <see cref="IPivotChrome.ValueFieldSettings(PivotValueFieldSettingsView)"/>.</summary>
     ValueFieldSettings = 64,
+
+    /// <summary>The PivotTable Fields pane, through <see cref="IPivotChrome.FieldList(PivotFieldListView)"/>.</summary>
+    FieldList = 128,
+
+    /// <summary>Show Details' sheet tabs, through <see cref="IPivotChrome.DetailsTabs(PivotDetailsTabsView)"/>.</summary>
+    DetailsTabs = 256,
+
+    /// <summary>Show Details' dialog, through <see cref="IPivotChrome.DetailsDialog(PivotDetailsDialogView)"/>.</summary>
+    DetailsDialog = 512,
 }
 
 /// <summary>
@@ -97,6 +108,33 @@ public static class PivotScriptSlotAttributes
     /// <summary>On a panel's first control, or an element holding it: the one each of the pivot's requests for the
     /// keyboard is for.</summary>
     public const string First = "data-ex-pivot-first";
+
+    /// <summary>On a field of the Field List, the element the browser drags: the field's
+    /// <see cref="PivotFieldListFieldView.Name"/>. Its checkbox inside ticks the field into the layout, or takes it
+    /// out. Draw it <c>draggable</c>.</summary>
+    public const string Field = "data-ex-pivot-field";
+
+    /// <summary>On an entry of an Area, the element the browser drags and drops on: the entry's
+    /// <see cref="PivotFieldListEntryView.Key"/>. The script keeps it draggable while no menu or panel of its stands
+    /// under it.</summary>
+    public const string Entry = "data-ex-pivot-entry";
+
+    /// <summary>On an Area's box, which takes a drop past its entries: the Area's
+    /// <see cref="PivotFieldListAreaView.Name"/>.</summary>
+    public const string Area = "data-ex-pivot-area";
+
+    /// <summary>On the Field List's list of fields: an entry dropped there is taken out of the layout.</summary>
+    public const string Fields = "data-ex-pivot-fields";
+
+    /// <summary>On Defer Layout Update's checkbox, or an element holding it.</summary>
+    public const string Defer = "data-ex-pivot-defer";
+
+    /// <summary>On a sheet tab: its <see cref="PivotDetailsTabView.Key"/>; a press selects its sheet.</summary>
+    public const string Tab = "data-ex-pivot-tab";
+
+    /// <summary>On a sheet tab's close button, beside the tab and not inside it: the tab's
+    /// <see cref="PivotDetailsTabView.Key"/>; a press closes its sheet.</summary>
+    public const string CloseTab = "data-ex-pivot-close-tab";
 }
 
 /// <summary>One command of a pivot menu, as the Script Core hands it (ADR-0061).</summary>
@@ -304,3 +342,113 @@ public sealed record PivotItemFilterView(
     string LoadingLabel,
     string OkLabel,
     string CancelLabel);
+
+/// <summary>A declared field as the Field List lists it (ADR-0061).</summary>
+/// <param name="Name">The field's name, which marks the element dragged
+/// (<see cref="PivotScriptSlotAttributes.Field"/>).</param>
+/// <param name="Key">The name its checkbox is handed in by (<see cref="PivotScriptSlotAttributes.Control"/>).</param>
+/// <param name="Caption">What it is called.</param>
+/// <param name="Placed">Whether it stands in an Area: its checkbox is ticked.</param>
+/// <param name="Filtered">Whether it hides Items now.</param>
+/// <param name="Count">Its count of Items, written in the pivot's culture, where the source counted them; null
+/// otherwise.</param>
+/// <param name="CountLabel">The count as said, "12 Items"; null with the count.</param>
+/// <param name="Dragging">Whether it is the one being dragged.</param>
+public sealed record PivotFieldListFieldView(string Name, string Key, string Caption, bool Placed, bool Filtered, string? Count, string? CountLabel, bool Dragging);
+
+/// <summary>A placed entry of an Area (ADR-0061).</summary>
+/// <param name="Key">The name its element (<see cref="PivotScriptSlotAttributes.Entry"/>), its button
+/// (<see cref="PivotScriptSlotAttributes.Press"/>, <see cref="PivotScriptSlotAttributes.Control"/>) and the anchor
+/// under it (<see cref="PivotScriptSlotAttributes.Anchor"/>) are marked with.</param>
+/// <param name="Caption">What it is called: the field's caption, a Value Field's, Σ Values.</param>
+/// <param name="MenuLabel">The button's accessible name: "Options for Region".</param>
+/// <param name="Filtered">Whether its field hides Items now.</param>
+/// <param name="Values">Whether it is Σ Values.</param>
+/// <param name="MenuOpen">Whether its menu, or a panel the menu opened, stands under it.</param>
+/// <param name="Dragging">Whether it is the one being dragged.</param>
+/// <param name="DropBefore">Whether a drop now would land before it.</param>
+public sealed record PivotFieldListEntryView(string Key, string Caption, string MenuLabel, bool Filtered, bool Values, bool MenuOpen, bool Dragging, bool DropBefore);
+
+/// <summary>One Area of the Field List (ADR-0061).</summary>
+/// <param name="Area">Which Area.</param>
+/// <param name="Name">The Area's name as the script reads it, which marks its box
+/// (<see cref="PivotScriptSlotAttributes.Area"/>).</param>
+/// <param name="Title">Its words: Filters, Columns, Rows, Values.</param>
+/// <param name="Entries">What stands in it, Σ Values last where it stands.</param>
+/// <param name="DropTarget">Whether what is dragged is over it, and may be dropped there.</param>
+/// <param name="OverCap">While a drop there would pass the leaf cap, the words that say so, as a status: a hint,
+/// never a refusal (ADR-0370 section 3); null otherwise.</param>
+public sealed record PivotFieldListAreaView(PivotArea Area, string Name, string Title, IReadOnlyList<PivotFieldListEntryView> Entries, bool DropTarget, string? OverCap);
+
+/// <summary>
+/// The PivotTable Fields pane when the Script Core draws the pivot (ADR-0061, ADR-0410): data only, drawn again at
+/// each change. The Razor draws the heading with Hide (<see cref="PivotScriptSlotAttributes.Press"/> <c>close</c>);
+/// the search, marked <see cref="PivotScriptSlotAttributes.Text"/> and <see cref="PivotScriptSlotAttributes.Control"/>
+/// <c>search</c>, drawn with the text it opens with and no value bound after; the list of fields, marked
+/// <see cref="PivotScriptSlotAttributes.Fields"/>, one draggable element per field marked
+/// <see cref="PivotScriptSlotAttributes.Field"/> holding its checkbox; the four Areas' boxes and their entries, each
+/// entry's button pressed and handed in by its key and an empty anchor under it, where its menu and panels open;
+/// and Defer Layout Update (<see cref="PivotScriptSlotAttributes.Defer"/>) with Update
+/// (<see cref="PivotScriptSlotAttributes.Press"/> <c>update</c>). Every drag and drop is the browser's, read by the
+/// script; key the fields and entries, so the element the browser drags stays through a render.
+/// </summary>
+/// <param name="Title">The pane's name: "PivotTable Fields".</param>
+/// <param name="HideLabel">Hide's accessible name.</param>
+/// <param name="ChooseCaption">The caption above the fields.</param>
+/// <param name="SearchLabel">The search's accessible name and placeholder.</param>
+/// <param name="Search">The search its field opens with; the script writes the pane's after.</param>
+/// <param name="Fields">The declared fields the search leaves, in declaration order.</param>
+/// <param name="DragCaption">The caption above the Areas.</param>
+/// <param name="Areas">The four Areas, in Excel's order.</param>
+/// <param name="DropRemoves">Whether a drop on the list of fields takes what is dragged out of the layout.</param>
+/// <param name="DeferLabel">Defer Layout Update's words.</param>
+/// <param name="Deferred">Whether Defer Layout Update is ticked.</param>
+/// <param name="UpdateLabel">Update's words.</param>
+/// <param name="CanUpdate">Whether Update would apply anything.</param>
+public sealed record PivotFieldListView(
+    string Title,
+    string HideLabel,
+    string ChooseCaption,
+    string SearchLabel,
+    string Search,
+    IReadOnlyList<PivotFieldListFieldView> Fields,
+    string DragCaption,
+    IReadOnlyList<PivotFieldListAreaView> Areas,
+    bool DropRemoves,
+    string DeferLabel,
+    bool Deferred,
+    string UpdateLabel,
+    bool CanUpdate);
+
+/// <summary>A sheet tab at the report's foot (ADR-0059): the report's own, first, or a Show Details sheet's.</summary>
+/// <param name="Key">The name the tab is marked and handed in by (<see cref="PivotScriptSlotAttributes.Tab"/>,
+/// <see cref="PivotScriptSlotAttributes.Control"/>), and its close by
+/// (<see cref="PivotScriptSlotAttributes.CloseTab"/>).</param>
+/// <param name="Title">What the tab reads.</param>
+/// <param name="Selected">Whether it is the selected sheet.</param>
+/// <param name="PanelId">The id of the panel its records stand in, for the tab's <c>aria-controls</c>; null on the
+/// report's tab.</param>
+/// <param name="CloseLabel">Its close button's accessible name; null on the report's tab, which does not close.</param>
+public sealed record PivotDetailsTabView(string Key, string Title, bool Selected, string? PanelId, string? CloseLabel);
+
+/// <summary>
+/// Show Details' sheet tabs when the Script Core draws the pivot (ADR-0059, ADR-0410): data only, drawn again at
+/// each change. The Razor draws a tab list named <see cref="Name"/>, one tab per <see cref="Tabs"/> marked
+/// <see cref="PivotScriptSlotAttributes.Tab"/> and <see cref="PivotScriptSlotAttributes.Control"/>, and a close
+/// button beside each tab that closes, marked <see cref="PivotScriptSlotAttributes.CloseTab"/>. Which sheet is
+/// selected, and which tab takes the keyboard, are the pivot's.
+/// </summary>
+/// <param name="Name">The tab list's accessible name.</param>
+/// <param name="Tabs">The report's tab, then each Show Details sheet's, in the order they opened.</param>
+public sealed record PivotDetailsTabsView(string Name, IReadOnlyList<PivotDetailsTabView> Tabs);
+
+/// <summary>
+/// What Show Details' dialog draws inside the pivot's modal frame when the Script Core draws the pivot (ADR-0059,
+/// ADR-0410): its title, an empty element marked <see cref="PivotScriptSlotAttributes.Anchor"/> <c>records</c> where
+/// the records stand, and Close, marked <see cref="PivotScriptSlotAttributes.Press"/> and
+/// <see cref="PivotScriptSlotAttributes.Control"/> <c>close</c>, which takes the keyboard as the dialog opens. The
+/// frame, its backdrop and Escape are the pivot's.
+/// </summary>
+/// <param name="Title">The cell the records are behind, which names the dialog.</param>
+/// <param name="CloseLabel">Close's words.</param>
+public sealed record PivotDetailsDialogView(string Title, string CloseLabel);
