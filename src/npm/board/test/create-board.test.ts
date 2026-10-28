@@ -2,14 +2,18 @@
 // A Board drawn into an element (layer 2, ADR-0350 section 13). What a grid, a pivot and a chart draw is theirs, tested in
 // their packages: here each is a stand-in that records what the Board hands it, and the tests judge what the Board
 // decides — what it lays out, what a selection narrows, what a press hands on, which Diff it raises, what it refuses.
-import { afterEach, describe, expect, it } from 'vitest';
-import type { ChartHandle, ChartOptions } from '@ex-grid/chart';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { thinChartData, type ChartHandle, type ChartOptions } from '@ex-grid/chart';
 import type { GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
 import type { Snapshot } from '@ex-grid/data';
 import type { PivotHandle, PivotViewOptions } from '@ex-grid/pivot';
-import { readPivotLayoutJson, textItemKey } from '@ex-grid/pivot-engine';
+import { readPivotLayoutJson, SnapshotPivotSource, textItemKey } from '@ex-grid/pivot-engine';
 import { BoardDrawing, type BoardMounts, type BoardOptions } from '../src/create-board';
-import { boardInput, BoardDiff, readBoard, type BoardOutput, type BoardReading, type ShapedRow } from '../src/index';
+import {
+    boardInput, BoardDiff, narrowedPositions, narrowedSnapshot, readBoard, valuesUnder, type BoardOutput, type BoardReading, type BoardSource, type LinkCondition,
+    type ShapedRow,
+} from '../src/index';
+import { declaredChartData } from '../src/snapshot-values';
 
 const views = [
     '{"id": "blotter", "title": "Blotter", "grid": {"data": "trades", "columns": [{"column": "desk"}, {"column": "pnl", "format": "#,##0", "width": 90}]}}',
@@ -380,3 +384,103 @@ describe('createBoard (ADR-0340)', () => {
         expect([mounts.grids[0]?.destroyed, mounts.pivots[0]?.destroyed, mounts.charts[0]?.destroyed]).toEqual([true, true, true]);
     });
 });
+
+/** A server holding the trades, answering as a host's own code would, its shape question held until the test lets it go. */
+function served(reading: BoardReading, failCells = false) {
+    const trades = data(reading)['trades'];
+    if (trades === undefined) throw new Error('No trades.');
+    let release: (() => void) | undefined;
+    const shapeAnswered = new Promise<void>(resolve => { release = resolve; });
+    const counts = { shape: 0, shapeAbandoned: 0, cells: 0 };
+    const input = boardInput(reading, 'trades');
+    if (input === undefined || release === undefined) throw new Error('No input trades.');
+    const through = (narrowing: readonly LinkCondition[]) => narrowedSnapshot(trades, narrowedPositions(trades, narrowing));
+    const source: BoardSource = {
+        shape: async signal => {
+            counts.shape++;
+            signal?.addEventListener('abort', () => { counts.shapeAbandoned++; });
+            await shapeAnswered;
+            return input.shape;
+        },
+        fetch: query => {
+            const kept = through(query.narrowing);
+            const start = Math.min(query.grid.range.start, kept.rowCount);
+            const count = Math.min(query.grid.range.count, kept.rowCount - start);
+            return Promise.resolve({ rows: narrowedSnapshot(kept, Array.from({ length: count }, (_, i) => start + i)), start, totalCount: kept.rowCount });
+        },
+        pivot: narrowing => new SnapshotPivotSource(through(narrowing)),
+        thin: query => Promise.resolve(thinChartData(declaredChartData(through(query.narrowing), input, undefined), query.chart, trades.version)),
+        under: query => {
+            counts.cells++;
+            return failCells ? Promise.reject(new Error('the server is down')) : Promise.resolve(valuesUnder(trades, query));
+        },
+    };
+    return { sources: { trades: source }, counts, release };
+}
+
+describe('createBoard over sources held on a server (ADR-0343)', () => {
+    it('says it is asking the sources, then draws its views over them', async () => {
+        const reading = board();
+        const server = served(reading);
+        const { element, mounts, view } = draw({ board: reading, data: {}, sources: server.sources });
+
+        expect(element.querySelector('.ex-board-binding[role="status"]')?.textContent).toBe('Asking the sources for their shapes.');
+        expect(element.querySelectorAll('section')).toHaveLength(0);
+        server.release();
+
+        await vi.waitFor(() => { expect(view.bound).toBeDefined(); });
+        expect(element.querySelector('.ex-board-binding')).toBeNull();
+        expect(element.querySelectorAll('section')).toHaveLength(3);
+        expect(only(mounts.grids).options.source).toBe(gridView(view, 'blotter').fetched);
+        expect(only(mounts.charts).options.definition.series.map(series => series.points.length)).toEqual([3]);
+        expect(server.counts.shape).toBe(1);
+    });
+
+    it('drops a binding over sources the options changed under, and lets go of its questions (spine rule 6)', () => {
+        const reading = board();
+        const server = served(reading);
+        const { view, mounts, options } = draw({ board: reading, data: {}, sources: server.sources });
+
+        view.update({ ...options, data: data(reading), sources: undefined });
+
+        expect(server.counts.shapeAbandoned).toBe(1);
+        expect(only(mounts.grids).options.source).toBe(gridView(view, 'blotter').source);
+        expect(gridView(view, 'blotter').fetched).toBeUndefined();
+    });
+
+    it('says under a pivot over a server that its source did not answer for the cells selected (ADR-0345)', async () => {
+        const reading = board(', "links": [{"from": "byDesk", "to": ["curve"], "on": ["desk"]}]');
+        const server = served(reading, true);
+        const { element, mounts, view } = draw({ board: reading, data: {}, sources: server.sources });
+        server.release();
+        await vi.waitFor(() => { expect(view.bound).toBeDefined(); });
+        const status = element.querySelector('[data-ex-view="byDesk"] .ex-board-link-status');
+
+        call(only(mounts.pivots).options.onSelectionChanged, { selection: rows(0), items: [{ row: [{ field: 'desk', item: textItemKey('Rates') }], column: [] }] });
+
+        await vi.waitFor(() => { expect(status?.textContent).toBe('The source did not answer for the cells selected, so they narrow nothing: the server is down'); });
+        expect(server.counts.cells).toBe(1);
+    });
+
+    it('says under a fetched grid that a selection reaching rows not fetched hands nothing on (ADR-0343)', async () => {
+        const server = served(linked);
+        const { element, mounts, view } = draw({ board: linked, data: {}, sources: server.sources });
+        server.release();
+        await vi.waitFor(() => { expect(view.bound).toBeDefined(); });
+        const unread = 'The selection reaches rows not fetched from the source, so it narrows nothing and hands nothing on.';
+        const button = element.querySelector<HTMLButtonElement>('button[data-ex-output="chosen"]');
+        await vi.waitFor(() => { expect(gridView(view, 'blotter').source.snapshot().window).toHaveLength(3); });
+
+        call(only(mounts.grids).options.onSelectionChanged, rows(1, 900));
+        button?.click();
+
+        expect(element.querySelector('[data-ex-view="blotter"] .ex-board-link-status')?.textContent).toBe(unread);
+        expect(element.querySelector('.ex-board-confirm-status')?.textContent).toBe(unread);
+    });
+});
+
+function gridView(view: BoardDrawing, id: string) {
+    const found = view.bound?.view(id);
+    if (found?.kind !== 'grid') throw new Error(`'${id}' is not a grid.`);
+    return found;
+}

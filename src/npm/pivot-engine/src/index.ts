@@ -20,7 +20,7 @@ export type {
     PivotAggregation, PivotArea, PivotAxis, PivotColumnRole, PivotDatePart, PivotFieldType, PivotItemKind, PivotReportForm, PivotRowRole,
     PivotShowValuesAs, PivotSortDirection,
 } from './layout/pivot-enums';
-export { pivotAggregations, pivotItemKinds, pivotShowValuesAsList } from './layout/pivot-enums';
+export { aggregationTitle, pivotAggregations, pivotItemKinds, pivotShowValuesAsList } from './layout/pivot-enums';
 export type { PivotItemKey } from './items/item-key';
 export {
     blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, publicKeyId as pivotItemKeyId,

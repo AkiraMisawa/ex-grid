@@ -2,7 +2,7 @@
 // hold the C# BoundBoard to them.
 import { describe, expect, it } from 'vitest';
 import { BoardRefusedError, createSnapshot, ticksFromText, type Snapshot } from '@ex-grid/data';
-import { textItemKey } from '@ex-grid/pivot-engine';
+import { SnapshotPivotSource, textItemKey } from '@ex-grid/pivot-engine';
 import {
     bindBoard, boardInput, LinkCondition, readBoard, type BoardReading, type BoundBoard, type BoundView, type SelectedRows,
 } from '../src/index';
@@ -53,9 +53,10 @@ function grid(bound: BoundBoard, id: string) {
 }
 
 function desks(bound: BoundBoard, id: string): (string | null)[] {
-    const view = grid(bound, id);
-    const desk = view.snapshot.column('desk');
-    return view.source.snapshot().window.map(row => desk.kind === 'text' ? desk.valueAt(row.at) : null);
+    return grid(bound, id).source.snapshot().window.map(row => {
+        const desk = row.snapshot.column('desk');
+        return desk.kind === 'text' ? desk.valueAt(row.at) : null;
+    });
 }
 
 function link(reading: BoardReading, at = 0) {
@@ -94,7 +95,7 @@ describe('a link (ADR-0340 Q5)', () => {
         // Across inputs that share the column, and as the grid's value list compares text.
         expect(desks(bound, 'limits')).toEqual(['rates']);
         const byDesk = bound.view('byDesk');
-        expect(byDesk.kind === 'pivot' && byDesk.source.snapshot.rowCount).toBe(2);
+        expect(byDesk.kind === 'pivot' && byDesk.source instanceof SnapshotPivotSource && byDesk.source.snapshot.rowCount).toBe(2);
         const curve = bound.view('curve');
         expect(curve.kind === 'chart' && curve.reading.definition.series[0]?.points.map(p => Number(p.y))).toEqual([100, 300]);
         expect(told).toBe(1);
@@ -103,7 +104,7 @@ describe('a link (ADR-0340 Q5)', () => {
 
         expect(bound.conditionOf(narrowing)).toBeUndefined();
         expect(desks(bound, 'other')).toHaveLength(5);
-        expect(byDesk.kind === 'pivot' && byDesk.source.snapshot).toBe(bound.data.get('trades'));
+        expect(byDesk.kind === 'pivot' && byDesk.source instanceof SnapshotPivotSource && byDesk.source.snapshot).toBe(bound.data.get('trades'));
         expect(curve.kind === 'chart' && curve.reading.definition.series[0]?.points).toHaveLength(5);
         expect(told).toBe(2);
     });
