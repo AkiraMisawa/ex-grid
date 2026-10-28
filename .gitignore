@@ -48,6 +48,9 @@ src/ExGrid/wwwroot/ex-grid-core.min.js.map
 # ExPivot's, bundled from src/npm as ExPivot builds (ADR-0370 section 1)
 src/ExPivot/wwwroot/ex-pivot.min.js
 src/ExPivot/wwwroot/ex-pivot.min.js.map
+# ExSheet's, bundled from src/npm as ExSheet builds (ADR-0370 section 1)
+src/ExSheet/wwwroot/ex-sheet.min.js
+src/ExSheet/wwwroot/ex-sheet.min.js.map
 src/ExChart/wwwroot/ex-chart-core.min.js
 src/ExChart/wwwroot/ex-chart-core.min.js.map
 

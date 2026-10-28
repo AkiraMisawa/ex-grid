@@ -1,0 +1,209 @@
+// @vitest-environment happy-dom
+// The bridge's own tests (ADR-0370 section 1): what crosses between .NET and ExSheet's Script Core. What the Sheet
+// draws and decides is the Script Core's, tested there, and the documents' JSON is the engines' shared cases'; here,
+// that a document crosses as .NET wrote it and comes back as the documents the Razor component raises, that one the
+// Sheet raised and handed back opens nothing, that a refusal crosses as data, and that the Consumer's words reach the
+// grid and the Sheet by the Razor component's ids.
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { gridCommandIds } from '@ex-grid/core';
+import { CellAddress, Culture, SheetDocument, SheetEdit, Workbook, WorkbookDocument } from '@ex-grid/sheet-engine';
+import { attach, labelIds, wordsOf, type BlazorSheet, type DotNetHandle, type WireAttach, type WireOptions } from '../src/blazor-sheet';
+
+/** .NET, as the bridge calls it: every event recorded. */
+class FakeDotNet implements DotNetHandle {
+    readonly heard: { readonly kind: string; readonly payload: unknown }[] = [];
+
+    invokeMethodAsync(method: string, ...args: readonly unknown[]): Promise<unknown> {
+        if (method !== 'Heard') throw new Error(`the bridge called ${method}`);
+        this.heard.push({ kind: String(args[0]), payload: args[1] });
+        return Promise.resolve(true);
+    }
+
+    of(kind: string): readonly unknown[] {
+        return this.heard.filter(event => event.kind === kind).map(event => event.payload);
+    }
+}
+
+const attached: BlazorSheet[] = [];
+
+afterEach(() => {
+    for (const sheet of attached.splice(0)) sheet.dispose();
+    document.body.replaceChildren();
+});
+
+const options = (more: Partial<WireOptions> = {}): WireOptions =>
+    ({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, hears: ['workbookChanged', 'documentChanged'], ...more });
+
+function mount(init: Partial<WireAttach> = {}): { readonly element: HTMLElement; readonly sheet: BlazorSheet; readonly dotnet: FakeDotNet } {
+    const element = document.createElement('div');
+    document.body.append(element);
+    const dotnet = new FakeDotNet();
+    const sheet = attach(element, dotnet, JSON.stringify({ options: options(), document: null, documentsSent: 0, words: null, ...init }));
+    attached.push(sheet);
+    return { element, sheet, dotnet };
+}
+
+/** A Workbook holding `entries` on its Sheets, as the JSON .NET writes. */
+function workbookJson(...sheets: readonly (readonly [string, Readonly<Record<string, string>>])[]): string {
+    const workbook = new Workbook(Culture.of('en-US'));
+    let previous = 'Sheet1';
+    sheets.forEach(([name], at) => {
+        workbook.do(previous, at === 0 ? SheetEdit.rename(name) : SheetEdit.insertSheet(name));
+        previous = name;
+    });
+    for (const [name, entries] of sheets) {
+        for (const [address, typed] of Object.entries(entries)) workbook.do(name, SheetEdit.enter(CellAddress.parse(address), typed));
+    }
+    return workbook.toDocument().toJson();
+}
+
+const cellText = (element: HTMLElement, row: number, column: number): string | null =>
+    element.querySelector(`.ex-viewport > .ex-row[aria-rowindex="${String(row + 2)}"] > [aria-colindex="${String(column + 1)}"]`)?.textContent ?? null; // oxlint-disable-line ex-grid/no-stand-in-default -- a cell not painted reads as null, which the expectation names
+
+function select(element: HTMLElement, address: string): void {
+    const box = element.querySelector<HTMLInputElement>('input.ex-name-box');
+    if (box === null) throw new Error('The Sheet shows no Name Box.');
+    box.focus();
+    box.value = address;
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    element.querySelector('form.ex-name-box-form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+}
+
+function rowHeadingWidthPx(element: HTMLElement): number {
+    const style = element.querySelector('.ex-row-heading')?.getAttribute('style');
+    if (style === null || style === undefined) return 0;
+    const width = /width: ([\d.]+)px/u.exec(style);
+    if (width?.[1] === undefined) throw new Error(`A Row Heading carries no width: ${style}`);
+    return Number(width[1]);
+}
+
+/** A press on the cell at `row`, `column` of a default Sheet, where the keyboard then is. */
+function press(element: HTMLElement, row: number, column: number): void {
+    const viewport = element.querySelector<HTMLElement>('.ex-viewport');
+    if (viewport === null) throw new Error('The grid has no viewport.');
+    // The Row Headings stand at the Viewport's left edge, and a press in that band selects a whole row
+    // (ADR-0050): the columns start after it.
+    const headingPx = rowHeadingWidthPx(element);
+    for (const type of ['mousedown', 'mouseup']) {
+        const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, buttons: type === 'mousedown' ? 1 : 0 });
+        Object.defineProperty(event, 'offsetX', { value: headingPx + (column * 99) + 20 });
+        Object.defineProperty(event, 'offsetY', { value: row * 28 + 5 });
+        viewport.dispatchEvent(event);
+        if (type === 'mousedown' && !event.defaultPrevented) element.querySelector<HTMLElement>('.ex-scroller')?.focus();
+    }
+}
+
+/** The text a test expects there. */
+function must(text: string | null): string {
+    if (text === null) throw new Error('No document was raised.');
+    return text;
+}
+
+function key(name: string): void {
+    const target = document.activeElement;
+    if (target === null) throw new Error('Nothing holds the keyboard.');
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+}
+
+interface Raised {
+    readonly workbook: string | null;
+    readonly sheet: string | null;
+    readonly documentsSent: number;
+}
+
+describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)', () => {
+    it('opens the document .NET wrote, and raises the Workbook and its one Sheet as documents after a change', async () => {
+        const { element, dotnet } = mount({ document: workbookJson(['Prices', { A1: '2', A2: '=A1*3' }]), documentsSent: 1 });
+        await vi.waitFor(() => { expect(cellText(element, 1, 0)).toBe('6'); });
+
+        select(element, 'A1');
+        key('Delete');
+
+        await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toHaveLength(1); });
+        const raised = dotnet.of('workbookChanged')[0] as Raised;
+        expect(raised.documentsSent).toBe(1);
+        expect(WorkbookDocument.fromJson(must(raised.workbook)).sheets.map(sheet => sheet.name)).toEqual(['Prices']);
+        // A Sheet Document of the one Sheet, as the Razor component's DocumentChanged hands it.
+        const sheet = SheetDocument.fromJson(must(raised.sheet));
+        expect(sheet.name).toBe('Prices');
+        expect(sheet.cells.map(cell => cell.address.toString())).toEqual(['A2']);
+    });
+
+    it('raises no Sheet Document while the Workbook holds several, and only the documents .NET listens to', async () => {
+        const { element, dotnet } = mount({
+            document: workbookJson(['One', { A1: '1' }], ['Two', {}]),
+            documentsSent: 1,
+            options: options({ hears: ['documentChanged'] }),
+        });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('1'); });
+
+        select(element, 'A1');
+        key('Delete');
+
+        await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toEqual([{ workbook: null, sheet: null, documentsSent: 1 }]); });
+    });
+
+    it('keeps the user\'s change when the parameters move and no document of the Consumer\'s came, and opens one that did', async () => {
+        const { element, sheet, dotnet } = mount({ document: workbookJson(['Sheet1', { A1: 'kept' }]), documentsSent: 1 });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('kept'); });
+        select(element, 'A1');
+        key('Delete');
+        await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toHaveLength(1); });
+
+        // Another parameter: the Workbook the Sheet raised is the one it is handed again.
+        sheet.update(JSON.stringify({ options: options({ showFormulaBar: false }) }));
+        expect(cellText(element, 0, 0)).toBe('');
+        expect(sheet.documents().workbook).toBe((dotnet.of('workbookChanged')[0] as Raised).workbook);
+
+        // A document of the Consumer's own making replaces it, and what the Sheet raises next says so.
+        sheet.update(JSON.stringify({ options: options(), document: workbookJson(['Sheet1', { A1: 'new' }]), documentsSent: 2 }));
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('new'); });
+        select(element, 'A1');
+        key('Delete');
+        await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toHaveLength(2); });
+        expect((dotnet.of('workbookChanged')[1] as Raised).documentsSent).toBe(2);
+
+        // None, handed after one: a Workbook of one empty Sheet.
+        sheet.update(JSON.stringify({ options: options(), document: workbookJson(['Sheet1', { B2: 'x' }]), documentsSent: 3 }));
+        sheet.update(JSON.stringify({ options: options(), document: null, documentsSent: 4 }));
+        expect(JSON.parse(sheet.documents().workbook)).toMatchObject({ sheets: [{ name: 'Sheet1' }] });
+        expect(SheetDocument.fromJson(must(sheet.documents().sheet)).cells).toEqual([]);
+    });
+});
+
+describe('commands across the bridge (ADR-0048)', () => {
+    it('answers a command as the Sheet did, and a refusal as data .NET throws again', async () => {
+        const { element, sheet, dotnet } = mount();
+        expect(sheet.undo()).toEqual({ done: false });
+
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('F2');
+        await vi.waitFor(() => { expect(dotnet.of('editingChanged')).toEqual([true]); });
+
+        expect(sheet.undo()).toEqual({ refused: { reason: 'editIsOpen', message: expect.any(String) as string } });
+        expect(sheet.openFormatCells()).toMatchObject({ refused: { reason: 'editIsOpen' } });
+    });
+});
+
+describe('words across the bridge (ADR-0370 section 10, ADR-0036)', () => {
+    it('asks .NET for the grid\'s ids and ExSheet\'s by the Razor component\'s names', () => {
+        const ids = labelIds();
+        expect(ids).toContain(gridCommandIds.copy);
+        expect(ids).toEqual(expect.arrayContaining([
+            'exsheet.insert-rows', 'exsheet.delete-rows', 'exsheet.insert-columns', 'exsheet.delete-columns', 'exsheet.format-cells',
+            'exsheet.summary-refused',
+        ]));
+        expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('words the grid\'s ids through its command label, and ExSheet\'s through the Sheet\'s own ids', () => {
+        const words = wordsOf({ [gridCommandIds.copy]: 'コピー', 'exsheet.summary-refused': '集計なし: {0}', 'exsheet.format-cells': 'セルの書式設定' });
+        expect(words.commandLabel?.(gridCommandIds.copy)).toBe('コピー');
+        expect(words.commandLabel?.('exsheet.format-cells')).toBeUndefined();
+        expect(words.label?.('summaryRefused', 'English')).toBe('集計なし: {0}');
+        expect(words.label?.('command.formatCells', 'English')).toBe('セルの書式設定');
+        expect(words.label?.('command.insertRows', 'English')).toBeUndefined();
+        expect(wordsOf(null)).toEqual({ label: undefined, commandLabel: undefined });
+    });
+});

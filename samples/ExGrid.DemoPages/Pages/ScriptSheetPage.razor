@@ -1,0 +1,78 @@
+@page "/script-sheet"
+@using System.Globalization
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Summarizing
+@using global::ExSheet
+@using global::ExSheet.Engine
+
+<DemoNav />
+
+<h1>ExSheet over the Script Core</h1>
+
+<p>
+    The Sheet below is <code>ExSheet.Script.ExSheet</code>: Blazor's Framework Adapter over
+    <code>@@ex-grid/sheet</code> (ADR-0370 section 1). The Workbook, its Formulas, the Formula Bar, the
+    Sheet Tabs and the Selection Summary are the Script Core's, in the browser, on both hosting models.
+    The page binds the Sheet Document two ways, as a page binds the Razor component's: each change
+    crosses to .NET as the JSON both engines read and write, and the status line counts its cells.
+    <i>Reset</i> hands the first document back; <i>Undo</i> is a command asked from .NET.
+</p>
+
+<div class="demo-toolbar">
+    <button id="script-sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
+    <button id="script-sheet-reset" @onclick="Reset">Reset the Sheet</button>
+</div>
+
+<p class="demo-status">
+    <span id="script-sheet-document" role="status">Cells in the document: @_document.Cells.Count</span><br />
+    <span id="script-sheet-editing" role="status">Editing: @(_editing ? "yes" : "no")</span><br />
+    <span id="script-sheet-figures" role="status">Figures: @_figures</span><br />
+    <span id="script-sheet-undone" role="status">@_undone</span>
+</p>
+
+<ExSheet.Script.ExSheet @ref="_sheet"
+                        @bind-Document="_document"
+                        Culture="EnUs"
+                        @bind-SummaryFigures="_figures"
+                        EditingChanged="Editing"
+                        ViewportHeight="420" />
+
+@code {
+    private static readonly CultureInfo EnUs = CultureInfo.GetCultureInfo("en-US");
+    // Held, and handed in again by Reset: the same document the Sheet opened on replaces the user's changes.
+    private static readonly SheetDocument First = FirstDocument();
+    private SheetDocument _document = First;
+    private SummaryFigures _figures = SummaryFigures.Default;
+    private bool _editing;
+    private ExSheet.Script.ExSheet? _sheet;
+    // Never empty: a line that appeared with the first answer would move the Sheet down under the pointer.
+    private string _undone = "Nothing undone yet";
+
+    private static SheetDocument FirstDocument()
+    {
+        var workbook = new Workbook(EnUs);
+        var sheet = workbook.Sheets[0].Name;
+        workbook.Do(sheet, SheetEdit.Enter(CellAddress.Parse("A1"), "2"));
+        workbook.Do(sheet, SheetEdit.Enter(CellAddress.Parse("A2"), "3"));
+        workbook.Do(sheet, SheetEdit.Enter(CellAddress.Parse("A3"), "=SUM(A1:A2)"));
+        return workbook.ToDocument(sheet);
+    }
+
+    private void Editing(bool open) => _editing = open;
+
+    private void Reset() => _document = First;
+
+    private async Task UndoAsync()
+    {
+        try
+        {
+            _undone = await Sheet().UndoAsync() ? "Undone" : "Nothing to undo";
+        }
+        catch (SheetRefusedException refused)
+        {
+            _undone = refused.Refusal.Message;
+        }
+    }
+
+    private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the page.");
+}

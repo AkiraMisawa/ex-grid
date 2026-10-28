@@ -37,6 +37,18 @@ public class ShippedFilesTests : SheetTestContext
         Assert.Equal(ShippedFiles.Stamp("ExGrid", "ex-grid.css"), Assert.Single(grids).GetAttribute("data-ex-stamp"));
     }
 
+    [Fact] // ADR-0123 / ADR-0370 s1: the bundled module ExSheet.Script.ExSheet imports answers the stamp the component is built with, at the version its address carries
+    public void The_script_core_module_is_the_one_the_component_was_built_with()
+    {
+        const string module = "ex-sheet.min.js";
+        var stamp = global::ExSheet.Script.ScriptCoreAsset.Stamp;
+        var shipped = File.ReadAllText(ShippedFiles.PathOf("ExSheet", module));
+        Assert.StartsWith($"/*! ex-sheet.js sha256:{stamp} ", shipped, StringComparison.Ordinal);
+        Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
+        Assert.Equal(global::ExSheet.Script.ScriptCoreAsset.Version, ShippedFiles.Version("ExSheet", module));
+        Assert.Contains($"sourceMappingURL={module}.map", shipped, StringComparison.Ordinal);
+    }
+
     [Fact] // ADR-0123 / ERR-11 / ADR-0203: the Sheet's notice is worded through its label function, as its grid's words are
     public void ERR11_the_notice_is_worded_through_the_label_function()
     {
