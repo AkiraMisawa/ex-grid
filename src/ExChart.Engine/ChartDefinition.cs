@@ -30,6 +30,13 @@ public sealed record ChartDefinition
     /// <summary>The Consumer's Notes: plain lines shown under the chart and written into its drawing's files (ADR-0257).</summary>
     public IReadOnlyList<string> Notes { get; }
 
+    /// <summary>
+    /// Every function of the Consumer's own script the definition names (ADR-0420 section 3), the axis' first and then
+    /// each series' format and sampler; empty for a definition a chart drawn in .NET can draw.
+    /// </summary>
+    public IEnumerable<ScriptFunction> ScriptFunctions =>
+        new[] { Axis.FormatScript }.Concat(Series.SelectMany(s => new[] { s.FormatScript, s.Sampler?.Script })).OfType<ScriptFunction>();
+
     private void ValidatePacked()
     {
         if (!Axis.Packed) return;

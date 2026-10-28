@@ -158,8 +158,26 @@ the points in.
   TypeScript reader throws a `TypeError`, rather than shown as its own text. Every .NET number type is a
   number. Two readers of one code are equal, so a chart's records compare as before. The reader's refusals
   no longer name a grid: a part it does not read is one "which the reader does not take".
-- The wire carries a code as a string and a `ScriptFunction` as `{module, export}`; the adapter's browser
-  half imports each module once per chart and refuses before attaching when one fails.
+- The wire carries a code as a string and a `ScriptFunction` as `{module, export}`. The adapter's browser
+  half imports each module once per chart, before it reads the definition that names it.
+- *Settled while implementing section 3 (2026-10-28).*
+  - **Where a `ScriptFunction` stands.** It is `FormatScript` on `ChartAxis`, `ChartSeries` and `SurfaceAxis`,
+    `ZFormatScript` on `SurfaceDefinition`, and a sampler through `ChartSeries.Sampled(…, ScriptFunction)`.
+    `SurfaceDefinition.Sampled` needs none, because a sampled surface is sampled in .NET at its nodes before it
+    crosses.
+  - **What it is handed.** The Script Core takes it as the function a React Consumer hands. An axis' script
+    therefore writes what an axis `format` writes there: the position under the pointer, a range's ends and a
+    logarithmic axis' ticks. Stepped and calendar ticks stay the axis' own. A surface axis' script is handed
+    the value as it crosses, a number or a text.
+  - **Where the module is read from.** The module's address is read against the page's base address, as a
+    stylesheet's is. An address of a scheme other than `http` or `https` (`data:`, `blob:`) carries the script
+    in the string, and is refused both by `ScriptFunction.Of` and in the browser.
+  - **How a failure is said.** A module that does not load, a missing export, and a function that throws or
+    answers what its member does not take all have the same outcome, whether the failure comes as the
+    definition is read or later as the pointer moves. The browser half says the failure in the chart's place,
+    and draws again when a later definition reads.
+  - **Where it is refused.** The component drawing in .NET refuses any definition that names a
+    `ScriptFunction` (`ChartDefinition.ScriptFunctions`, `SurfaceDefinition.ScriptFunctions`).
 - `Interpolant1D` gains the points it was made from (`Xs`, `Ys`), which a curve given another method or
   function by `with` drops. A `FittedCurve` already holds what it was made from.
 - *Changed while implementing (2026-10-28).* The note first said `ChartSeries` and `SurfaceDefinition` would keep

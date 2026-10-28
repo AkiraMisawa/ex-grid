@@ -88,6 +88,11 @@ public partial class ExSurface
     protected override void OnParametersSet()
     {
         ArgumentNullException.ThrowIfNull(Definition);
+        if (Definition.ScriptFunctions.FirstOrDefault() is { } script)
+        {
+            throw new NotSupportedException(
+                $"The surface names the script function {script}, which only a surface drawn in the browser calls. Draw it with ExChart.Script.ExSurface (ADR-0420).");
+        }
         if (!_parameters.Taken || _parameters.View != View)
         {
             // A view the 3D entry reported comes back as an echo, equal to what is held, and keeps

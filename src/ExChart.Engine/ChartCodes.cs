@@ -39,6 +39,13 @@ internal static class ChartCodes
     /// <summary>Refuses an axis' code it cannot write with, naming it (ADR-0420).</summary>
     public static void CheckAxis(ChartAxis axis)
     {
+        if (axis.FormatScript is { } script)
+        {
+            if (axis.Format is not null || axis.FormatCode is not null)
+                throw new ChartRefusedException($"The axis has the script function {script} beside a {(axis.Format is not null ? "Format" : "format code")}: it would write one position two ways.");
+            if (axis.Values == AxisValues.Labels)
+                throw new ChartRefusedException($"The axis places labels, which it writes as they are: the script function {script} has nothing to write.");
+        }
         if (axis.FormatCode is not { } code)
             return;
         if (axis.CodeRefusal is { } refusal)
@@ -64,8 +71,8 @@ internal static class ChartCodes
         var name = axis.Title.Length > 0 ? $"the surface axis '{axis.Title}'" : "a surface axis";
         if (refusal is not null || read is null)
             throw new ChartRefusedException($"The format code \"{code}\" of {name} {refusal}.");
-        if (axis.Format is not null)
-            throw new ChartRefusedException($"The format code \"{code}\" of {name} stands beside its Format: it would write one value two ways.");
+        if (axis.Format is not null || axis.FormatScript is not null)
+            throw new ChartRefusedException($"The format code \"{code}\" of {name} stands beside its {(axis.Format is not null ? "Format" : "script function")}: it would write one value two ways.");
         if (axis.Values.FirstOrDefault(v => read.IsDate ? !SurfaceAxis.IsDate(v) : !SurfaceAxis.IsNumber(v)) is { } other)
         {
             throw new ChartRefusedException(
@@ -88,8 +95,8 @@ internal static class ChartCodes
         var name = surface.ZTitle.Length > 0 ? $"the surface's '{surface.ZTitle}'" : "the surface's values";
         if (refusal is not null || read is null)
             throw new ChartRefusedException($"The format code \"{code}\" of {name} {refusal}.");
-        if (surface.ZFormat is not null)
-            throw new ChartRefusedException($"The format code \"{code}\" of {name} stands beside its ZFormat: it would write one value two ways.");
+        if (surface.ZFormat is not null || surface.ZFormatScript is not null)
+            throw new ChartRefusedException($"The format code \"{code}\" of {name} stands beside its {(surface.ZFormat is not null ? "ZFormat" : "script function")}: it would write one value two ways.");
         if (read.IsDate)
             throw new ChartRefusedException($"The format code \"{code}\" of {name} writes dates, and its values are numbers.");
     }
@@ -106,6 +113,8 @@ internal static class ChartCodes
     /// <summary>Refuses a series' code it cannot write with, naming the series (ADR-0420).</summary>
     public static void CheckSeries(ChartSeries s)
     {
+        if (s.FormatScript is { } script && (s.Format is not null || s.FormatCode is not null))
+            throw new ChartRefusedException($"'{s.Name}' has the script function {script} beside a {(s.Format is not null ? "Format" : "format code")}: it would write one value two ways.");
         if (s.FormatCode is not { } code)
             return;
         if (s.CodeRefusal is { } refusal)

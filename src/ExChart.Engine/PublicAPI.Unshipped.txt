@@ -1554,3 +1554,26 @@ static ExChart.Engine.SurfaceDefinition.Sampled(ExChart.Engine.Interpolation.Int
 static ExChart.Engine.SurfaceDefinition.Sampled(string! method, double xFrom, double xTo, double yFrom, double yTo, System.Func<double, double, ExChart.Engine.ChartValue?>! z, string! xTitle, string! yTitle, string! zTitle = "", int samples = 25, System.Func<double, string!>? xFormat = null, System.Func<double, string!>? yFormat = null, System.Func<object!, string!>? zFormat = null, ExChart.Engine.AxisScale xScale = ExChart.Engine.AxisScale.Categories, ExChart.Engine.AxisScale yScale = ExChart.Engine.AxisScale.Categories, string? xFormatCode = null, string? yFormatCode = null, string? zFormatCode = null) -> ExChart.Engine.SurfaceDefinition!
 ExChart.Engine.Interpolation.Interpolant1D.Xs.get -> System.Collections.Generic.IReadOnlyList<double>!
 ExChart.Engine.Interpolation.Interpolant1D.Ys.get -> System.Collections.Generic.IReadOnlyList<double>!
+ExChart.Engine.ChartAxis.FormatScript.get -> ExChart.Engine.ScriptFunction?
+ExChart.Engine.ChartAxis.FormatScript.init -> void
+ExChart.Engine.ChartDefinition.ScriptFunctions.get -> System.Collections.Generic.IEnumerable<ExChart.Engine.ScriptFunction!>!
+ExChart.Engine.ChartSeries.FormatScript.get -> ExChart.Engine.ScriptFunction?
+ExChart.Engine.ChartSeries.FormatScript.init -> void
+ExChart.Engine.ScriptFunction
+ExChart.Engine.ScriptFunction.<Clone>$() -> ExChart.Engine.ScriptFunction!
+ExChart.Engine.ScriptFunction.Equals(ExChart.Engine.ScriptFunction? other) -> bool
+ExChart.Engine.ScriptFunction.Export.get -> string!
+ExChart.Engine.ScriptFunction.Module.get -> string!
+ExChart.Engine.SeriesSampler.Script.get -> ExChart.Engine.ScriptFunction?
+ExChart.Engine.SurfaceAxis.FormatScript.get -> ExChart.Engine.ScriptFunction?
+ExChart.Engine.SurfaceAxis.FormatScript.init -> void
+ExChart.Engine.SurfaceDefinition.ScriptFunctions.get -> System.Collections.Generic.IEnumerable<ExChart.Engine.ScriptFunction!>!
+ExChart.Engine.SurfaceDefinition.ZFormatScript.get -> ExChart.Engine.ScriptFunction?
+ExChart.Engine.SurfaceDefinition.ZFormatScript.init -> void
+override ExChart.Engine.ScriptFunction.Equals(object? obj) -> bool
+override ExChart.Engine.ScriptFunction.GetHashCode() -> int
+override ExChart.Engine.ScriptFunction.ToString() -> string!
+static ExChart.Engine.ChartSeries.Sampled(string! id, string! name, ExChart.Engine.SeriesKind kind, double from, double to, ExChart.Engine.ScriptFunction! valueAt) -> ExChart.Engine.ChartSeries!
+static ExChart.Engine.ScriptFunction.Of(string! module, string! export) -> ExChart.Engine.ScriptFunction!
+static ExChart.Engine.ScriptFunction.operator !=(ExChart.Engine.ScriptFunction? left, ExChart.Engine.ScriptFunction? right) -> bool
+static ExChart.Engine.ScriptFunction.operator ==(ExChart.Engine.ScriptFunction? left, ExChart.Engine.ScriptFunction? right) -> bool

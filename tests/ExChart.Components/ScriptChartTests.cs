@@ -306,6 +306,33 @@ public class ScriptChartTests : BunitContext
             () => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [formatted]))).Message, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0420 s3: the Consumer's own script crosses as its module and export wherever it stands; a component drawing in .NET refuses it
+    public void A_script_function_crosses_by_name_and_the_razor_component_refuses_it()
+    {
+        var tenor = ScriptFunction.Of("./js/chart-formats.js", "tenor");
+        var smile = ScriptFunction.Of("./js/curves.js", "smile");
+        var definition = new ChartDefinition(ChartAxis.Numbers() with { FormatScript = tenor },
+        [
+            ChartSeries.Of("a", "A", SeriesKind.Level, [P(0, 1), P(1, 2)]) with { FormatScript = smile },
+            ChartSeries.Sampled("s", "Smile", SeriesKind.Level, 0, 1, smile),
+        ]);
+        var parsed = Parsed(ChartWire.Definition(definition).Json);
+        Assert.Equal("""{"module":"./js/chart-formats.js","export":"tenor"}""", parsed.GetProperty("axis").GetProperty("formatScript").GetRawText());
+        Assert.Equal(JsonValueKind.Null, parsed.GetProperty("series")[0].GetProperty("texts").ValueKind);
+        Assert.Equal("""{"kind":"script","module":"./js/curves.js","export":"smile"}""",
+            parsed.GetProperty("series")[1].GetProperty("sampler").GetProperty("madeFrom").GetRawText());
+
+        var surface = new SurfaceDefinition(SurfaceAxis.Of("x", [1.0, 2.0]) with { FormatScript = tenor }, SurfaceAxis.Of("y", [1.0, 2.0]),
+            [[ChartValue.Of(1.0), ChartValue.Of(2.0)], [ChartValue.Of(3.0), ChartValue.Of(4.0)]], "z") { ZFormatScript = smile };
+        var wired = Parsed(ChartWire.Surface(surface).Json);
+        Assert.Equal("tenor", wired.GetProperty("x").GetProperty("formatScript").GetProperty("export").GetString());
+        Assert.Equal("smile", wired.GetProperty("zFormatScript").GetProperty("export").GetString());
+
+        Assert.Contains("only a chart drawn in the browser calls", Assert.Throws<NotSupportedException>(
+            () => Render<global::ExChart.Components.ExChart>(ps => ps.Add(c => c.Definition, definition))).Message, StringComparison.Ordinal);
+        Assert.Throws<NotSupportedException>(() => Render<global::ExChart.Components.ExSurface>(ps => ps.Add(c => c.Definition, surface)));
+    }
+
     // ---- Read through Chart Sources (ADR-0322, ADR-0344) ----
 
     private const string TicksSpec = """

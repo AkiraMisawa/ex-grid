@@ -48,6 +48,25 @@ public sealed record SurfaceAxis
     private readonly ExGrid.Data.FormatCode? _code;
 
     /// <summary>
+    /// A function of the Consumer's own script that writes the axis' values and its ticks between them (ADR-0420
+    /// section 3), for what a <see cref="FormatCode"/> cannot say. Only a surface drawn in the browser calls it.
+    /// </summary>
+    /// <exception cref="ChartRefusedException">The axis has a <see cref="Format"/> or a <see cref="FormatCode"/> too.</exception>
+    public ScriptFunction? FormatScript
+    {
+        get;
+        init
+        {
+            if (value is not null && (Format is not null || FormatCode is not null))
+            {
+                var name = Title.Length > 0 ? $"the surface axis '{Title}'" : "a surface axis";
+                throw new ChartRefusedException($"The script function {value} of {name} stands beside its {(Format is not null ? "Format" : "format code")}: it would write one value two ways.");
+            }
+            field = value;
+        }
+    }
+
+    /// <summary>
     /// How the axis places its values (ADR-0312): <see cref="AxisScale.Categories"/>, the default, spaces a
     /// grid's lines evenly, one per value, as a market quotes tenors and deltas;
     /// <see cref="AxisScale.Proportional"/> and <see cref="AxisScale.Logarithmic"/> place numbers by their
@@ -250,6 +269,26 @@ public sealed record SurfaceDefinition
 
     private readonly ExGrid.Data.FormatCode? _zCode;
 
+    /// <summary>
+    /// A function of the Consumer's own script that writes the values the surface holds, the ones a slice reads between
+    /// them and its vertical ticks (ADR-0420 section 3), for what a <see cref="ZFormatCode"/> cannot say. Only a surface
+    /// drawn in the browser calls it.
+    /// </summary>
+    /// <exception cref="ChartRefusedException">The surface has a <see cref="ZFormat"/> or a <see cref="ZFormatCode"/> too.</exception>
+    public ScriptFunction? ZFormatScript
+    {
+        get;
+        init
+        {
+            if (value is not null && (ZFormat is not null || ZFormatCode is not null))
+            {
+                var name = ZTitle.Length > 0 ? $"the surface's '{ZTitle}'" : "the surface's values";
+                throw new ChartRefusedException($"The script function {value} of {name} stands beside its {(ZFormat is not null ? "ZFormat" : "format code")}: it would write one value two ways.");
+            }
+            field = value;
+        }
+    }
+
     /// <summary>The method the interpolated values were made with, or null when the surface claims none.</summary>
     public string? Method { get; }
 
@@ -267,6 +306,12 @@ public sealed record SurfaceDefinition
 
     /// <summary>Whether the surface is a Consumer's triangle mesh rather than a grid (ADR-0311).</summary>
     public bool IsMesh => Triangles is not null;
+
+    /// <summary>
+    /// Every function of the Consumer's own script the surface names (ADR-0420 section 3), its axes' and its values';
+    /// empty for a surface a component drawing in .NET can draw.
+    /// </summary>
+    public IEnumerable<ScriptFunction> ScriptFunctions => new[] { X.FormatScript, Y.FormatScript, ZFormatScript }.OfType<ScriptFunction>();
 
     /// <summary>
     /// The vertical scale (ADR-0312): proportional, or logarithmic. A value at or below zero, or a
@@ -499,7 +544,7 @@ public sealed record SurfaceDefinition
                 cut.AddRange(run.Select(p => new ChartPoint(p.Along, p.Z)));
             }
             var meshSeries = ChartSeries.Of("slice", $"{Name(ZTitle, "Value")} at {fixedAxis.Write(Convert.ToDouble(slice.Value, CultureInfo.InvariantCulture))}", SeriesKind.Level, cut)
-                with { FromZero = false, Format = ZFormat, FormatCode = ZFormatCode, Interpolated = true, Segments = [new Segment(cut[0].X, cut[^1].X, TrianglesMethod)] };
+                with { FromZero = false, Format = ZFormat, FormatCode = ZFormatCode, FormatScript = ZFormatScript, Interpolated = true, Segments = [new Segment(cut[0].X, cut[^1].X, TrianglesMethod)] };
             return new ChartDefinition(NumberAxis(along), [meshSeries]);
         }
 
@@ -509,7 +554,7 @@ public sealed record SurfaceDefinition
         var points = Enumerable.Range(0, along.Values.Count)
             .Select(k => new ChartPoint(placed ? along.Number(k) : k, slice.Axis == SurfaceSliceAxis.X ? At(at, k) : At(k, at)));
         var name = $"{Name(ZTitle, "Value")} at {fixedAxis.Write(at)}";
-        var series = ChartSeries.Of("slice", name, SeriesKind.Level, points) with { FromZero = false, Format = ZFormat, FormatCode = ZFormatCode };
+        var series = ChartSeries.Of("slice", name, SeriesKind.Level, points) with { FromZero = false, Format = ZFormat, FormatCode = ZFormatCode, FormatScript = ZFormatScript };
         var interpolated = Enumerable.Range(0, along.Values.Count).Any(k => slice.Axis == SurfaceSliceAxis.X ? IsInterpolated(at, k) : IsInterpolated(k, at));
         if (interpolated)
             series = series with

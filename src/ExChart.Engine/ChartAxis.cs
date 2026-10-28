@@ -60,6 +60,14 @@ public sealed record ChartAxis
     private readonly string? _formatCode;
     private readonly Code? _code;
 
+    /// <summary>
+    /// A function of the Consumer's own script that writes every position (ADR-0420 section 3), for what a
+    /// <see cref="FormatCode"/> cannot say: each tick, the position under the pointer and a range's ends, a date's as
+    /// its day number. Only a chart drawn in the browser calls it; one beside a <see cref="Format"/> or a
+    /// <see cref="FormatCode"/> is refused as the definition is checked.
+    /// </summary>
+    public ScriptFunction? FormatScript { get; init; }
+
     // Why FormatCode cannot be read, a phrase completing "the format code …"; null when it can or there is none.
     internal string? CodeRefusal { get; private init; }
 

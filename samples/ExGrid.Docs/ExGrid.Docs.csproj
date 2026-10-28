@@ -67,6 +67,9 @@
     <AdditionalFiles Include="Examples\**\*.cs;Examples\**\*.html;Examples\**\*.sh;Examples\**\*.css" />
     <!-- A React Example's files (ADR-0350 section 12), beside the Blazor Example's: the code the frame runs. -->
     <AdditionalFiles Include="Examples\**\*.ts;Examples\**\*.tsx" />
+    <!-- A module of the page's own that a Blazor Example imports (ADR-0420 section 3), shown as the file the site
+         serves. -->
+    <AdditionalFiles Include="wwwroot\js\chart-formats.js" />
     <!-- The decision records: an API summary's "ADR-0016" links to its file, and the Roadmap reads the
          scope tables of ADR-0046 and ADR-0059. -->
     <AdditionalFiles Include="..\..\docs\adr\*.md" />

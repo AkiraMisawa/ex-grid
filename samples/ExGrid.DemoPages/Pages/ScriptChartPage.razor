@@ -36,6 +36,11 @@
     <p id="script-chart-events" role="status">@_events</p>
 </section>
 
+<section id="script-functions">
+    <h2>The page's own script</h2>
+    <ExChart.Script.ExChart Definition="Survival" Title="Survival" Width="560" Height="300" />
+</section>
+
 <section id="script-surface">
     <h2>Volatility surface</h2>
     <ExChart.Script.ExSurface Definition="Volatility"
@@ -70,6 +75,14 @@
         ],
         "Volatility",
         v => ((double)v).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + "%");
+
+    // Written and sampled by the page's own module, served from this library's static files (ADR-0420 section 3).
+    private static readonly ChartDefinition Survival = new(
+        ChartAxis.Numbers("Years") with { FormatScript = ScriptFunction.Of("./_content/ExGrid.DemoPages/script-formats.js", "years") },
+        [
+            ChartSeries.Sampled("survival", "Survival", SeriesKind.Level, 0, 10, ScriptFunction.Of("./_content/ExGrid.DemoPages/script-formats.js", "survival"))
+                with { FormatScript = ScriptFunction.Of("./_content/ExGrid.DemoPages/script-formats.js", "bp"), FromZero = false },
+        ]);
 
     private void NextRun()
     {

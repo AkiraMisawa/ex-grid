@@ -140,6 +140,23 @@
             wraps one, is your own function, and is refused.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreCurves)" />
+        <p>
+            What a format code cannot say, and a curve that is neither an interpolation nor a fit, is written in your
+            own script. A <code>ScriptFunction</code> names a function exported from a JavaScript module your
+            application serves, <code>ScriptFunction.Of("./js/chart-formats.js", "tenor")</code>, read against the
+            page's base address as a stylesheet is. It stands where a code stands, as an axis' or a series'
+            <code>FormatScript</code>, a surface axis' <code>FormatScript</code> and a surface's
+            <code>ZFormatScript</code>, and where a sampler stands, in <code>ChartSeries.Sampled</code>. An axis'
+            script writes what a React Consumer's axis <code>format</code> writes: the position under the pointer,
+            a range's ends and a logarithmic axis' ticks, its stepped ticks staying the axis' own. The chart
+            imports the module once and calls the function as it draws, on Blazor Server as on WebAssembly, with no
+            round trip. Nothing is evaluated from a string, so a Content Security Policy without
+            <code>unsafe-eval</code> keeps it; a module addressed by <code>data:</code> is refused. A module that does
+            not load, an export that is not a function, and a function that throws or answers what its member does
+            not take, text for a writer and a finite number or <code>null</code> for a sampler, are said in the chart's
+            place, by name. The component drawing in .NET cannot call it, and refuses such a definition.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreScriptFunctions)" Files="@(["wwwroot/js/chart-formats.js"])" />
     </DocsSection>
 
     <DocsSection Title="WebAssembly, and AOT">
