@@ -163,15 +163,15 @@ describe('an input made on contents .NET patched ahead of their wiring', () => {
         await vi.waitFor(() => { expect(toolbar.invoked).toEqual(['print, wired for 2', 'made after']); });
     });
 
-    it('ADR-0410 section 2, spine rule 6: one whose contents were drawn again before its wiring came is refused, and holds nothing after it', async () => {
+    it('ADR-0410 section 2: one whose contents were drawn again before its wiring came is taken by the wiring of what they show, which judges it', async () => {
         const { host, toolbar, contents, order } = standing();
         contents.querySelector<HTMLElement>('[data-ex-command="print"]')?.click();
         order(() => { toolbar.invoked.push('made after'); });
-        // Changed again: what the press was made on no longer stands when the wiring comes.
+        // Changed again before the wiring came: the wiring stands for what the contents show.
         toolbar.again?.();
         contents.setAttribute(drawnVersionAttribute, '3');
         host.rendered(1, 2, contents);
-        await vi.waitFor(() => { expect(toolbar.invoked).toEqual(['made after']); });
+        await vi.waitFor(() => { expect(toolbar.invoked).toEqual(['print, wired for 3', 'made after']); });
     });
 
     it('ADR-0410 section 2: one whose slot goes before the wiring comes is taken nowhere, and holds nothing after it', async () => {

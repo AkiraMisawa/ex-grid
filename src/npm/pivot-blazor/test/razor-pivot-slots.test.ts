@@ -433,6 +433,47 @@ describe('ExPivot\'s Razor slots', () => {
         slots.dispose();
     });
 
+    it('ADR-0410 section 2, spine rule 6: an entry pressed before its wiring stands, whose place the pane gave another field meanwhile, opens nothing', async () => {
+        const heard: string[] = [];
+        const listeners = new Set<() => void>();
+        let view: PivotFieldListView = {
+            title: 'PivotTable Fields', hideLabel: 'Hide', chooseCaption: 'Choose', searchLabel: 'Search', search: '',
+            fields: [], dragCaption: 'Drag',
+            areas: [{ area: 'values', title: 'Values', entries: [], end: 0, dropTarget: false }],
+            dropRemoves: false, defer: { label: 'Defer', ticked: false }, update: { label: 'Update', enabled: false },
+        };
+        const list: PivotFieldListSlotContext = {
+            view: () => view, subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; }, label: id => id,
+            setSearch: () => undefined, toggle: () => undefined, openMenu: entry => { heard.push(`menu ${entry.area} ${String(entry.index)}`); },
+            close: () => undefined, update: () => undefined, startDrag: () => undefined, dragOver: () => undefined, dragEnter: () => undefined,
+            drop: () => undefined, dropOnList: () => undefined, endDrag: () => undefined, setDeferred: () => undefined,
+            control: () => () => undefined, anchor: key => element => { if (element !== null) heard.push(`anchor ${key}`); }, area: () => () => undefined,
+        };
+        const slots = new RazorPivotSlots(new FakeDotNet(), { pivot: ['fieldList'], grid: [] }, noGrids);
+        mountOf(slots, 'fieldList')(slotted(), list);
+        const contents = rendered('<div data-ex-pivot-area="values"></div>', 1);
+        slots.rendered(1, 1, contents);
+
+        // A field ticked into Values: .NET is handed the pane under the next number, and Blazor patches its entry in a
+        // round trip before .NET says it rendered, which is when the wiring stands.
+        view = { ...view, areas: [{ area: 'values', title: 'Values', entries: [entryOf('values', 0, 'Sum of Key')], end: 1, dropTarget: false }] };
+        for (const listener of listeners) listener();
+        contents.setAttribute(drawnVersionAttribute, '2');
+        contents.querySelector('[data-ex-pivot-area]')?.insertAdjacentHTML('beforeend',
+            '<div data-ex-pivot-entry="entry:values:0" draggable="true"><button data-ex-pivot-press="entry:values:0">Sum of Key</button><span data-ex-pivot-anchor="entry:values:0"></span></div>');
+        contents.querySelector<HTMLButtonElement>('[data-ex-pivot-press="entry:values:0"]')?.click();
+        await Promise.resolve();
+        // Another field takes the place before the wiring comes.
+        view = { ...view, areas: [{ area: 'values', title: 'Values', entries: [entryOf('values', 0, 'Sum of Qty')], end: 1, dropTarget: false }] };
+        for (const listener of listeners) listener();
+        contents.setAttribute(drawnVersionAttribute, '3');
+        slots.rendered(1, 2, contents);
+        await vi.waitFor(() => { expect(heard).toEqual(['anchor entry:values:0']); });
+        await Promise.resolve();
+        expect(heard).toEqual(['anchor entry:values:0']);
+        slots.dispose();
+    });
+
     it('ADR-0410 section 2, ADR-0059: a sheet tab and its close are pressed in the browser by the tab\'s key, and each tab is handed in by it', () => {
         const heard: string[] = [];
         const handed = new Map<string, HTMLElement | null>();

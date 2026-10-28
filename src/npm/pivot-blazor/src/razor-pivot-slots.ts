@@ -452,12 +452,12 @@ function marked(contents: HTMLElement, attribute: string): (readonly [HTMLElemen
  * wiring comes off, so contents moved out leave nothing of theirs for the pivot to place a popup in.
  */
 function wireStanding(contents: HTMLElement, later: Later, presses: Readonly<Record<string, () => void>>,
-    control: (name: string) => PivotPartRef, anchor?: (name: string) => PivotPartRef): () => void {
+    control: (name: string) => PivotPartRef, anchor?: (name: string) => PivotPartRef, madeOn?: () => string): () => void {
     const unwire: (() => void)[] = [wirePresses(contents, later, pivotSlotAttributes.press, name => {
         const press = presses[name];
         if (press === undefined) throw new RangeError(`A button is marked ${pivotSlotAttributes.press}="${name}": the part presses ${Object.keys(presses).join(', ')}.`);
         press();
-    })];
+    }, madeOn)];
     for (const [element, name] of marked(contents, pivotSlotAttributes.control)) {
         const ref = control(name);
         // A component library may write the mark on a wrapper around the control.
@@ -484,8 +484,10 @@ const pressAgainEvent = 'ex-pivot-press-again';
  * part has is refused by `press` as the button is pressed. The contents hear the press, not each button: a button .NET
  * patched in stands a round trip before its wiring does (the render, then .NET's word that it rendered), and claims no
  * press until then. A press on contents newer than this wiring is taken `later`, by the wiring of what they show, once
- * it stands: their controls and anchors are handed in only then. A press inside an anchor is the placed part's. */
-function wirePresses(contents: HTMLElement, later: Later, attribute: string, press: (value: string) => void): () => void {
+ * it stands: their controls and anchors are handed in only then. Where `madeOn` says what a mark stands for, as an entry
+ * named by its place, a press taken later is refused once that has changed (spine rule 6). A press inside an anchor is
+ * the placed part's. */
+function wirePresses(contents: HTMLElement, later: Later, attribute: string, press: (value: string) => void, madeOn?: () => string): () => void {
     for (const [button] of marked(contents, attribute)) button.setAttribute('data-ex-claims', 'click');
     const wiredFor = contents.getAttribute(drawnVersionAttribute);
     const heard = (event: Event): void => {
@@ -498,13 +500,15 @@ function wirePresses(contents: HTMLElement, later: Later, attribute: string, pre
         if (placed !== null && placed !== undefined && contents.contains(placed)) return;
         const value = button.getAttribute(attribute);
         if (value === null) throw new Error(`Internal: an element found by ${attribute} carries none.`);
-        // Made again, the press is on the contents this wiring stands for: the host takes it only while they show what
-        // they showed as it was made.
+        // Made again, the press is on the contents this wiring stands for.
         if (event instanceof CustomEvent || contents.getAttribute(drawnVersionAttribute) === wiredFor) {
             press(value);
             return;
         }
-        later(() => { if (contents.contains(button)) button.dispatchEvent(new CustomEvent(pressAgainEvent, { bubbles: true, detail: attribute })); });
+        const made = madeOn?.();
+        later(() => {
+            if (contents.contains(button) && madeOn?.() === made) button.dispatchEvent(new CustomEvent(pressAgainEvent, { bubbles: true, detail: attribute }));
+        });
     };
     contents.addEventListener('click', heard);
     contents.addEventListener(pressAgainEvent, heard);
@@ -556,7 +560,9 @@ function wireFieldList(contents: HTMLElement, list: PivotFieldListSlotContext, d
             presses[key] = () => { if (asDrawn()) list.openMenu(entryAt(key).entry.entry); };
         }
     }
-    const unstanding = wireStanding(contents, later, presses, key => list.control(key), key => list.anchor(key));
+    // An entry is named by its place: a press taken later is taken only while the Areas show what they showed as it was
+    // made.
+    const unstanding = wireStanding(contents, later, presses, key => list.control(key), key => list.anchor(key), () => entriesOf(drawn()));
     const unwire: (() => void)[] = [unstanding];
     for (const [element, name] of marked(contents, pivotSlotAttributes.area)) {
         const ref = list.area(areaAt(name)[0]);

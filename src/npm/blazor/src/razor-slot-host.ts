@@ -37,9 +37,9 @@ export interface RazorSlotKind<Context, Drawn = undefined, Memo = undefined> {
      * answers what the contents show, by the number they carry. `later` takes an input made on contents .NET patched
      * after this wiring, which stand a round trip before their own wiring does (the render, then .NET's word that it
      * rendered): its `take` runs in its turn in the product's Input Order once the contents are wired for what they
-     * showed as it was made, so a press on a control just drawn is neither lost nor taken out of its order. It is taken
-     * only while the contents still show that: never where the slot goes first, or where they were drawn again since,
-     * and what it was made on no longer holds (spine rule 6). */
+     * showed as it was made, so a press on a control just drawn is neither lost nor taken out of its order, and never
+     * where the slot goes first. Whether what it was made on still holds, where the contents were drawn again since, is
+     * the kind's to judge as `take` runs (spine rule 6). */
     wire(contents: HTMLElement, context: Context, answered: boolean, drawn: () => Drawn, later: (take: () => void) => void): () => void;
     /** Whether contents drawn from `drawn`, the data last sent, stand whole: until they do, the keyboard is not handed
      * to them and every input waits. Whole as drawn where not given. */
@@ -402,7 +402,7 @@ export class RazorSlotHost {
             ? Promise.resolve(true)
             : new Promise<boolean>(resolve => { standing.later.push({ version, go: resolve }); });
         const handling = (): Promise<void> => wired.then(taken => {
-            if (taken && !this.#disposed && !standing.leaving && standing.contents === contents && versionOf(contents) === version) take();
+            if (taken && !this.#disposed && !standing.leaving && standing.contents === contents) take();
         });
         if (this.#order === undefined) void handling();
         else this.#order(handling, standing.slot);
