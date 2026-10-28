@@ -632,9 +632,9 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         if (ToolbarContent is not null && _toolbar.Any)
             _toolbar.Write(json);
         // The slots the Chrome fills with Razor: the grid's, but the find panel, a Sheet's being its own (ADR-0332
-        // section 5), and the Cell Editor, whose own field colours a formula's References (ADR-0057), which a field
-        // drawn in the slot would show plain; and the Sheet's.
-        var gridSlots = Chrome is { } chrome ? chrome.ScriptSlots & ~(ScriptSlots.FindPanel | ScriptSlots.CellEditor) : ScriptSlots.None;
+        // section 5), and the Cell Editor and the Formula Bar's text, whose own fields colour a formula's References
+        // (ADR-0057), which a field drawn in the slot would show plain; and the Sheet's.
+        var gridSlots = Chrome is { } chrome ? chrome.ScriptSlots & ~(ScriptSlots.FindPanel | ScriptSlots.CellEditor | ScriptSlots.FormulaBarText) : ScriptSlots.None;
         var sheetSlots = Chrome is ISheetChrome sheetChrome ? sheetChrome.SheetScriptSlots : SheetScriptSlots.None;
         if (gridSlots != ScriptSlots.None || sheetSlots != SheetScriptSlots.None)
         {

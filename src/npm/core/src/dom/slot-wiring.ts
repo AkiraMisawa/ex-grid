@@ -5,7 +5,9 @@
 
 import type { FilterPanelView } from '../chrome/filter-panel-model';
 import type { FilterOperator } from '../query/filter';
-import type { GridCellEditorSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridMenuSlotContext } from './grid-chrome';
+import type {
+    GridCellEditorSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridFormulaBarTextSlotContext, GridMenuSlotContext, GridNameBoxSlotContext,
+} from './grid-chrome';
 
 /** The attribute a menu slot's contents write on the control of each command, its index in `commands`: the control
  * {@link wireMenuItems} wires. */
@@ -356,20 +358,57 @@ const handedEditorFields = new WeakMap<GridCellEditorSlotContext, HTMLElement>()
  * the function that takes the wiring off again, which has nothing to take: the core hears the field itself.
  */
 export function wireCellEditor(contents: HTMLElement, context: GridCellEditorSlotContext, answered = false): () => void {
-    const fields = contents.querySelectorAll<HTMLElement>(`[${editorFieldAttribute}]`);
-    const field = fields[0];
-    if (fields.length !== 1 || field === undefined) {
-        throw new Error(`The cell editor's contents drew ${fields.length} fields marked ${editorFieldAttribute}: mark the one text field.`);
-    }
-    // The field itself, so a field drawn anew is one marked anew, never one swapped inside an element kept.
-    if (field.tagName !== 'INPUT' && field.tagName !== 'TEXTAREA') {
-        throw new Error(`The cell editor's contents marked a ${field.tagName.toLowerCase()} with ${editorFieldAttribute}: mark the input or the textarea itself.`);
-    }
+    const field = markedField(contents, editorFieldAttribute, 'cell editor', true);
     const handed = handedEditorFields.get(context);
     // Contents not yet the ones the request is for take nothing: a later wiring hands the field over.
     if (!answered || (handed !== undefined && handed !== field)) {
         handedEditorFields.set(context, field);
         context.takeFocus(field);
     }
+    return () => undefined;
+}
+
+/** The attribute the Formula Bar's text slot's contents write on their one text field, an `input` or a `textarea`: the
+ * field {@link wireFormulaBarText} hands the core. */
+export const formulaBarFieldAttribute = 'data-ex-formula-bar-field';
+
+/** The attribute the Name Box slot's contents write on their one `input`: the field {@link wireNameBox} hands the
+ * core. */
+export const nameBoxFieldAttribute = 'data-ex-name-box-field';
+
+/** The one field marked with `attribute` in `contents`, an `input`, or where `textarea` allows, a `textarea`: the field
+ * itself, so a field drawn anew is one marked anew, never one swapped inside an element kept. Refused by `name` where
+ * the contents mark none, several, or another element. */
+function markedField(contents: HTMLElement, attribute: string, name: string, textarea: boolean): HTMLElement {
+    const fields = contents.querySelectorAll<HTMLElement>(`[${attribute}]`);
+    const field = fields[0];
+    if (fields.length !== 1 || field === undefined) throw new Error(`The ${name}'s contents drew ${fields.length} fields marked ${attribute}: mark the one text field.`);
+    if (field.tagName !== 'INPUT' && !(textarea && field.tagName === 'TEXTAREA')) {
+        throw new Error(`The ${name}'s contents marked a ${field.tagName.toLowerCase()} with ${attribute}: mark the ${textarea ? 'input or the textarea' : 'input'} itself.`);
+    }
+    return field;
+}
+
+/**
+ * Wires the Formula Bar's text slot's contents (ADR-0410 section 2), as `useFormulaBarText` does React's: the one field
+ * marked with {@link formulaBarFieldAttribute} in `contents`, an `input` or a `textarea`, is handed to the core, which
+ * reads and writes its text, names it, sets its `readOnly` and gives it the keyboard where the user's work asks. A field
+ * drawn anew is handed over too. Draw it with no value and no `readonly`, which are the core's, and no key handler.
+ * Answers the function that takes the wiring off again, which has nothing to take.
+ */
+export function wireFormulaBarText(contents: HTMLElement, context: GridFormulaBarTextSlotContext): () => void {
+    // The core takes a field it already holds as nothing new.
+    context.takeField(markedField(contents, formulaBarFieldAttribute, 'Formula Bar\'s text', true));
+    return () => undefined;
+}
+
+/**
+ * Wires the Name Box slot's contents (ADR-0410 section 2), as `useNameBox` does React's: the one `input` marked with
+ * {@link nameBoxFieldAttribute} in `contents` is handed to the core, which writes the Focus's name into it, names it and
+ * hears what is typed and entered. A field drawn anew is handed over too. Draw it with no value and no key handler.
+ * Answers the function that takes the wiring off again, which has nothing to take.
+ */
+export function wireNameBox(contents: HTMLElement, context: GridNameBoxSlotContext): () => void {
+    context.takeField(markedField(contents, nameBoxFieldAttribute, 'Name Box', false));
     return () => undefined;
 }

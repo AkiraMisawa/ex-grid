@@ -4,7 +4,8 @@
 
 @* A double click on a cell that does not edit opens that trade's note: the grid hands the keyboard on to the
    field, and Enter there gives it back. MudGridChrome draws the column menu, the filter panel (a value list on
-   Trader, conditions elsewhere), the Context Menu, the loading bar and Book's Cell Editor with MudBlazor's
+   Trader, conditions elsewhere), the Context Menu, the loading bar, Book's Cell Editor and the Formula Bar's fields
+   with MudBlazor's
    components inside the grid the browser draws, and MudExGridPaper hands it Roboto's widths with the font, as it
    hands the Razor grid. *@
 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
@@ -14,8 +15,12 @@
 </div>
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
     <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
-                          OnEdit="Edit" ShowFillHandle OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" Chrome="MudGridChrome.Default" @ref="_grid" />
+                          OnEdit="Edit" ShowFillHandle ShowFormulaBar OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" OnNameBoxEntered="GoToTradeAsync" Chrome="MudGridChrome.Default" @ref="_grid" />
 </MudExGridPaper>
+@if (_nameBoxRefusal is not null)
+{
+    <p role="status">@_nameBoxRefusal</p>
+}
 
 @code {
     // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.
@@ -64,6 +69,23 @@
     {
         if (e.Key == "Enter" && !e.IsComposing && _grid is not null)
             await _grid.ReturnKeyboardAsync(_noteField);
+    }
+
+    // The Name Box takes a trade's Id: the grid reads no address, so what a name means is yours. It places the
+    // Selection on that trade's Book, or says why it placed nothing.
+    private string? _nameBoxRefusal;
+
+    private async Task GoToTradeAsync(string typed)
+    {
+        var rows = _source.Window;
+        var at = -1;
+        if (int.TryParse(typed.Trim(), out var id))
+            for (var i = 0; i < rows.Count && at < 0; i++)
+                if (rows[i].Id == id)
+                    at = i;
+        _nameBoxRefusal = at < 0 ? $"No trade has the Id '{typed}'." : null;
+        if (at >= 0 && _grid is not null)
+            await _grid.PlaceSelectionAsync(new SelectionRange(at, 1, 1, 1), new CellPosition(at, 1), _source.RowSequenceVersion);
     }
 
     // The browser committed the edit; your source holds what the cell shows from then on.

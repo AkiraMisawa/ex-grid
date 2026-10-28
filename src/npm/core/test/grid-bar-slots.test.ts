@@ -9,6 +9,7 @@ import type { GridEditIntent } from '../src/cells/edit-intent';
 import type { FormulaBarTextView, GridChromeSlot, GridFormulaBarTextSlotContext, GridNameBoxSlotContext } from '../src/dom/grid-chrome';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
+import { formulaBarFieldAttribute, nameBoxFieldAttribute, wireFormulaBarText, wireNameBox } from '../src/dom/slot-wiring';
 import { mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
 
 afterEach(unmountAll);
@@ -262,5 +263,61 @@ describe('the bar\'s slots the Consumer changes', () => {
         view.update({ ...options, chrome: { formulaBarText: textMount, nameBox: nameSlot(names) }, showFormulaBar: false });
         await painted();
         expect([root.querySelector('.ex-formula-bar'), second.cleanups, names.cleanups]).toEqual([null, 1, 1]);
+    });
+});
+
+/** Draws a field of `tag` marked with `attribute` in `slot`, in place of what stood there. */
+function marked<Tag extends 'input' | 'textarea' | 'span'>(slot: HTMLElement, tag: Tag, attribute: string): HTMLElementTagNameMap[Tag] {
+    const field = document.createElement(tag);
+    field.setAttribute(attribute, '');
+    slot.replaceChildren(field);
+    return field;
+}
+
+describe('the Formula Bar\'s slots wired from their attributes', () => {
+    it('ADR-0410 section 2: each marked field is handed to the core once, and one drawn anew is handed again', async () => {
+        let text: { readonly slot: HTMLElement; readonly context: GridFormulaBarTextSlotContext } | undefined;
+        let name: { readonly slot: HTMLElement; readonly context: GridNameBoxSlotContext } | undefined;
+        const { root } = await grid({
+            chrome: {
+                formulaBarText: (slot, context) => { text = { slot, context }; return () => undefined; },
+                nameBox: (slot, context) => { name = { slot, context }; return () => undefined; },
+            },
+        });
+        press(root, 10, rowY(1));
+        await painted();
+        const bar = defined(text, 'the text slot');
+        const box = defined(name, 'the Name Box slot');
+        const input = marked(bar.slot, 'input', formulaBarFieldAttribute);
+        wireFormulaBarText(bar.slot, bar.context);
+        const named = marked(box.slot, 'input', nameBoxFieldAttribute);
+        wireNameBox(box.slot, box.context);
+        expect([input.value, input.readOnly, input.getAttribute('aria-label'), named.value, named.getAttribute('aria-label')])
+            .toEqual(['Book-1', false, 'Formula Bar', 'R2C1', 'Name Box']);
+        // Wired again on the same field, as a render that changed only the view is: nothing is handed again.
+        input.value = 'mine';
+        wireFormulaBarText(bar.slot, bar.context);
+        expect(input.value).toBe('mine');
+        const area = marked(bar.slot, 'textarea', formulaBarFieldAttribute);
+        wireFormulaBarText(bar.slot, bar.context);
+        expect([area.value, area.getAttribute('aria-label')]).toEqual(['Book-1', 'Formula Bar']);
+    });
+
+    it('ADR-0410 section 2: no marked field, a mark on an element holding one, or a textarea for the Name Box is refused by name', async () => {
+        let text: { readonly slot: HTMLElement; readonly context: GridFormulaBarTextSlotContext } | undefined;
+        let name: { readonly slot: HTMLElement; readonly context: GridNameBoxSlotContext } | undefined;
+        await grid({
+            chrome: {
+                formulaBarText: (slot, context) => { text = { slot, context }; return () => undefined; },
+                nameBox: (slot, context) => { name = { slot, context }; return () => undefined; },
+            },
+        });
+        const bar = defined(text, 'the text slot');
+        const box = defined(name, 'the Name Box slot');
+        expect(() => wireFormulaBarText(bar.slot, bar.context)).toThrow('The Formula Bar\'s text\'s contents drew 0 fields marked data-ex-formula-bar-field');
+        marked(bar.slot, 'span', formulaBarFieldAttribute);
+        expect(() => wireFormulaBarText(bar.slot, bar.context)).toThrow('marked a span with data-ex-formula-bar-field: mark the input or the textarea itself');
+        marked(box.slot, 'textarea', nameBoxFieldAttribute);
+        expect(() => wireNameBox(box.slot, box.context)).toThrow('marked a textarea with data-ex-name-box-field: mark the input itself');
     });
 });

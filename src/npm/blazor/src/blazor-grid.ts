@@ -22,7 +22,7 @@ import { WriteGate } from './write-gate';
 export type HeardKind =
     | 'selectionChanged' | 'edit' | 'paste' | 'fill' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
     | 'columnHidden' | 'pinnedCountChanged' | 'headerGroupToggled' | 'editingChanged' | 'editDiscarded' | 'cellDoubleClick' | 'leave' | 'overwriteNotice'
-    | 'action';
+    | 'action' | 'nameBoxEntered';
 
 /** The component's parameters, as the core's options are spelt. .NET sends only what the Consumer set, and the
  * core's own default stands for the rest, so a default is written once, in the core. */
@@ -63,12 +63,12 @@ export interface WirePointedAt {
 type PassedOption =
     | 'density' | 'rowHeight' | 'headerHeight' | 'viewportHeight' | 'viewportWidth' | 'pinnedColumnCount' | 'virtualiseColumns' | 'stripeRows'
     | 'highlightFocusRow' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
-    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle';
+    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle' | 'showFormulaBar';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'density', 'rowHeight', 'headerHeight', 'viewportHeight', 'viewportWidth', 'pinnedColumnCount', 'virtualiseColumns', 'stripeRows',
     'highlightFocusRow', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
-    'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle',
+    'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle', 'showFormulaBar',
 ]);
 
 /** What the component asks of the grid it attached. Each call carries its data as the JSON text .NET wrote, read
@@ -268,7 +268,7 @@ export function parsed<T>(json: string): T {
 type Handlers = Required<Pick<GridOptions<BlazorRow>,
     | 'onSelectionChanged' | 'onEdit' | 'onPaste' | 'onFill' | 'onClear' | 'onUndo' | 'onRedo' | 'onRefused' | 'onColumnWidthChanged' | 'onColumnOrderChanged'
     | 'onColumnHidden' | 'onPinnedCountChanged' | 'onHeaderGroupToggled' | 'onEditingChanged' | 'onEditDiscarded' | 'onCellDoubleClick' | 'onLeave'
-    | 'onOverwriteNotice' | 'onAction'>>;
+    | 'onOverwriteNotice' | 'onAction' | 'onNameBoxEntered'>>;
 
 type Asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>) => Promise<T>;
 
@@ -320,6 +320,7 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
         onLeave: () => { send('leave', null); },
         onOverwriteNotice: notice => { send('overwriteNotice', notice); },
         onAction: event => { send('action', { row: event.row.id, column: event.column, action: event.action }); },
+        onNameBoxEntered: typed => { send('nameBoxEntered', typed); },
     });
 }
 
@@ -488,6 +489,7 @@ function gridOptions(
         ...(hears.has('leave') ? { onLeave: heard.onLeave } : {}),
         ...(hears.has('overwriteNotice') ? { onOverwriteNotice: heard.onOverwriteNotice } : {}),
         ...(hears.has('action') ? { onAction: heard.onAction } : {}),
+        ...(hears.has('nameBoxEntered') ? { onNameBoxEntered: heard.onNameBoxEntered } : {}),
     };
 }
 

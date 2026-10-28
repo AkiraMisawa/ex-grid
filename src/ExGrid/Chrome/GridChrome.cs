@@ -739,4 +739,15 @@ public interface IGridChrome
     /// <see cref="ScriptSlots.CellEditor"/>: one text field marked with <see cref="ScriptSlotAttributes.EditorField"/>,
     /// holding <see cref="GridCellEditorView.InitialText"/> as drawn first, and no handler of its own.</summary>
     RenderFragment? CellEditor(GridCellEditorView view) => null;
+
+    /// <summary>The Formula Bar's text field when the Script Core draws the grid (ADR-0410), for a Chrome that names
+    /// <see cref="ScriptSlots.FormulaBarText"/>: one text field marked with
+    /// <see cref="ScriptSlotAttributes.FormulaBarField"/>, with no value, no <c>readonly</c> and no handler of its
+    /// own.</summary>
+    RenderFragment? FormulaBarText(GridFormulaBarTextView view) => null;
+
+    /// <summary>The Name Box when the Script Core draws the grid (ADR-0410), for a Chrome that names
+    /// <see cref="ScriptSlots.NameBox"/>: one <c>input</c> marked with <see cref="ScriptSlotAttributes.NameBoxField"/>,
+    /// with no value and no handler of its own.</summary>
+    RenderFragment? NameBox(GridNameBoxView view) => null;
 }

@@ -249,6 +249,52 @@ public class ScriptGridChromeTests : BunitContext
         Assert.Equal("Book Text 'a' Point error 'Not a book' pending True", cut.Find(".ex-razor-slot").TextContent);
     }
 
+    private sealed class BarChrome : IGridChrome
+    {
+        public ScriptSlots ScriptSlots => ScriptSlots.FormulaBarText | ScriptSlots.NameBox;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? FormulaBarText(GridFormulaBarTextView view) => builder => builder.AddContent(0, "bar text");
+
+        public RenderFragment? NameBox(GridNameBoxView view) => builder => builder.AddContent(0, "name box");
+    }
+
+    [Fact] // ADR-0410 section 3 / ADR-0051: the Formula Bar's fields are asked for by name and drawn from no data
+    public async Task ADR0410_the_formula_bars_fields_are_drawn_from_no_data()
+    {
+        var cut = Grid(new BarChrome());
+        using (var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2])))
+            Assert.Equal("""["formulaBarText","nameBox"]""", document.RootElement.GetProperty("options").GetProperty("razorSlots").GetRawText());
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "formulaBarText", "{}"));
+        await cut.InvokeAsync(() => Bridge().MountSlot(2, 1, "nameBox", "{}"));
+        Assert.Equal(["bar text", "name box"], cut.FindAll(".ex-razor-slot").Select(slot => slot.TextContent));
+    }
+
+    [Fact] // ADR-0051 / ADR-0050 item 4: Enter in the Name Box is heard only where handled, and hands the Consumer the typed text
+    public async Task ADR0051_enter_in_the_name_box_reaches_OnNameBoxEntered()
+    {
+        var typed = new List<string>();
+        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Rows, TestRows.Window())
+            .Add(g => g.Columns, Columns)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnNameBoxEntered, (string text) => typed.Add(text)));
+        using (var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2])))
+            Assert.Contains("nameBoxEntered", document.RootElement.GetProperty("options").GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
+
+        using var payload = JsonDocument.Parse("\"B7\"");
+        await cut.InvokeAsync(() => Bridge().Heard("nameBoxEntered", payload.RootElement));
+
+        Assert.Equal(["B7"], typed);
+    }
+
     [Fact] // ADR-0410: a Chrome that names a slot this adapter does not fill is refused by name, never left out quietly
     public void ADR0410_a_slot_the_adapter_does_not_fill_is_refused()
     {
@@ -258,7 +304,7 @@ public class ScriptGridChromeTests : BunitContext
 
     private sealed class UnknownSlotChrome : IGridChrome
     {
-        public ScriptSlots ScriptSlots => (ScriptSlots)64;
+        public ScriptSlots ScriptSlots => (ScriptSlots)1024;
 
         public RenderFragment? FilterPanel(FilterPanelContext context) => null;
 

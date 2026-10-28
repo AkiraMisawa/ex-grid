@@ -36,6 +36,14 @@ public enum ScriptSlots
     /// <see cref="IGridChrome.CellEditor(GridCellEditorView)"/>. The core's own editor colours a formula's
     /// References (ADR-0057); a field a Chrome draws shows its text plain.</summary>
     CellEditor = 32,
+
+    /// <summary>The Formula Bar's text field, inside the box the core stands in the bar, through
+    /// <see cref="IGridChrome.FormulaBarText(GridFormulaBarTextView)"/>.</summary>
+    FormulaBarText = 64,
+
+    /// <summary>The Formula Bar's Name Box field, inside the core's box and form, through
+    /// <see cref="IGridChrome.NameBox(GridNameBoxView)"/>.</summary>
+    NameBox = 128,
 }
 
 /// <summary>
@@ -112,6 +120,16 @@ public static class ScriptSlotAttributes
     /// browser. Draw it with <see cref="GridCellEditorView.InitialText"/> as its value and nothing bound after, and
     /// handle none of its keys: Enter, Tab, Escape, F2 and Overwrite's arrows are the core's.</summary>
     public const string EditorField = "data-ex-editor-field";
+
+    /// <summary>On the Formula Bar's one text field, an <c>input</c> or a <c>textarea</c>: the script hands it to the
+    /// core, which writes the Focus cell's text into it, names it, sets its <c>readonly</c>, and takes what is typed
+    /// there as the Cell Editor's, in the browser. Draw it with no value, no <c>readonly</c> and no key handler.</summary>
+    public const string FormulaBarField = "data-ex-formula-bar-field";
+
+    /// <summary>On the Name Box's one <c>input</c>: the script hands it to the core, which writes the Focus's name into
+    /// it, names it, and hands what Enter entered to the Consumer, in the browser. Draw it with no value and no key
+    /// handler.</summary>
+    public const string NameBoxField = "data-ex-name-box-field";
 }
 
 /// <summary>One command of a menu, as the Script Core hands it (ADR-0010, ADR-0036).</summary>
@@ -139,6 +157,20 @@ public sealed record GridMenuView(string Column, ColumnType Type, IReadOnlyList<
 /// <param name="IsLoading">Whether rows are on their way.</param>
 /// <param name="PlaceholderRowCount">How many of the painted rows are Placeholders, which stay the core's.</param>
 public sealed record GridLoadingView(bool IsLoading, int PlaceholderRowCount);
+
+/// <summary>
+/// The Formula Bar's text field when the Script Core draws the grid (ADR-0051, ADR-0410 section 3). It carries nothing,
+/// and is drawn once: the text, the field's name and its <c>readonly</c> are the core's, set on the field in the browser
+/// as the Focus moves, never a round trip behind it. The core also marks its box <c>ex-formula-bar-borrowed</c> while
+/// the text is not the Focus cell's own (ADR-0125), so a stylesheet dims it there.
+/// </summary>
+public sealed record GridFormulaBarTextView;
+
+/// <summary>
+/// The Name Box when the Script Core draws the grid (ADR-0051, ADR-0410 section 3). It carries nothing: what the box
+/// shows and what Enter in it means are the core's, in the browser.
+/// </summary>
+public sealed record GridNameBoxView;
 
 /// <summary>
 /// The Cell Editor when the Script Core draws the grid (ADR-0010, ADR-0410 section 3): data only, drawn again as the

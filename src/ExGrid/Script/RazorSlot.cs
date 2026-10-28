@@ -20,6 +20,8 @@ internal static class RazorSlot
         (ScriptSlots.FilterPanel, "filterPanel"),
         (ScriptSlots.FindPanel, "findPanel"),
         (ScriptSlots.CellEditor, "cellEditor"),
+        (ScriptSlots.FormulaBarText, "formulaBarText"),
+        (ScriptSlots.NameBox, "nameBox"),
     ];
 
     /// <summary>The script's names of the slots <paramref name="slots"/> names, refusing one this adapter does not fill.</summary>
@@ -43,8 +45,8 @@ internal static class RazorSlot
     }
 
     /// <summary>The view the slot the script names <paramref name="slot"/> is drawn from: a <see cref="GridMenuView"/>, a
-    /// <see cref="GridLoadingView"/>, a <see cref="GridFilterView"/>, a <see cref="GridFindView"/> or a
-    /// <see cref="GridCellEditorView"/>.</summary>
+    /// <see cref="GridLoadingView"/>, a <see cref="GridFilterView"/>, a <see cref="GridFindView"/>, a
+    /// <see cref="GridCellEditorView"/>, a <see cref="GridFormulaBarTextView"/> or a <see cref="GridNameBoxView"/>.</summary>
     internal static object ViewOf(string slot, string context)
     {
         var name = NameOf(slot);
@@ -73,6 +75,8 @@ internal static class RazorSlot
                 },
                 ScriptJson.Present(json, "error", out var error) ? error.GetString() : null,
                 json.GetProperty("pending").GetBoolean()),
+            ScriptSlots.FormulaBarText => new GridFormulaBarTextView(),
+            ScriptSlots.NameBox => new GridNameBoxView(),
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
         };
     }
@@ -161,6 +165,8 @@ internal static class RazorSlot
             (ScriptSlots.FilterPanel, GridFilterView filter) => chrome.FilterPanel(filter),
             (ScriptSlots.FindPanel, GridFindView find) => chrome.FindPanel(find),
             (ScriptSlots.CellEditor, GridCellEditorView editor) => chrome.CellEditor(editor),
+            (ScriptSlots.FormulaBarText, GridFormulaBarTextView bar) => chrome.FormulaBarText(bar),
+            (ScriptSlots.NameBox, GridNameBoxView box) => chrome.NameBox(box),
             _ => throw new InvalidOperationException($"Internal: the slot {name} holds a view of another slot's."),
         };
     }

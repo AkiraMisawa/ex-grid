@@ -673,6 +673,9 @@ export type FormatCodeReading = {
 export type FormatCodeValue = SnapshotDecimal | number | bigint;
 
 // @public
+export const formulaBarFieldAttribute = "data-ex-formula-bar-field";
+
+// @public
 export function formulaBarHeight(density: GridDensity, rowHeight?: number): number;
 
 // @public
@@ -1797,6 +1800,9 @@ export interface MenuKey {
 export type MenuKeyKind = 'none' | 'move' | 'run' | 'close' | 'filterFirst' | 'filterLast' | 'filterSearch';
 
 // @public
+export const nameBoxFieldAttribute = "data-ex-name-box-field";
+
+// @public
 export function operatorLabelId(operator: FilterOperator): string;
 
 // @public
@@ -2175,7 +2181,13 @@ export function wireFilterPanel(contents: HTMLElement, context: GridFilterPanelS
 export function wireFindPanel(contents: HTMLElement, context: GridFindPanelSlotContext, answered?: boolean): () => void;
 
 // @public
+export function wireFormulaBarText(contents: HTMLElement, context: GridFormulaBarTextSlotContext): () => void;
+
+// @public
 export function wireMenuItems(contents: HTMLElement, context: GridMenuSlotContext, answered?: boolean): () => void;
+
+// @public
+export function wireNameBox(contents: HTMLElement, context: GridNameBoxSlotContext): () => void;
 
 // @public
 export function writeGridQueryJson(query: GridQuery): string;

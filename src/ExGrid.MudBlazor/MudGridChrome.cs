@@ -137,10 +137,10 @@ public sealed class MudGridChrome : IGridChrome
     }
 
     /// <summary>The slots this Chrome fills when the Script Core draws the grid (ADR-0410): the column
-    /// menu, the filter panel, the find panel, the Context Menu, the loading bar and the Cell Editor so far. Every
-    /// other part is the Script Core's own there until this Wrapper fills it too.</summary>
+    /// menu, the filter panel, the find panel, the Context Menu, the loading bar, the Cell Editor and the Formula
+    /// Bar's two fields so far. Every other part is the Script Core's own there until this Wrapper fills it too.</summary>
     public ScriptSlots ScriptSlots => ScriptSlots.ColumnMenu | ScriptSlots.ContextMenu | ScriptSlots.LoadingIndicator | ScriptSlots.FilterPanel
-        | ScriptSlots.FindPanel | ScriptSlots.CellEditor;
+        | ScriptSlots.FindPanel | ScriptSlots.CellEditor | ScriptSlots.FormulaBarText | ScriptSlots.NameBox;
 
     /// <summary>The column menu when the Script Core draws the grid (ADR-0410): the same
     /// <c>MudButton</c> items, each marked for the script that wires them.</summary>
@@ -203,6 +203,33 @@ public sealed class MudGridChrome : IGridChrome
             builder.CloseElement();
         };
     }
+
+    /// <summary>The Formula Bar's text field when the Script Core draws the grid (ADR-0410): the same bare input,
+    /// marked for the script, which hands it to the core. Its text, its name and its <c>readonly</c> are the core's,
+    /// set in the browser, and the stylesheet reads them there: the underline while it takes typing, dimmed while its
+    /// text is borrowed. The core names it in the grid's words, not this Chrome's <see cref="Label"/>.</summary>
+    public RenderFragment? FormulaBarText(GridFormulaBarTextView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return BarField("mud-ex-formula-bar-text", ScriptSlotAttributes.FormulaBarField);
+    }
+
+    /// <summary>The Name Box when the Script Core draws the grid (ADR-0410): the same bare input, marked for the
+    /// script, which hands it to the core. What it shows and what Enter in it means are the core's, in the browser; the
+    /// core names it in the grid's words, not this Chrome's <see cref="Label"/>.</summary>
+    public RenderFragment? NameBox(GridNameBoxView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return BarField("mud-ex-name-box", ScriptSlotAttributes.NameBoxField);
+    }
+
+    private static RenderFragment BarField(string className, string mark) => builder =>
+    {
+        builder.OpenElement(0, "input");
+        builder.AddAttribute(1, "class", className);
+        builder.AddAttribute(2, mark, "");
+        builder.CloseElement();
+    };
 
     private RenderFragment ScriptMenu(GridMenuView view)
     {
