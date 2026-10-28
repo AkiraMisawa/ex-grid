@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet } from './fixtures.mjs';
+import { test, expect, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 
 // Blazor's ExChart and ExSurface over their Script Core (ADR-0370 section 1), on /script-chart, on both Blazor hosts:
 // the one path no other layer sees whole. The definition is .NET's, its Format crossing as the texts it writes each
@@ -66,4 +66,41 @@ test('ADR-0420 section 3: a chart is written and sampled by the page\'s own modu
     await circuitQuiet();
     // The position as the module's `years` writes it, and the curve's value as its `bp` writes what its `survival` answered.
     expect(await readingAt(page, chart, 0.5)).toMatch(/^\d+\.\d yrs\n[\s\S]*Survival[\s\S]*\b9\d{3} bp/u);
+});
+
+test('ADR-0410, ADR-0281: MudBlazor\'s toolbar and menu stand in the chart\'s slots, and a range typed and applied at once over a slow circuit is the one read', async ({ page }) => {
+    await page.goto('/script-chart-mud');
+    const chart = page.locator('.ex-chart').first();
+    await expect(chart.locator('g.ex-chart-series')).toHaveCount(5);
+    const toolbar = chart.locator('.ex-chart-toolbar-slot [role=toolbar]');
+    await expect(toolbar.locator('[data-ex-command="exchart.filters"]')).toHaveClass(/mud-button-root/);
+    await circuitQuiet();
+    try {
+        await setRoundTrip(150);
+        // Chart Filters opens on the press, in the browser; its fields are MudBlazor's once their Razor stands.
+        await toolbar.locator('[data-ex-command="exchart.filters"]').click();
+        const from = chart.locator('[data-ex-chart-from]');
+        await expect(from).toBeVisible();
+        // Typed and applied at machine speed: Apply reads the fields in the browser, never .NET's copy a round trip behind.
+        await from.fill('2027-01-01');
+        await chart.locator('[data-ex-chart-to]').fill('2029-12-31');
+        await chart.locator('[data-ex-chart-apply]').click();
+        await expect(page.locator('#script-chart-mud-events')).toHaveText('range narrowed');
+        await circuitQuiet();
+        await expect(from).toHaveValue('2027-01-01');
+
+        // Reset range from MudBlazor's menu, in the chart's frame: the range returns, and the fields with it.
+        const stage = chart.locator('.ex-chart-stage');
+        const box = await stage.boundingBox();
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: 'right' });
+        const reset = chart.locator('.ex-chart-menu [role=menuitem][data-ex-command="exchart.reset-range"]');
+        await expect(reset).toHaveClass(/mud-button-root/);
+        await reset.click();
+        await expect(page.locator('#script-chart-mud-events')).toHaveText('range: all');
+        await expect(chart.locator('.ex-chart-menu')).toHaveCount(0);
+        await circuitQuiet();
+        await expect(from).toHaveValue('');
+    } finally {
+        await setRoundTrip(0);
+    }
 });

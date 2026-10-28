@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using global::ExGrid.Chrome;
+using global::ExGrid.Script;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.JSInterop;
@@ -31,8 +32,11 @@ internal readonly record struct DrawingState(string Options, string Definition, 
 /// <param name="fail">The component's <c>DispatchExceptionAsync</c>.</param>
 /// <param name="prepare">What to hand the Consumer for an event, read against the parameters as they stand when it
 /// arrives; null for one nobody hears.</param>
+/// <param name="slots">The Chrome slots the component fills with Razor (ADR-0410), where it takes a Chrome.</param>
+/// <param name="slotsChanged">Renders the component again, as the script mounts, updates or unmounts a slot.</param>
 internal sealed class ScriptMount(
-    IJSRuntime js, Func<Func<Task>, Task> invoke, Func<Exception, Task> fail, Func<string, JsonElement, Func<Task>?> prepare)
+    IJSRuntime js, Func<Func<Task>, Task> invoke, Func<Exception, Task> fail, Func<string, JsonElement, Func<Task>?> prepare,
+    RazorSlotHolders? slots = null, Action? slotsChanged = null)
 {
     /// <summary>The script's address under the application's base: ExChart's minified Script Core and bridge. Not
     /// <c>ex-chart.min.js</c>, which is the Razor component's pointer script.</summary>
@@ -47,6 +51,10 @@ internal sealed class ScriptMount(
     // What the browser holds: the options as last sent, and the generation of the definition.
     private string? _sentOptions;
     private int _sentGeneration;
+
+    /// <summary>The calls the browser makes into .NET, in the order it made them, a call too large for a message of its
+    /// own among them (ADR-0005).</summary>
+    internal HeldCalls Calls { get; } = new();
 
     /// <summary>Whether the component was disposed: nothing more crosses.</summary>
     public bool Disposed { get; private set; }
@@ -102,7 +110,11 @@ internal sealed class ScriptMount(
     {
         var mounted = await AttachAsync(assets, root, function, () => Compose(state(), withDefinition: true));
         if (mounted == Mounted.Attached)
+        {
+            // A slot the chart mounted as it attached may have been drawn already, before there was a chart to hand it to.
+            await ReportSlotsAsync();
             await SendAsync(state());
+        }
         Refused = mounted == Mounted.Refused;
         return Refused;
     }
@@ -132,6 +144,8 @@ internal sealed class ScriptMount(
         return ChartWire.Json(json =>
         {
             json.WriteStartObject();
+            // Across a circuit, Blazor Server's, a call larger than its hub takes would close it: the browser holds one.
+            json.WriteBoolean("circuit", !OperatingSystem.IsBrowser());
             json.WritePropertyName("options");
             json.WriteRawValue(state.Options);
             if (withDefinition)
@@ -202,6 +216,12 @@ internal sealed class ScriptMount(
             bridge.Dispose();
             return Mounted.Gone;
         }
+        catch
+        {
+            // Never attached: a call held as it attached is never taken, and every call after it is let through.
+            Calls.Stopped();
+            throw;
+        }
         finally
         {
             _attaching = false;
@@ -214,8 +234,41 @@ internal sealed class ScriptMount(
             return Mounted.Gone;
         }
         _handle = handle;
+        Calls.Attached(handle);
         return Mounted.Attached;
     }
+
+    /// <summary>The script mounted slot <paramref name="id"/> for the Chrome, with its context as data (ADR-0410).</summary>
+    internal void MountSlot(long id, int version, string name, string context)
+    {
+        if (Disposed)
+            return;
+        Slots.Mount(id, version, name, context);
+        slotsChanged?.Invoke();
+    }
+
+    /// <summary>The slot <paramref name="id"/> was mounted again in place, with another context.</summary>
+    internal void UpdateSlot(long id, int version, string context)
+    {
+        if (Disposed || !Slots.Update(id, version, context))
+            return;
+        slotsChanged?.Invoke();
+    }
+
+    /// <summary>The chart took the slot <paramref name="id"/> away; the script has moved its contents back.</summary>
+    internal void UnmountSlot(long id)
+    {
+        if (Disposed || !Slots.Unmount(id))
+            return;
+        slotsChanged?.Invoke();
+    }
+
+    /// <summary>Each slot drawn again is handed to the script, which moves it in, or wires it for the context it now
+    /// holds; nothing before the drawing is attached, which hands over what was drawn meanwhile.</summary>
+    public Task ReportSlotsAsync() => slots is null ? Task.CompletedTask : slots.ReportAsync(_handle, () => Disposed);
+
+    // A drawing that takes no Chrome mounts no slot: a call to one is a defect of the bridge's.
+    private RazorSlotHolders Slots => slots ?? throw new InvalidOperationException("Internal: the script mounted a Chrome slot on a drawing that takes no Chrome.");
 
     /// <summary>Asks the browser's drawing for a file or its text; <paramref name="none"/> before it is attached, once
     /// it is stopped, or when the circuit has gone.</summary>
@@ -284,6 +337,7 @@ internal sealed class ScriptMount(
         if (Disposed)
             return;
         Disposed = true;
+        Calls.Stopped();
         // While it attaches, the drawing it makes is stopped once it is made, and the bridge let go after it.
         if (_attaching)
             return;

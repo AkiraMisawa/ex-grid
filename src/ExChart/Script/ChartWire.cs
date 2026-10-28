@@ -765,6 +765,13 @@ internal static class ChartWire
             w.WriteStringValue(value);
     }
 
+    /// <summary>The member the script names as <see cref="Camel{TEnum}"/> writes it; a name that is no member, or a
+    /// number, is the script's defect, said by name.</summary>
+    internal static TEnum Member<TEnum>(string text) where TEnum : struct, Enum =>
+        Enum.TryParse<TEnum>(text, ignoreCase: true, out var member) && Enum.IsDefined(member) && Camel(member) == text
+            ? member
+            : throw new InvalidOperationException($"Internal: the script sent '{text}', which is no {typeof(TEnum).Name}.");
+
     /// <summary>An enum member as the Script Core spells it: <c>AmountPerPeriod</c> is <c>amountPerPeriod</c>. A value
     /// that names no member is refused here, rather than sent as a number the browser would refuse later.</summary>
     internal static string Camel<TEnum>(TEnum value) where TEnum : struct, Enum
