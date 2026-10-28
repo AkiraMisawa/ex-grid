@@ -96,6 +96,8 @@ export interface WireSurfaceAxis {
     readonly scale: AxisScale;
     /** How its values are written. */
     readonly writing: WireSurfaceWriting;
+    /** The number code its values and ticks are written by (ADR-0420); it then carries no texts. */
+    readonly formatCode: string | null;
 }
 
 /** How a surface axis writes its values: `null` as the Script Core does, `plain` as a sampled surface's axis does, or
@@ -110,6 +112,8 @@ interface WireSurfaceScale {
     readonly centre: number | null;
     /** How its values are written where that is not the Script Core's own writing, or `null` for none. */
     readonly zTexts: WireTexts | null;
+    /** The code its values are written by (ADR-0420); it then carries no texts. */
+    readonly zFormatCode: string | null;
     readonly notes: readonly string[];
 }
 
@@ -134,6 +138,9 @@ export interface WireSurfaceTriangles extends WireSurfaceScale {
      * sends no texts for them. */
     readonly xWriting: null | 'plain';
     readonly yWriting: null | 'plain';
+    /** Each axis' number code (ADR-0420). */
+    readonly xFormatCode: string | null;
+    readonly yFormatCode: string | null;
     /** Each node, `[x, y, z]`. */
     readonly nodes: readonly (readonly [x: WireNumber, y: WireNumber, z: WireValue])[];
     /** Each triangle, `[a, b, c]`. */
@@ -296,6 +303,7 @@ export function readDefinition(wire: WireDefinition): ChartDefinition {
 /** The Surface Definition .NET wrote, made again in the Script Core, which checks it as C# did. */
 export function readSurface(wire: WireSurface): SurfaceDefinition {
     const zFormat = writerOf(wire.zTexts);
+    const zFormatCode = wire.zFormatCode === null ? {} : { zFormatCode: wire.zFormatCode };
     const scale = {
         ...(wire.zScale === 'proportional' ? {} : { zScale: wire.zScale }),
         ...(wire.centre === null ? {} : { centre: wire.centre }),
@@ -304,7 +312,10 @@ export function readSurface(wire: WireSurface): SurfaceDefinition {
         case 'grid': {
             const axis = (a: WireSurfaceAxis) => {
                 const format = surfaceValueWriter(a.writing);
-                return { title: a.title, values: a.values, scale: a.scale, ...(format === undefined ? {} : { format }) };
+                return {
+                    title: a.title, values: a.values, scale: a.scale, ...(format === undefined ? {} : { format }),
+                    ...(a.formatCode === null ? {} : { formatCode: a.formatCode }),
+                };
             };
             return SurfaceDefinition.grid({
                 x: axis(wire.x),
@@ -312,6 +323,7 @@ export function readSurface(wire: WireSurface): SurfaceDefinition {
                 z: wire.z.map(row => row.map(wireValue)),
                 zTitle: wire.zTitle,
                 ...(zFormat === undefined ? {} : { zFormat }),
+                ...zFormatCode,
                 ...(wire.method === null ? {} : { method: wire.method }),
                 ...(wire.interpolated === null ? {} : { interpolated: wire.interpolated }),
                 notes: wire.notes,
@@ -332,6 +344,9 @@ export function readSurface(wire: WireSurface): SurfaceDefinition {
                 yScale: wire.yScale,
                 ...(xFormat === undefined ? {} : { xFormat }),
                 ...(yFormat === undefined ? {} : { yFormat }),
+                ...(wire.xFormatCode === null ? {} : { xFormatCode: wire.xFormatCode }),
+                ...(wire.yFormatCode === null ? {} : { yFormatCode: wire.yFormatCode }),
+                ...zFormatCode,
                 notes: wire.notes,
                 ...scale,
             });

@@ -66,6 +66,8 @@ internal static class ChartWire
                 w.WriteString("yScale", Camel(definition.Y.Scale));
                 WriteWriting(w, "xWriting", Writing(definition.X, x, placedByValue: true));
                 WriteWriting(w, "yWriting", Writing(definition.Y, y, placedByValue: true));
+                WriteOptional(w, "xFormatCode", NumberCode(definition.X));
+                WriteOptional(w, "yFormatCode", NumberCode(definition.Y));
                 w.WriteStartArray("nodes");
                 foreach (var n in definition.Nodes!)
                 {
@@ -133,11 +135,14 @@ internal static class ChartWire
             {
                 throw new NotSupportedException(
                     $"The surface's Format for {Name(definition.ZTitle, "its values")} would be asked to write the values a slice through its "
-                    + "triangles reads between its nodes, and the surface in the browser cannot call that .NET function (ADR-0370 section 1). "
-                    + "Draw it with ExChart.Components.ExSurface, or leave its values to be written plainly.");
+                    + "triangles reads between its nodes, and the surface in the browser cannot call that .NET function (ADR-0420). "
+                    + "Give the surface a ZFormatCode in its place, or draw it with ExChart.Components.ExSurface.");
             }
-            var zTexts = Texts(HeldZ(definition), definition.WriteZ, () => $"the surface's values ({Name(definition.ZTitle, "z")})");
+            // A code is written by the Script Core's own reader, so it needs no texts (ADR-0420).
+            var zTexts = definition.ZFormatCode is not null ? null
+                : Texts(HeldZ(definition), definition.WriteZ, () => $"the surface's values ({Name(definition.ZTitle, "z")})");
             WriteTexts(w, "zTexts", zTexts);
+            WriteOptional(w, "zFormatCode", definition.ZFormatCode);
             WriteStrings(w, "notes", definition.Notes);
             w.WriteEndObject();
         });
@@ -486,8 +491,14 @@ internal static class ChartWire
         w.WriteEndArray();
         w.WriteString("scale", Camel(axis.Scale));
         WriteWriting(w, "writing", Writing(axis, values, placedByValue: axis.Scale != AxisScale.Categories));
+        WriteOptional(w, "formatCode", NumberCode(axis));
         w.WriteEndObject();
     }
+
+    // A surface axis' number code, which crosses as itself for the Script Core's reader (ADR-0420). A date code's axis
+    // crosses as the texts it writes its dates with, which are the values the browser holds.
+    private static string? NumberCode(SurfaceAxis axis) =>
+        axis.FormatCode is { } code && axis.Values.Count > 0 && IsNumber(axis.Values[0]) ? code : null;
 
     /// <summary>
     /// How an axis writes its values: as the Script Core does (null); plainly (<c>plain</c>); or by the text of every
@@ -498,14 +509,16 @@ internal static class ChartWire
     /// </summary>
     private static object? Writing(SurfaceAxis axis, object[] values, bool placedByValue)
     {
+        if (NumberCode(axis) is not null)
+            return null;
         if (axis.Format is not null && placedByValue)
         {
             if (WritesPlainly(axis, values))
                 return "plain";
             throw new NotSupportedException(
                 $"The surface's axis {Name(axis.Title, "")} has a Format, which would be asked to write the ticks between its values, and the surface in "
-                + "the browser cannot call that .NET function (ADR-0370 section 1). Draw it with ExChart.Components.ExSurface, or space the axis evenly "
-                + "as categories.");
+                + "the browser cannot call that .NET function (ADR-0420). Give the axis a FormatCode in its place, space it evenly as categories, "
+                + "or draw it with ExChart.Components.ExSurface.");
         }
         var texts = new List<(object Value, string Text)>(values.Length);
         var differs = false;

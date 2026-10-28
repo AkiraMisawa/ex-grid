@@ -222,6 +222,28 @@ public class ScriptChartTests : BunitContext
         Assert.Contains("between its nodes", Assert.Throws<NotSupportedException>(() => ChartWire.Surface(mesh)).Message, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0420: a surface's number codes cross as themselves, in place of the Formats a mesh refuses; a date code's axis crosses as the texts it writes
+    public void A_surfaces_codes_cross_in_place_of_its_Formats()
+    {
+        SurfaceNode[] nodes = [new(0, 0, 0.015), new(1, 0, 0.0225), new(0, 1, 0.03)];
+        var mesh = SurfaceDefinition.FromTriangles(nodes, [new SurfaceTriangle(0, 1, 2)], "Strike", "Tenor", "Rate", xFormatCode: "0.00") with { ZFormatCode = "0.00%" };
+        var parsed = Parsed(ChartWire.Surface(mesh).Json);
+        Assert.Equal("0.00", parsed.GetProperty("xFormatCode").GetString());
+        Assert.Equal(JsonValueKind.Null, parsed.GetProperty("yFormatCode").ValueKind);
+        Assert.Equal("0.00%", parsed.GetProperty("zFormatCode").GetString());
+        Assert.Equal(JsonValueKind.Null, parsed.GetProperty("zTexts").ValueKind);
+
+        var dated = new SurfaceDefinition(
+            SurfaceAxis.Of("Expiry", new[] { new DateOnly(2026, 12, 18), new DateOnly(2027, 3, 19) }) with { FormatCode = "mmm yy" },
+            SurfaceAxis.Of("Delta", new[] { 0.25, 0.5 }) with { FormatCode = "0%" },
+            [[1.0, 2.0], [3.0, 4.0]]);
+        var grid = Parsed(ChartWire.Surface(dated).Json);
+        Assert.Equal("""["Dec 26","Mar 27"]""", grid.GetProperty("x").GetProperty("values").GetRawText());
+        Assert.Equal(JsonValueKind.Null, grid.GetProperty("x").GetProperty("formatCode").ValueKind);
+        Assert.Equal("0%", grid.GetProperty("y").GetProperty("formatCode").GetString());
+        Assert.Equal(JsonValueKind.Null, grid.GetProperty("y").GetProperty("writing").ValueKind);
+    }
+
     [Fact] // ADR-0370 s1: two axis values that would be one value in the browser are refused, as a slice at either could not say which
     public void Axis_values_that_cross_alike_are_refused()
     {

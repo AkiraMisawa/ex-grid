@@ -283,8 +283,8 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
     {
         if (e.ValueKind == JsonValueKind.String)
             e = file.GetProperty("definitions").GetProperty(e.GetString()!);
-        Allow(e, "a surface", "x", "y", "z", "zTitle", "zFormat", "method", "interpolated", "notes", "points", "xTitle", "yTitle", "nodes", "triangles",
-            "xScale", "yScale", "sampled", "zScale", "centre", "interpolant", "samples");
+        Allow(e, "a surface", "x", "y", "z", "zTitle", "zFormat", "zFormatCode", "method", "interpolated", "notes", "points", "xTitle", "yTitle", "nodes", "triangles",
+            "xScale", "yScale", "xFormatCode", "yFormatCode", "sampled", "zScale", "centre", "interpolant", "samples");
         var forms = new[] { "z", "points", "nodes", "sampled", "interpolant" }.Where(k => e.TryGetProperty(k, out _)).ToList();
         if (forms.Count != 1)
             throw new InvalidOperationException($"\"{Name}\": a surface is one of a grid, points, nodes, a sampled function and an interpolant, not {forms.Count}.");
@@ -310,7 +310,8 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 e.GetProperty("triangles").EnumerateArray().Select(t => new SurfaceTriangle(t[0].GetInt32(), t[1].GetInt32(), t[2].GetInt32())).ToList(),
                 e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle, zFormat: zFormat,
                 xScale: e.TryGetProperty("xScale", out var xs) ? Enum<AxisScale>(xs) : AxisScale.Proportional,
-                yScale: e.TryGetProperty("yScale", out var ys) ? Enum<AxisScale>(ys) : AxisScale.Proportional, notes: notes),
+                yScale: e.TryGetProperty("yScale", out var ys) ? Enum<AxisScale>(ys) : AxisScale.Proportional, notes: notes,
+                xFormatCode: Text(e, "xFormatCode"), yFormatCode: Text(e, "yFormatCode")),
             "interpolant" => SurfaceDefinition.Sampled(
                 Interpolant(e.GetProperty("interpolant")) as Interpolant2D ?? throw new InvalidOperationException($"\"{Name}\": a surface interpolates in two dimensions."),
                 e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle,
@@ -320,18 +321,19 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             _ => Sampled(e, zTitle, zFormat),
         };
         if (e.TryGetProperty("zScale", out var zScale)) surface = surface with { ZScale = Enum<AxisScale>(zScale) };
+        if (Text(e, "zFormatCode") is { } zCode) surface = surface with { ZFormatCode = zCode };
         if (e.TryGetProperty("centre", out var centre)) surface = surface with { Centre = Number(centre) };
         return surface;
     }
 
     // What every form of surface may say, and what each form reads besides.
-    private static readonly string[] SurfaceCommonKeys = ["zTitle", "zFormat", "zScale", "centre"];
+    private static readonly string[] SurfaceCommonKeys = ["zTitle", "zFormat", "zFormatCode", "zScale", "centre"];
 
     private static readonly Dictionary<string, string[]> SurfaceFormKeys = new()
     {
         ["z"] = ["x", "y", "z", "method", "interpolated", "notes"],
         ["points"] = ["points", "xTitle", "yTitle"],
-        ["nodes"] = ["nodes", "triangles", "xTitle", "yTitle", "xScale", "yScale", "notes"],
+        ["nodes"] = ["nodes", "triangles", "xTitle", "yTitle", "xScale", "yScale", "xFormatCode", "yFormatCode", "notes"],
         ["sampled"] = ["sampled", "xTitle", "yTitle"],
         ["interpolant"] = ["interpolant", "xTitle", "yTitle", "samples", "xScale", "yScale"],
     };
@@ -364,10 +366,11 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     private static SurfaceAxis SurfaceAxisOf(JsonElement e)
     {
-        Allow(e, "a surface axis", "title", "values", "scale", "format");
+        Allow(e, "a surface axis", "title", "values", "scale", "format", "formatCode");
         var axis = new SurfaceAxis(e.GetProperty("title").GetString()!, e.GetProperty("values").EnumerateArray().Select(AxisValue).ToList(),
             e.TryGetProperty("format", out var format) ? ValueFormat(format) : null);
-        return e.TryGetProperty("scale", out var scale) ? axis with { Scale = Enum<AxisScale>(scale) } : axis;
+        if (e.TryGetProperty("scale", out var scale)) axis = axis with { Scale = Enum<AxisScale>(scale) };
+        return Text(e, "formatCode") is { } code ? axis with { FormatCode = code } : axis;
     }
 
     // A surface axis' value: a text, or a number as a double.

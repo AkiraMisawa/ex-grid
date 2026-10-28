@@ -58,6 +58,40 @@ internal static class ChartCodes
         }
     }
 
+    /// <summary>Refuses a surface axis' code it cannot write the axis' values with, naming the axis (ADR-0420).</summary>
+    public static void CheckSurfaceAxis(SurfaceAxis axis, string code, FormatCode? read, string? refusal)
+    {
+        var name = axis.Title.Length > 0 ? $"the surface axis '{axis.Title}'" : "a surface axis";
+        if (refusal is not null || read is null)
+            throw new ChartRefusedException($"The format code \"{code}\" of {name} {refusal}.");
+        if (axis.Format is not null)
+            throw new ChartRefusedException($"The format code \"{code}\" of {name} stands beside its Format: it would write one value two ways.");
+        if (axis.Values.FirstOrDefault(v => read.IsDate ? !SurfaceAxis.IsDate(v) : !SurfaceAxis.IsNumber(v)) is { } other)
+        {
+            throw new ChartRefusedException(
+                $"The format code \"{code}\" of {name} writes {(read.IsDate ? "dates" : "numbers")}, and the axis holds {Describe(other)}.");
+        }
+    }
+
+    /// <summary>Refuses a surface's code for its values it cannot write them with (ADR-0420).</summary>
+    public static void CheckZ(SurfaceDefinition surface, string code, FormatCode? read, string? refusal)
+    {
+        var name = surface.ZTitle.Length > 0 ? $"the surface's '{surface.ZTitle}'" : "the surface's values";
+        if (refusal is not null || read is null)
+            throw new ChartRefusedException($"The format code \"{code}\" of {name} {refusal}.");
+        if (surface.ZFormat is not null)
+            throw new ChartRefusedException($"The format code \"{code}\" of {name} stands beside its ZFormat: it would write one value two ways.");
+        if (read.IsDate)
+            throw new ChartRefusedException($"The format code \"{code}\" of {name} writes dates, and its values are numbers.");
+    }
+
+    private static string Describe(object value) => value switch
+    {
+        string text => $"the text \"{text}\"",
+        _ when SurfaceAxis.IsNumber(value) => $"the number {Convert.ToString(value, CultureInfo.InvariantCulture)}",
+        _ => $"a {value.GetType().Name}",
+    };
+
     /// <summary>Refuses a series' code it cannot write with, naming the series (ADR-0420).</summary>
     public static void CheckSeries(ChartSeries s)
     {

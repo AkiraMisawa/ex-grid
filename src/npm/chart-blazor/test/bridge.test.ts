@@ -94,10 +94,10 @@ describe('a definition .NET wrote', () => {
 function grid(writing: WireSurfaceGrid['x']['writing']): WireSurfaceGrid {
     return {
         form: 'grid',
-        x: { title: 'Strike', values: [0.5, 1.25, 2], scale: 'proportional', writing },
-        y: { title: 'Tenor', values: ['1M', '1Y'], scale: 'categories', writing: null },
+        x: { title: 'Strike', values: [0.5, 1.25, 2], scale: 'proportional', writing, formatCode: null },
+        y: { title: 'Tenor', values: ['1M', '1Y'], scale: 'categories', writing: null, formatCode: null },
         z: [[1, 2, 3], [4, 5, 6]],
-        method: null, interpolated: null, zTitle: 'Vol', zScale: 'proportional', centre: null, zTexts: null, notes: [],
+        method: null, interpolated: null, zTitle: 'Vol', zScale: 'proportional', centre: null, zTexts: null, zFormatCode: null, notes: [],
     };
 }
 
@@ -115,10 +115,19 @@ describe('a surface .NET wrote', () => {
         expect(readSurface(grid(null)).x.writeValue(0.5)).toBe('0.5');
     });
 
+    it('ADR-0420: a surface\'s codes cross as themselves, and write its axis\' ticks and its values', () => {
+        const wire = grid(null);
+        const read = readSurface({ ...wire, x: { ...wire.x, formatCode: '0.00' }, zFormatCode: '0.0%' });
+        expect(read.x.writeTick(1.123456)).toBe('1.12');
+        expect(read.writeZ(0.25)).toBe('25.0%');
+    });
+
     it('ADR-0370: a mesh\'s plain writing reaches its axes', () => {
         const mesh = readSurface({
             form: 'triangles', xTitle: 'x', yTitle: 'y', xScale: 'proportional', yScale: 'proportional', xWriting: 'plain', yWriting: null,
-            nodes: [[0, 0, 1], [1, 0, 2], [0, 1, 3]], triangles: [[0, 1, 2]], zTitle: 'z', zScale: 'proportional', centre: null, zTexts: null, notes: [],
+            xFormatCode: null, yFormatCode: null,
+            nodes: [[0, 0, 1], [1, 0, 2], [0, 1, 3]], triangles: [[0, 1, 2]], zTitle: 'z', zScale: 'proportional', centre: null, zTexts: null,
+            zFormatCode: null, notes: [],
         });
         expect(mesh.x.writeValue(1)).toBe(mesh.x.writeTick(1));
         expect(mesh.y.format).toBeUndefined();
@@ -172,10 +181,10 @@ describe('the surface the component attached', () => {
             options: { width: 640, height: 420, sliceWidth: 420, density: 'standard', title: null, description: null, view: null, slice: null, fileName: null, hears: [] },
             definition: {
                 form: 'grid',
-                x: { title: 'x', values: [1, 2], scale: 'categories', writing: null },
-                y: { title: 'y', values: [1, 2], scale: 'categories', writing: null },
+                x: { title: 'x', values: [1, 2], scale: 'categories', writing: null, formatCode: null },
+                y: { title: 'y', values: [1, 2], scale: 'categories', writing: null, formatCode: null },
                 z: [[1, 2], [3, 4]],
-                method: null, interpolated: null, zTitle: 'z', zScale: 'proportional', centre: null, zTexts: null, notes: [],
+                method: null, interpolated: null, zTitle: 'z', zScale: 'proportional', centre: null, zTexts: null, zFormatCode: null, notes: [],
             },
             generation: 1,
         }));

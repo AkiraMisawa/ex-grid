@@ -91,6 +91,38 @@
           ]
         }
       ]
+    },
+    "volCoded": {
+      "x": {
+        "title": "Delta",
+        "values": [
+          0.1,
+          0.25,
+          0.5
+        ],
+        "formatCode": "0%"
+      },
+      "y": {
+        "title": "Tenor",
+        "values": [
+          "1M",
+          "1Y"
+        ]
+      },
+      "z": [
+        [
+          0.0912,
+          0.0955,
+          0.1
+        ],
+        [
+          0.104,
+          0.11,
+          0.114
+        ]
+      ],
+      "zTitle": "Volatility",
+      "zFormatCode": "0.00%"
     }
   },
   "cases": [
@@ -503,6 +535,282 @@
       "throws": "chartRefused",
       "saying": [
         "'A''s format code \"yyyy\" writes dates, and its values are numbers."
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface's codes write its axis' values and its values, in its summary as everywhere",
+      "surface": "volCoded",
+      "surfaceSummary": {},
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of Volatility over Delta from 10% to 50% and Tenor from 1M to 1Y; 3 by 2 points, from 9.12% to 11.40%."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis' code writes the lines it labels",
+      "surface": "volCoded",
+      "mesh": {},
+      "expect": [
+        {
+          "at": "xLines",
+          "map": "label",
+          "is": [
+            "10%",
+            "25%",
+            "50%"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a slice is written by the surface's code for its values",
+      "surface": "volCoded",
+      "slice": {
+        "axis": "y",
+        "value": "1Y"
+      },
+      "expect": [
+        {
+          "at": "series.0.formatCode",
+          "is": "0.00%"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a mesh's axis code writes the ticks between its nodes, and its slice by the code for its values",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0.1
+          ],
+          [
+            1,
+            0,
+            0.2
+          ],
+          [
+            0,
+            1,
+            0.2
+          ],
+          [
+            1,
+            1,
+            0.3
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            3,
+            2
+          ]
+        ],
+        "xTitle": "Strike",
+        "yTitle": "Tenor",
+        "zTitle": "Rate",
+        "xFormatCode": "0.00",
+        "zFormatCode": "0.0%"
+      },
+      "slice": {
+        "axis": "x",
+        "value": 0.25
+      },
+      "expect": [
+        {
+          "at": "series.0.name",
+          "is": "Rate at 0.25"
+        },
+        {
+          "at": "series.0.formatCode",
+          "is": "0.0%"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis' number code is refused over an axis of texts, naming a text it holds",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "10P",
+            "ATM"
+          ],
+          "formatCode": "0%"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The format code \"0%\" of the surface axis 'Delta' writes numbers, and the axis holds the text \"10P\"."
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis' code the reader does not read is refused, naming the axis",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            1,
+            2
+          ],
+          "formatCode": "[Red]0"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The format code \"[Red]0\" of the surface axis 'Delta' holds a part in brackets"
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis with a Format and a code is refused",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            1,
+            2
+          ],
+          "format": {
+            "places": 1
+          },
+          "formatCode": "0.0"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "stands beside its Format: it would write one value two ways."
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code for a surface's values is refused: they are numbers",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            1,
+            2
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "zTitle": "P&L",
+        "zFormatCode": "yyyy"
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The format code \"yyyy\" of the surface's 'P&L' writes dates, and its values are numbers."
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface with a ZFormat and a code for its values is refused",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            1,
+            2
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "zFormat": {
+          "places": 2
+        },
+        "zFormatCode": "0.00"
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "stands beside its ZFormat: it would write one value two ways."
       ]
     }
   ]
