@@ -71,7 +71,7 @@ internal static class RazorSlot
                     "point" => CellEditMode.Point,
                     var other => throw new InvalidOperationException($"Internal: the script sent '{other}' as the editor's mode."),
                 },
-                json.GetProperty("error") is { ValueKind: JsonValueKind.String } error ? error.GetString() : null,
+                ScriptJson.Present(json, "error", out var error) ? error.GetString() : null,
                 json.GetProperty("pending").GetBoolean()),
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
         };

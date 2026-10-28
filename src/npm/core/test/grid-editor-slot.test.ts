@@ -264,10 +264,24 @@ describe('the Cell Editor\'s contents wired from their attribute', () => {
         expect(edits.map(intent => intent.value)).toEqual(['ab']);
     });
 
-    it('ADR-0410 section 2: contents with no marked field, or two, are refused by name', async () => {
+    it('ADR-0410 section 5: contents not yet the ones the opening is for take nothing, and the contents that are take the keyboard', async () => {
+        const { root, slot, context } = await editorDrawnLater();
+        const early = drawMarked(slot, context, 'input', true);
+        expect(document.activeElement).not.toBe(early);
+        expect(root.contains(document.activeElement)).toBe(true);
+        const input = drawMarked(slot, context, 'input', false);
+        expect([document.activeElement, input.value]).toEqual([input, 'a']);
+    });
+
+    it('ADR-0410 section 2: contents with no marked field, two, or a mark on an element holding the field are refused by name', async () => {
         const { slot, context } = await editorDrawnLater();
         expect(() => wireCellEditor(slot, context)).toThrow('drew 0 fields marked data-ex-editor-field');
         for (const _ of [0, 1]) slot.appendChild(document.createElement('input')).setAttribute(editorFieldAttribute, '');
         expect(() => wireCellEditor(slot, context)).toThrow('drew 2 fields marked data-ex-editor-field');
+        const holder = document.createElement('div');
+        holder.setAttribute(editorFieldAttribute, '');
+        holder.append(document.createElement('input'));
+        slot.replaceChildren(holder);
+        expect(() => wireCellEditor(slot, context)).toThrow('marked a div with data-ex-editor-field: mark the input or the textarea itself');
     });
 });
