@@ -70,7 +70,7 @@ export interface EditorCompletionHandles {
 export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement;
 
 // @public
-export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
+export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy' | 'holdSettled'>;
 
 // @public
 export interface ExGridChrome<Row> {

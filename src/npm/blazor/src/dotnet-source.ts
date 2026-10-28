@@ -4,8 +4,8 @@
 // stays the Consumer's: it sorts, filters and answers in .NET, and the grid neither holds nor executes.
 
 import {
-    engineFilterOf, readGridQueryJson, type DistinctValues, type GridFilter, type GridSource, type GridSourceState,
-    type QueryColumn, type RowKeyOf, type RowRange, type SortSpec,
+    engineFilterOf, readGridQueryJson, type DistinctValues, type GridFilter, type GridFindRequest, type GridFindResult, type GridSource,
+    type GridSourceState, type QueryColumn, type RowKeyOf, type RowRange, type SortSpec,
 } from '@ex-grid/core';
 import { filterText, sortsText } from './wire-query';
 import type { BlazorRow, ColumnSet, RowSet, WireRow } from './wire-rows';
@@ -38,7 +38,12 @@ export interface WireSourceTraits {
     readonly generation: number;
     readonly rowKey: boolean;
     readonly vouchesDistinctRows: boolean;
+    /** Whether the source answers a Find step (`IGridSource.CanFind`, ADR-0055): where it does not, Ctrl+F is refused. */
+    readonly finds: boolean;
 }
+
+/** A Find step asked of .NET's source, the one numbered `generation` (ADR-0055). */
+export type FindOf = (generation: number, request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
 
 let requests = 0;
 
@@ -53,14 +58,17 @@ export class DotNetSource implements GridSource<BlazorRow> {
     #state: GridSourceState<BlazorRow>;
     readonly rowKey?: RowKeyOf<BlazorRow>;
     readonly vouchesDistinctRows: boolean;
+    /** A Find step, answered by .NET's source where it searches: the core refuses Ctrl+F where this is absent. */
+    readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
 
-    constructor(dotnet: DotNetHandle, rows: RowSet, columns: ColumnSet, traits: WireSourceTraits) {
+    constructor(dotnet: DotNetHandle, rows: RowSet, columns: ColumnSet, traits: WireSourceTraits, find: FindOf) {
         this.#dotnet = dotnet;
         this.#rows = rows;
         this.#columns = columns;
         this.generation = traits.generation;
         this.vouchesDistinctRows = traits.vouchesDistinctRows;
         if (traits.rowKey) this.rowKey = keyOf;
+        if (traits.finds) this.find = (request, signal) => find(this.generation, request, signal);
         this.#state = Object.freeze({
             window: Object.freeze([]), windowStart: 0, totalCount: undefined, loading: true, rowSequenceVersion: 0, sorts: Object.freeze([]), filter: undefined,
         });

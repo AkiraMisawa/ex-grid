@@ -703,4 +703,35 @@ public interface IGridChrome
     /// </summary>
     /// <param name="id">The id of the words asked for.</param>
     string? Words(string id) => null;
+
+    /// <summary>The slots this Chrome fills with Razor when the Script Core draws the grid (ADR-0410):
+    /// each is asked for through its view overload. <see cref="ScriptSlots.None"/>, the default, leaves
+    /// every part the Script Core's own. Read as the grid's parameters are sent: answer the same each
+    /// time.</summary>
+    ScriptSlots ScriptSlots => ScriptSlots.None;
+
+    /// <summary>The column menu's commands when the Script Core draws the grid (ADR-0410), for a Chrome
+    /// that names <see cref="ScriptSlots.ColumnMenu"/>: one control per item, each marked with
+    /// <see cref="ScriptSlotAttributes.MenuItem"/>, and no handler of its own.</summary>
+    RenderFragment? ColumnMenu(GridMenuView view) => null;
+
+    /// <summary>The Context Menu when the Script Core draws the grid (ADR-0410), for a Chrome that names
+    /// <see cref="ScriptSlots.ContextMenu"/>, drawn as <see cref="ColumnMenu(GridMenuView)"/> is.</summary>
+    RenderFragment? ContextMenu(GridMenuView view) => null;
+
+    /// <summary>The loading indicator when the Script Core draws the grid (ADR-0410), for a Chrome that
+    /// names <see cref="ScriptSlots.LoadingIndicator"/>. Null draws nothing in the slot; the Placeholder
+    /// rows stay the core's (ADR-0004).</summary>
+    RenderFragment? LoadingIndicator(GridLoadingView view) => null;
+
+    /// <summary>A column's filter panel when the Script Core draws the grid (ADR-0410), for a Chrome that
+    /// names <see cref="ScriptSlots.FilterPanel"/>: its controls, each marked with
+    /// <see cref="ScriptSlotAttributes"/>' filter attributes, a submit button for OK, and no handler of
+    /// its own.</summary>
+    RenderFragment? FilterPanel(GridFilterView view) => null;
+
+    /// <summary>The find panel when the Script Core draws the grid (ADR-0410), for a Chrome that names
+    /// <see cref="ScriptSlots.FindPanel"/>: its controls, each marked with <see cref="ScriptSlotAttributes"/>'
+    /// find attributes, and no form or handler of its own; the slot stands inside the core's form.</summary>
+    RenderFragment? FindPanel(GridFindView view) => null;
 }

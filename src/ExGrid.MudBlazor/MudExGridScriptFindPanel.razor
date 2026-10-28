@@ -1,0 +1,94 @@
+@* Written in each file, not in an _Imports.razor, whose class Razor makes public (ADR-0201); and
+   with global::, as this project's root namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using global::ExGrid
+@using global::ExGrid.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudGridChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The find panel's content when the Script Core draws the grid (ADR-0055, ADR-0332, ADR-0410): MudExGridFindPanel's
+   MudBlazor controls, drawn from the core's view and marked for the adapter's script, which hands each change and
+   press to the core in the browser. Nothing here searches, keeps a working state, or handles a change, a key or a
+   focus: the core's view is drawn again at each change it makes.
+
+   The slot stands inside the core's form: Enter in a field submits it, and the core steps, backward with Shift, so
+   this draws no form, no default button and no key handler. No text field is bound to the view, which arrives a
+   round trip behind the typing and would write an older text back (SRV-7): each opens with the text the core holds
+   as it is drawn, and is left to the user after. What the last step came to is the core's sentence, written into a
+   live region. *@
+<div class="mud-ex-grid-find">
+    @Field("find", Own(FindPanelLabelIds.Field, View.Words.Field), Icons.Material.Filled.Search, "mud-ex-grid-find-field", _findOpens)
+    <MudCheckBox T="bool" @attributes="@ScriptSlotMarkup.ValueOnce(_matchCaseOpens)" Label="@Own(FindPanelLabelIds.MatchCase, View.Words.MatchCase)" Dense="true" Size="Size.Small"
+                 Class="mud-ex-grid-find-match-case" UserAttributes="@Marked(ScriptSlotAttributes.FindOption, "matchCase")" />
+    <MudCheckBox T="bool" @attributes="@ScriptSlotMarkup.ValueOnce(_wholeCellOpens)" Label="@Own(FindPanelLabelIds.WholeCell, View.Words.WholeCell)" Dense="true" Size="Size.Small"
+                 Class="mud-ex-grid-find-whole-cell" UserAttributes="@Marked(ScriptSlotAttributes.FindOption, "wholeCell")" />
+    <div class="mud-ex-grid-find-actions">
+        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowUp" Class="mud-ex-grid-find-previous"
+                   UserAttributes="@Marked(ScriptSlotAttributes.FindStep, "previous")">@Own(FindPanelLabelIds.Previous, View.Words.Previous)</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                   Class="mud-ex-grid-find-next" UserAttributes="@Marked(ScriptSlotAttributes.FindStep, "next")">@Own(FindPanelLabelIds.Next, View.Words.Next)</MudButton>
+    </div>
+    @if (View.ReplaceShown)
+    {
+        @* Replace (ADR-0332 §2): the replacement and the two writes, unavailable while a Replace All is out. Enter in
+           this field is still "find next", as in Excel's dialog. *@
+        @Field("replace", Own(FindPanelLabelIds.ReplaceField, View.Words.ReplaceField), Icons.Material.Filled.FindReplace,
+            "mud-ex-grid-find-replace-field", _replaceOpens)
+        <div class="mud-ex-grid-find-actions">
+            <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="View.ReplaceWaiting" Class="mud-ex-grid-find-replace"
+                       UserAttributes="@Marked(ScriptSlotAttributes.FindStep, "replace")">@Own(FindPanelLabelIds.Replace, View.Words.Replace)</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Disabled="View.ReplaceWaiting"
+                       Class="mud-ex-grid-find-replace-all"
+                       UserAttributes="@Marked(ScriptSlotAttributes.FindStep, "replaceAll")">@Own(FindPanelLabelIds.ReplaceAll, View.Words.ReplaceAll)</MudButton>
+        </div>
+    }
+    <MudText Typo="Typo.caption" Class="mud-ex-grid-find-outcome" role="status">@View.Outcome</MudText>
+</div>
+
+@code {
+    // What each field and option opens with: the core's, given as it is drawn and not after, so a render a round trip
+    // behind the typing or a tick writes nothing back (SRV-7). Null once it is drawn, or while it is not.
+    private string? _findOpens;
+    private string? _replaceOpens;
+    private object? _matchCaseOpens;
+    private object? _wholeCellOpens;
+    private bool _findDrawn;
+    private bool _replaceDrawn;
+    private bool _optionsDrawn;
+
+    /// <summary>The panel's view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public GridFindView View { get; set; } = default!;
+
+    /// <summary>Where the wording comes from.</summary>
+    [Parameter, EditorRequired] public MudGridChrome Chrome { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        (_findOpens, _findDrawn) = ScriptSlotMarkup.Opening(true, View.Text, _findDrawn);
+        (_replaceOpens, _replaceDrawn) = ScriptSlotMarkup.Opening(View.ReplaceShown, View.ReplaceText, _replaceDrawn);
+        if (!_optionsDrawn)
+        {
+            (_matchCaseOpens, _wholeCellOpens, _optionsDrawn) = (View.MatchCase, View.WholeCell, true);
+        }
+        else
+        {
+            (_matchCaseOpens, _wholeCellOpens) = (null, null);
+        }
+    }
+
+    /// <summary>The Chrome's own word for <paramref name="id"/>, else the core's.</summary>
+    private string Own(string id, string core) => Chrome.Label?.Invoke(id) ?? core;
+
+    private static Dictionary<string, object?> Marked(string attribute, string value) => ScriptSlotMarkup.Marked(attribute, value);
+
+    /// <summary>A text field the script reads as it is typed, opening with <paramref name="opens"/> where given.</summary>
+    private RenderFragment Field(string which, string label, string icon, string css, string? opens) => __builder =>
+    {
+        <MudTextField T="string" @attributes="@ScriptSlotMarkup.ValueOnce(opens)"
+                      Label="@label" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@icon" Class="@css"
+                      UserAttributes="@Marked(ScriptSlotAttributes.FindField, which)" />
+    };
+}

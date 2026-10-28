@@ -136,6 +136,68 @@ public sealed class MudGridChrome : IGridChrome
         return Menu(context.Commands, context.Close, context.FocusRequest, context.ResolveKey, context.TakeFocus);
     }
 
+    /// <summary>The slots this Chrome fills when the Script Core draws the grid (ADR-0410): the column
+    /// menu, the filter panel, the find panel, the Context Menu and the loading bar so far. Every other part is the
+    /// Script Core's own there until this Wrapper fills it too.</summary>
+    public ScriptSlots ScriptSlots => ScriptSlots.ColumnMenu | ScriptSlots.ContextMenu | ScriptSlots.LoadingIndicator | ScriptSlots.FilterPanel
+        | ScriptSlots.FindPanel;
+
+    /// <summary>The column menu when the Script Core draws the grid (ADR-0410): the same
+    /// <c>MudButton</c> items, each marked for the script that wires them.</summary>
+    public RenderFragment? ColumnMenu(GridMenuView view) => ScriptMenu(view);
+
+    /// <summary>The Context Menu when the Script Core draws the grid (ADR-0410), drawn as the column
+    /// menu is.</summary>
+    public RenderFragment? ContextMenu(GridMenuView view) => ScriptMenu(view);
+
+    /// <summary>The loading bar when the Script Core draws the grid (ADR-0410): the same
+    /// <c>MudProgressLinear</c> while rows are on their way, and nothing otherwise.</summary>
+    public RenderFragment? LoadingIndicator(GridLoadingView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return LoadingIndicator(new LoadingContext(view.IsLoading, view.PlaceholderRowCount));
+    }
+
+    /// <summary>The filter panel when the Script Core draws the grid (ADR-0410): MudBlazor's controls,
+    /// drawn from the core's view and marked for the script, which hands each change to the core.</summary>
+    public RenderFragment? FilterPanel(GridFilterView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenComponent<MudExGridScriptFilterPanel>(0);
+            builder.AddComponentParameter(1, nameof(MudExGridScriptFilterPanel.View), view);
+            builder.AddComponentParameter(2, nameof(MudExGridScriptFilterPanel.Chrome), this);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The find panel when the Script Core draws the grid (ADR-0410): MudBlazor's controls, drawn
+    /// from the core's view and marked for the script, which hands each change and press to the core.</summary>
+    public RenderFragment? FindPanel(GridFindView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenComponent<MudExGridScriptFindPanel>(0);
+            builder.AddComponentParameter(1, nameof(MudExGridScriptFindPanel.View), view);
+            builder.AddComponentParameter(2, nameof(MudExGridScriptFindPanel.Chrome), this);
+            builder.CloseComponent();
+        };
+    }
+
+    private RenderFragment ScriptMenu(GridMenuView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenComponent<MudExGridScriptMenu>(0);
+            builder.AddComponentParameter(1, nameof(MudExGridScriptMenu.View), view);
+            builder.AddComponentParameter(2, nameof(MudExGridScriptMenu.Chrome), this);
+            builder.CloseComponent();
+        };
+    }
+
     private RenderFragment Menu(
         IReadOnlyList<GridCommand> commands, Action close, int focusRequest, MenuKeyResolver? resolveKey,
         Func<ElementReference, bool, Task>? takeFocus)
@@ -168,6 +230,13 @@ public sealed class MudGridChrome : IGridChrome
         => MudExGridWords.MudKeyForCommand(id) is { } key
             ? MudExGridWords.Mud(localizer, key)
             : MudExGridWords.Own(this, id);
+
+    /// <summary>A command's word over the Script Core (ADR-0410): MudBlazor's where it has a key, then
+    /// <see cref="Label"/>, then the words the Script Core sent, which know every command it has.</summary>
+    internal string LabelFor(GridMenuItemView item, ILocalizationInterceptor localizer)
+        => MudExGridWords.MudKeyForCommand(item.Id) is { } key
+            ? MudExGridWords.Mud(localizer, key)
+            : Label?.Invoke(item.Id) ?? item.Label;
 
     /// <summary>A command's icon: the Chrome's <see cref="Icon"/> first, then the
     /// Material icon of each of the core's commands.</summary>

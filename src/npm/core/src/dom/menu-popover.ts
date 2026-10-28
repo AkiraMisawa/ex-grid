@@ -115,6 +115,12 @@ export interface MenuPlace {
     dispose(): void;
     /** Whether a popup of the contents' own is open: Escape is then the popup's (ADR-0039). */
     readonly innerPopupOpen: boolean;
+    /**
+     * A key typed on the grid while the menu stands: the menu's while its contents still owe the opening focus,
+     * as a Chrome slot's do until a Framework Adapter draws them (ADR-0410 section 5), answered against the place
+     * as a key on an item is. Answers whether the key was the menu's.
+     */
+    keyOnGrid(key: string, shift: boolean, controlAltOrMeta: boolean): boolean;
 }
 
 /**
@@ -129,6 +135,8 @@ export class MenuItems implements MenuPlace {
     readonly #state: MenuState;
     /** The built-in items open no popup of their own. */
     readonly innerPopupOpen = false;
+    /** The built-in items take the keyboard as they are drawn, so a key on the grid is never theirs. */
+    readonly keyOnGrid = (): boolean => false;
 
     /** `lettered` marks each command's letter the way Excel shows it (ADR-0044): the column menu's, whose sort
      * and clear-filter commands answer S, O and C; the Context Menu answers no letter and marks none. */

@@ -1879,6 +1879,9 @@ export class GridView<Row> {
     // The Settled Mark (ADR-0220).
     #passOwed = false;
     #settledShown: boolean | undefined;
+    // What a Framework Adapter still owes the page, each held until it stands: a slot's contents a round trip away
+    // (ADR-0410 section 5).
+    #settledHolds = 0;
     #destroyed = false;
 
     constructor(root: HTMLElement, options: GridOptions<Row>, reports: BrowserReports) {
@@ -3060,7 +3063,7 @@ export class GridView<Row> {
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
             && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
             && this.#findStepping === undefined && this.#errorStepping === undefined && this.#replacing === 0 && this.#pending === undefined
-            && this.#messageAsked === undefined);
+            && this.#messageAsked === undefined && this.#settledHolds === 0);
     }
 
     #showSettled(settled: boolean): void {
@@ -3577,6 +3580,13 @@ export class GridView<Row> {
         // A key typed in a control inside the root is that control's: only the root and this grid's own
         // Keyboard Field are the grid's (ADR-0010, ADR-0080).
         if (target !== this.#root && target !== this.#keyField) return;
+        // A key on the grid while a menu's Chrome contents still owe the opening focus, a round trip away on a
+        // circuit, is the menu's, answered against the place it keeps as a key on an item is (ADR-0410 section 5).
+        if (popover !== undefined && (popover.kind === 'column' || popover.kind === 'context')
+            && popover.items.keyOnGrid(event.key, event.shiftKey, event.ctrlKey || event.altKey || event.metaKey)) {
+            this.#taken(event);
+            return;
+        }
         // A released Tab is the browser's, and any other key ends the release (ADR-0012).
         if (this.#tabReleased) {
             this.#tabReleased = false;
@@ -7433,6 +7443,20 @@ export class GridView<Row> {
         this.#scroller.after(frame.element);
         frame.focusFirst();
         this.#answer();
+    }
+
+    /** Holds the Settled Mark until the answer is called, once (ADR-0410 section 5). */
+    holdSettled(): () => void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        this.#settledHolds += 1;
+        this.#showSettled(false);
+        let held = true;
+        return () => {
+            if (!held) return;
+            held = false;
+            this.#settledHolds -= 1;
+            if (!this.#destroyed) this.#lookSettled();
+        };
     }
 
     /** Closes a Consumer's popover where one stands (ADR-0050, item 16); the keyboard returns to the grid. */

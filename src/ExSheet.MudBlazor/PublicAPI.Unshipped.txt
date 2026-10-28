@@ -1,4 +1,10 @@
 #nullable enable
+ExSheet.MudBlazor.MudSheetChrome.ColumnMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.FilterPanel(ExGrid.Chrome.GridFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.FindPanel(ExGrid.Chrome.GridFindView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.LoadingIndicator(ExGrid.Chrome.GridLoadingView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
 ExSheet.MudBlazor.MudSheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?

@@ -47,9 +47,13 @@ export interface GridMenuSlotContext {
     readonly close: () => void;
     /** The count of requests for the menu to take the keyboard: each opening, and each return from the filter
      * below the column's commands (ADR-0044). Whenever it differs from the one the contents last answered, and
-     * at their first mount, they put DOM focus on the first enabled item, through {@link GridMenuSlotContext.takeFocus}, without
+     * at their first mount, they put DOM focus on {@link GridMenuSlotContext.focusItem}, through {@link GridMenuSlotContext.takeFocus}, without
      * scrolling (ADR-0039). */
     readonly focusRequest: number;
+    /** The index in {@link GridMenuSlotContext.commands} of the item a focus request asks for: the menu's place, its
+     * first enabled item unless a key typed on the grid before the contents took the keyboard moved it (ADR-0410
+     * section 5); -1 where no command is enabled. */
+    readonly focusItem: number;
     /**
      * What a key pressed on an item means (`KeyboardEvent.key`, Shift, and whether Control, Alt or Meta was
      * held), answered by `MenuKeys`' table against the place the core keeps for the menu (ADR-0039). A `move`
@@ -559,6 +563,11 @@ class SlotMount<Context> {
         return this.#live;
     }
 
+    /** Whether the contents still owe the focus a request of the grid's asked for. */
+    get owed(): boolean {
+        return this.#owed;
+    }
+
     /** Mounts the contents, once. Contents that cannot be drawn close the part, rather than leave it standing empty. */
     mount(context: Context): void {
         if (this.#live && this.#cleanup === undefined) this.#draw(context);
@@ -640,6 +649,9 @@ export class SlottedMenu<Extra extends object> implements MenuPlace {
     readonly #answers: MenuAnswers;
     readonly #label: (id: string) => string;
     #focusRequest = 1;
+    /** A key typed before the contents arrived moved the keyboard into the column's filter: the request they would
+     * answer is void, and they take no keyboard until the next one. */
+    #movedOn = false;
 
     constructor(slot: HTMLElement, name: string, mount: GridChromeSlot<GridMenuSlotContext & Extra>, extra: Extra,
         commands: readonly GridCommand[], label: (id: string) => string, table: MenuKeyTable, answers: MenuAnswers, takeFocus: ChromeFocus) {
@@ -678,7 +690,29 @@ export class SlottedMenu<Extra extends object> implements MenuPlace {
         if (!this.#slot.live) return;
         this.#state.toFirst();
         this.#focusRequest += 1;
+        this.#movedOn = false;
         this.#slot.request(this.#context());
+    }
+
+    /** A key on the grid before the contents took the keyboard (ADR-0410 section 5): answered against the place,
+     * as on an item. A move asks the contents again to focus the item it names; the keyboard is still owed. */
+    keyOnGrid(key: string, shift: boolean, controlAltOrMeta: boolean): boolean {
+        if (!this.#slot.live || !this.#slot.owed) return false;
+        const meaning = this.#state.key(key, shift, controlAltOrMeta);
+        if (meaning.kind === 'move') {
+            this.#focusRequest += 1;
+            this.#slot.request(this.#context());
+        } else if (meaning.kind === 'run') {
+            this.#answers.run(meaning.item);
+        } else if (meaning.kind === 'close') {
+            this.#answers.cancel();
+        } else if (meaning.kind !== 'none') {
+            // Into the column's filter, which the core carried out: the keyboard moved on, and the contents arriving
+            // later must not take it back.
+            this.#slot.heard();
+            this.#movedOn = true;
+        }
+        return true;
     }
 
     /** The menu is going: its contents are taken away, and nothing they call back reaches the grid again. */
@@ -693,12 +727,17 @@ export class SlottedMenu<Extra extends object> implements MenuPlace {
             label: this.#label,
             close: this.#close,
             focusRequest: this.#focusRequest,
+            focusItem: this.#state.place,
             resolveKey: this.#resolveKey,
             itemFocused: this.#itemFocused,
             innerPopupChanged: this.#slot.innerPopupChanged,
-            takeFocus: this.#slot.takeFocus,
+            takeFocus: this.#takeFocus,
         });
     }
+
+    readonly #takeFocus = (control: HTMLElement, options?: { readonly preventScroll?: boolean }): void => {
+        if (!this.#movedOn) this.#slot.takeFocus(control, options);
+    };
 
     readonly #close = (): void => {
         if (!this.#slot.live) return;
