@@ -141,6 +141,7 @@ public class ShippedAssetTests
             var served = Directory.EnumerateFiles(Wwwroot(package))
                 .Select(Path.GetFileName)
                 .Where(name => package != "ExPivot" || name?.StartsWith(PivotScriptModule, StringComparison.Ordinal) != true)
+                .Where(name => package != "ExSheet" || name?.StartsWith(SheetScriptModule, StringComparison.Ordinal) != true)
                 .Order(StringComparer.Ordinal);
             Assert.Equal(expected, served);
         }
@@ -154,6 +155,9 @@ public class ShippedAssetTests
     /// (ADR-0370 section 1). This project does not build ExPivot, so the module is there or not as ExPivot was last
     /// built: ExPivot's own tests, which build it, hold it to the stamp its component is built with.</summary>
     private const string PivotScriptModule = "ex-pivot.min.js";
+
+    /// <summary>ExSheet's, bundled as ExSheet builds and held to its stamp by ExSheet's own tests, as ExPivot's is.</summary>
+    private const string SheetScriptModule = "ex-sheet.min.js";
 
     [Fact] // ADR-0123 / ADR-0350 s7: the bundled module answers the stamp the component is built with, at the version its address carries
     public void The_script_core_module_is_the_one_the_component_was_built_with()

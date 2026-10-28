@@ -130,6 +130,37 @@
         </ul>
     </DocsSection>
 
+    <DocsSection Title="A sheet drawn in the browser">
+        <p>
+            Blazor's ExSheet is moving onto the same TypeScript core as React's, as ExGrid and ExPivot are.
+            <code>ExSheet.Script.ExSheet</code> is that Sheet, beside the one above while the move is under way: the
+            Workbook, its Formulas, the Formula Bar, the Sheet Tabs and the status-bar figures run in the browser on
+            both hosting models, so on Blazor Server a key typed into a cell no longer crosses the circuit. It takes
+            the parameters above under the same names and defaults, so a page moves to it by its type. The documents
+            cross as the JSON both engines read and write: <code>Document</code> or <code>Workbook</code> goes to the
+            browser when you hand over one of your own, and each change comes back through <code>DocumentChanged</code>
+            and <code>WorkbookChanged</code>; one it raised, bound back two ways, crosses no more.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreSheet)" Files="@(["Examples/Sheet/Expenses.cs"])" />
+        <p>
+            It carries <code>Document</code>, <code>Workbook</code> and their events, <code>SheetsChanged</code>,
+            <code>Culture</code>, <code>PinnedColumnCount</code>, <code>RowHeight</code>, the sizes, the Headings,
+            the Formula Bar, the Sheet Tabs, <code>ShowToolbar</code> with Excel's default row, the status-bar
+            figures' <code>SummaryFigures</code>, <code>ShowSelectionSummary</code> and <code>SummaryFiguresChanged</code>,
+            <code>SelectionChanged</code>, <code>AllowCopyWithHeaders</code>, <code>EditingChanged</code> and
+            <code>IsEditing</code>, <code>OnFormatKeyRefused</code>, <code>Seed</code>, <code>Today</code>,
+            <code>TimeZone</code> and <code>CommandLabel</code>, which is asked for every id once each time the
+            parameters are set, its words crossing only when they changed. <code>UndoAsync</code>,
+            <code>RedoAsync</code> and <code>OpenFormatCellsAsync</code> are asked of the Sheet in the browser and
+            throw its refusal as the Sheet above does; the Sheet's documents are read with <code>ToDocumentAsync</code>
+            and <code>ToWorkbookDocumentAsync</code>. Not carried yet: a <code>Chrome</code>,
+            <code>ToolbarContent</code>, a <code>PointingScope</code>, <code>OnLinkedColumnColoursChanged</code>,
+            <code>OnSelectionSummaryChanged</code>, and the commands that edit, format, open and save, or declare and
+            push a Linked Table; use the Sheet above for those until they arrive. The script it runs is bundled into
+            the package, at an address that changes with its content.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="The parts of a sheet">
         <p>
             These pages and the API name the parts of a sheet as the list under the figure does. A cell holds an
