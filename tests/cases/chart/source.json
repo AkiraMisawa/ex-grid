@@ -1,0 +1,983 @@
+{
+  "about": "The Chart Source (ADR-0322, ADR-0344): thinned where the data lives by the reference implementation, and a Chart Spec read through Chart Sources, with what each refuses before any source is asked, from tests/ExChart.Engine.Tests/ChartSourceTests.cs.",
+  "kind": "chart",
+  "tables": {
+    "steps": {
+      "x": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "y": [
+        1.0,
+        5.0,
+        2.0,
+        3.0,
+        9.0,
+        0.0,
+        4.0,
+        4.0,
+        7.0,
+        null,
+        8.0,
+        6.0
+      ]
+    },
+    "unordered": {
+      "x": [
+        3.0,
+        1.0,
+        2.0,
+        1.0
+      ],
+      "y": [
+        {
+          "decimal": "30"
+        },
+        {
+          "decimal": "10"
+        },
+        {
+          "decimal": "20"
+        },
+        {
+          "decimal": "11"
+        }
+      ]
+    },
+    "days": {
+      "day": [
+        {
+          "date": "2026-01-01"
+        },
+        {
+          "date": "2026-01-02"
+        },
+        {
+          "date": "2026-01-03"
+        },
+        {
+          "date": "2026-01-04"
+        },
+        {
+          "date": "2026-01-05"
+        },
+        {
+          "date": "2026-01-06"
+        },
+        {
+          "date": "2026-01-07"
+        },
+        {
+          "date": "2026-01-08"
+        },
+        {
+          "date": "2026-01-09"
+        },
+        {
+          "date": "2026-01-10"
+        }
+      ],
+      "pnl": [
+        {
+          "decimal": "1.5"
+        },
+        {
+          "decimal": "-2"
+        },
+        {
+          "decimal": "3.25"
+        },
+        {
+          "decimal": "0"
+        },
+        {
+          "decimal": "4"
+        },
+        {
+          "decimal": "-1.75"
+        },
+        {
+          "decimal": "2"
+        },
+        {
+          "decimal": "6"
+        },
+        {
+          "decimal": "-3"
+        },
+        {
+          "decimal": "5"
+        }
+      ]
+    },
+    "times": {
+      "at": [
+        {
+          "dateTime": "2026-01-01T00:00:00"
+        },
+        {
+          "dateTime": "2026-01-02T12:30:00"
+        }
+      ],
+      "v": [
+        1.0,
+        2.0
+      ]
+    },
+    "words": {
+      "x": [
+        1.0,
+        2.0
+      ],
+      "y": [
+        1.0,
+        "many"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0344 / ADR-0254: each pixel keeps its first, last, lowest and highest row, and says what it left out",
+      "sourceThin": {
+        "table": "steps",
+        "query": {
+          "data": "steps",
+          "x": "x",
+          "y": "y",
+          "values": "numbers",
+          "from": null,
+          "to": null,
+          "pixels": 3
+        },
+        "version": 3
+      },
+      "expect": [
+        {
+          "at": "version",
+          "is": 3
+        },
+        {
+          "at": "rows",
+          "is": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 5
+            },
+            {
+              "x": 3,
+              "y": 3
+            },
+            {
+              "x": 4,
+              "y": 9
+            },
+            {
+              "x": 5,
+              "y": 0
+            },
+            {
+              "x": 7,
+              "y": 4
+            },
+            {
+              "x": 8,
+              "y": 7
+            },
+            {
+              "x": 9,
+              "y": null
+            },
+            {
+              "x": 10,
+              "y": 8
+            },
+            {
+              "x": 11,
+              "y": 6
+            }
+          ]
+        },
+        {
+          "at": "thinned",
+          "is": [
+            {
+              "from": 0,
+              "to": 3,
+              "min": 1,
+              "max": 5,
+              "count": 4
+            },
+            {
+              "from": 4,
+              "to": 7,
+              "min": 0,
+              "max": 9,
+              "count": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344 / spine rule 1: a row with no value is kept where it is, and splits its pixel's rows into runs thinned on their own",
+      "sourceThin": {
+        "table": "steps",
+        "query": {
+          "data": "steps",
+          "x": "x",
+          "y": "y",
+          "values": "numbers",
+          "from": 8,
+          "to": 11,
+          "pixels": 1
+        },
+        "version": 0
+      },
+      "expect": [
+        {
+          "at": "rows",
+          "is": [
+            {
+              "x": 8,
+              "y": 7
+            },
+            {
+              "x": 9,
+              "y": null
+            },
+            {
+              "x": 10,
+              "y": 8
+            },
+            {
+              "x": 11,
+              "y": 6
+            }
+          ]
+        },
+        {
+          "at": "thinned",
+          "empty": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: a range asked for is the rows in it, at full detail; within the pixels nothing is thinned",
+      "sourceThin": {
+        "table": "days",
+        "query": {
+          "data": "days",
+          "x": "day",
+          "y": "pnl",
+          "values": "dates",
+          "from": 739618,
+          "to": 739621,
+          "pixels": 2048
+        },
+        "version": 0
+      },
+      "expect": [
+        {
+          "at": "rows",
+          "is": [
+            {
+              "x": 739618,
+              "y": 3.25
+            },
+            {
+              "x": 739619,
+              "y": 0
+            },
+            {
+              "x": 739620,
+              "y": 4
+            },
+            {
+              "x": 739621,
+              "y": -1.75
+            }
+          ]
+        },
+        {
+          "at": "thinned",
+          "empty": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: rows out of order are answered in order across, a row's place in the data breaking a tie",
+      "sourceThin": {
+        "table": "unordered",
+        "query": {
+          "data": "unordered",
+          "x": "x",
+          "y": "y",
+          "values": "numbers",
+          "from": null,
+          "to": null,
+          "pixels": 10
+        },
+        "version": 0
+      },
+      "expect": [
+        {
+          "at": "rows",
+          "is": [
+            {
+              "x": 1,
+              "y": 10
+            },
+            {
+              "x": 1,
+              "y": 11
+            },
+            {
+              "x": 2,
+              "y": 20
+            },
+            {
+              "x": 3,
+              "y": 30
+            }
+          ]
+        },
+        {
+          "at": "thinned",
+          "empty": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: one pixel over the whole range keeps the first, the last, the lowest and the highest row",
+      "sourceThin": {
+        "table": "steps",
+        "query": {
+          "data": "steps",
+          "x": "x",
+          "y": "y",
+          "values": "numbers",
+          "from": null,
+          "to": 7,
+          "pixels": 1
+        },
+        "version": 0
+      },
+      "expect": [
+        {
+          "at": "rows",
+          "is": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 4,
+              "y": 9
+            },
+            {
+              "x": 5,
+              "y": 0
+            },
+            {
+              "x": 7,
+              "y": 4
+            }
+          ]
+        },
+        {
+          "at": "thinned",
+          "is": [
+            {
+              "from": 0,
+              "to": 7,
+              "min": 0,
+              "max": 9,
+              "count": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: a labels axis needs every category, and is not asked of a Chart Source",
+      "sourceThin": {
+        "table": "steps",
+        "query": {
+          "data": "steps",
+          "x": "x",
+          "y": "y",
+          "values": "labels",
+          "from": null,
+          "to": null,
+          "pixels": 3
+        },
+        "version": 0
+      },
+      "throws": "argument",
+      "saying": "labels axis"
+    },
+    {
+      "name": "ADR-0344: a Chart Source is asked for one pixel or more",
+      "sourceThin": {
+        "table": "steps",
+        "query": {
+          "data": "steps",
+          "x": "x",
+          "y": "y",
+          "values": "numbers",
+          "from": null,
+          "to": null,
+          "pixels": 0
+        },
+        "version": 0
+      },
+      "throws": "argument",
+      "saying": "one pixel or more"
+    },
+    {
+      "name": "ADR-0344: a Chart Source is asked for a range of finite positions",
+      "sourceThin": {
+        "table": "steps",
+        "query": {
+          "data": "steps",
+          "x": "x",
+          "y": "y",
+          "values": "numbers",
+          "from": "-Infinity",
+          "to": null,
+          "pixels": 3
+        },
+        "version": 0
+      },
+      "throws": "argument",
+      "saying": "A Chart Source is asked for a range of finite positions."
+    },
+    {
+      "name": "ADR-0344: a column the table does not have is refused, naming its columns",
+      "sourceThin": {
+        "table": "steps",
+        "query": {
+          "data": "steps",
+          "x": "x",
+          "y": "pnl",
+          "values": "numbers",
+          "from": null,
+          "to": null,
+          "pixels": 3
+        },
+        "version": 0
+      },
+      "throws": "argument",
+      "saying": "\"steps\" has no column \"pnl\"; its columns are x, y."
+    },
+    {
+      "name": "ADR-0344: a date with a time of day is no position on a dates axis",
+      "sourceThin": {
+        "table": "times",
+        "query": {
+          "data": "times",
+          "x": "at",
+          "y": "v",
+          "values": "dates",
+          "from": null,
+          "to": null,
+          "pixels": 3
+        },
+        "version": 0
+      },
+      "throws": "chartSpecRefused",
+      "saying": "Row 2 of \"times\" holds \"01/02/2026 12:30:00\" across, and the axis needs a date."
+    },
+    {
+      "name": "ADR-0344: a value that is no number is refused, naming its row",
+      "sourceThin": {
+        "table": "words",
+        "query": {
+          "data": "words",
+          "x": "x",
+          "y": "y",
+          "values": "numbers",
+          "from": null,
+          "to": null,
+          "pixels": 3
+        },
+        "version": 0
+      },
+      "throws": "chartSpecRefused",
+      "saying": "Row 2 of \"words\" holds \"many\", which is not a number."
+    },
+    {
+      "name": "ADR-0344: a spec read through a source draws the points it kept and carries what each thinned pixel held",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "steps",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": [
+            5
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "asked",
+          "is": [
+            {
+              "data": "steps",
+              "x": "x",
+              "y": "y",
+              "values": "numbers",
+              "from": null,
+              "to": null,
+              "pixels": 3
+            }
+          ]
+        },
+        {
+          "at": "versions",
+          "is": {
+            "steps": 5
+          }
+        },
+        {
+          "at": "definition.series.0.points",
+          "count": true,
+          "is": 10
+        },
+        {
+          "at": "definition.series.0.thinned",
+          "is": [
+            {
+              "from": 0,
+              "to": 3,
+              "min": 1,
+              "max": 5,
+              "count": 4
+            },
+            {
+              "from": 4,
+              "to": 7,
+              "min": 0,
+              "max": 9,
+              "count": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: the range narrowed is asked of the source, its ends in the axis' own positions",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "days",
+            "x": "day",
+            "y": "pnl"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 2048,
+        "from": 739618,
+        "to": 739621,
+        "versions": {
+          "days": [
+            0
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "asked",
+          "is": [
+            {
+              "data": "days",
+              "x": "day",
+              "y": "pnl",
+              "values": "dates",
+              "from": 739618,
+              "to": 739621,
+              "pixels": 2048
+            }
+          ]
+        },
+        {
+          "at": "definition.series.0.points",
+          "count": true,
+          "is": 4
+        },
+        {
+          "at": "definition.series.0.thinned",
+          "empty": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: a series with observation is refused by path, before any source is asked",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "observation",
+            "data": "steps",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": []
+        }
+      },
+      "refused": {
+        "path": "series[0].kind",
+        "message": "series[0].kind \"observation\" draws each row as a point of its own, which a Chart Source does not thin; a series read from one is a level, a rateOverInterval or an amountPerPeriod.",
+        "asked": 0
+      }
+    },
+    {
+      "name": "ADR-0344: a series with a label is refused by path, before any source is asked",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "steps",
+            "x": "x",
+            "y": "y",
+            "label": "x"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": []
+        }
+      },
+      "refused": {
+        "path": "series[0].label",
+        "message": "series[0].label is one value a point, and a point read from a Chart Source stands for every row of its pixel; a series read from one draws its line from x and y.",
+        "asked": 0
+      }
+    },
+    {
+      "name": "ADR-0344: a series with a priceRange is refused by path, before any source is asked",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "priceRange",
+            "data": "steps",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": []
+        }
+      },
+      "refused": {
+        "path": "series[0].kind",
+        "message": "series[0].kind \"priceRange\" does not draw a line a Chart Source can thin; a series read from one is a level, a rateOverInterval or an amountPerPeriod.",
+        "asked": 0
+      }
+    },
+    {
+      "name": "ADR-0344: a series with a colour is refused by path, before any source is asked",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "steps",
+            "x": "x",
+            "y": "y",
+            "colour": {
+              "column": "y",
+              "scale": "sequential"
+            }
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": []
+        }
+      },
+      "refused": {
+        "path": "series[0].colour",
+        "message": "series[0].colour is one value a point, and a point read from a Chart Source stands for every row of its pixel; a series read from one draws its line from x and y.",
+        "asked": 0
+      }
+    },
+    {
+      "name": "ADR-0344: a series read from a source names its y, or is refused before any source is asked",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "steps",
+            "x": "x"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": []
+        }
+      },
+      "refused": {
+        "path": "series[0].y",
+        "message": "series[0].y names a column, and is needed: a series read from a Chart Source is asked for its \"data\", its \"x\" and its \"y\".",
+        "asked": 0
+      }
+    },
+    {
+      "name": "ADR-0344: a labels axis is refused by path, before any source is asked",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "labels"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "steps",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": []
+        }
+      },
+      "refused": {
+        "path": "axis.values",
+        "message": "axis.values \"labels\" needs every category, which only the whole column knows; a chart read from a Chart Source places dates or numbers.",
+        "asked": 0
+      }
+    },
+    {
+      "name": "ADR-0344: a surface needs every point, and is refused before any source is asked",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "steps",
+          "x": "x",
+          "y": "y",
+          "z": "y"
+        }
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": []
+        }
+      },
+      "refused": {
+        "path": "surface",
+        "message": "surface needs every point of its grid or its mesh, which a Chart Source does not thin; a chart read from one draws series.",
+        "asked": 0
+      }
+    },
+    {
+      "name": "ADR-0344: a Data Handle no source answers for is refused at its series",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "ticks",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": []
+        }
+      },
+      "refused": {
+        "path": "series[0].data",
+        "message": "series[0].data \"ticks\" is not known: name a Data Handle a capability returned.",
+        "asked": 0
+      }
+    },
+    {
+      "name": "ADR-0344 / spine rule 6: two series of one data answered at different versions are never drawn together",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "steps",
+            "x": "x",
+            "y": "y"
+          },
+          {
+            "id": "t",
+            "name": "T",
+            "kind": "level",
+            "data": "steps",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": [
+            1,
+            2
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[1].data",
+        "message": "series[1].data \"steps\" answered version 2, and an earlier series of it version 1: one chart is never drawn from two moments of its data.",
+        "asked": 2
+      }
+    },
+    {
+      "name": "ADR-0344: two series of one data each ask for their own column, and are drawn at the version they both answered",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "S",
+            "kind": "level",
+            "data": "steps",
+            "x": "x",
+            "y": "y"
+          },
+          {
+            "id": "t",
+            "name": "T",
+            "kind": "level",
+            "data": "steps",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "sources": {
+        "pixels": 3,
+        "versions": {
+          "steps": [
+            4,
+            4
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "asked",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "versions",
+          "is": {
+            "steps": 4
+          }
+        },
+        {
+          "at": "definition.series",
+          "count": true,
+          "is": 2
+        }
+      ]
+    }
+  ]
+}

@@ -28,12 +28,12 @@ public class ChartCaseTests
 
     [Theory] // ADR-0370: the layout's cases hold on the C# engine before the Script Core takes them
     [MemberData(nameof(Cases))]
-    public void A_shared_chart_case_holds(string file, string name)
+    public async Task A_shared_chart_case_holds(string file, string name)
     {
         var document = Read(file);
         var matches = document.GetProperty("cases").EnumerateArray().Where(c => c.GetProperty("name").GetString() == name).ToList();
         Assert.True(matches.Count == 1, $"chart/{file} holds {matches.Count} cases named \"{name}\".");
-        new ChartCase(document, matches[0]).Run();
+        await new ChartCase(document, matches[0]).Run();
     }
 
     private static JsonElement Read(string file)
