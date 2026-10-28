@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { formulaBarHeight, type GridSelection } from '@ex-grid/core';
+import { formulaBarHeight, GridMetrics, type GridSelection } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import { PointingScope, type PointingRefusal } from '@ex-grid/sheet';
 import {
@@ -83,7 +83,12 @@ export function SheetDemo(): ReactElement {
     const dark = useQuery('scheme') === 'dark';
     const scopeSwitch = useQuery('scope') === 'switch';
     const japanese = useQuery('lang') === 'ja';
-    const document = useMemo(() => (caseName === undefined ? opening() : sheetCase(caseName, enUs)), [caseName]);
+    // The Cell Metrics the Sheet paints with: the core's Compact preset, as ExSheet resolves them with no presentation
+    // of its own (ADR-0028). A case that sets a column at the edge of what fits computes its width from them.
+    const document = useMemo(
+        () => (caseName === undefined ? opening() : sheetCase(caseName, enUs, GridMetrics.resolve({ density: 'compact' }).cellMetrics)),
+        [caseName],
+    );
     const today = useMemo(() => (fixedDay === undefined ? undefined : dayOf(fixedDay)), [fixedDay]);
     // The page's own Sheet pins column A; a run's case does not, as Excel's workbook in the run had no frozen panes.
     const pinned = pin === undefined ? (caseName === undefined ? 1 : 0) : Number(pin);
