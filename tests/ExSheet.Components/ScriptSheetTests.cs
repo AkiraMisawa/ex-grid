@@ -227,7 +227,7 @@ public class ScriptSheetTests : BunitContext
         id = Assert.IsType<int>(_sheet.Invocations["open"][^1].Arguments[0]);
         var read = bridge.Read(id);
         Assert.False(read.IsCompleted);
-        bridge.CancelRead(id);
+        await bridge.CancelRead(id);
         Assert.Equal("""{"cancelled":true}""", await read);
         answers.SetResult(Parsed("""{"done":false}"""));
         Assert.False(await opening);
@@ -287,7 +287,7 @@ public class ScriptSheetTests : BunitContext
         Assert.Same(failure, await Assert.ThrowsAsync<IOException>(() => saving));
     }
 
-    [Fact] // ADR-0005 as amended 2026-10-20: an event, an answer and a save too large for a circuit's message are taken as streams, in their turn
+    [Fact] // ADR-0005 as amended 2026-10-28: an event, an answer and a save too large for a circuit's message are taken as streams, in their turn
     public async Task ADR0005_messages_held_in_the_browser_are_taken_as_streams_in_their_turn()
     {
         WorkbookDocument? raised = null;
@@ -296,17 +296,20 @@ public class ScriptSheetTests : BunitContext
             .Add(p => p.WorkbookChanged, (WorkbookDocument document) => { heard.Add("workbook"); raised = document; })
             .Add(p => p.EditingChanged, (bool _) => heard.Add("editing")));
         var large = WorkbookOf(new string('x', 20_000));
-        var raisedJson = JsonSerializer.Serialize(new { workbook = large.ToDocument().ToJson(), sheet = (string?)null, documentsSent = 0 });
+        var raisedJson = JsonSerializer.Serialize(new object[] { "workbookChanged", new { workbook = large.ToDocument().ToJson(), sheet = (string?)null, documentsSent = 0 } });
         var taking = new TaskCompletionSource();
         _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 1))
             .SetResult(FakeJSStream.Gated(raisedJson, taking.Task));
 
-        // The held event, and one after it: the second waits for the first to be taken.
-        var first = cut.InvokeAsync(() => Bridge().Value.HeardHeld("workbookChanged", Held(1, raisedJson)));
-        await cut.InvokeAsync(() => Bridge().Value.Heard("editingChanged", Parsed("true")));
+        // The held event, its kind and payload taken as the call's arguments, and one after it: the second waits for
+        // the first to be taken.
+        var first = cut.InvokeAsync(() => Bridge().Value.Held("Heard", Held(1, raisedJson)));
+        var second = cut.InvokeAsync(() => Bridge().Value.Heard("editingChanged", Parsed("true")));
         Assert.Empty(heard);
+        Assert.False(second.IsCompleted);
         taking.SetResult();
         await first;
+        await second;
         cut.WaitForAssertion(() => Assert.Equal(["workbook", "editing"], heard));
         Assert.Equal(large.ToDocument().ToJson(), raised?.ToJson());
 
@@ -315,6 +318,26 @@ public class ScriptSheetTests : BunitContext
         _sheet.Setup<JsonElement>("documents").SetResult(Held(2, documentsJson));
         _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 2)).SetResult(FakeJSStream.Gzipped(documentsJson));
         Assert.Equal(large.ToDocument().ToJson(), (await cut.InvokeAsync(() => cut.Instance.ToWorkbookDocumentAsync())).ToJson());
+
+        // A save's write, its id and Workbook taken as the call's arguments, answered as the write it makes.
+        var answers = _sheet.Setup<JsonElement>("save", _ => true);
+        Workbook? written = null;
+        var saving = cut.InvokeAsync(() => cut.Instance.SaveAsync(workbook =>
+        {
+            written = workbook;
+            return Task.CompletedTask;
+        }));
+        var id = Assert.IsType<int>(Assert.Single(_sheet.Invocations["save"]).Arguments[0]);
+        var writeJson = JsonSerializer.Serialize(new object[]
+        {
+            id,
+            new { document = large.ToDocument().ToJson(), tables = Array.Empty<object>(), seed = (string?)null, changes = 0, today = (object?)null, now = (object?)null },
+        });
+        _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 4)).SetResult(FakeJSStream.Gzipped(writeJson));
+        Assert.Equal("""{"done":true}""", await cut.InvokeAsync(() => Bridge().Value.Held("Write", Held(4, writeJson))));
+        answers.SetResult(Parsed("""{"done":null}"""));
+        await saving;
+        Assert.Equal(large.ToDocument().ToJson(), written?.ToDocument().ToJson());
 
         // A stream that is not the length declared is refused, never read as an answer.
         _sheet.Setup<JsonElement>("linkedTables").SetResult(Held(3, "[ ]"));

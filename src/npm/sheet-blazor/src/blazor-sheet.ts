@@ -7,6 +7,7 @@ import {
     builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary, type SummaryFigure,
     type ViewportSize,
 } from '@ex-grid/core';
+import { crossingCalls, HeldMessages, type WireHeld } from '@ex-grid/blazor-shared';
 import { decimalText } from '@ex-grid/data';
 import { createSheet, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId } from '@ex-grid/sheet';
 import {
@@ -86,7 +87,7 @@ export interface WireAttach {
     readonly documentsSent: number;
     readonly words: WireWords;
     /** Whether .NET is across a circuit, Blazor Server's, whose hub limits the size of a message: only then is a
-     * message larger than {@link inlineBytes} held. WebAssembly's .NET takes any message as it is. */
+     * message too large for one held (`HeldMessages`). WebAssembly's .NET takes any message as it is. */
     readonly circuit: boolean;
 }
 
@@ -199,63 +200,8 @@ export interface BlazorSheet {
     dispose(): void;
 }
 
-/**
- * The most a message to .NET carries in itself, in UTF-8 bytes. Blazor Server closes the circuit on a message larger
- * than its hub takes, 32 KB unless the application raises it, so a message larger than this, a Workbook's document or
- * a selection of many ranges, is held here and .NET takes it as a stream, as the grid's paste crosses (ADR-0005, as
- * amended 2026-10-20).
- */
-export const inlineBytes = 16 * 1024;
-
-/** What .NET is handed in place of a message larger than {@link inlineBytes}: the number it takes the message by,
- * with `take`, and the message's JSON's length in UTF-8 bytes. */
-export interface WireHeld {
-    readonly held: number;
-    readonly bytes: number;
-}
-
-// The messages held for .NET until it takes them, by number: none, where no circuit limits a message.
-class Held {
-    #last = 0;
-    readonly #messages = new Map<number, Uint8Array<ArrayBuffer>>();
-    readonly #circuit: boolean;
-
-    constructor(circuit: boolean) {
-        this.#circuit = circuit;
-    }
-
-    /** The message as it crosses: held, or nothing when it fits in a message of its own. */
-    crossing(value: unknown): WireHeld | undefined {
-        if (!this.#circuit) return undefined;
-        const json = JSON.stringify(value);
-        // A UTF-16 unit is at most three bytes of UTF-8: most messages are found small without encoding them.
-        if (json.length * 3 <= inlineBytes) return undefined;
-        const bytes = new TextEncoder().encode(json);
-        if (bytes.byteLength <= inlineBytes) return undefined;
-        this.#last += 1;
-        this.#messages.set(this.#last, bytes);
-        return { held: this.#last, bytes: bytes.byteLength };
-    }
-
-    take(held: number): Promise<Uint8Array<ArrayBuffer>> {
-        const bytes = this.#messages.get(held);
-        if (bytes === undefined) throw new Error(`Internal: .NET took the message ${String(held)}, which the bridge does not hold.`);
-        this.#messages.delete(held);
-        return packed(bytes);
-    }
-
-    clear(): void {
-        this.#messages.clear();
-    }
-}
-
-// Compressed where the browser can, since a stream crosses a circuit at about one chunk per round trip; .NET tells
-// the two apart by gzip's first two bytes, which no UTF-8 text begins with.
-async function packed(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
-    if (typeof CompressionStream !== 'function') return bytes;
-    const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
-    return new Uint8Array(await new Response(stream).arrayBuffer());
-}
+/** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
+const heldSheetCalls: ReadonlySet<string> = new Set(['Heard', 'Write']);
 
 /** What the bridge calls in .NET. */
 export interface DotNetHandle {
@@ -266,19 +212,23 @@ export interface DotNetHandle {
  * Mounts ExSheet's Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
  * `DotNetObjectReference` and `json` a {@link WireAttach}. What it answers is the component's handle on the Sheet.
  */
-export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): BlazorSheet {
+export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): BlazorSheet {
     const init = parsed<WireAttach>(json);
     let stopped = false;
-    const held = new Held(init.circuit);
-    // Once the Sheet is stopped .NET has let go of the bridge, and nothing more crosses. An event too large for a
-    // message of its own is held, and .NET takes it in its turn.
+    // An event or a save's Workbook too large for a message of its own is held, and .NET takes it in its turn, as the
+    // Shared Script crosses every product's: the hub would otherwise close the circuit.
+    const held = new HeldMessages(init.circuit);
+    const dotnet = crossingCalls(bridge, held, heldSheetCalls);
+    // Once the Sheet is stopped .NET has let go of the bridge, and nothing more crosses: an event still being taken
+    // then is let go with it, and only a failure while the Sheet stands is the page's to report.
     const send = (kind: HeardKind | 'editingChanged', payload: unknown): void => {
         if (stopped) return;
-        const crossing = held.crossing(payload);
-        if (crossing === undefined) void dotnet.invokeMethodAsync('Heard', kind, payload);
-        else void dotnet.invokeMethodAsync('HeardHeld', kind, crossing);
+        void dotnet.invokeMethodAsync('Heard', kind, payload).catch((failure: unknown) => { // oxlint-disable-line ex-grid/no-catch -- rethrown while the Sheet stands; once stopped .NET has let go of what it was taking
+            if (!stopped) throw failure;
+        });
     };
-    // A command's answer as it crosses: itself, or held when it is too large for a message of its own.
+    // A command's answer as it crosses: itself, or held when it is too large for a message of its own; .NET takes it
+    // before it reads the answer.
     const answer = <T>(value: T): T | WireHeld => held.crossing(value) ?? value;
     // The document the Sheet is handed on every update: the Consumer's, read once, or the one the Sheet raised last,
     // the same object, so handing it back opens nothing.
@@ -333,7 +283,7 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string): B
         })),
         open: async (id: number) => answer(await answeredLater(() => made.open(signal => readInDotNet(dotnet, id, signal, () => stopped)))),
         save: async (id: number) => answer(await answeredLater(async () => {
-            await made.save(workbook => writeInDotNet(dotnet, id, workbook, held));
+            await made.save(workbook => writeInDotNet(dotnet, id, workbook));
             return null;
         })),
         documents: () => answer({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
@@ -394,9 +344,8 @@ async function readInDotNet(dotnet: DotNetHandle, id: number, signal: AbortSigna
 
 // The write of a save, in its turn: the Workbook read whole before anything is awaited, as it is lent for the call
 // only, and handed to .NET, which makes its own of it: held, when it is too large for a message of its own.
-function writeInDotNet(dotnet: DotNetHandle, id: number, workbook: Workbook, held: Held): Promise<void> {
-    const saved = savedOf(workbook);
-    return dotnet.invokeMethodAsync('Write', id, held.crossing(saved) ?? saved).then(answer => {
+function writeInDotNet(dotnet: DotNetHandle, id: number, workbook: Workbook): Promise<void> {
+    return dotnet.invokeMethodAsync('Write', id, savedOf(workbook)).then(answer => {
         const written = parsed<WireWritten>(textOf(answer));
         if ('failed' in written) throw new Error(written.failed);
     });

@@ -182,6 +182,10 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private ElementReference _root;
     private IJSObjectReference? _module;
     private IJSObjectReference? _sheet;
+
+    /// <summary>The browser's calls, in the order it made them, a call too large for a circuit's message among them
+    /// (ADR-0005, as amended 2026-10-28).</summary>
+    internal global::ExGrid.Script.HeldCalls Calls { get; } = new();
     // The browser's Sheet once it is attached, or null once it never will be: refused, or disposed first. Never a
     // failed task, which nobody may be waiting to observe.
     private readonly TaskCompletionSource<IJSObjectReference?> _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -364,6 +368,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         catch (Exception) when (_disposed)
         {
             // Disposed while it attached, and the attach failed with it, as it does when the circuit closes.
+            Calls.Stopped();
             await ReleaseAsync(null, module);
             bridge.Dispose();
             return;
@@ -371,6 +376,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         catch (Exception)
         {
             // Refused by the Sheet itself: nothing of the browser's is held for a Sheet that never opened.
+            Calls.Stopped();
             _module = null;
             _bridge = null;
             await ReleaseAsync(null, module);
@@ -389,6 +395,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         }
         _sheet = sheet;
         _attached = true;
+        Calls.Attached(sheet);
         await SendUpdateAsync();
         _ready.TrySetResult(sheet);
     }
@@ -617,13 +624,6 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     // The Sheet's events, handed to the Consumer one at a time in the order the browser raised them: a handler that
     // awaits finishes before the next is called. What a handler throws fails the component, as Blazor's own do.
     internal Task HeardAsync(string kind, JsonElement payload) => InvokeAsync(() => HearAsync(Prepared(kind, payload)));
-
-    // An event too large for a message of its own, taken from the browser in its turn: the events after it wait for it.
-    internal Task HeardHeldAsync(string kind, JsonElement held) => InvokeAsync(() => HearAsync(async () =>
-    {
-        var payload = await CrossedMessage.OfAsync(await ReadyAsync(), held);
-        await Prepared(kind, payload)();
-    }));
 
     // Read in the component's turn, against the parameters as they stand when the event arrives.
     private Func<Task> Prepared(string kind, JsonElement payload)
@@ -947,9 +947,11 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private async Task<JsonElement> TakenAsync(IJSObjectReference sheet, ValueTask<JsonElement> answer)
     {
         var crossed = await answer;
+        if (!global::ExGrid.Script.HeldCalls.IsHeld(crossed))
+            return crossed;
         try
         {
-            return await CrossedMessage.OfAsync(sheet, crossed);
+            return await global::ExGrid.Script.HeldCalls.TakeAsync(sheet, crossed);
         }
         catch (JSException) when (_disposed)
         {
@@ -1063,6 +1065,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             return;
         _disposed = true;
         _ready.TrySetResult(null);
+        Calls.Stopped();
         // An opening under way reads no further, and lands nowhere.
         foreach (var opening in _openings.Values)
             opening.Cancel.Cancel();

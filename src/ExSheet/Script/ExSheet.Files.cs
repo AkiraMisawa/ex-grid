@@ -177,11 +177,9 @@ public sealed partial class ExSheet
             throw new InvalidOperationException($"Internal: the browser asked for the write of a save {id} that is not under way.");
         try
         {
-            // Taken first, when it was held; a failure to take it is the save's, thrown as it was. One handed over whole
-            // is written even when the Sheet is being disposed, as it was handed over before.
-            var root = CrossedMessage.IsHeld(saved) ? await CrossedMessage.OfAsync(await ReadyAsync(), saved) : saved;
+            // Written even when the Sheet is being disposed, as it was handed over before.
             saving.Written = true;
-            await saving.Write(WorkbookOf(root));
+            await saving.Write(WorkbookOf(saved));
             return """{"done":true}""";
         }
         catch (Exception failed)

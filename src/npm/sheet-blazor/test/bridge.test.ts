@@ -7,9 +7,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { gridCommandIds } from '@ex-grid/core';
 import { CellAddress, Culture, SheetDocument, SheetEdit, Workbook, WorkbookDocument } from '@ex-grid/sheet-engine';
+import { inlineBytes, type WireHeld } from '@ex-grid/blazor-shared';
 import {
-    attach, inlineBytes, labelIds, wordsOf, type BlazorSheet, type DotNetHandle, type WireAttach, type WireDocuments, type WireHeld, type WireOptions,
-    type WireSaved,
+    attach, labelIds, wordsOf, type BlazorSheet, type DotNetHandle, type WireAttach, type WireDocuments, type WireOptions, type WireSaved,
 } from '../src/blazor-sheet';
 
 /** .NET, as the bridge calls it: every event recorded. */
@@ -408,26 +408,34 @@ describe('files across the bridge (ADR-0330 section 10)', () => {
     });
 });
 
-describe('messages too large for a circuit (Blazor Server\'s hub limit, ADR-0005 as amended 2026-10-20)', () => {
+describe('messages too large for a circuit (Blazor Server\'s hub limit, ADR-0005 as amended 2026-10-28)', () => {
     it('holds an event, an answer and a save larger than a message carries, and hands each to .NET once, as a stream', async () => {
         const entries = Object.fromEntries(Array.from({ length: 600 }, (_, at) => [`A${String(at + 1)}`, `a text of some length, row ${String(at + 1)}`]));
         const { element, sheet, dotnet } = mount({ document: workbookJson(['Long', entries]), documentsSent: 1, circuit: true });
         await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('a text of some length, row 1'); });
-        dotnet.answers.set('HeardHeld', () => Promise.resolve(true));
+        // .NET takes a held call's arguments before the call answers, as `HeldCalls` does: the bridge lets go of them then.
+        const takenArgs: unknown[] = [];
+        dotnet.answers.set('Held', async (method, crossed) => {
+            const args = await taken(sheet, crossed as WireHeld);
+            takenArgs.push(args);
+            return method === 'Write' ? JSON.stringify({ done: true }) : null;
+        });
 
         select(element, 'A1');
         key('Delete');
 
-        // The event: no Heard, which would close the circuit, but its number and length.
-        await vi.waitFor(() => { expect(dotnet.called.map(call => call.method)).toEqual(['HeardHeld']); });
+        // The event: no Heard, which would close the circuit, but the call held, by its number and length.
+        await vi.waitFor(() => { expect(takenArgs).toHaveLength(1); });
+        expect(dotnet.called.map(call => call.method)).toEqual(['Held']);
         expect(dotnet.of('workbookChanged')).toEqual([]);
-        const heardHeld = dotnet.called[0];
-        if (heardHeld === undefined) throw new Error('Nothing crossed.');
-        const [kind, held] = heardHeld.args;
-        expect(kind).toBe('workbookChanged');
+        const heldCall = dotnet.called[0];
+        if (heldCall === undefined) throw new Error('Nothing crossed.');
+        const [method, held] = heldCall.args;
+        expect(method).toBe('Heard');
         const event = held as WireHeld;
         expect(event.bytes).toBeGreaterThan(inlineBytes);
-        const raised = await taken(sheet, event) as Raised;
+        const [kind, raised] = takenArgs[0] as [string, Raised];
+        expect(kind).toBe('workbookChanged');
         expect(raised.documentsSent).toBe(1);
         expect(WorkbookDocument.fromJson(must(raised.workbook)).sheets[0]?.cells).toHaveLength(599);
         // Taken once: the bridge holds it no longer.
@@ -439,9 +447,10 @@ describe('messages too large for a circuit (Blazor Server\'s hub limit, ADR-0005
         expect((await taken(sheet, answer) as WireDocuments).workbook).toBe(raised.workbook);
 
         // A save's Workbook, held for .NET's write.
-        dotnet.answers.set('Write', () => Promise.resolve(JSON.stringify({ done: true })));
         await expect(sheet.save(1)).resolves.toEqual({ done: null });
-        const saved = await taken(sheet, dotnet.called.find(call => call.method === 'Write')?.args[1] as WireHeld) as WireSaved;
+        expect(dotnet.called.map(call => call.args[0])).toEqual(['Heard', 'Write']);
+        const [id, saved] = takenArgs[1] as [number, WireSaved];
+        expect(id).toBe(1);
         expect(saved.document).toBe(raised.workbook);
 
         // A small answer still crosses in itself, and without a circuit, as WebAssembly's .NET is, so does a large one.
