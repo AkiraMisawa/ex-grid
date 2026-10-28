@@ -1,0 +1,36 @@
+@* A Consumer's page that declares the Sheet Toolbar of the Script ExSheet as it would the Razor component's
+   (ADR-0100, ADR-0370 step 2): the default row, and a row of its own holding its buttons, one with content of its
+   own, among ExSheet's items. *@
+@* A namespace outside ExSheet.Components, where ExSheet names the product's namespace and not the Razor component. *@
+@namespace ScriptSheetSupport
+@using global::ExSheet
+
+<ExSheet.Script.ExSheet @ref="Sheet" ShowToolbar="true">
+    <ToolbarContent>
+        <DefaultToolbarRow />
+        <ToolbarRow Label="Review" KeyTip="R">
+            <ToolbarButton Text="Mark reviewed" KeyTip="M" OnClick="MarkReviewed" DisabledReason="@Reason" />
+            <ToolbarSeparator />
+            <BoldItem />
+            <ToolbarButton Text="Flag" OnClick="Flag"><b class="flag-icon">F</b></ToolbarButton>
+        </ToolbarRow>
+    </ToolbarContent>
+</ExSheet.Script.ExSheet>
+
+@code {
+    /// <summary>Why Mark reviewed cannot be pressed now.</summary>
+    [Parameter] public string? Reason { get; set; }
+
+    /// <summary>What Flag does.</summary>
+    [Parameter] public Func<Task> OnFlag { get; set; } = () => Task.CompletedTask;
+
+    /// <summary>The Sheet.</summary>
+    public global::ExSheet.Script.ExSheet? Sheet { get; private set; }
+
+    /// <summary>How many times Mark reviewed was pressed.</summary>
+    public int Reviewed { get; private set; }
+
+    private void MarkReviewed() => Reviewed += 1;
+
+    private Task Flag() => OnFlag();
+}

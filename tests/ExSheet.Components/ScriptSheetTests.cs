@@ -658,7 +658,7 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal("""["toolbarItem","sheetTab","sheetTabAdd"]""", Attach().GetProperty("options").GetProperty("razorSlots").GetRawText());
 
         await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "toolbarItem",
-            """{"id":"fill","kind":"split","name":"Fill Colour","tooltip":"Fill Colour","icon":"fill","text":null,"swatch":"#FFFF00","moreName":"Fill Colour, more","pressed":false,"disabledReason":null,"choices":[{"label":"No Fill","swatch":null,"selected":true,"disabledReason":null},{"label":"Red","swatch":"#FF0000","selected":false,"disabledReason":null}],"rows":[[0],[1]]}"""));
+            """{"id":"fill","kind":"split","name":"Fill Colour","tooltip":"Fill Colour","icon":"fill","text":null,"swatch":"#FFFF00","moreName":"Fill Colour, more","pressed":false,"disabledReason":null,"choices":[{"label":"No Fill","swatch":null,"selected":true,"disabledReason":null},{"label":"Red","swatch":"#FF0000","selected":false,"disabledReason":null}],"rows":[[0],[1]],"content":false}"""));
         await cut.InvokeAsync(() => Bridge().Value.MountSlot(2, 1, "sheetTab", """{"name":"Sheet1","selected":true}"""));
         await cut.InvokeAsync(() => Bridge().Value.MountSlot(3, 1, "sheetTabAdd", "{}"));
         var slots = cut.FindAll("div[hidden] > .ex-razor-slot");
@@ -687,7 +687,7 @@ public class ScriptSheetTests : BunitContext
         _sheet.SetupVoid("slotRendered", _ => true).SetVoidResult();
         var cut = Sheet(ps => ps.Add(p => p.Chrome, new BlankToolbarChrome()));
         await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "toolbarItem",
-            """{"id":"bold","kind":"toggle","name":"Bold","tooltip":"Bold (Ctrl+B)","icon":"bold","text":null,"swatch":null,"moreName":null,"pressed":false,"disabledReason":null,"choices":[],"rows":[]}"""));
+            """{"id":"bold","kind":"toggle","name":"Bold","tooltip":"Bold (Ctrl+B)","icon":"bold","text":null,"swatch":null,"moreName":null,"pressed":false,"disabledReason":null,"choices":[],"rows":[],"content":false}"""));
         // The slot is drawn as it is mounted, so the refusal has been made by the time the mount returns.
         Assert.True(Renderer.UnhandledException.IsCompleted);
         var refused = Assert.IsType<InvalidOperationException>(await Renderer.UnhandledException);
@@ -729,5 +729,82 @@ public class ScriptSheetTests : BunitContext
             + "Accounting pads each value with * to fill its column, which ExSheet does not read. Use Currency, or type a code under Custom. | "
             + "top:mixed:differs,insideHorizontal:false:line | fill:0=White, Background 1* | font:none",
             cut.Find("div[hidden] > .ex-razor-slot").TextContent);
+    }
+
+    [Fact] // ADR-0100, ADR-0370 step 2: ToolbarContent crosses as the rows it declares, in markup order, and again when they change
+    public void ADR0100_toolbar_content_crosses_as_the_rows_it_declares()
+    {
+        var cut = Render<ScriptSheetSupport.ScriptSheetWithToolbar>();
+        Assert.Equal(
+            """["default",{"label":"Review","keyTip":"R","items":[{"button":1,"text":"Mark reviewed","keyTip":"M","content":false},"separator","bold",{"button":2,"text":"Flag","content":true}]}]""",
+            Attach().GetProperty("options").GetProperty("toolbar").GetRawText());
+        // The rows and items draw nothing of their own: the Script Core draws the toolbar.
+        Assert.Empty(cut.FindAll(".ex-sheet-toolbar-row"));
+
+        cut.Render(ps => ps.Add(p => p.Reason, "Nothing to review."));
+        var update = Assert.Single(Updates());
+        Assert.Equal("Nothing to review.", update.GetProperty("options").GetProperty("toolbar")[1].GetProperty("items")[0].GetProperty("disabledReason").GetString());
+    }
+
+    [Fact] // ADR-0100: a button inside a component of the Consumer's that renders on its own reaches the browser, as the Razor component's item redraws itself
+    public async Task ADR0100_a_toolbar_button_rendered_by_a_consumers_component_alone_crosses_again()
+    {
+        var cut = Render<ScriptSheetSupport.ScriptSheetWithOwnButtons>();
+        Assert.Equal("""[{"label":"Review","items":[{"button":1,"text":"Approve","content":false}]}]""",
+            Attach().GetProperty("options").GetProperty("toolbar").GetRawText());
+
+        await cut.InvokeAsync(() => cut.Instance.Button!.Disable("Nothing to approve."));
+        cut.WaitForAssertion(() => Assert.Equal("Nothing to approve.",
+            Updates()[^1].GetProperty("options").GetProperty("toolbar")[0].GetProperty("items")[0].GetProperty("disabledReason").GetString()));
+    }
+
+    [Fact] // ADR-0100: a button's OnClick runs when the browser says it was pressed, its content is drawn from its markup, and a refusal is said in the Sheet's notice
+    public async Task ADR0100_a_toolbar_buttons_press_runs_its_on_click_and_its_content_is_drawn_from_its_markup()
+    {
+        _sheet.SetupVoid("slotRendered", _ => true).SetVoidResult();
+        _sheet.SetupVoid("tell", _ => true).SetVoidResult();
+        var cut = Render<ScriptSheetSupport.ScriptSheetWithToolbar>(ps => ps.Add(p => p.OnFlag, () => throw new SheetRefusedException(new SheetRefusal(SheetRefusalReason.EditIsOpen, "An edit is open."))));
+
+        await cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(1));
+        Assert.Equal(1, cut.Instance.Reviewed);
+
+        await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "toolbarContent", """{"button":2}"""));
+        Assert.Equal("F", cut.Find("div[hidden] > .ex-razor-slot > b.flag-icon").TextContent);
+
+        await cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(2));
+        Assert.Equal(["An edit is open."], _sheet.Invocations["tell"].Select(call => call.Arguments[0]));
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
+    [Fact] // ADR-0240 section 6, the spine's first rule: a save awaited inside a press, whose place in the order the press holds, is refused by name rather than left to hang
+    public async Task ADR0240_a_save_called_from_a_toolbar_buttons_on_click_is_refused_rather_than_left_waiting()
+    {
+        IRenderedComponent<ScriptSheetSupport.ScriptSheetWithToolbar>? cut = null;
+        cut = Render<ScriptSheetSupport.ScriptSheetWithToolbar>(ps => ps.Add(p => p.OnFlag, () => cut!.Instance.Sheet!.SaveAsync(_ => Task.CompletedTask)));
+
+        await cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(2));
+        Assert.True(Renderer.UnhandledException.IsCompleted);
+        var refused = Assert.IsType<InvalidOperationException>(await Renderer.UnhandledException);
+        Assert.StartsWith("SaveAsync takes its place in the Sheet's Input Order", refused.Message, StringComparison.Ordinal);
+        Assert.Empty(_sheet.Invocations["save"]);
+    }
+
+    /// <summary>A Toolbar Item of the Consumer's own, which the Script Core has no counterpart for.</summary>
+    private sealed class OwnItem : ToolbarItemBase
+    {
+        protected override ToolbarItemFace Face() => new(ToolbarItemKind.Button, "Own", ToolbarIcon.None);
+
+        protected override Task PressAsync() => Task.CompletedTask;
+    }
+
+    [Fact] // ADR-0100, the spine's first rule: an item of the Consumer's own is refused by name, never left out
+    public void ADR0100_a_toolbar_item_of_the_consumers_own_is_refused_on_the_script_sheet()
+    {
+        var refused = Assert.Throws<InvalidOperationException>(() => Sheet(ps => ps.Add(p => p.ToolbarContent, toolbar =>
+        {
+            toolbar.OpenComponent<OwnItem>(0);
+            toolbar.CloseComponent();
+        })));
+        Assert.Contains("OwnItem is a Toolbar Item of its own", refused.Message);
     }
 }

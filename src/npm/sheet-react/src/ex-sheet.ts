@@ -142,6 +142,7 @@ export function ExSheet(props: ExSheetProps): ReactElement {
         save: write => mounted(sheet.current).save(write),
         focus: () => { mounted(sheet.current).focus(); },
         inOrder: handling => mounted(sheet.current).inOrder(handling),
+        tell: sentence => { mounted(sheet.current).tell(sentence); },
     }), []);
     useLayoutEffect(() => () => {
         // The portals go first: the contents the Sheet takes away as it goes ask for no render of a component gone.

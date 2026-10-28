@@ -1,0 +1,16 @@
+@* A component of the Consumer's own holding a ToolbarButton, which renders on its own when its state changes. *@
+@namespace ScriptSheetSupport
+@using global::ExSheet
+
+<ToolbarButton Text="Approve" DisabledReason="@_reason" />
+
+@code {
+    private string? _reason;
+
+    /// <summary>Disables the button, rendering this component alone.</summary>
+    public void Disable(string reason)
+    {
+        _reason = reason;
+        StateHasChanged();
+    }
+}

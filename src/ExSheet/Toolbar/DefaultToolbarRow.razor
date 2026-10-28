@@ -1,4 +1,5 @@
 @namespace ExSheet
+@implements IDisposable
 @* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
    Every product using is written with global::. A component in ExSheet.Components would look a
    plain "ExSheet.Engine" up against the ExSheet component class first, and a plain "ExGrid.X"
@@ -19,6 +20,9 @@
     formatting commands in the order Excel's Home tab has them. It is only an example — the order is
     the Consumer's to declare — and its KeyTip is H, Excel's Home.
 *@
+@* On the Script ExSheet the row is declared whole, and the Script Core draws its own default row, in its words. *@
+@if (Script is null)
+{
 <CascadingValue Value="_place" IsFixed="true">
 <ToolbarRow KeyTip="H" Label="Home">
     <BoldItem />
@@ -42,13 +46,24 @@
     <FormatCellsItem />
 </ToolbarRow>
 </CascadingValue>
+}
 
 @code {
     /// <summary>The scope the row takes its place from. Internal, as its type is (ADR-0201).</summary>
     [CascadingParameter] internal ToolbarOrder? Order { get; set; }
 
+    /// <summary>The Script ExSheet's toolbar, where the row declares itself; null on the Razor component's. Internal, as
+    /// its type is (ADR-0201).</summary>
+    [CascadingParameter] internal global::ExSheet.Script.ScriptToolbar? Script { get; set; }
+
     private ToolbarOrder _place = new();
 
     /// <inheritdoc />
     protected override void OnInitialized() => _place = Order?.Next() ?? _place;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet() => Script?.JoinDefault(this, _place);
+
+    /// <inheritdoc />
+    public void Dispose() => Script?.LeaveDefault(this);
 }

@@ -51,7 +51,17 @@
             else
             {
                 <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!View.Enabled" title="@Title" aria-label="@View.Name"
-                           data-ex-sheet-press="invoke">@(View.Text ?? MudToolbarIcons.TextOf(View.Icon) ?? View.Name)</MudButton>
+                           data-ex-sheet-press="invoke">
+                    @if (View.HasContent)
+                    {
+                        @* The Consumer's own content, which the script moves in. *@
+                        <span data-ex-sheet-content></span>
+                    }
+                    else
+                    {
+                        @(View.Text ?? MudToolbarIcons.TextOf(View.Icon) ?? View.Name)
+                    }
+                </MudButton>
             }
             break;
     }
