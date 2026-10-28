@@ -283,7 +283,17 @@ const output = bound.confirm('chosen');                         // the values ch
             that data's version, and a Diff the Board raised and you hand back binds nothing again. The script it runs is
             bundled into the package, at an address that changes with its content.
         </p>
-        <DocsExample Builtin="typeof(ScriptCoreBoard)" Files="@(["Examples/Board/DeskBoard.cs"])" />
+        <p>
+            It takes <code>Chrome</code> and <code>PivotChrome</code> as the Board above does: the grid Chrome dresses the
+            grids and the pivots' report grids, the pivot Chrome the pivots, and its grid Chrome the report grids where no
+            <code>Chrome</code> is given. Each part a Chrome names in its <code>ScriptSlots</code> is drawn by its Razor
+            inside the view the browser draws, as on <code>ExGrid.Script.ExGrid</code> and
+            <code>ExPivot.Script.ExPivot</code>, so the MudBlazor switch below dresses the same Board with
+            <code>MudGridChrome</code> and <code>MudPivotChrome</code>. Which parts are filled is read as the Board
+            attaches: Chromes naming other slots need a new ExBoard. The charts' Chrome is not carried yet; use the Board
+            above for a chart dressed by <code>ChartChrome</code> until it arrives.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreBoard)" Mud="typeof(ScriptCoreBoardMud)" Files="@(["Examples/Board/DeskBoard.cs"])" />
         <p>
             It takes <code>Sources</code> too, the same <code>BoardSource</code> objects as the Board above. Each stays in
             .NET: the browser asks it through .NET for the input's shape, for each page a grid fetches with its query and
@@ -293,8 +303,7 @@ const output = bound.confirm('chosen');                         // the values ch
             <code>ExPivot.Script.ExPivot</code> reads one: the engine in the browser builds the report and its totals from
             the Leaf Aggregates it answers. A page crosses back as its Arrow stream and a chart's points and the values
             under cells with every value exact. An output taken from rows the server held comes back with the version the
-            server answered them at, and <code>Take</code> holds it to that version. Not carried yet: the Chromes; use the
-            Board above for those until they arrive.
+            server answered them at, and <code>Take</code> holds it to that version.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreServerBoard)" Files="@(["Examples/Board/ServerBoard.cs"])" />
     </DocsSection>
