@@ -64,6 +64,32 @@ describe('a Razor slot host without a Settled Mark or an Input Order', () => {
         expect(toolbar.invoked).toEqual(['export']);
     });
 
+    it('ADR-0410 section 1: contents drawn again in a slot outside the page, which Blazor cannot find there, are the contents standing', () => {
+        const host = new RazorSlotHost(new FakeDotNet(), new Map([['toolbar', toolbarKind]]));
+        // A slot the core made and has not put in the page: a band with nothing to show.
+        const slot = document.createElement('div');
+        const toolbar: Toolbar = { name: 'Sales', invoked: [] };
+        const mount = host.mounts(['toolbar'])['toolbar'];
+        if (mount === undefined) throw new Error('No mount for the toolbar.');
+        mount(slot, toolbar);
+        const contents = rendered('<button data-ex-command="export">Export</button>', 1);
+        host.rendered(1, 1, contents);
+        expect(contents.parentElement).toBe(slot);
+
+        host.rendered(1, 2, null);
+        expect(contents.parentElement).toBe(slot);
+        contents.querySelector('button')?.click();
+        expect(toolbar.invoked).toEqual(['export']);
+    });
+
+    it('ADR-0410 section 1: a slot .NET drew no element for, which has no contents standing, is refused by name', () => {
+        const host = new RazorSlotHost(new FakeDotNet(), new Map([['toolbar', toolbarKind]]));
+        const mount = host.mounts(['toolbar'])['toolbar'];
+        if (mount === undefined) throw new Error('No mount for the toolbar.');
+        mount(document.createElement('div'), { name: 'Sales', invoked: [] });
+        expect(() => { host.rendered(1, 1, null); }).toThrow('.NET rendered no element for the slot 1.');
+    });
+
     it('ADR-0410 section 1: a slot of no kind the product registered is refused by name', () => {
         const host = new RazorSlotHost(new FakeDotNet(), new Map([['toolbar', toolbarKind]]));
         expect(host.fills('menu')).toBe(false);

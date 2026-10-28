@@ -144,10 +144,13 @@ export class RazorSlotHost {
     /** .NET rendered the contents of slot `id` for the data numbered `version` in `contents`: they move into the slot,
      * or are wired again with the context that slot now holds. Contents of a slot already gone stay in their holder,
      * which .NET removes. The Settled Mark stays held until the data last sent stand. */
-    rendered(id: number, version: number, contents: HTMLElement | null): void {
+    rendered(id: number, version: number, drawnIn: HTMLElement | null): void {
         const standing = this.#standing.get(id);
         if (standing === undefined || this.#disposed) return;
-        if (contents === null) throw new Error(`Internal: .NET rendered no element for the slot ${String(id)}.`);
+        // Blazor finds the element by searching the document: contents already moved into a slot the core has not put
+        // in the page (a report filter band with no filters) are not found, and are the contents standing there.
+        const contents = drawnIn ?? standing.contents;
+        if (contents === undefined) throw new Error(`Internal: .NET rendered no element for the slot ${String(id)}.`);
         if (standing.contents !== contents) {
             const holder = contents.parentElement;
             if (holder === null) throw new Error(`Internal: the contents of the slot ${String(id)} stand in no holder.`);

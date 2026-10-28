@@ -76,6 +76,13 @@ interface HeldKey {
 }
 
 // An answer, and the line of keys before it where .NET wrote one: neither holds a line break of its own.
+// The message of a failure .NET answered in place of an answer.
+function failedMessage(text: string): string {
+    const failed: unknown = (JSON.parse(text) as { readonly failed?: unknown }).failed; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the line PivotSourceCrossing.Failed writes, whose message is checked here
+    if (typeof failed !== 'string') throw new TypeError('Internal: .NET answered a failure with no message.');
+    return failed;
+}
+
 function split(text: string): { readonly keys: KeysLine | undefined; readonly answer: string } {
     const at = text.indexOf('\n');
     if (at < 0) return { keys: undefined, answer: text };
@@ -175,6 +182,8 @@ export class DotNetPivotSource extends FetchingPivotSource {
             try {
                 const answer = await dotnet.invokeMethodAsync(method, generation, call, json);
                 if (typeof answer !== 'string') throw new TypeError(`Internal: .NET answered ${method} with something other than JSON text.`);
+                // The source failed, in its own words (PivotSourceCrossing.Failed): the question fails with them.
+                if (answer.startsWith('{"failed":')) throw new Error(failedMessage(answer));
                 return answer;
             } finally {
                 signal?.removeEventListener('abort', cancel);

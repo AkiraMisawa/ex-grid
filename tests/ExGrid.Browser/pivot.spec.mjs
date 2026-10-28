@@ -359,10 +359,12 @@ for (const chrome of ['builtin', 'mud']) {
             // The records are an ExGrid of the source's fields, paged from the source, every one
             // of them Americas'.
             const panel = pivot(page).getByRole('tabpanel');
-            // Labelled by its tab: the tab itself under ExPivot's markup, the tab's title inside
-            // it under MudTabs, which gives its tab element an id of its own.
-            const labelledBy = await panel.getAttribute('aria-labelledby');
-            expect(await details.evaluate((tab, id) => tab.id === id || tab.querySelector(`[id="${id}"]`) !== null, labelledBy)).toBe(true);
+            // Labelled by its tab under ExPivot's markup. A Chrome's tab carries its framework's
+            // id, not the pivot's, so under MudTabs the panel is named by the tab's words.
+            if (chrome === 'builtin') {
+                const labelledBy = await panel.getAttribute('aria-labelledby');
+                expect(await details.evaluate((tab, id) => tab.id === id, labelledBy)).toBe(true);
+            }
             await expect(panel).toHaveAccessibleName(/^Details: Americas \/ \w+ \/ \w+$/);
             const records = panel.locator('.ex-grid .ex-viewport .ex-row');
             await expect(records.first()).toBeVisible();
@@ -607,14 +609,13 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r3c2$/);
         });
 
-        // ExGrid's HandKeyboardToAsync, as ExPivot asks it (PV-41), and the scroller's hand-off to
-        // its root (ADR-0033, A11Y-20). The control that takes the keyboard as a details view opens
+        // The keyboard handed on as a details view opens (PV-41), and the scroller's hand-off to its
+        // root (ADR-0033, A11Y-20). The control that takes the keyboard as a details view opens
         // takes it from the report's grid only while it is still the report's. The records'
-        // scroller is focused in the task that draws them, as a press there would focus it. That is
-        // before the control's request can land: on the Server host it comes a round trip after
-        // that render. So the request finds the keyboard in the records, and leaves it there, and
-        // their grid hands it to its root once the root is a tab stop, which comes later still. On
-        // WebAssembly the request can land first, in the same turn; the end is the same either way.
+        // scroller is focused in the task that draws them, as a press there would focus it. Where
+        // the control's request lands after that, it finds the keyboard in the records and leaves
+        // it there; where it lands first, the records take the keyboard from it. Their grid hands
+        // the keyboard to its root once the root is a tab stop. The end is the same either way.
 
         test(`ADR-0070/0033 (PV-41): the keyboard put in the dialog's records before Close's request lands stays there, on their root (${chrome})`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
@@ -631,9 +632,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(dialog.getByRole('button', { name: 'Close', exact: true })).not.toBeFocused();
             const log = await focusLog(page);
             expect(log.at(-1)).toBe('records');
-            if (SERVER) {
-                expect(log).not.toContain('close');
-            }
             // The keys are the records' own: the first places their Focus on their first cell.
             await page.keyboard.press('ArrowDown');
             await expect(records).toHaveAttribute('aria-activedescendant', /-r0c0$/);
@@ -655,9 +653,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(details).toHaveAttribute('aria-selected', 'true');
             const log = await focusLog(page);
             expect(log.at(-1)).toBe('records');
-            if (SERVER) {
-                expect(log).not.toContain('tab');
-            }
             await page.keyboard.press('ArrowDown');
             await expect(records).toHaveAttribute('aria-activedescendant', /-r0c0$/);
         });
@@ -1200,8 +1195,10 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+// The Razor component's Value Field Settings draws a MudSelect; the Script one's, a native select, whose list is the
+// browser's (ADR-0410). Run against the Razor component, which ships until step 3 (ADR-0370 section 6).
 test('ADR-0039/0062: a MudSelect list inside Value Field Settings takes Escape before its panel', async ({ page }) => {
-    await open(page, 'mud');
+    await open(page, 'mud', '&component=razor');
     await entry(page, 'Sum of P&L').click();
     await page.getByRole('menuitem', { name: 'Value Field Settings…' }).click();
     const panel = page.getByRole('dialog', { name: 'Value Field Settings…' });
@@ -1222,11 +1219,13 @@ test('ADR-0039/0062: a MudSelect list inside Value Field Settings takes Escape b
     await expect(entry(page, 'Sum of P&L')).toBeFocused();
 });
 
-for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (${chrome})`, async ({ page }) => {
+// The Script component under either Chrome, and the Razor one under MudBlazor's, whose box the script focuses into
+// (ADR-0360), until the Razor one goes (ADR-0370 section 6, step 3).
+for (const [chrome, component] of [['builtin', 'script'], ['mud', 'script'], ['mud', 'razor']]) {
+    test(`ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (${chrome}${component === 'razor' ? ', Razor component' : ''})`, async ({ page }) => {
         // The source's first answer waits for the page's button: the pane stands, and no report grid
         // does, so the keyboard cannot be handed on through one.
-        await page.goto(`/pivot?chrome=${chrome}&first=held`);
+        await page.goto(`/pivot?chrome=${chrome}&first=held${component === 'razor' ? '&component=razor' : ''}`);
         await stylesheetsLoaded(page);
         await expect(entry(page, 'Region')).toBeVisible({ timeout: 30_000 });
         await expect(report(page)).toHaveCount(0);
@@ -1241,10 +1240,10 @@ for (const chrome of ['builtin', 'mud']) {
         await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
         const settings = page.getByRole('dialog', { name: 'Field Settings…', exact: true });
         await expect(settings).toBeVisible();
-        // The panel's first control: under MudBlazor the sort order's select, inside the
-        // `display: contents` box the Chrome named, which cannot take focus itself; under ExPivot's own
-        // markup, the first subtotals choice, named itself.
-        const first = chrome === 'mud' ? settings.locator('.mud-ex-pivot-sort input') : settings.getByRole('radio').first();
+        // The panel's first control: under the Razor component's MudBlazor Chrome the sort order's
+        // select, inside the `display: contents` box the Chrome named, which cannot take focus itself;
+        // under the Script component, in either Chrome, the first subtotals choice.
+        const first = component === 'razor' ? settings.locator('.mud-ex-pivot-sort input') : settings.getByRole('radio').first();
         await expect(first).toBeFocused();
 
         await page.keyboard.press('Escape');

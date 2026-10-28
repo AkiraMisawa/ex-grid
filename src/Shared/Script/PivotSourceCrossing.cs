@@ -59,6 +59,20 @@ internal static class PivotSourceCrossing
         }
     }
 
+    /// <summary>A question the source failed to answer, as the browser reads it in place of an answer:
+    /// <c>{"failed":"…"}</c>, the failure's message, which the browser throws as the question's error.</summary>
+    public static string Failed(string message)
+    {
+        var buffer = new System.Buffers.ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteString("failed", message);
+            json.WriteEndObject();
+        }
+        return System.Text.Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
+
     // The answer as it is where it names no Item of a field with an Order Key; otherwise after the line of those Items'
     // keys, which the browser orders them by in place of the .NET function it cannot call (ADR-0412).
     private static string Keyed(PivotSource source, string answer, IEnumerable<(string Field, IReadOnlyList<PivotItemKey> Items)> named)
