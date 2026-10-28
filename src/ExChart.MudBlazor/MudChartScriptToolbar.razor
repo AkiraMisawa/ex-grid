@@ -1,0 +1,127 @@
+@* Written in each file, not in an _Imports.razor, whose class Razor makes public (ADR-0201); and
+   with global::, as this project's root namespace nests inside ExChart (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExChart.Chrome
+@using global::ExChart.Engine
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudChartChrome draws this part, and no Consumer places it. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The chart's toolbar under MudBlazor when the Script Core draws the chart (ADR-0281, ADR-0410):
+   MudChartToolbar's look, drawn from the view and wired in the browser from the attributes each
+   control writes, so a press means what the chart now says and a download is saved inside the click
+   that asked for it. The downloads are one MudButtonGroup, not a MudMenu, whose list would open
+   outside the chart, where nothing wires it. Chart Filters' ends are native fields in MudBlazor's
+   outline, which the script writes the range into and reads as Apply is pressed: text, the axis'
+   hint showing what a value looks like, or a select of the categories on a category axis. A
+   MudTextField would keep a .NET copy of its text, a round trip behind, and write it back over a
+   range the script has just written (SRV-7); a date picker's choice reaches the field only through
+   .NET; and a native date input reads a date it cannot make out as empty, which would apply the
+   axis' own end where the chart should say what it could not read (spine rule 1). The axis switch
+   is a native select too, its choice handed to the chart as the browser fires it (ADR-0410 section
+   3's note). *@
+<div class="mud-ex-chart-toolbar" role="toolbar" aria-label="@View.Name">
+    @foreach (var command in View.Commands.Where(c => !IsDownload(c.Id)))
+    {
+        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Chrome.IconFor(command.Id)"
+                   Color="@(command.Expanded == true ? Color.Primary : Color.Default)" Disabled="@(!command.Enabled)"
+                   Class="mud-ex-chart-toolbar-button" title="@command.Title" data-ex-command="@command.Id"
+                   aria-expanded="@(command.Expanded is { } open ? (open ? "true" : "false") : null)">@command.Label</MudButton>
+    }
+    <MudButtonGroup Variant="Variant.Text" Size="Size.Small" Class="mud-ex-chart-downloads" aria-label="@View.Words.Downloads">
+        @foreach (var command in View.Commands.Where(c => IsDownload(c.Id)))
+        {
+            <MudButton StartIcon="@Chrome.IconFor(command.Id)" Disabled="@(!command.Enabled)" title="@command.Title"
+                       data-ex-command="@command.Id">@command.Label</MudButton>
+        }
+    </MudButtonGroup>
+</div>
+@if (View.Filters is { } filters)
+{
+    <div class="mud-ex-chart-filters" role="group" aria-label="@View.Words.Filters">
+        @if (filters.Values == AxisValues.Labels)
+        {
+            @Categories(filters, View.Words.From, ChartScriptSlotAttributes.From)
+            @Categories(filters, View.Words.To, ChartScriptSlotAttributes.To)
+        }
+        else
+        {
+            @End(filters, View.Words.From, ChartScriptSlotAttributes.From)
+            @End(filters, View.Words.To, ChartScriptSlotAttributes.To)
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" Class="mud-ex-chart-apply"
+                   data-ex-chart-apply="">@View.Words.Apply</MudButton>
+        @if (filters.Scale is not null)
+        {
+            <label class="mud-ex-chart-native">
+                <span class="mud-ex-chart-native-label">@View.Words.Axis</span>
+                <select class="mud-ex-chart-native-field mud-ex-chart-scale" data-ex-chart-scale="">
+                    <option value="proportional">@View.Words.Proportional</option>
+                    <option value="categories">@View.Words.Categories</option>
+                </select>
+            </label>
+        }
+    </div>
+    @if (filters.Error is { } error)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mud-ex-chart-filter-error">@error</MudAlert>
+    }
+}
+
+@code {
+    private ChartToolbarView? _last;
+    private MudChartChrome? _lastChrome;
+    private bool _skip;
+
+    /// <summary>What the Script Core hands the toolbar.</summary>
+    [Parameter, EditorRequired] public ChartToolbarView View { get; set; } = null!;
+
+    /// <summary>The Chrome, for its icons.</summary>
+    [Parameter, EditorRequired] public MudChartChrome Chrome { get; set; } = null!;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        // Another Chrome draws other icons: only the same view under the same Chrome draws the same toolbar.
+        _skip = Equals(_last, View) && ReferenceEquals(_lastChrome, Chrome);
+        (_last, _lastChrome) = (View, Chrome);
+    }
+
+    // A view equal to the last draws the same toolbar: the chart renders again for the slots of others,
+    // and this part is not to render with it (ADR-0252).
+    /// <inheritdoc />
+    protected override bool ShouldRender()
+    {
+        var skip = _skip;
+        _skip = false;
+        return !skip;
+    }
+
+    private static bool IsDownload(string id) =>
+        id is ChartCommandIds.DownloadCsv or ChartCommandIds.DownloadSvg or ChartCommandIds.DownloadPng;
+
+    // An end typed as text in the axis' own writing (a date as yyyy-MM-dd), which the chart reads, or says it cannot.
+    private static RenderFragment End(ChartFiltersView filters, string label, string attribute) => __builder =>
+    {
+        <label class="mud-ex-chart-native @(attribute == ChartScriptSlotAttributes.From ? "mud-ex-chart-from" : "mud-ex-chart-to")">
+            <span class="mud-ex-chart-native-label">@label</span>
+            <input type="text" class="mud-ex-chart-native-field" placeholder="@filters.Hint" autocomplete="off"
+                   @attributes="@(new Dictionary<string, object?> { [attribute] = "" })" />
+        </label>
+    };
+
+    // An end chosen among the categories, the empty option the axis' own end.
+    private static RenderFragment Categories(ChartFiltersView filters, string label, string attribute) => __builder =>
+    {
+        <label class="mud-ex-chart-native @(attribute == ChartScriptSlotAttributes.From ? "mud-ex-chart-from" : "mud-ex-chart-to")">
+            <span class="mud-ex-chart-native-label">@label</span>
+            <select class="mud-ex-chart-native-field" @attributes="@(new Dictionary<string, object?> { [attribute] = "" })">
+                <option value=""></option>
+                @foreach (var category in filters.Labels)
+                {
+                    <option value="@category">@category</option>
+                }
+            </select>
+        </label>
+    };
+}

@@ -1,6 +1,8 @@
 using System.Text.Json;
+using global::ExChart.Chrome;
 using global::ExChart.Engine;
 using global::ExGrid;
+using global::ExGrid.Script;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.JSInterop;
@@ -18,7 +20,8 @@ namespace ExChart.Script;
 /// </summary>
 /// <remarks>
 /// <para>It stands beside <see cref="Components.ExChart"/>, the Razor component, until ExChart's Blazor step holds
-/// (ADR-0370 section 11). It takes no Chrome yet: the toolbar and the menu are the built-in ones. A Chart Spec is read
+/// (ADR-0370 section 11). Its <see cref="Chrome"/> fills the toolbar and the menu with Razor where it names them in
+/// <see cref="IChartChrome.ScriptSlots"/> (ADR-0410); every other part is the Script Core's own. A Chart Spec is read
 /// through its Chart Sources in .NET, where the sources are, as the Razor component reads it (ADR-0344), and the
 /// reading crosses as a definition does.</para>
 /// <para>A .NET function cannot cross to the browser, so a definition's Formats cross as the texts they write each
@@ -105,6 +108,14 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     /// <summary>The name a saved file takes, without its extension; the title's when null, else "chart" (ADR-0282).</summary>
     [Parameter] public string? FileName { get; set; }
 
+    /// <summary>
+    /// What draws the toolbar and the context menu's content, where its <see cref="IChartChrome.ScriptSlots"/> names
+    /// them (ADR-0410): the Razor renders in this component's tree, under the Consumer's cascading values, and the
+    /// Script Core places it in the chart. What its controls do is wired in the browser from the
+    /// <see cref="ChartScriptSlotAttributes"/> they write. Null, or a slot not named, is the Script Core's own part.
+    /// </summary>
+    [Parameter] public IChartChrome? Chrome { get; set; }
+
     private ScriptMount? _mount;
     private ElementReference _root;
     private bool _disposed;
@@ -114,10 +125,19 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     private RowKeys _rows = new();
     private int _generation;
     private bool _renderOwed = true;
+    // The Chrome slots the script mounted, and the Chrome they were last drawn by.
+    private readonly RazorSlotHolders _slots = new(ChartRazorSlot.ViewOf);
+    private IChartChrome? _renderedChrome;
 
     /// <inheritdoc />
     protected override void OnInitialized() =>
-        _mount = new ScriptMount(JS, InvokeAsync, DispatchExceptionAsync, Prepare);
+        _mount = new ScriptMount(JS, InvokeAsync, DispatchExceptionAsync, Prepare, _slots, RenderSlots);
+
+    private void RenderSlots()
+    {
+        _renderOwed = true;
+        StateHasChanged();
+    }
 
     /// <inheritdoc />
     protected override void OnParametersSet()
@@ -126,6 +146,16 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
             throw new InvalidOperationException("An ExChart is given its Definition, or a Spec and the Sources it is read through.");
         if (Spec is not null && (Definition is not null || Sources is null))
             throw new InvalidOperationException("An ExChart read from a Spec is given the Sources it is read through, and no Definition beside them (ADR-0344).");
+        if (Chrome is not null)
+            // A slot this adapter does not fill is refused as the Chrome is handed, not as the script first mounts it.
+            _ = ChartRazorSlot.NamesOf(Chrome.ScriptSlots);
+        if (!ReferenceEquals(Chrome, _renderedChrome))
+        {
+            // Another Chrome draws the slots standing, and the script wires what it drew.
+            _renderedChrome = Chrome;
+            _slots.Redrawn();
+            _renderOwed |= _slots.Any;
+        }
         // The range a spec is read over: the parameter when it changed, else what the user last narrowed it to, as the
         // Script Core takes it back (ADR-0272).
         if (!_rangeTaken || _rangeParameter != Range)
@@ -309,13 +339,19 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
     {
         _renderOwed = false;
         _mount?.Render(builder, element => _root = element, _refusal, _asking, Width, Height);
+        _slots.Render(builder, 20, (name, view) => ChartRazorSlot.Fragment(Chrome, name, view));
     }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _mount is not { } mount)
+        if (_mount is not { } mount)
             return;
+        if (!firstRender)
+        {
+            await mount.ReportSlotsAsync();
+            return;
+        }
         if (await mount.StartAsync(Assets, _root, "attachChart", State))
         {
             _renderOwed = true;
@@ -392,6 +428,17 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
         WriteScale(json, "scale", Scale);
         WriteScale(json, "yScale", YScale);
         WriteText(json, "fileName", FileName);
+        if (Chrome?.ScriptSlots is { } slots and not ChartScriptSlots.None)
+        {
+            json.WriteStartArray("razorSlots");
+            foreach (var name in ChartRazorSlot.NamesOf(slots))
+                json.WriteStringValue(name);
+            json.WriteEndArray();
+        }
+        else
+        {
+            json.WriteNull("razorSlots");
+        }
         json.WriteStartArray("hears");
         if (OnSeriesVisibilityChanged.HasDelegate)
             json.WriteStringValue("seriesVisibilityChanged");
@@ -435,7 +482,7 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
             }
             case "scaleChanged":
             {
-                var scale = Enum.Parse<AxisScale>(Text(payload), ignoreCase: true);
+                var scale = ChartWire.Member<AxisScale>(Text(payload));
                 return () => OnScaleChanged.InvokeAsync(scale);
             }
             case "pointClick":

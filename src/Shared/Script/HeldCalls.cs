@@ -89,6 +89,13 @@ internal sealed class HeldCalls
                 started.SetCanceled();
                 return;
             }
+            catch (Exception) when (_stopped)
+            {
+                // The component let go of the module it was being taken from, once attached: the call is cancelled, as
+                // one waiting for the module is, and nothing is left to make it on.
+                started.SetCanceled();
+                return;
+            }
             catch (Exception ex)
             {
                 started.SetException(ex);

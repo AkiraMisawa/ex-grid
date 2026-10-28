@@ -6,8 +6,11 @@ ExChart.MudBlazor.MudChartChrome
 ExChart.MudBlazor.MudChartChrome.Icon.get -> System.Func<string!, string?>?
 ExChart.MudBlazor.MudChartChrome.Icon.init -> void
 ExChart.MudBlazor.MudChartChrome.Menu(ExChart.Chrome.ChartMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExChart.MudBlazor.MudChartChrome.Menu(ExChart.Chrome.ChartMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExChart.MudBlazor.MudChartChrome.MudChartChrome() -> void
+ExChart.MudBlazor.MudChartChrome.ScriptSlots.get -> ExChart.Chrome.ChartScriptSlots
 ExChart.MudBlazor.MudChartChrome.Toolbar(ExChart.Chrome.ChartToolbarContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExChart.MudBlazor.MudChartChrome.Toolbar(ExChart.Chrome.ChartToolbarView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExChart.MudBlazor.MudChartDock<TRow>
 ExChart.MudBlazor.MudChartDock<TRow>.Bridge.get -> ExChart.GridChartBridge<TRow!>!
 ExChart.MudBlazor.MudChartDock<TRow>.Bridge.set -> void
@@ -30,6 +33,18 @@ ExChart.MudBlazor.MudChartMenu.Chrome.set -> void
 ExChart.MudBlazor.MudChartMenu.Context.get -> ExChart.Chrome.ChartMenuContext!
 ExChart.MudBlazor.MudChartMenu.Context.set -> void
 ExChart.MudBlazor.MudChartMenu.MudChartMenu() -> void
+ExChart.MudBlazor.MudChartScriptMenu
+ExChart.MudBlazor.MudChartScriptMenu.Chrome.get -> ExChart.MudBlazor.MudChartChrome!
+ExChart.MudBlazor.MudChartScriptMenu.Chrome.set -> void
+ExChart.MudBlazor.MudChartScriptMenu.MudChartScriptMenu() -> void
+ExChart.MudBlazor.MudChartScriptMenu.View.get -> ExChart.Chrome.ChartMenuView!
+ExChart.MudBlazor.MudChartScriptMenu.View.set -> void
+ExChart.MudBlazor.MudChartScriptToolbar
+ExChart.MudBlazor.MudChartScriptToolbar.Chrome.get -> ExChart.MudBlazor.MudChartChrome!
+ExChart.MudBlazor.MudChartScriptToolbar.Chrome.set -> void
+ExChart.MudBlazor.MudChartScriptToolbar.MudChartScriptToolbar() -> void
+ExChart.MudBlazor.MudChartScriptToolbar.View.get -> ExChart.Chrome.ChartToolbarView!
+ExChart.MudBlazor.MudChartScriptToolbar.View.set -> void
 ExChart.MudBlazor.MudChartToolbar
 ExChart.MudBlazor.MudChartToolbar.Chrome.get -> ExChart.MudBlazor.MudChartChrome!
 ExChart.MudBlazor.MudChartToolbar.Chrome.set -> void
@@ -41,10 +56,16 @@ ExChart.MudBlazor.MudExChartStylesheet.MudExChartStylesheet() -> void
 override ExChart.MudBlazor.MudChartDock<TRow>.OnParametersSet() -> void
 override ExChart.MudBlazor.MudChartMenu.OnParametersSet() -> void
 override ExChart.MudBlazor.MudChartMenu.ShouldRender() -> bool
+override ExChart.MudBlazor.MudChartScriptMenu.OnParametersSet() -> void
+override ExChart.MudBlazor.MudChartScriptMenu.ShouldRender() -> bool
+override ExChart.MudBlazor.MudChartScriptToolbar.OnParametersSet() -> void
+override ExChart.MudBlazor.MudChartScriptToolbar.ShouldRender() -> bool
 override ExChart.MudBlazor.MudChartToolbar.OnParametersSet() -> void
 override ExChart.MudBlazor.MudChartToolbar.ShouldRender() -> bool
 static ExChart.MudBlazor.MudChartChrome.Default.get -> ExChart.MudBlazor.MudChartChrome!
 static ExChart.MudBlazor.MudChartChrome.GridChrome.get -> ExGrid.MudBlazor.MudGridChrome!
 ~override ExChart.MudBlazor.MudChartDock<TRow>.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExChart.MudBlazor.MudChartMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExChart.MudBlazor.MudChartScriptMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExChart.MudBlazor.MudChartScriptToolbar.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExChart.MudBlazor.MudChartToolbar.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
