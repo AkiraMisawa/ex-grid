@@ -5,7 +5,7 @@
 | ExGrid | 94.4% | 88% |
 | ExSheet | 94.9% | 87.4% |
 | ExPivot | 93% | 85.2% |
-| ExChart | 89.2% | 85.1% |
+| ExChart | 89.4% | 85.3% |
 | ExBoard | 93.8% | 86.9% |
 | Data | 94.5% | 90% |
 
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 01:59:01 |
+| Generated on: | 10/28/2026 - 02:19:30 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1237 |
 | Files: | 627 |
-| **Line coverage:** | 93.8% (86439 of 92113) |
-| Covered lines: | 86439 |
-| Uncovered lines: | 5674 |
-| Coverable lines: | 92113 |
-| Total lines: | 146821 |
-| **Branch coverage:** | 87.1% (51806 of 59415) |
-| Covered branches: | 51806 |
-| Total branches: | 59415 |
+| **Line coverage:** | 93.8% (86590 of 92263) |
+| Covered lines: | 86590 |
+| Uncovered lines: | 5673 |
+| Coverable lines: | 92263 |
+| Total lines: | 147033 |
+| **Branch coverage:** | 87.2% (51903 of 59511) |
+| Covered branches: | 51903 |
+| Total branches: | 59511 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -76,11 +76,11 @@
 |ExBoard.Narrowing|76.7%|59.5%|
 
 </details>
-<details><summary>ExChart - 82.2%</summary>
+<details><summary>ExChart - 83%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**82.2%**|**74%**|
+|**ExChart**|**83%**|**75.2%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -117,14 +117,14 @@
 |ExChart.GridState<TRow>|85.7%||
 |ExChart.KeyedPosition|100%||
 |ExChart.RowSeries|100%||
-|ExChart.Script.ChartWire|73.1%|69.3%|
+|ExChart.Script.ChartWire|75%|70.4%|
 |ExChart.Script.DrawingState|100%||
-|ExChart.Script.ExChart|82.8%|73.2%|
+|ExChart.Script.ExChart|86.9%|87.1%|
 |ExChart.Script.ExSurface|76.2%|59.2%|
 |ExChart.Script.RowKeys|77.5%|71.6%|
 |ExChart.Script.ScriptBridge|100%||
-|ExChart.Script.ScriptMount|74.3%|75%|
-|ExChart.Script.ScriptMount<T>|74.3%|75%|
+|ExChart.Script.ScriptMount|76.1%|79.3%|
+|ExChart.Script.ScriptMount<T>|76.1%|79.3%|
 |ExChart.Script.SurfaceValues|100%||
 |ExChart.SelectionReader|92.1%|73.9%|
 |ExChart.SelectionReader<TRow>|92.1%|73.9%|
