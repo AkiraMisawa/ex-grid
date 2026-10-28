@@ -174,6 +174,55 @@ describe('an input made on contents .NET patched ahead of their wiring', () => {
         await vi.waitFor(() => { expect(toolbar.invoked).toEqual(['print, wired for 3', 'made after']); });
     });
 
+    it('ADR-0410 section 5, ADR-0240: a slot that takes the keyboard, mounted as it is taken, holds the inputs made after it until its contents stand', async () => {
+        // A press on a field's entry, drawn again ahead of its wiring, opens the field's menu: the keys typed meanwhile
+        // are the menu's, taken once it stands (pivot.spec's Enter typed at once on an entry, under the mud Chrome).
+        let last: Promise<void> = Promise.resolve();
+        const order = (handling: () => void | PromiseLike<void>): void => { last = last.then(() => handling()); };
+        interface Entry { readonly invoked: string[]; again: (() => void) | undefined; open: () => void }
+        const entryKind: RazorSlotKind<Entry> = {
+            takesKeyboard: false,
+            data: () => ({ json: '{}', drawn: undefined, memo: undefined }),
+            subscribe: (entry, again) => { entry.again = again; return () => { entry.again = undefined; }; },
+            wire: (contents, entry, _answered, _drawn, later) => {
+                const wiredFor = contents.getAttribute(drawnVersionAttribute);
+                const press = (): void => {
+                    if (contents.getAttribute(drawnVersionAttribute) === wiredFor) entry.open();
+                    else later(() => { entry.open(); });
+                };
+                contents.addEventListener('click', press);
+                return () => { contents.removeEventListener('click', press); };
+            },
+        };
+        const menuKind: RazorSlotKind<Entry> = {
+            takesKeyboard: true,
+            data: () => ({ json: '{}', drawn: undefined, memo: undefined }),
+            wire: (_contents, entry) => { entry.invoked.push('menu stands'); return () => undefined; },
+        };
+        const host = new RazorSlotHost(new FakeDotNet(), new Map<string, RazorSlotKind<Entry>>([['entry', entryKind], ['menu', menuKind]]), { order, keyboardBack: () => undefined });
+        const mounts = host.mounts(['entry', 'menu']);
+        const mountEntry = mounts['entry'];
+        const mountMenu = mounts['menu'];
+        if (mountEntry === undefined || mountMenu === undefined) throw new Error('No mount for the entry or the menu.');
+        const slot = document.createElement('div');
+        const menuSlot = document.createElement('div');
+        document.body.append(slot, menuSlot);
+        const entry: Entry = { invoked: [], again: undefined, open: () => { mountMenu(menuSlot, entry); } };
+        mountEntry(slot, entry);
+        const contents = rendered('<button>Options for Region</button>', 1);
+        host.rendered(1, 1, contents);
+        entry.again?.();
+        contents.setAttribute(drawnVersionAttribute, '2');
+
+        contents.querySelector('button')?.click();
+        order(() => { entry.invoked.push('Enter typed at once'); });
+        host.rendered(1, 2, contents);
+        await new Promise(resolve => { setTimeout(resolve, 0); });
+        expect(entry.invoked).toEqual([]);
+        host.rendered(2, 1, rendered('<button>Move Down</button>', 1));
+        await vi.waitFor(() => { expect(entry.invoked).toEqual(['menu stands', 'Enter typed at once']); });
+    });
+
     it('ADR-0410 section 2: one whose slot goes before the wiring comes is taken nowhere, and holds nothing after it', async () => {
         const { toolbar, contents, order, unmount } = standing();
         contents.querySelector<HTMLElement>('[data-ex-command="print"]')?.click();

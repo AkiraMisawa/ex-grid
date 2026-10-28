@@ -968,7 +968,7 @@ export class SheetRefusal {
 }
 
 // @public
-export type SheetRefusalReason = 'entriesWouldLeaveSheet' | 'blockWouldLeaveSheet' | 'waitingForData' | 'fillPatternNotSupported' | 'fillShapeNotSupported' | 'editIsOpen' | 'sheetNameTaken' | 'lastSheet' | 'sheetNotNamed';
+export type SheetRefusalReason = 'entriesWouldLeaveSheet' | 'blockWouldLeaveSheet' | 'waitingForData' | 'fillPatternNotSupported' | 'fillShapeNotSupported' | 'editIsOpen' | 'sheetNameTaken' | 'lastSheet' | 'sheetNotNamed' | 'selectionMoved' | 'focusFormatChanged';
 
 // @public
 export class SheetRefusedError extends Error {

@@ -86,6 +86,7 @@ ExSheet.Script.ExSheet.SelectionChanged.get -> Microsoft.AspNetCore.Components.E
 ExSheet.Script.ExSheet.SelectionChanged.set -> void
 ExSheet.Script.ExSheet.SetAlignmentAsync(ExSheet.Engine.HorizontalAlignment alignment) -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.SetCellFormatAsync(ExSheet.Engine.CellFormatChange! change) -> System.Threading.Tasks.Task<bool>!
+ExSheet.Script.ExSheet.SetCellFormatFromFocusAsync(System.Func<ExSheet.Engine.CellFormat!, ExSheet.Engine.CellFormatChange!>! change) -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.SetNumberFormatAsync(ExSheet.Engine.NumberFormat? format) -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.SheetsChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.SheetsChange!>
 ExSheet.Script.ExSheet.SheetsChanged.set -> void

@@ -27,7 +27,8 @@ test('ADR-0361: a press on the cell being typed into, made before its editor is 
     // Only a round trip leaves the cell without its editor at the press; on WebAssembly the editor is
     // drawn within the key's own handling, and the press lands in it.
     test.skip(!SERVER, 'the editor is drawn before the press without a round trip');
-    await openSheet(page);
+    // The Razor component, whose editor is drawn a round trip after the key (CIRCUIT_SHEET's reason).
+    await openSheet(page, 'builtin', 'razor');
     const grid = sheet(page);
     await pressCell(grid, 'E2');
     await settled(grid);
@@ -96,7 +97,10 @@ for (const chrome of ['builtin', 'mud']) {
 
     for (const surface of ['cell', 'bar', 'name']) {
         test(`ADR-0240: ${surface} typing is covered by the Settled Mark (${chrome})`, async ({ page }) => {
-            await openSheet(page, chrome);
+            // The mode text a field reports to .NET is the Razor grid's: ExSheet over the Script Core holds
+            // its fields' text in the browser, so this reads the Razor component, which still ships
+            // (ADR-0370 section 6, step 2).
+            await openSheet(page, chrome, 'razor');
             const grid = sheet(page);
             await setRoundTrip(150);
             await pressCell(grid, 'D10');

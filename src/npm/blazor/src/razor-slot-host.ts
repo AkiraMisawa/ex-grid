@@ -165,6 +165,8 @@ export class RazorSlotHost {
     readonly #bySlot = new Map<HTMLElement, Standing>();
     #ids = 0;
     #disposed = false;
+    /** While an input taken `later` runs: the holds of the slots it mounted, which its turn waits for. */
+    #takenHolds: Promise<void>[] | undefined;
     #mounts: { readonly names: string; readonly mounts: Readonly<Record<string, (slot: HTMLElement, context: unknown) => () => void>> } | undefined;
 
     /** `kinds` are the product's, by the core's slot names. A kind whose contents take the keyboard needs `order`, to
@@ -288,9 +290,13 @@ export class RazorSlotHost {
     }
 
     // Every input made in the product from now waits, in its order, until the slot's latest contents stand (ADR-0240).
+    // A slot mounted by an input taken `later` is mounted inside that input's turn, after the inputs made since were held
+    // behind it: its hold, placed now, would come after them, and they would be taken before its contents stand. The
+    // turn waits for it instead (ADR-0240).
     #holdInputs(standing: Standing): void {
         if (standing.letInputsGo !== undefined || this.#order === undefined) return;
         const until = new Promise<void>(resolve => { standing.letInputsGo = resolve; });
+        this.#takenHolds?.push(until);
         this.#order(() => until, standing.slot);
     }
 
@@ -402,7 +408,16 @@ export class RazorSlotHost {
             ? Promise.resolve(true)
             : new Promise<boolean>(resolve => { standing.later.push({ version, go: resolve }); });
         const handling = (): Promise<void> => wired.then(taken => {
-            if (taken && !this.#disposed && !standing.leaving && standing.contents === contents) take();
+            if (!taken || this.#disposed || standing.leaving || standing.contents !== contents) return undefined;
+            const holds: Promise<void>[] = [];
+            const outer = this.#takenHolds;
+            this.#takenHolds = holds;
+            try {
+                take();
+            } finally {
+                this.#takenHolds = outer;
+            }
+            return Promise.all(holds).then(() => undefined);
         });
         if (this.#order === undefined) void handling();
         else this.#order(handling, standing.slot);

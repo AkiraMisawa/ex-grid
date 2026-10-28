@@ -1,6 +1,6 @@
 import { test, expect, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
-import { sheet, openSheet, cell, clickCell, pressCell, editor, expectFocusAt } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, clickCell, pressCell, editor, expectFocusAt, CIRCUIT_SHEET } from './sheet-helpers.mjs';
 
 // The Settled Mark (ADR-0220): the root carries `data-ex-settled` once every input its key gate has
 // taken has been handled and its effect is in the DOM. These tests drive at machine speed and read
@@ -29,6 +29,8 @@ const focusNow = (grid) => grid.evaluate((root) => root.querySelector('.ex-cell.
     ?? root.getAttribute('aria-activedescendant') ?? root.querySelector('.ex-key-field')?.getAttribute('aria-activedescendant'));
 
 test('ADR-0220: a key takes the mark off at once, and it comes back once the key\'s move is painted', async ({ page }) => {
+    // On the Server host, the Razor component, whose keys cross the circuit (CIRCUIT_SHEET's reason).
+    if (CIRCUIT_SHEET !== undefined) await openSheet(page, 'builtin', CIRCUIT_SHEET);
     const grid = sheet(page);
     // A round trip longer than the reading after the key takes, so that the key cannot be answered
     // before it on the Server host.
@@ -52,6 +54,8 @@ test('ADR-0220: a key takes the mark off at once, and it comes back once the key
 });
 
 test('ADR-0220: twenty arrows typed at once, read once after the mark, find the Focus where the last one left it', async ({ page }) => {
+    // On the Server host, the Razor component, whose keys cross the circuit (CIRCUIT_SHEET's reason).
+    if (CIRCUIT_SHEET !== undefined) await openSheet(page, 'builtin', CIRCUIT_SHEET);
     const grid = sheet(page);
     await setRoundTrip(150);
     await pressCell(grid, 'B2');

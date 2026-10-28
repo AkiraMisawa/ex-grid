@@ -415,6 +415,9 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(suggestion.locator('tr[data-column="Account"]')).toContainText('leading zeros');
             await page.locator('#csv-confirm').click();
             await expect(status(page)).toHaveText(/^trades-de\.csv: 2,000 rows read/);
+            // The pane is a Chrome's Razor under the mud Chrome, drawn a round trip after the pivot takes the new
+            // source (ADR-0410): read the boxes once it shows the new source's empty layout, not the first sample's.
+            await expect(pane(page).getByRole('checkbox', { checked: true })).toHaveCount(0);
             await setTicked(pane(page).getByRole('checkbox', { name: 'Desk', exact: true }));
             await setTicked(pane(page).getByRole('checkbox', { name: 'P&L', exact: true }));
 

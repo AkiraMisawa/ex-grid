@@ -330,6 +330,32 @@ describe('edits, Cell Formats and Linked Tables across the bridge (ADR-0370 sect
         expect(sheet.cellFormatAt('Nowhere', 'B2')).toMatchObject({ thrown: { kind: 'outOfRange' } });
     });
 
+    it('ADR-0100: reads the Focus format for .NET, sets the change .NET made from it once, and refuses one whose Selection moved', async () => {
+        const { element, sheet } = mount();
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBeNull(); });
+        expect(sheet.readFocusFormat()).toEqual({ done: null });
+        select(element, 'B2');
+
+        const first = sheet.readFocusFormat();
+        if (!('done' in first) || first.done === null) throw new Error('Expected a reading.');
+        expect(JSON.parse(first.done.format)).toMatchObject({ font: { bold: false } });
+        expect(sheet.setCellFormatFrom(first.done.reading, '{"bold":true}')).toEqual({ done: true });
+        expect(sheet.cellFormatAt(null, 'B2')).toMatchObject({ done: expect.stringContaining('"bold":true') as string });
+        // A reading is taken by its set: named again, it is .NET's error, which .NET throws as an InvalidOperationException.
+        expect(sheet.setCellFormatFrom(first.done.reading, '{"bold":true}')).toMatchObject({ thrown: { kind: 'invalidOperation' } });
+
+        const moved = sheet.readFocusFormat();
+        if (!('done' in moved) || moved.done === null) throw new Error('Expected a reading.');
+        select(element, 'C3');
+        expect(sheet.setCellFormatFrom(moved.done.reading, '{"italic":true}')).toMatchObject({ refused: { reason: 'selectionMoved' } });
+
+        // One .NET let go of is gone.
+        const forgotten = sheet.readFocusFormat();
+        if (!('done' in forgotten) || forgotten.done === null) throw new Error('Expected a reading.');
+        sheet.forgetFocusFormat(forgotten.done.reading);
+        expect(sheet.setCellFormatFrom(forgotten.done.reading, '{"bold":true}')).toMatchObject({ thrown: { kind: 'invalidOperation' } });
+    });
+
     it('declares a Linked Table, takes a snapshot, and hands back a refused one whole', async () => {
         const { element, sheet } = mount();
         await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBeNull(); });

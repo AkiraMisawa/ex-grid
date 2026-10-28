@@ -1,5 +1,5 @@
 import { test, expect, settled } from './fixtures.mjs';
-import { sheet, cell, clickCell } from './sheet-helpers.mjs';
+import { sheet, cell, clickCell, CIRCUIT_SHEET } from './sheet-helpers.mjs';
 
 // Opening and saving an .xlsx at its place in the Input Order (ADR-0330 §10; exsheet-xlsx ticket 06), on
 // /xlsx under both Chromes. The page opens the file it is given through ExSheet's OpenAsync, reading it
@@ -21,8 +21,9 @@ async function fileOf(page, link, name) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`ADR-0330 .xlsx in the Input Order (${chrome})`, () => {
-        async function openPage(page, hold) {
-            const query = [hold ? 'hold=1' : null, chrome === 'builtin' ? null : `chrome=${chrome}`].filter(Boolean).join('&');
+        async function openPage(page, hold, component = undefined) {
+            const query = [hold ? 'hold=1' : null, chrome === 'builtin' ? null : `chrome=${chrome}`, component === undefined ? null : `component=${component}`]
+                .filter(Boolean).join('&');
             await page.goto(query ? `/xlsx?${query}` : '/xlsx');
             await expect(cell(sheet(page), 'A1')).toHaveText('Before the file');
             // Enabled once InputFile's script is attached: on the Server host a file set before then is never heard.
@@ -34,7 +35,11 @@ for (const chrome of ['builtin', 'mud']) {
         const notice = (page) => page.locator('.ex-sheet-notice');
 
         test('XL-1: a key typed while a file opens waits for it, and lands on the Workbook it opened', async ({ page }) => {
-            await openPage(page, true);
+            // On the Server host, the Razor component, whose key crosses the circuit behind the file's choice and so
+            // after the page's call to OpenAsync. Over the Script Core the opening takes its place when that call
+            // reaches the browser, a round trip after the choice, and a key typed before it means the Workbook the
+            // page still showed (ADR-0240 §12, ADR-0350 section 6), as XL-2 reads for Escape.
+            await openPage(page, true, CIRCUIT_SHEET);
             const grid = sheet(page);
             const sample = await fileOf(page, '#xlsx-sample', 'sample.xlsx');
 

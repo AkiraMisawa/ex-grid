@@ -7,8 +7,10 @@ import { sheet, openSheet, pressCell } from './sheet-helpers.mjs';
 
 test.use({ viewport: { width: 1280, height: 1000 } });
 
+// The journal is the Razor grid's: ExSheet over the Script Core keeps none, so the file reads the Razor
+// component, which still ships (ADR-0370 section 6, step 2).
 test.beforeEach(async ({ page }) => {
-    await openSheet(page);
+    await openSheet(page, 'builtin', 'razor');
 });
 
 // The journal of the grid's root, read once, as it is now.

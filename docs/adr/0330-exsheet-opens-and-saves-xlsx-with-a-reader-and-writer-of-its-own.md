@@ -193,6 +193,13 @@ refuses.
 - `MaxCells` counts every cell written and every row a row format writes, so a sheet of formatted empty
   rows cannot get round it.
 
+*Over the Script Core (2026-10-28, as ADR-0350 section 6 has it):* Blazor's `ExSheet.Script.ExSheet` takes the
+opening's place in the order where the application's call reaches the browser. On Blazor Server that is a round
+trip after the application's own control was used, since the Sheet's keys no longer cross the circuit behind it.
+A key typed in between means the Workbook the page still shows, whose Settled Stamp does not yet name the opening,
+as an Escape typed then does (ADR-0240 §12). On WebAssembly the call is made in the task that handles the control,
+and nothing comes between.
+
 ## Consequences
 
 - Two new shipped packages, packed and smoke-tested as the others are (ADR-0042).

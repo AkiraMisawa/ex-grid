@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { GridSelection } from '../src/selection/selection';
 import type { GridPage } from '../src/source/fetching-source';
 import { GridSource } from '../src/source/grid-source';
+import type { GridColumn } from '../src/dom/grid-column';
 import { columns, mount, painted, q, rowsOf, trades, unmountAll, type Trade } from './grid-harness';
 
 afterEach(unmountAll);
@@ -79,6 +80,17 @@ describe('Row Headings', () => {
         view.update({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480, rowHeadings: headings });
         await painted();
         expect(width()).toBeGreaterThan(narrow);
+    });
+
+    it('ADR-0090: the band is put on a Device Pixel first, and each column edge is counted from there, as the C# grid counts it', async () => {
+        // At 2.25 a band of 37.6 px is 84.6 Device Pixels, painted as 85. A column of 99 px (222.75) then ends at 307.75,
+        // painted as 308: 223 Device Pixels wide. Counted from the 84.6 declared, it would end at 307 and be 222 wide.
+        const wide: readonly GridColumn<Trade>[] = columns.map(column => ({ ...column, width: 99 }));
+        const { root } = mount({ columns: wide, rows: trades(10), rowHeight: 24, viewportHeight: 480, rowHeadings: headings, rowHeadingWidth: 37.6 },
+            { devicePixelRatio: 2.25 });
+        await painted();
+        expect(q(root, '.ex-headings-corner').getAttribute('style')).toBe(`width: ${85 / 2.25}px`);
+        expect(q(root, `[id$='-r0c0']`).getAttribute('style')).toBe(`width: ${223 / 2.25}px`);
     });
 
     it('ADR-0050/0003: a new function with the same labels paints no row again; a label that changed paints its row', async () => {

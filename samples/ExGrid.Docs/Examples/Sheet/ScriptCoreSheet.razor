@@ -31,9 +31,11 @@
     private SheetDocument _document = Expenses.Document();
     private ExSheet.Script.ExSheet? _sheet;
 
-    // The page's own command on the Selection, run through the Sheet's public command as the Razor component's would be.
+    // The page's own command on the Selection, run through the Sheet's public command as the Razor component's would be:
+    // a toggle, made from the Focus cell as it shows when the press runs, so a reviewed cell is unmarked.
     private Task MarkReviewedAsync() =>
-        Sheet().SetCellFormatAsync(new CellFormatChange { Fill = CellFill.Solid(CellColour.FromRgb(0xE2EFDA)) });
+        Sheet().SetCellFormatFromFocusAsync(focus => new CellFormatChange { Fill = focus.Fill == Reviewed ? CellFill.None : Reviewed });
+    private static readonly CellFill Reviewed = CellFill.Solid(CellColour.FromRgb(0xE2EFDA));
     private string _undone = "";
     private string _selected = "";
 
