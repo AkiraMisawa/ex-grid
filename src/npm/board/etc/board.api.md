@@ -12,6 +12,7 @@ import type { ChartSourceQuery } from '@ex-grid/chart';
 import { ChartSourceReading } from '@ex-grid/chart';
 import { ChartSpecReading } from '@ex-grid/chart';
 import { DataShape } from '@ex-grid/data';
+import { DataShapeColumn } from '@ex-grid/data';
 import { FetchingGridSource } from '@ex-grid/core';
 import { GridColumn } from '@ex-grid/core';
 import type { GridQuery } from '@ex-grid/core';
@@ -280,6 +281,8 @@ export class BoundBoard {
     selectCellsThrough(from: string, cells: readonly PivotCellItems[] | undefined): Promise<boolean>;
     readonly sources: ReadonlyMap<string, BoardSource>;
     subscribe(listener: () => void): () => void;
+    // @internal
+    tellFailed(): void;
     view(id: string): BoundView;
     readonly views: readonly BoundView[];
 }
@@ -328,7 +331,10 @@ export class BoundGridView {
         readonly snapshot: Snapshot;
     } | {
         readonly source: BoardSource;
+        readonly alsoRead: readonly DataShapeColumn[];
     }, locale: string, path: string);
+    // @internal
+    begin(failed: () => void): void;
     get change(): BoardGridChange | undefined;
     columns: readonly GridColumn<ShapedRow>[];
     // @internal
@@ -369,7 +375,10 @@ export class BoundPivotView {
     // @internal
     narrowTo(narrowed: Snapshot | undefined, served: PivotSource | undefined): void;
     // @internal
-    select(): number;
+    select(stop: AbortSignal): {
+        readonly selected: number;
+        readonly signal: AbortSignal;
+    };
     // @internal
     get selected(): number;
     readonly served: boolean;
@@ -384,7 +393,7 @@ export class BoundPivotView {
 export type BoundView = BoundGridView | BoundPivotView | BoundChartView;
 
 // @public
-export function checkShapedPage(page: Snapshot, spec: GridViewSpecReading): void;
+export function checkShapedPage(page: Snapshot, spec: GridViewSpecReading, alsoRead?: readonly DataShapeColumn[]): void;
 
 // @public
 export function createBoard(element: HTMLElement, options: BoardOptions): BoardHandle;

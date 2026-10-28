@@ -3,7 +3,7 @@
 // it through its format code, the kind's default where it writes none.
 
 import { exactDecimalDigits, FormatCode, gridNumberOf, plainDateTimeOf, significantDigits, type GridColumn, type GridColumnWidth } from '@ex-grid/core';
-import { BoardRefusedError, ticksOfTemporal, type Snapshot, type SnapshotColumn, type SnapshotKind } from '@ex-grid/data';
+import { BoardRefusedError, ticksOfTemporal, type DataShapeColumn, type Snapshot, type SnapshotColumn, type SnapshotKind } from '@ex-grid/data';
 import type { GridViewSpecReading, ShapedColumn } from './grid-view-spec';
 
 /** The format of an Integer column that writes none. */
@@ -58,10 +58,21 @@ export function fetchedColumns(spec: GridViewSpecReading, locale = 'invariant'):
 
 /**
  * Checks a page a source answered for a fetched grid (ADR-0343) as a whole Snapshot is checked: one lacking a column
- * the spec shows, holding it of another kind, or holding a Decimal a grid would show rounded, is refused with a
+ * the spec shows, or `alsoRead` names (the columns its links and outputs read, which it may not show), holding one of
+ * another kind, or holding a Decimal a grid would show rounded, is refused with a
  * {@link @ex-grid/data#BoardRefusedError}, and so fails that fetch.
  */
-export function checkShapedPage(page: Snapshot, spec: GridViewSpecReading): void {
+export function checkShapedPage(page: Snapshot, spec: GridViewSpecReading, alsoRead: readonly DataShapeColumn[] = []): void {
+    for (const read of alsoRead) {
+        if (spec.columns.some(shown => shown.column === read.name)) continue;
+        const held = page.columns.find(column => column.name === read.name);
+        if (held === undefined) {
+            throw new BoardRefusedError(spec.data, `Input '${spec.data}' declares column '${read.name}', which a page its source answered does not have.`);
+        }
+        if (held.kind !== read.kind) {
+            throw new BoardRefusedError(spec.data, `Input '${spec.data}', column '${read.name}': declared ${read.kind}, and a page its source answered holds ${held.kind}.`);
+        }
+    }
     for (const shown of spec.columns) {
         const held = page.columns.find(column => column.name === shown.column);
         if (held === undefined) {

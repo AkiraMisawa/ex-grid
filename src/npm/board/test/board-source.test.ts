@@ -201,6 +201,16 @@ describe('a Board over a source held on a server (ADR-0343)', () => {
         expect(server.asked).toHaveLength(0);
     });
 
+    it('asks a source nothing more once the binding is aborted while it answers its shape', async () => {
+        const server = new Server();
+        const aborted = new AbortController();
+        const binding = bindBoardThrough(board(`${blotter}, ${pivot}, ${chart}`), {}, { trades: server.source() }, { signal: aborted.signal });
+        aborted.abort();
+
+        await expect(binding).rejects.toThrow(DOMException);
+        expect([server.asked, server.pivots, server.charted]).toEqual([[], [], []]);
+    });
+
     it('refuses an input bound both to a Snapshot and to a source, never choosing one', async () => {
         const server = new Server();
         const refused = await refusalOf(bindBoardThrough(board(blotter), { trades: server.held }, { trades: server.source() }));
@@ -262,6 +272,28 @@ describe('a Board over a source held on a server (ADR-0343)', () => {
         expect(output?.sourceVersion).toBe(7n);
         expect(output?.condition.values).toEqual([['FX'], ['Rates']]);
         expect(output?.take(server.held).rowCount).toBe(3);
+    });
+
+    it('fails a page without a column the grid\'s links read, though the grid does not show it, and says so', async () => {
+        const server = new Server();
+        const pnlOnly = '{"id": "blotter", "grid": {"data": "trades", "columns": [{"column": "pnl", "format": "#,##0"}]}}';
+        const source = server.source();
+        let heard = 0;
+        const bound = await bindBoardThrough(board(`${pnlOnly}, ${other}`, '{"from": "blotter", "to": ["other"], "on": ["desk"]}'), {}, {
+            trades: {
+                ...source,
+                fetch: async (query, signal) => {
+                    const page = await source.fetch(query, signal);
+                    return { ...page, rows: createSnapshot({ version: 7, columns: [{ name: 'pnl', kind: 'decimal', values: [] }] }), totalCount: 0, start: 0 };
+                },
+            },
+        });
+        bound.subscribe(() => { heard++; });
+
+        await desks(bound, 'blotter');
+
+        expect(grid(bound, 'blotter').failure).toBe("The source did not answer the grid: Input 'trades' declares column 'desk', which a page its source answered does not have.");
+        expect(heard).toBeGreaterThan(0);
     });
 
     it('refuses by path a pivot over a source that makes no pivot source', async () => {

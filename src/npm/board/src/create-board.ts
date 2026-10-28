@@ -119,6 +119,7 @@ export class BoardDrawing {
     // Each binding's number: a binding over sources answered after another began is dropped, never drawn over it
     // (spine rule 6).
     #generation = 0;
+    #asking: AbortController | undefined;
     #destroyed = false;
 
     constructor(element: HTMLElement, options: BoardOptions, mounts: BoardMounts) {
@@ -166,8 +167,10 @@ export class BoardDrawing {
     }
 
     #clear(): void {
-        // A binding over sources still on its way is dropped when it comes.
+        // A binding over sources still on its way is dropped when it comes, and asks them nothing more.
         this.#generation++;
+        this.#asking?.abort();
+        this.#asking = undefined;
         for (const unsubscribe of this.#unsubscribe) unsubscribe();
         this.#unsubscribe = [];
         for (const mounted of this.#mounted) mounted.destroy();
@@ -188,23 +191,31 @@ export class BoardDrawing {
         if (sources !== undefined && Object.keys(sources).length > 0) {
             // Its sources are asked their shapes before anything is drawn (ADR-0341), and the Board says so meanwhile.
             const generation = this.#generation;
-            const asking = made('div', 'ex-board-binding', 'Asking the sources for their shapes.');
-            asking.setAttribute('role', 'status');
-            root.append(asking);
+            const asking = new AbortController();
+            this.#asking = asking;
+            const said = made('div', 'ex-board-binding', 'Asking the sources for their shapes.');
+            said.setAttribute('role', 'status');
+            root.append(said);
             this.#binding = false;
-            // A Board that does not bind is drawn as its refusal, and sources that do not answer say so in its place.
-            bindBoardThrough(board, data, sources, options).then(bound => { // oxlint-disable-line ex-grid/no-catch -- the failure is said in the Board's place
+            // A Board that does not bind is drawn as its refusal. Sources that fail are said in its place too, and the
+            // failure goes on to the host's error path; the next update asks them again, as a binding that threw does.
+            bindBoardThrough(board, data, sources, { ...options, signal: asking.signal }).then(bound => { // oxlint-disable-line ex-grid/no-catch -- a refusal is drawn in the Board's place, and any other failure is said there and rethrown
                 if (generation !== this.#generation || this.#destroyed) {
                     bound.dispose();
                     return;
                 }
-                asking.remove();
+                said.remove();
                 this.#adopt(bound);
             }, (error: unknown) => {
                 if (generation !== this.#generation || this.#destroyed) return;
-                asking.remove();
-                this.#refuse(error instanceof BoardRefusedError ? error
-                    : new BoardRefusedError('', `The sources did not answer: ${messageOf(error)}`, { cause: error }));
+                said.remove();
+                if (error instanceof BoardRefusedError) {
+                    this.#refuse(error);
+                    return;
+                }
+                this.#refuse(new BoardRefusedError('', `The sources did not answer: ${messageOf(error)}`, { cause: error }));
+                this.#binding = true;
+                throw error;
             });
             return;
         }

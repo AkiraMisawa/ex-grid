@@ -10,7 +10,7 @@ import {
     engineFilterOf, FetchingGridSource, GridViewState, GridViewStateJsonError, InMemoryGridSource, sameGridFilter, type ColumnViewState, type GridColumn, type GridFilter,
     type GridSelection, type GridSource,
 } from '@ex-grid/core';
-import { BoardRefusedError, type BoardInput, type DataShape, type Snapshot, type SnapshotKind } from '@ex-grid/data';
+import { BoardRefusedError, type BoardInput, type DataShape, type DataShapeColumn, type Snapshot, type SnapshotKind } from '@ex-grid/data';
 import { SnapshotPivotSource, writePivotLayoutJson, type PivotLayout, type PivotSource } from '@ex-grid/pivot-engine';
 import { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange, kindsOf, placed } from './board-diff';
 import { BoardOutput } from './board-output';
@@ -20,7 +20,7 @@ import { declaredInput, type BoardChartView, type BoardGridView, type BoardLink,
 import { LinkCondition, narrowedPositions, narrowedSnapshot, valueAt, type BoardValue } from './link-condition';
 import { checkShapedPage, fetchedColumns, resized, shapedColumns, shapedRows, type ShapedRow } from './shaped-grid';
 import { declaredChartData } from './snapshot-values';
-import { messageOf } from './must';
+import { elementAt, messageOf } from './must';
 import { taggedFilter } from './tagged-filter';
 
 /** What a grid's selection is read by: its rectangles, in the rows the grid shows; a {@link @ex-grid/core#GridSelection} is one. */
@@ -83,33 +83,49 @@ export async function bindBoardThrough(board: BoardReading, data: Readonly<Recor
         if (Object.hasOwn(data, input.name)) {
             throw new BoardRefusedError(`inputs.${input.name}`, `Input '${input.name}' is bound both to a Snapshot and to a source held on a server.`);
         }
-        try {
-            await input.checkSource(source, options.signal);
-        } catch (error) {
-            if (!(error instanceof BoardRefusedError)) throw error;
-            throw new BoardRefusedError(`inputs.${input.name}`, error.message, { cause: error });
-        }
         held.set(input.name, source);
     }
+    // Every source is asked at once, and the first refusal in the Board's order is the one said, whichever answers
+    // first (spine rule 6).
+    const shapes = await Promise.allSettled([...held].map(async ([name, source]) => {
+        try {
+            await declaredInput(board, name).checkSource(source, options.signal);
+        } catch (error) {
+            if (!(error instanceof BoardRefusedError)) throw error;
+            throw new BoardRefusedError(`inputs.${name}`, error.message, { cause: error });
+        }
+    }));
+    firstFailure(shapes);
+    // A binding dropped while its sources answered asks them nothing more: no grid fetches, no chart thins.
+    options.signal?.throwIfAborted();
     const made = make(board, bindData(board, data, held), held, options);
     try {
         // A chart over a server input is read from its sources' first answers before the Board is handed back, and a
-        // spec they cannot draw is refused by path, as one over a Snapshot is.
-        for (const { chart, at } of made.thinned) {
+        // spec they cannot draw is refused by path, as one over a Snapshot is. The charts are asked together.
+        const readings = await Promise.allSettled(made.thinned.map(async ({ chart, at }) => {
             const path = `views[${at}].chart`;
             try {
-                chart.read(await made.board.readThrough(chart, [], options.signal));
+                return await made.board.readThrough(chart, [], options.signal);
             } catch (error) {
                 if (!(error instanceof ChartSpecRefusedError)) throw error;
                 throw new BoardRefusedError(error.path === '' ? path : `${path}.${error.path}`, error.message, { cause: error });
             }
-        }
+        }));
+        firstFailure(readings).forEach((reading, i) => { elementAt(made.thinned, i).chart.read(reading); });
     } catch (error) {
         // A Board that is not handed back lets go of the sources its grids already asked, and the failure goes on.
         made.board.dispose();
         throw error;
     }
     return made.board;
+}
+
+// The values of questions asked together, or the first failure in the order they were asked.
+function firstFailure<T>(settled: readonly PromiseSettledResult<T>[]): T[] {
+    return settled.map(result => {
+        if (result.status === 'rejected') throw result.reason;
+        return result.value;
+    });
 }
 
 function bindData(board: BoardReading, data: Readonly<Record<string, Snapshot>>, held: ReadonlyMap<string, BoardSource>): Map<string, Snapshot> {
@@ -134,7 +150,12 @@ function make(board: BoardReading, bound: ReadonlyMap<string, Snapshot>, held: R
         switch (view.kind) {
             case 'grid': {
                 const source = held.get(view.grid.data);
-                return new BoundGridView(view, source === undefined ? { snapshot: heldData(bound, view.grid.data) } : { source }, locale, `views[${i}].grid`);
+                if (source === undefined) return new BoundGridView(view, { snapshot: heldData(bound, view.grid.data) }, locale, `views[${i}].grid`);
+                // A page is checked for the columns the grid's links and outputs read too, which it may not show.
+                const input = declaredInput(board, view.grid.data);
+                const read = new Set([...board.links, ...board.outputs].filter(l => l.from === view.id).flatMap(l => l.on));
+                const alsoRead = input.columns.filter(column => read.has(column.name));
+                return new BoundGridView(view, { source, alsoRead }, locale, `views[${i}].grid`);
             }
             case 'pivot': {
                 const shape = declaredInput(board, view.input).shape;
@@ -197,6 +218,7 @@ function make(board: BoardReading, bound: ReadonlyMap<string, Snapshot>, held: R
         }
     }
     const made = new BoundBoard(board, bound, held, inputs, views, dropped);
+    for (const view of views) if (view.kind === 'grid') view.begin(() => { made.tellFailed(); });
     const thinned = views.flatMap((view, at) => view.kind === 'chart' && view.thinned ? [{ chart: view, at }] : []);
     for (const { chart } of thinned) chart.asks(() => made.askChart(chart.view.id));
     return { board: made, thinned };
@@ -268,8 +290,8 @@ export class BoundBoard {
         return found;
     }
 
-    /** Hears each step that narrowed a view or changed what can be confirmed, and each answer a chart's source gave;
-     * answers the call that stops it. */
+    /** Hears each step that narrowed a view or changed what can be confirmed, each answer a chart's source gave, and
+     * each question a fetched grid's source failed; answers the call that stops it. */
     subscribe(listener: () => void): () => void {
         this.#listeners.add(listener);
         return () => { this.#listeners.delete(listener); };
@@ -397,7 +419,7 @@ export class BoundBoard {
         const pivot = this.view(from);
         if (pivot.kind !== 'pivot') throw new RangeError(`View '${from}' is not a pivot.`);
         if (!pivot.served) return this.selectCells(from, cells);
-        const selected = pivot.select();
+        const { selected, signal } = pivot.select(this.#disposed.signal);
         const links = this.board.links.filter(l => l.from === from);
         let conditions: readonly (LinkCondition | undefined)[] = links.map(() => undefined);
         if (cells !== undefined && cells.length > 0) {
@@ -405,12 +427,11 @@ export class BoundBoard {
             const source = this.#source(pivot.view.input);
             const under = source.under?.bind(source);
             if (under === undefined) throw new Error(`Internal: pivot '${from}' is linked over a source that answers nothing under cells.`);
-            const signal = this.#disposed.signal;
             try {
                 conditions = await Promise.all(links.map(link => under({ view: from, layout: pivot.layout, cells, on: link.on, narrowing }, signal)));
             } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a selection a later one replaced is dropped, failure and all (spine rule 6); the newest's failure is rethrown
                 // A selection a later one replaced, or a Board let go: its failure says nothing about what is shown.
-                if (selected !== pivot.selected || signal.aborted) return false;
+                if (selected !== pivot.selected || this.#disposed.signal.aborted) return false;
                 // The newest selection was not answered: its links let go, so no view stays narrowed by the selection
                 // before it while the pivot shows this one (spine rule 1).
                 const released = new Set<string>();
@@ -518,6 +539,11 @@ export class BoundBoard {
             ...(range?.to === undefined ? {} : { to: range.to }),
             ...(signal === undefined ? {} : { signal }),
         });
+    }
+
+    /** @internal A fetched grid's source failed a question, said in its {@link BoundGridView.failure}. */
+    tellFailed(): void {
+        this.#tell();
     }
 
     #source(name: string): BoardSource {
@@ -652,7 +678,8 @@ export class BoundGridView {
     unread: string | undefined;
 
     /** @internal Made by {@link bindBoard} and {@link bindBoardThrough}. */
-    constructor(view: BoardGridView, rows: { readonly snapshot: Snapshot } | { readonly source: BoardSource }, locale: string, path: string) {
+    constructor(view: BoardGridView, rows: { readonly snapshot: Snapshot } | { readonly source: BoardSource; readonly alsoRead: readonly DataShapeColumn[] },
+        locale: string, path: string) {
         this.view = view;
         this.#kinds = new Map(view.grid.columns.map(column => [column.column, column.kind]));
         const columns = 'snapshot' in rows ? shapedColumns(rows.snapshot, view.grid, locale) : fetchedColumns(view.grid, locale);
@@ -679,25 +706,42 @@ export class BoundGridView {
                 }
             });
         } else {
-            const { source } = rows;
+            const { source, alsoRead } = rows;
             this.snapshot = undefined;
             this.#rows = Object.freeze([]);
+            // Asked only once the grid is built and its query set, and the Diff laid over: a question its own query
+            // replaced before then is never sent, so the server is asked once, under the whole query.
+            let built: (() => void) | undefined;
+            const ready = new Promise<void>(resolve => { built = resolve; });
+            this.#built = built;
             this.source = this.fetched = FetchingGridSource.fetch<ShapedRow>(async (query, signal) => {
+                await ready;
+                signal.throwIfAborted();
                 const page = await source.fetch({ view: view.id, grid: query, narrowing: this.#narrowing }, signal);
-                checkShapedPage(page.rows, view.grid);
+                checkShapedPage(page.rows, view.grid, alsoRead);
                 return { rows: shapedRows(page.rows), start: page.start, totalCount: page.totalCount };
             }, {
-                // Held in the source's lastError until an answer lands, which the Board says in the grid's place
-                // (failure), rather than thrown where nobody hears it.
-                onFetchFailed: () => undefined,
+                // Held in the source's lastError until an answer lands, said as the grid's failure, and told to the
+                // Board's listeners, rather than thrown where nobody hears it.
+                onFetchFailed: () => { this.#failed?.(); },
             });
         }
-        this.source.setSorts(view.grid.viewState.sorts);
         this.#taggedFilter = view.grid.viewState.filter;
         this.#engineSet = this.#engineFilter(view.grid.viewState.filter, path);
+        this.source.setSorts(view.grid.viewState.sorts);
         this.source.setFilter(this.#engineSet);
-        // The query first, so a fetched grid's first page is fetched under it, never once without it and again.
+        // The query first, so a fetched grid's first page is fetched under it.
         if (this.#held === undefined) this.source.setColumns(columns);
+    }
+
+    readonly #built: (() => void) | undefined;
+    #failed: (() => void) | undefined;
+
+    /** @internal Lets a fetched grid ask its source, once the Board is made, and tells `failed` each question its
+     * source fails. */
+    begin(failed: () => void): void {
+        this.#failed = failed;
+        this.#built?.();
     }
 
     /** Why the source did not answer the grid's last question, over a source held on a server; undefined while it
@@ -894,6 +938,7 @@ export class BoundPivotView {
     #held: SnapshotPivotSource | undefined;
     readonly #shape: DataShape;
     #selected = 0;
+    #asking: AbortController | undefined;
 
     /** What kind of view it is. */
     readonly kind = 'pivot';
@@ -952,9 +997,13 @@ export class BoundPivotView {
         return this.#selected;
     }
 
-    /** @internal A selection made, answering its number. */
-    select(): number {
-        return ++this.#selected;
+    /** @internal A selection made: its number, and the signal its questions are asked under, aborted by the next
+     * selection, by a narrowing, and by `stop`. */
+    select(stop: AbortSignal): { readonly selected: number; readonly signal: AbortSignal } {
+        this.#asking?.abort();
+        const asking = new AbortController();
+        this.#asking = asking;
+        return { selected: ++this.#selected, signal: AbortSignal.any([asking.signal, stop]) };
     }
 
     /** @internal Shows the rows of `narrowed`, or every row given undefined; over a server, the source made for the
@@ -963,6 +1012,7 @@ export class BoundPivotView {
         if (this.served) {
             if (served === undefined) throw new Error('Internal: a served pivot narrowed to no source.');
             this.#selected++;
+            this.#asking?.abort();
             this.source = served;
             return;
         }

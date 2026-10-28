@@ -386,26 +386,23 @@ describe('createBoard (ADR-0340)', () => {
 });
 
 /** A server holding the trades, answering as a host's own code would, its shape question held until the test lets it go. */
-function served(reading: BoardReading, { failCells = false, holdRows = false } = {}) {
+function served(reading: BoardReading, failCells = false) {
     const trades = data(reading)['trades'];
     if (trades === undefined) throw new Error('No trades.');
     let release: (() => void) | undefined;
     const shapeAnswered = new Promise<void>(resolve => { release = resolve; });
-    const counts = { shape: 0, fetch: 0, cells: 0, disposedFetches: 0 };
+    const counts = { shape: 0, shapeAbandoned: 0, cells: 0 };
     const input = boardInput(reading, 'trades');
     if (input === undefined || release === undefined) throw new Error('No input trades.');
     const through = (narrowing: readonly LinkCondition[]) => narrowedSnapshot(trades, narrowedPositions(trades, narrowing));
     const source: BoardSource = {
-        shape: async () => {
+        shape: async signal => {
             counts.shape++;
+            signal?.addEventListener('abort', () => { counts.shapeAbandoned++; });
             await shapeAnswered;
             return input.shape;
         },
-        fetch: (query, signal) => {
-            counts.fetch++;
-            signal.addEventListener('abort', () => { counts.disposedFetches++; });
-            // Held, the rows are still on their way when the Board is let go.
-            if (holdRows) return new Promise(() => { /* Never answered: only its abort is read. */ });
+        fetch: query => {
             const kept = through(query.narrowing);
             const start = Math.min(query.grid.range.start, kept.rowCount);
             const count = Math.min(query.grid.range.count, kept.rowCount - start);
@@ -439,25 +436,21 @@ describe('createBoard over sources held on a server (ADR-0343)', () => {
         expect(server.counts.shape).toBe(1);
     });
 
-    it('drops a binding over sources answered after the options changed, and lets go of its questions (spine rule 6)', async () => {
+    it('drops a binding over sources the options changed under, and lets go of its questions (spine rule 6)', () => {
         const reading = board();
-        const server = served(reading, { holdRows: true });
+        const server = served(reading);
         const { view, mounts, options } = draw({ board: reading, data: {}, sources: server.sources });
 
         view.update({ ...options, data: data(reading), sources: undefined });
-        expect(only(mounts.grids).options.source).toBe(gridView(view, 'blotter').source);
-        const shown = view.bound;
-        server.release();
-        await vi.waitFor(() => { expect(server.counts.fetch).toBeGreaterThan(0); });
-        await vi.waitFor(() => { expect(server.counts.disposedFetches).toBe(server.counts.fetch); });
 
-        expect(view.bound).toBe(shown);
-        expect(mounts.grids).toHaveLength(1);
+        expect(server.counts.shapeAbandoned).toBe(1);
+        expect(only(mounts.grids).options.source).toBe(gridView(view, 'blotter').source);
+        expect(gridView(view, 'blotter').fetched).toBeUndefined();
     });
 
     it('says under a pivot over a server that its source did not answer for the cells selected (ADR-0345)', async () => {
         const reading = board(', "links": [{"from": "byDesk", "to": ["curve"], "on": ["desk"]}]');
-        const server = served(reading, { failCells: true });
+        const server = served(reading, true);
         const { element, mounts, view } = draw({ board: reading, data: {}, sources: server.sources });
         server.release();
         await vi.waitFor(() => { expect(view.bound).toBeDefined(); });
