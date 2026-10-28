@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 94.1% | 87.8% |
-| ExSheet | 94.4% | 87.1% |
+| ExSheet | 93.3% | 86.9% |
 | ExPivot | 88.6% | 82.9% |
 | ExChart | 90% | 84.9% |
 | ExBoard | 70.8% | 64.3% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 13:17:11 |
+| Generated on: | 10/28/2026 - 14:00:28 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1354 |
-| Files: | 666 |
-| **Line coverage:** | 91.5% (91873 of 100348) |
-| Covered lines: | 91873 |
-| Uncovered lines: | 8475 |
-| Coverable lines: | 100348 |
-| Total lines: | 154691 |
-| **Branch coverage:** | 85.5% (53739 of 62798) |
-| Covered branches: | 53739 |
-| Total branches: | 62798 |
+| Classes: | 1360 |
+| Files: | 670 |
+| **Line coverage:** | 91.2% (91946 of 100758) |
+| Covered lines: | 91946 |
+| Uncovered lines: | 8812 |
+| Coverable lines: | 100758 |
+| Total lines: | 155072 |
+| **Branch coverage:** | 85.5% (53775 of 62881) |
+| Covered branches: | 53775 |
+| Total branches: | 62881 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -347,7 +347,7 @@
 |ExGrid.Chrome.GridMenuItemView|100%||
 |ExGrid.Chrome.GridMenuView|100%||
 |ExGrid.Chrome.GridPopoverContext|100%||
-|ExGrid.Chrome.IGridChrome|40%||
+|ExGrid.Chrome.IGridChrome|46.6%||
 |ExGrid.Chrome.LoadingContext|100%||
 |ExGrid.Chrome.MenuKey|100%||
 |ExGrid.Chrome.MenuKeys|99.1%|96.5%|
@@ -715,7 +715,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1122,8 +1122,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1186,7 +1186,7 @@
 |ExGrid.Script.RazorSlot|33.6%|33.3%|
 |ExGrid.Script.RazorSlotHolders|75.4%|64.2%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
-|ExGrid.Script.ScriptJson|44.8%|30%|
+|ExGrid.Script.ScriptJson|48.2%|35%|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -1214,7 +1214,7 @@
 |ExSheet.FormatCellsItem|100%||
 |ExSheet.FormatCellsOffer|98.9%|96.5%|
 |ExSheet.FormatCellsSpread|100%|100%|
-|ExSheet.ISheetChrome|33.3%||
+|ExSheet.ISheetChrome|37.5%||
 |ExSheet.ItalicItem|100%|100%|
 |ExSheet.LinkedColumnColour|100%||
 |ExSheet.LinkedColumnColours|66.6%||
@@ -1229,14 +1229,16 @@
 |ExSheet.PointingScope|93.4%|90.3%|
 |ExSheet.PointingScope.Dashed|100%||
 |ExSheet.PointingScope.GridMember|97.7%|92.8%|
-|ExSheet.PointingScope.GridMember<TRow>|100%|100%|
 |ExSheet.PointingScope.GridMember<TRow>|97.7%|92.8%|
+|ExSheet.PointingScope.GridMember<TRow>|100%|100%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
-|ExSheet.Script.ExSheet|84.5%|75.6%|
+|ExSheet.Script.ExSheet|84.6%|75.8%|
 |ExSheet.Script.ExSheet.Opening|100%||
 |ExSheet.Script.ExSheet.Saving|100%||
 |ExSheet.Script.ScriptBridge|75.8%|25%|
+|ExSheet.Script.SheetRazorSlot|93.4%|84.6%|
+|ExSheet.Script.SheetRazorSlot.AddFace|100%||
 |ExSheet.SheetAppearance|97.6%|96%|
 |ExSheet.SheetCellText|94.4%|100%|
 |ExSheet.SheetClipboard|94.1%|77.9%|
@@ -1265,8 +1267,10 @@
 |ExSheet.SheetTabKeys|100%|100%|
 |ExSheet.SheetTabMenuContext|100%||
 |ExSheet.SheetToolbar|82.1%|68.4%|
+|ExSheet.SheetToolbarChoiceView|100%||
 |ExSheet.SheetToolbarContext|93.5%|79.5%|
 |ExSheet.SheetToolbarContext.NotJoined|0%||
+|ExSheet.SheetToolbarItemView|50%||
 |ExSheet.SheetWidening|100%|97.5%|
 |ExSheet.SheetWords|94.8%|89.4%|
 |ExSheet.StrikethroughItem|100%|100%|
@@ -1439,20 +1443,22 @@
 |ExSheet.Engine.WorkbookStep|100%|100%|
 
 </details>
-<details><summary>ExSheet.MudBlazor - 93.6%</summary>
+<details><summary>ExSheet.MudBlazor - 80.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.MudBlazor**|**93.6%**|**74%**|
+|**ExSheet.MudBlazor**|**80.8%**|**69.4%**|
 |ExSheet.MudBlazor.MudExSheetStylesheet|100%||
 |ExSheet.MudBlazor.MudFormatCellsDialog|97.9%|80.9%|
 |ExSheet.MudBlazor.MudFormatCellsFrame|82.4%|68.5%|
 |ExSheet.MudBlazor.MudFormatCellsTabs|78.9%|76.6%|
 |ExSheet.MudBlazor.MudMoreColours|91.4%|58.3%|
-|ExSheet.MudBlazor.MudSheetChrome|88.2%|100%|
+|ExSheet.MudBlazor.MudScriptToolbarItem|0%|0%|
+|ExSheet.MudBlazor.MudSheetChrome|79.8%|100%|
 |ExSheet.MudBlazor.MudSheetFindPanel|84.3%|67.8%|
 |ExSheet.MudBlazor.MudSheetTabMenu|100%|100%|
-|ExSheet.MudBlazor.MudToolbarItem|87.7%|74.1%|
+|ExSheet.MudBlazor.MudToolbarIcons|100%|87.5%|
+|ExSheet.MudBlazor.MudToolbarItem|87%|73%|
 |ExSheet.MudBlazor.MudToolbarItem.ListFrame|100%|75%|
 
 </details>
