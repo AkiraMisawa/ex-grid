@@ -27,7 +27,7 @@ namespace ExSheet.Script;
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
 /// <para>Not carried yet, and so not offered: a <c>Chrome</c>, <c>ToolbarContent</c>, a <c>PointingScope</c>,
-/// <c>OnLinkedColumnColoursChanged</c>, <c>OnSelectionSummaryChanged</c> and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
+/// <c>OnLinkedColumnColoursChanged</c> and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
 /// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>
 /// </remarks>
 public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
@@ -114,6 +114,10 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
 
     /// <summary>Raised when the figures menu changes the figures shown (ADR-0130).</summary>
     [Parameter] public EventCallback<SummaryFigures> SummaryFiguresChanged { get; set; }
+
+    /// <summary>The Selection Summary as it now stands (ADR-0130), for an application that shows the figures
+    /// elsewhere. The Sheet in the browser answers it, as the Razor component's Sheet does.</summary>
+    [Parameter] public EventCallback<SelectionSummary> OnSelectionSummaryChanged { get; set; }
 
     /// <summary>Raised whenever the grid's Selection changes, as ExGrid raises it (ADR-0011/0014).</summary>
     [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
@@ -510,6 +514,8 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             json.WriteStringValue("summaryFiguresChanged");
         if (SelectionChanged.HasDelegate)
             json.WriteStringValue("selectionChanged");
+        if (OnSelectionSummaryChanged.HasDelegate)
+            json.WriteStringValue("selectionSummaryChanged");
         if (OnFormatKeyRefused.HasDelegate)
             json.WriteStringValue("formatKeyRefused");
         json.WriteEndArray();
@@ -521,17 +527,80 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     {
         if ((figures & ~SummaryFigures.All) != 0)
             throw new ArgumentOutOfRangeException(nameof(figures), figures, $"{figures} names a figure the Selection Summary does not have (ADR-0130).");
-        SummaryFigures[] order = [SummaryFigures.Average, SummaryFigures.Count, SummaryFigures.NumericalCount, SummaryFigures.Min, SummaryFigures.Max, SummaryFigures.Sum];
-        return order.Where(figure => figures.HasFlag(figure)).Select(Camel);
+        return SummaryFigureOrder.Each.Where(figure => figures.HasFlag(figure)).Select(Camel);
     }
+
+    // One figure as the Script Core spells it, refused when it names a set of figures or none.
+    private static SummaryFigures Figure(string camel)
+        => Member<SummaryFigures>(camel) is var figure && SummaryFigureOrder.Each.Contains(figure)
+            ? figure
+            : throw new InvalidOperationException($"Internal: the Script Core named the figure '{camel}'.");
 
     private static SummaryFigures FiguresFrom(JsonElement json)
     {
         var figures = SummaryFigures.None;
         foreach (var figure in json.EnumerateArray())
-            figures |= Member<SummaryFigures>(Text(figure));
+            figures |= Figure(Text(figure));
         return figures;
     }
+
+    // A Selection Summary as the browser writes it: its status, the question and the answer, an exact figure as its
+    // decimal's digits. Read as Blazor's ExPivot reads its own, but for the columns, which are the Sheet's letters
+    // always: the browser checks that and sends none, so 16,384 names do not cross on every selection.
+    private static SelectionSummary SummaryOf(JsonElement json)
+    {
+        var status = Member<SelectionSummaryStatus>(Text(json.GetProperty("status")));
+        var request = json.GetProperty("request");
+        var result = json.GetProperty("result");
+        return new SelectionSummary(status,
+            request.ValueKind == JsonValueKind.Null ? null : SummaryRequestOf(request),
+            result.ValueKind == JsonValueKind.Null ? null : SummaryResultOf(result));
+    }
+
+    // The Sheet's columns by their ids, A to XFD, as the Razor component's grid names them: made the first time a
+    // summary is heard, and only then.
+    private static IReadOnlyList<string>? _letters;
+
+    private static IReadOnlyList<string> Letters
+        => _letters ??= Array.AsReadOnly(Enumerable.Range(0, Sheet.ColumnCount).Select(CellAddress.ColumnName).ToArray());
+
+    private static GridSummaryRequest SummaryRequestOf(JsonElement json)
+    {
+        var focus = json.GetProperty("focus");
+        return new GridSummaryRequest
+        {
+            Ranges = [.. json.GetProperty("ranges").EnumerateArray().Select(range => new SelectionRange(
+                range.GetProperty("topRow").GetInt32(), range.GetProperty("leftColumn").GetInt32(),
+                range.GetProperty("rowCount").GetInt32(), range.GetProperty("columnCount").GetInt32()))],
+            Columns = Letters,
+            RowSequenceVersion = json.GetProperty("rowSequenceVersion").GetInt32(),
+            Figures = FiguresFrom(json.GetProperty("figures")),
+            Focus = focus.ValueKind == JsonValueKind.Null ? null : new CellPosition(focus.GetProperty("row").GetInt32(), focus.GetProperty("column").GetInt32()),
+        };
+    }
+
+    private static GridSummaryResult SummaryResultOf(JsonElement json)
+    {
+        if (json.TryGetProperty("reason", out var reason))
+            return GridSummaryResult.Declined(Text(reason));
+        var figures = new Dictionary<SummaryFigures, ExGrid.Data.AggregateResult>();
+        foreach (var figure in json.GetProperty("figures").EnumerateObject())
+            figures[Figure(figure.Name)] = AggregateOf(figure.Value);
+        var texts = new Dictionary<SummaryFigures, string>();
+        foreach (var text in json.GetProperty("texts").EnumerateObject())
+            texts[Figure(text.Name)] = Text(text.Value);
+        return GridSummaryResult.Answered(figures, texts);
+    }
+
+    // A figure's answer: nothing, an error, an exact decimal written as its digits, or a double.
+    private static ExGrid.Data.AggregateResult AggregateOf(JsonElement json) => Text(json.GetProperty("kind")) switch
+    {
+        "empty" => ExGrid.Data.AggregateResult.Empty,
+        "error" => ExGrid.Data.AggregateResult.Of(Member<ExGrid.Data.AggregateError>(Text(json.GetProperty("error")))),
+        "number" when json.TryGetProperty("exact", out var exact) => ExGrid.Data.AggregateResult.Of(decimal.Parse(Text(exact), NumberStyles.Number, CultureInfo.InvariantCulture)),
+        "number" => ExGrid.Data.AggregateResult.Of(json.GetProperty("number").GetDouble()),
+        var kind => throw new InvalidOperationException($"Internal: the Script Core answered a figure of the kind '{kind}'."),
+    };
 
     // The zone as the browser knows it: by its IANA name, which a Windows zone is converted to.
     private static string IanaNameOf(TimeZoneInfo zone)
@@ -626,6 +695,11 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             {
                 var selection = Selection(payload);
                 return () => SelectionChanged.InvokeAsync(selection);
+            }
+            case "selectionSummaryChanged":
+            {
+                var summary = SummaryOf(payload);
+                return () => OnSelectionSummaryChanged.InvokeAsync(summary);
             }
             case "editingChanged":
             {

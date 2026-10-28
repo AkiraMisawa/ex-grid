@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using Bunit;
+using ExGrid;
 using ExGrid.Chrome;
+using ExGrid.Selection;
 using ExGrid.Summarizing;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components;
@@ -391,6 +393,39 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(SheetRefusalReason.EditIsOpen, refusal?.Reason);
         Assert.Equal(["Sheet1", "Sheet2"], sheets?.After);
         Assert.Equal("Sheet2", sheets?.Shown);
+    }
+
+    [Fact] // ADR-0130: the Selection Summary the Sheet answered in the browser reaches the handler whole, its columns the Sheet's letters
+    public async Task ADR0130_the_selection_summary_reaches_the_handler_with_the_sheets_columns()
+    {
+        var summaries = new List<SelectionSummary>();
+        var cut = Sheet(ps => ps.Add(p => p.OnSelectionSummaryChanged, (SelectionSummary summary) => summaries.Add(summary)));
+        Assert.Contains("selectionSummaryChanged", Attach().GetProperty("options").GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
+
+        // As the bridge writes it (bridge.test.ts): no column names cross.
+        const string request = """{"ranges":[{"topRow":0,"leftColumn":0,"rowCount":3,"columnCount":1}],"rowSequenceVersion":0,"figures":["average","count","sum"],"focus":{"row":0,"column":0}}""";
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""{"status":"pending","request":{{{request}}},"result":null}""")));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""
+            {"status":"answered","request":{{{request}}},"result":{
+              "figures":{"average":{"kind":"error","error":"divideByZero"},"count":{"kind":"number","exact":"3"},"sum":{"kind":"number","number":0.30000000000000004}},
+              "texts":{"sum":"0.3"} } }
+            """)));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""{"status":"declined","request":{{{request}}},"result":{"reason":"too many"}}""")));
+
+        Assert.Equal([SelectionSummaryStatus.Pending, SelectionSummaryStatus.Answered, SelectionSummaryStatus.Declined], summaries.Select(summary => summary.Status));
+        Assert.Null(summaries[0].Result);
+        var asked = summaries[1].Request ?? throw new InvalidOperationException("An answered summary carries its question.");
+        Assert.Equal(new SelectionRange(0, 0, 3, 1), Assert.Single(asked.Ranges));
+        Assert.Equal(SummaryFigures.Average | SummaryFigures.Count | SummaryFigures.Sum, asked.Figures);
+        Assert.Equal(new CellPosition(0, 0), asked.Focus);
+        Assert.Equal(16_384, asked.Columns.Count);
+        Assert.Equal(["A", "B", "Z", "AA", "XFD"], new[] { 0, 1, 25, 26, 16_383 }.Select(at => asked.Columns[at]));
+        var answer = summaries[1].Result ?? throw new InvalidOperationException("An answered summary carries its answer.");
+        Assert.Equal(ExGrid.Data.AggregateResult.Of(3m), answer[SummaryFigures.Count]);
+        Assert.Equal(ExGrid.Data.AggregateResult.Of(0.30000000000000004), answer[SummaryFigures.Sum]);
+        Assert.Equal(ExGrid.Data.AggregateResult.Of(ExGrid.Data.AggregateError.DivideByZero), answer[SummaryFigures.Average]);
+        Assert.Equal("0.3", answer.TextOf(SummaryFigures.Sum));
+        Assert.Equal("too many", summaries[2].Result?.DeclineReason);
     }
 
     [Fact] // ADR-0036, ADR-0370 section 10: CommandLabel is asked for each id the module names, and crosses again only when its answers changed

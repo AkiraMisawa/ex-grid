@@ -15,7 +15,7 @@ public class ReferenceDirectionTests
 {
     private static readonly Assembly Component = typeof(SheetRow).Assembly;
 
-    [Fact] // ADR-0046: ExSheet → ExSheet.Engine and ExSheet → ExGrid, and nothing else of ours
+    [Fact] // ADR-0046 (its note of 2026-10-28), ADR-0064: ExSheet → ExSheet.Engine, and ExSheet → ExGrid with the data under it, and nothing else of ours
     public void The_component_references_the_engine_and_the_grid()
     {
         var ours = Component.GetReferencedAssemblies()
@@ -24,7 +24,7 @@ public class ReferenceDirectionTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["ExGrid", "ExSheet.Engine"], ours);
+        Assert.Equal(["ExGrid", "ExGrid.Data", "ExSheet.Engine"], ours);
     }
 
     [Fact] // ADR-0046: nothing ExSheet depends on references ExSheet

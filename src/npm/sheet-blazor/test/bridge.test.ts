@@ -206,6 +206,49 @@ describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)',
     });
 });
 
+describe('the Selection Summary across the bridge (ADR-0130)', () => {
+    it('hands .NET the summary the Sheet answered, an exact figure as its digits and no column names, and none unheard', async () => {
+        const { element, dotnet } = mount({
+            document: workbookJson(['Prices', { A1: '0.1', A2: '0.2', A3: 'x' }]),
+            documentsSent: 1,
+            options: options({ hears: ['selectionSummaryChanged'] }),
+        });
+        await vi.waitFor(() => { expect(cellText(element, 1, 0)).toBe('0.2'); });
+
+        select(element, 'A1:A3');
+
+        const request = {
+            ranges: [{ topRow: 0, leftColumn: 0, rowCount: 3, columnCount: 1 }],
+            rowSequenceVersion: 0,
+            figures: ['average', 'count', 'sum'],
+            focus: { row: 0, column: 0 },
+        };
+        await vi.waitFor(() => {
+            expect(dotnet.of('selectionSummaryChanged')).toEqual([
+                { status: 'pending', request, result: null },
+                {
+                    status: 'answered',
+                    request,
+                    result: {
+                        // Count is exact, so it crosses as its digits; the doubles' sums cross as numbers.
+                        figures: { average: { kind: 'number', number: 0.15000000000000002 }, count: { kind: 'number', exact: '3' }, sum: { kind: 'number', number: 0.30000000000000004 } },
+                        texts: { average: '0.15', sum: '0.3' },
+                    },
+                },
+            ]);
+        });
+
+        const unheard = mount({ document: workbookJson(['Prices', { A1: '1', A2: '2' }]), documentsSent: 1 });
+        await vi.waitFor(() => { expect(cellText(unheard.element, 1, 0)).toBe('2'); });
+        select(unheard.element, 'A1:A2');
+        // Answered on screen, and not raised to .NET by the time an event raised after it, the editor opening, has come.
+        await vi.waitFor(() => { expect(unheard.element.querySelector('.ex-summary')?.textContent).toContain('3'); });
+        key('F2');
+        await vi.waitFor(() => { expect(unheard.dotnet.of('editingChanged')).toEqual([true]); });
+        expect(unheard.dotnet.of('selectionSummaryChanged')).toEqual([]);
+    });
+});
+
 describe('commands across the bridge (ADR-0048)', () => {
     it('answers a command as the Sheet did, and a refusal as data .NET throws again', async () => {
         const { element, sheet, dotnet } = mount();

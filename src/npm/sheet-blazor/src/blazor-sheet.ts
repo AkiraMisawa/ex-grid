@@ -3,10 +3,14 @@
 // write, and every event it raises handed to .NET in the order it was raised. It decides nothing and computes
 // nothing: the Workbook, its Formulas and what each input means are the Script Core's, in the browser.
 
-import { builtInLabelIds, type GridSelection, type SummaryFigure, type ViewportSize } from '@ex-grid/core';
+import {
+    builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary, type SummaryFigure,
+    type ViewportSize,
+} from '@ex-grid/core';
+import { decimalText } from '@ex-grid/data';
 import { createSheet, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId } from '@ex-grid/sheet';
 import {
-    CellAddress, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
+    CellAddress, columnCount, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
     WorkbookDocument, writeCellFormat, writeLinkedRows, writeRepeatedKey, type SheetDay, type SheetMoment, type SheetRefusal, type Value,
     type Workbook,
 } from '@ex-grid/sheet-engine';
@@ -15,7 +19,7 @@ import {
  * always heard, since the component answers `IsEditing`. */
 export type HeardKind =
     | 'workbookChanged' | 'documentChanged' | 'sheetsChanged' | 'showToolbarChanged' | 'summaryFiguresChanged' | 'selectionChanged'
-    | 'formatKeyRefused';
+    | 'selectionSummaryChanged' | 'formatKeyRefused';
 
 /** ExSheet's command ids as the Razor component names them (`SheetCommandIds`), each with the id the Script Core
  * words it by, so a Consumer's `CommandLabel` words both components alike. */
@@ -378,7 +382,7 @@ function sheetDocumentOf(sheet: SheetHandle): string | null {
 
 type Handlers = Required<Pick<SheetOptions,
     'onWorkbookChanged' | 'onSheetsChanged' | 'onShowToolbarChanged' | 'onSummaryFiguresChanged' | 'onSelectionChanged' | 'onEditingChanged'
-    | 'onFormatKeyRefused'>>;
+    | 'onSelectionSummaryChanged' | 'onFormatKeyRefused'>>;
 
 // One function per event, made once, so the Sheet sees the same handler on every update.
 function handlers(
@@ -399,6 +403,7 @@ function handlers(
         onShowToolbarChanged: shown => { send('showToolbarChanged', shown); },
         onSummaryFiguresChanged: figures => { send('summaryFiguresChanged', figures); },
         onSelectionChanged: selection => { send('selectionChanged', wireSelection(selection)); },
+        onSelectionSummaryChanged: summary => { send('selectionSummaryChanged', wireSummary(summary)); },
         onEditingChanged: open => { send('editingChanged', open); },
         onFormatKeyRefused: refusal => { send('formatKeyRefused', wireRefusal(refusal)); },
     });
@@ -413,6 +418,49 @@ export function wireSelection(selection: Pick<GridSelection, 'ranges' | 'focus' 
     const focusRangeIndex = selection.ranges.indexOf(focusRange);
     if (focusRangeIndex < 0) throw new Error('Internal: a Selection\'s Focus range is not among its ranges.');
     return { ranges: selection.ranges, focus, focusRangeIndex };
+}
+
+/** A Selection Summary as .NET reads it back: its status, the question and the answer, an exact figure as its
+ * decimal's digits, which no JSON number holds. Written as Blazor's ExPivot writes its own, but for the columns: a
+ * Sheet's are its letters, A to XFD, which .NET makes again rather than read 16,384 names on every selection. */
+export function wireSummary(summary: SelectionSummary): unknown {
+    return { status: summary.status, request: summary.request === undefined ? null : wireRequest(summary.request), result: summary.result === undefined ? null : wireResult(summary.result) };
+}
+
+function wireRequest(request: GridSummaryRequest): unknown {
+    lettersChecked(request.columns);
+    return {
+        ranges: request.ranges,
+        rowSequenceVersion: request.rowSequenceVersion,
+        figures: request.figures,
+        focus: request.focus === undefined ? null : request.focus,
+    };
+}
+
+// The column lists already seen to be the Sheet's letters, so a list the grid hands again is not walked again.
+const lettered = new WeakSet<readonly string[]>();
+let letters: readonly string[] | undefined;
+
+function lettersChecked(columns: readonly string[]): void {
+    if (lettered.has(columns)) return;
+    letters ??= Object.freeze(Array.from({ length: columnCount }, (_, at) => CellAddress.columnName(at)));
+    const all = letters;
+    if (columns.length !== all.length || columns.some((name, at) => name !== all[at]))
+        throw new Error('Internal: a Sheet\'s columns are not its letters, A to XFD.');
+    lettered.add(columns);
+}
+
+function wireResult(result: GridSummaryResult): unknown {
+    if (result.kind === 'declined') return { reason: result.reason };
+    return {
+        figures: Object.fromEntries(Object.entries(result.figures).map(([figure, answer]) => [figure, wireFigure(answer)])),
+        texts: result.texts,
+    };
+}
+
+function wireFigure(answer: AggregateResult): unknown {
+    if (answer.kind !== 'number') return answer;
+    return answer.exact === undefined ? { kind: 'number', number: answer.number } : { kind: 'number', exact: decimalText(answer.exact) };
 }
 
 /** The Consumer's words as the Sheet takes them: the grid's ids through `commandLabel`, ExSheet's through `label`, by
@@ -453,6 +501,7 @@ function sheetOptions(wire: WireOptions, document: WorkbookDocument | undefined,
         ...(hears.has('showToolbarChanged') ? { onShowToolbarChanged: heard.onShowToolbarChanged } : {}),
         ...(hears.has('summaryFiguresChanged') ? { onSummaryFiguresChanged: heard.onSummaryFiguresChanged } : {}),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
+        ...(hears.has('selectionSummaryChanged') ? { onSelectionSummaryChanged: heard.onSelectionSummaryChanged } : {}),
         ...(hears.has('formatKeyRefused') ? { onFormatKeyRefused: heard.onFormatKeyRefused } : {}),
         onEditingChanged: heard.onEditingChanged,
     };

@@ -162,9 +162,10 @@
             among the Sheet's inputs in the browser, as the Sheet above's do, and call back into .NET in their turn:
             your read runs in .NET, and an Escape that cancels the opening cancels its token; your write is handed
             .NET's own copy of the browser's Workbook, made from its document, its Linked Tables' rows, its seed and
-            its day, so that it computes the Values the browser shows. Not carried yet: a <code>Chrome</code>,
-            <code>ToolbarContent</code>, a <code>PointingScope</code>, <code>OnLinkedColumnColoursChanged</code>,
-            <code>OnSelectionSummaryChanged</code> and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
+            its day, so that it computes the Values the browser shows. <code>OnSelectionSummaryChanged</code> hands
+            you the Selection Summary the Sheet in the browser answered, as the Sheet above's does. Not carried yet: a <code>Chrome</code>,
+            <code>ToolbarContent</code>, a <code>PointingScope</code>, <code>OnLinkedColumnColoursChanged</code>
+            and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
             for those until they arrive. Its engine holds the data of
             five cultures, en-US, en-GB, de-DE, ja-JP and fr-FR, and the invariant culture: a Sheet under another is
             refused by name when it opens, where the Sheet above takes any. The script it runs is bundled

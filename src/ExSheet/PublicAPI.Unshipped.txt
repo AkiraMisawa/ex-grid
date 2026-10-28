@@ -50,6 +50,8 @@ ExSheet.Script.ExSheet.IsEditing.get -> bool
 ExSheet.Script.ExSheet.LinkedTablesAsync() -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!>!
 ExSheet.Script.ExSheet.OnFormatKeyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetRefusal!>
 ExSheet.Script.ExSheet.OnFormatKeyRefused.set -> void
+ExSheet.Script.ExSheet.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SelectionSummary!>
+ExSheet.Script.ExSheet.OnSelectionSummaryChanged.set -> void
 ExSheet.Script.ExSheet.OpenAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!>! read) -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.OpenFormatCellsAsync() -> System.Threading.Tasks.Task<bool>!
 ExSheet.Script.ExSheet.PinnedColumnCount.get -> int
