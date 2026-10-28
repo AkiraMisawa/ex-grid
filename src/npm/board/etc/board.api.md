@@ -30,6 +30,11 @@ import { SnapshotKind } from '@ex-grid/data';
 import { TemporalLike } from '@ex-grid/core';
 
 // @public
+export function answerBoardSpec(json: string, tables: (handle: string) => Snapshot | undefined, options?: {
+    readonly locale?: string;
+}): BoardSpecAnswer;
+
+// @public
 export function bindBoard(board: BoardReading, data: Readonly<Record<string, Snapshot>>, options?: BindBoardOptions): BoundBoard;
 
 // @public
@@ -90,7 +95,13 @@ export interface BoardChartView {
 }
 
 // @public
+export const boardChartViewId = "chart";
+
+// @public
 export type BoardColumnKinds = ReadonlyMap<string, SnapshotKind>;
+
+// @public
+export function boardDeclarationOf(shape: DataShape): string;
 
 // @public
 export const boardDefaultRowHeight = 320;
@@ -159,6 +170,9 @@ export interface BoardLink {
     readonly on: readonly string[];
     readonly to: readonly string[];
 }
+
+// @public
+export function boardOfChart(chartSpec: string, tables: (handle: string) => DataShape | undefined): BoardReading;
 
 // @public
 export interface BoardOptions {
@@ -241,6 +255,29 @@ export interface BoardSource extends ShapedSource {
     thin?(query: BoardChartQuery, signal: AbortSignal): Promise<ChartSourceAnswer>;
     under?(query: BoardCellsQuery, signal: AbortSignal): Promise<LinkCondition>;
 }
+
+// @public
+export type BoardSpecAnswer = {
+    readonly accepted: true;
+    readonly text: string;
+    readonly board: BoardReading;
+    readonly bound: BoundBoard;
+} | {
+    readonly accepted: false;
+    readonly text: string;
+    readonly board: undefined;
+    readonly bound: undefined;
+};
+
+// @public
+export interface BoardSpecTool {
+    readonly description: string;
+    readonly inputSchema: string;
+    readonly name: string;
+}
+
+// @public
+export const boardSpecTool: BoardSpecTool;
 
 // @public
 export const boardTitleHeight = 28;
@@ -443,6 +480,9 @@ export function readBoard(json: string): BoardReading;
 
 // @public
 export function readGridViewSpec(spec: JsonValue, inputs: (name: string) => DataShape | undefined, path: string): GridViewSpecReading;
+
+// @public
+export function sayBoard(bound: BoundBoard): string;
 
 // @public
 export type SelectedRows = Pick<GridSelection, 'ranges'>;

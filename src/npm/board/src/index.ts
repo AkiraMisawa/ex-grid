@@ -20,6 +20,8 @@ export type { BindBoardOptions, BindBoardThroughOptions, BoundView, SelectedRows
 export { BoundBoard, BoundChartView, BoundGridView, BoundPivotView, bindBoard, bindBoardThrough, boardChartPixels } from './bound-board';
 export type { BoardCellsQuery, BoardChartQuery, BoardQuery, BoardSource, PivotCellItems, ShapedPage } from './board-source';
 export { valuesUnder } from './board-source';
+export type { BoardSpecAnswer, BoardSpecTool } from './board-tool';
+export { answerBoardSpec, boardChartViewId, boardDeclarationOf, boardOfChart, boardSpecTool, sayBoard } from './board-tool';
 export type { BoardColumnKinds, BoardDiffParts, BoardDiffReading } from './board-diff';
 export { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange } from './board-diff';
 export type { BoardHandle, BoardOptions } from './create-board';

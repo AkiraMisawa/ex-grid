@@ -123,6 +123,12 @@
             the Board, which is what a workflow saves and runs again without the model, and the Board bound to draw now.
             Edit the call below and leave the field.
         </p>
+        <p>
+            In TypeScript the tool is <code>boardSpecTool</code>, the shape is said by <code>boardDeclarationOf(shape)</code>,
+            and <code>answerBoardSpec(call, handle =&gt; snapshot)</code> answers with <code>accepted</code>,
+            <code>text</code>, <code>board</code> and <code>bound</code>, in the same words as the C# tool, so a host on
+            Node answers a model as a .NET host does.
+        </p>
         <DocsExample Builtin="typeof(BoardToolCallBuiltin)" Mud="typeof(BoardToolCallMud)" Files="@(["Examples/Board/BoardToolCall.cs"])" />
     </DocsSection>
 
@@ -137,7 +143,9 @@
             makes that spec a Board of one view, <code>BoardSpec.ChartViewId</code>: each handle the spec names becomes an
             input declared with the shape of the table the host holds for it, and a refusal keeps the spec's own path, as
             the tool says it. Bind it with each handle's Snapshot under the handle's name. Below, the spec is a
-            <code>draw_chart</code> call's; write <code>"y": "book"</code> and leave the field to see it refused.
+            <code>draw_chart</code> call's; write <code>"y": "book"</code> and leave the field to see it refused. In
+            TypeScript it is <code>boardOfChart(spec, handle =&gt; shape)</code>, and the view's id
+            <code>boardChartViewId</code>.
         </p>
         <DocsExample Builtin="typeof(ChartSpecBoardBuiltin)" Mud="typeof(ChartSpecBoardMud)" Files="@(["Examples/Board/ChartSpecBoard.cs"])" />
     </DocsSection>
@@ -244,7 +252,9 @@ const bound = bindBoard(board, { trades: input.fromJson(rowsJson) });  // or a S
 bound.select('blotter', selection);                             // a grid's selection narrows its links' views
 const output = bound.confirm('chosen');                         // the values chosen with their version, or undefined while none are</code></pre>
         <p>
-            There is no Example here, because this site is a Blazor app and runs no package script of its own.
+            Read this site for React and every Example on this page runs on <code>@@ex-grid/board-react</code>, with its
+            code under <em>Show code</em>: the server's Example answers its source in a few lines of TypeScript over rows
+            in memory, ordering a page with <code>GridSource.from</code>, as a server's query is written to match.
         </p>
     </DocsSection>
 

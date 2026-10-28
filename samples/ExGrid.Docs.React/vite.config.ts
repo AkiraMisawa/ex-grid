@@ -33,6 +33,8 @@ export default defineConfig({
             '@ex-grid/chart-react': at('../../src/npm/chart-react/src/index.ts'),
             '@ex-grid/chart-mantine': at('../../src/npm/chart-mantine/src/index.ts'),
             '@ex-grid/chart-mui': at('../../src/npm/chart-mui/src/index.ts'),
+            '@ex-grid/board': at('../../src/npm/board/src/index.ts'),
+            '@ex-grid/board-react': at('../../src/npm/board-react/src/index.ts'),
         },
         // The Examples and the packages' sources sit outside this folder; one React for all, or its hooks see two,
         // and one of each design system, or a Wrapper's components read another provider than the frame's; the
