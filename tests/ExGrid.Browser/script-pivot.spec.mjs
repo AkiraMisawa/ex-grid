@@ -56,7 +56,7 @@ test('ADR-0059, ADR-0370 section 1: a field ticked reaches the Consumer\'s layou
     await expect(page.locator('#script-pivot-layout')).toHaveText('Rows: Region, Desk');
 });
 
-test('ADR-0060, ADR-0063, ADR-0201, ADR-0370 section 10: the Consumer\'s words, its Show Details handler and its Selection handler, all in .NET, reach the pivot in the browser', async ({ page }) => {
+test('ADR-0060, ADR-0063, ADR-0130, ADR-0201, ADR-0370 section 10: the Consumer\'s words, its Show Details handler, its Selection handler and its Selection Summary handler, all in .NET, reach the pivot in the browser', async ({ page }) => {
     await open(page, '/script-pivot?details=dotnet');
     await expect(report(page).getByText('Row Labels', { exact: true })).toBeVisible();
 
@@ -68,4 +68,9 @@ test('ADR-0060, ADR-0063, ADR-0201, ADR-0370 section 10: the Consumer\'s words, 
     await expect(pivot(page).locator('.ex-pivot-details-panel')).toHaveCount(0);
     // The cell double clicked is the report's Selection, as .NET heard it (ADR-0201's note of 2026-10-27).
     await expect(page.locator('#script-pivot-selection')).toHaveText('Focus: row 1, column 1; 1 range(s)');
+
+    // Two cells summed in the browser are the Selection Summary .NET hears, in the strip's own text (ADR-0130).
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(page.locator('#script-pivot-summary')).toHaveText(/^Sum: \S+$/);
+    await expect(report(page).locator('.ex-summary')).toContainText(await page.locator('#script-pivot-summary').innerText());
 });

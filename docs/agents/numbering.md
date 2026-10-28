@@ -53,7 +53,8 @@ block on `main` before it uses the first number.
 | 0380–0389 | `claude/project-thread-ba3868` | Validation that answers later: a verdict or a refusal as a promise, the input behind it waiting, Blazor carrying it (ADR-0380, decided with the user 2026-10-26 from the survey of AG Grid and Apex Grid), and rules over the whole collection (ADR-0381, the same day) |
 | 0390–0399 | `claude/project-thread-qwl4ao` | React's design-system Wrappers: Mantine first and MUI, both in 0.3.0, over the same Chrome slots (ADR-0390, decided with the user 2026-10-26) |
 | 0400–0409 | `claude/project-thread-b2x605` | Expandable Header Groups: a toggle the grid draws and notifies, the Focus kept across it, and the Hidden Mark (ADR-0400, decided with the user 2026-10-27) |
-| 0410– | free | reserve a block of ten |
+| 0410–0419 | `claude/project-thread-sh93yf` | The Blazor adapters' slots: how a Blazor adapter fills the Script Core's Chrome and Template slots with Razor (ADR-0410, proposed 2026-10-27), and what else finishing ExPivot's Blazor adapter needs decided |
+| 0420– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
