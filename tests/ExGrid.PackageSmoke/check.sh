@@ -134,12 +134,13 @@ sheetxlsxdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec Ex
 enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.Engine)" | sort)
 [ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
   || fail "ExPivot.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
-# Nothing else the family packs references a data package directly (DA-1), and nothing but the
+# Nothing else the family packs references a data package directly (DA-1), but for ExChart.Engine, held
+# to ExGrid.Data alone below (ADR-0420), and nothing but the
 # Arrow and xlsx packages themselves reference ExGrid.Data.Arrow or ExGrid.Data.Xlsx.
 if grep -qE '<dependency id="ExGrid\.Data\.(Arrow|Xlsx)"' <<<"$(nuspec ExGrid)"; then fail "ExGrid references ExGrid.Data.Arrow or ExGrid.Data.Xlsx"; fi
 if grep -q '<dependency id="ExGrid.Data.Arrow"' <<<"$(nuspec ExGrid.Data.Xlsx)"; then fail "ExGrid.Data.Xlsx references ExGrid.Data.Arrow"; fi
 if grep -q '<dependency id="ExGrid.Data.Xlsx"' <<<"$(nuspec ExGrid.Data.Arrow)"; then fail "ExGrid.Data.Arrow references ExGrid.Data.Xlsx"; fi
-for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor ExBoard; do
+for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor ExChart ExChart.MudBlazor ExBoard; do
   if grep -qE '<dependency id="ExGrid\.Data(\.Arrow|\.Xlsx)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
 done
 # ExPivot depends on exactly the core and the engine it was built with, and on nothing else.
