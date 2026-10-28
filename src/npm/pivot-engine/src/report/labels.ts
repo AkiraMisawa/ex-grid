@@ -180,6 +180,8 @@ export class ItemOrder {
                 try {
                     given = orderKey(item.firstValue);
                 } catch (error) {
+                    // An Order Key that refuses in its own words, naming this field, is refused in them.
+                    if (error instanceof PivotOrderKeyError && error.field === this.#meta.field.name) throw error;
                     throw new PivotOrderKeyError(this.#meta.field.name,
                         `The Order Key of ${this.#meta.field.caption} failed on '${this.#labels.of(item, this.#meta)}'.`, { cause: error });
                 }

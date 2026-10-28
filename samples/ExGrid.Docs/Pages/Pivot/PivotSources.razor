@@ -49,6 +49,12 @@
             list in a browser, <code>PivotSource.FromAsync</code> reads them in slices of about 30 ms, yielding
             between them and reporting progress, so the page keeps painting.
         </p>
+        <p>
+            Under React, <code>RecordPivotSource</code> reads your objects when it is first asked. A set as large as
+            this one comes better as a Snapshot read in slices: the React Example reads 200,000 sales from an Arrow
+            stream, as a server would send them, with <code>readArrowSnapshot</code>'s <code>onProgress</code>, and
+            pivots it with a <code>SnapshotPivotSource</code> that computes in slices of the same size.
+        </p>
         <DocsExample Builtin="typeof(LoadInSlices)" Mud="typeof(LoadInSlicesMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
     </DocsSection>
 
@@ -135,11 +141,18 @@
                 never over the rows you send.
             </li>
         </ul>
+        <p>
+            Under React the server answers Leaf Aggregates, a page of a field's Items and the records behind a cell,
+            and the browser builds the report from them with a <code>FetchingPivotSource</code>
+            (<a href="expivot/sources#from-typescript">From TypeScript</a>, below). The React Example's server is
+            simulated the same way, in <code>SalesServer.ts</code>.
+        </p>
         <DocsExample Builtin="typeof(ServerSource)" Mud="typeof(ServerSourceMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
             The server here is simulated in the page, with half a second of latency: change the layout and watch the
             report wait under its loading indication. Tick Date in the field list for a report hundreds of rows long,
             and scroll it: the rows read ahead come with each answer, and the next Window is asked for before you
-            reach the end of the one held.
+            reach the end of the one held. Under React the server answers the Leaf Aggregates once, and the report is
+            built whole in the browser, so a scroll asks it nothing.
         </DocsExample>
     </DocsSection>
 

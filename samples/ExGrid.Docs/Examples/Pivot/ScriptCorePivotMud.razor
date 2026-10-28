@@ -10,15 +10,30 @@
     <MudRadio Value="PivotDetailsView.Tab">Show Details in a tab at the report's foot</MudRadio>
     <MudRadio Value="PivotDetailsView.Dialog">Show Details in a dialog</MudRadio>
 </MudRadioGroup>
+<MudSwitch T="bool" @bind-Value="_byMarket" Label="Order the regions by market size" Color="Color.Primary" />
 
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
-    <ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" DetailsView="_detailsView" ViewportHeight="360"
+    <ExPivot.Script.ExPivot Source="@(_byMarket ? _byMarketSize : _source)" @bind-Layout="_layout" DetailsView="_detailsView" ViewportHeight="360"
                             Chrome="MudPivotChrome.Default" />
 </MudExGridPaper>
 
 @code {
+    private static readonly Sale[] Records = Sales.Sample();
+
     // The same source as ExPivot.Components.ExPivot's: it answers in .NET, and the report is built in the browser.
-    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+    private readonly PivotSource _source = PivotSource.From(Records, Sales.Fields);
+
+    // The regions ordered by the size of their market, largest first, by an Order Key in C#: .NET answers each
+    // region's key with the regions, and the browser orders them by it.
+    private readonly PivotSource _byMarketSize = PivotSource.From(Records, Sales.FieldsOf(regionOrder: region => region switch
+    {
+        "North America" => 0,
+        "Europe" => 1,
+        "Asia Pacific" => 2,
+        _ => 3,
+    }));
+
+    private bool _byMarket;
 
     private PivotDetailsView _detailsView = PivotDetailsView.Tab;
 

@@ -192,4 +192,103 @@ public class ScriptPivotTests : BunitContext
 
         Assert.Equal([2_000, 0], heard.Select(selection => selection.Ranges.Count));
     }
+
+    // An answer that names Items of a field with an Order Key: the line of their keys, and the answer after it.
+    private static (JsonElement Keys, string Answer) KeysAndAnswer(string text)
+    {
+        var at = text.IndexOf('\n');
+        Assert.True(at > 0, "The answer came with no line of keys.");
+        return (Parsed(text[..at]), text[(at + 1)..]);
+    }
+
+    [Fact] // ADR-0412: an answer that names no Item of a field with an Order Key crosses as it is
+    public async Task ADR0412_an_answer_naming_no_keyed_field_crosses_as_it_is()
+    {
+        var source = PivotSource.From(PivotTestContext.Sales, [
+            new PivotField<Sale>("Region", PivotFieldType.Text, s => s.Region) { OrderKey = item => (string)item },
+            .. PivotTestContext.Fields.Skip(1),
+        ]);
+        Pivot(source);
+
+        var answer = await Bridge().Value.Aggregate(1, 1, PivotJson.Write(new PivotQuery(rows: [new PivotQueryField("Product")])));
+
+        Assert.DoesNotContain('\n', answer);
+        Assert.False(PivotJson.ReadAnswer(answer).IsRefused);
+    }
+
+    [Fact] // ADR-0412: a date Item hands the Order Key its DateTime, as .NET's engine hands it
+    public async Task ADR0412_a_date_item_hands_the_order_key_its_datetime()
+    {
+        var day = new DateTime(2026, 10, 28, 9, 30, 0).AddTicks(7);
+        var source = PivotSource.From(PivotTestContext.Sales, [
+            new PivotField<Sale>("Day", PivotFieldType.Date, _ => day) { OrderKey = item => ((DateTime)item).Ticks },
+            .. PivotTestContext.Fields,
+        ]);
+        Pivot(source);
+
+        var (answered, _) = KeysAndAnswer(await Bridge().Value.Aggregate(1, 1, PivotJson.Write(new PivotQuery(rows: [new PivotQueryField("Day")]))));
+
+        var item = Assert.Single(Assert.Single(answered.GetProperty("orderKeys").EnumerateArray()).GetProperty("items").EnumerateArray());
+        Assert.Equal(day.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture), item[1].GetProperty("bigint").GetString());
+    }
+
+    [Fact] // ADR-0412: a field's Order Key, a .NET function, crosses as the key of each Item an answer names, as the browser compares it
+    public async Task ADR0412_an_order_key_crosses_as_each_answered_items_key()
+    {
+        var regionRank = new Dictionary<string, int> { ["West"] = 1, ["North"] = 2 };
+        var source = PivotSource.From(PivotTestContext.Sales, [
+            new PivotField<Sale>("Region", PivotFieldType.Text, s => s.Region)
+            {
+                // East has no key; West and North are ranked.
+                OrderKey = item => regionRank.TryGetValue((string)item, out var rank) ? rank : null,
+            },
+            new PivotField<Sale>("Product", PivotFieldType.Text, s => s.Product)
+            {
+                OrderKey = item => (string)item == "Plums" ? throw new InvalidOperationException("No rank for Plums.") : new Version(1, ((string)item).Length),
+            },
+            .. PivotTestContext.Fields.Skip(2),
+        ]);
+        Pivot(source);
+        var fields = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("source").GetProperty("fields");
+        Assert.Equal([true, true, false], fields.EnumerateArray().Take(3).Select(field => field.GetProperty("orderKey").GetBoolean()));
+
+        var query = PivotJson.Write(new PivotQuery(rows: [new PivotQueryField("Region")], columns: [new PivotQueryField("Product")]));
+        var (answered, answer) = KeysAndAnswer(await Bridge().Value.Aggregate(1, 1, query));
+
+        Assert.False(PivotJson.ReadAnswer(answer).IsRefused);
+        var keys = answered.GetProperty("orderKeys").EnumerateArray().ToDictionary(
+            field => field.GetProperty("field").GetString()!,
+            field => field.GetProperty("items").EnumerateArray().ToDictionary(item => item[0].GetProperty("value").GetString()!, item => item[1]));
+        // The Blank Region is ordered by no key, and is not listed.
+        Assert.Equal(["East", "North", "West"], keys["Region"].Keys.Order());
+        Assert.Equal(JsonValueKind.Null, keys["Region"]["East"].ValueKind);
+        Assert.Equal("1", keys["Region"]["West"].GetProperty("bigint").GetString());
+        Assert.Equal("System.Int32", keys["Region"]["West"].GetProperty("type").GetString());
+        // A key that throws is raised only if the browser orders by it; one the browser cannot order as .NET does is refused by name.
+        Assert.Equal("No rank for Plums.", keys["Product"]["Plums"].GetProperty("threw").GetString());
+        Assert.Contains("a key of type Version", keys["Product"]["Apples"].GetProperty("refused").GetString());
+    }
+
+    [Fact] // ADR-0412: a key crosses as a whole number that orders as .NET's CompareTo orders its type, exactly
+    public async Task ADR0412_keys_of_each_ordered_type_cross_in_their_order()
+    {
+        object[] keys = [-1.5m, 0.1m, 2m, DateTime.MinValue.AddTicks(7), new DateOnly(2026, 10, 28), TimeSpan.FromTicks(-3), ulong.MaxValue, 'b',
+            new Guid("00000000-0000-0000-0000-0000000000ff"), DayOfWeek.Friday, 0.1, true, "Wide"];
+        var named = keys.Select((key, at) => (Name: $"K{at}", Key: key)).ToArray();
+        var source = PivotSource.From(PivotTestContext.Sales, [
+            .. named.Select(entry => new PivotField<Sale>(entry.Name, PivotFieldType.Text, s => s.Region) { OrderKey = _ => (IComparable)entry.Key }),
+            .. PivotTestContext.Fields.Skip(2),
+        ]);
+        Pivot(source);
+
+        var query = PivotJson.Write(new PivotQuery(rows: [.. named.Select(entry => new PivotQueryField(entry.Name))]));
+        var (answered, _) = KeysAndAnswer(await Bridge().Value.Aggregate(1, 1, query));
+
+        var crossed = answered.GetProperty("orderKeys").EnumerateArray().Select(field => field.GetProperty("items")[0][1]).ToArray();
+        Assert.Equal(["-15000000000000000000000000000", "1000000000000000000000000000", "20000000000000000000000000000", "7", "739916", "-3",
+            "18446744073709551615", "98", "255", "5"], crossed.Take(10).Select(key => key.GetProperty("bigint").GetString()));
+        Assert.Equal("0.1", crossed[10].GetProperty("number").GetString());
+        Assert.True(crossed[11].GetProperty("boolean").GetBoolean());
+        Assert.Equal("Wide", crossed[12].GetProperty("text").GetString());
+    }
 }

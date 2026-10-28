@@ -497,6 +497,9 @@ export function pivotItemsQuery(input: {
 }): PivotItemsQuery;
 
 // @public
+export function pivotItemValue(key: PivotItemKey): string | number | bigint | boolean | undefined;
+
+// @public
 export const PivotJson: Readonly<{
     version: 1;
     writeQuery(query: PivotQuery): string;

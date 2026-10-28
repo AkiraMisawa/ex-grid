@@ -40,7 +40,10 @@
             report asks crosses to it as PivotJson, it answers with the Leaf Aggregates, and the report and its totals
             are built in the browser from them, as from a server. A source that says it changed is asked again.
         </p>
-        <DocsExample Builtin="typeof(ScriptCorePivot)" Mud="typeof(ScriptCorePivotMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+        <DocsExample Builtin="typeof(ScriptCorePivot)" Mud="typeof(ScriptCorePivotMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Order the regions by market size: the regions follow an Order Key written in C#, largest market first,
+            where they stood in alphabetical order.
+        </DocsExample>
         <p>
             It carries <code>Layout</code>, <code>ShowFieldList</code>, the sizes, <code>Density</code>,
             <code>Culture</code>, <code>Caps</code>, <code>RedrawInterval</code>, <code>ChangeHighlightDuration</code>,
@@ -52,7 +55,14 @@
             them is refused by name. A function cannot cross to the
             browser, so <code>Label</code> is asked for every id the pivot and its grid have words for each time the
             parameters are set, as the Razor component asks it on each render; the words cross only when they changed,
-            and it answers from the id alone. Records double clicked while a
+            and it answers from the id alone. A field's <code>OrderKey</code> is a function too: .NET calls it for
+            each Item an answer names and sends the keys with the Items, and the browser orders the Items by them, so
+            the Order Key you declared in C# orders the report here as it does above. A key crosses as a text, a number,
+            a Boolean or a whole number that orders as its type does in .NET: integers, decimals, dates and times, a
+            <code>Guid</code> and an enum keep their order exactly. Text keys are compared ordinally, as the browser
+            compares every text key, where the pivot above compares them in the current culture. A key of any other
+            type, two types in one field, and a function that throws are refused by name, field and Item included, when
+            the report orders by them. Records double clicked while a
             removed <code>OnShowDetails</code> was still on its way to the browser open as if nobody had listened.
             <code>Chrome</code> takes a Pivot Chrome, and the parts it draws in Razor stand inside the pivot the
             browser draws: <code>MudPivotChrome</code> draws the Pivot Toolbar, the report filter band, the Layout menu, a
@@ -70,11 +80,12 @@
             own names its parts in <code>IPivotChrome.ScriptSlots</code> and marks its controls with
             <code>PivotScriptSlotAttributes</code>. Its <code>CellMetrics</code>, and inside
             <code>MudExGridPaper</code> the paper's Roboto widths and Density, size the report's grids and its label
-            columns as on the pivot above. Not carried yet:
-            <code>OrderKeyPolicies</code>, <code>Clock</code> and <code>ReportSource</code>;
-            use the pivot above for those until they arrive. A field with an
-            <code>OrderKey</code>, a .NET function the browser cannot call, is refused by name; declare its order with
-            <code>ItemOrder</code> instead. The script it runs is bundled into the package, at an address that changes
+            columns as on the pivot above. It takes no <code>ReportSource</code> and no
+            <code>OrderKeyPolicies</code>: a server pivot answers Leaf Aggregates to the browser, through
+            <code>PivotSource.Fetch</code>, and the report is built there, so a server neither computes the report nor
+            orders it; give the field its Order Key in C# instead. It takes no <code>Clock</code> either: the browser
+            paints the Change Highlight and writes a Stale Report's time by its own clock, in the user's time zone on
+            both hosting models. The script it runs is bundled into the package, at an address that changes
             with its content; the grid it draws through, and the core under it, come from the Shared Script the ExGrid
             package ships, <code>_content/ExGrid/ex-grid-script.min.js</code>, which a page with a grid of ExGrid's
             beside it loads once for both. A Content Security Policy that lists the packages' files names it too.

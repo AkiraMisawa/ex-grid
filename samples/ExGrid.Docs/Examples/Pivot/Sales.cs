@@ -24,9 +24,13 @@ public static class Sales
 {
     // Each field once, with a typed accessor: the declaration makes both the column the sales are
     // read into and the Pivot Field over it. Year, Quarter and Month are parts of the date.
-    public static readonly PivotFields<Sale> Fields = PivotFields.Of<Sale>()
+    public static readonly PivotFields<Sale> Fields = FieldsOf();
+
+    /// <summary>The same fields, the regions ordered by <paramref name="regionOrder"/>, an Order Key, where one is
+    /// given.</summary>
+    public static PivotFields<Sale> FieldsOf(Func<string, IComparable?>? regionOrder = null) => PivotFields.Of<Sale>()
         .Key("Id", s => s.Id)                                    // the Record Key, not offered as a field
-        .Text("Region", s => s.Region)
+        .Text("Region", s => s.Region, orderKey: regionOrder)
         .Text("Country", s => s.Country)
         .Text("Category", s => s.Category)
         .Text("Product", s => s.Product)

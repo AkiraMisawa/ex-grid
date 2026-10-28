@@ -2,15 +2,23 @@
 @using ExPivot.Engine
 
 <p>
-    <label>
-        Show the second Revenue as
-        <select @bind:get="Shown" @bind:set="ShowAs">
-            <option value="@PivotShowValuesAs.PercentOfGrandTotal">% of Grand Total</option>
-            <option value="@PivotShowValuesAs.PercentOfColumnTotal">% of Column Total</option>
-            <option value="@PivotShowValuesAs.PercentOfRowTotal">% of Row Total</option>
-            <option value="@PivotShowValuesAs.NoCalculation">No Calculation</option>
-        </select>
-    </label>
+    @* The choice is offered while the user has left a second value in Values. *@
+    @if (_layout.Values.Count > 1)
+    {
+        <label>
+            Show the second Revenue as
+            <select @bind:get="_layout.Values[1].ShowValuesAs" @bind:set="ShowAs">
+                <option value="@PivotShowValuesAs.PercentOfGrandTotal">% of Grand Total</option>
+                <option value="@PivotShowValuesAs.PercentOfColumnTotal">% of Column Total</option>
+                <option value="@PivotShowValuesAs.PercentOfRowTotal">% of Row Total</option>
+                <option value="@PivotShowValuesAs.NoCalculation">No Calculation</option>
+            </select>
+        </label>
+    }
+    else
+    {
+        <span>Put a second value in Values to choose how it is shown.</span>
+    }
 </p>
 
 <ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="340" />
@@ -34,10 +42,8 @@
         ],
     };
 
-    // The second Value Field, while the user has left it in Values.
-    private PivotShowValuesAs Shown => _layout.Values.ElementAtOrDefault(1)?.ShowValuesAs ?? PivotShowValuesAs.NoCalculation;
-
-    // The layout is immutable: the Value Field changed is a new one, in a new layout.
+    // The layout is immutable: the Value Field changed is a new one, in a new layout. A choice that arrives as the
+    // user removes the field goes with the select it was made in.
     private void ShowAs(PivotShowValuesAs showAs)
     {
         if (_layout.Values.Count > 1)

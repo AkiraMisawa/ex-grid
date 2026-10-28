@@ -32,9 +32,9 @@ namespace ExPivot.Script;
 /// 3); the engine in the browser builds the report and its totals from them. A source's <see cref="PivotSource.Changed"/>
 /// crosses as a notice, and the report asks again (ADR-0067).</para>
 /// <para>It stands beside <see cref="Components.ExPivot"/>, the Razor component, until ExPivot's Blazor step holds
-/// (ADR-0370 section 11). What this adapter does not carry yet is refused by name, never left out quietly: a field
-/// with an <see cref="PivotField.OrderKey"/>, which is a .NET function, or with declared Items that are not text,
-/// numbers or Booleans.</para>
+/// (ADR-0370 section 11). A field's <see cref="PivotField.OrderKey"/>, a .NET function, is called in .NET for each
+/// Item an answer names, and its keys cross with the Items (ADR-0412). What this adapter does not carry yet is refused
+/// by name, never left out quietly: a field with declared Items that are not text, numbers or Booleans.</para>
 /// </remarks>
 public sealed class ExPivot : ComponentBase, IAsyncDisposable
 {
@@ -234,7 +234,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         _slicingGiven = Slicing;
         if (!ReferenceEquals(Chrome, _renderedChrome))
         {
-            var gridChrome = Chrome?.GridChrome(id => Label?.Invoke(id));
+            var gridChrome = Chrome?.GridChrome(CommandLabelFor);
             var slots = SlotsOf(Chrome, gridChrome);
             if (_attachedSlots is { } attached && attached != slots)
             {
@@ -760,6 +760,18 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         => [.. json.EnumerateArray().Select(item => new PivotDetailItem(Text(item.GetProperty("field")), Text(item.GetProperty("item"))))];
 
     private static string Text(JsonElement json) => json.GetString() ?? throw new InvalidOperationException("Internal: the Script Core sent null for a text.");
+
+    // A command's words in the report grid's menus, as IPivotChrome.GridChrome has them: the Consumer's through Label,
+    // then ExPivot's English, the Remove command filled with its field's caption as the Razor pivot fills it.
+    private string? CommandLabelFor(string id)
+    {
+        if (Label?.Invoke(id) is { } own)
+            return own;
+        return PivotCommandIds.CaptionOfRemove(id) is { } caption
+            ? PivotWords.Fill(Label?.Invoke(PivotCommandIds.RemoveNamedField) ?? PivotWords.EnglishFor(PivotCommandIds.RemoveNamedField)
+                ?? throw new InvalidOperationException("Internal: ExPivot has no English for removing a named field."), caption)
+            : PivotWords.EnglishFor(id);
+    }
 
     // Each question the browser asks, answered by the source of its generation, or refused as one the Consumer replaced.
     internal async Task<string> AskAsync(string kind, int generation, long call, string? query)

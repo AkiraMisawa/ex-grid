@@ -24,7 +24,7 @@ export { aggregationTitle, pivotAggregations, pivotItemKinds, pivotShowValuesAsL
 export type { PivotItemKey } from './items/item-key';
 export {
     blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, publicKeyId as pivotItemKeyId,
-    textItemKey,
+    pivotItemValue, textItemKey,
 } from './items/item-key';
 export { pivotItemKeyAt } from './items/snapshot-item';
 export type {

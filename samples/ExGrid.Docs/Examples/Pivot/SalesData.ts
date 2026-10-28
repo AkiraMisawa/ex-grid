@@ -1,6 +1,7 @@
 import { Temporal } from 'temporal-polyfill';
 import type { SnapshotDecimal } from '@ex-grid/data';
 import { pivotRecordField, type PivotRecordField } from '@ex-grid/pivot-engine';
+import { mulberry32 } from './Seeded';
 
 /** One invented sale: a line of an order, as the ExPivot Examples pivot it. */
 export interface Sale {
@@ -60,7 +61,7 @@ const catalog: readonly (readonly [string, readonly (readonly [string, number])[
 const first = Temporal.PlainDate.from('2025-01-01');
 
 /** The entry at `index` of a list known to hold it. */
-function at<T>(list: readonly T[], index: number): T {
+export function at<T>(list: readonly T[], index: number): T {
     const found = list[index];
     if (found === undefined) throw new RangeError(`No entry ${index} in a list of ${list.length}.`);
     return found;
@@ -68,14 +69,9 @@ function at<T>(list: readonly T[], index: number): T {
 
 /** `count` invented sales from January 2025 to September 2026, the same on every call: they come from a fixed seed. */
 export function sampleSales(count = 5000): readonly Sale[] {
-    let seed = 20261003;
-    // Mulberry32, a small seeded generator: the same draws in every browser.
-    const next = (below: number): number => {
-        seed = (seed + 0x6D2B79F5) | 0;
-        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * below);
-    };
+    // A seeded generator: the same draws in every browser.
+    const random = mulberry32(20261003);
+    const next = (below: number): number => Math.floor(random() * below);
     return Array.from({ length: count }, (_, i): Sale => {
         const [region, countries] = at(regions, next(regions.length));
         const [category, products] = at(catalog, next(catalog.length));
