@@ -2,9 +2,12 @@
 // held where the data lives (ADR-0343). Each column the spec shows reads its value from the row's Snapshot and writes
 // it through its format code, the kind's default where it writes none.
 
-import { exactDecimalDigits, FormatCode, gridNumberOf, plainDateTimeOf, significantDigits, type GridColumn, type GridColumnWidth } from '@ex-grid/core';
+import {
+    engineFilterOf, exactDecimalDigits, FormatCode, gridNumberOf, GridViewStateJsonError, InMemoryGridSource, plainDateTimeOf, significantDigits,
+    type GridColumn, type GridColumnWidth, type GridFilter, type SortSpec,
+} from '@ex-grid/core';
 import { BoardRefusedError, ticksOfTemporal, type DataShapeColumn, type Snapshot, type SnapshotColumn, type SnapshotKind } from '@ex-grid/data';
-import type { GridViewSpecReading, ShapedColumn } from './grid-view-spec';
+import { refusedAt, type GridViewSpecReading, type ShapedColumn } from './grid-view-spec';
 
 /** The format of an Integer column that writes none. */
 export const integerFormat = '#,##0';
@@ -100,6 +103,63 @@ function checkDigits(shown: ShapedColumn, held: SnapshotColumn, rowCount: number
             throw new BoardRefusedError(shown.column, `Column '${shown.column}' holds a value of ${significantDigits(value)} significant digits, `
                 + `and a grid shows a number to ${exactDecimalDigits}; it would be shown rounded.`);
         }
+    }
+}
+
+/** A grid built from a source's shape over a Snapshot (ADR-0342): C#'s ShapedGrid. */
+export interface ShapedGrid {
+    /** The Snapshot its rows are of. */
+    readonly snapshot: Snapshot;
+    /** The spec it was built from. */
+    readonly spec: GridViewSpecReading;
+    /** The columns, in the spec's order at the View State's widths. */
+    readonly columns: readonly GridColumn<ShapedRow>[];
+    /** The rows, in the Snapshot's order. */
+    readonly rows: readonly ShapedRow[];
+    /** The grid's source over the rows, under the spec's sort and filter, keyed by each row's position. */
+    readonly source: InMemoryGridSource<ShapedRow>;
+    /** How many leading columns the spec pins. */
+    readonly pinnedColumnCount: number;
+}
+
+/**
+ * The grid `spec` describes over `snapshot`, C#'s `ShapedGrid.Of`: {@link shapedColumns} in `locale`, the
+ * Snapshot's rows, and a source sorting and filtering them as the spec says, with `GridSource.from`'s semantics. Refused,
+ * with a {@link @ex-grid/data#BoardRefusedError} named under `path` (the grid's place in a Board, empty for the whole):
+ * whatever {@link shapedColumns} refuses, a sort by a column the grid does not show, and a filter whose operands the
+ * columns cannot compare.
+ */
+export function shapedGrid(snapshot: Snapshot, spec: GridViewSpecReading, locale = 'invariant', path = ''): ShapedGrid {
+    const columns = shapedColumns(snapshot, spec, locale);
+    const declared = new Map(columns.map(column => [column.name, column]));
+    checkSortsShown(spec.viewState.sorts, declared, path);
+    const filter = engineFilterAt(spec.viewState.filter, declared, path);
+    const rows = shapedRows(snapshot);
+    const source = InMemoryGridSource.from(rows, { rowKey: row => row.at });
+    source.setColumns(columns);
+    source.setSorts(spec.viewState.sorts);
+    source.setFilter(filter);
+    return Object.freeze({ snapshot, spec, columns, rows, source, pinnedColumnCount: spec.viewState.pinnedColumnCount });
+}
+
+/** @internal The spec's reader reads a sort against every column the input declares, as a server's grid may sort by
+ * any; a grid over a Snapshot sorts by those it shows (C#'s GridSource.From refuses the rest by name). */
+export function checkSortsShown(sorts: readonly SortSpec[], shown: ReadonlyMap<string, GridColumn<ShapedRow>>, path: string): void {
+    sorts.forEach((sort, i) => {
+        if (!shown.has(sort.column)) {
+            throw new BoardRefusedError(`${path === '' ? '' : `${path}.`}sorts[${i}]`, `The grid sorts by column '${sort.column}', which it does not show.`);
+        }
+    });
+}
+
+/** @internal The spec's filter as the engine compares it, against the columns the grid is built with; a refusal named
+ * under the grid's path. Only the conversion is in the try: a refusal of the source's own is not the spec's. */
+export function engineFilterAt(filter: GridFilter | undefined, shown: ReadonlyMap<string, GridColumn<ShapedRow>>, path: string): GridFilter | undefined {
+    try {
+        return engineFilterOf(filter, name => shown.get(name));
+    } catch (error) {
+        if (!(error instanceof GridViewStateJsonError)) throw error;
+        throw refusedAt(error, path);
     }
 }
 
