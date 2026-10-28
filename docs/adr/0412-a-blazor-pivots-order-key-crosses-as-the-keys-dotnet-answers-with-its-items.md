@@ -1,7 +1,7 @@
 # A Blazor pivot's Order Key crosses as the keys .NET answers with its Items
 
-*Proposed on 2026-10-28 in the project thread "ExPivotのBlazor包みを仕上げる" ("Finish ExPivot's Blazor wrapper"), and
-put to the user with the alternatives below. Until the user answers, the implementation follows the recommendation.*
+*Decided by the user on 2026-10-28 in the project thread "ExPivotのBlazor包みを仕上げる" ("Finish ExPivot's Blazor
+wrapper"), who chose option A from the alternatives below.*
 
 This fills in what [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 1's
 Blazor ExPivot does with what ExPivot's Razor component takes as .NET objects: a field's Order Key
@@ -37,7 +37,7 @@ On 2026-10-28:
 - **C. Refuse the field, as before**, with `ItemOrder` for a fixed order. An order computed from the Item, such as a
   tenor's length in days, cannot be declared.
 
-## Decision (as proposed: option A)
+## Decision: option A
 
 ### 1. A field says it has an Order Key, and its keys come with its Items
 
