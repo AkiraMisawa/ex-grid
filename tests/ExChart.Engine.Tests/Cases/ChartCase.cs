@@ -304,7 +304,8 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 notes),
             "points" => SurfaceDefinition.FromPoints(
                 e.GetProperty("points").EnumerateArray().Select(p => (AxisValue(p[0]), AxisValue(p[1]), ChartValue.Of(Number(p[2])))).ToList(),
-                e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle, zFormat: zFormat),
+                e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle, zFormat: zFormat,
+                xFormatCode: Text(e, "xFormatCode"), yFormatCode: Text(e, "yFormatCode")),
             "nodes" => SurfaceDefinition.FromTriangles(
                 e.GetProperty("nodes").EnumerateArray().Select(p => new SurfaceNode(Number(p[0]), Number(p[1]), Value(p[2]))).ToList(),
                 e.GetProperty("triangles").EnumerateArray().Select(t => new SurfaceTriangle(t[0].GetInt32(), t[1].GetInt32(), t[2].GetInt32())).ToList(),
@@ -317,7 +318,8 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle,
                 samples: e.TryGetProperty("samples", out var samples) ? samples.GetInt32() : 25, zFormat: zFormat,
                 xScale: e.TryGetProperty("xScale", out var ixs) ? Enum<AxisScale>(ixs) : AxisScale.Categories,
-                yScale: e.TryGetProperty("yScale", out var iys) ? Enum<AxisScale>(iys) : AxisScale.Categories),
+                yScale: e.TryGetProperty("yScale", out var iys) ? Enum<AxisScale>(iys) : AxisScale.Categories,
+                xFormatCode: Text(e, "xFormatCode"), yFormatCode: Text(e, "yFormatCode")),
             _ => Sampled(e, zTitle, zFormat),
         };
         if (e.TryGetProperty("zScale", out var zScale)) surface = surface with { ZScale = Enum<AxisScale>(zScale) };
@@ -332,10 +334,10 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
     private static readonly Dictionary<string, string[]> SurfaceFormKeys = new()
     {
         ["z"] = ["x", "y", "z", "method", "interpolated", "notes"],
-        ["points"] = ["points", "xTitle", "yTitle"],
+        ["points"] = ["points", "xTitle", "yTitle", "xFormatCode", "yFormatCode"],
         ["nodes"] = ["nodes", "triangles", "xTitle", "yTitle", "xScale", "yScale", "xFormatCode", "yFormatCode", "notes"],
-        ["sampled"] = ["sampled", "xTitle", "yTitle"],
-        ["interpolant"] = ["interpolant", "xTitle", "yTitle", "samples", "xScale", "yScale"],
+        ["sampled"] = ["sampled", "xTitle", "yTitle", "xFormatCode", "yFormatCode"],
+        ["interpolant"] = ["interpolant", "xTitle", "yTitle", "samples", "xScale", "yScale", "xFormatCode", "yFormatCode"],
     };
 
     // A function sampled over a rectangle: a constant, or a plane [a, b, c], a + b·x + c·y.
@@ -361,7 +363,8 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle,
             samples: s.TryGetProperty("samples", out var samples) ? samples.GetInt32() : 25, zFormat: zFormat,
             xScale: s.TryGetProperty("xScale", out var xs) ? Enum<AxisScale>(xs) : AxisScale.Categories,
-            yScale: s.TryGetProperty("yScale", out var ys) ? Enum<AxisScale>(ys) : AxisScale.Categories);
+            yScale: s.TryGetProperty("yScale", out var ys) ? Enum<AxisScale>(ys) : AxisScale.Categories,
+            xFormatCode: Text(e, "xFormatCode"), yFormatCode: Text(e, "yFormatCode"));
     }
 
     private static SurfaceAxis SurfaceAxisOf(JsonElement e)

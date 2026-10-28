@@ -507,8 +507,12 @@ export class ChartCase {
             ...optionalPart('centre', optional(e, 'centre', number)),
         };
         const notes = optionalPart('notes', optional(e, 'notes', v => list(v, 'notes').map(n => string(n, 'a note'))));
-        // A grid's axes carry their titles; the other forms name them.
-        const titles = (): { xTitle: string; yTitle: string } => ({ xTitle: string(e['xTitle'], 'xTitle'), yTitle: string(e['yTitle'], 'yTitle') });
+        // A grid's axes carry their titles and codes; the other forms name them.
+        const titles = (): { xTitle: string; yTitle: string; xFormatCode?: string; yFormatCode?: string } => ({
+            xTitle: string(e['xTitle'], 'xTitle'), yTitle: string(e['yTitle'], 'yTitle'),
+            ...optionalPart('xFormatCode', optional(e, 'xFormatCode', v => string(v, 'xFormatCode'))),
+            ...optionalPart('yFormatCode', optional(e, 'yFormatCode', v => string(v, 'yFormatCode'))),
+        });
         switch (form) {
             case 'z':
                 return SurfaceDefinition.grid({
@@ -539,8 +543,6 @@ export class ChartCase {
                     ...titles(), ...common, ...notes,
                     ...optionalPart('xScale', optional(e, 'xScale', v => oneOf(v, scales, 'AxisScale'))),
                     ...optionalPart('yScale', optional(e, 'yScale', v => oneOf(v, scales, 'AxisScale'))),
-                    ...optionalPart('xFormatCode', optional(e, 'xFormatCode', v => string(v, 'xFormatCode'))),
-                    ...optionalPart('yFormatCode', optional(e, 'yFormatCode', v => string(v, 'yFormatCode'))),
                 });
             case 'interpolant': {
                 const made = interpolant(allow(e['interpolant'], 'an interpolant', interpolantKeys(e['interpolant'])));
@@ -1249,10 +1251,10 @@ function view(given: Json | undefined): ChartView {
 const surfaceCommonKeys = ['zTitle', 'zFormat', 'zFormatCode', 'zScale', 'centre'];
 const surfaceFormKeys: ReadonlyMap<string, readonly string[]> = new Map([
     ['z', ['x', 'y', 'z', 'method', 'interpolated', 'notes']],
-    ['points', ['points', 'xTitle', 'yTitle']],
+    ['points', ['points', 'xTitle', 'yTitle', 'xFormatCode', 'yFormatCode']],
     ['nodes', ['nodes', 'triangles', 'xTitle', 'yTitle', 'xScale', 'yScale', 'xFormatCode', 'yFormatCode', 'notes']],
-    ['sampled', ['sampled', 'xTitle', 'yTitle']],
-    ['interpolant', ['interpolant', 'xTitle', 'yTitle', 'samples', 'xScale', 'yScale']],
+    ['sampled', ['sampled', 'xTitle', 'yTitle', 'xFormatCode', 'yFormatCode']],
+    ['interpolant', ['interpolant', 'xTitle', 'yTitle', 'samples', 'xScale', 'yScale', 'xFormatCode', 'yFormatCode']],
 ]);
 
 function surfaceAxis(given: Json | undefined): SurfaceAxisOptions {
@@ -1277,7 +1279,7 @@ function slice(given: Json | undefined): SurfaceSlice {
 }
 
 // A function sampled over a rectangle: a constant, or a plane [a, b, c], a + b·x + c·y.
-function sampledSurface(given: Json | undefined, titles: { xTitle: string; yTitle: string }, common: SurfaceScaleOptions & {
+function sampledSurface(given: Json | undefined, titles: { xTitle: string; yTitle: string; xFormatCode?: string; yFormatCode?: string }, common: SurfaceScaleOptions & {
     readonly zTitle?: string;
     readonly zFormat?: (value: ChartValue) => string;
 }): SurfaceDefinition {

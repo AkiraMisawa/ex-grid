@@ -71,6 +71,15 @@ internal static class ChartCodes
             throw new ChartRefusedException(
                 $"The format code \"{code}\" of {name} writes {(read.IsDate ? "dates" : "numbers")}, and the axis holds {Describe(other)}.");
         }
+        // A grid line, a slice and a tooltip are named by the text: two values written alike could not be told apart.
+        var written = new Dictionary<string, object>();
+        foreach (var value in axis.Values)
+        {
+            var text = read.Format(value, CultureInfo.InvariantCulture);
+            if (written.TryGetValue(text, out var before))
+                throw new ChartRefusedException($"The format code \"{code}\" of {name} writes {Describe(before)} and {Describe(value)} alike, as \"{text}\".");
+            written[text] = value;
+        }
     }
 
     /// <summary>Refuses a surface's code for its values it cannot write them with (ADR-0420).</summary>
@@ -89,6 +98,8 @@ internal static class ChartCodes
     {
         string text => $"the text \"{text}\"",
         _ when SurfaceAxis.IsNumber(value) => $"the number {Convert.ToString(value, CultureInfo.InvariantCulture)}",
+        DateOnly date => $"the date {date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}",
+        DateTime date => $"the date {date.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}",
         _ => $"a {value.GetType().Name}",
     };
 

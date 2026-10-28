@@ -47,7 +47,7 @@ public static class SurfaceShapes
                 else { triangles.Add(new(a, b, d)); triangles.Add(new(b, c, d)); }
             }
         return SurfaceDefinition.FromTriangles(nodes, triangles, "x", "y", "u",
-            xFormatCode: "0.00", yFormatCode: "0.00");
+            xFormatCode: "0.000", yFormatCode: "0.000");
     }
 
     private static readonly double[] Years = [7 / 365.0, 1 / 12.0, 0.25, 0.5, 1, 2, 5, 10];

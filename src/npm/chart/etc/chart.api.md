@@ -1104,6 +1104,8 @@ export class SurfaceDefinition {
     sliceChart(slice: SurfaceSlice): ChartDefinition | undefined;
     get triangles(): readonly SurfaceTriangle[] | undefined;
     writeZ(value: ChartValue): string;
+    // @internal
+    writeZTick(value: number): string;
     get x(): SurfaceAxis;
     get y(): SurfaceAxis;
     get z(): readonly (readonly (ChartValue | null)[])[];

@@ -79,12 +79,12 @@ export class SurfaceAxis {
         return this.#formatCode;
     }
 
-    /** Writes the value at `index` through the format. */
+    /** Writes the value at `index` through the format or the code. */
     write(index: number): string {
         return this.writeValue(elementAt(this.#values, index));
     }
 
-    /** Writes `value` through the format, or invariantly. */
+    /** Writes `value` through the format or the code, or invariantly. */
     writeValue(value: SurfaceValue): string {
         if (this.#format !== undefined) {
             return this.#format(value);
@@ -614,7 +614,18 @@ export class SurfaceDefinition {
         return this.#parts.nodes === undefined && this.isInterpolated(index % count, Math.trunc(index / count));
     }
 
-    /** Writes a value through the format, or invariantly. */
+    /**
+     * A tick on the vertical axis or the colour bar, and the centre the colours diverge from: through the code, as
+     * the values are, or plainly; a format, written for the values a column holds, leaves them plain (ADR-0420).
+     *
+     * @internal
+     */
+    writeZTick(value: number): string {
+        const code = this.#parts.zCode;
+        return code === undefined ? tickText(value) : code.format(value, 'invariant');
+    }
+
+    /** Writes a value through the format or the code, or invariantly. */
     writeZ(value: ChartValue): string {
         const { zFormat: format, zCode: code } = this.#parts;
         return format !== undefined ? format(value) : code === undefined ? invariantText(value) : code.format(value, 'invariant');
@@ -783,7 +794,7 @@ export class SurfaceDefinition {
         }
         const centre = this.#parts.centre;
         if (centre !== undefined && !(centre > 0)) {
-            return `The vertical scale stays proportional: the colours diverge from ${tickText(centre)}, which a logarithmic scale cannot place.`;
+            return `The vertical scale stays proportional: the colours diverge from ${this.writeZTick(centre)}, which a logarithmic scale cannot place.`;
         }
         return undefined;
     }
@@ -860,6 +871,16 @@ function checkAxisCode(axis: SurfaceAxis, code: string): FormatCode {
     const other = axis.values.find(v => reading.isDate || typeof v !== 'number');
     if (other !== undefined) {
         throw new ChartRefusedError(`The format code "${code}" of ${name} writes ${reading.isDate ? 'dates' : 'numbers'}, and the axis holds ${describe(other)}.`);
+    }
+    // A grid line, a slice and a tooltip are named by the text: two values written alike could not be told apart.
+    const written = new Map<string, number>();
+    for (const value of axis.values.filter(v => typeof v === 'number')) {
+        const text = reading.format(value, 'invariant');
+        const before = written.get(text);
+        if (before !== undefined) {
+            throw new ChartRefusedError(`The format code "${code}" of ${name} writes ${describe(before)} and ${describe(value)} alike, as "${text}".`);
+        }
+        written.set(text, value);
     }
     return reading;
 }
