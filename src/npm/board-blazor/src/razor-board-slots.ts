@@ -1,25 +1,32 @@
 // A Board's Chrome slots filled with Razor (ADR-0410): one Shared Script RazorSlotHost for every view of the Board,
-// its grids' slots of the grid's kinds and its pivots' of the pivot's and the report grid's, so each crosses to .NET
-// and is wired as ExGrid's and ExPivot's own adapters cross and wire them. What a slot holds, the Settled Mark and the
+// its grids' slots of the grid's kinds, its pivots' of the pivot's and the report grid's, and its charts' of the
+// chart's, so each crosses to .NET and is wired as ExGrid's, ExPivot's and ExChart's own adapters cross and wire them.
+// A chart's slots cross under `chart.` and their name, since the chart names its toolbar and menu as the pivot does. What a slot holds, the Settled Mark and the
 // inputs (section 5), is held in the view the slot was mounted by: each view is made with mount functions of its own,
 // which note the view of every slot they are handed. A slot is known by the view that mounted it, never by where it
 // stands, since a view mounts a part before it places it.
 
 import { gridRazorSlotKinds, isGridRazorSlotName, RazorSlotHost, type HostedSlotKind, type RazorSlotHostOptions } from '@ex-grid/blazor-shared';
 import type { BoardChrome, BoardMounts, ShapedRow } from '@ex-grid/board';
+import type { ChartChrome, ChartHandle, ChartOptions } from '@ex-grid/chart';
+import { chartRazorSlotKinds } from '@ex-grid/chart-blazor';
 import type { GridChrome, GridHandle, GridOptions } from '@ex-grid/core';
 import type { PivotChrome, PivotHandle, PivotViewOptions } from '@ex-grid/pivot';
 import { isPivotRazorSlotName, pivotRazorSlotKinds, pivotSlotHostOptions, type PivotGrids } from '@ex-grid/pivot-blazor';
 import type { DotNetHandle } from './blazor-board';
 
-/** The slots .NET fills, by the core's names: the grids', the pivots', and the pivots' report grids'. A Board's grid
- * Chrome dresses its pivots' report grids too, unless it has none (the Razor ExBoard's rule): .NET says which Chrome's
- * slots the report grids have, and the browser hands them on as named. */
+/** The slots .NET fills, by the core's names: the grids', the pivots', the pivots' report grids' and the charts'. A
+ * Board's grid Chrome dresses its pivots' report grids too, unless it has none (the Razor ExBoard's rule): .NET says
+ * which Chrome's slots the report grids have, and the browser hands them on as named. */
 export interface WireRazorSlots {
     readonly grid: readonly string[];
     readonly pivot: readonly string[];
     readonly pivotGrid: readonly string[];
+    readonly chart: readonly string[];
 }
+
+/** The name a chart's slot crosses under, apart from the pivot's of the same name. */
+const chartSlotPrefix = 'chart.';
 
 type Mount = (slot: HTMLElement, context: unknown) => () => void;
 
@@ -35,15 +42,15 @@ interface EarlyHold {
 /** A view of the Board, as its slots know it: its kind, its handle once made, and the holds asked of it meanwhile. */
 type ViewOfSlots =
     | { readonly kind: 'grid'; handle: GridHandle<ShapedRow> | undefined; readonly early: EarlyHold[] }
-    | { readonly kind: 'pivot'; handle: PivotHandle | undefined; readonly early: EarlyHold[] };
+    | { readonly kind: 'pivot'; handle: PivotHandle | undefined; readonly early: EarlyHold[] }
+    | { readonly kind: 'chart' };
 
 /** The view of each slot the Board's views mounted. */
 class BoardViews {
     // By the slot, so a slot a view let go goes with its element.
     readonly #ofSlot = new WeakMap<HTMLElement, ViewOfSlots>();
 
-    /** The family's mounts, each making its view with mount functions that note the view of the slots they are handed.
-     * A chart has no slots filled with Razor. */
+    /** The family's mounts, each making its view with mount functions that note the view of the slots they are handed. */
     mounts(family: BoardMounts): BoardMounts {
         return Object.freeze({
             grid: (element: HTMLElement, options: GridOptions<ShapedRow>) => {
@@ -73,7 +80,15 @@ class BoardViews {
                     update: { value: (next: PivotViewOptions) => { pivot.update(pivotDressed(next, dressed)); }, enumerable: true },
                 })) as PivotHandle;
             },
-            chart: family.chart,
+            chart: (element: HTMLElement, options: ChartOptions) => {
+                const view: ViewOfSlots = { kind: 'chart' };
+                const dressed = dressing<ChartChrome>(chrome => this.#noting(view, chrome));
+                const chart = family.chart(element, chartDressed(options, dressed));
+                // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Object.create answers any; the members are the chart's
+                return Object.freeze(Object.create(chart, {
+                    update: { value: (next: ChartOptions) => { chart.update(chartDressed(next, dressed)); }, enumerable: true },
+                })) as ChartHandle;
+            },
         } satisfies BoardMounts);
     }
 
@@ -115,6 +130,12 @@ function gridDressed(options: GridOptions<ShapedRow>, dressed: (chrome: GridChro
     return chrome === undefined ? options : { ...options, chrome: dressed(chrome) };
 }
 
+// A chart view's options, its Chrome's mount functions noting the view.
+function chartDressed(options: ChartOptions, dressed: (chrome: ChartChrome) => ChartChrome): ChartOptions {
+    const { chrome } = options;
+    return chrome === undefined ? options : { ...options, chrome: dressed(chrome) };
+}
+
 // A pivot view's options, its Chrome's mount functions and its report grids' noting the view.
 function pivotDressed(options: PivotViewOptions, dressed: (chrome: PivotChrome) => PivotChrome): PivotViewOptions {
     const { chrome } = options;
@@ -138,6 +159,9 @@ export class RazorBoardSlots {
         for (const name of names.pivot) {
             if (!isPivotRazorSlotName(name)) throw new TypeError(`Internal: .NET named '${name}' as a pivot slot its Chrome fills.`);
         }
+        for (const name of names.chart) {
+            if (!chartRazorSlotKinds.has(name)) throw new TypeError(`Internal: .NET named '${name}' as a chart slot its Chrome fills.`);
+        }
         this.#names = names;
         const views = this.#views;
         // A pivot's slots hold as ExPivot's adapter holds them, in the grid of the pivot the slot stands for: the
@@ -153,28 +177,25 @@ export class RazorBoardSlots {
         if (pivotOrder === undefined || pivotKeyboardBack === undefined) {
             throw new Error('Internal: ExPivot\'s slot host options hold no Input Order or no way to hand the keyboard back.');
         }
-        // A grid view's, as ExGrid's adapter holds them: only a part the user opened takes the keyboard, and the user
-        // opens nothing in a grid before it stands.
-        const gridOf = (slot: HTMLElement): GridHandle<ShapedRow> | undefined => {
-            const view = views.of(slot);
-            if (view.kind === 'pivot') return undefined;
-            if (view.handle === undefined) throw new Error('Internal: a Razor slot that takes the keyboard was mounted while its grid was being made.');
-            return view.handle;
-        };
         const options: RazorSlotHostOptions = {
             hold: slot => hold(views.of(slot), slot),
             order: (until, slot) => {
-                const grid = gridOf(slot);
-                if (grid === undefined) pivotOrder(until, slot);
-                else void grid.inOrder(() => until);
+                const view = views.of(slot);
+                if (view.kind === 'chart') throw new Error('Internal: a chart\'s Razor slot took the keyboard, which no chart slot takes.');
+                if (view.kind === 'pivot') pivotOrder(until, slot);
+                else void gridOf(view).inOrder(() => until);
             },
+            // A chart's contents hand the keyboard nowhere as they go, a menu whose command was clicked among them: the
+            // chart takes it back from none of its own parts, as ExChart's own adapter has it (ADR-0281).
             keyboardBack: slot => {
-                const grid = gridOf(slot);
-                if (grid === undefined) pivotKeyboardBack(slot);
-                else grid.focus();
+                const view = views.of(slot);
+                if (view.kind === 'pivot') pivotKeyboardBack(slot);
+                else if (view.kind === 'grid') gridOf(view).focus();
             },
         };
-        const kinds = new Map<string, HostedSlotKind>([...gridRazorSlotKinds, ...pivotRazorSlotKinds]);
+        const kinds = new Map<string, HostedSlotKind>([
+            ...gridRazorSlotKinds, ...pivotRazorSlotKinds, ...[...chartRazorSlotKinds].map(([name, kind]): [string, HostedSlotKind] => [chartSlotPrefix + name, kind]),
+        ]);
         this.#host = new RazorSlotHost(dotnet, kinds, options);
     }
 
@@ -187,13 +208,14 @@ export class RazorBoardSlots {
     /** The Board's Chrome for the slots .NET fills, the same object for the Board's life. */
     chrome(): BoardChrome {
         if (this.#chrome !== undefined) return this.#chrome;
-        const { grid, pivot, pivotGrid } = this.#names;
+        const { grid, pivot, pivotGrid, chart } = this.#names;
         // One call for every slot, so each keeps its mount function: a standing part is not drawn again for an update.
-        const mounts = this.#host.mounts([...new Set([...grid, ...pivot, ...pivotGrid])]);
-        const pick = (names: readonly string[]): Record<string, Mount> =>
+        const mounts = this.#host.mounts([...new Set([...grid, ...pivot, ...pivotGrid]), ...chart.map(name => chartSlotPrefix + name)]);
+        // The mounts of the slots named, each under the name its view reads, crossed to .NET under `prefix`'s.
+        const pick = (names: readonly string[], prefix = ''): Record<string, Mount> =>
             Object.fromEntries(names.map(name => {
-                const mount = mounts[name];
-                if (mount === undefined) throw new Error(`Internal: the host made no mount for the slot '${name}'.`);
+                const mount = mounts[prefix + name];
+                if (mount === undefined) throw new Error(`Internal: the host made no mount for the slot '${prefix + name}'.`);
                 return [name, mount];
             }));
         const gridChrome: GridChrome<unknown> | undefined = grid.length === 0 ? undefined : pick(grid);
@@ -202,9 +224,11 @@ export class RazorBoardSlots {
         const pivotOwn: Omit<PivotChrome, 'grid'> = pick(pivot);
         const pivotChrome: PivotChrome | undefined = pivot.length === 0 && pivotGridChrome === undefined ? undefined
             : Object.freeze({ ...pivotOwn, ...(pivotGridChrome === undefined ? {} : { grid: pivotGridChrome }) });
+        const chartChrome: ChartChrome | undefined = chart.length === 0 ? undefined : Object.freeze(pick(chart, chartSlotPrefix));
         this.#chrome = Object.freeze({
             ...(gridChrome === undefined ? {} : { grid: gridChrome }),
             ...(pivotChrome === undefined ? {} : { pivot: pivotChrome }),
+            ...(chartChrome === undefined ? {} : { chart: chartChrome }),
         });
         return this.#chrome;
     }
@@ -220,13 +244,27 @@ export class RazorBoardSlots {
     }
 }
 
+// The grid view a slot that takes the keyboard stands in, as ExGrid's adapter has it: only a part the user opened takes
+// the keyboard, and the user opens nothing in a grid before it stands.
+function gridOf(view: ViewOfSlots): GridHandle<ShapedRow> {
+    if (view.kind !== 'grid') throw new Error(`Internal: a ${view.kind}'s Razor slot asked for its grid.`);
+    if (view.handle === undefined) throw new Error('Internal: a Razor slot that takes the keyboard was mounted while its grid was being made.');
+    return view.handle;
+}
+
 // Holds the Settled Mark of the view that mounted `slot`, or of the one being made once it is: a grid view's own, or
-// the grid of the pivot the slot stands for.
+// the grid of the pivot the slot stands for. A chart has no Settled Mark, and ExChart's own adapter holds none.
 function hold(view: ViewOfSlots, slot: Element): () => void {
     if (!(slot instanceof HTMLElement)) throw new TypeError('Internal: a Razor slot that is no HTML element.');
+    if (view.kind === 'chart') return noHold;
     if (view.kind === 'grid' && view.handle !== undefined) return view.handle.holdSettled();
     if (view.kind === 'pivot' && view.handle !== undefined) return view.handle.holdSettled(slot);
     const early: EarlyHold = { slot, release: undefined, gone: false };
     view.early.push(early);
     return () => { early.gone = true; early.release?.(); };
+}
+
+// What a chart's slot holds: nothing, as the chart's own adapter holds nothing.
+function noHold(): void {
+    // A chart has no Settled Mark to let go.
 }

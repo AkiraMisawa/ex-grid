@@ -279,6 +279,8 @@ ExBoard.LinkCondition.Values.get -> System.Collections.Generic.IReadOnlyList<Sys
 ExBoard.Script.ExBoard
 ExBoard.Script.ExBoard.Board.get -> ExBoard.BoardReading!
 ExBoard.Script.ExBoard.Board.set -> void
+ExBoard.Script.ExBoard.ChartChrome.get -> ExChart.Chrome.IChartChrome?
+ExBoard.Script.ExBoard.ChartChrome.set -> void
 ExBoard.Script.ExBoard.Chrome.get -> ExGrid.Chrome.IGridChrome?
 ExBoard.Script.ExBoard.Chrome.set -> void
 ExBoard.Script.ExBoard.Culture.get -> System.Globalization.CultureInfo?

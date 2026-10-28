@@ -1,3 +1,4 @@
+@implements IDisposable
 @using ExGrid.Cells
 @using ExSheet
 @using ExSheet.Engine
@@ -44,8 +45,20 @@
     {
         if (!firstRender) return;
         var sheet = _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
-        await sheet.PushLinkedTableAsync(CostCentre.Table, Centres.Select(c => c.ToRow()));
+        try
+        {
+            // Waits for the Sheet to open in the browser, and is refused if the page goes first.
+            await sheet.PushLinkedTableAsync(CostCentre.Table, Centres.Select(c => c.ToRow()));
+        }
+        catch (ObjectDisposedException) when (_left)
+        {
+            // Left before the Sheet opened: the Sheet went with the page, and there is nothing to push to.
+        }
     }
+
+    private bool _left;
+
+    public void Dispose() => _left = true;
 
     private void Refused(PointingRefusal refusal) => _said = refusal.Message;
 }

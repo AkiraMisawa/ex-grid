@@ -143,17 +143,19 @@ const menuKind: RazorSlotKind<ChartMenuSlotContext> = {
 // Every slot the chart takes has its kind: a slot added to ChartChrome without one does not compile.
 const chartKindsByName = { toolbar: toolbarKind, menu: menuKind } satisfies Record<ChartRazorSlotName, HostedSlotKind>;
 
-const chartKinds: ReadonlyMap<string, HostedSlotKind> = new Map(Object.entries(chartKindsByName));
+/** The kinds of the chart's slots a Razor Chrome fills, by the chart's names: for a host of a product that draws charts,
+ * as a Board's does. No kind takes the keyboard, and the chart has no Settled Mark to hold. */
+export const chartRazorSlotKinds: ReadonlyMap<string, HostedSlotKind> = new Map(Object.entries(chartKindsByName));
 
 /** The Razor Chrome of one chart, over `dotnet`: `MountSlot`, `UpdateSlot` and `UnmountSlot` are called on it. */
 export function chartRazorSlots(dotnet: DotNetCalls): RazorSlotHost {
-    return new RazorSlotHost(dotnet, chartKinds);
+    return new RazorSlotHost(dotnet, chartRazorSlotKinds);
 }
 
 /** The chart's Chrome for the slots .NET names, each checked against the slots a Razor Chrome fills. */
 export function chartRazorChrome(host: RazorSlotHost, names: readonly string[]): ChartChrome {
     for (const name of names) {
-        if (!chartKinds.has(name)) throw new TypeError(`Internal: .NET named '${name}' as a chart slot its Chrome fills, which the chart does not take.`);
+        if (!chartRazorSlotKinds.has(name)) throw new TypeError(`Internal: .NET named '${name}' as a chart slot its Chrome fills, which the chart does not take.`);
     }
     return host.mounts(names);
 }

@@ -75,7 +75,6 @@ interface HeldKey {
     readonly key: WireOrderKey;
 }
 
-// An answer, and the line of keys before it where .NET wrote one: neither holds a line break of its own.
 // The message of a failure .NET answered in place of an answer.
 function failedMessage(text: string): string {
     const failed: unknown = (JSON.parse(text) as { readonly failed?: unknown }).failed; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the line PivotSourceCrossing.Failed writes, whose message is checked here
@@ -83,6 +82,7 @@ function failedMessage(text: string): string {
     return failed;
 }
 
+// An answer, and the line of keys before it where .NET wrote one: neither holds a line break of its own.
 function split(text: string): { readonly keys: KeysLine | undefined; readonly answer: string } {
     const at = text.indexOf('\n');
     if (at < 0) return { keys: undefined, answer: text };
