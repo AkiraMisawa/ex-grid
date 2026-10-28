@@ -223,7 +223,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     private ElementReference _root;
     // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1).
-    private readonly SortedDictionary<long, RazorSlot> _slots = [];
+    private readonly RazorSlotHolders _slots = new(RazorSlot.ViewOf);
     private IGridChrome? _renderedChrome;
     private IJSObjectReference? _module;
     private IJSObjectReference? _grid;
@@ -290,9 +290,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             // Another Chrome draws the slots standing, and the script wires what it drew.
             _renderedChrome = Chrome;
-            foreach (var slot in _slots.Values)
-                slot.Owed = true;
-            _renderOwed |= _slots.Count > 0;
+            _slots.Redrawn();
+            _renderOwed |= _slots.Any;
         }
         if (!ReferenceEquals(CellState, _sentCellState))
         {
@@ -387,22 +386,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
-        // Each slot's holder beside the root, never inside it: hidden, and holding only the element the fragment is
-        // drawn in, which the script moves into the slot and back (ADR-0410 section 1).
-        foreach (var slot in _slots.Values)
-        {
-            builder.OpenElement(6, "div");
-            builder.SetKey(slot.Id);
-            builder.AddAttribute(7, "hidden", true);
-            builder.OpenElement(8, "div");
-            builder.AddAttribute(9, "class", "ex-razor-slot");
-            // The data the contents are drawn from, by the script's number: a press on them is read against these.
-            builder.AddAttribute(10, RazorSlot.DrawnVersionAttribute, slot.Version);
-            builder.AddElementReferenceCapture(11, element => slot.Contents = element);
-            builder.AddContent(12, slot.Fragment(Chrome));
-            builder.CloseElement();
-            builder.CloseElement();
-        }
+        _slots.Render(builder, 6, (name, view) => RazorSlot.Fragment(Chrome, name, view));
     }
 
     /// <inheritdoc />
@@ -600,23 +584,22 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     {
         if (_disposed)
             return;
-        _slots.Add(id, new RazorSlot(id, RazorSlot.NameOf(name), version, context));
+        _slots.Mount(id, version, name, context);
         RenderSlots();
     }
 
     /// <summary>The slot <paramref name="id"/> was mounted again in place, with another context.</summary>
     internal void UpdateSlot(long id, int version, string context)
     {
-        if (_disposed || !_slots.TryGetValue(id, out var slot))
+        if (_disposed || !_slots.Update(id, version, context))
             return;
-        slot.Take(version, context);
         RenderSlots();
     }
 
     /// <summary>The core took the slot <paramref name="id"/> away; the script has moved its contents back.</summary>
     internal void UnmountSlot(long id)
     {
-        if (_disposed || !_slots.Remove(id))
+        if (_disposed || !_slots.Unmount(id))
             return;
         RenderSlots();
     }
@@ -628,26 +611,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     }
 
     // Each slot drawn again is handed to the script, which moves it in, or wires it for the context it now holds.
-    private async Task ReportSlotsAsync()
-    {
-        var grid = _grid;
-        foreach (var slot in _slots.Values.Where(slot => slot.Owed).ToArray())
-        {
-            // Disposed while an earlier slot was handed over: the grid is gone, and nothing is handed to it.
-            if (grid is null || _disposed)
-                return;
-            slot.Owed = false;
-            try
-            {
-                await grid.InvokeVoidAsync("slotRendered", slot.Id, slot.Version, slot.Contents);
-            }
-            catch (JSDisconnectedException)
-            {
-                // The circuit is gone, and the grid with it.
-                return;
-            }
-        }
-    }
+    private Task ReportSlotsAsync() => _slots.ReportAsync(_grid, () => _disposed);
 
     private async Task SendUpdateAsync()
     {
