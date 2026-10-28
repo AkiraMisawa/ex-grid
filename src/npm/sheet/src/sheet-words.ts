@@ -38,6 +38,15 @@ export type FormatCellsLabel =
     | 'strikethrough' | 'normalFont' | 'colour' | 'lineStyle' | 'presets' | 'border' | 'preview' | 'backgroundColour'
     | 'automatic' | 'noColour' | 'moreColours' | 'ok' | 'cancel';
 
+/** The words the Sheet's find panel adds to the grid's (ADR-0332 §5): the Within choice and its two answers. */
+export type SheetFindWithinWord = 'within' | 'withinSheet' | 'withinWorkbook';
+
+/** One of the commands of a Sheet Tab's menu (ADR-0331 §4), in the order the menu offers them. */
+export type SheetTabCommand = 'rename' | 'delete' | 'moveLeft' | 'moveRight' | 'copy';
+
+/** One of ExSheet's own Context Menu commands (ADR-0036). */
+export type SheetContextCommand = 'insertRows' | 'deleteRows' | 'insertColumns' | 'deleteColumns' | 'formatCells';
+
 /** A command of the Sheet Toolbar's default row (ADR-0100), in Excel's Home tab order. */
 export type SheetToolbarCommand =
     | 'bold' | 'italic' | 'underline' | 'strikethrough' | 'fontColour' | 'fill' | 'borders' | 'alignLeft' | 'alignCenter'
@@ -61,7 +70,7 @@ export type SheetWordId =
     | `toolbar.border.${SheetToolbarBorder}` | 'toolbar.moreNumberFormats' | 'sheetTabsName' | 'editSheetGone'
     | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded'
     | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied'
-    | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName'
+    | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName' | `tabCommand.${SheetTabCommand}`
     | 'onlySheet' | 'sheetGone' | 'sheetNotChanged' | 'firstSheet'
     | 'lastSheet' | 'commaStyleUnread' | 'editDiscardedByNewDocument'
     | `editDiscarded.${EditDiscardReason}`
@@ -74,8 +83,7 @@ export type SheetWordId =
     | `copyRefused.${CopyRefusalReason}`
     | `pointingRefused.${PointingRefusalWordCase}`
     | 'pointingExtendedByKey' | 'nothingToUndo' | 'nothingToRedo'
-    | 'command.insertRows' | 'command.deleteRows' | 'command.insertColumns' | 'command.deleteColumns'
-    | 'command.formatCells' | 'formatCellsTitle'
+    | `command.${SheetContextCommand}` | `find.${SheetFindWithinWord}` | 'formatCellsTitle'
     | `formatCells.tab.${FormatCellsTab}`
     | `formatCells.category.${NumberFormatCategory}`
     | `formatCells.disabled.${DisabledNumberFormatCategory}`
@@ -466,6 +474,21 @@ export class SheetWords {
     /** A copy the grid refused, in the Sheet's terms. */
     copyRefused(reason: CopyRefusalReason): string {
         return this.word(`copyRefused.${reason}`);
+    }
+
+    /** What the Context Menu calls one of ExSheet's own commands (ADR-0036). */
+    command(command: SheetContextCommand): string {
+        return this.word(`command.${command}`);
+    }
+
+    /** What a Sheet Tab's menu calls one of its commands (ADR-0331 §4). */
+    tabCommand(command: SheetTabCommand): string {
+        return this.word(`tabCommand.${command}`);
+    }
+
+    /** What the find panel calls Within and its two choices (ADR-0332 §5). */
+    findWithin(word: SheetFindWithinWord): string {
+        return this.word(`find.${word}`);
     }
 
     /** Format Cells' title. */

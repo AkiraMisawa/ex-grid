@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GridFindRequest } from '@ex-grid/core';
 import { CellAddress, Culture, SheetEdit, Workbook, type Sheet } from '@ex-grid/sheet-engine';
-import { planSheetReplace, positionsOf, sheetFindStep } from '../src/sheet-find';
+import { planSheetReplace, planWorkbookReplace, positionsOf, sheetFindStep, sheetFindStepWorkbook } from '../src/sheet-find';
 import { SheetSource } from '../src/sheet-source';
 
 const columns = ['A', 'B', 'C'];
@@ -51,6 +51,49 @@ describe('planSheetReplace (ADR-0332 §2)', () => {
         const refusing = planSheetReplace(sheet, { text: '+', matchCase: false, wholeCell: false }, '+)', positionsOf(columns), undefined,
             (address, text) => (text.startsWith('=') ? `unreadable at ${address.toString()}` : undefined));
         expect(refusing.refused.map(cell => [cell.address.toString(), cell.position, cell.reason])).toEqual([['A2', 0, 'unreadable at A2']]);
+    });
+});
+
+function workbookOf(sheets: Readonly<Record<string, Readonly<Record<string, string>>>>): readonly Sheet[] {
+    const workbook = new Workbook(Culture.of('en-US'), Object.keys(sheets));
+    for (const [name, entries] of Object.entries(sheets)) {
+        for (const [address, typed] of Object.entries(entries)) workbook.do(name, SheetEdit.enter(CellAddress.parse(address), typed));
+    }
+    return workbook.sheets;
+}
+
+/** Where a step over the Workbook found its match, as Sheet!row:position. */
+function where(found: ReturnType<typeof sheetFindStepWorkbook>): string | undefined {
+    return found === undefined ? undefined : `${found.sheet.name}!${String(found.row)}:${String(found.position)}`;
+}
+
+describe('sheetFindStepWorkbook (ADR-0332 §5)', () => {
+    it('ADR-0332 §5: past the Focus on the Sheet shown, then each other Sheet whole in tab order, wrapping, then the Sheet shown up to the Focus; backward the reverse', () => {
+        const sheets = workbookOf({ One: { A1: 'x', A3: 'x' }, Two: { B2: 'x' }, Three: { C1: 'x' } });
+        const [one, two, three] = sheets;
+        if (one === undefined || two === undefined || three === undefined) throw new Error('Three Sheets.');
+        expect(where(sheetFindStepWorkbook(sheets, one, request('x', { from: { row: 0, column: 0 } })))).toBe('One!2:0');
+        expect(where(sheetFindStepWorkbook(sheets, one, request('x', { from: { row: 2, column: 0 } })))).toBe('Two!1:1');
+        expect(where(sheetFindStepWorkbook(sheets, two, request('x', { from: { row: 1, column: 1 } })))).toBe('Three!0:2');
+        expect(where(sheetFindStepWorkbook(sheets, three, request('x', { from: { row: 0, column: 2 } })))).toBe('One!0:0');
+        expect(where(sheetFindStepWorkbook(sheets, one, request('x', { from: { row: 0, column: 0 }, backward: true })))).toBe('Three!0:2');
+        expect(where(sheetFindStepWorkbook(sheets, one, request('x', { from: { row: 2, column: 0 }, backward: true })))).toBe('One!0:0');
+        // The Focus's own cell last, and nothing anywhere.
+        const alone = workbookOf({ One: { B2: 'only' }, Two: {} });
+        const [onlyOne] = alone;
+        if (onlyOne === undefined) throw new Error('One Sheet.');
+        expect(where(sheetFindStepWorkbook(alone, onlyOne, request('only', { from: { row: 1, column: 1 } })))).toBe('One!1:1');
+        expect(sheetFindStepWorkbook(alone, onlyOne, request('none'))).toBeUndefined();
+    });
+});
+
+describe('planWorkbookReplace (ADR-0332 §5)', () => {
+    it('ADR-0332 §5: every Sheet\'s Entries, in tab order and by rows, all or nothing', () => {
+        const sheets = workbookOf({ Claim: { A3: 'Hotel, nights', A2: 'Flights' }, Summary: { A2: 'Travel' } });
+        const plan = planWorkbookReplace(sheets, { text: 'el', matchCase: false, wholeCell: false }, 'EL', accept);
+        expect(plan.writes.map(write => `${write.sheet.name}!${write.address.toString()}=${write.text}`)).toEqual(['Claim!A3=HotEL, nights', 'Summary!A2=TravEL']);
+        const refusing = planWorkbookReplace(sheets, { text: 'el', matchCase: false, wholeCell: false }, 'EL', sheet => (sheet.name === 'Summary' ? 'no' : undefined));
+        expect(refusing.refused.map(cell => `${cell.sheet.name}!${cell.address.toString()}:${cell.reason}`)).toEqual(['Summary!A2:no']);
     });
 });
 

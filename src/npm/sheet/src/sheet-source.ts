@@ -17,8 +17,13 @@ export class SheetSource implements GridSource<SheetRow> {
     #before: { readonly version: number; readonly sheet: Sheet } | undefined;
     #state: GridSourceState<SheetRow>;
 
-    constructor(sheet: Sheet) {
+    // One step's answer over the Sheet the step was asked of: the Sheet's own walk unless one is given, as a Sheet
+    // searching Within the Workbook gives (ADR-0332 §5).
+    readonly #step: (sheet: Sheet, request: GridFindRequest) => Promise<GridFindResult>;
+
+    constructor(sheet: Sheet, step: (sheet: Sheet, request: GridFindRequest) => Promise<GridFindResult> = (over, request) => Promise.resolve(sheetFindStep(over, request))) {
         this.#sheet = sheet;
+        this.#step = step;
         this.#state = SheetSource.#stateOf([], 0, 0);
     }
 
@@ -83,7 +88,7 @@ export class SheetSource implements GridSource<SheetRow> {
         const sheet = request.rowSequenceVersion === this.#version ? this.#sheet
             : request.rowSequenceVersion === before?.version ? before.sheet : undefined;
         if (sheet === undefined) return Promise.reject(new DOMException('The step was asked of a Sheet shown before the last one.', 'AbortError'));
-        return Promise.resolve(sheetFindStep(sheet, request));
+        return this.#step(sheet, request);
     }
 
     distinctValues(_column: string, _signal: AbortSignal): Promise<DistinctValues> {

@@ -68,6 +68,7 @@ class StandIns implements BoardMounts {
         return {
             ...made.handle(),
             placeSelection: unused('place a selection'),
+            placeMatch: unused('place a match'),
             readView: unused('read a grid\'s view'),
             writePointedText: unused('write a grid\'s pointed text'),
             takeBackPointedText: unused('take back a grid\'s pointed text'),

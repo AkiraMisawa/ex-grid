@@ -15,9 +15,11 @@ export function checkTimeZone(zone: string): void {
     readerOf(zone);
 }
 
-/** The time zone the browser runs in. */
-export function browserTimeZone(): string {
-    return new Intl.DateTimeFormat().resolvedOptions().timeZone;
+/** The time zone the browser runs in, or `undefined` for a browser that does not say it (ADR-0121): then no day and
+ * no time of day are known, and `TODAY()` and `NOW()` wait, never answered in a zone guessed. */
+export function browserTimeZone(): string | undefined {
+    const zone: unknown = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return typeof zone === 'string' && zone !== '' ? zone : undefined;
 }
 
 /** The date and time of day at `at` in `zone`. */

@@ -4,6 +4,8 @@
 // data is readable only inside the event, so a held paste keeps its flavours, and a held copy or cut is done at its
 // turn by the grid's asynchronous route.
 
+import { showCaret } from './caret-shown';
+
 /** The input events the root holds while a commit is pending. A key, a press, a drag and what follows a press, typed
  * text and a composition, and the clipboard's three commands. A move with no button down is the hover's, and passes. */
 export const heldEventTypes: readonly string[] = Object.freeze([
@@ -127,6 +129,7 @@ export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: K
     const reach = (to: number): KeyDefault => {
         if (key.shiftKey) field.setSelectionRange(Math.min(anchor, to), Math.max(anchor, to), to < anchor ? 'backward' : 'forward');
         else field.setSelectionRange(to, to);
+        showCaret(field, to);
         return 'done';
     };
     const remove = (from: number, to: number, inputType: string): KeyDefault => {

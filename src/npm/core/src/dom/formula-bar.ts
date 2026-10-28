@@ -7,6 +7,7 @@
 
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import type { CellPosition } from '../selection/cell';
+import type { SelectionRange } from '../selection/range';
 import {
     BarField, ViewListeners, type EditorField, type FormulaBarTextView, type GridChromeSlot, type GridFormulaBarTextSlotContext, type GridNameBoxSlotContext,
 } from './grid-chrome';
@@ -19,6 +20,12 @@ export interface FormulaBarOptions<Row> {
     readonly showFormulaBar?: boolean;
     /** The Name Box's words for the Focus (ADR-0051): `D200` on a Sheet. The box is empty unless given. */
     readonly nameBoxLabel?: (cell: CellPosition) => string;
+    /** The Name Box's words for the size of a range while a drag selects it (ADR-0052): `4R x 3C` on a Sheet, as
+     * Excel shows while the button is down. Asked for the range holding the Focus on each pass of a selecting drag
+     * once it covers more than one cell; when the button comes up the Name Box names the Focus again through
+     * `nameBoxLabel`. A fill drag, a pointing drag and a drag across Headings are not asked, nor is keyboard
+     * extension. Undefined, or an undefined answer, keeps the Focus's words throughout. */
+    readonly nameBoxSizeLabel?: (range: SelectionRange) => string | undefined;
     /** Hears what was typed into the Name Box when Enter entered it (ADR-0051). The Consumer resolves it, and
      * places the Selection with the handle's `placeSelection` (ADR-0050, item 4). */
     readonly onNameBoxEntered?: (typed: string) => void;
@@ -38,23 +45,25 @@ export function formulaBarHeight(density: GridDensity, rowHeight?: number): numb
 export interface FormulaBarDeclarations<Row> {
     readonly shown: boolean;
     readonly nameBoxLabel: ((cell: CellPosition) => string) | undefined;
+    readonly nameBoxSizeLabel: ((range: SelectionRange) => string | undefined) | undefined;
     readonly onNameBoxEntered: ((typed: string) => void) | undefined;
     readonly borrowedText: ((row: Row, column: GridColumn<Row>) => string | undefined) | undefined;
 }
 
 /** The declarations in `options`, checked as an untyped caller may hand them (CONVENTIONS.md). */
 export function formulaBarDeclarations<Row>(options: FormulaBarOptions<Row>): FormulaBarDeclarations<Row> {
-    const { showFormulaBar, nameBoxLabel, onNameBoxEntered, formulaBarBorrowedText }: {
-        readonly showFormulaBar?: unknown; readonly nameBoxLabel?: unknown; readonly onNameBoxEntered?: unknown;
-        readonly formulaBarBorrowedText?: unknown;
+    const { showFormulaBar, nameBoxLabel, nameBoxSizeLabel, onNameBoxEntered, formulaBarBorrowedText }: {
+        readonly showFormulaBar?: unknown; readonly nameBoxLabel?: unknown; readonly nameBoxSizeLabel?: unknown;
+        readonly onNameBoxEntered?: unknown; readonly formulaBarBorrowedText?: unknown;
     } = options;
     if (showFormulaBar !== undefined && typeof showFormulaBar !== 'boolean') throw new TypeError('showFormulaBar is true or false.');
-    for (const [name, value] of Object.entries({ nameBoxLabel, onNameBoxEntered, formulaBarBorrowedText })) {
+    for (const [name, value] of Object.entries({ nameBoxLabel, nameBoxSizeLabel, onNameBoxEntered, formulaBarBorrowedText })) {
         if (value !== undefined && typeof value !== 'function') throw new TypeError(`${name} is a function (ADR-0051).`);
     }
     return {
         shown: showFormulaBar === true,
         nameBoxLabel: options.nameBoxLabel,
+        nameBoxSizeLabel: options.nameBoxSizeLabel,
         onNameBoxEntered: options.onNameBoxEntered,
         borrowedText: options.formulaBarBorrowedText,
     };
