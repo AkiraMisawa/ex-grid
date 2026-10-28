@@ -55,20 +55,32 @@ internal sealed class ScriptMount(
 
     /// <summary>
     /// Renders the root: an element the Script Core draws in, or, once the script was refused, the notice in the
-    /// built-in words, as the Razor component says it (ADR-0123).
+    /// built-in words, as the Razor component says it (ADR-0123). A <paramref name="refusal"/> is said in the chart's
+    /// place, and the root is hidden under it, as a spec its sources cannot answer is (ADR-0344): beside the root, whose
+    /// children are the Script Core's. <paramref name="busy"/> marks the root Busy while an answer is awaited.
     /// </summary>
-    public void Render(RenderTreeBuilder builder, Action<ElementReference> capture)
+    public void Render(RenderTreeBuilder builder, Action<ElementReference> capture, string? refusal = null, bool busy = false)
     {
-        builder.OpenElement(0, "div");
+        if (refusal is not null && !Refused)
+        {
+            builder.OpenElement(0, "p");
+            builder.AddAttribute(1, "class", "ex-chart-source-refusal");
+            builder.AddAttribute(2, "role", "alert");
+            builder.AddContent(3, refusal);
+            builder.CloseElement();
+        }
+        builder.OpenElement(4, "div");
         if (Refused)
-            builder.AddAttribute(1, "class", "ex-chart");
-        builder.AddElementReferenceCapture(2, capture);
+            builder.AddAttribute(5, "class", "ex-chart");
+        builder.AddAttribute(6, "hidden", refusal is not null && !Refused);
+        builder.AddAttribute(7, "aria-busy", busy && !Refused ? "true" : null);
+        builder.AddElementReferenceCapture(8, capture);
         if (Refused)
         {
-            builder.OpenElement(3, "p");
-            builder.AddAttribute(4, "class", "ex-chart-script-notice");
-            builder.AddAttribute(5, "role", "alert");
-            builder.AddContent(6, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
+            builder.OpenElement(9, "p");
+            builder.AddAttribute(10, "class", "ex-chart-script-notice");
+            builder.AddAttribute(11, "role", "alert");
+            builder.AddContent(12, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
             builder.CloseElement();
         }
         builder.CloseElement();
