@@ -15,19 +15,28 @@
     Sheet Tabs and the Selection Summary are the Script Core's, in the browser, on both hosting models.
     The page binds the Sheet Document two ways, as a page binds the Razor component's: each change
     crosses to .NET as the JSON both engines read and write, and the status line counts its cells.
-    <i>Reset</i> hands the first document back; <i>Undo</i> is a command asked from .NET.
+    <i>Reset</i> hands the first document back; <i>Undo</i> is a command asked from .NET, and <i>Enter 7 in A2</i> an
+    edit .NET makes, which crosses as <code>SheetWire</code> writes it. <i>Save</i> and <i>Open what was saved</i> take
+    their place among the Sheet's inputs, which call back into .NET for the write and the read in their turn.
+    <i>Enter a long note</i> makes the document larger than a message of the Server circuit carries, so it crosses back,
+    and to the write of a save, as a stream.
 </p>
 
 <div class="demo-toolbar">
     <button id="script-sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
     <button id="script-sheet-reset" @onclick="Reset">Reset the Sheet</button>
+    <button id="script-sheet-enter" disabled="@_editing" @onclick="EnterAsync">Enter 7 in A2</button>
+    <button id="script-sheet-save" disabled="@_editing" @onclick="SaveAsync">Save</button>
+    <button id="script-sheet-open" disabled="@(_editing || _saved is null)" @onclick="OpenAsync">Open what was saved</button>
+    <button id="script-sheet-long" disabled="@_editing" @onclick="LongNoteAsync">Enter a long note in B1</button>
 </div>
 
 <p class="demo-status">
     <span id="script-sheet-document" role="status">Cells in the document: @_document.Cells.Count</span><br />
     <span id="script-sheet-editing" role="status">Editing: @(_editing ? "yes" : "no")</span><br />
     <span id="script-sheet-figures" role="status">Figures: @_figures</span><br />
-    <span id="script-sheet-undone" role="status">@_undone</span>
+    <span id="script-sheet-undone" role="status">@_undone</span><br />
+    <span id="script-sheet-file" role="status">@_file</span>
 </p>
 
 <ExSheet.Script.ExSheet @ref="_sheet"
@@ -47,6 +56,9 @@
     private ExSheet.Script.ExSheet? _sheet;
     // Never empty: a line that appeared with the first answer would move the Sheet down under the pointer.
     private string _undone = "Nothing undone yet";
+    // What Save wrote: the Workbook .NET was handed, as a document, and what its A3 computed in .NET.
+    private WorkbookDocument? _saved;
+    private string _file = "Nothing saved yet";
 
     private static SheetDocument FirstDocument()
     {
@@ -73,6 +85,24 @@
             _undone = refused.Refusal.Message;
         }
     }
+
+    private Task SaveAsync() => Sheet().SaveAsync(workbook =>
+    {
+        _saved = workbook.ToDocument();
+        _file = $"Saved, A3 = {workbook.Sheets[0].GetValue(CellAddress.Parse("A3"))?.Number}";
+        return Task.CompletedTask;
+    });
+
+    private async Task OpenAsync()
+    {
+        var saved = _saved ?? throw new InvalidOperationException("Open is offered once something was saved.");
+        _file = await Sheet().OpenAsync(_ => Task.FromResult(saved)) ? "Opened" : "Nothing opened";
+    }
+
+    private Task EnterAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("A2"), "7"));
+
+    // Larger than the 32 KB a Server circuit's message carries, so the document the Sheet raises crosses as a stream.
+    private Task LongNoteAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("B1"), new string('n', 40_000)));
 
     private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the page.");
 }

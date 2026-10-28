@@ -64,6 +64,15 @@ it maps its palette to a Theme and its density words onto Density, supplies Cell
 fills the Chrome slots and adds its outer chrome, and owns no geometry, no DOM inside the instance root
 and no state.
 
+*Note of 2026-10-28, as React's ExBoard took the kits' Chromes:* a Board is dressed by its products'
+Wrappers rather than one of its own. `BoardOptions.chrome` holds a Chrome for each kind of view, `grid`,
+`pivot` and `chart`, handed to every view of that kind, and the grid's dresses the pivots' report grids where
+`pivot` names no grid of its own, as the Razor ExBoard's `Chrome`, `PivotChrome` and `ChartChrome` do. React's
+`ExBoard` takes them as render functions through its own portals, so an application hands it
+`mantineChrome`, `mantinePivotChrome` and `mantineChartChrome` (or MUI's) inside an element of the Wrappers'
+classes, whose Visual Tokens map the views' colours onto the theme, as each Wrapper's frame documents for a
+Consumer that frames a product itself.
+
 ### 2. Both ship in 0.3.0, and Mantine's comes first
 
 ADR-0370 section 6's gate gains the eight Wrappers: 0.3.0 is not tagged until each runs stably on the

@@ -48,8 +48,8 @@ export function ExChart(props: ExChartProps): ReactElement {
     const chart = useRef<ChartHandle | undefined>(undefined);
     const portals = useGridPortals();
     // A render function handed again keeps its mount function, so the chart does not draw its part again.
-    const [made] = useState<MadeMounts>(() => ({}));
-    const mounts = useMemo(() => chartChromeOf(chrome, portals, made), [chrome, portals, made]);
+    const [made] = useState<ChartMountsMade>(() => ({}));
+    const mounts = useMemo(() => chartChromeMounts(chrome, portals, made), [chrome, portals, made]);
     const options: ChartOptions = mounts === undefined ? given : { ...given, chrome: mounts };
     useImperativeHandle(ref, () => ({
         download: (format: ChartFileFormat) => {
@@ -83,15 +83,19 @@ export function ExChart(props: ExChartProps): ReactElement {
 // A mount function, which takes any slot's context: each is made for one slot, and handed only that slot's.
 type AnyMount = (slot: HTMLElement, context: unknown) => () => void;
 
-// The mount functions made for the render functions handed, by slot.
-interface MadeMounts {
-    toolbar?: { readonly render: unknown; readonly mount: AnyMount };
-    menu?: { readonly render: unknown; readonly mount: AnyMount };
+/** The mount functions made for an ExChart's render functions, by slot: one handed again is mounted by the same. */
+export interface ChartMountsMade {
+    /** The toolbar's render function, and the mount function made for it. */
+    toolbar?: { readonly render: unknown; readonly mount: (slot: HTMLElement, context: unknown) => () => void };
+    /** The context menu's render function, and the mount function made for it. */
+    menu?: { readonly render: unknown; readonly mount: (slot: HTMLElement, context: unknown) => () => void };
 }
 
-// The chart's Chrome as the core takes it: each render function as a mount function rendering through the portals.
-// Which slots there are is the core's to check; a render function that is not a function is named here.
-function chartChromeOf(given: ExChartChrome | undefined, portals: GridPortals, made: MadeMounts): ChartChrome | undefined {
+/** The chart's Chrome as the core takes it: each render function as a mount function rendering through the portals.
+ * Which slots there are is the core's to check; a render function that is not a function is named here. Exported for
+ * the family's Framework Adapters, whose products hand ExChart's Chrome on to the charts they draw, not for a
+ * Consumer. */
+export function chartChromeMounts(given: ExChartChrome | undefined, portals: GridPortals, made: ChartMountsMade): ChartChrome | undefined {
     // Checked as a script may hand it, whatever its type says.
     const chrome: unknown = given;
     if (chrome === undefined) return undefined;
@@ -99,7 +103,7 @@ function chartChromeOf(given: ExChartChrome | undefined, portals: GridPortals, m
         throw new TypeError('An ExChart\'s chrome is an object of Chrome slots, each a render function of its context (ADR-0390).');
     }
     const { toolbar, menu, ...others }: { readonly toolbar?: unknown; readonly menu?: unknown } = chrome;
-    const mountOf = (name: keyof MadeMounts, render: unknown): AnyMount | undefined => {
+    const mountOf = (name: keyof ChartMountsMade, render: unknown): AnyMount | undefined => {
         if (render === undefined) return undefined;
         if (typeof render !== 'function') throw new TypeError(`An ExChart's chrome.${name} is a render function of the slot's context (ADR-0390).`);
         const before = made[name];

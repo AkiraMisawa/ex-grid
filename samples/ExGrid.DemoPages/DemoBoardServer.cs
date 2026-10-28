@@ -33,7 +33,7 @@ public static class DemoBoardServer
         return ValueTask.FromResult(new ShapedPage(Copy(through, rows.Skip(start).Take(count).Select(r => r.Position)), start, rows.Count));
     })
     {
-        Report = narrowing => PivotReportSource.From(PivotSource.From(Copy(Held, Through(narrowing)))),
+        Pivot = narrowing => PivotSource.From(Copy(Held, Through(narrowing))),
         // Thinned here, as ChartSource.Thin thins: only the points kept cross to the chart.
         Thin = (query, _) => ValueTask.FromResult(ChartSource.Thin(new SnapshotChartData(Copy(Held, Through(query.Narrowing))), query.Chart, Held.Version)),
         Under = (query, _) => ValueTask.FromResult(BoardSource.ValuesUnder(Held, query)),

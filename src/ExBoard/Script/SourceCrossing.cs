@@ -1,7 +1,9 @@
+using System.Buffers;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using ExGrid.Data;
+using ExPivot.Engine;
 
 namespace ExBoard.Script;
 
@@ -12,11 +14,19 @@ namespace ExBoard.Script;
 /// named it for the same input; one dropped and handed in again is numbered anew, so a number the browser let go is
 /// never named again, in whichever order the browser's release and .NET's next message cross.
 /// </summary>
+/// <remarks>A source a pivot view reads makes a Pivot Source the browser's pivot asks through .NET
+/// (<see cref="BoardSource.Pivot"/>, ADR-0370 section 3). The browser makes one each time the view's narrowing changes,
+/// at once, so it is told the fields and what such a source answers with the number: they are read from the one the
+/// source makes over every row, which answers the first pivot the browser makes over every row.</remarks>
 internal sealed class SourceCrossing
 {
     private readonly Dictionary<int, Held> _held = [];
     private Dictionary<Held, int> _named = new(HeldKey.Comparer);
     private int _last;
+    // What the browser declares each source's Pivot Sources by, and the one made over every row to read it from, until
+    // the browser's pivot over every row takes it.
+    private readonly Dictionary<int, string> _pivots = [];
+    private readonly Dictionary<int, PivotSource> _unclaimed = [];
 
     /// <summary>
     /// Writes <c>"sources"</c>, each input's source by its number and what it answers, numbering for the next message
@@ -39,10 +49,24 @@ internal sealed class SourceCrossing
                 number = ++_last;
                 _held[number] = held;
             }
+            // Declared once per number, as a Board that pivots the input first names it: a later Board sharing the
+            // declaration may add the pivot.
+            if (!_pivots.ContainsKey(number) && source.Pivot is { } pivot && board.Views.OfType<BoardPivotView>().Any(view => view.Input == input))
+            {
+                var whole = pivot([]) ?? throw new InvalidOperationException($"The source of input '{input}' made no Pivot Source.");
+                _pivots[number] = Members(whole);
+                _unclaimed[number] = whole;
+            }
             named[held] = number;
             json.WriteStartObject(input);
             json.WriteNumber("number", number);
             json.WriteBoolean("thin", source.Thin is not null);
+            json.WriteBoolean("under", source.Under is not null);
+            json.WritePropertyName("pivot");
+            if (_pivots.TryGetValue(number, out var members))
+                json.WriteRawValue(members);
+            else
+                json.WriteNullValue();
             json.WriteEndObject();
         }
         json.WriteEndObject();
@@ -56,6 +80,28 @@ internal sealed class SourceCrossing
         ? held
         : throw new InvalidOperationException($"Internal: the browser names source {number}, which .NET never sent or the browser let go.");
 
+    /// <summary>A Pivot Source over the rows of source <paramref name="number"/> that <paramref name="narrowing"/> lets
+    /// through: the one made as the source was numbered, for the first over every row, and one the source makes for
+    /// every other.</summary>
+    public PivotSource PivotOver(int number, IReadOnlyList<LinkCondition> narrowing)
+    {
+        var held = this[number];
+        if (!_pivots.ContainsKey(number))
+            throw new InvalidOperationException($"Internal: the browser made a pivot over source {number}, which .NET declared none for.");
+        // The one over every row is the first pivot's, or nobody's: never held past the first pivot made.
+        if (_unclaimed.Remove(number, out var whole) && narrowing.Count == 0)
+            return whole;
+        var pivot = held.Source.Pivot ?? throw new InvalidOperationException($"Internal: source {number} makes no Pivot Source.");
+        var made = pivot(narrowing) ?? throw new InvalidOperationException($"The source of input '{held.Input}' made no Pivot Source.");
+        // The browser's pivot reads the one declaration: a source made with other fields or answers is refused by name.
+        if (Members(made) != _pivots[number])
+        {
+            throw new InvalidOperationException(
+                $"The source of input '{held.Input}' made a Pivot Source over a narrowing whose fields or answers are not those of the one over every row, which the pivot in the browser was told of.");
+        }
+        return made;
+    }
+
     /// <summary>The browser let go of <paramref name="numbers"/>: no message names them again.</summary>
     public void Release(IEnumerable<int> numbers)
     {
@@ -64,7 +110,22 @@ internal sealed class SourceCrossing
             if (_named.ContainsValue(number))
                 throw new InvalidOperationException($"Internal: the browser let go of source {number}, which the last message names.");
             _held.Remove(number);
+            _pivots.Remove(number);
+            _unclaimed.Remove(number);
         }
+    }
+
+    // A Pivot Source's fields and what it answers, as the browser declares the ones it makes over the source.
+    private static string Members(PivotSource pivot)
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            global::ExGrid.Script.PivotSourceCrossing.WriteMembers(json, pivot);
+            json.WriteEndObject();
+        }
+        return System.Text.Encoding.UTF8.GetString(buffer.WrittenSpan);
     }
 
     /// <summary>A source as it is held under a number: the input it is bound to, the source, and the Board's

@@ -7,7 +7,7 @@ namespace ExBoard;
 
 /// <summary>
 /// An input held where the data lives (ADR-0343): the host's own code, which says the input's shape,
-/// fetches a grid's rows and, if it can, makes a pivot's report source. The Board never talks to a server
+/// fetches a grid's rows and, if it can, makes a pivot's Pivot Source. The Board never talks to a server
 /// itself; each call here is handed the narrowing the Board's links put on the view, for the host to
 /// execute where the data lives.
 /// </summary>
@@ -22,11 +22,13 @@ public sealed class BoardSource(Func<CancellationToken, ValueTask<DataShape>> sh
     public Func<BoardQuery, CancellationToken, ValueTask<ShapedPage>> Fetch { get; } = fetch ?? throw new ArgumentNullException(nameof(fetch));
 
     /// <summary>
-    /// Makes a pivot view's report source over the input's rows that the given conditions let through
-    /// (all of them; none for the whole input), or null where the host cannot. Called again each time
-    /// the view's narrowing changes. A Board with a pivot over this input is refused when null.
+    /// Makes a pivot view's source over the input's rows that the given conditions let through (all of
+    /// them; none for the whole input), such as a <see cref="FetchingPivotSource"/> answering Leaf
+    /// Aggregates where the data lives, the engine building the report and its totals from them
+    /// (ADR-0343, ADR-0370 section 3); or null where the host cannot. Called again each time the view's
+    /// narrowing changes. A Board with a pivot over this input is refused when null.
     /// </summary>
-    public Func<IReadOnlyList<LinkCondition>, PivotReportSource>? Report { get; init; }
+    public Func<IReadOnlyList<LinkCondition>, PivotSource>? Pivot { get; init; }
 
     /// <summary>
     /// Answers a chart view's series with the points it draws, thinned where the data lives (ADR-0344), as

@@ -32,13 +32,42 @@ internal sealed class ScriptBridge(ExBoard board)
     [JSInvokable]
     public Task<string> Thin(int number, long call, string question) => Calls.InOrder(() => board.ThinAsync(number, call, question));
 
+    [JSInvokable]
+    public Task<string> Under(int number, long call, string question) => Calls.InOrder(() => board.UnderAsync(number, call, question));
+
+    [JSInvokable]
+    public Task MakePivot(int source, int pivot, string narrowing) => Calls.InOrder(() => board.MakePivotAsync(source, pivot, narrowing));
+
+    [JSInvokable]
+    public Task<string> PivotAggregate(int pivot, long call, string query) => Calls.InOrder(() => board.PivotAskAsync("aggregate", pivot, call, query));
+
+    [JSInvokable]
+    public Task<string> PivotItems(int pivot, long call, string query) => Calls.InOrder(() => board.PivotAskAsync("items", pivot, call, query));
+
+    [JSInvokable]
+    public Task<string> PivotDetails(int pivot, long call, string query) => Calls.InOrder(() => board.PivotAskAsync("details", pivot, call, query));
+
+    [JSInvokable]
+    public Task<string> PivotItemCounts(int pivot, long call, string? query) => Calls.InOrder(() => board.PivotAskAsync("itemCounts", pivot, call, query));
+
+    [JSInvokable]
+    public Task PivotRefresh(int pivot) => Calls.InOrder(() => board.PivotRefreshAsync(pivot));
+
+    [JSInvokable]
+    public Task ReleasePivot(int pivot) => Calls.InOrder(() => board.ReleasePivot(pivot));
+
+    // A pivot's questions are numbered apart from the sources' own, and cancelled as theirs are.
+    [JSInvokable]
+    public Task PivotCancel(long call) => board.TryCancelPivot(call) ? Task.CompletedTask : Calls.InOrder(() => board.TryCancelPivot(call));
+
     // A question already asked is cancelled at once; one not yet asked, held or behind a held call, once it is.
     [JSInvokable]
     public Task Cancel(long call) => board.TryCancel(call) ? Task.CompletedTask : Calls.InOrder(() => board.TryCancel(call));
 
     /// <summary>A call the browser held, too large for a message of its own: <paramref name="method"/>, with the
     /// arguments taken from the browser by <paramref name="crossed"/>'s number, made in its turn. Only a call that can
-    /// carry what the Board or the Consumer made, an event or a question narrowed by a link's values, is held.</summary>
+    /// carry what the Board or the Consumer made, an event, or a question narrowed by a link's values or naming a layout's
+    /// Items, is held.</summary>
     [JSInvokable]
     public Task<object?> Held(string method, JsonElement crossed) => Calls.Held(crossed, async arguments =>
     {
@@ -53,6 +82,17 @@ internal sealed class ScriptBridge(ExBoard board)
                 return await board.FetchAsync(At(0).GetInt32(), At(1).GetInt64(), Text(2));
             case nameof(Thin):
                 return await board.ThinAsync(At(0).GetInt32(), At(1).GetInt64(), Text(2));
+            case nameof(Under):
+                return await board.UnderAsync(At(0).GetInt32(), At(1).GetInt64(), Text(2));
+            case nameof(MakePivot):
+                await board.MakePivotAsync(At(0).GetInt32(), At(1).GetInt32(), Text(2));
+                return null;
+            case nameof(PivotAggregate):
+                return await board.PivotAskAsync("aggregate", At(0).GetInt32(), At(1).GetInt64(), Text(2));
+            case nameof(PivotItems):
+                return await board.PivotAskAsync("items", At(0).GetInt32(), At(1).GetInt64(), Text(2));
+            case nameof(PivotDetails):
+                return await board.PivotAskAsync("details", At(0).GetInt32(), At(1).GetInt64(), Text(2));
             default:
                 throw new InvalidOperationException($"Internal: the browser held a call to {method}, which carries nothing that large.");
         }

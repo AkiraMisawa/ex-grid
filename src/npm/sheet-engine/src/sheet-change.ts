@@ -179,6 +179,8 @@ export class RepeatedKeyError extends Error {
     readonly secondRow: number;
     /** What the table's going back to waiting changed: its readers, and what depends on them, now show `#GETTING_DATA`. */
     readonly change: SheetChange;
+    /** The key as the second of its rows holds it, one Value per key column, which the message names. @internal */
+    readonly repeats: readonly Value[];
 
     /** @internal */
     constructor(table: string, keyColumns: readonly string[], keys: readonly Value[], firstRow: number, repeats: readonly Value[], secondRow: number,
@@ -195,6 +197,7 @@ export class RepeatedKeyError extends Error {
         this.firstRow = firstRow;
         this.secondRow = secondRow;
         this.change = change;
+        this.repeats = repeats;
     }
 }
 

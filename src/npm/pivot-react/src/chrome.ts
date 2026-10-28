@@ -65,8 +65,11 @@ export function layPivotChrome(pivot: Omit<ExPivotChrome, 'grid'>, grid: ExGridC
 
 /** The mount functions made for an ExPivot's render functions: the pivot's slots', and the grid's. */
 export interface PivotMountsMade {
+    /** The pivot's slots' render functions, and the mount function made for each, by slot. */
     readonly pivot: Map<string, { readonly render: unknown; readonly mount: (slot: HTMLElement, context: unknown) => () => void }>;
+    /** The report grid's slots', as ExGrid for React makes them. */
     readonly grid: ChromeMountsMade;
+    /** The report grid's Chrome last handed, and its mount functions. */
     gridChrome?: { readonly given: unknown; readonly mounts: PivotChrome['grid'] };
 }
 
@@ -76,7 +79,8 @@ const pivotSlots: readonly string[] = ['menu', 'itemFilter', 'fieldSettings', 'v
 /** The ExPivot's Chrome as the pivot takes it: each slot's render function as a mount function rendering it through
  * the ExPivot's portals, and `grid`'s as ExGrid for React makes its own. A render function handed again keeps its
  * mount function. Which slots there are is the pivot's to check; a render function that is not a function is named
- * here, in React's terms. */
+ * here, in React's terms. Exported for the family's Framework Adapters, whose products hand ExPivot's Chrome on to the
+ * pivots they draw, not for a Consumer. */
 export function pivotChromeMounts(given: ExPivotChrome | undefined, portals: GridPortals, made: PivotMountsMade): PivotChrome | undefined {
     // Checked as a script may hand it, whatever its type says.
     const chrome: unknown = given;

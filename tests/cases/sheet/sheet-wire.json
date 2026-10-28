@@ -1,0 +1,359 @@
+{
+  "about": "An edit as Blazor's adapter sends it to the Sheet in the browser (ADR-0370 section 1): each `doWire` is the text ExSheet.Engine's SheetWire writes for the edit, exactly, which xUnit checks by writing the edit it reads, and which Vitest reads with @ex-grid/sheet-engine's readSheetEdit. A block copied inside ExSheet crosses only so; every other edit of every case crosses through SheetWire and readSheetEdit too.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0370 s1, ADR-0048: a block crosses as its source and its cells, and pastes at a cell with its References shifted and its formats",
+      "steps": [
+        {
+          "enter": {
+            "D4": "5"
+          }
+        },
+        {
+          "doWire": "{\"paste\":{\"block\":{\"source\":\"A1:B2\",\"cells\":[[{\"entry\":{\"constant\":2}},{\"entry\":{\"formula\":\"=A1*10\"},\"font\":{\"colour\":\"#FF0000\",\"bold\":true,\"italic\":false,\"underline\":false,\"strikethrough\":false}}],[{\"entry\":{\"constant\":\"three\"},\"numberFormat\":\"0.00\"},{\"fill\":\"#FFFF00\",\"borders\":{\"top\":\"none\",\"bottom\":{\"style\":\"double\",\"colour\":\"Automatic\"},\"left\":\"none\",\"right\":\"none\"}}]]},\"at\":\"D5\"}}",
+          "expect": {
+            "values": {
+              "D5": 2,
+              "E5": 20,
+              "D6": "three",
+              "E6": null
+            },
+            "formulas": {
+              "E5": "=D5*10"
+            },
+            "numberFormats": {
+              "D6": "0.00"
+            },
+            "fonts": {
+              "E5": {
+                "colour": "#FF0000",
+                "bold": true,
+                "italic": false,
+                "underline": false,
+                "strikethrough": false
+              }
+            },
+            "fills": {
+              "E6": "#FFFF00"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 s1, ADR-0048: a block crosses and pastes over a range it tiles, and over several ranges",
+      "steps": [
+        {
+          "doWire": "{\"paste\":{\"block\":{\"source\":\"A1:B2\",\"cells\":[[{\"entry\":{\"constant\":2}},{\"entry\":{\"formula\":\"=A1*10\"},\"font\":{\"colour\":\"#FF0000\",\"bold\":true,\"italic\":false,\"underline\":false,\"strikethrough\":false}}],[{\"entry\":{\"constant\":\"three\"},\"numberFormat\":\"0.00\"},{\"fill\":\"#FFFF00\",\"borders\":{\"top\":\"none\",\"bottom\":{\"style\":\"double\",\"colour\":\"Automatic\"},\"left\":\"none\",\"right\":\"none\"}}]]},\"at\":\"D1:E4\"}}",
+          "expect": {
+            "values": {
+              "D1": 2,
+              "D3": 2,
+              "E3": 20,
+              "D4": "three"
+            },
+            "formulas": {
+              "E3": "=D3*10"
+            }
+          }
+        },
+        {
+          "doWire": "{\"paste\":{\"block\":{\"source\":\"A1:B2\",\"cells\":[[{\"entry\":{\"constant\":2}},{\"entry\":{\"formula\":\"=A1*10\"},\"font\":{\"colour\":\"#FF0000\",\"bold\":true,\"italic\":false,\"underline\":false,\"strikethrough\":false}}],[{\"entry\":{\"constant\":\"three\"},\"numberFormat\":\"0.00\"},{\"fill\":\"#FFFF00\",\"borders\":{\"top\":\"none\",\"bottom\":{\"style\":\"double\",\"colour\":\"Automatic\"},\"left\":\"none\",\"right\":\"none\"}}]]},\"at\":[\"H1:I2\",\"H5:I6\"]}}",
+          "expect": {
+            "values": {
+              "H1": 2,
+              "I5": 20
+            },
+            "formulas": {
+              "I5": "=H5*10"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 s1: typed text, Entries and a cell named twice cross in order",
+      "steps": [
+        {
+          "doWire": "{\"enter\":{\"A1\":\"2\",\"A2\":\"=A1\\u002B1\"}}",
+          "expect": {
+            "values": {
+              "A2": 3
+            }
+          }
+        },
+        {
+          "doWire": "{\"setEntries\":{\"B1\":{\"formula\":\"=A2*2\"},\"B2\":{\"constant\":\"x\"},\"A1\":null}}",
+          "expect": {
+            "values": {
+              "B1": 2,
+              "B2": "x",
+              "A1": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 s1, ADR-0071: a Number Format, an alignment and a Cell Format change cross, a General written as null",
+      "steps": [
+        {
+          "doWire": "{\"setNumberFormat\":{\"at\":[\"A1\",\"B2\"],\"format\":\"0.00\"}}",
+          "expect": {
+            "numberFormats": {
+              "A1": "0.00",
+              "B2": "0.00"
+            }
+          }
+        },
+        {
+          "doWire": "{\"setNumberFormat\":{\"at\":\"A1:B2\",\"format\":null}}",
+          "expect": {
+            "numberFormats": {
+              "A1": "General"
+            }
+          }
+        },
+        {
+          "doWire": "{\"setAlignment\":{\"at\":[\"A1\"],\"alignment\":\"center\"}}",
+          "expect": {
+            "alignments": {
+              "A1": "center"
+            }
+          }
+        },
+        {
+          "doWire": "{\"setAlignment\":{\"at\":\"C1:C2\",\"alignment\":\"right\"}}",
+          "expect": {
+            "alignments": {
+              "C2": "right"
+            }
+          }
+        },
+        {
+          "doWire": "{\"setCellFormat\":{\"ranges\":[\"A1:B2\",\"D1:D1048576\"],\"change\":{\"numberFormat\":\"0%\",\"alignment\":\"left\",\"fontColour\":\"#0000FF\",\"bold\":true,\"italic\":false,\"fill\":\"none\",\"borders\":{\"top\":{\"style\":\"thin\",\"colour\":\"Automatic\"},\"bottom\":\"none\"}}}}",
+          "expect": {
+            "numberFormats": {
+              "B2": "0%"
+            },
+            "alignments": {
+              "D7": "left"
+            },
+            "borders": {
+              "A1": {
+                "top": {
+                  "style": "thin",
+                  "colour": "Automatic"
+                },
+                "bottom": "none",
+                "left": "none",
+                "right": "none"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 s1, ADR-0046: rows and columns inserted and deleted, and widths set, cross with their counts",
+      "steps": [
+        {
+          "enter": {
+            "A1": "1",
+            "A2": "=A1"
+          }
+        },
+        {
+          "doWire": "{\"insertRows\":[0,2]}",
+          "expect": {
+            "formulas": {
+              "A4": "=A3"
+            }
+          }
+        },
+        {
+          "doWire": "{\"deleteColumns\":[1,1]}",
+          "expect": {
+            "values": {
+              "A4": 1
+            }
+          }
+        },
+        {
+          "doWire": "{\"setColumnWidth\":{\"columns\":\"B1:C1048576\",\"width\":20}}",
+          "expect": {
+            "columnWidths": {
+              "B": {
+                "width": 20,
+                "kind": "setByUser"
+              },
+              "C": {
+                "width": 20,
+                "kind": "setByUser"
+              }
+            }
+          }
+        },
+        {
+          "doWire": "{\"setColumnWidth\":{\"columns\":\"B1:C1048576\",\"width\":null}}",
+          "expect": {
+            "columnWidths": {
+              "B": null,
+              "C": null
+            }
+          }
+        },
+        {
+          "doWire": "{\"setAutomaticColumnWidth\":{\"columns\":\"E1:E1048576\",\"width\":12.5}}",
+          "expect": {
+            "columnWidths": {
+              "E": {
+                "width": 12.5,
+                "kind": "widenedByEntry"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 s1, ADR-0050: a fill, a fill key, Ctrl+Enter and pasted text cross",
+      "steps": [
+        {
+          "enter": {
+            "A1": "1",
+            "A2": "2"
+          }
+        },
+        {
+          "doWire": "{\"fill\":{\"source\":\"A1:A2\",\"target\":\"A3:A4\",\"direction\":\"down\"}}",
+          "expect": {
+            "values": {
+              "A4": 4
+            }
+          }
+        },
+        {
+          "doWire": "{\"fillCopy\":{\"source\":\"A1:A2\",\"target\":\"B1:B2\",\"direction\":\"right\"}}",
+          "expect": {
+            "values": {
+              "B2": 2
+            }
+          }
+        },
+        {
+          "doWire": "{\"enterInto\":{\"targets\":[\"C1:C2\"],\"at\":\"C1\",\"typed\":\"=A1*2\"}}",
+          "expect": {
+            "formulas": {
+              "C2": "=A2*2"
+            }
+          }
+        },
+        {
+          "doWire": "{\"pasteText\":{\"fields\":[[\"7\",\"x\"]],\"at\":\"D1\"}}",
+          "expect": {
+            "values": {
+              "D1": 7,
+              "E1": "x"
+            }
+          }
+        },
+        {
+          "doWire": "{\"pasteFields\":{\"typed\":{\"F1\":\"1,234\"}}}",
+          "expect": {
+            "values": {
+              "F1": 1234
+            }
+          }
+        },
+        {
+          "doWire": "{\"pasteFields\":{\"typed\":{\"G1\":\"5\"},\"entries\":{\"G2\":{\"constant\":0.1}}}}",
+          "expect": {
+            "values": {
+              "G1": 5,
+              "G2": 0.1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 s1, ADR-0331: the Sheets renamed, inserted, moved, copied and deleted cross",
+      "steps": [
+        {
+          "doWire": "{\"rename\":\"Data\"}",
+          "expect": {
+            "sheets": [
+              "Data"
+            ]
+          }
+        },
+        {
+          "doWire": "{\"insertSheet\":{\"name\":\"Notes\",\"before\":false}}",
+          "expect": {
+            "sheets": [
+              "Data",
+              "Notes"
+            ]
+          }
+        },
+        {
+          "doWire": "{\"insertSheet\":{\"before\":true}}",
+          "expect": {
+            "sheets": [
+              "Sheet3",
+              "Data",
+              "Notes"
+            ]
+          }
+        },
+        {
+          "doWire": "{\"moveSheet\":0}",
+          "expect": {
+            "sheets": [
+              "Data",
+              "Sheet3",
+              "Notes"
+            ]
+          }
+        },
+        {
+          "doWire": "{\"copySheet\":true}",
+          "expect": {
+            "sheets": [
+              "Data",
+              "Data (2)",
+              "Sheet3",
+              "Notes"
+            ]
+          }
+        },
+        {
+          "doWire": "{\"copySheet\":0}",
+          "expect": {
+            "sheets": [
+              "Data (3)",
+              "Data",
+              "Data (2)",
+              "Sheet3",
+              "Notes"
+            ]
+          }
+        },
+        {
+          "doWire": "{\"deleteSheet\":true}",
+          "expect": {
+            "sheets": [
+              "Data (3)",
+              "Data (2)",
+              "Sheet3",
+              "Notes"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

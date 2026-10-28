@@ -514,68 +514,9 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     {
         json.WriteStartObject();
         json.WriteNumber("generation", generation);
-        json.WriteStartArray("fields");
-        foreach (var field in source.Fields)
-            WriteField(json, field);
-        json.WriteEndArray();
-        var features = source.Features;
-        json.WriteStartArray("aggregations");
-        foreach (var aggregation in features.Aggregations)
-            json.WriteStringValue(Camel(aggregation));
-        json.WriteEndArray();
-        json.WriteBoolean("canRefresh", features.CanRefresh);
-        json.WriteBoolean("countsItems", features.CountsItems);
-        json.WriteBoolean("answersLevels", features.AnswersLevels);
+        global::ExGrid.Script.PivotSourceCrossing.WriteMembers(json, source);
         json.WriteEndObject();
     });
-
-    private static void WriteField(Utf8JsonWriter json, PivotField field)
-    {
-        if (field.OrderKey is not null)
-        {
-            throw new NotSupportedException(
-                $"Pivot Field '{field.Name}' has an Order Key, a .NET function the pivot in the browser cannot call (ADR-0370 section 1). "
-                + "Declare its Items' order with ItemOrder instead.");
-        }
-        json.WriteStartObject();
-        json.WriteString("name", field.Name);
-        json.WriteString("type", Camel(field.Type));
-        json.WriteString("caption", field.Caption);
-        if (field.Format is { } format)
-            json.WriteString("format", format);
-        else
-            json.WriteNull("format");
-        json.WriteStartArray("itemOrder");
-        foreach (var item in field.ItemOrder)
-        {
-            switch (item)
-            {
-                case string text: json.WriteStringValue(text); break;
-                case bool flag: json.WriteBooleanValue(flag); break;
-                case int whole: json.WriteNumberValue(whole); break;
-                case long whole: json.WriteNumberValue(whole); break;
-                case double number when double.IsFinite(number): json.WriteNumberValue(number); break;
-                case double number:
-                    throw new NotSupportedException(
-                        $"Pivot Field '{field.Name}' declares the Item {number}, which no Item of a field can be: an Item is a finite number.");
-                case decimal number: json.WriteNumberValue(number); break;
-                default:
-                    throw new NotSupportedException(
-                        $"Pivot Field '{field.Name}' declares an Item of the type {item.GetType().Name}, which the pivot in the browser does not "
-                        + "read yet: declared Items are text, numbers or Booleans (ADR-0370 section 1).");
-            }
-        }
-        json.WriteEndArray();
-        if (field.Column is { } column)
-            json.WriteString("column", column);
-        else
-            json.WriteNull("column");
-        if (field.DatePart is { } part)
-            json.WriteString("datePart", Camel(part));
-        else
-            json.WriteNull("datePart");
-        json.WriteEndObject();
-    }
 
     private void OnSourceChanged(int generation, PivotSourceChanged change)
     {
@@ -749,23 +690,13 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             throw new InvalidOperationException($"Internal: the browser asked question {call} twice.");
         try
         {
-            var token = cancellation.Token;
-            return kind switch
-            {
-                "aggregate" => PivotJson.Write(await source.AggregateAsync(PivotJson.ReadQuery(Must(query)), token)),
-                "items" => PivotJson.Write(await source.ItemsAsync(PivotJson.ReadItemsQuery(Must(query)), token)),
-                "details" => PivotJson.Write(await source.DetailsAsync(PivotJson.ReadDetailsQuery(Must(query)), token)),
-                "itemCounts" => PivotJson.Write(await source.ItemCountsAsync(token)),
-                _ => throw new InvalidOperationException($"Internal: the browser asked a question of the kind '{kind}'."),
-            };
+            return await global::ExGrid.Script.PivotSourceCrossing.AnswerAsync(source, kind, query, cancellation.Token);
         }
         finally
         {
             _asked.TryRemove(call, out _);
         }
     }
-
-    private static string Must(string? query) => query ?? throw new InvalidOperationException("Internal: the browser asked without a question.");
 
     internal async Task RefreshAsync(int generation)
     {
@@ -878,13 +809,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
 
     // An enum member as the Script Core spells it: `CountNumbers` is `countNumbers`. A value that names no member is
     // refused here, rather than sent as a number the browser would refuse later.
-    private static string Camel<TEnum>(TEnum value) where TEnum : struct, Enum
-    {
-        if (!Enum.IsDefined(value))
-            throw new ArgumentOutOfRangeException(nameof(value), value, $"{value} is not a {typeof(TEnum).Name}.");
-        var name = value.ToString();
-        return string.Concat(char.ToLowerInvariant(name[0]).ToString(), name.AsSpan(1));
-    }
+    private static string Camel<TEnum>(TEnum value) where TEnum : struct, Enum => global::ExGrid.Script.PivotSourceCrossing.Camel(value);
 
     private static string Json(Action<Utf8JsonWriter> write)
     {
