@@ -261,24 +261,38 @@ public class ScriptGridChromeTests : BunitContext
 
         public RenderFragment? LoadingIndicator(LoadingContext context) => null;
 
-        public RenderFragment? FormulaBarText(GridFormulaBarTextView view) => builder => builder.AddContent(0,
-            $"bar read only {view.IsReadOnly} borrowed {view.IsBorrowed}");
+        public RenderFragment? FormulaBarText(GridFormulaBarTextView view) => builder => builder.AddContent(0, "bar text");
 
         public RenderFragment? NameBox(GridNameBoxView view) => builder => builder.AddContent(0, "name box");
     }
 
-    [Fact] // ADR-0410 section 3 / ADR-0051: the Formula Bar's text field's view crosses as data, and the Name Box is drawn from none
-    public async Task ADR0410_the_formula_bars_views_cross_as_data()
+    [Fact] // ADR-0410 section 3 / ADR-0051: the Formula Bar's fields are asked for by name and drawn from no data
+    public async Task ADR0410_the_formula_bars_fields_are_drawn_from_no_data()
     {
         var cut = Grid(new BarChrome());
         using (var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2])))
             Assert.Equal("""["formulaBarText","nameBox"]""", document.RootElement.GetProperty("options").GetProperty("razorSlots").GetRawText());
-        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "formulaBarText", "{\"readOnly\":true,\"borrowed\":false}"));
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "formulaBarText", "{}"));
         await cut.InvokeAsync(() => Bridge().MountSlot(2, 1, "nameBox", "{}"));
-        Assert.Equal(["bar read only True borrowed False", "name box"], cut.FindAll(".ex-razor-slot").Select(slot => slot.TextContent));
+        Assert.Equal(["bar text", "name box"], cut.FindAll(".ex-razor-slot").Select(slot => slot.TextContent));
+    }
 
-        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2, "{\"readOnly\":true,\"borrowed\":true}"));
-        Assert.Equal("bar read only True borrowed True", cut.FindAll(".ex-razor-slot")[0].TextContent);
+    [Fact] // ADR-0051 / ADR-0050 item 4: Enter in the Name Box is heard only where handled, and hands the Consumer the typed text
+    public async Task ADR0051_enter_in_the_name_box_reaches_OnNameBoxEntered()
+    {
+        var typed = new List<string>();
+        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Rows, TestRows.Window())
+            .Add(g => g.Columns, Columns)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnNameBoxEntered, (string text) => typed.Add(text)));
+        using (var document = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["attach"]).Arguments[2])))
+            Assert.Contains("nameBoxEntered", document.RootElement.GetProperty("options").GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
+
+        using var payload = JsonDocument.Parse("\"B7\"");
+        await cut.InvokeAsync(() => Bridge().Heard("nameBoxEntered", payload.RootElement));
+
+        Assert.Equal(["B7"], typed);
     }
 
     [Fact] // ADR-0410: a Chrome that names a slot this adapter does not fill is refused by name, never left out quietly

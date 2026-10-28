@@ -159,15 +159,12 @@ public sealed record GridMenuView(string Column, ColumnType Type, IReadOnlyList<
 public sealed record GridLoadingView(bool IsLoading, int PlaceholderRowCount);
 
 /// <summary>
-/// The Formula Bar's text field when the Script Core draws the grid (ADR-0051, ADR-0410 section 3): data only, drawn
-/// again as it changes. The text, the field's name and its <c>readonly</c> are the core's, set on the field in the
-/// browser; the core also marks its box <c>ex-formula-bar-borrowed</c> while <paramref name="IsBorrowed"/> holds, so a
-/// stylesheet can dim it without waiting for this view.
+/// The Formula Bar's text field when the Script Core draws the grid (ADR-0051, ADR-0410 section 3). It carries nothing,
+/// and is drawn once: the text, the field's name and its <c>readonly</c> are the core's, set on the field in the browser
+/// as the Focus moves, never a round trip behind it. The core also marks its box <c>ex-formula-bar-borrowed</c> while
+/// the text is not the Focus cell's own (ADR-0125), so a stylesheet dims it there.
 /// </summary>
-/// <param name="IsReadOnly">Whether the field takes no typing: the Focus cell does not edit.</param>
-/// <param name="IsBorrowed">Whether the text is not the Focus cell's own, an array's Formula over a cell it spills into
-/// (ADR-0125).</param>
-public sealed record GridFormulaBarTextView(bool IsReadOnly, bool IsBorrowed);
+public sealed record GridFormulaBarTextView;
 
 /// <summary>
 /// The Name Box when the Script Core draws the grid (ADR-0051, ADR-0410 section 3). It carries nothing: what the box

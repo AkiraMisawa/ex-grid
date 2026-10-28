@@ -143,9 +143,18 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>
     /// Whether the Formula Bar stands above the header (ADR-0051): the Name Box and the Focus cell's text, which edits
     /// the cell as its editor does. A Chrome draws its fields where it names <see cref="ScriptSlots.FormulaBarText"/>
-    /// and <see cref="ScriptSlots.NameBox"/> (ADR-0410). Off unless set.
+    /// and <see cref="ScriptSlots.NameBox"/> (ADR-0410). Off unless set. The Name Box names no cell here yet: the
+    /// Script Core asks a label of the Consumer's in the browser, which a .NET delegate cannot answer without a round
+    /// trip per move, so it stays empty until the Consumer types in it.
     /// </summary>
     [Parameter] public bool ShowFormulaBar { get; set; }
+
+    /// <summary>
+    /// Hears Enter in the Name Box (ADR-0051): the text the user typed there. The Consumer resolves it to a position,
+    /// the grid reads no address, and places the Selection and the Focus with <see cref="PlaceSelectionAsync"/>
+    /// (ADR-0050, item 4). The keyboard is the grid's again as Enter is typed.
+    /// </summary>
+    [Parameter] public EventCallback<string> OnNameBoxEntered { get; set; }
 
     /// <summary>
     /// Hears a fill-handle drag, released (ADR-0050, item 5): the source, the target beside it and the direction. The
@@ -967,6 +976,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         yield return ("leave", OnLeave.HasDelegate);
         yield return ("overwriteNotice", OnOverwriteNotice.HasDelegate);
         yield return ("action", OnAction.HasDelegate);
+        yield return ("nameBoxEntered", OnNameBoxEntered.HasDelegate);
     }
 
     private static void WriteSize(Utf8JsonWriter json, string name, ViewportSize size)
@@ -1612,6 +1622,11 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 var action = new GridActionEventArgs<TRow>(
                     _rows.RowOf(payload.GetProperty("row").GetInt64()), Text(payload, "column"), Text(payload, "action"));
                 return () => OnAction.InvokeAsync(action);
+            }
+            case "nameBoxEntered":
+            {
+                var typed = payload.GetString() ?? throw new InvalidOperationException("Internal: Enter in the Name Box without its text.");
+                return () => OnNameBoxEntered.InvokeAsync(typed);
             }
             default:
                 throw new InvalidOperationException($"Internal: the Script Core raised '{kind}', which the adapter does not hear.");

@@ -358,15 +358,7 @@ const handedEditorFields = new WeakMap<GridCellEditorSlotContext, HTMLElement>()
  * the function that takes the wiring off again, which has nothing to take: the core hears the field itself.
  */
 export function wireCellEditor(contents: HTMLElement, context: GridCellEditorSlotContext, answered = false): () => void {
-    const fields = contents.querySelectorAll<HTMLElement>(`[${editorFieldAttribute}]`);
-    const field = fields[0];
-    if (fields.length !== 1 || field === undefined) {
-        throw new Error(`The cell editor's contents drew ${fields.length} fields marked ${editorFieldAttribute}: mark the one text field.`);
-    }
-    // The field itself, so a field drawn anew is one marked anew, never one swapped inside an element kept.
-    if (field.tagName !== 'INPUT' && field.tagName !== 'TEXTAREA') {
-        throw new Error(`The cell editor's contents marked a ${field.tagName.toLowerCase()} with ${editorFieldAttribute}: mark the input or the textarea itself.`);
-    }
+    const field = markedField(contents, editorFieldAttribute, 'cell editor', true);
     const handed = handedEditorFields.get(context);
     // Contents not yet the ones the request is for take nothing: a later wiring hands the field over.
     if (!answered || (handed !== undefined && handed !== field)) {
@@ -384,23 +376,17 @@ export const formulaBarFieldAttribute = 'data-ex-formula-bar-field';
  * core. */
 export const nameBoxFieldAttribute = 'data-ex-name-box-field';
 
-/** The field each of the Formula Bar's slots was last handed, so a wiring of the same field again hands nothing. */
-const handedBarFields = new WeakMap<object, HTMLElement>();
-
-/** Hands `takeField` the one field marked with `attribute` in `contents`, where it is another than the one handed last
- * for `context`: an `input`, or where `textarea` allows, a `textarea`, marked itself. */
-function wireBarField(contents: HTMLElement, context: object, attribute: string, name: string, textarea: boolean, takeField: (control: HTMLElement) => void): () => void {
+/** The one field marked with `attribute` in `contents`, an `input`, or where `textarea` allows, a `textarea`: the field
+ * itself, so a field drawn anew is one marked anew, never one swapped inside an element kept. Refused by `name` where
+ * the contents mark none, several, or another element. */
+function markedField(contents: HTMLElement, attribute: string, name: string, textarea: boolean): HTMLElement {
     const fields = contents.querySelectorAll<HTMLElement>(`[${attribute}]`);
     const field = fields[0];
     if (fields.length !== 1 || field === undefined) throw new Error(`The ${name}'s contents drew ${fields.length} fields marked ${attribute}: mark the one text field.`);
     if (field.tagName !== 'INPUT' && !(textarea && field.tagName === 'TEXTAREA')) {
         throw new Error(`The ${name}'s contents marked a ${field.tagName.toLowerCase()} with ${attribute}: mark the ${textarea ? 'input or the textarea' : 'input'} itself.`);
     }
-    if (handedBarFields.get(context) !== field) {
-        handedBarFields.set(context, field);
-        takeField(field);
-    }
-    return () => undefined;
+    return field;
 }
 
 /**
@@ -411,7 +397,9 @@ function wireBarField(contents: HTMLElement, context: object, attribute: string,
  * Answers the function that takes the wiring off again, which has nothing to take.
  */
 export function wireFormulaBarText(contents: HTMLElement, context: GridFormulaBarTextSlotContext): () => void {
-    return wireBarField(contents, context, formulaBarFieldAttribute, 'Formula Bar\'s text', true, context.takeField);
+    // The core takes a field it already holds as nothing new.
+    context.takeField(markedField(contents, formulaBarFieldAttribute, 'Formula Bar\'s text', true));
+    return () => undefined;
 }
 
 /**
@@ -421,5 +409,6 @@ export function wireFormulaBarText(contents: HTMLElement, context: GridFormulaBa
  * Answers the function that takes the wiring off again, which has nothing to take.
  */
 export function wireNameBox(contents: HTMLElement, context: GridNameBoxSlotContext): () => void {
-    return wireBarField(contents, context, nameBoxFieldAttribute, 'Name Box', false, context.takeField);
+    context.takeField(markedField(contents, nameBoxFieldAttribute, 'Name Box', false));
+    return () => undefined;
 }

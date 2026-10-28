@@ -75,7 +75,7 @@ internal static class RazorSlot
                 },
                 ScriptJson.Present(json, "error", out var error) ? error.GetString() : null,
                 json.GetProperty("pending").GetBoolean()),
-            ScriptSlots.FormulaBarText => new GridFormulaBarTextView(json.GetProperty("readOnly").GetBoolean(), json.GetProperty("borrowed").GetBoolean()),
+            ScriptSlots.FormulaBarText => new GridFormulaBarTextView(),
             ScriptSlots.NameBox => new GridNameBoxView(),
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
         };

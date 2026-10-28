@@ -36,11 +36,13 @@
                          ViewportWidth="640"
                          Chrome="MudGridChrome.Default"
                          OnColumnHidden="OnColumnHidden"
-                         OnEdit="OnEdit" />
+                         OnEdit="OnEdit"
+                         OnNameBoxEntered="OnNameBoxEntered" />
 </MudExGridPaper>
 
 <p><span id="script-mud-hidden" role="status">Hidden: @_hidden</span></p>
 <p><span id="script-mud-edited" role="status">Edited: @_edited</span></p>
+<p><span id="script-mud-named" role="status">Named: @_named</span></p>
 
 @code {
     private static readonly GridColumn<DemoTrade>[] Columns =
@@ -55,8 +57,13 @@
 
     private string _edited = "none";
 
+    private string _named = "none";
+
     private void OnColumnHidden(string column) => _hidden = column;
 
     // What the editor committed, as the core read it from MudBlazor's field in the browser.
     private void OnEdit(GridEditIntent<DemoTrade> intent) => _edited = $"{intent.Column} = {intent.Value}";
+
+    // What was typed in MudBlazor's Name Box as Enter was pressed there; resolving it is the Consumer's (ADR-0051).
+    private void OnNameBoxEntered(string typed) => _named = typed;
 }

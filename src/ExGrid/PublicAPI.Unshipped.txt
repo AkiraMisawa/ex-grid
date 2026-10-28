@@ -216,13 +216,8 @@ ExGrid.Chrome.GridFindWords.WholeCell.get -> string!
 ExGrid.Chrome.GridFindWords.WholeCell.init -> void
 ExGrid.Chrome.GridFormulaBarTextView
 ExGrid.Chrome.GridFormulaBarTextView.<Clone>$() -> ExGrid.Chrome.GridFormulaBarTextView!
-ExGrid.Chrome.GridFormulaBarTextView.Deconstruct(out bool IsReadOnly, out bool IsBorrowed) -> void
 ExGrid.Chrome.GridFormulaBarTextView.Equals(ExGrid.Chrome.GridFormulaBarTextView? other) -> bool
-ExGrid.Chrome.GridFormulaBarTextView.GridFormulaBarTextView(bool IsReadOnly, bool IsBorrowed) -> void
-ExGrid.Chrome.GridFormulaBarTextView.IsBorrowed.get -> bool
-ExGrid.Chrome.GridFormulaBarTextView.IsBorrowed.init -> void
-ExGrid.Chrome.GridFormulaBarTextView.IsReadOnly.get -> bool
-ExGrid.Chrome.GridFormulaBarTextView.IsReadOnly.init -> void
+ExGrid.Chrome.GridFormulaBarTextView.GridFormulaBarTextView() -> void
 ExGrid.Chrome.GridLoadingView
 ExGrid.Chrome.GridLoadingView.<Clone>$() -> ExGrid.Chrome.GridLoadingView!
 ExGrid.Chrome.GridLoadingView.Deconstruct(out bool IsLoading, out int PlaceholderRowCount) -> void
@@ -604,6 +599,8 @@ ExGrid.Script.ExGrid<TRow>.OnHeaderGroupToggled.get -> Microsoft.AspNetCore.Comp
 ExGrid.Script.ExGrid<TRow>.OnHeaderGroupToggled.set -> void
 ExGrid.Script.ExGrid<TRow>.OnLeave.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Script.ExGrid<TRow>.OnLeave.set -> void
+ExGrid.Script.ExGrid<TRow>.OnNameBoxEntered.get -> Microsoft.AspNetCore.Components.EventCallback<string!>
+ExGrid.Script.ExGrid<TRow>.OnNameBoxEntered.set -> void
 ExGrid.Script.ExGrid<TRow>.OnOverwriteNotice.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridOverwriteNotice>
 ExGrid.Script.ExGrid<TRow>.OnOverwriteNotice.set -> void
 ExGrid.Script.ExGrid<TRow>.OnPaste.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Clipboard.GridPasteIntent!>

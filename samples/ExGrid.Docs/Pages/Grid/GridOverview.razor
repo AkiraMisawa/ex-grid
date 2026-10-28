@@ -87,7 +87,10 @@
             grid reads and writes their text, places the caret and gives them the keyboard in the browser, so what is
             typed is what the Enter commits, and a field a Chrome draws shows a formula's References uncoloured.
             ExSheet therefore keeps its own Cell Editor and Formula Bar text, whatever the Chrome, and takes the
-            Chrome's Name Box. The
+            Chrome's Name Box. On this grid the Name Box names no cell yet, since the grid asks its label in the browser
+            and a .NET <code>NameBoxLabel</code> would cost a round trip at every move; Enter in it hands
+            <code>OnNameBoxEntered</code> what was typed, and the Example places the Selection on the trade whose Id it
+            names. The
             grid's script hands each to the grid in the browser, so nothing a user does waits on a Blazor Server
             circuit, and a key typed as a menu opens, before your Razor has arrived, waits for it and is answered
             there.

@@ -1,5 +1,5 @@
 import { test, expect, circuitQuiet, settled, setRoundTrip } from './fixtures.mjs';
-import { activeDescendant } from './keyboard.mjs';
+import { activeDescendant, expectKeyboardOn } from './keyboard.mjs';
 
 // A Chrome written in Razor over the Script Core (ADR-0410), on /script-grid-mud, on both Blazor hosts:
 // ExGrid.MudBlazor's column menu, filter panel and find panel rendered in .NET, moved into the Script Core's slots by
@@ -143,7 +143,7 @@ test('ADR-0410 / SRV-7: the Cell Editor is MudBlazor\'s field, and a text typed 
     await expect(field).toHaveAttribute('aria-label', 'Trader');
 });
 
-test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and a text typed in its text field and entered at machine speed over a slow circuit is what commits', async ({ page }) => {
+test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and what is typed in either and entered at machine speed over a slow circuit is what the grid hears', async ({ page }) => {
     await settled(grid(page));
     await cell(page, 3, 1).click({ force: true });
     await settled(grid(page));
@@ -160,4 +160,14 @@ test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and a tex
     await settled(grid(page));
     await circuitQuiet();
     await expect(page.locator('#script-mud-edited')).toHaveText('Edited: Trader = Mira Holt');
+
+    // The Name Box's Enter is the form's implicit submission around MudBlazor's field: the typed text reaches
+    // OnNameBoxEntered whole, and the keyboard is the grid's again.
+    await grid(page).locator('input.mud-ex-name-box').click();
+    await page.keyboard.type('B7');
+    await page.keyboard.press('Enter');
+    await settled(grid(page));
+    await circuitQuiet();
+    await expect(page.locator('#script-mud-named')).toHaveText('Named: B7');
+    await expectKeyboardOn(grid(page));
 });

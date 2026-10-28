@@ -87,16 +87,12 @@ const editorKind: RazorSlotKind<GridCellEditorSlotContext> = {
     wire: (contents, editor, answered) => wireCellEditor(contents, editor, answered),
 };
 
-/** The Formula Bar's text field's kind: whether it takes typing and whether its text is borrowed, as data, drawn again
- * as they change, and the field the contents mark handed to the core, which reads, writes and names it in the browser.
+/** The Formula Bar's text field's kind: nothing as data, drawn once, and the field the contents mark handed to the
+ * core, which reads, writes, names and makes it read only in the browser as the Focus moves, never a round trip behind.
  * It takes the keyboard only by the user's press, so no input waits for it. */
 const barTextKind: RazorSlotKind<GridFormulaBarTextSlotContext> = {
     takesKeyboard: false,
-    data: bar => {
-        const view = bar.view();
-        return { json: JSON.stringify({ readOnly: view.readOnly, borrowed: view.borrowed }), drawn: undefined, memo: undefined };
-    },
-    subscribe: (bar, again) => bar.subscribe(again),
+    data: () => ({ json: '{}', drawn: undefined, memo: undefined }),
     wire: (contents, bar) => wireFormulaBarText(contents, bar),
 };
 
