@@ -4,8 +4,8 @@
 |---|---|---|
 | ExGrid | 94.4% | 88% |
 | ExSheet | 95.2% | 87.5% |
-| ExPivot | 93.5% | 85.6% |
-| ExChart | 91.8% | 86.4% |
+| ExPivot | 93% | 85.2% |
+| ExChart | 89.2% | 85.1% |
 | ExBoard | 93.8% | 86.9% |
 | Data | 94.5% | 90% |
 
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 00:49:12 |
+| Generated on: | 10/28/2026 - 01:09:48 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1226 |
-| Files: | 620 |
-| **Line coverage:** | 94.2% (85118 of 90291) |
-| Covered lines: | 85118 |
-| Uncovered lines: | 5173 |
-| Coverable lines: | 90291 |
-| Total lines: | 144238 |
-| **Branch coverage:** | 87.4% (51311 of 58666) |
-| Covered branches: | 51311 |
-| Total branches: | 58666 |
+| Classes: | 1235 |
+| Files: | 625 |
+| **Line coverage:** | 93.9% (86073 of 91639) |
+| Covered lines: | 86073 |
+| Uncovered lines: | 5566 |
+| Coverable lines: | 91639 |
+| Total lines: | 146015 |
+| **Branch coverage:** | 87.2% (51684 of 59247) |
+| Covered branches: | 51684 |
+| Total branches: | 59247 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -76,11 +76,11 @@
 |ExBoard.Narrowing|76.7%|59.5%|
 
 </details>
-<details><summary>ExChart - 85.9%</summary>
+<details><summary>ExChart - 82.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**85.9%**|**75.3%**|
+|**ExChart**|**82.2%**|**74%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -117,6 +117,15 @@
 |ExChart.GridState<TRow>|85.7%||
 |ExChart.KeyedPosition|100%||
 |ExChart.RowSeries|100%||
+|ExChart.Script.ChartWire|73.1%|69.3%|
+|ExChart.Script.DrawingState|100%||
+|ExChart.Script.ExChart|82.8%|73.2%|
+|ExChart.Script.ExSurface|76.2%|59.2%|
+|ExChart.Script.RowKeys|77.5%|71.6%|
+|ExChart.Script.ScriptBridge|100%||
+|ExChart.Script.ScriptMount|74.3%|75%|
+|ExChart.Script.ScriptMount<T>|74.3%|75%|
+|ExChart.Script.SurfaceValues|100%||
 |ExChart.SelectionReader|92.1%|73.9%|
 |ExChart.SelectionReader<TRow>|92.1%|73.9%|
 |ExChart.SeriesVisibility|100%||
@@ -796,11 +805,11 @@
 |ExGrid.MudBlazor.RobotoGlyphTable|100%||
 
 </details>
-<details><summary>ExPivot - 88.6%</summary>
+<details><summary>ExPivot - 87.5%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**88.6%**|**79.9%**|
+|**ExPivot**|**87.5%**|**79%**|
 |ExPivot.Chrome.IPivotChrome|41.6%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
@@ -856,7 +865,7 @@
 |ExPivot.PivotCommandIds|95%|93.3%|
 |ExPivot.PivotDetailItem|100%||
 |ExPivot.PivotDetails|100%||
-|ExPivot.Script.ExPivot|59.9%|44.2%|
+|ExPivot.Script.ExPivot|52.6%|38.4%|
 |ExPivot.Script.ScriptBridge|22.2%||
 
 </details>
@@ -1019,8 +1028,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1073,12 +1082,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
