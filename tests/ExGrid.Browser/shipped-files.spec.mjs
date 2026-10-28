@@ -123,7 +123,9 @@ async function recordAnnouncements(page) {
 
 test.describe('ERR-9: the address of each file', () => {
     test(`ERR-9 / ADR-0123: the script and the stylesheets are asked for at ${SERVER ? 'the fingerprinted address' : 'the plain path with the file\'s version'}`, async ({ page }) => {
-        await page.goto('/sheet');
+        // The Razor ExSheet, which still ships (ADR-0370 section 6, step 2): the Sheet over the Script
+        // Core brings its own bundle and draws no stylesheet notice yet.
+        await page.goto('/sheet?component=razor');
         await expect(page.locator('.ex-grid').first().locator('.ex-row').first()).toBeVisible();
 
         const links = await page.evaluate(() => [...document.querySelectorAll('head link[rel=stylesheet]')]
@@ -270,7 +272,9 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
     // Sheet's grid's, and ExPivot's for ExPivot.MudBlazor (ADR-0123, 2026-10-11).
     const products = [
         { product: 'ExGrid', path: '/wide', root: '.ex-grid', name: 'ex-grid' },
-        { product: 'ExSheet', path: '/sheet', root: '.ex-sheet', name: 'ex-sheet' },
+        // ExSheet over the Script Core draws no stylesheet notice yet, so ExSheet's row runs the Razor
+        // component, which still ships, until it does (ADR-0370 section 6, step 2).
+        { product: 'ExSheet', path: '/sheet?component=razor', root: '.ex-sheet', name: 'ex-sheet' },
         { product: 'ExPivot', path: '/pivot', root: '.ex-pivot', name: 'ex-pivot' },
         { product: 'ExGrid.MudBlazor', path: '/mud', root: '.ex-grid', name: 'mud-ex-grid' },
         { product: 'ExSheet.MudBlazor', path: '/sheet?chrome=mud', root: '.ex-sheet .ex-grid', name: 'mud-ex-sheet' },

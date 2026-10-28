@@ -1,6 +1,7 @@
 import { test, expect, alterPage, circuitBack, circuitQuiet, connectionMark, dataRowCount, dropCircuit, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
+import { CIRCUIT_SHEET } from './sheet-helpers.mjs';
 
 // What a Blazor Server circuit can fail and a WebAssembly tab cannot (Definition of Done
 // §24): keys typed faster than a round trip (ED-22), a paste past the hub's message
@@ -596,8 +597,8 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
     const sheetGrid = (page) => page.locator('.ex-grid').first();
     const columnF = (page, row) => sheetGrid(page).locator(`[id$='-r${row}c5']`);
 
-    async function openSheet(page) {
-        await page.goto('/sheet');
+    async function openSheet(page, component = undefined) {
+        await page.goto(component === undefined ? '/sheet' : `/sheet?component=${component}`);
         await expect(sheetGrid(page).locator("[id$='-r0c0']")).toHaveText('Item');
         await expectTabStopTaken(sheetGrid(page));
     }
@@ -670,7 +671,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
     for (const rtt of [0, 150]) {
         test(`a press held behind a page move lands on the row painted under it at the press, at ${rtt} ms (ED-31, ADR-0021)`, async ({ page }) => {
             test.skip(!SERVER && rtt > 0, 'WebAssembly has no round trip to set');
-            await openSheet(page);
+            await openSheet(page, CIRCUIT_SHEET);
             const grid = sheetGrid(page);
             const rowHeight = (await columnF(page, 0).boundingBox()).height;
             await alterPage(page, () => {

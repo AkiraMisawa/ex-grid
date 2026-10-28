@@ -3236,12 +3236,14 @@ export class GridView<Row> {
 
     // The Row Headings' width (ADR-0050, ADR-0028): the Consumer's number where it gave one, otherwise the wider of
     // the first and the last row's labels as the Cell Metrics estimate a cell's text and padding; none without the
-    // band. Resolved with the column geometry, so a result that grows a digit widens the band.
+    // band. Resolved with the column geometry, so a result that grows a digit widens the band. On a Device Pixel, so
+    // every column edge is counted from where the band is painted, as the C# grid counts it (ADR-0090).
     #resolveRowHeadingWidth(): number {
         if (this.#rowHeadings === undefined) return 0;
-        if (this.#rowHeadingWidth !== undefined) return this.#rowHeadingWidth;
+        if (this.#rowHeadingWidth !== undefined) return ColumnGeometry.onDevicePixel(this.#rowHeadingWidth, this.#devicePixelRatio);
         const asText = this.#metrics.cellMetrics.for('text');
-        return Math.max(asText.estimatePx(this.#headingAt(0)), asText.estimatePx(this.#headingAt(Math.max(0, this.#totalRows - 1))));
+        const width = Math.max(asText.estimatePx(this.#headingAt(0)), asText.estimatePx(this.#headingAt(Math.max(0, this.#totalRows - 1))));
+        return ColumnGeometry.onDevicePixel(width, this.#devicePixelRatio);
     }
 
     #raiseRangeIfUncovered(): void {
