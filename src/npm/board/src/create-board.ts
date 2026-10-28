@@ -87,14 +87,22 @@ export interface BoardHandle {
     readonly bound: BoundBoard | undefined;
 }
 
-/** @internal The family's mounts a Board draws its views with: the real ones, or a layer-2 test's own. */
+/**
+ * The mounts a Board draws its views with: the family's own ({@link familyMounts}), or those a Framework Adapter wraps
+ * around them to keep each view's handle by the element it draws into, as Blazor's does for its Razor slots, which
+ * hold the Settled Mark and the inputs of the view they stand in (ADR-0410 section 5).
+ */
 export interface BoardMounts {
+    /** Draws a grid view into `element`. */
     readonly grid: (element: HTMLElement, options: GridOptions<ShapedRow>) => GridHandle<ShapedRow>;
+    /** Draws a pivot view into `element`. */
     readonly pivot: (element: HTMLElement, options: PivotViewOptions) => PivotHandle;
+    /** Draws a chart view into `element`. */
     readonly chart: (element: HTMLElement, options: ChartOptions) => ChartHandle;
 }
 
-const familyMounts: BoardMounts = Object.freeze({ grid: createGrid<ShapedRow>, pivot: createPivot, chart: createChart });
+/** The family's own mounts, `createGrid`, `createPivot` and `createChart`, which {@link createBoard} draws with. */
+export const familyMounts: BoardMounts = Object.freeze({ grid: createGrid<ShapedRow>, pivot: createPivot, chart: createChart });
 
 /**
  * Draws a Board into `element`, which becomes its root (ADR-0370 section 1): its views laid out in its rows, each
@@ -103,7 +111,16 @@ const familyMounts: BoardMounts = Object.freeze({ grid: createGrid<ShapedRow>, p
  * the element and hands the Board its props; nothing here assumes React's lifecycle or Blazor's.
  */
 export function createBoard(element: HTMLElement, options: BoardOptions): BoardHandle {
-    const view = new BoardDrawing(element, options, familyMounts);
+    return createBoardWith(element, options, familyMounts);
+}
+
+/**
+ * Draws a Board as {@link createBoard} does, each view with `mounts`: for a Framework Adapter whose Chrome's contents
+ * arrive later than their slot, and so hold the Settled Mark and the inputs of the view the slot stands in, as Blazor's
+ * Razor slots do (ADR-0410 section 5). It wraps {@link familyMounts} to keep each view's handle by its element.
+ */
+export function createBoardWith(element: HTMLElement, options: BoardOptions, mounts: BoardMounts): BoardHandle {
+    const view = new BoardDrawing(element, options, mounts);
     return Object.freeze({
         update: (next: BoardOptions) => { view.update(next); },
         destroy: () => { view.destroy(); },

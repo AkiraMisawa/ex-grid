@@ -106,6 +106,8 @@ public static class DemoPageList
             "Blazor's ExChart and ExSurface drawn by their TypeScript Script Core: /chart's exposure profile and a volatility surface, the data and its Format's texts in .NET, the drawing and the gestures in the browser (ADR-0370 section 1)."),
         new("script-chart-mud", "ExChart over the Script Core, MudBlazor", "ExChart",
             "The same chart under MudChartChrome: its toolbar, Chart Filters and context menu drawn in Razor and moved into the Script Core's slots, each control wired in the browser (ADR-0410)."),
+        new("script-chart-dock", "The Chart Dock over the Script Core", "ExChart",
+            "/chart-dock's curve history with the grid and the charts drawn by the Script Core: the grid's Context Menu asks .NET for the bridge's commands as it opens, and a command still running holds the input after it (ADR-0421)."),
         new("chart-bridge", "Charting a selection", "ExChart",
             "A curve history charted from the grid's context menu: series in columns along the dates or in rows across the tenors, Add to chart, a refusal by name, a chart that keeps its rows through a recalculation and a deleted row, and a click that moves the grid's Focus (ADR-0258)."),
         new("chart-dock", "Charts under MudBlazor", "ExChart",

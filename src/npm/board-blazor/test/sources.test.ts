@@ -47,7 +47,7 @@ class Drawn {
 }
 
 function attachJson(sources: WireAttach['sources'], hears: WireAttach['options']['hears'] = [], circuit = false): string {
-    const init: WireAttach = { options: { width: 1200, locale: 'en-GB', hears }, circuit, board: boardJson, data: {}, sent: [], sources, diff: null, diffsSent: 0 };
+    const init: WireAttach = { options: { width: 1200, locale: 'en-GB', hears }, circuit, board: boardJson, data: {}, sent: [], sources, diff: null, diffsSent: 0, razorSlots: null };
     return JSON.stringify(init);
 }
 

@@ -14,8 +14,9 @@ export interface GridCommand {
     /** Whether it may run now. A disabled command is shown, and is never moved to or run. */
     readonly enabled: boolean;
     /** Runs it. The menu has closed and the keyboard is back on the grid by then, so a command may move the
-     * keyboard on itself. */
-    readonly invoke: () => void;
+     * keyboard on itself. A command that answers a promise takes its place in the Input Order: every input made
+     * after the press is held until it settles, and taken against what it left (ADR-0421). */
+    readonly invoke: () => void | PromiseLike<void>;
 }
 
 /**

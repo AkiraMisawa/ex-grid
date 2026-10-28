@@ -1,0 +1,40 @@
+@using ExBoard
+@using ExGrid.Data
+@using ExPivot.MudBlazor
+
+@* The same Board drawn by ExBoard's Script Core, dressed by the MudBlazor Wrappers' Chromes: MudGridChrome draws the
+   grids' and the pivots' report grids' menus, filter and find panels and loading bar with MudBlazor's components inside
+   the views the browser draws, and MudPivotChrome the pivots' toolbar, menus and panels. The charts are the Script
+   Core's own for now. *@
+<MudExGridPaper Elevation="0" Outlined="true">
+    <ExBoard.Script.ExBoard Board="Board" Data="Data" Width="900" Chrome="_chrome" PivotChrome="MudPivotChrome.Default" OnOutput="Raised" Diff="_laid"
+                            OnDiff="Changed" />
+</MudExGridPaper>
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="my-2">
+    <MudButton Variant="Variant.Outlined" Disabled="@(_diff is null)" OnClick="DrawAgain">Draw with my changes</MudButton>
+</MudStack>
+<MudText Typo="Typo.body2" Class="mt-2" Style="font-family: monospace; white-space: pre-wrap">@_raised</MudText>
+<MudText Typo="Typo.body2" Class="mt-2" Style="font-family: monospace; white-space: pre-wrap">@_diff</MudText>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly (BoardReading? Board, IReadOnlyDictionary<string, Snapshot>? Data, string? Refusal) Read = DeskBoard.Read(DeskBoard.Json);
+    private static readonly BoardReading Board = Read.Board ?? throw new InvalidOperationException(Read.Refusal);
+    private static readonly IReadOnlyDictionary<string, Snapshot> Data = Read.Data ?? throw new InvalidOperationException(Read.Refusal);
+
+    private string? _raised;
+    private string? _diff;
+    private BoardDiff? _laid;
+
+    // Each output is read in .NET against the Snapshot it was taken from, so Take holds it to that data's version.
+    private void Raised(BoardOutput output) => _raised = output.ToJson();
+
+    private void Changed(BoardDiff diff) => _diff = diff.ToJson();
+
+    // The Diff read back from its JSON, as a host does next time, and laid over the Board drawn again.
+    private void DrawAgain()
+    {
+        if (_diff is not null)
+            _laid = BoardDiff.Read(_diff);
+    }
+}

@@ -5,8 +5,8 @@
 // does to them are the Consumer's, in .NET.
 
 import {
-    createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridErrorStepRequest, type GridFindResult,
-    type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
+    createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridCommand, type GridContextMenuContext, type GridErrorStepRequest,
+    type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
 import { awaitPointingScope, crossingCalls, HeldMessages, isGridRazorSlotName, slotHostOptionsOf, type GridRazorSlotName } from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
@@ -36,6 +36,8 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly cellMessages?: number;
     /** Whether the Consumer answers the error step, F8 and Shift+F8, which .NET is asked as it is taken (ADR-0381). */
     readonly findsErrors?: true;
+    /** Whether the Consumer adds commands to the Context Menu, which .NET is asked for as it opens (ADR-0421). */
+    readonly contextCommands?: true;
     /** The Chrome slots the Consumer's Chrome fills with Razor, which .NET renders as each is mounted (ADR-0410). */
     readonly razorSlots?: readonly GridRazorSlotName[];
     /** The Pointing Scope's declaration the grid took as it was made, which it joins in the page (ADR-0430). */
@@ -115,7 +117,9 @@ export function browserCollector(collected: (held: number) => void): RowCollecto
 }
 
 /** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
-const heldGridCalls: ReadonlySet<string> = new Set(['Heard', 'Validate', 'Find', 'FindError', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot']);
+const heldGridCalls: ReadonlySet<string> = new Set([
+    'Heard', 'Validate', 'Find', 'FindError', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot', 'ContextCommands',
+]);
 
 /**
  * Mounts the Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
@@ -158,7 +162,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
     let wired = init.options;
     let pointedAt: GridPointedAt<BlazorRow> | undefined;
     const optionsNow = (): GridOptions<BlazorRow> => {
-        const options = gridOptions(wired, columns, source, heard, paint, findError, slots);
+        const options = gridOptions(wired, columns, source, heard, paint, findError, slots, menus);
         return pointedAt === undefined ? options : { ...options, pointedAt };
     };
 
@@ -201,6 +205,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
             return { found: false };
         });
     const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
+    const menus = contextMenus(dotnet, () => ({ generation: source.generation, columnsVersion: columns.version }));
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
     const made: { grid?: GridHandle<BlazorRow> } = {};
     const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'));
@@ -344,6 +349,56 @@ function findResultOf(answer: unknown): GridFindResult | 'moved' {
     throw new TypeError(`Internal: .NET answered the error step with ${JSON.stringify(found)}.`);
 }
 
+/** The Consumer's Context Menu commands, and their words, as the core takes them (ADR-0421). */
+interface ContextMenus {
+    readonly commands: (context: GridContextMenuContext<BlazorRow>) => Promise<readonly GridCommand[]>;
+    readonly label: (id: string) => string | undefined;
+}
+
+// The Consumer's commands are .NET's, asked as the menu opens, which stands once they come (ADR-0421). Each menu is
+// numbered, and a command runs as the number of the menu it stood in and its place there: .NET keeps the commands of
+// the last menu asked, the only one standing. A command runs in .NET, and the core holds the input after it until
+// .NET has run it. A menu asked under columns or a source .NET no longer holds, or of a component gone, is given up,
+// and no menu stands. Made once, so the core sees the same functions on every update (ADR-0003).
+function contextMenus(dotnet: DotNetHandle, held: () => { readonly generation: number; readonly columnsVersion: number }): ContextMenus {
+    let asked = 0;
+    let words: ReadonlyMap<string, string> = new Map();
+    return Object.freeze({
+        commands: async (context: GridContextMenuContext<BlazorRow>): Promise<readonly GridCommand[]> => {
+            asked += 1;
+            const number = asked;
+            const { generation, columnsVersion } = held();
+            const answer = await dotnet.invokeMethodAsync('ContextCommands', number, generation, columnsVersion, context.row.id, context.column,
+                context.selection, context.rowSequenceVersion);
+            const commands = commandsOf(answer);
+            words = new Map(commands.flatMap(command => (command.label === undefined ? [] : [[command.id, command.label] as const])));
+            return Object.freeze(commands.map(({ id, enabled }, index) => Object.freeze({
+                id, enabled, invoke: async () => { await dotnet.invokeMethodAsync('RunContextCommand', number, index); },
+            })));
+        },
+        label: (id: string) => words.get(id),
+    });
+}
+
+/** .NET's answer to a Context Menu's opening, as `ExGrid.Script` writes it: its commands, or `moved` where what the
+ * menu was opened on is no longer what .NET holds. One .NET did not answer, its component gone, is given up. */
+function commandsOf(answer: unknown): readonly { readonly id: string; readonly enabled: boolean; readonly label: string | undefined }[] {
+    if (answer === null) throw new DOMException('.NET gave the Context Menu no commands: the component is gone.', 'AbortError');
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered the Context Menu\'s commands with something other than JSON text.');
+    const read = parsed<unknown>(answer);
+    if (typeof read === 'object' && read !== null && Reflect.get(read, 'moved') === true) {
+        throw new DOMException('The Context Menu was opened on columns or rows .NET no longer holds.', 'AbortError');
+    }
+    if (!Array.isArray(read)) throw new TypeError('Internal: .NET answered the Context Menu\'s commands with something other than a list.');
+    return (read as readonly unknown[]).map(command => {
+        const { id, enabled, label } = command as { readonly id?: unknown; readonly enabled?: unknown; readonly label?: unknown }; // oxlint-disable-line typescript/no-unsafe-type-assertion -- each member is checked below
+        if (typeof id !== 'string' || typeof enabled !== 'boolean' || (label !== undefined && typeof label !== 'string')) {
+            throw new TypeError(`Internal: .NET answered a Context Menu's command as ${JSON.stringify(command)}.`);
+        }
+        return { id, enabled, label };
+    });
+}
+
 type MessageOf = NonNullable<GridOptions<BlazorRow>['cellMessage']>;
 
 interface Paint {
@@ -377,7 +432,9 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
     });
 }
 
-function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf, slots: RazorSlots): GridOptions<BlazorRow> {
+function gridOptions(
+    wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf, slots: RazorSlots, menus: ContextMenus,
+): GridOptions<BlazorRow> {
     const hears = new Set(wire.hears);
     const razorSlots = wire.razorSlots;
     for (const name of razorSlots === undefined ? [] : razorSlots) {
@@ -397,6 +454,7 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
         ...(wire.cellStates === true ? { cellState: paint.cellState } : {}),
         ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
         ...(wire.findsErrors === true ? { findError } : {}),
+        ...(wire.contextCommands === true ? { contextCommands: menus.commands, commandLabel: menus.label } : {}),
         ...(razorSlots === undefined || razorSlots.length === 0 ? {} : { chrome: slots.chrome(razorSlots) }),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('edit') ? { onEdit: heard.onEdit } : {}),

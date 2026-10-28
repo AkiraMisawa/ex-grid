@@ -13,7 +13,8 @@
    over it, holding the charts made from the grid's selection as MudTabs. It takes the bridge's
    events: a chart made opens as a new tab, one with a series added replaces its tab, and a refusal
    is said in a warning MudAlert above the tabs. Every open chart is a target of "Add to chart", and a
-   click on a point shows its cell in the grid. Each chart is drawn again from the grid's rows on
+   click on a point shows its cell in the grid. With ScriptCore, each chart is drawn by the Script
+   Core, as the grid beside it may be (ADR-0421). Each chart is drawn again from the grid's rows on
    every render, so it follows them (ADR-0258); the chart skips what did not change. *@
 <div class="@Classes">
     <div class="mud-ex-chart-dock-content">@ChildContent</div>
@@ -32,8 +33,16 @@
                         <MudTabPanel @key="chart.Name" ID="@chart.Name" Text="@chart.Name" ShowCloseIcon="true">
                             @if (DefinitionOf(chart.Chart, out var why) is { } definition)
                             {
-                                <ExChart Definition="definition" Title="@chart.Name" Width="ChartWidth" Height="ChartHeight"
-                                         Chrome="Chrome" OnPointClick="ClickOf(chart.Name)" />
+                                @if (ScriptCore)
+                                {
+                                    <ExChart.Script.ExChart Definition="definition" Title="@chart.Name" Width="ChartWidth" Height="ChartHeight"
+                                                                    Chrome="Chrome" OnPointClick="ClickOf(chart.Name)" />
+                                }
+                                else
+                                {
+                                    <ExChart Definition="definition" Title="@chart.Name" Width="ChartWidth" Height="ChartHeight"
+                                             Chrome="Chrome" OnPointClick="ClickOf(chart.Name)" />
+                                }
                             }
                             else
                             {

@@ -429,9 +429,12 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * ContextMenu key and Shift+F10 on the Focus. They stand after the core's own, Copy and Copy with headers,
      * and are asked for each time the menu opens, with the cell it opened on and the Selection its commands act
      * on. A secondary click outside the Selection first collapses it onto the cell it lands on, so what a
-     * command acts on is what the user can see.
+     * command acts on is what the user can see. The answer may be a promise: the menu then stands once it settles,
+     * and every input made meanwhile is held, in its order, and taken once it stands (ADR-0421). A menu whose
+     * Selection an order, a source, columns or `placeSelection` moved meanwhile does not open, as an open one closes;
+     * nor does one whose promise rejects, with an `AbortError` silently, as given up by whoever answers.
      */
-    readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
+    readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[] | PromiseLike<readonly GridCommand[]>;
     /** What the built-in menu calls a command, by its id (ADR-0036): the Consumer's words, in any language, or
      * `undefined` for the built-in English. A command the table does not know either is shown as its id. A refused
      * copy, paste, fill or Delete is said in the words it answers for the reason's id (ADR-0203:
@@ -909,7 +912,7 @@ interface Taken<Row> {
     readonly onLeave: (() => void) | undefined;
     readonly onColumnWidthChanged: ((change: GridColumnWidthChange) => void) | undefined;
     readonly onColumnOrderChanged: ((order: readonly string[]) => void) | undefined;
-    readonly contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
+    readonly contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[] | PromiseLike<readonly GridCommand[]>) | undefined;
     readonly commandLabel: ((id: string) => string | undefined) | undefined;
     readonly hideCopyWithHeaders: boolean;
     readonly chrome: GridChrome<Row> | undefined;
@@ -1708,7 +1711,7 @@ export class GridView<Row> {
     #grips = new Map<Element, number>();
     #reorderDrops: { readonly geometry: ColumnGeometry; readonly layout: HeaderGroupLayout; readonly boundaries: readonly number[] } | undefined;
     // The Context Menu (ADR-0036): what the Consumer adds to it and calls its commands, and the menu standing.
-    #contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
+    #contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[] | PromiseLike<readonly GridCommand[]>) | undefined;
     #commandLabel: ((id: string) => string | undefined) | undefined;
     #hideCopyWithHeaders = false;
     #chrome: GridChrome<Row> | undefined;
@@ -7238,7 +7241,9 @@ export class GridView<Row> {
 
     // Opens the Context Menu on `cell`, at (leftPx, topPx) in the Viewport's readable box: the core's commands,
     // then the Consumer's, asked for now. Its first enabled item takes the keyboard (ADR-0039). A cell whose
-    // row the Window does not hold opens nothing: there is no row to hand the commands.
+    // row the Window does not hold opens nothing: there is no row to hand the commands. Commands answered later
+    // take the menu's place in the Input Order (ADR-0421): it stands once they come, and what was typed meanwhile
+    // reaches it then.
     #openContextMenu(cell: CellPosition, leftPx: number, topPx: number): void {
         const { window, windowStart } = this.#state;
         const slice = cell.row - windowStart;
@@ -7256,7 +7261,34 @@ export class GridView<Row> {
             row: itemAt(window, slice), column: column.name, columnType: column.type,
             selection: this.#held.selection.ranges, rowSequenceVersion: this.#handedVersion(), commands: Object.freeze(core),
         });
-        const commands = this.#contextCommands === undefined ? core : [...core, ...checkedCommands(this.#contextCommands(context))];
+        const answer = this.#contextCommands === undefined ? Object.freeze([]) : this.#contextCommands(context);
+        if (!isThenable(answer)) {
+            this.#standContextMenu(context, [...core, ...checkedCommands(answer)], version, leftPx, topPx);
+            return;
+        }
+        // A menu standing goes now, the keyboard back on the grid, so no press reaches its commands while the next
+        // menu's are out, and what is typed meanwhile is held for the menu that stands.
+        this.#closePopover(true);
+        const source = this.#source;
+        const names = this.#columnNames;
+        // oxlint-disable-next-line ex-grid/no-catch -- an answer given up as an AbortError stands no menu; anything else is rethrown
+        void this.#placeWork(() => Promise.resolve(answer).then(extra => {
+            // The Selection the commands act on went with an order, a source or columns that moved meanwhile, as an open
+            // menu goes (ADR-0011, ADR-0036), or was placed elsewhere by the Consumer: no menu stands over another
+            // Selection.
+            if (this.#destroyed || this.#sequence() !== version || this.#source !== source || !sameItems(this.#columnNames, names)
+                || !sameRanges(this.#held.selection.ranges, context.selection)) return;
+            this.#standContextMenu(context, [...core, ...checkedCommands(extra)], version, leftPx, topPx);
+        }, (error: unknown) => {
+            // Given up by whoever answers, who says why itself, as a Find step is: no menu stands, and nothing more is
+            // said (ADR-0055). Any other failure reaches the page.
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+            throw error;
+        }), undefined);
+    }
+
+    // Stands the Context Menu of `context` with `commands`, the core's and the Consumer's.
+    #standContextMenu(context: GridContextMenuContext<Row>, commands: readonly GridCommand[], version: number, leftPx: number, topPx: number): void {
         this.#closePopover(false);
         const element = this.#root.ownerDocument.createElement('div');
         element.className = 'ex-popover';
@@ -7349,7 +7381,11 @@ export class GridView<Row> {
             command = now;
         }
         this.#closePopover(true);
-        command.invoke();
+        // A command still running takes its place in the Input Order: every input made after the press is held until
+        // it settles (ADR-0421), as behind a declared key's answer. A failure its promise rejects with reaches the page
+        // as that rejection, unheard.
+        const ran = command.invoke();
+        if (isThenable(ran)) void this.#placeWork(() => ran, undefined);
         this.#invalidate();
     }
 

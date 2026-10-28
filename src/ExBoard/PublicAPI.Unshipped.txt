@@ -279,6 +279,8 @@ ExBoard.LinkCondition.Values.get -> System.Collections.Generic.IReadOnlyList<Sys
 ExBoard.Script.ExBoard
 ExBoard.Script.ExBoard.Board.get -> ExBoard.BoardReading!
 ExBoard.Script.ExBoard.Board.set -> void
+ExBoard.Script.ExBoard.Chrome.get -> ExGrid.Chrome.IGridChrome?
+ExBoard.Script.ExBoard.Chrome.set -> void
 ExBoard.Script.ExBoard.Culture.get -> System.Globalization.CultureInfo?
 ExBoard.Script.ExBoard.Culture.set -> void
 ExBoard.Script.ExBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
@@ -291,6 +293,8 @@ ExBoard.Script.ExBoard.OnDiff.get -> Microsoft.AspNetCore.Components.EventCallba
 ExBoard.Script.ExBoard.OnDiff.set -> void
 ExBoard.Script.ExBoard.OnOutput.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardOutput!>
 ExBoard.Script.ExBoard.OnOutput.set -> void
+ExBoard.Script.ExBoard.PivotChrome.get -> ExPivot.Chrome.IPivotChrome?
+ExBoard.Script.ExBoard.PivotChrome.set -> void
 ExBoard.Script.ExBoard.Sources.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardSource!>?
 ExBoard.Script.ExBoard.Sources.set -> void
 ExBoard.Script.ExBoard.Width.get -> double
