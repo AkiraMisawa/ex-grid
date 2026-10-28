@@ -314,6 +314,8 @@ ExChart.GridChartBridge<TRow>.OnChart.get -> System.Func<ExChart.GridChart!, Sys
 ExChart.GridChartBridge<TRow>.OnChart.set -> void
 ExChart.GridChartBridge<TRow>.OnRefused.get -> System.Func<string!, System.Threading.Tasks.Task!>?
 ExChart.GridChartBridge<TRow>.OnRefused.set -> void
+ExChart.GridChartBridge<TRow>.ScriptGrid.get -> ExGrid.Script.ExGrid<TRow!>?
+ExChart.GridChartBridge<TRow>.ScriptGrid.set -> void
 ExChart.GridChartBridge<TRow>.ShowInGridAsync(ExChart.GridCell! cell) -> System.Threading.Tasks.Task<bool>!
 ExChart.GridChartBridge<TRow>.ShowInGridAsync(ExChart.GridChart! chart, ExChart.ChartPointClick! click) -> System.Threading.Tasks.Task<bool>!
 ExChart.GridChartBridge<TRow>.Targets.get -> System.Collections.Generic.IReadOnlyList<ExChart.ChartTarget!>!

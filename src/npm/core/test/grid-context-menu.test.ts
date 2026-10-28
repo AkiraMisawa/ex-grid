@@ -277,3 +277,92 @@ describe('the menu\'s copy', () => {
             .toEqual([['Book\tNotional', 'Book-1\t1000'], true]);
     });
 });
+
+function later<T>(): { readonly promise: Promise<T>; readonly resolve: (value: T) => void } {
+    let resolve: ((value: T) => void) | undefined;
+    const promise = new Promise<T>(given => { resolve = given; });
+    return { promise, resolve: value => { defined(resolve, 'the resolver')(value); } };
+}
+
+describe('commands answered later (ADR-0421)', () => {
+    it('ADR-0421: the menu stands once the Consumer\'s commands come, and a key typed meanwhile reaches it then', async () => {
+        const answer = later<readonly GridCommand[]>();
+        const ran: string[] = [];
+        const { root } = heard({ contextCommands: () => answer.promise });
+        await painted();
+        root.focus();
+        secondary(root, 10, rowY(1));
+        key(root, 'ArrowDown');
+        key(root, 'ArrowDown');
+        await painted();
+        expect(menu(root)).toBeNull();
+        answer.resolve([{ id: 'open-trade', enabled: true, invoke: () => { ran.push('open-trade'); } }]);
+        await settle();
+        await painted();
+        // Typed fast or slow, the same keys land on the same item (spine rule 6).
+        expect([labels(root), active()]).toEqual([['Copy', 'Copy with headers', 'open-trade'], item(root, 'open-trade')]);
+        key(active(), 'Enter');
+        await painted();
+        expect([menu(root), ran]).toEqual([null, ['open-trade']]);
+    });
+
+    it('ADR-0421 / ADR-0011: commands that come after the columns moved open no menu over the Selection those columns took', async () => {
+        const answer = later<readonly GridCommand[]>();
+        const { root, view } = heard({ contextCommands: () => answer.promise });
+        await painted();
+        secondary(root, 10, rowY(1));
+        view.update({ ...base, columns: columns.toReversed(), contextCommands: () => answer.promise });
+        await painted();
+        answer.resolve([]);
+        await settle();
+        await painted();
+        expect(menu(root)).toBeNull();
+    });
+
+    it('ADR-0421: commands that come after the Consumer placed the Selection elsewhere open no menu over the one they were asked for', async () => {
+        const answer = later<readonly GridCommand[]>();
+        const { root, view, contexts } = heard({ contextCommands: context => { contexts.push(context); return answer.promise; } });
+        await painted();
+        secondary(root, 10, rowY(1));
+        const asked = defined(contexts[0], 'the context');
+        expect(view.placeSelection({ topRow: 5, leftColumn: 0, rowCount: 1, columnCount: 1 }, { row: 5, column: 0 }, asked.rowSequenceVersion)).toBe(true);
+        answer.resolve([]);
+        await settle();
+        await painted();
+        expect(menu(root)).toBeNull();
+    });
+
+    it('ADR-0421 / ADR-0055: commands given up with an AbortError open no menu, and say nothing more', async () => {
+        const { root } = heard({ contextCommands: () => Promise.reject(new DOMException('The component is gone.', 'AbortError')) });
+        await painted();
+        root.focus();
+        secondary(root, 10, rowY(1));
+        key(root, 'ArrowDown');
+        await settle();
+        await painted();
+        // The key held behind the menu is taken against the grid, as if no menu had been asked.
+        expect([menu(root), active()]).toEqual([null, root]);
+    });
+
+    it('ADR-0421: a command still running holds the next input until it settles, so the menu after it is asked what it left', async () => {
+        const running = later<undefined>();
+        let targets = ['Chart 1'];
+        const asked: string[][] = [];
+        const { root } = heard({
+            contextCommands: () => {
+                asked.push(targets);
+                return [{ id: 'chart', enabled: true, invoke: () => running.promise.then(() => { targets = [...targets, 'Chart 2']; }) }];
+            },
+        });
+        await painted();
+        secondary(root, 10, rowY(1));
+        item(root, 'chart').click();
+        secondary(root, 10, rowY(1));
+        await painted();
+        expect([menu(root), asked]).toEqual([null, [['Chart 1']]]);
+        running.resolve(undefined);
+        await settle();
+        await painted();
+        expect([menu(root) !== null, asked]).toEqual([true, [['Chart 1'], ['Chart 1', 'Chart 2']]]);
+    });
+});

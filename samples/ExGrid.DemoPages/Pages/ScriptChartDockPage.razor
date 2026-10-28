@@ -1,0 +1,90 @@
+@page "/script-chart-dock"
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+@using global::ExChart.MudBlazor
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+@using global::MudBlazor
+
+@* The Wrappers' stylesheets and font, loaded by this page alone, as /chart-dock loads them. *@
+<HeadContent>
+    <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <MudExGridStylesheet />
+    <ExChartStylesheet />
+    <MudExChartStylesheet />
+</HeadContent>
+
+<MudThemeProvider />
+<MudPopoverProvider />
+
+<DemoNav />
+
+<h1>The Chart Dock over the Script Core</h1>
+
+<p>
+    /chart-dock's curve history, with the grid and each chart drawn by the Script Core (ADR-0370). The grid's Context
+    Menu is drawn in the browser, so it asks .NET for the bridge's commands as it opens and stands once they come;
+    what is typed meanwhile is held and reaches it then, and a command still running in .NET holds the input after
+    it, so the menu opened next offers "Add to chart" for the tab it opened (ADR-0421).
+</p>
+
+<MudChartDock TRow="CurveRow" Bridge="_bridge" ChartWidth="560" ChartHeight="280" ScriptCore="true">
+    <MudExGridPaper>
+        <ExGrid.Script.ExGrid @ref="_bridge.ScriptGrid" TRow="CurveRow"
+                              Rows="_rows"
+                              Columns="Columns"
+                              HeaderGroups="Groups"
+                              ContextCommands="_commands"
+                              ContextCommandLabel="Label"
+                              PinnedColumnCount="1"
+                              ViewportHeight="260"
+                              ViewportWidth="520"
+                              Chrome="MudChartChrome.GridChrome" />
+    </MudExGridPaper>
+</MudChartDock>
+
+@code {
+    /// <summary>One date's rates.</summary>
+    public sealed record CurveRow(DateOnly Date, double Y1, double Y2, double Y5, double Y10);
+
+    private static readonly DateOnly Start = new(2026, 10, 1);
+
+    private static readonly GridColumn<CurveRow>[] Columns =
+    [
+        new("date", ColumnType.Date, r => r.Date, "Date"),
+        new("y1", ColumnType.Number, r => r.Y1, "1Y"),
+        new("y2", ColumnType.Number, r => r.Y2, "2Y"),
+        new("y5", ColumnType.Number, r => r.Y5, "5Y"),
+        new("y10", ColumnType.Number, r => r.Y10, "10Y"),
+    ];
+
+    private static readonly HeaderGroup[] Groups = [new("Rates", ["y1", "y2", "y5", "y10"])];
+    private static readonly Dictionary<string, double> Tenors = new() { ["y1"] = 1, ["y2"] = 2, ["y5"] = 5, ["y10"] = 10 };
+
+    // Held in fields, never rebuilt per render (CLAUDE.md: a new delegate is a changed parameter).
+    private static readonly Func<string, string?> Label = GridChartCommands.Label;
+
+    private readonly IReadOnlyList<CurveRow> _rows = Enumerable.Range(0, 8)
+        .Select(i => new CurveRow(Start.AddDays(i), 3.0 + i * 0.01, 3.1 + i * 0.01, 3.3 - i * 0.02, 3.6 - i * 0.01))
+        .ToList();
+
+    private GridChartBridge<CurveRow> _bridge = null!;
+    private Func<ContextMenuContext<CurveRow>, IEnumerable<GridCommand>> _commands = null!;
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<CurveRow>(new GridChartDeclarations<CurveRow>
+        {
+            RowKey = r => r.Date,
+            RowOf = key => _rows.FirstOrDefault(r => r.Date == (DateOnly)key),
+            KindOf = _ => SeriesKind.Level,
+            PositionOf = column => Tenors.TryGetValue(column, out var years) ? years : null,
+            PositionTitle = "Tenor (years)",
+            RowName = r => r.Date.ToString("yyyy-MM-dd"),
+        });
+        _commands = _bridge.Commands;
+    }
+}
