@@ -13,15 +13,15 @@ import {
 } from '@ex-grid/blazor-shared';
 import { decimalText } from '@ex-grid/data';
 import {
-    createSheet, PointingScope, type GridPointedAt, type PointingRefusal, type SheetChrome, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId,
-    type TableRow,
+    createSheet, PointingScope, sheetWords, type GridPointedAt, type PointingRefusal, type SheetChrome, type SheetHandle, type SheetLabel, type SheetOptions,
+    type SheetToolbarCommand, type SheetToolbarContent, type SheetWordId, type TableRow,
 } from '@ex-grid/sheet';
 import {
     CellAddress, columnCount, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
     WorkbookDocument, writeCellFormat, writeLinkedRows, writeRepeatedKey, type SheetDay, type SheetMoment, type SheetRefusal, type Value,
     type Workbook,
 } from '@ex-grid/sheet-engine';
-import { isSheetRazorSlotName, sheetRazorSlotKinds, type SheetRazorSlotName } from './razor-sheet-slots';
+import { isSheetRazorSlotName, sheetRazorSlotKinds, toolbarContentSlotName, type SheetRazorSlotName } from './razor-sheet-slots';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. Whether an edit is open is
  * always heard, since the component answers `IsEditing`. */
@@ -83,8 +83,28 @@ export interface WireOptions {
     /** The slots the Consumer's Chrome fills with Razor (ADR-0410): the grid's, never the find panel, which is the
      * Sheet's own, with Within (ADR-0332 §5), and the Sheet's own. */
     readonly razorSlots?: readonly (GridRazorSlotName | SheetRazorSlotName)[];
+    /** What the component's `ToolbarContent` declares (ADR-0100), in markup order; absent, the default row alone. */
+    readonly toolbar?: readonly WireToolbarRow[];
     readonly hears: readonly HeardKind[];
 }
+
+/** A Toolbar Row as .NET declares it: `default` for `DefaultToolbarRow`, or a row whose label is `null` for the items
+ * that stand in no `ToolbarRow`, which takes the default row's name, as the Razor component lays them out. */
+export type WireToolbarRow = 'default' | {
+    readonly label: string | null;
+    readonly keyTip?: string;
+    readonly items: readonly WireToolbarEntry[];
+};
+
+/** One of a row's items: ExSheet's own, a separator, or the Consumer's `ToolbarButton`, by the number .NET gave it,
+ * whose `OnClick` .NET runs and whose `ChildContent`, where `content` says it has one, .NET draws. */
+export type WireToolbarEntry = SheetToolbarCommand | 'separator' | {
+    readonly button: number;
+    readonly text: string;
+    readonly keyTip?: string;
+    readonly disabledReason?: string;
+    readonly content: boolean;
+};
 
 /** The Consumer's word for each of {@link labelIds} it answers, or `null` to keep the English. */
 export type WireWords = Readonly<Record<string, string>> | null;
@@ -210,6 +230,9 @@ export interface BlazorSheet {
     take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** .NET rendered the contents of the Razor slot `id` for the data numbered `version` in `contents` (ADR-0410). */
     slotRendered(id: number, version: number, contents: HTMLElement | null): void;
+    /** Says a refusal .NET met running a Consumer's toolbar button in the Sheet's notice, as the Razor component's
+     * toolbar says one. */
+    tell(sentence: string): void;
     /** Stops the Sheet and empties its element. */
     dispose(): void;
 }
@@ -277,8 +300,49 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
         }
         return slots.mounts(names);
     };
+    // The Consumer's buttons' contents, which .NET draws from their markup: each the same function from one update to
+    // the next, as the Sheet asks, so a content standing is not drawn again.
+    const contents = new Map<number, SheetToolbarContent>();
+    const contentOf = (button: number): SheetToolbarContent => {
+        const known = contents.get(button);
+        if (known !== undefined) return known;
+        const content: SheetToolbarContent = element => slots.mount(toolbarContentSlotName, element, { button });
+        contents.set(button, content);
+        return content;
+    };
+    // A press on a Consumer's button runs its OnClick in .NET in the press's place in the Sheet's Input Order: the inputs
+    // made after it wait until it has run, as on the Razor component (ADR-0240 section 6), so no edit opens in between.
+    const pressed = (button: number): void => {
+        const sheet = making.sheet;
+        if (sheet === undefined) throw new Error('Internal: a toolbar button was pressed while the Sheet was being made.');
+        void sheet.inOrder(async () => {
+            await dotnet.invokeMethodAsync('ToolbarPressed', button).catch((failure: unknown) => { // oxlint-disable-line ex-grid/no-catch -- rethrown while the Sheet stands; once stopped .NET has let go of the button
+                if (!stopped) throw failure;
+            });
+        });
+    };
+    const toolbarOf = (wire: WireOptions, wording: Words): SheetOptions['toolbar'] => {
+        // A button gone takes its content's function with it: .NET numbers a button made again anew.
+        const standing = new Set(wire.toolbar?.flatMap(row => (row === 'default' ? [] : row.items.flatMap(entry => (typeof entry === 'string' ? [] : [entry.button])))));
+        for (const button of contents.keys()) if (!standing.has(button)) contents.delete(button);
+        return toolbarRowsOf(wire, wording);
+    };
+    const toolbarRowsOf = (wire: WireOptions, wording: Words): SheetOptions['toolbar'] => wire.toolbar?.map(row => (row === 'default' ? row : {
+        // The items that stand in no row are one row, named as the Script Core names its own default row.
+        label: row.label ?? sheetWords({ label: wording.label }).toolbarHomeRow,
+        keyTip: row.keyTip,
+        items: row.items.map(entry => (typeof entry === 'string' ? entry : {
+            text: entry.text,
+            onPress: () => { pressed(entry.button); },
+            keyTip: entry.keyTip,
+            disabledReason: entry.disabledReason,
+            content: entry.content ? contentOf(entry.button) : undefined,
+        })),
+    }));
     // The Sheet raises nothing while it is made, so `made` stands before a handler reads it.
-    const made = createSheet(root, sheetOptions(init.options, document, words, heard, scopeNamed(init.options.pointingScope), chromeOf(init.options)));
+    const made = createSheet(root, sheetOptions(
+        init.options, document, words, heard, scopeNamed(init.options.pointingScope), chromeOf(init.options), toolbarOf(init.options, words),
+    ));
     making.sheet = made;
     return Object.freeze({
         update: (text: string) => {
@@ -290,7 +354,9 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
             const nextWords = next.words === undefined ? words : wordsOf(next.words);
             // Heard as the parameters now say, events the update itself raises included.
             hears = new Set(next.options.hears);
-            made.update(sheetOptions(next.options, nextDocument, nextWords, heard, scopeNamed(next.options.pointingScope), chromeOf(next.options)));
+            made.update(sheetOptions(
+                next.options, nextDocument, nextWords, heard, scopeNamed(next.options.pointingScope), chromeOf(next.options), toolbarOf(next.options, nextWords),
+            ));
             document = nextDocument;
             words = nextWords;
         },
@@ -326,7 +392,8 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
         })),
         documents: () => answer({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
         take: (number: number) => held.take(number),
-        slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots.rendered(id, version, contents); },
+        slotRendered: (id: number, version: number, drawn: HTMLElement | null) => { slots.rendered(id, version, drawn); },
+        tell: (sentence: string) => { made.tell(sentence); },
         dispose: () => {
             stopped = true;
             // Every slot's contents go back to their holders before the Sheet empties its element.
@@ -585,20 +652,20 @@ interface Words {
 export function wordsOf(words: WireWords): Words {
     if (words === null) return { label: undefined, commandLabel: undefined };
     const held: ReadonlyMap<string, string> = new Map(Object.entries(words));
-    const sheetWords = new Map<SheetWordId, string>();
+    const aliased = new Map<SheetWordId, string>();
     for (const [razorId, id] of commandIdAliases) {
         const word = held.get(razorId);
-        if (word !== undefined) sheetWords.set(id, word);
+        if (word !== undefined) aliased.set(id, word);
     }
     return {
-        label: id => sheetWords.get(id),
+        label: id => aliased.get(id),
         commandLabel: id => (commandIdAliases.has(id) ? undefined : held.get(id)),
     };
 }
 
 function sheetOptions(
     wire: WireOptions, document: WorkbookDocument | undefined, words: Words, heard: Handlers, pointingScope: PointingScope | undefined,
-    chrome: SheetChrome | undefined,
+    chrome: SheetChrome | undefined, toolbar: SheetOptions['toolbar'],
 ): SheetOptions {
     const hears = new Set(wire.hears);
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
@@ -620,6 +687,7 @@ function sheetOptions(
         ...(hears.has('formatKeyRefused') ? { onFormatKeyRefused: heard.onFormatKeyRefused } : {}),
         ...(pointingScope === undefined ? {} : { pointingScope }),
         ...(chrome === undefined ? {} : { chrome }),
+        ...(toolbar === undefined ? {} : { toolbar }),
         ...(hears.has('pointingRefused') ? { onPointingRefused: heard.onPointingRefused } : {}),
         onEditingChanged: heard.onEditingChanged,
     };

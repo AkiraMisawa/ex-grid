@@ -50,12 +50,15 @@ public sealed partial class ExSheet
     /// <returns><see langword="true"/> once the document opened; <see langword="false"/> when Escape cancelled the
     /// read, or the Sheet was disposed first or meanwhile.</returns>
     /// <exception cref="SheetRefusedException">An edit is open; nothing was read.</exception>
+    /// <exception cref="InvalidOperationException">Called from a <see cref="ToolbarButton"/>'s <c>OnClick</c>, whose press
+    /// holds the Input Order the opening would wait for.</exception>
     /// <exception cref="SheetDocumentException">The document is one the engine in the browser does not read; nothing
     /// opened.</exception>
     /// <exception cref="Exception">Whatever <paramref name="read"/> failed with; nothing opened.</exception>
     public async Task<bool> OpenAsync(Func<CancellationToken, Task<WorkbookDocument>> read)
     {
         ArgumentNullException.ThrowIfNull(read);
+        RefuseInsidePress(nameof(OpenAsync));
         if (_disposed)
             return false;
         var id = ++_files;
@@ -100,10 +103,13 @@ public sealed partial class ExSheet
     /// <exception cref="SheetRefusedException">An edit is open: the file would quietly lack what is being typed. The
     /// Sheet says so, and nothing was written.</exception>
     /// <exception cref="ObjectDisposedException">The Sheet was disposed before the save's turn; nothing was written.</exception>
+    /// <exception cref="InvalidOperationException">Called from a <see cref="ToolbarButton"/>'s <c>OnClick</c>, whose press
+    /// holds the Input Order the save would wait for.</exception>
     /// <exception cref="Exception">Whatever <paramref name="write"/> failed with.</exception>
     public async Task SaveAsync(Func<global::ExSheet.Engine.Workbook, Task> write)
     {
         ArgumentNullException.ThrowIfNull(write);
+        RefuseInsidePress(nameof(SaveAsync));
         var sheet = await ReadyAsync();
         var id = ++_files;
         var saving = new Saving(write);

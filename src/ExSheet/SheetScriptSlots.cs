@@ -59,6 +59,11 @@ public static class SheetScriptSlotAttributes
     /// choice on a press.</summary>
     public const string Choice = "data-ex-sheet-choice";
 
+    /// <summary>On the empty element a Toolbar Item's contents draw where a <see cref="ToolbarButton"/>'s
+    /// <c>ChildContent</c> goes, for an item whose <see cref="SheetToolbarItemView.HasContent"/> says it has one: the
+    /// script moves the content in.</summary>
+    public const string Content = "data-ex-sheet-content";
+
     /// <summary>On the one form holding every tab of Format Cells: its submission is OK. The script checks its fields
     /// first, on every tab, and shows the tab of one the browser holds invalid; then OK sets what was touched, or the
     /// view says why it set nothing. OK is a submit button in it, and Enter in a field submits it.</summary>
@@ -129,6 +134,11 @@ public sealed record SheetToolbarItemView(
 {
     /// <summary>Whether it can be pressed now.</summary>
     public bool Enabled => DisabledReason is null;
+
+    /// <summary>For a Consumer's <see cref="ToolbarButton"/> with <c>ChildContent</c>, which shows in place of its text:
+    /// the contents draw an empty element marked <see cref="SheetScriptSlotAttributes.Content"/> where it goes, and the
+    /// script moves it in (ADR-0100). <see cref="Text"/> is then null, and <see cref="Name"/> still names it.</summary>
+    public bool HasContent { get; init; }
 }
 
 /// <summary>One choice of a Toolbar Item's list as the Script Core describes it (ADR-0100, ADR-0410).</summary>

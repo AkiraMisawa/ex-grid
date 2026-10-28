@@ -385,6 +385,7 @@ export interface SheetHandle {
     redo(): boolean;
     save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void>;
     setCellFormat(change: CellFormatChange): boolean;
+    tell(sentence: string): void;
     undo(): boolean;
     update(options: SheetOptions): void;
     readonly workbook: Workbook;

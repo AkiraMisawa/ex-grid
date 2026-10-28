@@ -72,6 +72,10 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     /// <summary>Where the item stands on the toolbar, in markup order.</summary>
     internal ToolbarOrder Place { get; private set; } = new();
 
+    /// <summary>The Script ExSheet's toolbar, where the item declares itself in place of drawing anything; null on the
+    /// Razor component's. Internal, as its type is (ADR-0201).</summary>
+    [CascadingParameter] internal global::ExSheet.Script.ScriptToolbar? Script { get; set; }
+
     /// <summary>
     /// The item's KeyTip letters (ADR-0100). ExSheet's own items carry Excel's; a Consumer's item
     /// carries only what the Consumer declares here, and none otherwise.
@@ -191,6 +195,11 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        if (Script is { } script)
+        {
+            script.Join(this);
+            return;
+        }
         var context = Context;
         if (ReferenceEquals(context, _joined)) return;
         if (_joined is { } previous)
@@ -205,11 +214,14 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     }
 
     /// <inheritdoc />
-    protected override bool ShouldRender() => !Describe().Equals(_drawn);
+    protected override bool ShouldRender() => Script is null && !Describe().Equals(_drawn);
 
     /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
+        // Declared to the Script ExSheet's toolbar, which the Script Core draws.
+        if (Script is not null)
+            return;
         var drawn = Describe();
         _drawn = drawn;
         var chromes = Context.Chrome?.ToolbarItem(drawn);
@@ -225,6 +237,7 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        Script?.Leave(this);
         if (_joined is { } joined)
         {
             joined.Changed -= OnToolbarChanged;

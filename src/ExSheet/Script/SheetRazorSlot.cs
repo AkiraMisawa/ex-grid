@@ -66,7 +66,10 @@ internal static class SheetRazorSlot
                 [.. json.GetProperty("choices").EnumerateArray().Select(choice => new SheetToolbarChoiceView(
                     ScriptJson.Text(choice, "label"), Nullable(choice, "swatch"), choice.GetProperty("selected").GetBoolean(),
                     Nullable(choice, "disabledReason")))],
-                [.. json.GetProperty("rows").EnumerateArray().Select(row => (IReadOnlyList<int>)[.. row.EnumerateArray().Select(at => at.GetInt32())])]),
+                [.. json.GetProperty("rows").EnumerateArray().Select(row => (IReadOnlyList<int>)[.. row.EnumerateArray().Select(at => at.GetInt32())])])
+            {
+                HasContent = json.GetProperty("content").GetBoolean(),
+            },
             SheetScriptSlots.SheetTab => new SheetTabContext(ScriptJson.Text(json, "name"), json.GetProperty("selected").GetBoolean()),
             SheetScriptSlots.SheetTabAdd => AddFace.Instance,
             SheetScriptSlots.FormatCells => FormatCellsView(json),

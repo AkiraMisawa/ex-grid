@@ -435,6 +435,12 @@ export interface SheetHandle {
      * answers settles. A Sheet destroyed before its turn runs nothing; one already destroyed throws.
      */
     inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
+    /**
+     * Says `sentence` in the Sheet's notice, where the Sheet says its own refusals (ADR-0100): for a Framework Adapter
+     * whose Consumer's Toolbar button ran a command a round trip later that was refused, as the C# toolbar says one.
+     * Throws once the Sheet is destroyed, as `inOrder` does.
+     */
+    tell(sentence: string): void;
     /** Stops the Sheet and empties its element. */
     destroy(): void;
 }
@@ -501,6 +507,7 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
         focus: () => { view.focus(); },
         holdSettled: () => view.holdSettled(),
         inOrder: (handling: () => void | PromiseLike<void>) => view.inOrder(handling),
+        tell: (sentence: string) => { view.tellFromAdapter(sentence); },
         destroy: () => { view.destroy(); },
     });
 }
@@ -962,6 +969,12 @@ class SheetView {
     inOrder(handling: () => void | PromiseLike<void>): Promise<void> {
         if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240 section 6).');
         return this.#liveGrid().inOrder(handling);
+    }
+
+    tellFromAdapter(sentence: string): void {
+        if (typeof sentence !== 'string') throw new TypeError('tell takes the sentence to say.');
+        this.#alive();
+        this.#tell(sentence);
     }
 
     // The Sheet's grid, while the Sheet stands.
