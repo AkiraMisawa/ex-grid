@@ -93,6 +93,7 @@ function attachJson(overrides: Partial<WireAttach> = {}): string {
         sources: {},
         diff: null,
         diffsSent: 0,
+        razorSlots: null,
         ...overrides,
     };
     return JSON.stringify(init);

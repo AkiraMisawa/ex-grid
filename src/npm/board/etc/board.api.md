@@ -7,6 +7,8 @@
 import { AxisScale } from '@ex-grid/chart';
 import { BoardInput } from '@ex-grid/data';
 import { ChartChrome } from '@ex-grid/chart';
+import { ChartHandle } from '@ex-grid/chart';
+import { ChartOptions } from '@ex-grid/chart';
 import { ChartRange } from '@ex-grid/chart';
 import type { ChartSourceAnswer } from '@ex-grid/chart';
 import type { ChartSourceQuery } from '@ex-grid/chart';
@@ -17,6 +19,8 @@ import { DataShapeColumn } from '@ex-grid/data';
 import { FetchingGridSource } from '@ex-grid/core';
 import { GridChrome } from '@ex-grid/core';
 import { GridColumn } from '@ex-grid/core';
+import { GridHandle } from '@ex-grid/core';
+import { GridOptions } from '@ex-grid/core';
 import type { GridQuery } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
 import { GridSource } from '@ex-grid/core';
@@ -25,8 +29,10 @@ import { InMemoryGridSource } from '@ex-grid/core';
 import { JsonValue } from '@ex-grid/data';
 import { PivotChrome } from '@ex-grid/pivot';
 import { PivotFieldItem } from '@ex-grid/pivot-engine';
+import { PivotHandle } from '@ex-grid/pivot';
 import { PivotLayout } from '@ex-grid/pivot-engine';
 import { PivotSource } from '@ex-grid/pivot-engine';
+import { PivotViewOptions } from '@ex-grid/pivot';
 import type { ShapedSource } from '@ex-grid/data';
 import { Snapshot } from '@ex-grid/data';
 import { SnapshotDecimal } from '@ex-grid/data';
@@ -178,6 +184,13 @@ export interface BoardLink {
     readonly from: string;
     readonly on: readonly string[];
     readonly to: readonly string[];
+}
+
+// @public
+export interface BoardMounts {
+    readonly chart: (element: HTMLElement, options: ChartOptions) => ChartHandle;
+    readonly grid: (element: HTMLElement, options: GridOptions<ShapedRow>) => GridHandle<ShapedRow>;
+    readonly pivot: (element: HTMLElement, options: PivotViewOptions) => PivotHandle;
 }
 
 // @public
@@ -446,10 +459,16 @@ export function checkShapedPage(page: Snapshot, spec: GridViewSpecReading, alsoR
 export function createBoard(element: HTMLElement, options: BoardOptions): BoardHandle;
 
 // @public
+export function createBoardWith(element: HTMLElement, options: BoardOptions, mounts: BoardMounts): BoardHandle;
+
+// @public
 export const dateFormat = "yyyy-mm-dd";
 
 // @public
 export const dateTimeFormat = "yyyy-mm-dd hh:mm:ss";
+
+// @public
+export const familyMounts: BoardMounts;
 
 // @public
 export function fetchedColumns(spec: GridViewSpecReading, locale?: string): readonly GridColumn<ShapedRow>[];

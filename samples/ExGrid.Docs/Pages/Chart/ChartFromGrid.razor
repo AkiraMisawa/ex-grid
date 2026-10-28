@@ -48,6 +48,24 @@
         <DocsExample Builtin="typeof(FromGrid)" Mud="typeof(FromGridMud)" Files="@(["Examples/Chart/CurveHistory.cs"])" CodeOpen="true" />
     </DocsSection>
 
+    <DocsSection Title="Over the Script Core">
+        <p>
+            The grid and the charts the Script Core draws take the same bridge. Set <code>ScriptGrid</code> in place
+            of <code>Grid</code> with <code>@@ref</code> on <code>ExGrid.Script.ExGrid</code>, and hand its
+            <code>ContextCommands</code> the bridge's <code>Commands</code> and its <code>ContextCommandLabel</code>
+            <code>GridChartCommands.Label</code>. Draw each chart with <code>ExChart.Script.ExChart</code>, or set
+            <code>ScriptCore</code> on <code>MudChartDock</code> to have the dock draw them that way.
+        </p>
+        <p>
+            That grid's Context Menu is drawn in the browser, so it asks .NET for the bridge's commands as it opens,
+            and opens once they arrive. A key typed in the meantime is held and reaches the menu once it is open. A
+            command still running in .NET holds the input that follows it. So a right-click straight after "Chart"
+            gets a menu that already offers "Add to chart" for the tab that "Chart" opened, however fast it follows
+            and however slow the circuit.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreFromGrid)" Mud="typeof(ScriptCoreFromGridMud)" Files="@(["Examples/Chart/CurveHistory.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="A chart keeps its rows">
         <p>
             A chart is made from rows, not from a picture of them. When the rows change, the chart draws them
