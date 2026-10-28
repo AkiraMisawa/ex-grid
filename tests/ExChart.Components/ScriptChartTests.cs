@@ -172,6 +172,17 @@ public class ScriptChartTests : BunitContext
         Assert.Empty(_module.Invocations["attachChart"]);
     }
 
+    [Fact] // ADR-0370 s1: a circuit that is closing calls off the dispose it was sent, and the component lets go quietly
+    public async Task A_dispose_the_closing_circuit_calls_off_is_not_raised()
+    {
+        _surface.SetupVoid("dispose", _ => true).SetCanceled();
+        Render<ScriptSurface>(ps => ps.Add(c => c.Definition, Vol()));
+        Assert.Single(_module.Invocations["attachSurface"]);
+        await DisposeComponentsAsync();
+        Assert.Single(_surface.Invocations["dispose"]);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
     private static SurfaceDefinition Vol() => new(
         SurfaceAxis.Of("Strike", new[] { 0.50m, 1.25m, 2.00m }) with { Scale = AxisScale.Categories },
         SurfaceAxis.Of("Tenor", new[] { "1M", "1Y" }),
