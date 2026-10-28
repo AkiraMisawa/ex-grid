@@ -2,7 +2,7 @@
 // ExPivot's Razor slots (ADR-0410): what the Razor's attributes wire in the browser. A press runs the context's
 // callback, a control and an anchor are handed in by name and handed back as the contents go, and a menu's items take
 // their command's role and the keyboard at the pivot's request. What the pivot does with them is its own tests'.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { drawnVersionAttribute } from '@ex-grid/blazor-shared';
 import { pivotItemKeyId, textItemKey } from '@ex-grid/pivot-engine';
 import type {
@@ -380,6 +380,56 @@ describe('ExPivot\'s Razor slots', () => {
         at('[data-ex-pivot-entry="entry:rows:0"]').dispatchEvent(new DragEvent('dragstart', { bubbles: true }));
         at('[data-ex-pivot-area="values"]').dispatchEvent(new DragEvent('drop', { bubbles: true }));
         expect(heard).toEqual(['end']);
+        slots.dispose();
+    });
+
+    it('ADR-0410 section 2: a button that is its own anchor is pressed, as a menu beside it would be placed in it', () => {
+        const pressed: string[] = [];
+        const handed = new Map<string, HTMLElement | null>();
+        const slots = new RazorPivotSlots(new FakeDotNet(), { pivot: ['toolbar'], grid: [] }, noGrids);
+        mountOf(slots, 'toolbar')(slotted(), toolbarOf(pressed, handed));
+        const contents = rendered('<button data-ex-pivot-press="layout" data-ex-pivot-anchor="layout">Layout</button>', 1);
+        slots.rendered(1, 1, contents);
+        contents.querySelector('button')?.click();
+        expect(pressed).toEqual(['layout']);
+        expect(handed.get('anchor:layout')).toBe(contents.querySelector('button'));
+        slots.dispose();
+    });
+
+    it('ADR-0410 section 2, ADR-0240: an entry .NET patched in, pressed before its wiring stands, opens its menu once its anchor is handed in', async () => {
+        const heard: string[] = [];
+        const listeners = new Set<() => void>();
+        let view: PivotFieldListView = {
+            title: 'PivotTable Fields', hideLabel: 'Hide', chooseCaption: 'Choose', searchLabel: 'Search', search: '',
+            fields: [], dragCaption: 'Drag',
+            areas: [{ area: 'values', title: 'Values', entries: [], end: 0, dropTarget: false }],
+            dropRemoves: false, defer: { label: 'Defer', ticked: false }, update: { label: 'Update', enabled: false },
+        };
+        const list: PivotFieldListSlotContext = {
+            view: () => view, subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; }, label: id => id,
+            setSearch: () => undefined, toggle: () => undefined, openMenu: entry => { heard.push(`menu ${entry.area} ${String(entry.index)}`); },
+            close: () => undefined, update: () => undefined, startDrag: () => undefined, dragOver: () => undefined, dragEnter: () => undefined,
+            drop: () => undefined, dropOnList: () => undefined, endDrag: () => undefined, setDeferred: () => undefined,
+            control: () => () => undefined, anchor: key => element => { if (element !== null) heard.push(`anchor ${key}`); }, area: () => () => undefined,
+        };
+        const slots = new RazorPivotSlots(new FakeDotNet(), { pivot: ['fieldList'], grid: [] }, noGrids);
+        mountOf(slots, 'fieldList')(slotted(), list);
+        const contents = rendered('<div data-ex-pivot-area="values"></div>', 1);
+        slots.rendered(1, 1, contents);
+
+        // A field ticked into Values: .NET is handed the pane under the next number, and Blazor patches its entry in a
+        // round trip before .NET says it rendered, which is when the wiring stands.
+        view = { ...view, areas: [{ area: 'values', title: 'Values', entries: [entryOf('values', 0, 'Sum of Key')], end: 1, dropTarget: false }] };
+        for (const listener of listeners) listener();
+        contents.setAttribute(drawnVersionAttribute, '2');
+        contents.querySelector('[data-ex-pivot-area]')?.insertAdjacentHTML('beforeend',
+            '<div data-ex-pivot-entry="entry:values:0" draggable="true"><button data-ex-pivot-press="entry:values:0">Sum of Key</button><span data-ex-pivot-anchor="entry:values:0"></span></div>');
+        contents.querySelector<HTMLButtonElement>('[data-ex-pivot-press="entry:values:0"]')?.click();
+        await Promise.resolve();
+        // The pivot has no anchor to place the menu in yet: the press waits for the wiring, and is taken once it stands.
+        expect(heard).toEqual([]);
+        slots.rendered(1, 2, contents);
+        await vi.waitFor(() => { expect(heard).toEqual(['anchor entry:values:0', 'menu values 0']); });
         slots.dispose();
     });
 

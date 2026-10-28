@@ -3,7 +3,7 @@
 // Order, as ExChart's is: a kind registered by name is mounted, crossed and wired, and a slot of no registered kind is
 // refused; and the options a product still being made is held through. The grid's kinds over the host are
 // razor-slots.test.ts'.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { DotNetCalls } from '../src/held-messages';
 import { drawnVersionAttribute, RazorSlotHost, slotHostOptionsOf, type RazorSlotKind, type SlotHostProduct } from '../src/razor-slot-host';
 
@@ -109,6 +109,80 @@ describe('a Razor slot host without a Settled Mark or an Input Order', () => {
     });
 });
 
+describe('an input made on contents .NET patched ahead of their wiring', () => {
+    interface Changing extends Toolbar {
+        again: (() => void) | undefined;
+    }
+
+    /** A toolbar drawn again as it changes, whose wiring takes a press on contents newer than itself `later`. */
+    const changingKind: RazorSlotKind<Changing> = {
+        takesKeyboard: false,
+        data: toolbar => ({ json: JSON.stringify({ name: toolbar.name }), drawn: undefined, memo: undefined }),
+        subscribe: (toolbar, again) => { toolbar.again = again; return () => { toolbar.again = undefined; }; },
+        wire: (contents, toolbar, _answered, _drawn, later) => {
+            const wiredFor = contents.getAttribute(drawnVersionAttribute);
+            const press = (event: Event): void => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement) || target.dataset['exCommand'] === undefined) return;
+                const command = target.dataset['exCommand'];
+                if (contents.getAttribute(drawnVersionAttribute) === wiredFor) toolbar.invoked.push(command);
+                else later(() => { toolbar.invoked.push(`${command}, wired for ${String(contents.getAttribute(drawnVersionAttribute))}`); });
+            };
+            contents.addEventListener('click', press);
+            return () => { contents.removeEventListener('click', press); };
+        },
+    };
+
+    function standing(): { readonly host: RazorSlotHost; readonly toolbar: Changing; readonly contents: HTMLElement; readonly order: (handling: () => void | PromiseLike<void>) => void; readonly unmount: () => void } {
+        // An Input Order that takes each handling once the one before it has settled, as a grid's does.
+        let last: Promise<void> = Promise.resolve();
+        const order = (handling: () => void | PromiseLike<void>): void => { last = last.then(() => handling()); };
+        const host = new RazorSlotHost(new FakeDotNet(), new Map([['toolbar', changingKind]]), { order });
+        const slot = document.createElement('div');
+        document.body.append(slot);
+        const toolbar: Changing = { name: 'Sales', invoked: [], again: undefined };
+        const mount = host.mounts(['toolbar'])['toolbar'];
+        if (mount === undefined) throw new Error('No mount for the toolbar.');
+        const unmount = mount(slot, toolbar);
+        const contents = rendered('<button data-ex-command="export">Export</button>', 1);
+        host.rendered(1, 1, contents);
+        // Changed: .NET is handed the data numbered 2, and Blazor patches them in a round trip before .NET says so.
+        toolbar.again?.();
+        contents.setAttribute(drawnVersionAttribute, '2');
+        contents.insertAdjacentHTML('beforeend', '<button data-ex-command="print">Print</button>');
+        return { host, toolbar, contents, order, unmount };
+    }
+
+    it('ADR-0410 section 2, ADR-0240: it is taken once the contents are wired for what they show, before any input made after it', async () => {
+        const { host, toolbar, contents, order } = standing();
+        contents.querySelector<HTMLElement>('[data-ex-command="print"]')?.click();
+        order(() => { toolbar.invoked.push('made after'); });
+        await Promise.resolve();
+        expect(toolbar.invoked).toEqual([]);
+        host.rendered(1, 2, contents);
+        await vi.waitFor(() => { expect(toolbar.invoked).toEqual(['print, wired for 2', 'made after']); });
+    });
+
+    it('ADR-0410 section 2, spine rule 6: one whose contents were drawn again before its wiring came is refused, and holds nothing after it', async () => {
+        const { host, toolbar, contents, order } = standing();
+        contents.querySelector<HTMLElement>('[data-ex-command="print"]')?.click();
+        order(() => { toolbar.invoked.push('made after'); });
+        // Changed again: what the press was made on no longer stands when the wiring comes.
+        toolbar.again?.();
+        contents.setAttribute(drawnVersionAttribute, '3');
+        host.rendered(1, 2, contents);
+        await vi.waitFor(() => { expect(toolbar.invoked).toEqual(['made after']); });
+    });
+
+    it('ADR-0410 section 2: one whose slot goes before the wiring comes is taken nowhere, and holds nothing after it', async () => {
+        const { toolbar, contents, order, unmount } = standing();
+        contents.querySelector<HTMLElement>('[data-ex-command="print"]')?.click();
+        order(() => { toolbar.invoked.push('made after'); });
+        unmount();
+        await vi.waitFor(() => { expect(toolbar.invoked).toEqual(['made after']); });
+    });
+});
+
 describe('the keys that toggle a control in a Razor slot', () => {
     it('ADR-0410 section 3: Space on a checkbox stays the browser\'s, never reaching a component library\'s handler above the contents', () => {
         const host = new RazorSlotHost(new FakeDotNet(), new Map([['toolbar', toolbarKind]]));
@@ -145,8 +219,7 @@ describe('the options over a product being made', () => {
         const released: string[] = [];
         const ordered: Promise<void>[] = [];
         const release = options.hold?.(slot);
-        const until = Promise.resolve();
-        options.order?.(until, slot);
+        options.order?.(() => Promise.resolve(), slot);
         expect(() => { options.keyboardBack?.(slot); }).toThrow('Internal: a Razor slot held the keyboard while the grid was being made.');
         made.product = {
             holdSettled: () => { held += 1; return () => { released.push('held'); }; },

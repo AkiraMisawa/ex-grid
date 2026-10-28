@@ -72,9 +72,9 @@ function rendered(markup = ''): HTMLElement {
 class Order {
     owed = 0;
 
-    readonly order = (until: Promise<void>): void => {
+    readonly order = (handling: () => void | PromiseLike<void>): void => {
         this.owed += 1;
-        void until.then(() => { this.owed -= 1; });
+        void Promise.resolve(handling()).then(() => { this.owed -= 1; });
     };
 }
 

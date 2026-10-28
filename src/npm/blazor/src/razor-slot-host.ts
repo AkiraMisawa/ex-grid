@@ -34,8 +34,13 @@ export interface RazorSlotKind<Context, Drawn = undefined, Memo = undefined> {
     subscribe?(context: Context, again: () => void): () => void;
     /** Wires the contents drawn for `context`, answering the function that stops it. `answered` says the context's
      * focus request is not to be answered on them: it was, or the contents are not yet the ones it is for. `drawn`
-     * answers what the contents show, by the number they carry. */
-    wire(contents: HTMLElement, context: Context, answered: boolean, drawn: () => Drawn): () => void;
+     * answers what the contents show, by the number they carry. `later` takes an input made on contents .NET patched
+     * after this wiring, which stand a round trip before their own wiring does (the render, then .NET's word that it
+     * rendered): its `take` runs in its turn in the product's Input Order once the contents are wired for what they
+     * showed as it was made, so a press on a control just drawn is neither lost nor taken out of its order. It is taken
+     * only while the contents still show that: never where the slot goes first, or where they were drawn again since,
+     * and what it was made on no longer holds (spine rule 6). */
+    wire(contents: HTMLElement, context: Context, answered: boolean, drawn: () => Drawn, later: (take: () => void) => void): () => void;
     /** Whether contents drawn from `drawn`, the data last sent, stand whole: until they do, the keyboard is not handed
      * to them and every input waits. Whole as drawn where not given. */
     standsWhole?(drawn: Drawn): boolean;
@@ -47,8 +52,9 @@ export interface RazorSlotKind<Context, Drawn = undefined, Memo = undefined> {
 export interface RazorSlotHostOptions {
     /** Holds the product's Settled Mark until the function it answers is called. */
     readonly hold?: (slot: HTMLElement) => (() => void);
-    /** Holds every input made in the product after it, in its order, until the promise it is handed settles (ADR-0240). */
-    readonly order?: (until: Promise<void>, slot: HTMLElement) => void;
+    /** Runs `handling` in its turn in the product's Input Order, holding every input made after it until the promise it
+     * answers settles (ADR-0240); at once where the product holds no order for the slot. */
+    readonly order?: (handling: () => void | PromiseLike<void>, slot: HTMLElement) => void;
     /** Hands the keyboard to the product, from contents that held it as their slot went. */
     readonly keyboardBack?: (slot: HTMLElement) => void;
 }
@@ -86,16 +92,19 @@ export function slotHostOptionsOf(made: () => SlotHostProduct | undefined, named
             });
             return () => { gone = true; release?.(); };
         },
-        order: until => {
+        order: handling => {
             const standing = made();
             if (standing !== undefined) {
-                void standing.inOrder(() => until);
+                void standing.inOrder(handling);
                 return;
             }
             // Each adapter names its product as its making returns, before the task ends; a making that threw has said
-            // so, and leaves no product whose inputs could wait. A slot that leaves first lets `until` go, which the
-            // product then takes at once.
-            queueMicrotask(() => { void made()?.inOrder(() => until); });
+            // so, and leaves no product whose inputs could wait, nor any order to run the handling in.
+            queueMicrotask(() => {
+                const now = made();
+                if (now === undefined) void handling();
+                else void now.inOrder(handling);
+            });
         },
         keyboardBack: () => { product('held the keyboard').focus(); },
     };
@@ -128,6 +137,11 @@ interface Standing {
     contents: HTMLElement | undefined;
     holder: HTMLElement | undefined;
     unwire: (() => void) | undefined;
+    /** The number the contents carried as they were last wired. */
+    wired: number;
+    /** The inputs made on contents newer than their wiring, each let go once the contents are wired for the number it
+     * was made on: true to be taken, false where the slot went first. */
+    readonly later: { readonly version: number; readonly go: (taken: boolean) => void }[];
     /** The context whose focus request the contents answered: wired again for it, they take no keyboard. */
     answered: unknown;
     /** Lets the Settled Mark go, while the contents are owed. */
@@ -226,6 +240,7 @@ export class RazorSlotHost {
         for (const standing of this.#standing.values()) {
             this.#takeBack(standing);
             this.#letInputsGo(standing);
+            dropLater(standing);
         }
         this.#standing.clear();
         this.#bySlot.clear();
@@ -252,7 +267,8 @@ export class RazorSlotHost {
         this.#ids += 1;
         const standing: Standing = {
             id: this.#ids, name, kind, slot, context, sent: '', version: 0, drawn: 0, views: new Map(), memo: undefined, unsubscribe: undefined,
-            letInputsGo: undefined, contents: undefined, holder: undefined, unwire: undefined, answered: undefined, release: undefined, leaving: false,
+            letInputsGo: undefined, contents: undefined, holder: undefined, unwire: undefined, wired: 0, later: [], answered: undefined, release: undefined,
+            leaving: false,
         };
         this.#standing.set(standing.id, standing);
         this.#bySlot.set(slot, standing);
@@ -265,7 +281,8 @@ export class RazorSlotHost {
     // Every input made in the product from now waits, in its order, until the slot's latest contents stand (ADR-0240).
     #holdInputs(standing: Standing): void {
         if (standing.letInputsGo !== undefined || this.#order === undefined) return;
-        this.#order(new Promise<void>(resolve => { standing.letInputsGo = resolve; }), standing.slot);
+        const until = new Promise<void>(resolve => { standing.letInputsGo = resolve; });
+        this.#order(() => until, standing.slot);
     }
 
     #letInputsGo(standing: Standing): void {
@@ -290,6 +307,7 @@ export class RazorSlotHost {
             standing.release?.();
             standing.release = undefined;
             this.#letInputsGo(standing);
+            dropLater(standing);
             throw error;
         });
     }
@@ -323,6 +341,7 @@ export class RazorSlotHost {
             standing.release?.();
             standing.release = undefined;
             this.#letInputsGo(standing);
+            dropLater(standing);
             this.#standing.delete(standing.id);
             if (this.#bySlot.get(standing.slot) === standing) this.#bySlot.delete(standing.slot);
             void this.#dotnet.invokeMethodAsync('UnmountSlot', standing.id);
@@ -351,12 +370,44 @@ export class RazorSlotHost {
         if (contents === undefined) return;
         const current = standsWhole(standing);
         const answered = standing.answered === context || !current;
-        const unwire = standing.kind.wire(contents, context, answered, () => drawnView(standing, contents));
+        const unwire = standing.kind.wire(contents, context, answered, () => drawnView(standing, contents), take => { this.#later(standing, contents, take); });
         const native = keepTogglesNative(contents);
         standing.unwire = () => { unwire(); native(); };
+        // The wiring reads the contents as they stand, which may be newer than the rendering .NET has told of.
+        standing.wired = Math.max(standing.wired, versionOf(contents));
         if (current) standing.answered = context;
         else if (standing.answered !== context && standing.kind.takesKeyboard) this.#holdInputs(standing);
+        if (standing.later.length === 0) return;
+        for (const each of standing.later.splice(0)) {
+            if (each.version <= standing.wired) each.go(true);
+            else standing.later.push(each);
+        }
     }
+
+    // An input made on contents newer than their wiring takes its turn in the product's order now, and waits there for
+    // the wiring of what the contents showed as it was made.
+    #later(standing: Standing, contents: HTMLElement, take: () => void): void {
+        if (this.#disposed || standing.leaving || standing.contents !== contents) return;
+        const version = versionOf(contents);
+        const wired = version <= standing.wired
+            ? Promise.resolve(true)
+            : new Promise<boolean>(resolve => { standing.later.push({ version, go: resolve }); });
+        const handling = (): Promise<void> => wired.then(taken => {
+            if (taken && !this.#disposed && !standing.leaving && standing.contents === contents && versionOf(contents) === version) take();
+        });
+        if (this.#order === undefined) void handling();
+        else this.#order(handling, standing.slot);
+    }
+}
+
+/** The inputs waiting for a wiring that will not come: the slot went, or .NET failed to draw it. */
+function dropLater(standing: Standing): void {
+    for (const each of standing.later.splice(0)) each.go(false);
+}
+
+/** The number of the data the contents were drawn from. */
+function versionOf(contents: HTMLElement): number {
+    return Number(contents.getAttribute(drawnVersionAttribute));
 }
 
 // The keys a component library's checkbox or radio takes in its own .NET handler, toggling the value it draws without
@@ -393,7 +444,7 @@ function standsWhole(standing: Standing): boolean {
 
 /** What a slot's contents show: what .NET drew them from, whose number they carry. */
 function drawnView(standing: Standing, contents: HTMLElement): unknown {
-    const version = Number(contents.getAttribute(drawnVersionAttribute));
+    const version = versionOf(contents);
     if (!standing.views.has(version)) {
         throw new Error(`Internal: the contents of the slot ${standing.name} show the data numbered ${String(version)}, which the script no longer holds.`);
     }
