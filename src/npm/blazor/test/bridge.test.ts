@@ -5,7 +5,7 @@
 // .NET has not sent it again, and that what the grid tells its source and its Consumer reaches .NET in order.
 import { afterEach, describe, expect, it } from 'vitest';
 import { GridPointedAt } from '@ex-grid/core';
-import { attach, type BlazorGrid, type WireAttach, type WireOptions } from '../src/blazor-grid';
+import { attach, latestOnly, type BlazorGrid, type WireAttach, type WireOptions } from '../src/blazor-grid';
 import { DotNetSource, type DotNetHandle, type WireState } from '../src/dotnet-source';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type WireColumn, type WireRow } from '../src/wire-rows';
 import { awaitPointingScope, holdPointingScope, type PagePointingScope } from '../src/pointing-scopes';
@@ -771,5 +771,53 @@ describe('the Context Menu\'s commands .NET answers (ADR-0421)', () => {
             expect(root.querySelector('.ex-popover')).toBeNull();
         }
         expect(dotnet.calls.filter(call => call.method === 'ContextCommands')).toHaveLength(2);
+    });
+});
+
+describe('completion .NET answers (ADR-0051)', () => {
+    it('ADR-0051: the editor\'s text and caret are asked of .NET as typed, and its answer is listed, Tab writing the chosen candidate', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = (method, args) => (method === 'Complete' && args[0] === '=SU'
+            ? '{"candidates":[{"label":"SUM","start":1,"length":2,"insert":"SUM("},{"label":"SUMIF","start":1,"length":2,"insert":"SUMIF("}],"hint":{"text":"SUM(number1)","emphasisStart":4,"emphasisLength":7}}'
+            : null);
+        const { root } = mount({ options: options({ rowHeight: 24, completesText: true, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('=SU');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Complete').map(call => call.args).at(-1)).toEqual(['=SU', 3]);
+        expect([...root.querySelectorAll('.ex-completion-item')].map(item => item.textContent)).toEqual(['SUM', 'SUMIF']);
+        expect(root.querySelector('.ex-completion-hint')?.textContent).toBe('SUM(number1)');
+        key('ArrowDown');
+        key('Tab');
+        await turns();
+        expect(editorOf(root)?.value).toBe('=SUMIF(');
+    });
+
+    it('ADR-0051: a grid whose Consumer answers no completion asks .NET nothing', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({ options: options({ rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('=SU');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Complete')).toEqual([]);
+    });
+});
+
+describe('completion asked of .NET at machine speed (ADR-0051)', () => {
+    it('ADR-0051: while a question is on its way only the latest crosses after it, and the one replaced answers nothing', async () => {
+        let first: (() => void) | undefined;
+        const asked: unknown[] = [];
+        const completeEditorText = latestOnly((text, caret) => {
+            asked.push([text, caret]);
+            return asked.length === 1 ? new Promise(resolve => { first = () => { resolve(undefined); }; }) : Promise.resolve(undefined);
+        });
+        const answers = [completeEditorText('=', 1), completeEditorText('=S', 2), completeEditorText('=SU', 3)];
+        expect(asked).toEqual([['=', 1]]);
+        if (first === undefined) throw new Error('The first question crossed.');
+        first();
+        await Promise.all(answers);
+        expect(asked).toEqual([['=', 1], ['=SU', 3]]);
     });
 });

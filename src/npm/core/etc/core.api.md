@@ -241,6 +241,12 @@ export type CommitRefusalReason =
 export type CompleteEditorText = (text: string, caret: number) => EditorCompletion | undefined | PromiseLike<EditorCompletion | undefined>;
 
 // @public
+export const completionAttributes: Readonly<{
+    readonly list: 'data-ex-completion-list';
+    readonly candidate: 'data-ex-candidate';
+}>;
+
+// @public
 export interface CompletionCandidate {
     readonly insert: string;
     readonly label: string;
@@ -2173,6 +2179,9 @@ export type ViewStateOperand = {
 
 // @public
 export function wireCellEditor(contents: HTMLElement, context: GridCellEditorSlotContext, answered?: boolean): () => void;
+
+// @public
+export function wireEditorCompletion(contents: HTMLElement, context: GridEditorCompletionSlotContext, current: () => boolean): () => void;
 
 // @public
 export function wireFilterPanel(contents: HTMLElement, context: GridFilterPanelSlotContext, drawn: () => FilterPanelView, answered?: boolean): () => void;

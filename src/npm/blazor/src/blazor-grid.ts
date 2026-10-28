@@ -5,7 +5,7 @@
 // does to them are the Consumer's, in .NET.
 
 import {
-    createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridCommand, type GridContextMenuContext, type GridErrorStepRequest,
+    createGrid, EditorCompletion, EditorHint, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict, type GridColumn, type GridCommand, type GridContextMenuContext, type GridErrorStepRequest,
     type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
 import {
@@ -43,6 +43,8 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly cellMessages?: number;
     /** Whether the Consumer answers the error step, F8 and Shift+F8, which .NET is asked as it is taken (ADR-0381). */
     readonly findsErrors?: true;
+    /** Whether the Consumer answers completion, which .NET is asked as the editor's text or caret moves (ADR-0051). */
+    readonly completesText?: true;
     /** Whether the Consumer adds commands to the Context Menu, which .NET is asked for as it opens (ADR-0421). */
     readonly contextCommands?: true;
     /** The Chrome slots the Consumer's Chrome fills with Razor, which .NET renders as each is mounted (ADR-0410). */
@@ -125,7 +127,7 @@ export function browserCollector(collected: (held: number) => void): RowCollecto
 
 /** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
 const heldGridCalls: ReadonlySet<string> = new Set([
-    'Heard', 'Validate', 'Find', 'FindError', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot', 'ContextCommands',
+    'Heard', 'Validate', 'Find', 'FindError', 'Complete', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot', 'ContextCommands',
 ]);
 
 /**
@@ -169,7 +171,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
     let wired = init.options;
     let pointedAt: GridPointedAt<BlazorRow> | undefined;
     const optionsNow = (): GridOptions<BlazorRow> => {
-        const options = gridOptions(wired, columns, source, heard, paint, findError, slots, menus, metrics);
+        const options = gridOptions(wired, columns, source, heard, paint, findError, completeEditorText, slots, menus, metrics);
         return pointedAt === undefined ? options : { ...options, pointedAt };
     };
 
@@ -212,6 +214,8 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
             return { found: false };
         });
     const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
+    // Asked of .NET for the text and caret the core hands; the core drops an answer for text it no longer holds.
+    const completeEditorText = latestOnly(async (text, caret) => completionOf(await dotnet.invokeMethodAsync('Complete', text, caret)));
     const menus = contextMenus(dotnet, () => ({ generation: source.generation, columnsVersion: columns.version }));
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
     const made: { grid?: GridHandle<BlazorRow> } = {};
@@ -344,6 +348,48 @@ function verdictOf(answer: unknown, column: string): EditVerdict {
 
 type FindErrorOf = (request: GridErrorStepRequest, signal: AbortSignal) => Promise<GridFindResult>;
 
+type CompleteEditorTextOf = (text: string, caret: number) => Promise<EditorCompletion | undefined>;
+
+/**
+ * `ask`, one question at a time: a question asked while another is on its way waits for it, and one asked after it
+ * takes its place, answering it nothing. Typing at machine speed then crosses to .NET as the question on its way and
+ * the latest, never one per key ahead of the edit, each awaiting the Consumer in its turn. The core asks again at each
+ * key and drops an answer to any question but its last, so the list it shows is the one for the text it holds,
+ * whichever question crossed.
+ */
+export function latestOnly(ask: CompleteEditorTextOf): CompleteEditorTextOf {
+    let asking = false;
+    let waiting: { readonly text: string; readonly caret: number; readonly answer: (to: Promise<EditorCompletion | undefined> | undefined) => void } | undefined;
+    const crossing = async (text: string, caret: number): Promise<EditorCompletion | undefined> => {
+        asking = true;
+        try {
+            return await ask(text, caret);
+        } finally {
+            asking = false;
+            const next = waiting;
+            waiting = undefined;
+            if (next !== undefined) next.answer(crossing(next.text, next.caret));
+        }
+    };
+    return (text, caret) => {
+        if (!asking) return crossing(text, caret);
+        // Replaced: the core asked again since, and drops any answer to this one.
+        waiting?.answer(undefined);
+        return new Promise(answer => { waiting = { text, caret, answer }; });
+    };
+}
+
+/** .NET's completion, as `ScriptJson.Completion` writes it, or nothing where it answered none. */
+function completionOf(answer: unknown): EditorCompletion | undefined {
+    if (answer === null) return undefined;
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a completion with something other than JSON text.');
+    const { candidates, hint } = parsed<{
+        readonly candidates: readonly CompletionCandidate[];
+        readonly hint?: { readonly text: string; readonly emphasisStart: number; readonly emphasisLength: number };
+    }>(answer);
+    return new EditorCompletion(hint === undefined ? { candidates } : { candidates, hint: new EditorHint(hint) });
+}
+
 /** .NET's answer to an error step, as `ExGrid.Script` writes a Find result, or `moved` where .NET did not ask the
  * Consumer, since what the step was asked under is gone there. A step .NET did not answer, its component gone or its
  * `OnFindError` taken away meanwhile, is given up: nothing moves, and nothing is claimed of cells nobody read. */
@@ -442,8 +488,8 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
 }
 
 function gridOptions(
-    wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf, slots: RazorSlots, menus: ContextMenus,
-    metrics: WireMetrics,
+    wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf,
+    completeEditorText: CompleteEditorTextOf, slots: RazorSlots, menus: ContextMenus, metrics: WireMetrics,
 ): GridOptions<BlazorRow> {
     const cellMetrics = metrics.cellMetrics(wire.cellMetrics);
     const presentationDefaults = metrics.presentationDefaults(wire.presentationDefaults);
@@ -468,6 +514,7 @@ function gridOptions(
         ...(wire.cellStates === true ? { cellState: paint.cellState } : {}),
         ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
         ...(wire.findsErrors === true ? { findError } : {}),
+        ...(wire.completesText === true ? { completeEditorText } : {}),
         ...(wire.contextCommands === true ? { contextCommands: menus.commands, commandLabel: menus.label } : {}),
         ...(razorSlots === undefined || razorSlots.length === 0 ? {} : { chrome: slots.chrome(razorSlots) }),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),

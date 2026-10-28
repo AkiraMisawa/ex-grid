@@ -240,6 +240,15 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public Func<Validation.GridErrorStepRequest, CancellationToken, Task<Finding.GridFindResult>>? OnFindError { get; set; }
 
     /// <summary>
+    /// Completion and the argument hint (ADR-0051): asked with the editor's text and caret as the user types or moves
+    /// the caret, in the Cell Editor and the Formula Bar alike, in its turn among the grid's events. The grid shows the
+    /// answer beneath the surface typed in, unless the text has changed since it was asked: an answer for older text is
+    /// dropped, never shown. ↑ and ↓ choose, Tab accepts and Escape closes the list, all in the browser; what a
+    /// candidate writes is the Consumer's, the grid knows no Formula. Null, or a null answer, shows nothing.
+    /// </summary>
+    [Parameter] public Func<string, int, ValueTask<EditorCompletion?>>? CompleteEditorText { get; set; }
+
+    /// <summary>
     /// The Chrome that fills the Script Core's slots with Razor (ADR-0410): each slot its
     /// <see cref="IGridChrome.ScriptSlots"/> names is drawn by its view overload, rendered beside the grid's root
     /// and moved into the slot by the script, which wires its controls in the browser from the attributes of
@@ -925,6 +934,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cellMessages", _judgement);
         if (OnFindError is not null)
             json.WriteBoolean("findsErrors", true);
+        if (CompleteEditorText is not null)
+            json.WriteBoolean("completesText", true);
         if (ContextCommands is not null)
             json.WriteBoolean("contextCommands", true);
         if (_pointedAt is { } pointedAt)
@@ -1239,6 +1250,18 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             });
         }), Answers: true, SendsState: false));
     }
+
+    /// <summary>The Consumer's completion for the editor's <paramref name="text"/> and <paramref name="caret"/>
+    /// (ADR-0051), asked in its turn among the events and written as the browser reads it; null where it answers
+    /// nothing, or was taken away since the browser asked. The browser asks one at a time, and only its latest
+    /// question once one is on its way, so typing does not queue a question per key ahead of the edit.</summary>
+    internal Task<string?> CompleteAsync(string text, int caret)
+        => InTurnAsync(new Heard(async () =>
+        {
+            if (CompleteEditorText is not { } complete || await complete(text, caret) is not { } answer)
+                return null;
+            return ScriptJson.Completion(answer);
+        }, Answers: true, SendsState: false));
 
     /// <summary>A cell's message, asked as the browser's popover would open (ADR-0034), in its turn among the
     /// events: null where the Consumer has nothing to say, or no longer asks.</summary>

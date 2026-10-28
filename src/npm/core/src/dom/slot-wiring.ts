@@ -6,7 +6,8 @@
 import type { FilterPanelView } from '../chrome/filter-panel-model';
 import type { FilterOperator } from '../query/filter';
 import type {
-    GridCellEditorSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridFormulaBarTextSlotContext, GridMenuSlotContext, GridNameBoxSlotContext,
+    GridCellEditorSlotContext, GridEditorCompletionSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridFormulaBarTextSlotContext,
+    GridMenuSlotContext, GridNameBoxSlotContext,
 } from './grid-chrome';
 
 /** The attribute a menu slot's contents write on the control of each command, its index in `commands`: the control
@@ -411,4 +412,60 @@ export function wireFormulaBarText(contents: HTMLElement, context: GridFormulaBa
 export function wireNameBox(contents: HTMLElement, context: GridNameBoxSlotContext): () => void {
     context.takeField(markedField(contents, nameBoxFieldAttribute, 'Name Box', false));
     return () => undefined;
+}
+
+/** The attributes the completion slot's contents write (ADR-0410 section 2): `list` on the one element holding the
+ * candidates, drawn where there are any, and `candidate` on each candidate's element, its index in `candidates`, as the
+ * core's own list marks its options. */
+export const completionAttributes = Object.freeze({
+    list: 'data-ex-completion-list',
+    candidate: 'data-ex-candidate',
+} as const);
+
+/**
+ * Wires the completion slot's contents (ADR-0410 section 2), as `useEditorCompletion` does React's: the list marked
+ * {@link completionAttributes}`.list` takes the list's id and role, and each candidate marked
+ * {@link completionAttributes}`.candidate` its option's id and role and whether it is the one chosen, in the browser, so
+ * ↑ and ↓ move the choice without the contents being drawn again. A click on a candidate accepts it, while `current`
+ * says the contents show the answer `context` is for: a click on contents still showing an earlier answer accepts
+ * nothing, as the core refuses an answer no longer its own. Draw the candidates and the hint with no handler and no
+ * choice of your own. Answers the function that takes the wiring off again.
+ */
+export function wireEditorCompletion(contents: HTMLElement, context: GridEditorCompletionSlotContext, current: () => boolean): () => void {
+    const lists = contents.querySelectorAll<HTMLElement>(`[${completionAttributes.list}]`);
+    if (lists.length > 1) throw new Error(`The completion's contents drew ${lists.length} lists marked ${completionAttributes.list}: mark the one holding the candidates.`);
+    const list = lists[0];
+    if (list !== undefined) {
+        list.id = context.listId;
+        list.setAttribute('role', 'listbox');
+    }
+    // Contents still showing an earlier answer name no candidate of this one: none is marked chosen, and none carries the
+    // id the editor names, so neither the eye nor a screen reader is told of a choice Tab would not take.
+    const shown = current();
+    for (const option of contents.querySelectorAll<HTMLElement>(`[${completionAttributes.candidate}]`)) {
+        const index = candidateIndex(option, shown ? context.candidates.length : undefined);
+        if (shown) option.id = context.optionId(index);
+        else option.removeAttribute('id');
+        option.setAttribute('role', 'option');
+        option.setAttribute('aria-selected', shown && index === context.selected ? 'true' : 'false');
+    }
+    const click = (event: MouseEvent): void => {
+        if (event.button !== 0 || !(event.target instanceof Element)) return;
+        const option = event.target.closest<HTMLElement>(`[${completionAttributes.candidate}]`);
+        if (option === null || !contents.contains(option) || !current()) return;
+        context.accept(candidateIndex(option, context.candidates.length));
+    };
+    contents.addEventListener('click', click);
+    return () => { contents.removeEventListener('click', click); };
+}
+
+/** The index a candidate's element is marked with, refused where it names no candidate: within `count` where the
+ * contents show the answer it counts. */
+function candidateIndex(option: HTMLElement, count: number | undefined): number {
+    const marked = option.getAttribute(completionAttributes.candidate);
+    const index = Number(marked);
+    if (marked === null || marked === '' || !Number.isSafeInteger(index) || index < 0 || (count !== undefined && index >= count)) {
+        throw new RangeError(`A completion candidate is marked ${completionAttributes.candidate}="${String(marked)}": it is the candidate's index.`);
+    }
+    return index;
 }

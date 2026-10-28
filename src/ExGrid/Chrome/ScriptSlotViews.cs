@@ -1,3 +1,5 @@
+using ExGrid.Cells;
+
 namespace ExGrid.Chrome;
 
 /// <summary>
@@ -44,6 +46,10 @@ public enum ScriptSlots
     /// <summary>The Formula Bar's Name Box field, inside the core's box and form, through
     /// <see cref="IGridChrome.NameBox(GridNameBoxView)"/>.</summary>
     NameBox = 128,
+
+    /// <summary>The completion list and the argument hint, inside the box the core stands beneath the surface typed
+    /// in, through <see cref="IGridChrome.EditorCompletion(GridEditorCompletionView)"/>.</summary>
+    EditorCompletion = 256,
 }
 
 /// <summary>
@@ -130,6 +136,16 @@ public static class ScriptSlotAttributes
     /// it, names it, and hands what Enter entered to the Consumer, in the browser. Draw it with no value and no key
     /// handler.</summary>
     public const string NameBoxField = "data-ex-name-box-field";
+
+    /// <summary>On the one element holding the completion's candidates, drawn where there are any: the script gives it
+    /// the list's id and role, which the editor names.</summary>
+    public const string CompletionList = "data-ex-completion-list";
+
+    /// <summary>On each completion candidate's element, the candidate's index in
+    /// <see cref="GridEditorCompletionView.Labels"/>: the script gives it the option's id and role, marks the chosen one
+    /// <c>aria-selected</c> as ↑ and ↓ move the choice, in the browser, and accepts it on a click. Draw no choice of your
+    /// own: style the chosen one by <c>aria-selected="true"</c>.</summary>
+    public const string CompletionCandidate = "data-ex-candidate";
 }
 
 /// <summary>One command of a menu, as the Script Core hands it (ADR-0010, ADR-0036).</summary>
@@ -165,6 +181,18 @@ public sealed record GridLoadingView(bool IsLoading, int PlaceholderRowCount);
 /// the text is not the Focus cell's own (ADR-0125), so a stylesheet dims it there.
 /// </summary>
 public sealed record GridFormulaBarTextView;
+
+/// <summary>
+/// The completion list and the argument hint when the Script Core draws the grid (ADR-0051, ADR-0410 section 3): data
+/// only, drawn again for each answer that shows otherwise. The Razor draws the candidates in an element marked
+/// <see cref="ScriptSlotAttributes.CompletionList"/>, each marked <see cref="ScriptSlotAttributes.CompletionCandidate"/>
+/// with its index, then the hint, with no handler. Which candidate is chosen, and every key, are the core's in the
+/// browser: ↑ and ↓ move the choice without drawing the list again.
+/// </summary>
+/// <param name="Labels">The candidates' labels, in the Consumer's order; may be empty, an answer with only a hint.</param>
+/// <param name="Hint">The argument hint, drawn beneath the candidates, with <see cref="EditorHint.Parts"/> setting off the
+/// argument the caret is in; null where there is none.</param>
+public sealed record GridEditorCompletionView(IReadOnlyList<string> Labels, EditorHint? Hint);
 
 /// <summary>
 /// The Name Box when the Script Core draws the grid (ADR-0051, ADR-0410 section 3). It carries nothing: what the box

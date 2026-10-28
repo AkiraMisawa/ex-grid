@@ -143,6 +143,35 @@ test('ADR-0410 / SRV-7: the Cell Editor is MudBlazor\'s field, and a text typed 
     await expect(field).toHaveAttribute('aria-label', 'Trader');
 });
 
+test('ADR-0410 / ADR-0051: the completion list is MudBlazor\'s, the arrows move its choice without waiting on a slow circuit, and a click accepts a candidate', async ({ page }) => {
+    await settled(grid(page));
+    await setRoundTrip(150);
+    await cell(page, 4, 1).click({ force: true });
+    await page.keyboard.type('M');
+    await settled(grid(page));
+    await circuitQuiet();
+    const items = grid(page).locator('.ex-completion .mud-ex-completion-item');
+    await expect(items).toHaveText(['Marsh', 'Martens', 'Mira Holt']);
+    await expect(items.nth(0)).toHaveAttribute('aria-selected', 'true');
+    // The choice is the core's, marked on MudBlazor's list in the browser: .NET is asked to draw nothing for it, so the
+    // contents still carry the number of the drawing that listed the answer.
+    const list = grid(page).locator('.ex-completion [data-ex-version]');
+    const drawing = await list.getAttribute('data-ex-version');
+    if (drawing === null) throw new Error('The completion\'s contents carry no drawing number.');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await settled(grid(page));
+    await circuitQuiet();
+    await expect(items.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await expect(items.nth(0)).toHaveAttribute('aria-selected', 'false');
+    await expect(list).toHaveAttribute('data-ex-version', drawing);
+    await items.nth(1).click();
+    await page.keyboard.press('Enter');
+    await settled(grid(page));
+    await circuitQuiet();
+    await expect(page.locator('#script-mud-edited')).toHaveText('Edited: Trader = Martens');
+});
+
 test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and what is typed in either and entered at machine speed over a slow circuit is what the grid hears', async ({ page }) => {
     await settled(grid(page));
     await cell(page, 3, 1).click({ force: true });
