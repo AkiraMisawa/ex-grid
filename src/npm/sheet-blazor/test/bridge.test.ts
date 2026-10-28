@@ -614,3 +614,124 @@ describe('the grid\'s slots filled with Razor (ADR-0410)', () => {
         expect(() => mount({ options: options({ razorSlots: ['findPanel'] }) })).toThrow(TypeError);
     });
 });
+
+/** A Toolbar Item as .NET is handed it. */
+interface WireToolbarItem {
+    readonly id: string;
+    readonly kind: string;
+    readonly name: string;
+    readonly choices: readonly { readonly label: string; readonly swatch: string | null; readonly selected: boolean; readonly disabledReason: string | null }[];
+}
+
+/** What a Razor Chrome draws for a Toolbar Item: its face, the arrow of an item with a list, and the list. */
+function itemContents(item: WireToolbarItem): HTMLElement {
+    const contents = document.createElement('div');
+    const face = `<button data-ex-sheet-press="${item.kind === 'menu' ? 'list' : 'invoke'}">${item.name}</button>`;
+    const arrow = item.kind === 'split' ? '<button class="arrow" data-ex-sheet-press="list">▾</button>' : '';
+    const list = item.choices.length === 0 ? '' : `<div data-ex-sheet-list>${item.choices.map((choice, index) =>
+        `<button data-ex-sheet-choice="${String(index)}">${choice.label}</button>`).join('')}</div>`;
+    contents.innerHTML = face + arrow + list;
+    return contents;
+}
+
+/** A Sheet whose Chrome fills `slots`, .NET answering each slot's calls and drawing nothing until asked. */
+async function razorSheet(slots: NonNullable<WireOptions['razorSlots']>, more: Partial<WireOptions> = {}): Promise<{ readonly element: HTMLElement; readonly sheet: BlazorSheet; readonly dotnet: FakeDotNet }> {
+    const element = document.createElement('div');
+    document.body.append(element);
+    const dotnet = new FakeDotNet();
+    for (const method of ['MountSlot', 'UpdateSlot', 'UnmountSlot']) dotnet.answers.set(method, () => Promise.resolve(null));
+    const sheet = attach(element, dotnet, JSON.stringify({
+        options: options({ razorSlots: slots, ...more }), document: workbookJson(['Sheet1', { A1: 'x' }], ['Sheet2', {}]), documentsSent: 1, words: null,
+        circuit: false,
+    }));
+    attached.push(sheet);
+    await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('x'); });
+    return { element, sheet, dotnet };
+}
+
+/** Each slot .NET was asked to mount, drawn by `draw` from the data last sent for it in a holder beside the root, and
+ * handed back. */
+function render(sheet: BlazorSheet, dotnet: FakeDotNet, draw: (name: string, json: string) => HTMLElement): { readonly id: number; readonly name: string; readonly json: string; readonly contents: HTMLElement }[] {
+    return dotnet.called.filter(call => call.method === 'MountSlot').map(call => {
+        const [id, , name] = call.args;
+        const last = dotnet.called.findLast(each => (each.method === 'MountSlot' || each.method === 'UpdateSlot') && each.args[0] === id);
+        if (last === undefined) throw new Error('Internal: the slot has no call.');
+        const version = last.args[1];
+        const json = last.method === 'MountSlot' ? last.args[3] : last.args[2];
+        const contents = draw(String(name), String(json));
+        contents.setAttribute('data-ex-version', String(version));
+        const holder = document.createElement('div');
+        holder.hidden = true;
+        holder.append(contents);
+        document.body.append(holder);
+        sheet.slotRendered(Number(id), Number(version), contents);
+        return { id: Number(id), name: String(name), json: String(json), contents };
+    });
+}
+
+describe('the Sheet\'s own slots filled with Razor (ADR-0410)', () => {
+
+    it('draws each Sheet Tab\'s face and the + button\'s from data, inside the tabs the Sheet keeps', async () => {
+        const { element, sheet, dotnet } = await razorSheet(['sheetTab', 'sheetTabAdd']);
+        const drawn = render(sheet, dotnet, (name, json) => {
+            const face = document.createElement('span');
+            face.textContent = name === 'sheetTab' ? `[${(JSON.parse(json) as { readonly name: string }).name}]` : '+';
+            return face;
+        });
+        expect(drawn.map(slot => [slot.name, slot.json])).toEqual([
+            ['sheetTabAdd', '{}'], ['sheetTab', '{"name":"Sheet1","selected":true}'], ['sheetTab', '{"name":"Sheet2","selected":false}'],
+        ]);
+        expect([...element.querySelectorAll('[role="tab"]')].map(tab => tab.textContent)).toEqual(['[Sheet1]', '[Sheet2]']);
+        expect(drawn.every(slot => element.contains(slot.contents))).toBe(true);
+    });
+
+    it('opens a Toolbar Item\'s list on the toolbar\'s keys and on a press, moves and chooses in the browser, and hands each close back', async () => {
+        const { element, sheet, dotnet } = await razorSheet(['toolbarItem'], { showToolbar: true });
+        press(element, 0, 0);
+        const grid = element.querySelector('.ex-key-field');
+        const drawn = render(sheet, dotnet, (_name, json) => itemContents(JSON.parse(json) as WireToolbarItem));
+        const fill = drawn.find(slot => (JSON.parse(slot.json) as WireToolbarItem).name === 'Fill Colour');
+        if (fill === undefined) throw new Error('No Fill Colour was mounted.');
+        const item = JSON.parse(fill.json) as WireToolbarItem;
+        expect([item.kind, item.choices[0]]).toEqual(['split', { label: 'No Fill', swatch: null, selected: true, disabledReason: null }]);
+        const list = fill.contents.querySelector<HTMLElement>('[data-ex-sheet-list]');
+        const choice = (label: string): HTMLElement => {
+            const found = fill.contents.querySelector<HTMLElement>(`[data-ex-sheet-choice="${String(item.choices.findIndex(each => each.label === label))}"]`);
+            if (found === null) throw new Error(`No choice ${label} was drawn.`);
+            return found;
+        };
+        expect([list?.hidden, list?.getAttribute('role'), choice('Red').getAttribute('role')]).toEqual([true, 'menu', 'menuitemradio']);
+
+        // ↓ on the item asks for its list, which opens on the Focus cell's choice; the arrows move among the swatches.
+        // Typed once the inputs held until the items' contents stood are let go: the keyboard's field is still while
+        // they wait.
+        await vi.waitFor(() => { expect(element.querySelector<HTMLTextAreaElement>('.ex-key-field')?.readOnly).toBe(false); });
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        band?.focus();
+        const fillId = fill.contents.closest('.ex-sheet-toolbar-slot')?.id;
+        for (let steps = 0; band?.getAttribute('aria-activedescendant') !== fillId; steps += 1) {
+            if (steps > 20) throw new Error(`The band's keyboard never reached ${String(fillId)}.`);
+            key('ArrowRight');
+        }
+        key('ArrowDown');
+        expect([list?.hidden, document.activeElement]).toEqual([false, choice('No Fill')]);
+        key('ArrowDown');
+        key('ArrowRight');
+        expect(document.activeElement?.textContent).toBe(item.choices[2]?.label);
+
+        // A choice is made on the Sheet, and the keyboard goes back to the grid.
+        choice('Red').click();
+        expect([list?.hidden, document.activeElement]).toEqual([true, grid]);
+        await vi.waitFor(() => {
+            const last = dotnet.called.findLast(call => call.method === 'UpdateSlot' && call.args[0] === fill.id);
+            if (last === undefined) throw new Error('The item was not sent again.');
+            expect((JSON.parse(String(last.args[2])) as WireToolbarItem).choices.find(each => each.label === 'Red')?.selected).toBe(true);
+        });
+
+        // Opened by a press on the arrow, Escape closes it and the keyboard goes back.
+        fill.contents.querySelector<HTMLElement>('.arrow')?.click();
+        expect(list?.hidden).toBe(false);
+        key('Escape');
+        expect([list?.hidden, document.activeElement]).toEqual([true, grid]);
+    });
+});

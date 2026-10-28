@@ -11,7 +11,7 @@
 </p>
 
 <ExSheet.Script.ExSheet @ref="_sheet" @bind-Document="_document" OnSelectionSummaryChanged="Summarised"
-                        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+                        ViewportHeight="330" ViewportWidth="ViewportSize.Stretch" ShowToolbar="true" />
 
 @* Never empty, so the line is there before the first answer and the Sheet does not move under the pointer. *@
 <p class="mt-3" role="status">The document holds @_document.Cells.Count cells.@_selected @_undone</p>

@@ -21,8 +21,9 @@ import { SheetToolbarButton } from '@ex-grid/sheet';
 import { SheetToolbarCommand } from '@ex-grid/sheet';
 import { SheetToolbarContent } from '@ex-grid/sheet';
 import { SheetToolbarItemSlotContext } from '@ex-grid/sheet';
-import type { SheetToolbarItemView } from '@ex-grid/sheet';
+import { SheetToolbarItemView } from '@ex-grid/sheet';
 import { SheetToolbarRowOptions } from '@ex-grid/sheet';
+import { ToolbarChoiceRow } from '@ex-grid/sheet';
 
 // @public
 export function ExSheet(props: ExSheetProps): ReactElement;
@@ -90,8 +91,7 @@ export interface ToolbarChoiceProps {
     readonly title: string;
 }
 
-// @public
-export type ToolbarChoiceRow = number | readonly number[];
+export { ToolbarChoiceRow }
 
 // @public
 export interface ToolbarControlProps {

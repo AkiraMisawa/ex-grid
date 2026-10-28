@@ -32,6 +32,7 @@ export type {
     SheetToolbarContent, SheetToolbarIcon, SheetToolbarItemChoice, SheetToolbarItemKind, SheetToolbarItemSlot, SheetToolbarItemSlotContext, SheetToolbarItemView,
 } from './sheet-toolbar-slot';
 export { sheetToolbarPictures } from './sheet-toolbar';
+export { toolbarChoiceMovedTo, toolbarChoiceRows, toolbarChoiceStart, toolbarSwatchesAcross, type ToolbarChoiceRow } from './toolbar-choice-keys';
 export { sheetFormatChangeFor, sheetFormatKeyOf, sheetFormatKeysDeclared, type SheetFormatKey } from './sheet-format-keys';
 export { sheetCommandIds } from './sheet-context-commands';
 export { sheetFindLabelIds, type SheetFindWithin } from './sheet-find-panel';

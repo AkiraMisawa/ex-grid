@@ -63,9 +63,10 @@ export interface SlotHostProduct {
 
 /**
  * The host's options over one product that may still be being made, `made` answering it once it is, and `named` naming
- * it in a defect: a slot mounted as the product is made holds its Settled Mark once there is a product to hold, before
- * the task ends. Only a part the user opened takes the keyboard, and the user opens nothing before the product stands,
- * so ordering inputs or handing the keyboard back before then is a defect.
+ * it in a defect: a slot mounted as the product is made holds its Settled Mark, and the inputs made after it, once there
+ * is a product to hold, before the task ends and so before any input. A Sheet's Toolbar Items stand as it is made, and
+ * take the keyboard. Contents that held the keyboard cannot go before the product stands, so handing it back then is a
+ * defect.
  */
 export function slotHostOptionsOf(made: () => SlotHostProduct | undefined, named: string): RazorSlotHostOptions {
     const product = (asked: string): SlotHostProduct => {
@@ -85,7 +86,14 @@ export function slotHostOptionsOf(made: () => SlotHostProduct | undefined, named
             });
             return () => { gone = true; release?.(); };
         },
-        order: until => { void product('that takes the keyboard was mounted').inOrder(() => until); },
+        order: until => {
+            const standing = made();
+            if (standing !== undefined) {
+                void standing.inOrder(() => until);
+                return;
+            }
+            queueMicrotask(() => { void product('that takes the keyboard was mounted').inOrder(() => until); });
+        },
         keyboardBack: () => { product('held the keyboard').focus(); },
     };
 }

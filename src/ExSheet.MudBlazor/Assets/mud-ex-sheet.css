@@ -144,6 +144,34 @@ button.mud-ex-sheet-swatch { padding: 0; }
 .mud-ex-sheet-toolbar-list { width: 0; height: 0; }
 .mud-ex-sheet-toolbar-separator { margin: 6px 2px; }
 
+/* A Toolbar Item over the Script Core (ADR-0410): its list stands inside the item, and the script
+   shows it while it is open, fixed at the item's foot, so the band, which clips what its rows hold,
+   does not cut it. */
+.ex-sheet-toolbar-slot.ex-sheet-toolbar-active:has(.mud-ex-sheet-script-toolbar-item) {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: -2px;
+    border-radius: 4px;
+}
+.mud-ex-sheet-script-toolbar-list {
+    position: fixed;
+    z-index: var(--mud-zindex-popover, 1200);
+    min-width: 12em;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+.mud-ex-sheet-script-toolbar-list[hidden] { display: none; }
+.mud-ex-sheet-script-choice {
+    padding: 6px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    outline: none;
+}
+.mud-ex-sheet-script-choice:hover,
+.mud-ex-sheet-script-choice:focus { background-color: var(--mud-palette-action-default-hover); }
+.mud-ex-sheet-script-choice-disabled { cursor: default; color: var(--mud-palette-text-disabled); }
+.mud-ex-sheet-script-toolbar-list .mud-ex-sheet-swatch:focus { outline: 2px solid var(--mud-palette-primary); outline-offset: 1px; }
+
 /* ADR-0039: the frame holds opening keys until the dialog root can hear Escape.
    Do not inherit visibility: MudTabs transitions all properties on its tab wrapper,
    leaving it hidden when the ready render asks the selected tab for focus. */
