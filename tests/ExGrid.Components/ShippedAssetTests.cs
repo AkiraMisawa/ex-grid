@@ -135,7 +135,7 @@ public class ShippedAssetTests
         {
             var expected = Directory.EnumerateFiles(AssetSources.Folder(package))
                 .Select(file => MinifiedName(Path.GetFileName(file)))
-                .Concat(package == "ExGrid" ? [ScriptCoreModule] : [])
+                .Concat(package == "ExGrid" ? [ScriptCoreModule, SharedScript] : [])
                 .SelectMany(name => new[] { name, $"{name}.map" })
                 .Order(StringComparer.Ordinal);
             var served = Directory.EnumerateFiles(Wwwroot(package))
@@ -149,6 +149,10 @@ public class ShippedAssetTests
     /// <summary>The Script Core's module, which ExGrid's build bundles from <c>src/npm</c> rather than from an
     /// <c>Assets</c> source (ADR-0123's note of 2026-10-26).</summary>
     private const string ScriptCoreModule = "ex-grid-core.min.js";
+
+    /// <summary>The Shared Script, the core and the data it reads, which ExGrid's build bundles beside its bridge and
+    /// every product's Blazor module imports (ADR-0411).</summary>
+    private const string SharedScript = "ex-grid-script.min.js";
 
     /// <summary>ExPivot's Script Core's module, which ExPivot's build bundles from <c>src/npm</c> as ExGrid's does
     /// (ADR-0370 section 1). This project does not build ExPivot, so the module is there or not as ExPivot was last
@@ -168,5 +172,21 @@ public class ShippedAssetTests
         Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
         Assert.Equal(global::ExGrid.Script.ScriptCoreAsset.Version, HashOf(shipped)[..12]);
         Assert.Contains($"sourceMappingURL={ScriptCoreModule}.map", shipped, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0411 / ADR-0123: the bridge imports the Shared Script shipped beside it, at an address its stamp names, and expects that stamp
+    public void The_bridge_imports_the_shared_script_shipped_beside_it()
+    {
+        var bridge = File.ReadAllText(Path.Combine(Wwwroot("ExGrid"), ScriptCoreModule));
+        var shared = File.ReadAllText(Path.Combine(Wwwroot("ExGrid"), SharedScript));
+        var banner = Banner.Match(shared);
+        Assert.True(banner.Success, $"{SharedScript} does not open with the banner src/npm/scripts/build-blazor.mjs writes");
+        Assert.Equal("ex-grid-script.js", banner.Groups["name"].Value);
+        var stamp = banner.Groups["hash"].Value;
+        // The Shared Script answers its stamp, and the bridge expects that stamp of the one it is handed.
+        Assert.Contains($"\"{stamp}\"", shared, StringComparison.Ordinal);
+        Assert.Contains($"\"{stamp}\"", bridge, StringComparison.Ordinal);
+        Assert.Contains($"from\"./{SharedScript}?v={stamp[..12]}\"", bridge, StringComparison.Ordinal);
+        Assert.Contains($"sourceMappingURL={SharedScript}.map", shared, StringComparison.Ordinal);
     }
 }

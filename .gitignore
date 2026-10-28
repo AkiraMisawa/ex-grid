@@ -45,6 +45,8 @@ samples/ExGrid.DemoHost.React/dist/
 # The Script Core's module for Blazor ExGrid, bundled from src/npm as ExGrid builds (ADR-0350 section 7)
 src/ExGrid/wwwroot/ex-grid-core.min.js
 src/ExGrid/wwwroot/ex-grid-core.min.js.map
+src/ExGrid/wwwroot/ex-grid-script.min.js
+src/ExGrid/wwwroot/ex-grid-script.min.js.map
 # ExPivot's, bundled from src/npm as ExPivot builds (ADR-0370 section 1)
 src/ExPivot/wwwroot/ex-pivot.min.js
 src/ExPivot/wwwroot/ex-pivot.min.js.map

@@ -58,7 +58,9 @@
             use the pivot above for those until they arrive. A field with an
             <code>OrderKey</code>, a .NET function the browser cannot call, is refused by name; declare its order with
             <code>ItemOrder</code> instead. The script it runs is bundled into the package, at an address that changes
-            with its content.
+            with its content; the grid it draws through, and the core under it, come from the Shared Script the ExGrid
+            package ships, <code>_content/ExGrid/ex-grid-script.min.js</code>, which a page with a grid of ExGrid's
+            beside it loads once for both. A Content Security Policy that lists the packages' files names it too.
         </p>
     </DocsSection>
 
