@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Bunit;
 using ExGrid.Chrome;
 using ExPivot.Chrome;
@@ -51,7 +52,7 @@ public class ShippedFilesTests : PivotTestContext
         Assert.Equal(BuiltInCommandLabels.For(ReloadNoticeLabelIds.Stylesheet), notices[1].TextContent);
     }
 
-    [Fact] // ADR-0123 / ADR-0370 s1: the bundled module ExPivot.Script.ExPivot imports answers the stamp the component is built with, at the version its address carries
+    [Fact] // ADR-0123 / ADR-0370 s1 / ADR-0411: the bundled module ExPivot.Script.ExPivot imports answers the stamp the component is built with, at the version its address carries
     public void The_script_core_module_is_the_one_the_component_was_built_with()
     {
         const string module = "ex-pivot.min.js";
@@ -61,6 +62,12 @@ public class ShippedFilesTests : PivotTestContext
         Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
         Assert.Equal(global::ExPivot.Script.ScriptCoreAsset.Version, ShippedFiles.Version("ExPivot", module));
         Assert.Contains($"sourceMappingURL={module}.map", shipped, StringComparison.Ordinal);
+        // The grid and the data come from the Shared Script ExGrid ships, at the address its stamp names, which the
+        // module expects of it (ADR-0411).
+        var shared = Regex.Match(File.ReadAllText(ShippedFiles.PathOf("ExGrid", "ex-grid-script.min.js")), "^/\\*! ex-grid-script\\.js sha256:(?<stamp>[0-9a-f]{64}) ").Groups["stamp"].Value;
+        Assert.Matches("^[0-9a-f]{64}$", shared);
+        Assert.Contains($"from\"../ExGrid/ex-grid-script.min.js?v={shared[..12]}\"", shipped, StringComparison.Ordinal);
+        Assert.Contains($"\"{shared}\"", shipped, StringComparison.Ordinal);
     }
 
     /// <summary>A Pivot Chrome that draws nothing of its own.</summary>

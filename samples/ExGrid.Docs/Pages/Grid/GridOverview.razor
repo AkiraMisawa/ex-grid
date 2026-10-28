@@ -70,7 +70,10 @@
             above for those until they arrive. The browser is sent the rows around the ones in view, a few
             screens either side, and asks for more as it scrolls, so a source that holds a million rows sends a
             few hundred. The script it runs is bundled into the package, at an address that changes with its
-            content, as ExGrid's own script is.
+            content, as ExGrid's own script is, and the core under it is the Shared Script beside it,
+            <code>_content/ExGrid/ex-grid-script.min.js</code>, which every product over the core on the page
+            shares, so a page with a grid and a pivot loads it once. A Content Security Policy that lists the
+            package's files names it too.
         </p>
         <p>
             A dialog or panel of yours that took the keyboard over the grid gives it back with

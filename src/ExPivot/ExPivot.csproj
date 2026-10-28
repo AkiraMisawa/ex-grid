@@ -20,8 +20,9 @@
   </ItemGroup>
 
   <!-- ExPivot's Script Core's module for ExPivot.Script.ExPivot (ADR-0370 section 1): the bridge, @ex-grid/pivot
-       and the grid it draws through, bundled from their sources in src/npm as this project builds, never committed,
-       as ExGrid's is (ADR-0350 section 7). The module goes to wwwroot, where the package serves it; its version and
+       and its engine, bundled from their sources in src/npm as this project builds, never committed, as ExGrid's is
+       (ADR-0350 section 7). The grid it draws through, and the data it reads, it imports from the Shared Script
+       ExGrid ships, built against the same sources (ADR-0411). The module goes to wwwroot, where the package serves it; its version and
        stamp (ADR-0123) are compiled in as ScriptCoreAsset. src/npm's dependencies are ExGrid's build's to install:
        the bundle is built once the project references are, so the two never run npm in the workspace at once. -->
   <PropertyGroup>
@@ -31,7 +32,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)pivot-engine/src/**/*.ts;$(ScriptCoreWorkspace)pivot/src/**/*.ts;$(ScriptCoreWorkspace)pivot-blazor/src/**/*.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)pivot-engine/src/**/*.ts;$(ScriptCoreWorkspace)pivot/src/**/*.ts;$(ScriptCoreWorkspace)pivot-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts" />
     <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
     <Content Remove="wwwroot/ex-pivot.min.js;wwwroot/ex-pivot.min.js.map" />
   </ItemGroup>

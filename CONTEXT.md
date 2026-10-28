@@ -483,6 +483,13 @@ the instance root, and decides nothing
 Distinct from a Wrapper, which adapts a design system, not a framework.
 _Avoid_: binding, wrapper, port
 
+**Shared Script**:
+The one module, shipped by the ExGrid package, that holds ExGrid's Script Core and the data it reads for
+every Blazor Framework Adapter on a page: each product's Blazor module imports them from it by one
+address, so a page loads them once and runs one core. A module refuses a Shared Script it was not built
+against ([ADR-0411](./docs/adr/0411-every-products-blazor-script-imports-the-core-from-one-shared-script-exgrid-ships.md)).
+_Avoid_: vendor bundle, common chunk, runtime
+
 **Engine Host**:
 Where a Script Core's engine runs, asked by asynchronous messages whose answers are data: the page's
 own thread or a Web Worker. The engine and the messages are the same in both, and an answer names the
