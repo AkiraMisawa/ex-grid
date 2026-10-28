@@ -1074,8 +1074,7 @@ export interface GridHeaderGroup {
 }
 
 // @public
-export function gridHeaderRequiredPx(label: string, options: {
-    readonly density?: GridDensity;
+export function gridHeaderRequiredPx(label: string, options: GridTextOptions & {
     readonly menuButton: boolean;
     readonly sortable: boolean;
 }): number;
@@ -1608,9 +1607,14 @@ export interface GridTextGeometry {
 }
 
 // @public
-export function gridTextGeometry(options?: {
+export function gridTextGeometry(options?: GridTextOptions): GridTextGeometry;
+
+// @public
+export interface GridTextOptions {
+    readonly cellMetrics?: CellTextMetrics;
     readonly density?: GridDensity;
-}): GridTextGeometry;
+    readonly presentationDefaults?: GridPresentationDefaults;
+}
 
 // @public
 export interface GridViewRead {

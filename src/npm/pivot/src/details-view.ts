@@ -4,7 +4,7 @@
 // PivotDialogFrame, PivotDetailsDialogView and PivotDetailsGrid (ADR-0350 section 4). Each sheet's records are an
 // ExGrid of their own, in an Input Root of their own (ADR-0240 section 6).
 
-import type { GridChrome, GridDensity, GridHandle, GridOptions } from '@ex-grid/core';
+import type { CellTextMetrics, GridChrome, GridDensity, GridHandle, GridOptions, GridPresentationDefaults } from '@ex-grid/core';
 import type { PivotDetailRecord } from '@ex-grid/pivot-engine';
 import {
     StandingSlot, type PivotChrome, type PivotDetailsDialogSlotContext, type PivotDetailsDialogView, type PivotDetailsTabsSlotContext, type PivotDetailsTabsView,
@@ -21,6 +21,8 @@ export type MountGrid = <Row>(element: HTMLElement, options: GridOptions<Row>) =
 export interface DetailsGridLook {
     readonly rowHeight: number | undefined;
     readonly density: GridDensity | undefined;
+    readonly cellMetrics: CellTextMetrics | undefined;
+    readonly presentationDefaults: GridPresentationDefaults | undefined;
     readonly commandLabel: ((id: string) => string | undefined) | undefined;
     /** The grid's Chrome a pivot's Chrome dresses its grids in (ADR-0390). */
     readonly chrome: GridChrome<PivotDetailRecord> | undefined;
@@ -91,7 +93,7 @@ class Records {
             if (held) this.#keyboardHome();
             return;
         }
-        const { rowHeight, density, commandLabel, chrome } = this.#host.look();
+        const { rowHeight, density, cellMetrics, presentationDefaults, commandLabel, chrome } = this.#host.look();
         const options: GridOptions<PivotDetailRecord> = {
             columns: this.sheet.columns,
             source: this.sheet.source,
@@ -108,6 +110,8 @@ class Records {
             ...(chrome === undefined ? {} : { chrome }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
+            ...(cellMetrics === undefined ? {} : { cellMetrics }),
+            ...(presentationDefaults === undefined ? {} : { presentationDefaults }),
             // The dialog's way out: the Escape its grid has nothing left to dismiss closes it (ADR-0070). A tab's grid
             // has none; Escape does not close a sheet.
             ...(this.#leave === undefined ? {} : { onLeave: this.#leave }),

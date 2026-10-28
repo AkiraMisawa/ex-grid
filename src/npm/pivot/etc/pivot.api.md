@@ -4,9 +4,11 @@
 
 ```ts
 
+import { CellTextMetrics } from '@ex-grid/core';
 import type { GridChrome } from '@ex-grid/core';
 import { GridDensity } from '@ex-grid/core';
 import { GridHandle } from '@ex-grid/core';
+import { GridPresentationDefaults } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
 import type { PivotAggregation } from '@ex-grid/pivot-engine';
 import type { PivotArea } from '@ex-grid/pivot-engine';
@@ -422,6 +424,7 @@ export interface PivotValueFieldSettingsView {
 
 // @public
 export interface PivotViewOptions {
+    readonly cellMetrics?: CellTextMetrics;
     readonly changeHighlightDuration?: number;
     readonly chrome?: PivotChrome;
     readonly density?: GridDensity;
@@ -441,6 +444,7 @@ export interface PivotViewOptions {
     readonly onShowDetails?: (event: PivotShowDetailsEvent) => void;
     readonly onShowFieldListChanged?: (event: PivotFieldListShownEvent) => void;
     readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
+    readonly presentationDefaults?: GridPresentationDefaults;
     readonly redrawInterval?: number;
     readonly rowHeight?: number;
     readonly showFieldList?: boolean;

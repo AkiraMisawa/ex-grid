@@ -411,6 +411,8 @@ ExPivot.Components.ExPivot.ItemsOf(ExGrid.Selection.GridSelection! selection) ->
 ExPivot.Script.ExPivot
 ExPivot.Script.ExPivot.Caps.get -> ExPivot.PivotCaps?
 ExPivot.Script.ExPivot.Caps.set -> void
+ExPivot.Script.ExPivot.CellMetrics.get -> ExGrid.Columns.CellTextMetrics?
+ExPivot.Script.ExPivot.CellMetrics.set -> void
 ExPivot.Script.ExPivot.ChangeHighlightDuration.get -> System.TimeSpan?
 ExPivot.Script.ExPivot.ChangeHighlightDuration.set -> void
 ExPivot.Script.ExPivot.Chrome.get -> ExPivot.Chrome.IPivotChrome?
@@ -435,6 +437,8 @@ ExPivot.Script.ExPivot.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Com
 ExPivot.Script.ExPivot.OnSelectionSummaryChanged.set -> void
 ExPivot.Script.ExPivot.OnShowDetails.get -> Microsoft.AspNetCore.Components.EventCallback<ExPivot.PivotDetails!>
 ExPivot.Script.ExPivot.OnShowDetails.set -> void
+ExPivot.Script.ExPivot.Presentation.get -> ExGrid.GridPresentationDefaults?
+ExPivot.Script.ExPivot.Presentation.set -> void
 ExPivot.Script.ExPivot.RedrawInterval.get -> System.TimeSpan?
 ExPivot.Script.ExPivot.RedrawInterval.set -> void
 ExPivot.Script.ExPivot.RowHeight.get -> double?

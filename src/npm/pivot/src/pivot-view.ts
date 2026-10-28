@@ -11,7 +11,8 @@
 // which data it is.
 
 import {
-    gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions, type GridSelection, type GridTextGeometry,
+    CellTextMetrics, GridPresentationDefaults, gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions,
+    type GridSelection, type GridTextGeometry, type GridTextOptions,
     type CellPosition, type GridCommand, type GridContextMenuContext,
     type FetchingGridSource, type GridRefusal, type ViewportSize, type GridColumn, type GridCopyAnswer, type GridCopyRequest,
     type SelectionSummary, type SummaryFigure,
@@ -141,8 +142,15 @@ export interface PivotViewOptions {
     readonly redrawInterval?: number;
     /** The report's row height, or the Density's. */
     readonly rowHeight?: number;
-    /** The report's Density. */
+    /** The report's Density, beating a Wrapper's. */
     readonly density?: GridDensity;
+    /** The widths the report's grids charge each glyph, beating a Wrapper's and the Density's (ADR-0016): whoever sets
+     * the font the cells are drawn in hands its widths, so `####` and the label widths are judged by the face on
+     * screen. */
+    readonly cellMetrics?: CellTextMetrics;
+    /** What a Wrapper hands the report's grids (ADR-0030): the widths of the font it sets, its Density, and its hover
+     * band and Row Stripes. A value the pivot is given beats these. */
+    readonly presentationDefaults?: GridPresentationDefaults;
     /** How long the Change Highlight marks a value that changed with the data, in milliseconds: one second unless
      * given (ADR-0068). The source's changes are marked when newer data is shown, and a Refresh marks what changed
      * too; a move of the user's marks nothing. Zero marks nothing, and a negative or endless one is refused. */
@@ -314,6 +322,38 @@ function showsNothing(layout: PivotLayout): boolean {
     return layout.rows.length === 0 && layout.columns.length === 0 && layout.values.length === 0;
 }
 
+/** What the report's text is charged by, as its grids resolve it (ADR-0028). */
+function textOf(options: PivotViewOptions): GridTextOptions {
+    return {
+        ...(options.density === undefined ? {} : { density: options.density }),
+        ...(options.cellMetrics === undefined ? {} : { cellMetrics: options.cellMetrics }),
+        ...(options.presentationDefaults === undefined ? {} : { presentationDefaults: options.presentationDefaults }),
+    };
+}
+
+/** Whether two Cell Metrics, either of them none, charge every glyph alike. */
+function sameCellMetrics(a: CellTextMetrics | undefined, b: CellTextMetrics | undefined): boolean {
+    return a === b || (a !== undefined && b !== undefined && a.equals(b));
+}
+
+/** Whether two Wrappers' defaults, either of them none, hand the grids the same widths and words. */
+function sameDefaults(a: GridPresentationDefaults | undefined, b: GridPresentationDefaults | undefined): boolean {
+    if (a === b) return true;
+    if (a === undefined || b === undefined) return false;
+    const read = ['wideWidthPx', 'digitWidthPx', 'narrowWidthPx', 'boldWideWidthPx', 'boldDigitWidthPx', 'boldNarrowWidthPx', 'otherWidthPx',
+        'boldOtherWidthPx', 'glyphWidths', 'fontSizePx', 'density', 'highlightHoverRow', 'stripeRows'] as const;
+    return read.every(name => a[name] === b[name]);
+}
+
+/** Whether two geometries charge every glyph alike. */
+function sameGeometry(a: GridTextGeometry, b: GridTextGeometry): boolean {
+    if (a === b) return true;
+    const widths = ['wideWidthPx', 'digitWidthPx', 'narrowWidthPx', 'fullWidthPx', 'otherWidthPx', 'cellHorizontalPaddingPx'] as const;
+    if (widths.some(name => a[name] !== b[name])) return false;
+    const glyphs = Object.keys(a.glyphWidths);
+    return glyphs.length === Object.keys(b.glyphWidths).length && glyphs.every(point => a.glyphWidths[Number(point)] === b.glyphWidths[Number(point)]);
+}
+
 function checkedOptions(options: PivotViewOptions): PivotViewOptions {
     // Checked as an untyped caller may hand them, where they arrive (CONVENTIONS.md).
     const given: Readonly<Record<string, unknown>> = { ...options };
@@ -334,6 +374,12 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
         if (cap !== undefined && (typeof cap !== 'number' || !Number.isSafeInteger(cap) || cap < 1)) {
             throw new RangeError(`${name} is a whole number of at least 1, not ${JSON.stringify(cap)} (ADR-0066).`);
         }
+    }
+    if (given['cellMetrics'] !== undefined && !(given['cellMetrics'] instanceof CellTextMetrics)) {
+        throw new TypeError('cellMetrics is a CellTextMetrics: the widths the report\'s grids charge each glyph (ADR-0016).');
+    }
+    if (given['presentationDefaults'] !== undefined && !(given['presentationDefaults'] instanceof GridPresentationDefaults)) {
+        throw new TypeError('presentationDefaults is a GridPresentationDefaults, as a Wrapper makes one (ADR-0030).');
     }
     const highlight = given['changeHighlightDuration'];
     if (highlight !== undefined && (typeof highlight !== 'number' || !Number.isFinite(highlight) || highlight < 0)) {
@@ -529,7 +575,7 @@ export class PivotView {
         this.#summaryFiguresHanded = options.summaryFigures;
         this.#summaryFigures = options.summaryFigures ?? defaultSummaryFigures;
         this.#commandLabel = this.#commandLabelOf(options.label);
-        this.#geometry = gridTextGeometry(options.density === undefined ? {} : { density: options.density });
+        this.#geometry = gridTextGeometry(textOf(options));
         this.#columns = this.#columnsOf(options);
         this.#settings = this.#settingsOf(options);
         this.#fieldListShown = options.showFieldList !== false;
@@ -652,7 +698,10 @@ export class PivotView {
             document,
             mountGrid,
             words: () => this.#words,
-            look: () => ({ rowHeight: this.#options.rowHeight, density: this.#options.density, commandLabel: this.#options.label, chrome: this.#chrome?.grid }),
+            look: () => ({
+                rowHeight: this.#options.rowHeight, density: this.#options.density, cellMetrics: this.#options.cellMetrics,
+                presentationDefaults: this.#options.presentationDefaults, commandLabel: this.#options.label, chrome: this.#chrome?.grid,
+            }),
             problemText: problem => detailsProblemText(problem, this.#words),
             changed: () => { this.#draw(); },
             // The report's grid takes the keyboard back; a report with no grid has the Field List's toggle take it, so
@@ -741,14 +790,20 @@ export class PivotView {
         if (asked !== undefined && pending !== undefined && (consumerLayout !== undefined || !placesOnly(pending, this.#declared(options.source)))) {
             this.#deferred = Object.freeze({ layout: asked, moves: Object.freeze([]) });
         }
-        const densityMoved = options.density !== before.density;
-        const settingsMoved = options.locale !== before.locale || options.label !== before.label || densityMoved;
+        // What the report's text is charged by: a label's width is estimated under it, so the report is asked again
+        // when it charges otherwise, and not for equal widths handed again in a new object, as a framework's render may.
+        const geometry = gridTextGeometry(textOf(options));
+        const textMoved = options.density !== before.density || !sameGeometry(geometry, this.#geometry);
+        // The grids are handed what they resolve their own metrics from when it charges or reads otherwise, not when
+        // equal values come again in new objects.
+        const metricsGiven = !sameCellMetrics(options.cellMetrics, before.cellMetrics) || !sameDefaults(options.presentationDefaults, before.presentationDefaults);
+        const settingsMoved = options.locale !== before.locale || options.label !== before.label || textMoved;
         if (options.label !== before.label) {
             this.#words = new PivotScreenWords(options.label);
             this.#commandLabel = this.#commandLabelOf(options.label);
         }
-        if (densityMoved) this.#geometry = gridTextGeometry(options.density === undefined ? {} : { density: options.density });
-        if (options.label !== before.label || densityMoved) this.#columns = this.#columnsOf(options);
+        if (textMoved) this.#geometry = geometry;
+        if (options.label !== before.label || textMoved) this.#columns = this.#columnsOf(options);
         // A highlight's length is the next question's to carry, which keeps what it compares that long; the report on
         // screen is not asked again for it, and the grid paints by it at once.
         const highlightMoved = highlightMsOf(options) !== highlightMsOf(before);
@@ -777,14 +832,14 @@ export class PivotView {
         }
         const gridChromeMoved = options.chrome?.grid !== before.chrome?.grid;
         const summaryMoved = this.#adoptSummaryFigures(options.summaryFigures) || options.showSelectionSummary !== before.showSelectionSummary;
-        if (summaryMoved || highlightMoved || options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
+        if (summaryMoved || highlightMoved || options.rowHeight !== before.rowHeight || textMoved || metricsGiven || options.viewportHeight !== before.viewportHeight
             || options.viewportWidth !== before.viewportWidth || gridChromeMoved) {
             this.#drawGrid();
         }
         const detailsChromeMoved = options.chrome?.detailsTabs !== before.chrome?.detailsTabs || options.chrome?.detailsDialog !== before.chrome?.detailsDialog;
         this.#consumerDraws = true;
         try {
-            if (settingsMoved || options.rowHeight !== before.rowHeight || gridChromeMoved || detailsChromeMoved) {
+            if (settingsMoved || metricsGiven || options.rowHeight !== before.rowHeight || gridChromeMoved || detailsChromeMoved) {
                 this.#details.draw();
                 this.#slotErrors.push(...this.#details.takeRefused());
             }
@@ -926,7 +981,7 @@ export class PivotView {
             indentPx: this.#indentPx,
             toggleName: (toggle: PivotToggle) => words.fill(toggle.isCollapsed ? 'expand-item' : 'collapse-item', toggle.itemLabel),
             toggled: (toggle: PivotToggle, row: PivotDisplayRow) => { this.#toggled(toggle, row); },
-        }), options.density);
+        }), textOf(options));
     }
 
     #localeOf(options: PivotViewOptions): string {
@@ -1459,7 +1514,7 @@ export class PivotView {
         const { columns, headerGroups, pinnedColumnCount } = this.#columns.of(answer.metadata, this.#userWidths);
         this.#gridColumns = columns;
         this.#valueColumnIndexes = new Map(answer.metadata.valueColumns.map((column, index) => [column.name, index]));
-        const { rowHeight, density } = this.#options;
+        const { rowHeight, density, cellMetrics, presentationDefaults } = this.#options;
         const gridChrome = this.#chrome?.grid;
         const options: GridOptions<PivotDisplayRow> = {
             columns,
@@ -1490,6 +1545,8 @@ export class PivotView {
             ...(gridChrome === undefined ? {} : { chrome: gridChrome }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
+            ...(cellMetrics === undefined ? {} : { cellMetrics }),
+            ...(presentationDefaults === undefined ? {} : { presentationDefaults }),
         };
         if (this.#grid === undefined) {
             // Made standing in the sheet, inside the pivot's box: the grid reads its Input Root once, as it is made, and

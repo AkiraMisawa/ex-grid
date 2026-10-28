@@ -8,7 +8,9 @@ import {
     createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridErrorStepRequest, type GridFindResult,
     type GridHandle, type GridOptions, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
-import { crossingCalls, HeldMessages, isGridRazorSlotName, type GridRazorSlotName } from '@ex-grid/blazor-shared';
+import {
+    crossingCalls, HeldMessages, isGridRazorSlotName, WireMetrics, type GridRazorSlotName, type WireCellMetrics, type WirePresentationDefaults,
+} from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
 import { RazorSlots } from './razor-slots';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
@@ -28,6 +30,10 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     /** The columns' number, which .NET moves each time it declares other ones. */
     readonly columnsVersion: number;
     readonly locale: string;
+    /** The component's Cell Metrics, which beat a Wrapper's widths (ADR-0016). */
+    readonly cellMetrics?: WireCellMetrics;
+    /** A Wrapper's cascaded defaults (ADR-0030): the widths of the font it sets, its Density, hover band and Row Stripes. */
+    readonly presentationDefaults?: WirePresentationDefaults;
     readonly hears: readonly HeardKind[];
     /** Whether the Consumer answers Cell States, which come with each row (ADR-0006). */
     readonly cellStates?: true;
@@ -154,7 +160,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
         } else if (next.state !== undefined) {
             source.take(next.state);
         }
-        grid.update(gridOptions(next.options, columns, source, heard, paint, findError, slots));
+        grid.update(gridOptions(next.options, columns, source, heard, paint, findError, slots, metrics));
     };
 
     const gate = new WriteGate<WireUpdate, WireState>(message => {
@@ -185,6 +191,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
     const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
     const made: { grid?: GridHandle<BlazorRow> } = {};
+    const metrics = new WireMetrics();
     const slots = new RazorSlots(dotnet, () => {
         if (made.grid !== undefined) return made.grid.holdSettled();
         let release: (() => void) | undefined;
@@ -199,7 +206,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
         if (made.grid === undefined) throw new Error('Internal: a Razor slot held the keyboard while the grid was being made.');
         made.grid.focus();
     });
-    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint, findError, slots));
+    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint, findError, slots, metrics));
     made.grid = grid;
     return Object.freeze({
         update: (text: string) => { gate.receive({ update: parsed<WireUpdate>(text) }); },
@@ -359,7 +366,10 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
     });
 }
 
-function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf, slots: RazorSlots): GridOptions<BlazorRow> {
+function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf, slots: RazorSlots,
+    metrics: WireMetrics): GridOptions<BlazorRow> {
+    const cellMetrics = metrics.cellMetrics(wire.cellMetrics);
+    const presentationDefaults = metrics.presentationDefaults(wire.presentationDefaults);
     const hears = new Set(wire.hears);
     const razorSlots = wire.razorSlots;
     for (const name of razorSlots === undefined ? [] : razorSlots) {
@@ -372,6 +382,8 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
         columns: columns.columns,
         source,
         locale: wire.locale,
+        ...(cellMetrics === undefined ? {} : { cellMetrics }),
+        ...(presentationDefaults === undefined ? {} : { presentationDefaults }),
         // A C# Consumer cannot hand the grid a JavaScript namespace, so Blazor's ExGrid hands it the browser's. Every
         // browser the family serves ships one (ADR-0017); where one does not, the core refuses a filterable Date column
         // by name, as it refuses one given none.
