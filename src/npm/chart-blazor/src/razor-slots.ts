@@ -94,11 +94,14 @@ const toolbarKind: RazorSlotKind<ChartToolbarSlotContext> = {
         const from = field(chartSlotAttributes.from);
         const to = field(chartSlotAttributes.to);
         if (filters !== undefined) {
-            // The range as the chart holds it replaces what both fields hold whenever it changes (Chart Filters opened,
-            // a drag narrowed it, Reset range returned it), as React's Chromes replace it, and a field drawn anew opens
-            // with it. An end typed and not applied is kept only while the range stands.
+            // The range as the chart holds it replaces what both fields hold whenever it changes (a drag narrowed it,
+            // Reset range returned it), as React's Chromes replace it, and a field drawn anew opens with it. An end
+            // typed and not applied is kept only while the range stands.
+            // A field drawn anew that the user typed into before these contents were wired for it keeps what was
+            // typed: the typing came after the range it would be given, whichever of the two reached the browser first.
             const range = JSON.stringify([filters.from, filters.to]);
-            const moved = givenRange.get(contents) !== range;
+            const given = givenRange.get(contents);
+            const moved = given !== undefined && given !== range;
             givenRange.set(contents, range);
             shown(from, filters.from, moved);
             shown(to, filters.to, moved);
@@ -162,9 +165,17 @@ const givenScale = new WeakMap<HTMLSelectElement, AxisScale>();
 const written = new WeakSet<HTMLInputElement | HTMLSelectElement>();
 
 function shown(field: HTMLInputElement | HTMLSelectElement | null, value: string | null, moved: boolean): void {
-    if (field === null || (!moved && written.has(field))) return;
+    if (field === null) return;
+    const first = !written.has(field);
     written.add(field);
+    if (!moved && (!first || typedInto(field))) return;
     field.value = value ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- an end the chart holds as null is the axis' own, which an empty field means (ChartFiltersSlotContext.from)
+}
+
+/** Whether the user changed `field` from what .NET drew it with. */
+function typedInto(field: HTMLInputElement | HTMLSelectElement): boolean {
+    if (field instanceof HTMLInputElement) return field.value !== field.defaultValue;
+    return [...field.options].some(option => option.selected !== option.defaultSelected);
 }
 
 function typed(field: HTMLInputElement | HTMLSelectElement | null): string | null {

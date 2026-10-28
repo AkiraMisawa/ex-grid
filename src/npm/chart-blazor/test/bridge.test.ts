@@ -376,6 +376,29 @@ describe('a Razor Chrome in the chart\'s slots', () => {
         expect(dotnet.calls.filter(call => call.method === 'UnmountSlot')).toEqual([]);
     });
 
+    it('ADR-0410, spine rule 6: ends typed into fields .NET drew, before the browser hears they were drawn, are the ones applied', async () => {
+        const dotnet = new SlotDotNet();
+        const chart = await attachChart(root(), dotnet, JSON.stringify({
+            circuit: true, options: { ...options, hears: ['rangeChanged'], razorSlots: ['toolbar'] }, definition: definition(), generation: 1,
+        } satisfies WireChart));
+        const first = dotnet.last('toolbar');
+        const contents = drawn(toolbarMarkup, first.version);
+        chart.slotRendered(first.id, first.version, contents);
+        press(contents, '[data-ex-command="exchart.filters"]');
+        // .NET's render reaches the page, the fields in it, and the user types at once: that it was rendered is told a
+        // message later, over the circuit.
+        const opened = dotnet.last('toolbar');
+        contents.innerHTML = filtersMarkup;
+        contents.setAttribute('data-ex-version', String(opened.version));
+        field(contents, '[data-ex-chart-from]').value = '2';
+        field(contents, '[data-ex-chart-to] input').value = '8';
+        chart.slotRendered(opened.id, opened.version, contents);
+        expect([field(contents, '[data-ex-chart-from]').value, field(contents, '[data-ex-chart-to] input').value]).toEqual(['2', '8']);
+        press(contents, '[data-ex-chart-apply]');
+        expect(dotnet.calls.filter(call => call.method === 'Heard')).toEqual([{ method: 'Heard', args: ['rangeChanged', { from: 2, to: 8 }] }]);
+        chart.dispose();
+    });
+
     it('ADR-0410, ADR-0273: an end typed and not applied is kept while the range stands, and both ends are replaced when it moves', async () => {
         const dotnet = new SlotDotNet();
         const chart = await attachChart(root(), dotnet, JSON.stringify({
