@@ -299,10 +299,34 @@ export class RazorSlotHost {
         if (contents === undefined) return;
         const current = standsWhole(standing);
         const answered = standing.answered === context || !current;
-        standing.unwire = standing.kind.wire(contents, context, answered, () => drawnView(standing, contents));
+        const unwire = standing.kind.wire(contents, context, answered, () => drawnView(standing, contents));
+        const native = keepTogglesNative(contents);
+        standing.unwire = () => { unwire(); native(); };
         if (current) standing.answered = context;
         else if (standing.answered !== context && standing.kind.takesKeyboard) this.#holdInputs(standing);
     }
+}
+
+// The keys a component library's checkbox or radio takes in its own .NET handler, toggling the value it draws without
+// the browser's `change` that a kind hears: MudBlazor 9's MudCheckBox unticks on Space and Delete in .NET, and the box
+// it draws then disagrees with the draft the script holds. Stopped above the control, they do what the browser's own
+// control does, which for Space is a click and a `change`, and for Delete and Backspace nothing.
+const toggleKeys: ReadonlySet<string> = new Set([' ', 'Delete', 'Backspace']);
+
+function stopToggleKey(event: KeyboardEvent): void {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || (target.type !== 'checkbox' && target.type !== 'radio')) return;
+    if (toggleKeys.has(event.key)) event.stopPropagation();
+}
+
+/** Keeps the keys that toggle a checkbox or a radio in `contents` the browser's own (ADR-0410 section 3), answering
+ * the function that lets them go to the component library again. */
+function keepTogglesNative(contents: HTMLElement): () => void {
+    const types = ['keydown', 'keypress', 'keyup'] as const;
+    for (const type of types) contents.addEventListener(type, stopToggleKey, true);
+    return () => {
+        for (const type of types) contents.removeEventListener(type, stopToggleKey, true);
+    };
 }
 
 /** Whether the contents .NET drew from the data last sent stand whole, as the slot's kind judges them. */

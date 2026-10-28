@@ -35,7 +35,7 @@ public interface IPivotChrome
     RenderFragment? ReportFilters(PivotReportFiltersContext context) => null;
 
     /// <summary>The Pivot Toolbar above the report (ADR-0061): the report filter band on its left —
-    /// the context hands it over, drawn by <see cref="ReportFilters"/> — and on its right, in this
+    /// the context hands it over, drawn by <see cref="ReportFilters(PivotReportFiltersContext)"/> — and on its right, in this
     /// order, Layout ▾, Refresh when the source can be refreshed, and the Field
     /// List's toggle.</summary>
     RenderFragment? Toolbar(PivotToolbarContext context) => null;
@@ -101,6 +101,26 @@ public interface IPivotChrome
     /// <see cref="PivotScriptSlots.StaleReport"/>: the sentence and Retry, marked with
     /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
     RenderFragment? StaleReport(PivotStaleReportView view) => null;
+
+    /// <summary>The report filter band when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.ReportFilters"/>: each filter's button and anchor marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? ReportFilters(PivotReportFiltersView view) => null;
+
+    /// <summary>Filter… when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.ItemFilter"/>: its controls marked with <see cref="PivotScriptSlotAttributes"/>,
+    /// and no handler of its own.</summary>
+    RenderFragment? ItemFilter(PivotItemFilterView view) => null;
+
+    /// <summary>Field Settings… when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.FieldSettings"/>: its controls marked with <see cref="PivotScriptSlotAttributes"/>,
+    /// and no handler of its own.</summary>
+    RenderFragment? FieldSettings(PivotFieldSettingsView view) => null;
+
+    /// <summary>Value Field Settings… when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.ValueFieldSettings"/>: its controls marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? ValueFieldSettings(PivotValueFieldSettingsView view) => null;
 }
 
 /// <summary>
@@ -613,7 +633,7 @@ public sealed record PivotReportFilterView(
 /// open under it, over the report, in ExPivot's frame, with a backdrop that closes them; the Chrome
 /// places each frame inside a positioned wrapper around the button that opened it.
 /// </summary>
-/// <param name="ReportFilters">The report filter band, drawn by <see cref="IPivotChrome.ReportFilters"/>
+/// <param name="ReportFilters">The report filter band, drawn by <see cref="IPivotChrome.ReportFilters(PivotReportFiltersContext)"/>
 /// or ExPivot's markup; null while no field stands in Filters.</param>
 /// <param name="LayoutMenu">Layout ▾, which opens Excel's Design tab choices.</param>
 /// <param name="Refresh">Refresh: asks the source again. Null when the source cannot be

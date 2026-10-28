@@ -149,6 +149,21 @@ popup's frame in it and a Razor child beside the frame would be moved by Blazor'
 kinds moved into the Shared Script (`gridRazorSlotKinds`), so ExPivot's adapter fills its report grid's
 slots with the kinds ExGrid's uses.
 
+*Note of 2026-10-28, as ExPivot's panels were built:* the panels follow the grid's filter panel. A text
+field (`Text`) is read as it is typed and drawn with the text it opens with, never bound after; the
+script writes the draft into it only where the two differ, so Value Field Settings…' caption follows the
+Aggregation as the built-in panel's does. A choice (`Choice`) is a native select, or a radio button
+naming its `Value`, read in the browser; Filter…'s Items (`Item`) are ticked against the Items they were
+drawn with. OK that cannot apply is drawn `aria-disabled`, not disabled: a disabled OK drawn a round trip
+behind the ticks would drop a press the pivot would take, and the pivot refuses one it cannot, saying why.
+A part's marks are read only outside its anchors, since what stands in an anchor is another part the
+pivot placed there with marks of its own (the report filter band in the toolbar's). Space, Delete and
+Backspace on a checkbox or a radio button in any slot's contents are stopped above the control, so they
+do what the browser's own control does: MudBlazor 9's checkbox takes them in its .NET handler and ticks
+or unticks the box it draws with no `change` the script hears, which left the box disagreeing with the
+draft (found in review). Filter…'s (Select All) is judged on the draft as it stands, not on the box as
+drawn, so two presses come to the same Items however many renders arrive between them (spine rule 6).
+
 ### 5. A slot's contents arrive a render later, and the grid is settled only once they stand
 
 On the Server host the contents arrive a round trip after the slot. Meanwhile the core already owes the

@@ -75,3 +75,30 @@ describe('a Razor slot host without a Settled Mark or an Input Order', () => {
         expect(() => new RazorSlotHost(new FakeDotNet(), new Map([['menu', menuKind]]))).toThrow('the slot \'menu\' takes the keyboard');
     });
 });
+
+describe('the keys that toggle a control in a Razor slot', () => {
+    it('ADR-0410 section 3: Space on a checkbox stays the browser\'s, never reaching a component library\'s handler above the contents', () => {
+        const host = new RazorSlotHost(new FakeDotNet(), new Map([['toolbar', toolbarKind]]));
+        const slot = document.createElement('div');
+        document.body.append(slot);
+        const mount = host.mounts(['toolbar'])['toolbar'];
+        if (mount === undefined) throw new Error('No mount for the toolbar.');
+        mount(slot, { name: 'Sales', invoked: [] });
+        const contents = rendered('<input type="checkbox"><input type="text">', 1);
+        host.rendered(1, 1, contents);
+        const heard: string[] = [];
+        const hear = (event: KeyboardEvent): void => {
+            if (!(event.target instanceof HTMLInputElement)) throw new Error('A key on no input.');
+            heard.push(`${event.target.type} ${event.key}`);
+        };
+        document.addEventListener('keydown', hear);
+        try {
+            for (const input of contents.querySelectorAll('input')) {
+                for (const key of [' ', 'Delete', 'Enter']) input.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+            }
+        } finally {
+            document.removeEventListener('keydown', hear);
+        }
+        expect(heard).toEqual(['checkbox Enter', 'text  ', 'text Delete', 'text Enter']);
+    });
+});

@@ -1,0 +1,58 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* Value Field Settings… when the Script Core draws the pivot (ADR-0410): MudPivotValueFieldSettings' controls, the
+   caption and the number format as MudTextFields and the Aggregation and Show Values As as native selects in
+   MudBlazor's outline, each marked for the adapter's script, which hands every change to the pivot in the browser.
+   The text fields open with the texts the script sends as the panel is mounted and are never written by a render
+   after, which arrives a round trip behind the typing (SRV-7); the script writes the draft's caption in where it
+   follows the Aggregation. An Aggregation the source does not answer is offered disabled, and the reason is said
+   (ADR-0066). *@
+<div class="mud-ex-pivot-panel mud-ex-pivot-value-settings">
+    <MudText Typo="Typo.subtitle2" Class="mud-ex-pivot-panel-title">@View.Title</MudText>
+    <MudText Typo="Typo.caption" Class="mud-ex-pivot-source">@View.SourceCaption</MudText>
+    <MudTextField T="string" Value="View.Caption" Label="@View.CustomNameLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Class="mud-ex-pivot-caption"
+                  UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Text, "caption", PivotScriptSlotAttributes.First, "")" />
+    @Select(View.SummarizeByLabel, "aggregation", "mud-ex-pivot-aggregation", View.Aggregations, View.Aggregation)
+    @foreach (var reason in View.Aggregations.Where(choice => !choice.Enabled && choice.Reason is not null).Select(choice => choice.Reason))
+    {
+        <MudText Typo="Typo.caption" Class="mud-ex-pivot-not-offered">@reason</MudText>
+    }
+    @Select(View.ShowValuesAsLabel, "show-values-as", "mud-ex-pivot-show-values-as", View.ShowValuesAsChoices, View.ShowValuesAs)
+    <MudTextField T="string" Value="View.NumberFormat" Label="@View.NumberFormatLabel" Placeholder="@View.NumberFormatPlaceholder"
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-pivot-number-format"
+                  UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Text, "number-format")" />
+    <MudText Typo="Typo.caption" Class="mud-ex-pivot-sample">@View.Sample</MudText>
+    @if (View.Refusal is { } refusal)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-ex-pivot-refusal" role="alert">@refusal</MudText>
+    }
+    <MudPivotScriptActions Ok="@View.OkLabel" Cancel="@View.CancelLabel" CanApply="true" />
+</div>
+
+@code {
+    /// <summary>Value Field Settings…' view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotValueFieldSettingsView View { get; set; } = default!;
+
+    // A choice as a native select in MudBlazor's outline, its label above it as a dense outlined field's caption.
+    private static RenderFragment Select(string label, string choice, string @class, IReadOnlyList<PivotChoiceView> choices, string chosen) => __builder =>
+    {
+        <label class="mud-ex-pivot-native">
+            <span class="mud-ex-pivot-native-label">@label</span>
+            <select class="@($"mud-ex-pivot-native-select {@class}")" @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Choice, choice)">
+                @foreach (var each in choices)
+                {
+                    <option value="@each.Value" selected="@(each.Value == chosen)" disabled="@(!each.Enabled)">@each.Label</option>
+                }
+            </select>
+        </label>
+    };
+}

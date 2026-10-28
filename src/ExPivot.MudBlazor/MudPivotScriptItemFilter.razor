@@ -1,0 +1,60 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* Filter… when the Script Core draws the pivot (ADR-0410): MudPivotItemFilter's look, a MudTextField that narrows
+   the list, (Select All) as a tri-state MudCheckBox, a MudCheckBox per Item, and Cancel / OK, each marked for the
+   adapter's script, which hands every change to the pivot in the browser. The search opens with the text the
+   script sends as it is mounted and is never written by a render after, which arrives a round trip behind the
+   typing (SRV-7). A first listing on its way is a MudProgressLinear; while newer Items are on their way the list
+   shown stays, marked busy (ADR-0066). *@
+<div class="mud-ex-pivot-panel mud-ex-pivot-item-filter">
+    <MudTextField T="string" Value="View.Search" Label="@View.SearchLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Class="mud-ex-pivot-search"
+                  UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Text, "search", PivotScriptSlotAttributes.First, "")" />
+    <div class="mud-ex-pivot-item-list" role="group" aria-label="@View.Caption" aria-busy="@(View.Loading || View.Updating ? "true" : null)">
+        @if (View.Unavailable is { } unavailable)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-ex-pivot-unavailable" role="alert">@unavailable</MudText>
+        }
+        else if (View.Loading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mud-ex-pivot-loading" aria-label="@View.LoadingLabel" />
+        }
+        else
+        {
+            @if (View.Items.Count > 0)
+            {
+                <MudCheckBox T="bool?" TriState="true" Value="View.AllTicked" Label="@View.SelectAllLabel" Dense="true" Size="Size.Small"
+                             Color="Color.Primary" Class="mud-ex-pivot-select-all"
+                             UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.All, "")" />
+            }
+            @for (var i = 0; i < View.Items.Count; i++)
+            {
+                var item = View.Items[i];
+                <MudCheckBox @key="item.Key" T="bool" Value="item.Ticked" Label="@item.Label" Dense="true" Size="Size.Small" Color="Color.Primary"
+                             Class="mud-ex-pivot-item" UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Item, i)" />
+            }
+            @if (View.Note is { } note)
+            {
+                <MudText Typo="Typo.caption" Class="mud-ex-pivot-note">@note</MudText>
+            }
+        }
+    </div>
+    @if (View.Refusal is { } refusal)
+    {
+        <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-ex-pivot-refusal" role="alert">@refusal</MudText>
+    }
+    <MudPivotScriptActions Ok="@View.OkLabel" Cancel="@View.CancelLabel" CanApply="View.CanApply" />
+</div>
+
+@code {
+    /// <summary>Filter…'s view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotItemFilterView View { get; set; } = default!;
+}

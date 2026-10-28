@@ -20,6 +20,10 @@ internal static class PivotRazorSlot
         (PivotScriptSlots.Menu, "menu"),
         (PivotScriptSlots.Toolbar, "toolbar"),
         (PivotScriptSlots.StaleReport, "staleReport"),
+        (PivotScriptSlots.ReportFilters, "reportFilters"),
+        (PivotScriptSlots.ItemFilter, "itemFilter"),
+        (PivotScriptSlots.FieldSettings, "fieldSettings"),
+        (PivotScriptSlots.ValueFieldSettings, "valueFieldSettings"),
     ];
 
     /// <summary>The script's names of the slots <paramref name="slots"/> names, refusing one this adapter does not fill.</summary>
@@ -67,9 +71,91 @@ internal static class PivotRazorSlot
                 ScriptJson.Text(json, "reason"),
                 ScriptJson.Text(json.GetProperty("retry"), "label"),
                 json.GetProperty("retry").GetProperty("enabled").GetBoolean()),
+            PivotScriptSlots.ReportFilters => new PivotReportFiltersView(
+                ScriptJson.Text(json, "name"),
+                [.. json.GetProperty("filters").EnumerateArray().Select(filter => new PivotReportFiltersEntryView(
+                    ScriptJson.Text(filter, "field"),
+                    ScriptJson.Text(filter, "caption"),
+                    ScriptJson.Text(filter, "summary"),
+                    filter.GetProperty("filtered").GetBoolean(),
+                    filter.GetProperty("open").GetBoolean(),
+                    ScriptJson.Text(filter, "buttonLabel")))]),
+            PivotScriptSlots.ItemFilter => ItemFilterViewOf(json),
+            PivotScriptSlots.FieldSettings => FieldSettingsViewOf(json),
+            PivotScriptSlots.ValueFieldSettings => ValueFieldSettingsViewOf(json),
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
         };
     }
+
+    private static PivotItemFilterView ItemFilterViewOf(JsonElement json)
+    {
+        var words = json.GetProperty("words");
+        return new PivotItemFilterView(
+            ScriptJson.Text(json, "caption"),
+            ScriptJson.Text(json, "search"),
+            [.. json.GetProperty("items").EnumerateArray().Select(item => new PivotItemChoiceView(ScriptJson.Text(item, "key"), ScriptJson.Text(item, "label"), item.GetProperty("ticked").GetBoolean()))],
+            json.GetProperty("allTicked") is { ValueKind: JsonValueKind.Null } ? null : json.GetProperty("allTicked").GetBoolean(),
+            json.GetProperty("loading").GetBoolean(),
+            json.GetProperty("updating").GetBoolean(),
+            TextOrNull(json, "unavailable"),
+            TextOrNull(json, "note"),
+            json.GetProperty("canApply").GetBoolean(),
+            TextOrNull(json, "refusal"),
+            ScriptJson.Text(words, "search"),
+            ScriptJson.Text(words, "selectAll"),
+            ScriptJson.Text(words, "loading"),
+            ScriptJson.Text(words, "ok"),
+            ScriptJson.Text(words, "cancel"));
+    }
+
+    private static PivotFieldSettingsView FieldSettingsViewOf(JsonElement json)
+    {
+        var words = json.GetProperty("words");
+        return new PivotFieldSettingsView(
+            ScriptJson.Text(json, "caption"),
+            json.GetProperty("subtotals").GetBoolean(),
+            [.. json.GetProperty("sorts").EnumerateArray().Select(sort => sort.GetString() ?? throw new InvalidOperationException("Internal: an order crossed with no words."))],
+            json.GetProperty("sort").GetInt32(),
+            ScriptJson.Text(words, "subtotals"),
+            ScriptJson.Text(words, "automatic"),
+            ScriptJson.Text(words, "none"),
+            ScriptJson.Text(words, "sortOrder"),
+            ScriptJson.Text(words, "ok"),
+            ScriptJson.Text(words, "cancel"));
+    }
+
+    private static PivotValueFieldSettingsView ValueFieldSettingsViewOf(JsonElement json)
+    {
+        var words = json.GetProperty("words");
+        return new PivotValueFieldSettingsView(
+            ScriptJson.Text(words, "title"),
+            ScriptJson.Text(json, "sourceCaption"),
+            ScriptJson.Text(json, "caption"),
+            ScriptJson.Text(json, "aggregation"),
+            ChoicesOf(json.GetProperty("aggregations")),
+            ScriptJson.Text(json, "showValuesAs"),
+            ChoicesOf(json.GetProperty("showValuesAsChoices")),
+            ScriptJson.Text(json, "numberFormat"),
+            ScriptJson.Text(json, "numberFormatPlaceholder"),
+            ScriptJson.Text(json, "sample"),
+            TextOrNull(json, "refusal"),
+            ScriptJson.Text(words, "customName"),
+            ScriptJson.Text(words, "summarizeBy"),
+            ScriptJson.Text(words, "showValuesAs"),
+            ScriptJson.Text(words, "numberFormat"),
+            ScriptJson.Text(words, "ok"),
+            ScriptJson.Text(words, "cancel"));
+    }
+
+    private static IReadOnlyList<PivotChoiceView> ChoicesOf(JsonElement choices) =>
+        [.. choices.EnumerateArray().Select(choice => new PivotChoiceView(
+            ScriptJson.Text(choice, "value"),
+            ScriptJson.Text(choice, "label"),
+            choice.GetProperty("enabled").GetBoolean(),
+            TextOrNull(choice, "reason")))];
+
+    // A text the script sends as null where there is none; anything but a text or null is refused.
+    private static string? TextOrNull(JsonElement json, string name) => json.GetProperty(name).GetString();
 
     private static PivotToolbarView ToolbarViewOf(JsonElement json)
     {
@@ -99,6 +185,10 @@ internal static class PivotRazorSlot
             (PivotScriptSlots.Menu, PivotMenuView menu) => chrome.Menu(menu),
             (PivotScriptSlots.Toolbar, PivotToolbarView toolbar) => chrome.Toolbar(toolbar),
             (PivotScriptSlots.StaleReport, PivotStaleReportView notice) => chrome.StaleReport(notice),
+            (PivotScriptSlots.ReportFilters, PivotReportFiltersView band) => chrome.ReportFilters(band),
+            (PivotScriptSlots.ItemFilter, PivotItemFilterView filter) => chrome.ItemFilter(filter),
+            (PivotScriptSlots.FieldSettings, PivotFieldSettingsView settings) => chrome.FieldSettings(settings),
+            (PivotScriptSlots.ValueFieldSettings, PivotValueFieldSettingsView settings) => chrome.ValueFieldSettings(settings),
             _ => throw new InvalidOperationException($"Internal: the slot {name} holds a view of another slot's."),
         };
     }
