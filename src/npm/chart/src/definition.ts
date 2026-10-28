@@ -8,7 +8,8 @@ import type {
 import { elementAt } from './must';
 import { pointScaleRefusal } from './point-scales';
 import { disagreement, hasOpen, wholeBar } from './price-ranges';
-import { ChartRefusedError, toNumber, writePosition, writeValue } from './values';
+import { codeResolution } from './ticks';
+import { ChartRefusedError, readCode, toNumber, writePosition, writeValue } from './values';
 
 const kinds = new Set(['level', 'rateOverInterval', 'amountPerPeriod', 'observation', 'priceRange']);
 
@@ -23,6 +24,7 @@ export function chartAxis(options: ChartAxisOptions): ChartAxis {
         named: Object.freeze(named.map(n => Object.freeze([n[0], n[1]] as const))),
         daysPerYear, packed,
         ...(options.format === undefined ? {} : { format: options.format }),
+        ...(options.formatCode === undefined ? {} : { formatCode: options.formatCode }),
         effectiveScale,
     });
 }
@@ -103,6 +105,7 @@ export function chartSeries(options: ChartSeriesOptions): ChartSeries {
         thinned: Object.freeze(thinned.map(t => Object.freeze({ ...t }))),
         ...(checkedSampler === undefined ? {} : { sampler: checkedSampler }),
         ...(options.format === undefined ? {} : { format: options.format }),
+        ...(options.formatCode === undefined ? {} : { formatCode: options.formatCode }),
         effectiveKeys,
         reachesZero,
     });
@@ -211,16 +214,63 @@ function edgeWithoutInterval(s: ChartSeries): ChartPoint | undefined {
     return edge.y === null ? undefined : edge;
 }
 
+// Refuses an axis' code it cannot write with, naming it (ADR-0420), as C#'s `ChartCodes.CheckAxis`.
+function checkAxisCode(axis: ChartAxis): void {
+    const code = axis.formatCode;
+    if (code === undefined) {
+        return;
+    }
+    const reading = readCode(code);
+    if (typeof reading === 'string') {
+        throw new ChartRefusedError(`The axis' format code "${code}" ${reading}.`);
+    }
+    if (axis.format !== undefined) {
+        throw new ChartRefusedError(`The axis has both a Format and the format code "${code}": it would write one position two ways.`);
+    }
+    if (axis.values === 'labels') {
+        throw new ChartRefusedError(`The axis places labels, which it writes as they are: the format code "${code}" has nothing to write.`);
+    }
+    if (axis.values === 'dates' && !reading.isDate) {
+        throw new ChartRefusedError(`The axis' format code "${code}" writes numbers, and the axis places dates.`);
+    }
+    if (axis.values === 'dates' && codeResolution(x => writePosition(axis, x)) === undefined) {
+        throw new ChartRefusedError(`The axis' format code "${code}" writes no day, month or year, and the axis places dates.`);
+    }
+    if (axis.values === 'numbers' && reading.isDate) {
+        throw new ChartRefusedError(`The axis' format code "${code}" writes dates, and the axis places numbers.`);
+    }
+}
+
+// Refuses a series' code it cannot write with, naming the series (ADR-0420), as C#'s `ChartCodes.CheckSeries`.
+function checkSeriesCode(s: ChartSeries): void {
+    const code = s.formatCode;
+    if (code === undefined) {
+        return;
+    }
+    const reading = readCode(code);
+    if (typeof reading === 'string') {
+        throw new ChartRefusedError(`'${s.name}''s format code "${code}" ${reading}.`);
+    }
+    if (s.format !== undefined) {
+        throw new ChartRefusedError(`'${s.name}' has both a Format and the format code "${code}": it would write one value two ways.`);
+    }
+    if (reading.isDate) {
+        throw new ChartRefusedError(`'${s.name}''s format code "${code}" writes dates, and its values are numbers.`);
+    }
+}
+
 function validate(axis: ChartAxis, series: readonly ChartSeries[]): void {
     const ids = new Set<string>();
     const logarithmic = axis.effectiveScale === 'logarithmic';
     if (logarithmic && axis.values !== 'numbers') {
         throw new ChartRefusedError('Only a number axis can be logarithmic.');
     }
+    checkAxisCode(axis);
     for (const s of series) {
         if (ids.has(s.id)) {
             throw new ChartRefusedError(`Two series are named '${s.id}'; each series needs an identity of its own.`);
         }
+        checkSeriesCode(s);
         ids.add(s.id);
         if (!kinds.has(s.kind)) {
             throw new ChartRefusedError(`'${s.name}' declares no Series Kind: say whether it is a Level, a Rate over an interval or an Amount per period.`);

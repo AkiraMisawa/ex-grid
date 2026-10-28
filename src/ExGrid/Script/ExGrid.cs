@@ -26,8 +26,10 @@ namespace ExGrid.Script;
 /// <remarks>
 /// It stands beside <see cref="Components.ExGrid{TRow}"/>, the C# core, until every product that draws through
 /// that one has moved (ADR-0350 section 7). What this adapter does not carry yet is refused by name as its
-/// parameters are set, never left out quietly; Find and the Selection Summary, which no column declares, are not
-/// offered: Ctrl+F is refused as a Find with nothing to answer it, and no summary is drawn.
+/// parameters are set, never left out quietly. Find is the source's: Ctrl+F asks
+/// <see cref="IGridSource{TRow}.FindAsync"/> where the source <see cref="IGridSource{TRow}.CanFind"/>, and is refused as
+/// a Find with nothing to answer it where it does not; Replace is not carried, so Ctrl+H is refused as Replace unavailable. The Selection
+/// Summary, which no column declares, is not offered: no summary is drawn.
 /// </remarks>
 /// <typeparam name="TRow">The Consumer's row type.</typeparam>
 public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
@@ -210,11 +212,27 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// </summary>
     [Parameter] public Func<Validation.GridErrorStepRequest, CancellationToken, Task<Finding.GridFindResult>>? OnFindError { get; set; }
 
+    /// <summary>
+    /// The Chrome that fills the Script Core's slots with Razor (ADR-0410): each slot its
+    /// <see cref="IGridChrome.ScriptSlots"/> names is drawn by its view overload, rendered beside the grid's root
+    /// and moved into the slot by the script, which wires its controls in the browser from the attributes of
+    /// <see cref="ScriptSlotAttributes"/>. Every other part is the Script Core's own, and so is every part while
+    /// this is null.
+    /// </summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
     private ElementReference _root;
+    // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1).
+    private readonly SortedDictionary<long, RazorSlot> _slots = [];
+    private IGridChrome? _renderedChrome;
     private IJSObjectReference? _module;
     private IJSObjectReference? _grid;
     private DotNetObjectReference<ScriptBridge<TRow>>? _bridge;
     private readonly ScriptRows<TRow> _rows = new();
+
+    /// <summary>The browser's calls into .NET, made in the order the browser made them, one too large for a message of
+    /// its own among them (ADR-0005, as amended 2026-10-20).</summary>
+    internal HeldCalls Calls { get; } = new();
     private readonly Dictionary<long, CancellationTokenSource> _asked = [];
     private readonly Queue<Heard> _heard = new();
     private readonly Dictionary<long, CancellationTokenSource> _answers = [];
@@ -268,6 +286,14 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 + "the grid orders Rows out of its sight: give the grid a Source, GridSource.From(rows) for rows held in memory (ADR-0381).");
         }
         ScriptColumns.Check(Columns);
+        if (!ReferenceEquals(Chrome, _renderedChrome))
+        {
+            // Another Chrome draws the slots standing, and the script wires what it drew.
+            _renderedChrome = Chrome;
+            foreach (var slot in _slots.Values)
+                slot.Owed = true;
+            _renderOwed |= _slots.Count > 0;
+        }
         if (!ReferenceEquals(CellState, _sentCellState))
         {
             // Another judgement: the rows the browser shows go again, with their states (ADR-0006).
@@ -361,13 +387,32 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
+        // Each slot's holder beside the root, never inside it: hidden, and holding only the element the fragment is
+        // drawn in, which the script moves into the slot and back (ADR-0410 section 1).
+        foreach (var slot in _slots.Values)
+        {
+            builder.OpenElement(6, "div");
+            builder.SetKey(slot.Id);
+            builder.AddAttribute(7, "hidden", true);
+            builder.OpenElement(8, "div");
+            builder.AddAttribute(9, "class", "ex-razor-slot");
+            // The data the contents are drawn from, by the script's number: a press on them is read against these.
+            builder.AddAttribute(10, RazorSlot.DrawnVersionAttribute, slot.Version);
+            builder.AddElementReferenceCapture(11, element => slot.Contents = element);
+            builder.AddContent(12, slot.Fragment(Chrome));
+            builder.CloseElement();
+            builder.CloseElement();
+        }
     }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
+        {
+            await ReportSlotsAsync();
             return;
+        }
         // The script this build was made with, by an address that changes with its content (ADR-0123), and refused
         // when the browser holds another version's: nothing is attached, and the root says so.
         var address = "./" + PackageStylesheet.AddressOf(Assets, ScriptPath, ScriptCoreAsset.Version);
@@ -418,6 +463,12 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             grid = await module.InvokeAsync<IJSObjectReference>("attach", _root, bridge, attach);
         }
+        catch
+        {
+            // Never attached: a call held as it attached is never taken, and every call after it is let through.
+            Calls.Stopped();
+            throw;
+        }
         finally
         {
             _attaching = false;
@@ -431,6 +482,9 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         }
         _grid = grid;
         _attached = true;
+        Calls.Attached(grid);
+        // A slot the grid mounted as it attached may have been drawn already, before there was a grid to hand it to.
+        await ReportSlotsAsync();
         await SendUpdateAsync();
     }
 
@@ -541,6 +595,60 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     // ---- What crosses to the browser ------------------------------------------------------------------------
 
+    /// <summary>The script mounted slot <paramref name="id"/> for the Chrome, with its context as data (ADR-0410).</summary>
+    internal void MountSlot(long id, int version, string name, string context)
+    {
+        if (_disposed)
+            return;
+        _slots.Add(id, new RazorSlot(id, RazorSlot.NameOf(name), version, context));
+        RenderSlots();
+    }
+
+    /// <summary>The slot <paramref name="id"/> was mounted again in place, with another context.</summary>
+    internal void UpdateSlot(long id, int version, string context)
+    {
+        if (_disposed || !_slots.TryGetValue(id, out var slot))
+            return;
+        slot.Take(version, context);
+        RenderSlots();
+    }
+
+    /// <summary>The core took the slot <paramref name="id"/> away; the script has moved its contents back.</summary>
+    internal void UnmountSlot(long id)
+    {
+        if (_disposed || !_slots.Remove(id))
+            return;
+        RenderSlots();
+    }
+
+    private void RenderSlots()
+    {
+        _renderOwed = true;
+        StateHasChanged();
+    }
+
+    // Each slot drawn again is handed to the script, which moves it in, or wires it for the context it now holds.
+    private async Task ReportSlotsAsync()
+    {
+        var grid = _grid;
+        foreach (var slot in _slots.Values.Where(slot => slot.Owed).ToArray())
+        {
+            // Disposed while an earlier slot was handed over: the grid is gone, and nothing is handed to it.
+            if (grid is null || _disposed)
+                return;
+            slot.Owed = false;
+            try
+            {
+                await grid.InvokeVoidAsync("slotRendered", slot.Id, slot.Version, slot.Contents);
+            }
+            catch (JSDisconnectedException)
+            {
+                // The circuit is gone, and the grid with it.
+                return;
+            }
+        }
+    }
+
     private async Task SendUpdateAsync()
     {
         var grid = _grid;
@@ -626,6 +734,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         WriteTraits(json);
         json.WritePropertyName("state");
         json.WriteRawValue(StateJson());
+        // Across a circuit, Blazor Server's, a call larger than its hub takes would close it: the browser holds one.
+        json.WriteBoolean("circuit", !OperatingSystem.IsBrowser());
         json.WriteEndObject();
     });
 
@@ -636,6 +746,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteNumber("generation", _generation);
         json.WriteBoolean("rowKey", source.RowKey is not null);
         json.WriteBoolean("vouchesDistinctRows", source.VouchesDistinctRows);
+        json.WriteBoolean("finds", source.CanFind);
         json.WriteEndObject();
     }
 
@@ -737,6 +848,13 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cellMessages", _judgement);
         if (OnFindError is not null)
             json.WriteBoolean("findsErrors", true);
+        if (Chrome?.ScriptSlots is { } slots and not ScriptSlots.None)
+        {
+            json.WriteStartArray("razorSlots");
+            foreach (var name in RazorSlot.NamesOf(slots))
+                json.WriteStringValue(name);
+            json.WriteEndArray();
+        }
         json.WriteStartArray("hears");
         foreach (var (kind, heard) in Hears())
         {
@@ -1066,29 +1184,70 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 found = await find(asked, cancelled);
                 cancelled.ThrowIfCancellationRequested();
             }
-            // The browser judges the answer against the source it holds when the answer lands: what changed before
-            // it, or while the Consumer read, crosses ahead of it.
-            if (_attached)
-                await SendUpdateAsync();
-            return Json(json =>
-            {
-                json.WriteStartObject();
-                if (found is null)
-                {
-                    json.WriteBoolean("moved", true);
-                }
-                else
-                {
-                    json.WriteBoolean("found", found.IsFound);
-                    if (found.IsFound)
-                    {
-                        json.WriteNumber("row", found.Row);
-                        json.WriteString("column", found.Column);
-                    }
-                }
-                json.WriteEndObject();
-            });
+            return await FoundJsonAsync(found);
         }), Answers: true, SendsState: false));
+    }
+
+    /// <summary>The Find step the browser numbered <paramref name="number"/> (ADR-0055), asked of the source's
+    /// <see cref="IGridSource{TRow}.FindAsync"/> in its turn among the events, as an error step is asked of
+    /// <see cref="OnFindError"/>: one asked of a source since replaced, or under another order, is answered as moved,
+    /// after what the source owes the browser. <see cref="IGridSource{TRow}.CanFind"/> is read once for each source, as
+    /// it is handed to the browser.</summary>
+    internal Task<string?> FindAsync(long number, int generation, JsonElement request)
+    {
+        var asked = new Finding.GridFindRequest
+        {
+            Text = ScriptJson.Text(request, "text"),
+            MatchCase = request.GetProperty("matchCase").GetBoolean(),
+            WholeCell = request.GetProperty("wholeCell").GetBoolean(),
+            Backward = request.GetProperty("backward").GetBoolean(),
+            From = ScriptJson.Present(request, "from", out var from) ? ScriptJson.Cell(from) : null,
+            Scope = ScriptJson.Present(request, "scope", out var scope) ? ScriptJson.Ranges(scope) : null,
+            Columns = ScriptJson.Texts(request.GetProperty("columns")),
+            RowSequenceVersion = request.GetProperty("rowSequenceVersion").GetInt32(),
+        };
+        return InTurnAsync(new Heard(Answered(number, async cancelled =>
+        {
+            Finding.GridFindResult? found = null;
+            if (SourceOf(generation) is { } source && source.RowSequenceVersion == asked.RowSequenceVersion)
+            {
+                // The browser was told CanFind once, as the source was handed over: a source that stops searching
+                // while it stands is said, never answered as "none found" or as rows that moved.
+                if (!source.CanFind)
+                    throw new InvalidOperationException($"{source.GetType().Name} stopped answering Find (CanFind is false) after the grid was told it searches: "
+                        + "ExGrid over the Script Core reads CanFind once for each source it is handed (ADR-0055).");
+                found = await source.FindAsync(asked, cancelled);
+                cancelled.ThrowIfCancellationRequested();
+            }
+            return await FoundJsonAsync(found);
+        }), Answers: true, SendsState: false));
+    }
+
+    /// <summary>A step's answer as the core reads a Find result, or moved where it was not asked. The browser judges
+    /// the answer against the source it holds when the answer lands: what changed before it, or while the source or
+    /// the Consumer read, crosses ahead of it.</summary>
+    private async Task<string?> FoundJsonAsync(Finding.GridFindResult? found)
+    {
+        if (_attached)
+            await SendUpdateAsync();
+        return Json(json =>
+        {
+            json.WriteStartObject();
+            if (found is null)
+            {
+                json.WriteBoolean("moved", true);
+            }
+            else
+            {
+                json.WriteBoolean("found", found.IsFound);
+                if (found.IsFound)
+                {
+                    json.WriteNumber("row", found.Row);
+                    json.WriteString("column", found.Column);
+                }
+            }
+            json.WriteEndObject();
+        });
     }
 
     /// <summary>The user cancelled the commit numbered <paramref name="number"/> with Escape (ADR-0380 section 3).
@@ -1333,8 +1492,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         };
     }
 
-    private static string Text(JsonElement json, string name)
-        => json.GetProperty(name).GetString() ?? throw new InvalidOperationException($"Internal: the Script Core sent no {name}.");
+    private static string Text(JsonElement json, string name) => ScriptJson.Text(json, name);
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
@@ -1342,6 +1500,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (_disposed)
             return;
         _disposed = true;
+        Calls.Stopped();
         if (_source is not null)
         {
             _source.StateChanged -= OnSourceChanged;
@@ -1372,9 +1531,10 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             if (module is not null)
                 await module.DisposeAsync();
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or OperationCanceledException)
         {
-            // The circuit is gone, and the browser's grid with it: nothing is left there to stop.
+            // The circuit is gone, or is closing and has called off what it had sent the browser, and the browser's
+            // grid goes with it: nothing is left there to stop.
         }
     }
 }

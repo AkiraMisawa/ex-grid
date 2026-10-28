@@ -1,0 +1,24 @@
+@using ExChart
+@using ExChart.Engine
+
+<ExChart.Script.ExChart Definition="Definition" Title="A curve of the page's own script" Width="720" Height="360" />
+
+@code {
+    private static readonly double[] Tenors = [0.5, 1, 2, 3, 5, 7, 10];
+
+    // What a format code cannot say, written by a function of the page's own module, js/chart-formats.js: tenors as
+    // a market quotes them, and rates as basis points from 3%. The curve is sampled from that module too, at every
+    // pixel, in the browser. Nothing here runs in .NET once the definition has crossed.
+    private static readonly ScriptFunction Tenor = ScriptFunction.Of("./js/chart-formats.js", "tenor");
+    private static readonly ScriptFunction FromThree = ScriptFunction.Of("./js/chart-formats.js", "fromThree");
+
+    private static readonly ChartDefinition Definition = new(
+        ChartAxis.Numbers("Tenor") with { FormatScript = Tenor },
+        [
+            ChartSeries.Of("quotes", "Quoted", SeriesKind.Observation,
+                Tenors.Select((t, i) => new ChartPoint(t, ChartValue.Of(new[] { 3.12, 3.05, 2.98, 3.01, 3.12, 3.21, 3.33 }[i]))))
+                with { FormatScript = FromThree },
+            ChartSeries.Sampled("ns", "Nelson–Siegel", SeriesKind.Level, 0.5, 10, ScriptFunction.Of("./js/chart-formats.js", "nelsonSiegel"))
+                with { FormatScript = FromThree, FromZero = false, Interpolated = true, Segments = [new Segment(0.5, 10, "Nelson–Siegel, the page's script")] },
+        ]);
+}

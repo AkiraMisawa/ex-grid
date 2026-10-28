@@ -42,4 +42,26 @@
             written. The axis switch draws a tenor axis proportionally or as evenly spaced categories.
         </p>
     </DocsSection>
+
+    <DocsSection Title="Format codes">
+        <p>
+            An axis and a series take an Excel number format code, <code>FormatCode</code>, in the invariant
+            spelling a grid built from a source's shape reads: <code>#,##0.00</code>, <code>0.0%</code>,
+            <code>0.00"x"</code>, <code>#,##0,"K"</code>, <code>yyyy-mm-dd</code>, <code>mmm yy</code>. The code
+            writes every value the chart shows, held or computed: an axis' ticks, the position under the pointer
+            and a range's ends; a series' values in the tooltip and the chart's summary, a candle's change and a
+            merged candle's volume. View as table and the CSV keep each value as data, written invariantly, as
+            they do under a <code>Format</code>. A code the reader does not take (a condition in brackets, a
+            colour, a fraction) is refused as the definition is checked, and so is a date code on a series of
+            numbers, a number code on a Dates axis, a code on a Categories axis, whose labels are written as
+            they are, and a code beside a <code>Format</code> on the same axis or series. React's chart takes the
+            same code as <code>formatCode</code> on an axis' and a series' options, read by the same reader.
+        </p>
+        <p>
+            A <code>Format</code>, a .NET function, still writes what no code says, and keeps a decimal's digits
+            as it was handed in. It cannot run where a chart is drawn in the browser, so a chart meant for
+            <code>ExChart.Script.ExChart</code> writes its axis and its candles by a code.
+        </p>
+        <DocsExample Builtin="typeof(FormatCodes)" Files="@(["Examples/Chart/IndexSessions.cs"])" />
+    </DocsSection>
 </DocsPage>

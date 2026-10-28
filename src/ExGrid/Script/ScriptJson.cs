@@ -42,6 +42,10 @@ internal static class ScriptJson
     internal static IReadOnlyList<string> Texts(JsonElement json) => [.. json.EnumerateArray().Select(text => text.GetString()
         ?? throw new InvalidOperationException("Internal: the Script Core sent null among texts."))];
 
+    /// <summary>A text member the Script Core always sends.</summary>
+    internal static string Text(JsonElement json, string name)
+        => json.GetProperty(name).GetString() ?? throw new InvalidOperationException($"Internal: the Script Core sent no {name}.");
+
     /// <summary>A member that may be absent or null.</summary>
     internal static bool Present(JsonElement json, string name, out JsonElement value)
         => json.TryGetProperty(name, out value) && value.ValueKind != JsonValueKind.Null;

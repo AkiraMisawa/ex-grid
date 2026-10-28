@@ -23,3 +23,6 @@ export function stampAgainst(own: string, expected: string): string {
     const shared = sharedStamp();
     return shared === expected ? own : `the Shared Script ${shared}, not ${expected}`;
 }
+
+export { crossingCalls, HeldMessages, inlineBytes, mostHeldBytes, type DotNetCalls, type WireHeld } from './held-messages';
+export { HeldSnapshots, type DotNetStream, type SnapshotsRead } from './snapshots';

@@ -177,6 +177,13 @@ public partial class ExChart
             throw new InvalidOperationException("An ExChart is given its Definition, or a Spec and the Sources it is read through.");
         if (Spec is not null && (Definition is not null || Sources is null))
             throw new InvalidOperationException("An ExChart read from a Spec is given the Sources it is read through, and no Definition beside them (ADR-0344).");
+        // The Consumer's script runs in the browser, and this chart draws in .NET: what it would write is not written
+        // another way (ADR-0420 section 3).
+        if (Definition?.ScriptFunctions.FirstOrDefault() is { } script)
+        {
+            throw new NotSupportedException(
+                $"The definition names the script function {script}, which only a chart drawn in the browser calls. Draw it with ExChart.Script.ExChart (ADR-0420).");
+        }
         // Taken back as plain parameters (ADR-0272): a parameter that changed replaces what the
         // user last did; one that did not leaves it.
         if (!_parameters.Taken || !ReferenceEquals(_parameters.Hidden, HiddenSeries)) _hidden = HiddenSeries ?? NoneHidden;

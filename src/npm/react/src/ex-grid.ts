@@ -27,7 +27,7 @@ export type ExGridProps<Row> = Omit<GridOptions<Row>, 'chrome'> & {
  * the keyboard's hand-offs: `returnKeyboard` then does nothing, and `handKeyboardTo` focuses the control itself
  * (DC-61).
  */
-export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy'>;
+export type ExGridApi<Row> = Omit<GridHandle<Row>, 'update' | 'destroy' | 'holdSettled'>;
 
 /** The props as the core takes them: the browser's language where the Consumer gave no locale. */
 function withLocale<Row>(props: GridOptions<Row>, browserLocale: string): GridOptions<Row> {
@@ -71,6 +71,9 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
         writePointedText: (text) => mounted(grid.current).writePointedText(text),
         takeBackPointedText: () => mounted(grid.current).takeBackPointedText(),
         showViewWith: (view, rowSequenceVersion) => { mounted(grid.current).showViewWith(view, rowSequenceVersion); },
+        showNewView: (rowSequenceVersion, place) => { mounted(grid.current).showNewView(rowSequenceVersion, place); },
+        // Before the grid is drawn no edit can be open on it.
+        readEditText: () => grid.current?.readEditText(),
         focus: () => { mounted(grid.current).focus(); },
         // Before the grid is drawn there is no keyboard of its own to give back, and the control takes it by its
         // own focus, as the C# core's does before it attaches (DC-61).

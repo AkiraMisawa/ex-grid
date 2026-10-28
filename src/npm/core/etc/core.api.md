@@ -34,6 +34,12 @@ export type AggregateResult = {
 export function answeredSummary(figures: Readonly<Partial<Record<SummaryFigure, AggregateResult>>>, texts?: Readonly<Partial<Record<SummaryFigure, string>>>): GridSummaryResult;
 
 // @public
+export function answerMenuKey(context: GridMenuSlotContext, event: MenuItemKeyEvent, item: (index: number) => HTMLElement): void;
+
+// @public
+export function answerValueListKey(context: GridFilterPanelSlotContext, event: ValueListKeyEvent): void;
+
+// @public
 export function applyQuery<Row>(rows: readonly Row[], columns: readonly QueryColumn<Row>[], filter: GridFilter | undefined, sorts: readonly SortSpec[] | undefined): Row[];
 
 // @public
@@ -473,6 +479,20 @@ export type FilteredColumn = Pick<QueryColumn<never>, 'type' | 'dateType'>;
 export type FilterOperator = 'equals' | 'notEquals' | 'greaterThan' | 'greaterThanOrEqual' | 'lessThan' | 'lessThanOrEqual' | 'contains' | 'doesNotContain' | 'startsWith' | 'endsWith' | 'in' | 'isBlank' | 'isNotBlank';
 
 // @public
+export const filterPanelAttributes: Readonly<{
+    readonly search: 'data-ex-filter-search';
+    readonly addToCurrent: 'data-ex-filter-add';
+    readonly values: 'data-ex-filter-values';
+    readonly selectAll: 'data-ex-filter-all';
+    readonly value: 'data-ex-filter-value';
+    readonly operator: 'data-ex-filter-operator';
+    readonly operand: 'data-ex-filter-operand';
+    readonly join: 'data-ex-filter-join';
+    readonly cancel: 'data-ex-filter-cancel';
+    readonly focus: 'data-ex-filter-focus';
+}>;
+
+// @public
 export interface FilterPanelCondition {
     readonly operand: string;
     readonly operator: FilterOperator;
@@ -562,6 +582,13 @@ export type FindOutcome = {
 
 // @public
 export function findOutcomeText(outcome: FindOutcome, words: (id: string) => string): string;
+
+// @public
+export const findPanelAttributes: Readonly<{
+    readonly field: 'data-ex-find-field';
+    readonly option: 'data-ex-find-option';
+    readonly step: 'data-ex-find-step';
+}>;
 
 // @public
 export const findPanelLabelIds: Readonly<{
@@ -1015,14 +1042,20 @@ export interface GridHandle<Row> {
     handKeyboardTo(control: HTMLElement, options?: {
         readonly preventScroll?: boolean;
     }): void;
+    holdSettled(): () => void;
     inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
     keyName(event: KeyboardEvent): string;
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
     placeMatch(cell: CellPosition, rowSequenceVersion: number): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
+    readEditText(): string | undefined;
     readView(): GridViewRead;
     refreshSummary(): void;
     returnKeyboard(from?: Element): void;
+    showNewView(rowSequenceVersion: number, place?: {
+        readonly range: SelectionRange;
+        readonly focus: CellPosition;
+    }): void;
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
     takeBackPointedText(): boolean;
     update(options: GridOptions<Row>): void;
@@ -1066,6 +1099,7 @@ export interface GridLoadingIndicatorSlotContext {
 export interface GridMenuSlotContext {
     readonly close: () => void;
     readonly commands: readonly GridCommand[];
+    readonly focusItem: number;
     readonly focusRequest: number;
     readonly innerPopupChanged: (open: boolean) => void;
     readonly itemFocused: (index: number) => void;
@@ -1731,6 +1765,19 @@ export interface MarksHost<Row> {
 }
 
 // @public
+export const menuItemAttribute = "data-ex-menu-item";
+
+// @public
+export interface MenuItemKeyEvent {
+    readonly altKey: boolean;
+    readonly ctrlKey: boolean;
+    readonly key: string;
+    readonly metaKey: boolean;
+    preventDefault(): void;
+    readonly shiftKey: boolean;
+}
+
+// @public
 export interface MenuKey {
     readonly item: number;
     readonly kind: MenuKeyKind;
@@ -2016,6 +2063,15 @@ export function summaryOf<Row>(rows: readonly Row[], request: GridSummaryRequest
 export const systemClock: GridClock;
 
 // @public
+export function takeFilterFocus(context: GridFilterPanelSlotContext, control: (target: 'first' | 'last' | 'search') => HTMLElement | undefined): void;
+
+// @public
+export function takeFindFocus(context: GridFindPanelSlotContext, field: HTMLElement | null | undefined): void;
+
+// @public
+export function takeMenuFocus(context: GridMenuSlotContext, item: (index: number) => HTMLElement): void;
+
+// @public
 export interface TemporalLike {
     readonly PlainDate: {
         from(fields: {
@@ -2044,6 +2100,11 @@ export interface TemporalLike {
 
 // @public
 export function textOf<Row>(column: Pick<QueryColumn<Row>, 'name' | 'value' | 'format'>, row: Row): string;
+
+// @public
+export interface ValueListKeyEvent extends MenuItemKeyEvent {
+    readonly isComposing: boolean;
+}
 
 // @public
 export type ViewportSize = number | 'stretch';
@@ -2088,6 +2149,15 @@ export type ViewStateOperand = {
     readonly ticks: bigint;
     readonly offsetMinutes: number;
 };
+
+// @public
+export function wireFilterPanel(contents: HTMLElement, context: GridFilterPanelSlotContext, drawn: () => FilterPanelView, answered?: boolean): () => void;
+
+// @public
+export function wireFindPanel(contents: HTMLElement, context: GridFindPanelSlotContext, answered?: boolean): () => void;
+
+// @public
+export function wireMenuItems(contents: HTMLElement, context: GridMenuSlotContext, answered?: boolean): () => void;
 
 // @public
 export function writeGridQueryJson(query: GridQuery): string;

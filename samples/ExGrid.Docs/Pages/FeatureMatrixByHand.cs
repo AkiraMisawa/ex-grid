@@ -55,6 +55,7 @@ internal static class FeatureMatrixByHand
         new("IGridChrome.SelectionSummary", "The Selection Summary in the status line", ["ADR-0130"]),
         new("IGridChrome.Stylesheets", "The notice that the page holds another version of the Wrapper's stylesheet", ["ADR-0123"]),
         new("IGridChrome.Words", "The words a refusal is announced in", ["ADR-0203"]),
+        new("IGridChrome.ScriptSlots", "The parts the Wrapper draws when the TypeScript core draws the grid", ["ADR-0410"]),
         new("ISheetChrome.FormatCells", "Format Cells", ["ADR-0071"]),
         new("ISheetChrome.ToolbarItem", "The Sheet Toolbar's items", ["ADR-0100"]),
         new("ISheetChrome.SheetTab", "A Sheet Tab's face", ["ADR-0331"]),

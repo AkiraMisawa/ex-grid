@@ -1,0 +1,5 @@
+Product: ExChart
+Kind: Added
+ADR: 0420
+
+`ScriptFunction.Of("./js/chart-formats.js", "tenor")` names a function exported from a JavaScript module the application serves, which `ExChart.Script.ExChart` and `ExChart.Script.ExSurface` import in the browser and call as they draw, on Blazor Server as on WebAssembly. It stands as `FormatScript` on `ChartAxis`, `ChartSeries` and `SurfaceAxis`, as `SurfaceDefinition.ZFormatScript`, and as a sampler through `ChartSeries.Sampled(…, ScriptFunction)`, for what a format code cannot say. Nothing is evaluated from a string: a module addressed by `data:` or `blob:` is refused. A module that does not load, a missing export, and a function that throws or answers what its member does not take are said in the chart's place, by name. A script beside a `Format` or a format code is refused as the definition is checked, and `ExChart.Components.ExChart` and `ExSurface`, which draw in .NET, refuse a definition that names one (`ChartDefinition.ScriptFunctions`, `SurfaceDefinition.ScriptFunctions`).

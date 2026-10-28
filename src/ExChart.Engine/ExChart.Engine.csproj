@@ -3,15 +3,26 @@
   <PropertyGroup>
     <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
     <TargetFramework>net10.0</TargetFramework>
-    <Description>The chart engine of ExChart: series in the data's own terms, each with its Series Kind, drawn as what it is — levels joined only to their neighbours, rates and amounts as steps with open and filled ends — on proportional or category axes, thinned past the plot's pixels, laid out as an immutable scene, and written as CSV. No UI and no dependency.</Description>
+    <Description>The chart engine of ExChart: series in the data's own terms, each with its Series Kind, drawn as what it is — levels joined only to their neighbours, rates and amounts as steps with open and filled ends — on proportional or category axes, thinned past the plot's pixels, laid out as an immutable scene, and written as CSV. No UI, and no dependency but the family's data.</Description>
     <PackageTags>chart;svg;finance;steps;csv</PackageTags>
   </PropertyGroup>
 
-  <!-- No reference at all (ADR-0250): the engine knows no grid, so a chart can be built and tested
-       without a renderer, and a Consumer that wants a chart and no grid is not handed one. -->
+  <!-- One reference, the family's data (ADR-0250, ADR-0420): the engine knows no grid, so a chart can be
+       built and tested without a renderer, and a Consumer that wants a chart and no grid is not handed one.
+       ExGrid.Data holds the format-code reader both cores write a code with, and depends on nothing. -->
+  <ItemGroup>
+    <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="ExChart.Engine.Tests" />
   </ItemGroup>
+
+  <!-- The data it was built with, exactly, as ExGrid depends on it (CH-13). -->
+  <Target Name="DependOnExactlyThisData" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
 
 </Project>

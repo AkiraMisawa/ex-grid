@@ -29,9 +29,19 @@ export interface GridHandle<Row> {
      * its Selection in place of the empty one a new version leaves (ADR-0011), and its scroll offsets. Handed as the
      * Consumer brings the rows the view was read of, under the version it brings them with, the two arrive together
      * in the grid's next pass. A view
-     * handed later replaces one not yet taken; a Selection that does not fit the rows then shown is dropped.
+     * handed later replaces one not yet taken; a Selection that does not fit the rows then shown is dropped. An edit
+     * open as another set's view is taken stays open with the rows it was opened among, away (ADR-0331 §5): its editor
+     * holds the keyboard unseen, the Formula Bar shows its text, Point points at the rows shown, and its commit raises
+     * the Edit Intent with the row it was opened on; its own set's view handed back brings it back over its cell.
      */
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
+    /** Shows rows the grid holds no view of, a Sheet shown for the first time, as `showViewWith` shows a view it read:
+     * scrolled to the start, with `place` selected where it is given and fits, nothing selected otherwise. They are a
+     * set of their own, which an open edit stays away from (ADR-0331 §5). */
+    showNewView(rowSequenceVersion: number, place?: { readonly range: SelectionRange; readonly focus: CellPosition }): void;
+    /** The open edit's text as the grid holds it, or undefined while no edit is open: what a Consumer's own key is
+     * pressed over (ADR-0331 §5). */
+    readEditText(): string | undefined;
     /** Hands the keyboard to the grid: to the field an open edit is typed in, else to where the grid takes keys
      * (ADR-0080). A Consumer's control beside the grid, such as a Sheet's tabs, gives it back with this. */
     focus(): void;
@@ -68,6 +78,12 @@ export interface GridHandle<Row> {
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
     /** Closes the Consumer's popover where one stands; the keyboard returns to the grid. */
     closePopover(): void;
+    /**
+     * Holds the Settled Mark (ADR-0220) until the function it answers is called: for a Framework Adapter whose slot's
+     * contents arrive after the slot, a round trip later on a circuit (ADR-0410 section 5), so that nothing reads the
+     * part before it stands. Each hold is let go once; a second call of its function does nothing.
+     */
+    holdSettled(): () => void;
     /** Whether anything can answer a Selection Summary (ADR-0130): `onSummarize`, or a source that summarises.
      * False: no figure ever appears. */
     readonly canSummarize: boolean;
@@ -144,12 +160,17 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         writePointedText: (text: string) => view.writePointedText(text),
         takeBackPointedText: () => view.takeBackPointedText(),
         showViewWith: (state: GridViewRead, rowSequenceVersion: number) => { view.showViewWith(state, rowSequenceVersion); },
+        showNewView: (rowSequenceVersion: number, place?: { readonly range: SelectionRange; readonly focus: CellPosition }) => {
+            view.showNewView(rowSequenceVersion, place);
+        },
+        readEditText: () => view.readEditText(),
         focus: () => { view.focus(); },
         returnKeyboard: (from?: Element) => { view.returnKeyboard(from); },
         handKeyboardTo: (control: HTMLElement, how?: { readonly preventScroll?: boolean }) => { view.handKeyboardTo(control, how); },
         keyName: (event: KeyboardEvent) => view.keyName(event),
         openPopover: (content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void) => view.openPopover(content, label, closed),
         closePopover: () => { view.closePopover(); },
+        holdSettled: () => view.holdSettled(),
         get canSummarize() {
             return view.canSummarize;
         },

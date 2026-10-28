@@ -1,0 +1,12 @@
+@using ExChart
+@using ExChart.Engine
+
+<ExChart.Script.ExChart Definition="Definition" Title="Zero rates" Width="720" Height="360" />
+
+@code {
+    // A format code crosses to the browser as itself, and the Script Core's reader writes by it, so the ticks
+    // between the data's positions read as the code says. An axis Format, a .NET function, would be refused here.
+    private static readonly ChartDefinition Definition = new(
+        ChartAxis.Numbers("Tenor") with { FormatCode = "0.0\"y\"" },
+        [ChartData.Curve() with { Format = null, FormatCode = "0.00%" }]);
+}

@@ -178,7 +178,7 @@ allowed are the ones its own rows already state; the rows below cite them rather
 
 *(2026-10-24, decided with the user with [ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)'s
 note of that date: from `0.2.0` they are checked for each of the sixteen packages a tag publishes. The six
-that joined after `0.1.0` declare, and reference as projects, exactly: `ExChart.Engine` — nothing (CH-13);
+that joined after `0.1.0` declare, and reference as projects, exactly: `ExChart.Engine` — `ExGrid.Data` (CH-13, ADR-0420);
 `ExChart` — `ExChart.Engine` and `ExGrid` (CH-13); `ExChart.MudBlazor` — `ExChart`, `ExGrid.MudBlazor` and
 MudBlazor in the Wrappers' range; `ExBoard` — `ExGrid`, `ExPivot` and `ExChart` (ADR-0340);
 `ExGrid.Data.Xlsx` — `ExGrid.Data`; `ExSheet.Xlsx` — `ExGrid.Data.Xlsx` and `ExSheet.Engine` (ADR-0330 §2).
@@ -1788,7 +1788,7 @@ section gates the tag ([ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
-| **DA-1** | MUST | `ExGrid.Data` references no package and nothing of ours. `ExGrid.Data.Arrow` references `ExGrid.Data` exactly and `Apache.Arrow` within a stated range. Nothing references either but `ExPivot.Engine` and `ExGrid` (`ExGrid.Data` only), the demo and the tests (ADR-0064/0065; `ExGrid` since ADR-0130) | the package check | as stated |
+| **DA-1** | MUST | `ExGrid.Data` references no package and nothing of ours. `ExGrid.Data.Arrow` references `ExGrid.Data` exactly and `Apache.Arrow` within a stated range. Nothing references either but `ExPivot.Engine` and `ExGrid` (`ExGrid.Data` only), `ExBoard` (`ExGrid.Data.Arrow` only), the demo and the tests (ADR-0064/0065; `ExGrid` since ADR-0130) *(2026-10-28: `ExBoard` added, whose Script adapter sends each input's Snapshot to the browser as Arrow, ADR-0065's note of that date and ADR-0370 section 1; the package check holds it to its exact list of dependencies)* | the package check | as stated |
 | **DA-2** | MUST | A Snapshot is immutable: no public member changes one. A Change Batch yields a new Snapshot, and the old one reads exactly as before (ADR-0064) | Layer 1 | as stated |
 | **DA-3** | MUST | The kinds hold their values as ADR-0064 says. Text is exact, with its dictionary in order of first appearance. Decimal is exact, and `1.5` and `1.50` read back alike. Double keeps non-finite values. Integer is 64-bit. Date is a clock value: a `DateTime`'s ticks with its `Kind` ignored, a `DateOnly`'s midnight, a `DateTimeOffset`'s clock without its offset. Boolean is true or false. A Blank is possible in every kind and differs from `""` and 0 (ADR-0064) | Layer 1 | every clause a named test |
 | **DA-4** | MUST | Built from objects with typed accessors, a Snapshot keeps the objects, by reference and in order, and boxes no value (ADR-0064) | Layer 1, with an allocation bound | as stated |
@@ -1929,7 +1929,7 @@ grilling. ExChart has no timed target: render counts gate, timings are recorded.
 | **CH-10** | MUST | At `deviceScaleFactor` 1.25 and 1.5 a 2D plot's lines lie on Device Pixels, and the PNG and the 3D surface are drawn at that scale (ADR-0282, ADR-0283) | Layer 3 `paints`; PNG size | as stated |
 | **CH-11** | MUST | Under `forcedColors: 'active'` every two series of a panel differ in line style or marker (ADR-0256, ADR-0283) | Layer 3 | as stated |
 | **CH-12** | MUST | CSV, SVG and PNG are each saved by one click, under the chart's file name, and none is encoded during a render (ADR-0252, ADR-0282) | Layer 2 markup (no `data:` URL); Layer 3 download | as stated |
-| **CH-13** | MUST | `ExChart.Engine`'s `.nuspec` declares no dependency, and `ExChart`'s declares exactly the ExGrid it was built with (ADR-0250, ADR-0283) | PackageSmoke | as stated |
+| **CH-13** | MUST | `ExChart.Engine`'s `.nuspec` declares exactly the `ExGrid.Data` it was built with and nothing else, and `ExChart`'s declares exactly the ExGrid it was built with (ADR-0250, ADR-0283, ADR-0420) | PackageSmoke | as stated |
 | **CH-14** | SHOULD | `spikes/render-bench`'s ExChart mode has a recorded result on Server, WebAssembly and WebAssembly with AOT (ADR-0283) *(Recorded 2026-10-19 in `spikes/render-bench/results/20261019-chart`: the proof of concept's redraw of 1,566 dates, 644 ms on Server and 1.8 s on WebAssembly, takes 21 ms, 125 ms and 87 ms with AOT; a pointer move answers within its frame on all three.)* | Recorded JSON | present; never a gate |
 
 *Not verified, by decision (ADR-0283, 2026-10-19): what NVDA or another screen reader actually speaks,

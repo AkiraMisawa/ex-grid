@@ -89,6 +89,27 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <summary>The loading bar: <see cref="Grid"/>'s.</summary>
     public RenderFragment? LoadingIndicator(LoadingContext context) => GridSeams.LoadingIndicator(context);
 
+    /// <summary>The slots the Grid Chrome fills over the Script Core (ADR-0410), forwarded, except the find panel:
+    /// a Sheet's is its own, with Within (ADR-0332 section 5), and a grid's panel drawn in its place would search
+    /// the Sheet shown alone.</summary>
+    public ScriptSlots ScriptSlots => GridSeams.ScriptSlots & ~ScriptSlots.FindPanel;
+
+    /// <summary>The Grid Chrome's column menu over the Script Core (ADR-0410), in ExSheet's words.</summary>
+    public RenderFragment? ColumnMenu(GridMenuView view) => GridSeams.ColumnMenu(view);
+
+    /// <summary>The Grid Chrome's Context Menu over the Script Core (ADR-0410), in ExSheet's words.</summary>
+    public RenderFragment? ContextMenu(GridMenuView view) => GridSeams.ContextMenu(view);
+
+    /// <summary>The Grid Chrome's loading bar over the Script Core (ADR-0410).</summary>
+    public RenderFragment? LoadingIndicator(GridLoadingView view) => GridSeams.LoadingIndicator(view);
+
+    /// <summary>The Grid Chrome's filter panel over the Script Core (ADR-0410).</summary>
+    public RenderFragment? FilterPanel(GridFilterView view) => GridSeams.FilterPanel(view);
+
+    /// <summary>No find panel over the Script Core: a Sheet's is its own, with Within (ADR-0332 section 5), and
+    /// <see cref="ScriptSlots"/> leaves the slot to it (ADR-0410 section 4's note of 2026-10-28).</summary>
+    public RenderFragment? FindPanel(GridFindView view) => null;
+
     /// <summary>The Formula Bar's Name Box: <see cref="Grid"/>'s.</summary>
     public RenderFragment? NameBox(NameBoxContext context) => GridSeams.NameBox(context);
 

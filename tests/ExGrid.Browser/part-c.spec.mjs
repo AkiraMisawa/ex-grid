@@ -1,4 +1,4 @@
-import { test, expect, alterPage, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet } from './fixtures.mjs';
+import { test, expect, alterPage, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, twoFrames } from './fixtures.mjs';
 import { sheet, cell, at, pressCell, clickCell, expectFocusAt } from './sheet-helpers.mjs';
 import { sameColour, resolvedColour, paints, painted } from './pixels.mjs';
 import { across, along, pattern, expected, isDark } from './line-pixels.mjs';
@@ -378,7 +378,11 @@ test('DC-59: scrolling with column A selected, its shade stays on column A down 
         await scrollRowToTop(grid, down);
         await grid.locator('.ex-scroller').evaluate((scroller, left) => { scroller.scrollLeft = left; }, sideways);
         await expect.poll(() => grid.locator('.ex-scroller').evaluate((s) => s.scrollLeft)).toBe(sideways);
+        // The browser tells the grid of the offset in the frame after it is written: read once the grid has
+        // heard it, and settled from it.
+        await twoFrames(page);
         await circuitQuiet();
+        await settled(grid);
         // A row clear of the Focus's, two below the top of the readable area, and the first cell of it
         // wholly clear of column A's edge, whichever column has scrolled there: read at their middles,
         // away from every gridline.

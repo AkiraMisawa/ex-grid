@@ -8,7 +8,9 @@ import {
     createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridErrorStepRequest, type GridFindResult,
     type GridHandle, type GridOptions, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
+import { crossingCalls, HeldMessages } from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
+import { RazorSlots, isRazorSlotName, type RazorSlotName } from './razor-slots';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
 import { WriteGate } from './write-gate';
 
@@ -34,6 +36,8 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly cellMessages?: number;
     /** Whether the Consumer answers the error step, F8 and Shift+F8, which .NET is asked as it is taken (ADR-0381). */
     readonly findsErrors?: true;
+    /** The Chrome slots the Consumer's Chrome fills with Razor, which .NET renders as each is mounted (ADR-0410). */
+    readonly razorSlots?: readonly RazorSlotName[];
 }
 
 /** The options .NET sets as they are, with no function or object of the browser's in them. */
@@ -66,6 +70,11 @@ export interface BlazorGrid {
      * ADR-0070). A control a render removed before the request landed reaches here as null, and keeps nothing to
      * hand on, as the core does with one no longer in the document. */
     handKeyboardTo(control: HTMLElement | null, preventScroll: boolean): void;
+    /** .NET rendered the contents of the Razor slot `id`, for the data it was sent numbered `version`, in `contents`, in
+     * its holder beside the root (ADR-0410). */
+    slotRendered(id: number, version: number, contents: HTMLElement | null): void;
+    /** The call held as `held`, too large for a message of its own, as the stream .NET reads it from. Taken once. */
+    take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the grid and empties its element. */
     dispose(): void;
 }
@@ -75,6 +84,9 @@ export interface WireAttach {
     readonly options: WireOptions;
     readonly source: WireSourceTraits;
     readonly state: WireState;
+    /** Whether .NET is across a circuit, Blazor Server's, whose hub limits the size of a message: only then is a
+     * call larger than `inlineBytes` held for .NET to take as a stream (ADR-0005, as amended 2026-10-20). */
+    readonly circuit: boolean;
 }
 
 /** What `update` is handed. `source` is another source of .NET's, the Consumer's next, which the grid hears as a
@@ -92,12 +104,19 @@ export function browserCollector(collected: (held: number) => void): RowCollecto
     return { register: (row, held) => { registry.register(row, held); } };
 }
 
+/** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
+const heldGridCalls: ReadonlySet<string> = new Set(['Heard', 'Validate', 'Find', 'FindError', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot']);
+
 /**
  * Mounts the Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
  * `DotNetObjectReference` and `json` a {@link WireAttach}. What it answers is the component's handle on the grid.
  */
-export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, makeCollector = browserCollector): BlazorGrid {
+export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, makeCollector = browserCollector): BlazorGrid {
     const init = parsed<WireAttach>(json);
+    // A call too large for a message of its own, a large paste, a long edit, a filter of many values or a filter
+    // panel's list, is held, and .NET takes it in its turn: the hub would otherwise close the circuit.
+    const holding = new HeldMessages(init.circuit);
+    const dotnet = crossingCalls(bridge, holding, heldGridCalls);
     // Each answer .NET is asked to give later is numbered, so the user's cancel calls that one off there (ADR-0380).
     let answers = 0;
     const asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>): Promise<T> => {
@@ -120,7 +139,7 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
     columns.take(init.options.columns, init.options.columnsVersion);
     const rows = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen); });
     const sourceOf = (traits: WireSourceTraits, state: WireState): DotNetSource => {
-        const made = new DotNetSource(dotnet, rows, columns, traits);
+        const made = new DotNetSource(dotnet, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal));
         made.take(state);
         return made;
     };
@@ -135,7 +154,7 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
         } else if (next.state !== undefined) {
             source.take(next.state);
         }
-        grid.update(gridOptions(next.options, columns, source, heard, paint, findError));
+        grid.update(gridOptions(next.options, columns, source, heard, paint, findError, slots));
     };
 
     const gate = new WriteGate<WireUpdate, WireState>(message => {
@@ -148,20 +167,40 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
     // Asked of the source the grid holds now, by its number. .NET sends what its source owes before it answers, and
     // answers a step asked of a source or an order it no longer holds as moved: once what a write of the user's holds
     // meanwhile is taken in, the core holds the newer one, and says the rows moved (ADR-0381, ADR-0142).
-    const findError: FindErrorOf = (request, signal) => asking(signal, async number => {
-        const askedOf = source;
-        const answer = await dotnet.invokeMethodAsync('FindError', number, askedOf.generation, request);
-        signal.throwIfAborted();
-        const found = findResultOf(answer);
-        if (found !== 'moved') return found;
-        await gate.released();
-        // A "none found" the core would read as said of the rows it shows: .NET moved without sending what moved.
-        if (source === askedOf && source.snapshot().rowSequenceVersion === request.rowSequenceVersion) {
-            throw new Error('Internal: .NET answered the error step as moved, and sent no other source or order.');
-        }
-        return { found: false };
+    // A Find step and an error step alike (ADR-0055, ADR-0381).
+    const askedFind = (method: 'Find' | 'FindError', generation: number, request: { readonly rowSequenceVersion: number }, signal: AbortSignal): Promise<GridFindResult> =>
+        asking(signal, async number => {
+            const askedOf = source;
+            const answer = await dotnet.invokeMethodAsync(method, number, generation, request);
+            signal.throwIfAborted();
+            const found = findResultOf(answer);
+            if (found !== 'moved') return found;
+            await gate.released();
+            // A "none found" the core would read as said of the rows it shows: .NET moved without sending what moved.
+            if (source === askedOf && source.snapshot().rowSequenceVersion === request.rowSequenceVersion) {
+                throw new Error(`Internal: .NET answered the ${method === 'Find' ? 'Find' : 'error'} step as moved, and sent no other source or order.`);
+            }
+            return { found: false };
+        });
+    const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
+    // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
+    const made: { grid?: GridHandle<BlazorRow> } = {};
+    const slots = new RazorSlots(dotnet, () => {
+        if (made.grid !== undefined) return made.grid.holdSettled();
+        let release: (() => void) | undefined;
+        let gone = false;
+        queueMicrotask(() => { if (!gone && made.grid !== undefined) release = made.grid.holdSettled(); });
+        return () => { gone = true; release?.(); };
+    }, until => {
+        // Only a part the user opened takes the keyboard, and the user opens nothing before the grid stands.
+        if (made.grid === undefined) throw new Error('Internal: a Razor slot that takes the keyboard was mounted while the grid was being made.');
+        void made.grid.inOrder(() => until);
+    }, () => {
+        if (made.grid === undefined) throw new Error('Internal: a Razor slot held the keyboard while the grid was being made.');
+        made.grid.focus();
     });
-    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint, findError));
+    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint, findError, slots));
+    made.grid = grid;
     return Object.freeze({
         update: (text: string) => { gate.receive({ update: parsed<WireUpdate>(text) }); },
         state: (text: string) => { gate.receive({ state: parsed<WireState>(text) }); },
@@ -175,10 +214,14 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
         handKeyboardTo: (control: HTMLElement | null, preventScroll: boolean) => {
             if (control !== null) grid.handKeyboardTo(control, { preventScroll });
         },
+        slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots.rendered(id, version, contents); },
+        take: (number: number) => holding.take(number),
         dispose: () => {
             // Nothing is let go once .NET has let go of the bridge, and nothing held is taken in.
             gate.stop();
             rows.stop();
+            slots.dispose();
+            holding.clear();
             grid.destroy();
         },
     });
@@ -316,8 +359,12 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
     });
 }
 
-function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf): GridOptions<BlazorRow> {
+function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf, slots: RazorSlots): GridOptions<BlazorRow> {
     const hears = new Set(wire.hears);
+    const razorSlots = wire.razorSlots;
+    for (const name of razorSlots === undefined ? [] : razorSlots) {
+        if (!isRazorSlotName(name)) throw new TypeError(`Internal: .NET named '${String(name)}' as a slot its Chrome fills.`);
+    }
     const temporal: unknown = Reflect.get(globalThis, 'Temporal');
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
     return {
@@ -332,6 +379,7 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
         ...(wire.cellStates === true ? { cellState: paint.cellState } : {}),
         ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
         ...(wire.findsErrors === true ? { findError } : {}),
+        ...(razorSlots === undefined || razorSlots.length === 0 ? {} : { chrome: slots.chrome(razorSlots) }),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('edit') ? { onEdit: heard.onEdit } : {}),
         ...(hears.has('paste') ? { onPaste: heard.onPaste } : {}),

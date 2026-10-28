@@ -146,6 +146,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     // still holds, as an open Details tab holds the source its records came from. The browser says when it has let one
     // go, and only then is it let go here.
     private readonly Dictionary<int, PivotSource> _sources = [];
+
+    /// <summary>The browser's calls into .NET, made in the order the browser made them, one too large for a message of
+    /// its own among them (ADR-0005, as amended 2026-10-20).</summary>
+    internal global::ExGrid.Script.HeldCalls Calls { get; } = new();
     // A notice a source gave while the pivot was attaching, and the generation it is of, sent once it is attached.
     private (int Generation, string Notice)? _noticeOwed;
 
@@ -328,6 +332,12 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             bridge.Dispose();
             return;
         }
+        catch
+        {
+            // Never attached: a call held as it attached is never taken, and every call after it is let through.
+            Calls.Stopped();
+            throw;
+        }
         finally
         {
             _attaching = false;
@@ -341,6 +351,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         }
         _pivot = pivot;
         _attached = true;
+        Calls.Attached(pivot);
         await SendUpdateAsync();
         if (_noticeOwed is var (generation, notice))
         {
@@ -412,6 +423,8 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         _sentWords = words;
         json.WritePropertyName("words");
         json.WriteRawValue(words);
+        // Across a circuit, Blazor Server's, a call larger than its hub takes would close it: the browser holds one.
+        json.WriteBoolean("circuit", !OperatingSystem.IsBrowser());
         json.WriteEndObject();
     });
 
@@ -896,6 +909,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         if (_disposed)
             return;
         _disposed = true;
+        Calls.Stopped();
         if (_source is not null)
             _source.Changed -= _hearSource;
         foreach (var asked in _asked.Values.ToArray())
@@ -920,9 +934,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             if (module is not null)
                 await module.DisposeAsync();
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or OperationCanceledException)
         {
-            // The circuit is gone, and the browser's pivot with it: nothing is left there to stop.
+            // The circuit is gone, or is closing and has called off what it had sent the browser, and the browser's
+            // pivot goes with it: nothing is left there to stop.
         }
     }
 }

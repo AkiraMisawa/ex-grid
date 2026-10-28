@@ -1,0 +1,17 @@
+@using ExChart
+@using ExChart.Components
+@using ExChart.Engine
+
+<ExChart Definition="Definition" Title="Equity index, 2025" Width="720" Height="420" />
+
+@code {
+    // Excel format codes, read the way a grid built from a source's shape reads them. The codes write every value
+    // the chart shows: the ticks, the tooltip, a candle's change, and a merged candle's volume, computed or held.
+    private static readonly PriceBar[] Bars =
+        [.. IndexSessions.All.Where(s => s.Date.Year == 2025)
+            .Select(s => new PriceBar(s.Date.DayNumber, s.Open, s.High, s.Low, s.Close, s.Volume))];
+
+    private static readonly ChartDefinition Definition = new(
+        ChartAxis.Dates("Date") with { FormatCode = "mmm yy" },
+        [ChartSeries.Candles("index", "Index", Bars) with { FormatCode = "#,##0.00", MergeTo = CandlePeriod.Week }]);
+}

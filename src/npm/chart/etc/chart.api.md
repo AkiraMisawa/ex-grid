@@ -63,6 +63,7 @@ export interface ChartAxis {
     readonly daysPerYear: number;
     readonly effectiveScale: AxisScale;
     readonly format?: (position: number) => string;
+    readonly formatCode?: string;
     readonly labels: readonly string[];
     readonly named: readonly NamedPosition[];
     readonly packed: boolean;
@@ -75,6 +76,7 @@ export interface ChartAxis {
 export interface ChartAxisOptions {
     readonly daysPerYear?: number;
     readonly format?: (position: number) => string;
+    readonly formatCode?: string;
     readonly labels?: readonly string[];
     readonly named?: readonly NamedPosition[];
     readonly packed?: boolean;
@@ -290,6 +292,7 @@ export interface ChartSeries {
     readonly edges: readonly ChartEdge[];
     readonly effectiveKeys: AppearanceKeys;
     readonly format?: (value: ChartValue) => string;
+    readonly formatCode?: string;
     readonly fromZero?: boolean;
     readonly id: string;
     readonly interpolated: boolean;
@@ -317,6 +320,7 @@ export interface ChartSeriesOptions {
     readonly details?: readonly PointDetail[];
     readonly edges?: readonly ChartEdge[];
     readonly format?: (value: ChartValue) => string;
+    readonly formatCode?: string;
     readonly fromZero?: boolean;
     readonly id: string;
     readonly interpolated?: boolean;
@@ -1038,6 +1042,7 @@ export type StepSide = 'preceding' | 'following';
 export class SurfaceAxis {
     constructor(options: SurfaceAxisOptions);
     get format(): ((value: SurfaceValue) => string) | undefined;
+    get formatCode(): string | undefined;
     indexOf(value: SurfaceValue): number;
     // @internal
     number(index: number): number;
@@ -1052,6 +1057,7 @@ export class SurfaceAxis {
 // @public
 export interface SurfaceAxisOptions {
     readonly format?: (value: SurfaceValue) => string;
+    readonly formatCode?: string;
     readonly scale?: AxisScale;
     readonly title: string;
     readonly values: readonly SurfaceValue[];
@@ -1098,10 +1104,13 @@ export class SurfaceDefinition {
     sliceChart(slice: SurfaceSlice): ChartDefinition | undefined;
     get triangles(): readonly SurfaceTriangle[] | undefined;
     writeZ(value: ChartValue): string;
+    // @internal
+    writeZTick(value: number): string;
     get x(): SurfaceAxis;
     get y(): SurfaceAxis;
     get z(): readonly (readonly (ChartValue | null)[])[];
     get zFormat(): ((value: ChartValue) => string) | undefined;
+    get zFormatCode(): string | undefined;
     get zScale(): AxisScale;
     get zTitle(): string;
 }
@@ -1203,8 +1212,10 @@ export interface SurfacePoint {
 export interface SurfacePointsOptions extends SurfaceScaleOptions {
     readonly points: readonly SurfacePoint[];
     readonly xFormat?: (value: SurfaceValue) => string;
+    readonly xFormatCode?: string;
     readonly xTitle: string;
     readonly yFormat?: (value: SurfaceValue) => string;
+    readonly yFormatCode?: string;
     readonly yTitle: string;
     readonly zFormat?: (value: ChartValue) => string;
     readonly zTitle?: string;
@@ -1215,11 +1226,13 @@ export interface SurfaceSampledOptions extends SurfaceScaleOptions {
     readonly method: string;
     readonly samples?: number;
     readonly xFormat?: (value: SurfaceValue) => string;
+    readonly xFormatCode?: string;
     readonly xFrom: number;
     readonly xScale?: AxisScale;
     readonly xTitle: string;
     readonly xTo: number;
     readonly yFormat?: (value: SurfaceValue) => string;
+    readonly yFormatCode?: string;
     readonly yFrom: number;
     readonly yScale?: AxisScale;
     readonly yTitle: string;
@@ -1232,6 +1245,7 @@ export interface SurfaceSampledOptions extends SurfaceScaleOptions {
 // @public
 export interface SurfaceScaleOptions {
     readonly centre?: number;
+    readonly zFormatCode?: string;
     readonly zScale?: AxisScale;
 }
 
@@ -1269,9 +1283,11 @@ export interface SurfaceTrianglesOptions extends SurfaceScaleOptions {
     readonly notes?: readonly string[];
     readonly triangles: readonly SurfaceTriangle[];
     readonly xFormat?: (value: SurfaceValue) => string;
+    readonly xFormatCode?: string;
     readonly xScale?: AxisScale;
     readonly xTitle: string;
     readonly yFormat?: (value: SurfaceValue) => string;
+    readonly yFormatCode?: string;
     readonly yScale?: AxisScale;
     readonly yTitle: string;
     readonly zFormat?: (value: ChartValue) => string;

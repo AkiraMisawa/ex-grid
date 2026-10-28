@@ -6,6 +6,7 @@
 
 import { builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
+import { crossingCalls, HeldMessages } from '@ex-grid/blazor-shared';
 import { createPivot, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import { PivotJson, pivotWordIdList, readPivotLayoutJson, writePivotLayoutJson, type PivotLabel, type PivotLayout } from '@ex-grid/pivot-engine';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from './dotnet-pivot-source';
@@ -49,6 +50,9 @@ export interface WireAttach {
     /** How many of the Consumer's layouts .NET has sent, this one included. */
     readonly layoutsSent: number;
     readonly words: WireWords;
+    /** Whether .NET is across a circuit, Blazor Server's, whose hub limits the size of a message: only then is a
+     * call larger than `inlineBytes` held for .NET to take as a stream (ADR-0005, as amended 2026-10-20). */
+    readonly circuit: boolean;
 }
 
 /** What `update` is handed: the parameters again, whole; another source, if the Consumer handed one; and a layout of
@@ -70,9 +74,14 @@ export interface BlazorPivot {
     /** Takes what the source of `generation` said, a `PivotSourceChanged` in PivotJson. A source the Consumer has
      * since replaced is heard of no more. */
     changed(generation: number, json: string): void;
+    /** The call held as `held`, too large for a message of its own, as the stream .NET reads it from. Taken once. */
+    take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the pivot and empties its element. */
     dispose(): void;
 }
+
+/** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
+const heldPivotCalls: ReadonlySet<string> = new Set(['Heard', 'Aggregate', 'Items', 'Details', 'ItemCounts']);
 
 /**
  * Mounts ExPivot's Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
@@ -81,10 +90,14 @@ export interface BlazorPivot {
 export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, makeCollector = browserCollector): BlazorPivot {
     const init = parsed<WireAttach>(json);
     let stopped = false;
+    // A call too large for a message of its own, a layout's query over many items or a large selection, is held, and
+    // .NET takes it in its turn: the hub would otherwise close the circuit.
+    const held = new HeldMessages(init.circuit);
+    const crossing = crossingCalls(dotnet, held, heldPivotCalls);
     // Once the pivot is stopped .NET has let go of the bridge, and nothing more crosses: a question still on its way is
     // the destroyed pivot's, which reads no answer, so it is left unanswered rather than failed.
     const bridge: DotNetHandle = {
-        invokeMethodAsync: (method, ...args) => (stopped ? new Promise<never>(() => undefined) : dotnet.invokeMethodAsync(method, ...args)),
+        invokeMethodAsync: (method, ...args) => (stopped ? new Promise<never>(() => undefined) : crossing.invokeMethodAsync(method, ...args)),
     };
     // A source the browser no longer holds, an open Details tab's included, is let go in .NET.
     const collector = makeCollector(generation => { void bridge.invokeMethodAsync('Release', generation); });
@@ -125,8 +138,10 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
         changed: (generation: number, text: string) => {
             if (generation === source.generation) source.hear(text);
         },
+        take: (number: number) => held.take(number),
         dispose: () => {
             stopped = true;
+            held.clear();
             pivot.destroy();
         },
     });

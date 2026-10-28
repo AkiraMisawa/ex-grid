@@ -47,7 +47,8 @@ function publish(work, mark) {
         fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
         fs.copyFileSync(path.join(repository, file), path.join(root, file));
     }
-    for (const project of ['src/ExGrid', 'src/ExGrid.Data', 'tests/ExGrid.Browser/freshness-app']) {
+    // src/Shared holds the sources each adapter compiles in, ExGrid's held calls among them (ADR-0005).
+    for (const project of ['src/ExGrid', 'src/ExGrid.Data', 'src/Shared', 'tests/ExGrid.Browser/freshness-app']) {
         copy(path.join(repository, project), path.join(root, project));
     }
     // ExGrid's build bundles the Script Core from src/npm (ADR-0350 section 7): the sources it bundles,

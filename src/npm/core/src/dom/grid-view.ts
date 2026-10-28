@@ -747,6 +747,9 @@ const edgeScrollTickMs = 50;
 /** The keys whose own keydown is no key of the grid's: they neither take nor end a release of Tab. */
 const modifierKeys: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
 
+/** Home and End where Command is the primary key, which the browser binds to a scroll in a text field (ticket 32). */
+const appleCaretKeys: ReadonlySet<string> = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
+
 /** The built-in Chrome's words for a stylesheet of another version (ADR-0123, ADR-0203). */
 const stylesheetNoticeWords = 'This page holds another version\'s stylesheet. Reload the page.';
 
@@ -1114,7 +1117,8 @@ interface OpenEdit<Row> {
     /** The source, the columns and the Row Sequence Version it opened under. */
     readonly source: GridSource<Row>;
     readonly columnNames: readonly string[];
-    readonly sequence: number;
+    /** Taken again as it comes back among its own rows from another set's (ADR-0331 §5). */
+    sequence: number;
     /** The Row Key of the row it opened on, where one is in force: the third holding ADR-0160 names. */
     readonly key: RowKey | undefined;
     /** What the user saw of the cell (ADR-0142, D1): what it painted as the editor opened, or, once a write
@@ -1132,6 +1136,18 @@ interface OpenEdit<Row> {
     error: string | undefined;
     /** Where the text is typed: the Cell Editor over the cell, or the Formula Bar, its second surface (ADR-0051). */
     surface: 'cell' | 'bar';
+    /** The committed text it opened on, where it opened on the cell's own text, by F2, a double click or a press into
+     * the Formula Bar; none where a typed character opened it, which is never untyped (ADR-0007's note of 2026-10-11). */
+    readonly untypedText: string | undefined;
+    /** The set of rows it opened among (ADR-0331 §5): while another is shown it is away, open with its editor holding
+     * the keyboard unseen, pointing at the rows shown, and its commit landing on `awayRow`. */
+    readonly set: number;
+    /** The row it opened on as the grid last held it, read from the Window as another set replaced it: what its
+     * commit lands on while it is away; none where that Window no longer held the row (ED-21). */
+    awayRow: Row | undefined;
+    /** Whether it left its own rows under the order it was opened under: without a Row Key, only then does its
+     * position name its row again when they come back (ADR-0142, LV-20). */
+    leftInOrder: boolean;
 }
 
 // A press handed over whose button is still down (ADR-0058): where it was, on a header or not, and where the pointer
@@ -1572,6 +1588,8 @@ export class GridView<Row> {
     #imeKeyTold = false;
     readonly #editorPinned: HTMLElement;
     readonly #message: HTMLElement;
+    // The Size Tip (ADR-0052, 2026-09-29), painted while a drag across Headings covers more than one column or row.
+    #sizeTip: HTMLElement | undefined;
     // The Chrome's cellMessage slot, standing in the message while it draws it (ADR-0390).
     readonly #messageSlot: ShownSlot<GridCellMessageSlotContext>;
     // The Chrome's loadingIndicator slot, at the root's foot while the Chrome has one (ADR-0390).
@@ -1784,10 +1802,20 @@ export class GridView<Row> {
     #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
     #cancelEdgeTick: (() => void) | undefined;
     #scrollOwed = false;
-    // The views this grid read (readView), each holding the grid's own Selection; the one handed back to be shown
-    // when the grid takes the version it names, in place of the empty Selection a new version leaves (ADR-0331).
-    readonly #viewsRead = new WeakMap<GridViewRead, Selection>();
-    #viewAhead: { readonly selection: Selection; readonly version: number; readonly topPx: number; readonly leftPx: number } | undefined;
+    // The views this grid read (readView), each holding the grid's own Selection and the set of rows it was read of; the
+    // one handed back to be shown when the grid takes the version it names, in place of the empty Selection a new
+    // version leaves (ADR-0331). A view of rows never shown (showNewView) brings a set of its own.
+    readonly #viewsRead = new WeakMap<GridViewRead, { readonly selection: Selection; readonly set: number }>();
+    #viewAhead: {
+        readonly selection: Selection | { readonly range: SelectionRange; readonly focus: CellPosition } | undefined; readonly set: number | undefined;
+        readonly version: number; readonly topPx: number; readonly leftPx: number;
+    } | undefined;
+    // The set of rows shown, by a number the grid gives each set a view brings in, and the numbers given so far. Rows
+    // the source hands under a new version with no view are the same set, in another order (ADR-0331 §5).
+    #rowSet = 1;
+    #rowSetsGiven = 1;
+    // The state the Selection was last reconciled under: the Window an edit leaving its set is read from.
+    #reconciledState: GridSourceState<Row> | undefined;
     // Whether the offsets taken from a view are still to be kept inside the rows shown, as the browser keeps them.
     #viewScrollUnclamped = false;
     // The row a new page size brings to the top of the view, once the geometry over it is made (ADR-0015).
@@ -1812,6 +1840,9 @@ export class GridView<Row> {
     // it, and F4 and the arrows change nothing while it stands. With it, the edit as it was before that write.
     #pointedFromOutside = false;
     #pointBefore: PointBefore | undefined;
+    // Whether what Point wrote stands with no outline, which stood over rows another set has replaced (#takeRowSet):
+    // the next arrow or press points afresh, from where pointing starts among the rows shown, and writes in its place.
+    #pointAside = false;
     #pointStateTold: GridPointState = 'none';
     // Completion (ADR-0051): the declaration, the answer shown and the candidate chosen in it, the number of the last
     // question asked (an answer to any other is stale and dropped, DC-18), and the text and caret the core last saw,
@@ -1848,6 +1879,9 @@ export class GridView<Row> {
     // The Settled Mark (ADR-0220).
     #passOwed = false;
     #settledShown: boolean | undefined;
+    // What a Framework Adapter still owes the page, each held until it stands: a slot's contents a round trip away
+    // (ADR-0410 section 5).
+    #settledHolds = 0;
     #destroyed = false;
 
     constructor(root: HTMLElement, options: GridOptions<Row>, reports: BrowserReports) {
@@ -2155,10 +2189,11 @@ export class GridView<Row> {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
+        // Revealed in the Viewport; the page is not moved for it, as a Consumer's placement is no move the grid made
+        // (ADR-0204): a Name Box's Go To scrolls the grid, never the page under it.
         if (this.#apply(this.#held.selection.place(range, focus, now))) {
             this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
             this.#revealHeaderOwed = undefined;
-            this.#followArmed = { focus, target: focus };
         }
         return true;
     }
@@ -3028,7 +3063,7 @@ export class GridView<Row> {
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
             && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
             && this.#findStepping === undefined && this.#errorStepping === undefined && this.#replacing === 0 && this.#pending === undefined
-            && this.#messageAsked === undefined);
+            && this.#messageAsked === undefined && this.#settledHolds === 0);
     }
 
     #showSettled(settled: boolean): void {
@@ -3255,6 +3290,8 @@ export class GridView<Row> {
     // Row Sequence Version for the rows, which moves on with another source too, and the columns by name,
     // in order, never the array's identity, which a Framework Adapter hands afresh on every render.
     #reconcileSelection(): void {
+        const left = this.#reconciledState;
+        this.#reconciledState = this.#state;
         const version = this.#sequence();
         const names = this.#columns.map(({ column }) => column.name);
         const columnsMoved = !sameItems(names, this.#columnNames);
@@ -3282,9 +3319,17 @@ export class GridView<Row> {
         const ahead = this.#viewAhead;
         if (ahead !== undefined && ahead.version === this.#handedVersion()) {
             this.#viewAhead = undefined;
+            this.#takeRowSet(ahead.set ?? ++this.#rowSetsGiven, left);
             const extent = this.#extent;
-            if (!columnsMoved && ahead.selection.ranges.every(range => bottomRow(range) < extent.rowCount && range.leftColumn + range.columnCount <= extent.columnCount)) {
-                this.#held = HeldSelection.of(version, ahead.selection);
+            const fits = (range: SelectionRange): boolean => bottomRow(range) < extent.rowCount && range.leftColumn + range.columnCount <= extent.columnCount;
+            // Rows never shown with no place given are left with nothing selected, as a new version leaves them.
+            const shown = ahead.selection;
+            if (!columnsMoved && shown !== undefined) {
+                if (shown instanceof Selection) {
+                    if (shown.ranges.every(fits)) this.#held = HeldSelection.of(version, shown);
+                } else if (fits(shown.range)) {
+                    this.#held = HeldSelection.of(version, Selection.empty.place(shown.range, shown.focus, extent));
+                }
             }
             // The offsets come back either way: the browser keeps them inside the rows shown.
             this.#scrollTopPx = ahead.topPx;
@@ -3535,6 +3580,13 @@ export class GridView<Row> {
         // A key typed in a control inside the root is that control's: only the root and this grid's own
         // Keyboard Field are the grid's (ADR-0010, ADR-0080).
         if (target !== this.#root && target !== this.#keyField) return;
+        // A key on the grid while a menu's Chrome contents still owe the opening focus, a round trip away on a
+        // circuit, is the menu's, answered against the place it keeps as a key on an item is (ADR-0410 section 5).
+        if (popover !== undefined && (popover.kind === 'column' || popover.kind === 'context')
+            && popover.items.keyOnGrid(event.key, event.shiftKey, event.ctrlKey || event.altKey || event.metaKey)) {
+            this.#taken(event);
+            return;
+        }
         // A released Tab is the browser's, and any other key ends the release (ADR-0012).
         if (this.#tabReleased) {
             this.#tabReleased = false;
@@ -4394,7 +4446,8 @@ export class GridView<Row> {
         const focus = defined(selection.focus, 'the Focus of a Selection that is not empty');
         if (!this.#isEditableCell(focus)) return false;
         this.#apply(selection);
-        this.#startEdit(focus, mode, typed ?? this.#openingTextAt(focus));
+        if (typed === undefined) this.#startEdit(focus, mode, this.#openingTextAt(focus), 'cell', true);
+        else this.#startEdit(focus, mode, typed);
         return true;
     }
 
@@ -4411,7 +4464,7 @@ export class GridView<Row> {
         return true;
     }
 
-    #startEdit(at: CellPosition, mode: OpenEdit<Row>['mode'], text: string, surface: OpenEdit<Row>['surface'] = 'cell'): void {
+    #startEdit(at: CellPosition, mode: OpenEdit<Row>['mode'], text: string, surface: OpenEdit<Row>['surface'] = 'cell', onOwnText = false): void {
         // An edit opening ends the Copied Range, as an edit ends Excel's copy mode (ADR-0170), and a flagged cell's
         // message, which the editor's own outranks from here on (ADR-0034).
         this.#copied = undefined;
@@ -4467,7 +4520,8 @@ export class GridView<Row> {
             cell: at, mode, element, slot, source: this.#source, columnNames: this.#columnNames, sequence: this.#sequence(),
             key: rowKey === undefined ? undefined : keyOf(rowKey, held.row, 'The row an edit opens on'),
             seenText: this.#paintedTextAt(at), openedOn: held.row, error: undefined,
-            awaits: this.#userWritesOver(at), rebaseOwed: false, surface,
+            awaits: this.#userWritesOver(at), rebaseOwed: false, surface, untypedText: onOwnText ? text : undefined,
+            set: this.#rowSet, awayRow: undefined, leftInOrder: true,
         };
         this.#edit = opened;
         // The editor takes the keyboard in the task that opened it, with the caret placed by the core at the end
@@ -4534,7 +4588,10 @@ export class GridView<Row> {
         const overPoint = listed && this.#completionOverPoint(edit);
         const keys = listed ? overPoint ? 'completionOverPoint' : 'completion'
             : edit.mode === 'caret' ? 'editing' : edit.mode === 'overwrite' ? 'overwrite' : this.#pointedFromOutside ? 'pointed' : 'point';
-        if (!editingKeysByMode[keys].includes(canonical)) return;
+        if (!editingKeysByMode[keys].includes(canonical)) {
+            this.#scrollingKeyInField(event, canonical);
+            return;
+        }
         if (listed && this.#completionKey(canonical, overPoint)) {
             this.#taken(event);
             this.#invalidate();
@@ -4566,6 +4623,23 @@ export class GridView<Row> {
                 return;
             default:
                 this.#commitAndKey(press);
+        }
+    }
+
+    // A key left to an editor surface that the browser would scroll the grid with is answered here (ADR-0010's note
+    // of 2026-09-30, ticket 32): scrolled away, the edited cell left the painted rows. PageUp and PageDown, which move
+    // no caret in a one-line field, do nothing on every platform, and Home and End, bound to a scroll where Command is
+    // the primary key, place the caret or, with Shift, extend the selection as they do elsewhere. The keys the core
+    // claims, Home and End in Overwrite and Point, stay the core's.
+    #scrollingKeyInField(event: KeyboardEvent, canonical: string): void {
+        if (canonical === 'PageUp' || canonical === 'PageDown') {
+            this.#taken(event);
+            return;
+        }
+        const field = event.target;
+        if (this.#metaIsPrimary && appleCaretKeys.has(canonical) && (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) {
+            this.#taken(event);
+            keyDefault(field, event, true);
         }
     }
 
@@ -4635,9 +4709,14 @@ export class GridView<Row> {
         // The commit lands over whatever the cell paints now, and the intent says what the user saw of it
         // (ADR-0142). A flag raises the intent unchanged: the mark comes back through what the cell shows.
         this.#supersedeFill();
-        const intent = new GridEditIntent(row, name, text, edit.seenText, this.#paintedTextAt(landing.cell), controller.signal);
+        // Away, the cell is not painted: what it holds is read from the edit's own row as the grid last held it, so a
+        // change made to that row is told as any other is (LV-11), and no cell shown is the user's write (ADR-0331 §5).
+        // A row the Consumer replaced with another instance while away is not seen: the grid holds no Window of it.
+        const away = this.#away(edit);
+        const replaced = away ? textFor(column.column, column.column.value(row)) : this.#paintedTextAt(landing.cell);
+        const intent = new GridEditIntent(row, name, text, edit.seenText, replaced, controller.signal);
         // The user's own write (D1), noted before the Consumer hears it, and taken back if refused.
-        const written = this.#noteUserWrite([fromCorners(landing.cell, landing.cell)]);
+        const written = this.#noteUserWrite(away ? [] : [fromCorners(landing.cell, landing.cell)]);
         const answer = this.#heardNow(() => heard(intent), failed => { this.#intentAnswered(intent, written, failed); });
         if (answer !== undefined) {
             this.#pend(answer, {
@@ -4694,13 +4773,15 @@ export class GridView<Row> {
     // columns the Consumer handed over while it answered are the commit's own doing: accepted, the edit ends as
     // committed; refused, the editor cannot stand over rows or columns the grid no longer shows, and the edit is
     // discarded with the reason (ADR-0142). Neither raises a notice: its cell would name a position among rows or
-    // columns the grid no longer shows.
+    // columns the grid no longer shows. Nor does a commit away whose answer did not hand its own rows back, for the
+    // same reason (ADR-0331 §5).
     #editLanded(edit: OpenEdit<Row>, intent: GridEditIntent<Row>, cell: CellPosition): boolean {
         const outlived = this.#outlivedBy(edit);
         const refusal = intent.refusalMessage;
+        const amongItsRows = !this.#away(edit) || this.#viewAhead?.set === edit.set;
         if (refusal === undefined || outlived !== undefined) {
             this.#endEdit(refusal === undefined ? undefined : outlived);
-            if (refusal === undefined && outlived === undefined) {
+            if (refusal === undefined && outlived === undefined && amongItsRows) {
                 this.#raiseOverwriteNotice(cell, intent.column, intent.seenText, intent.replacedText);
             }
             return true;
@@ -5367,6 +5448,8 @@ export class GridView<Row> {
     // row, the editor keeps what it saw before, never another row's text; the commit may then tell the user's
     // own write as a change, which errs towards a notice (ADR-0142's accepted limits).
     #rebaseEdit(edit: OpenEdit<Row>): void {
+        // Away, the cell is not painted: the reading stays owed until its own rows come back (ADR-0331 §5).
+        if (this.#away(edit)) return;
         edit.rebaseOwed = false;
         const held = this.#rowAt(edit.cell.row);
         if (held === undefined) return;
@@ -5391,6 +5474,12 @@ export class GridView<Row> {
         | { readonly kind: 'row'; readonly row: Row; readonly cell: CellPosition }
         | { readonly kind: 'refused'; readonly reason: 'rowLeftTheWindow' | 'orderMoved' }
         | { readonly kind: 'discard'; readonly reason: EditDiscardReason } {
+        // Away among rows another set replaced (ADR-0331 §5): the commit lands on the row the edit was opened on, as the
+        // grid last held it, at the edit's own cell among those rows. Gone before the set was replaced, the grid never
+        // held it away, and the typing goes with it (ED-21).
+        if (this.#away(edit)) {
+            return edit.awayRow === undefined ? { kind: 'discard', reason: 'rowLeftTheWindow' } : { kind: 'row', row: edit.awayRow, cell: edit.cell };
+        }
         if (edit.key !== undefined) {
             const at = this.#positionOfKey(edit.key, edit.cell.row);
             if (at === undefined) return { kind: 'refused', reason: 'rowLeftTheWindow' };
@@ -5419,6 +5508,56 @@ export class GridView<Row> {
         return found;
     }
 
+    // Whether the open edit is away: opened among rows another set has replaced (ADR-0331 §5).
+    #away(edit: OpenEdit<Row>): boolean {
+        return edit.set !== this.#rowSet;
+    }
+
+    // The rows of `set` are shown now (ADR-0331 §5). An open edit leaving its own set is set aside with them: its row
+    // as last held, and Point's outline, which stood over the rows left, goes while what it wrote stays, for the next
+    // point to replace. Back among its own set, the edit stands over its cell under the version they are shown under
+    // now, as when it was opened: the Consumer vouches that a view handed back is of the same rows in the same order.
+    //
+    // `left` is the state the grid last reconciled under, the edit's own rows: the edited row is read from its Window,
+    // the one row the grid holds beyond its Window while the edit is away (ADR-0160), by its key, or without one at
+    // its position while the order it opened under holds. A Window that no longer held it leaves none, and a commit
+    // away then has no row to land on (ED-21); an order that had moved leaves its position naming no row of its own,
+    // back among those rows too, so the commit there is refused as before (LV-20).
+    #takeRowSet(set: number, left: GridSourceState<Row> | undefined): void {
+        if (set === this.#rowSet) return;
+        const edit = this.#edit;
+        const wasAway = edit !== undefined && this.#away(edit);
+        this.#rowSet = set;
+        if (edit === undefined) return;
+        if (set === edit.set) {
+            if (edit.leftInOrder) edit.sequence = this.#sequence();
+            edit.awayRow = undefined;
+        } else if (!wasAway) {
+            const inOrder = left !== undefined && left.rowSequenceVersion + this.#sequenceOffset === edit.sequence;
+            edit.leftInOrder = edit.key !== undefined || inOrder;
+            edit.awayRow = left === undefined ? undefined : this.#editedRowAmong(edit, left, inOrder);
+        }
+        // An outline over the rows left goes, whether or not it still stood: what it wrote stays for the next point.
+        if (this.#pointer !== undefined) {
+            this.#pointAside = this.#pointingContinues(edit);
+            this.#pointer = undefined;
+        }
+    }
+
+    // The row the open edit was opened on among the Window of `state`: under its key wherever it stands, met once; or,
+    // without one, at the edit's position while `inOrder`, the order it was opened under holding there.
+    #editedRowAmong(edit: OpenEdit<Row>, state: GridSourceState<Row>, inOrder: boolean): Row | undefined {
+        const { window, windowStart } = state;
+        const rowKey = this.#source.rowKey;
+        if (edit.key !== undefined) {
+            if (rowKey === undefined) return undefined;
+            const found = window.filter(row => keyOf(rowKey, row, 'A row of the Window') === edit.key);
+            return found.length === 1 ? found[0] : undefined;
+        }
+        const slice = edit.cell.row - windowStart;
+        return inOrder && slice >= 0 && slice < window.length ? itemAt(window, slice) : undefined;
+    }
+
     // What took the open edit's rows or columns away: another source, or other columns (ADR-0011, ADR-0142).
     #outlivedBy(edit: OpenEdit<Row>): EditDiscardReason | undefined {
         if (edit.source !== this.#source) return 'sourceChanged';
@@ -5441,7 +5580,8 @@ export class GridView<Row> {
             this.#endEdit(outlived);
             return;
         }
-        if (edit.key !== undefined) {
+        // Away, the rows shown are another set's, and no key among them names the edit's row.
+        if (edit.key !== undefined && !this.#away(edit)) {
             const at = this.#positionOfKey(edit.key, edit.cell.row);
             if (at !== undefined) {
                 edit.cell = cellPosition(at, edit.cell.column);
@@ -5449,7 +5589,30 @@ export class GridView<Row> {
                 if (focus === undefined || !sameCell(focus, edit.cell)) this.#apply(Selection.empty.click(edit.cell, this.#extent));
             }
         }
+        // An editor whose text is still the committed value it opened on holds a copy of committed data, not typing:
+        // once the Window no longer holds its row it closes as Escape closes it, its field saying it still holds that
+        // text and is not composing (ST-2, ADR-0007's note of 2026-10-11). One with typed text stays (ADR-0142).
+        if (!answering && !this.#editedRowInWindow(edit) && this.#untouched(edit)) {
+            this.#endEdit(undefined);
+            return;
+        }
         if (edit.rebaseOwed) this.#rebaseEdit(edit);
+    }
+
+    // Whether the Window holds the row the editor opened on: with a Row Key, the row under its key, wherever it stands
+    // now; without one, the row at the editor's position while the order it opened under holds (ADR-0011, ADR-0142).
+    #editedRowInWindow(edit: OpenEdit<Row>): boolean {
+        // Away, the rows shown are another set's: the edit's row is set aside, not gone (ADR-0331 §5).
+        if (this.#away(edit)) return true;
+        if (edit.key !== undefined) return this.#positionOfKey(edit.key, edit.cell.row) !== undefined;
+        return this.#sequence() === edit.sequence && this.#rowAt(edit.cell.row) !== undefined;
+    }
+
+    // Whether the field the edit is typed in still holds the committed text it opened on and is not composing.
+    #untouched(edit: OpenEdit<Row>): boolean {
+        if (edit.untypedText === undefined) return false;
+        const field = this.#surfaceOf(edit);
+        return field !== undefined && this.#composingIn !== field && field.value === edit.untypedText;
     }
 
     // Holds the editor (ADR-0034, ADR-0142): the typing stays, the keyboard stays in it, and the Consumer's
@@ -5471,8 +5634,9 @@ export class GridView<Row> {
         this.#reconcileSelection();
         if (this.#edit !== edit) return;
         // A fill is positional: once the order has moved since the editor opened, the Selection it was aimed
-        // with no longer names those rows (ADR-0142; ADR-0011's note of 2026-10-07).
-        if (this.#sequence() !== edit.sequence) {
+        // with no longer names those rows (ADR-0142; ADR-0011's note of 2026-10-07). Away among another set's rows,
+        // the Selection names that set's rows, never the edit's, whatever version they are shown under (ADR-0331 §5).
+        if (this.#away(edit) || this.#sequence() !== edit.sequence) {
             this.#refuse({ kind: 'paste', reason: 'orderMoved' });
             return;
         }
@@ -5612,7 +5776,7 @@ export class GridView<Row> {
     // Whether what Point wrote stands, its outline over this grid's cells or text written from outside, the
     // editor's text is still the text it was written into, and the caret still stands after it.
     #pointingContinues(edit: OpenEdit<Row>): boolean {
-        return (this.#pointer !== undefined || this.#pointedFromOutside) && this.#editorText(edit) === this.#pointWritten
+        return (this.#pointer !== undefined || this.#pointedFromOutside || this.#pointAside) && this.#editorText(edit) === this.#pointWritten
             && this.#caretOf(edit) === this.#pointStart + this.#pointLength;
     }
 
@@ -5620,6 +5784,7 @@ export class GridView<Row> {
     #endPointing(): boolean {
         const stood = this.#pointer !== undefined || this.#pointedFromOutside || this.#pointWritten !== undefined;
         this.#pointer = undefined;
+        this.#pointAside = false;
         this.#pointWritten = undefined;
         this.#pointDragging = false;
         this.#pointedFromOutside = false;
@@ -5701,6 +5866,13 @@ export class GridView<Row> {
         told(state);
     }
 
+    // Where pointing starts: the edited cell, or, while the edit is away, the Focus of the rows shown, the first cell
+    // where they have none, as Excel points from the active cell of the Sheet shown (ADR-0331 §5).
+    #pointOrigin(edit: OpenEdit<Row>): CellPosition {
+        if (!this.#away(edit)) return edit.cell;
+        return this.#held.selection.focus ?? cellPosition(0, 0);
+    }
+
     /**
      * A key Point may take while editing (ADR-0051): while an outline stands over unchanged text it moves or extends
      * it, the Primary Modifier's to the data edge the Consumer answers, and Shift+Home extends it to the row's first
@@ -5724,16 +5896,21 @@ export class GridView<Row> {
         const extent = this.#extent;
         if (extent.rowCount <= 0 || extent.columnCount <= 0) return false;
         let pointer = continues ? this.#pointer : undefined;
-        if (pointer === undefined) {
+        if (!continues) {
             this.#endPointing();
             const caret = this.#caretOf(edit);
             // Caret's arrows are the field's.
             if (edit.mode === 'caret' || caret < 0 || !pointAt(this.#editorText(edit), caret)) return false;
             // End turns on an End Mode in Excel, which the grid does not have: it writes nothing and commits nothing.
             if (canonical === 'End') return true;
-            pointer = Selection.empty.click(edit.cell, extent);
+            pointer = Selection.empty.click(this.#pointOrigin(edit), extent);
             this.#pointStart = caret;
             this.#pointLength = 0;
+        } else if (pointer === undefined) {
+            // Set aside with the rows it stood over: the arrow points afresh from among the rows shown, over what was
+            // written (ADR-0331 §5).
+            pointer = Selection.empty.click(this.#pointOrigin(edit), extent);
+            this.#pointAside = false;
         }
         const { direction, move } = step;
         const edge = this.#dataEdge;
@@ -5772,7 +5949,10 @@ export class GridView<Row> {
             this.#pointStart = caret;
             this.#pointLength = 0;
         }
-        this.#pointer = event.shiftKey ? (from ?? Selection.empty.click(edit.cell, extent)).extendTo(at, extent) : Selection.empty.click(at, extent);
+        // What was pointed among rows since replaced is replaced in the same place, and Shift reaches from where
+        // pointing starts, as it does before anything is pointed (ADR-0331 §5).
+        this.#pointAside = false;
+        this.#pointer = event.shiftKey ? (from ?? Selection.empty.click(this.#pointOrigin(edit), extent)).extendTo(at, extent) : Selection.empty.click(at, extent);
         this.#writePointedReference(edit, false);
         this.#setDragging(true);
         this.#pointDragging = true;
@@ -5825,6 +6005,7 @@ export class GridView<Row> {
         this.#writeEditText(edit, text, caret, caret);
         this.#pointWritten = text;
         edit.mode = 'point';
+        this.#pointAside = false;
         // This grid's own cell replaces whatever a press outside it wrote.
         this.#pointedFromOutside = false;
         this.#pointBefore = undefined;
@@ -6519,7 +6700,7 @@ export class GridView<Row> {
         const view: GridViewRead = Object.freeze({
             rowSequenceVersion: this.#handedVersion(), selection, scrollTopPx: this.#scrollTopPx, scrollLeftPx: this.#scrollLeftPx,
         });
-        this.#viewsRead.set(view, selection);
+        this.#viewsRead.set(view, { selection, set: this.#rowSet });
         return view;
     }
 
@@ -6533,11 +6714,44 @@ export class GridView<Row> {
      */
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void {
         if (this.#destroyed) throw new Error('This grid was destroyed.');
-        const selection = this.#viewsRead.get(view);
-        if (selection === undefined) throw new TypeError('A view handed back is one this grid read with readView (ADR-0331).');
+        const read = this.#viewsRead.get(view);
+        if (read === undefined) throw new TypeError('A view handed back is one this grid read with readView (ADR-0331).');
         if (!Number.isInteger(rowSequenceVersion)) throw new TypeError('rowSequenceVersion is a whole number.');
-        this.#viewAhead = { selection, version: rowSequenceVersion, topPx: view.scrollTopPx, leftPx: view.scrollLeftPx };
+        this.#viewAhead = { selection: read.selection, set: read.set, version: rowSequenceVersion, topPx: view.scrollTopPx, leftPx: view.scrollLeftPx };
         this.#invalidate();
+    }
+
+    /**
+     * Shows rows this grid holds no view of, a Sheet shown for the first time, once the grid takes rows under
+     * `rowSequenceVersion`, as {@link GridView.showViewWith} shows a view it read (ADR-0331): scrolled to the start,
+     * with `place` selected where it is given and fits those rows, and nothing selected otherwise. They are rows of
+     * their own: an edit open as they are taken stays open with the rows it was opened among, away (ADR-0331 §5).
+     */
+    showNewView(rowSequenceVersion: number, place?: { readonly range: SelectionRange; readonly focus: CellPosition }): void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        if (!Number.isInteger(rowSequenceVersion)) throw new TypeError('rowSequenceVersion is a whole number.');
+        if (place !== undefined) {
+            const { range, focus } = place;
+            if (!Number.isInteger(range.topRow) || !Number.isInteger(range.leftColumn) || range.topRow < 0 || range.leftColumn < 0
+                || !Number.isInteger(range.rowCount) || !Number.isInteger(range.columnCount) || range.rowCount < 1 || range.columnCount < 1) {
+                throw new RangeError('A range starts at row and column 0 or after and holds a cell at least (ADR-0050).');
+            }
+            if (!Number.isInteger(focus.row) || !Number.isInteger(focus.column)
+                || focus.row < range.topRow || focus.row > bottomRow(range) || focus.column < range.leftColumn || focus.column >= range.leftColumn + range.columnCount) {
+                throw new RangeError('The Focus is placed inside the range it belongs to (ADR-0050, ADR-0052).');
+            }
+        }
+        this.#viewAhead = { selection: place, set: undefined, version: rowSequenceVersion, topPx: 0, leftPx: 0 };
+        this.#invalidate();
+    }
+
+    /** The open edit's text as the grid holds it, or undefined while no edit is open: a Consumer deciding what a key of
+     * its own means with an edit open reads the text it was pressed over (a Sheet shows another Sheet while a Formula
+     * is typed, and not while a constant is, ADR-0331 §5). */
+    readEditText(): string | undefined {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        const edit = this.#edit;
+        return edit === undefined ? undefined : this.#editorText(edit);
     }
 
     /** Hands the keyboard to the grid: to the field an open edit is typed in, else to where the grid takes keys
@@ -6637,7 +6851,7 @@ export class GridView<Row> {
         if (this.#discardedAim()) return;
         const focus = this.#held.selection.focus;
         if (focus === undefined || !this.#isEditableCell(focus) || !this.#bar.editable) return;
-        this.#startEdit(focus, 'caret', this.#openingTextAt(focus), 'bar');
+        this.#startEdit(focus, 'caret', this.#openingTextAt(focus), 'bar', true);
     };
 
     // Typed in the bar: the one uncommitted text, shown over the cell as well (ADR-0051).
@@ -6760,9 +6974,12 @@ export class GridView<Row> {
             const pointer = this.#pointer?.focus;
             if (pointer !== undefined) return this.#nameBoxWords(declared.nameBoxLabel?.(pointer), 'nameBoxLabel');
         }
+        // A drag across Headings shows its size in the Size Tip instead, and the Name Box is empty while the tip shows;
+        // over one column or row it names the Focus (ADR-0052, 2026-09-29).
+        if (this.#headingDrag) return this.#sizeTipText() === undefined ? named : '';
         const range = this.#held.selection.focusRange;
         const sizeLabel = declared.nameBoxSizeLabel;
-        if (sizeLabel === undefined || range === undefined || !this.#dragging || this.#headingDrag || this.#handleDrag !== undefined
+        if (sizeLabel === undefined || range === undefined || !this.#dragging || this.#handleDrag !== undefined
             || this.#pointDragging || rangeCellCount(range) <= 1) {
             return named;
         }
@@ -7226,6 +7443,20 @@ export class GridView<Row> {
         this.#scroller.after(frame.element);
         frame.focusFirst();
         this.#answer();
+    }
+
+    /** Holds the Settled Mark until the answer is called, once (ADR-0410 section 5). */
+    holdSettled(): () => void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        this.#settledHolds += 1;
+        this.#showSettled(false);
+        let held = true;
+        return () => {
+            if (!held) return;
+            held = false;
+            this.#settledHolds -= 1;
+            if (!this.#destroyed) this.#lookSettled();
+        };
     }
 
     /** Closes a Consumer's popover where one stands (ADR-0050, item 16); the keyboard returns to the grid. */
@@ -8644,7 +8875,7 @@ export class GridView<Row> {
         this.#invalidate();
         if (this.#isEditableCell(at)) {
             this.#apply(this.#held.selection.click(at, this.#extent));
-            this.#startEdit(at, 'caret', this.#openingTextAt(at));
+            this.#startEdit(at, 'caret', this.#openingTextAt(at), 'cell', true);
             return;
         }
         this.#onCellDoubleClick?.(at);
@@ -9849,10 +10080,63 @@ export class GridView<Row> {
         this.#paintViewport();
         this.#paintStatus();
         this.#paintMessage();
+        this.#paintSizeTip();
         this.#paintLoading();
         this.#paintFormulaBar();
         this.#paintCompletion();
         this.#placePopover();
+    }
+
+    // The Size Tip's text (ADR-0052, 2026-09-29): the Consumer's size label for the range, while a Heading drag covers
+    // more than one column or row. None otherwise, over one, without a label or with no answer: then nothing is
+    // painted and the Name Box names the Focus.
+    #sizeTipText(): string | undefined {
+        const label = this.#formulaBarDeclared.nameBoxSizeLabel;
+        const range = this.#held.selection.focusRange;
+        if (!this.#dragging || !this.#headingDrag || this.#headerPress !== undefined || label === undefined || range === undefined) return undefined;
+        const covered = this.#headingAxis === 'columns' ? range.columnCount : range.rowCount;
+        if (covered <= 1) return undefined;
+        const size: unknown = label(range);
+        return size === undefined ? undefined : this.#nameBoxWords(size, 'nameBoxSizeLabel');
+    }
+
+    // The Size Tip (ADR-0052, 2026-09-29), at the Heading the Extent is on: beneath its Column Heading, or beside its
+    // Row Heading, inside the grid's box. It follows the Extent's Heading, not the pointer, so it is written only when
+    // the Extent moves to another; its width is the Cell Metrics' estimate of its text, so nothing is measured
+    // (ADR-0021). Under the root and outside the scroll container, as a popover is (ADR-0040); paint only, taking no
+    // pointer and saying nothing to assistive technology, to which the live region describes the range (ADR-0033).
+    #paintSizeTip(): void {
+        const text = this.#sizeTipText();
+        const extent = this.#held.selection.extent;
+        const geometry = this.#geometry;
+        if (text === undefined || extent === undefined || geometry === undefined) {
+            this.#sizeTip?.remove();
+            this.#sizeTip = undefined;
+            return;
+        }
+        let tip = this.#sizeTip;
+        if (tip === undefined) {
+            tip = this.#root.ownerDocument.createElement('div');
+            tip.className = 'ex-size-tip';
+            tip.setAttribute('aria-hidden', 'true');
+            this.#sizeTip = tip;
+        }
+        const band = this.#bandHeightPx;
+        const width = Math.min(this.#metrics.cellMetrics.for('text').estimatePx(text), Math.max(0, this.#visibleWidthPx));
+        let left: number;
+        let top: number;
+        if (this.#headingAxis === 'columns') {
+            left = this.#cellLeftPx(extent.column);
+            top = band;
+        } else {
+            left = this.#styles.geometry.leadWidthPx;
+            top = Math.min(Math.max(band + geometry.viewportTopPxOf(extent.row, this.#scrollTopPx), band),
+                Math.max(band, this.#visibleHeightPx - this.#metrics.rowHeightPx));
+        }
+        left = Math.min(Math.max(left, 0), Math.max(0, this.#visibleWidthPx - width));
+        setAttribute(tip, 'style', `left: ${left}px; top: ${this.#barPx + top}px; width: ${width}px`);
+        if (tip.textContent !== text) tip.textContent = text;
+        if (tip.parentNode !== this.#root) this.#scroller.after(tip);
     }
 
     // The Chrome's loading indicator (ADR-0010), at the root's foot before the pager and the status line, as the C#
@@ -10841,10 +11125,12 @@ export class GridView<Row> {
 
     // The Cell Editor's Font and Fill (ADR-0050, item 15): the Consumer's editor appearance where it declares one,
     // the cell's own otherwise, so the editor reads like the cell it covers. The Borders stay the cell's.
-    #editorLook(cell: CellPosition, openedOn: Row): string | undefined {
+    #editorLook(edit: OpenEdit<Row>): string | undefined {
         const declared = this.#cellPaint.editorAppearance ?? this.#cellPaint.cellAppearance;
         if (declared === undefined) return undefined;
-        const row = this.#rowAt(cell.row)?.row ?? openedOn;
+        const { cell } = edit;
+        // Away, the rows shown are another set's: the look is the edit's own row's (ADR-0331 §5).
+        const row = this.#away(edit) ? edit.awayRow ?? edit.openedOn : this.#rowAt(cell.row)?.row ?? edit.openedOn;
         return this.#appearances.styles.editorClassFor(checkedAppearance(declared(row, itemAt(this.#columns, cell.column).column)));
     }
 
@@ -10866,7 +11152,7 @@ export class GridView<Row> {
             const away = this.#editorAway(edit.cell, visible);
             const at = away ? cellPosition(visible.start, edit.cell.column) : edit.cell;
             const box = defined(cellBox(at, this.#styles.geometry, this.#metrics.rowHeightPx, visible), 'the box of a cell among the painted rows');
-            const look = this.#editorLook(edit.cell, edit.openedOn);
+            const look = this.#editorLook(edit);
             // The coloured text's mark is the gate's (#gateReferenceTexts), and is kept here.
             const shown = element.classList.contains('ex-reference-text-shown') ? ' ex-reference-text-shown' : '';
             const base = away ? 'ex-editor ex-editor-away' : 'ex-editor';
@@ -10898,6 +11184,9 @@ export class GridView<Row> {
     // Whether the editor, or a message, is away from the rows painted (ADR-0011), or under a pager from the page: the
     // row just before a page is on the page before, and never scrolls into this one (ADR-0015).
     #editorAway(at: CellPosition, painted: RowRange): boolean {
+        // Away among another set's rows, its cell is none of the rows painted (ADR-0331 §5).
+        const edit = this.#edit;
+        if (edit !== undefined && this.#away(edit)) return true;
         const page = this.#pageRows();
         return editorAway(at, painted) || (page !== undefined && (at.row < page.start || at.row >= page.start + page.count));
     }

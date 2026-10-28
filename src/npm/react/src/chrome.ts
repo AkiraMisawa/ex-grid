@@ -8,6 +8,7 @@ import {
     useLayoutEffect, useRef, useState, useSyncExternalStore, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent,
     type MouseEvent as ReactMouseEvent, type ReactNode, type SyntheticEvent,
 } from 'react';
+import { answerMenuKey, answerValueListKey, takeFilterFocus, takeFindFocus, takeMenuFocus } from '@ex-grid/core';
 import type {
     CellEditorView, FilterPanelView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome,
     GridColumnMenuSlotContext, GridContextMenuSlotContext, GridEditorCompletionSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext,
@@ -123,8 +124,7 @@ export function useMenuItems(context: GridMenuSlotContext): (index: number) => M
     useLayoutEffect(() => {
         if (answered.current === context.focusRequest) return;
         answered.current = context.focusRequest;
-        const first = context.commands.findIndex(command => command.enabled);
-        if (first >= 0) context.takeFocus(drawn(first), { preventScroll: true });
+        takeMenuFocus(context, drawn);
     }, [context]);
     return (index: number): MenuItemProps => {
         const command = context.commands[index];
@@ -141,18 +141,7 @@ export function useMenuItems(context: GridMenuSlotContext): (index: number) => M
             onKeyDown: event => {
                 // Only the item's own: an event from a popup the item opened through a portal reaches it in React's
                 // tree, but is not inside it in the page, and is that popup's.
-                if (!within(event)) return;
-                event.preventDefault();
-                const meaning = context.resolveKey(event.key, event.shiftKey, event.ctrlKey || event.altKey || event.metaKey);
-                if (meaning.kind === 'move') {
-                    context.takeFocus(drawn(meaning.item));
-                } else if (meaning.kind === 'run') {
-                    const run = context.commands[meaning.item];
-                    if (run === undefined) throw new Error(`Internal: the core ran item ${meaning.item} of ${context.commands.length}.`);
-                    run.invoke();
-                } else if (meaning.kind === 'close') {
-                    context.close();
-                }
+                if (within(event)) answerMenuKey(context, event, drawn);
             },
             onClick: event => { if (within(event)) command.invoke(); },
             onFocus: event => { if (within(event)) context.itemFocused(index); },
@@ -191,14 +180,12 @@ export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanel
     const view = useSyncExternalStore(context.subscribe, context.view);
     const controls = useRef<Record<FocusTarget, HTMLElement | null>>({ first: null, last: null, search: null });
     useLayoutEffect(() => {
-        const target = context.focusTarget;
-        if (target === undefined || answeredRequests.has(context)) return;
+        if (context.focusTarget === undefined || answeredRequests.has(context)) return;
         answeredRequests.add(context);
-        const control = controls.current[target];
-        if (control === null) {
-            throw new Error(`The filter panel's ${target} control is not drawn: hand useFilterPanel's \`${target}\` ref to the control the core asks for.`);
-        }
-        context.takeFocus(control);
+        takeFilterFocus(context, target => {
+            const control = controls.current[target];
+            return control === null ? undefined : control;
+        });
     }, [context]);
     // Made once, so a render hands React the same refs and it does not take them away and back.
     const [refs] = useState(() => {
@@ -209,8 +196,7 @@ export function useFilterPanel(context: GridFilterPanelSlotContext): FilterPanel
         view,
         ...refs,
         onValueListKeyDown: event => {
-            if (!within(event) || event.nativeEvent.isComposing) return;
-            if (context.valueListKey(event.key, event.ctrlKey || event.altKey || event.metaKey)) event.preventDefault();
+            if (within(event)) answerValueListKey(context, event.nativeEvent);
         },
     };
 }
@@ -240,9 +226,8 @@ export function useFindPanel(context: GridFindPanelSlotContext): FindPanelHandle
     useLayoutEffect(() => {
         if (answeredFinds.has(context)) return;
         answeredFinds.add(context);
-        const field = control.current;
-        if (field === null) throw new Error("The find panel's field is not drawn: hand useFindPanel's `field` ref to the find field.");
-        context.takeFocus(field);
+        if (control.current === null) throw new Error("The find panel's field is not drawn: hand useFindPanel's `field` ref to the find field.");
+        takeFindFocus(context, control.current);
     }, [context]);
     const [field] = useState(() => (element: HTMLElement | null): void => { control.current = element; });
     return { view, field };
