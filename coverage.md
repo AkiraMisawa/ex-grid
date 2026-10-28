@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 94.1% | 87.8% |
 | ExSheet | 91% | 86.6% |
-| ExPivot | 88.6% | 82.8% |
+| ExPivot | 88.7% | 82.9% |
 | ExChart | 90% | 84.9% |
 | ExBoard | 68.8% | 61.3% |
 | Data | 94.5% | 89.9% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 17:08:48 |
+| Generated on: | 10/28/2026 - 18:21:01 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1380 |
 | Files: | 675 |
-| **Line coverage:** | 90.5% (92588 of 102301) |
-| Covered lines: | 92588 |
-| Uncovered lines: | 9713 |
-| Coverable lines: | 102301 |
-| Total lines: | 156271 |
-| **Branch coverage:** | 85.1% (54047 of 63437) |
-| Covered branches: | 54047 |
-| Total branches: | 63437 |
+| **Line coverage:** | 90.5% (92618 of 102317) |
+| Covered lines: | 92618 |
+| Uncovered lines: | 9699 |
+| Coverable lines: | 102317 |
+| Total lines: | 156287 |
+| **Branch coverage:** | 85.2% (54070 of 63451) |
+| Covered branches: | 54070 |
+| Total branches: | 63451 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -872,11 +872,11 @@
 |ExGrid.MudBlazor.ScriptSlotMarkup|100%|100%|
 
 </details>
-<details><summary>ExPivot - 81.2%</summary>
+<details><summary>ExPivot - 81.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**81.2%**|**75%**|
+|**ExPivot**|**81.4%**|**75.2%**|
 |ExGrid.Script.CrossedText|52%|38.8%|
 |ExGrid.Script.HeldCalls|74.2%|62.5%|
 |ExGrid.Script.HeldCalls<T>|74.2%|62.5%|
@@ -884,12 +884,12 @@
 |ExGrid.Script.PivotSourceCrossing|81.3%|73.1%|
 |ExGrid.Script.PivotSourceCrossing<T>|81.3%|73.1%|
 |ExGrid.Script.RazorSlot|0%|0%|
-|ExGrid.Script.RazorSlotHolders|14.8%|28.5%|
+|ExGrid.Script.RazorSlotHolders|22.2%|35.7%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|0%||
 |ExGrid.Script.ScriptJson|0%|0%|
 |ExGrid.Script.ScriptMetricsJson|61.9%|40%|
 |ExGrid.Script.ScriptMetricsJson.Written|0%||
-|ExPivot.Chrome.IPivotChrome|21.7%||
+|ExPivot.Chrome.IPivotChrome|26%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
 |ExPivot.Chrome.PivotChoice<T>|100%||
@@ -962,7 +962,7 @@
 |ExPivot.PivotCommandIds|95%|93.3%|
 |ExPivot.PivotDetailItem|100%||
 |ExPivot.PivotDetails|100%||
-|ExPivot.Script.ExPivot|54.8%|41.6%|
+|ExPivot.Script.ExPivot|57.3%|46.1%|
 |ExPivot.Script.PivotRazorSlot|0%|0%|
 |ExPivot.Script.ScriptBridge|42.4%|19.4%|
 
