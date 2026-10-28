@@ -21,16 +21,23 @@ public sealed record BoardOutputDeclaration(string Name, string From, IReadOnlyL
 /// </summary>
 public sealed class BoardOutput
 {
-    private readonly Snapshot _takenFrom;
+    // The Snapshot the values were chosen in, which vouches for itself at any version; none for an output the browser
+    // took from rows a source held, which only their version vouches for.
+    private readonly Snapshot? _takenFrom;
     private readonly SnapshotKind[] _kinds;
 
     internal BoardOutput(string name, string input, Snapshot takenFrom, LinkCondition condition, SnapshotKind[] kinds)
+        : this(name, input, takenFrom, takenFrom.Version, condition, kinds)
+    {
+    }
+
+    private BoardOutput(string name, string input, Snapshot? takenFrom, long sourceVersion, LinkCondition condition, SnapshotKind[] kinds)
     {
         Name = name;
         Input = input;
         _takenFrom = takenFrom;
         _kinds = kinds;
-        SourceVersion = takenFrom.Version;
+        SourceVersion = sourceVersion;
         Condition = condition;
     }
 
@@ -53,20 +60,55 @@ public sealed class BoardOutput
         var columns = on.Select(column => takenFrom.TryGetColumn(column, out var held)
             ? new DataShapeColumn(column, held.Kind)
             : throw new InvalidOperationException($"Internal: output '{name}' hands on column '{column}', which the Snapshot it was taken from does not have.")).ToArray();
-        // The values as rows of the output's columns, read back as a Board Input reads its rows.
+        var condition = ConditionOf(input, columns, root.GetProperty("values"), $"output '{name}'");
+        return new BoardOutput(name, input, takenFrom, condition, [.. columns.Select(column => column.Kind)]);
+    }
+
+    /// <summary>
+    /// The output <paramref name="json"/> holds, taken in the browser from rows a source held where the data lives
+    /// (ADR-0343) for input <paramref name="input"/>: no Snapshot of .NET's holds them, so each value is read as
+    /// <paramref name="declared"/>, the declaration of the input the source was handed the browser under, holds its
+    /// column, and the output vouches for its values only by the version the source answered them at, as one taken from
+    /// a fetched page does (<see cref="Take"/>).
+    /// </summary>
+    internal static BoardOutput ReadFromSource(string json, string input, DataShape declared)
+    {
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        var name = Text(root.GetProperty("output"));
+        if (Text(root.GetProperty("input")) is var named && named != input)
+            throw new InvalidOperationException($"Internal: output '{name}' is on input '{named}', and was raised from the source of input '{input}'.");
+        var version = root.GetProperty("version").GetInt64();
+        string[] on = [.. root.GetProperty("on").EnumerateArray().Select(Text)];
+        var columns = on.Select(column => declared.TryGetColumn(column, out var held)
+            ? held
+            : throw new InvalidOperationException($"Internal: output '{name}' hands on column '{column}', which input '{input}' does not declare.")).ToArray();
+        var condition = ConditionOf(input, columns, root.GetProperty("values"), $"output '{name}'");
+        return new BoardOutput(name, input, null, version, condition, [.. columns.Select(column => column.Kind)]);
+    }
+
+    /// <summary>
+    /// The condition on <paramref name="columns"/> whose tuples <paramref name="values"/> holds, each value written as
+    /// <see cref="ToJson"/> writes one and read as its column's kind, as a Board Input reads a row
+    /// (<see cref="BoardInput.FromJson(string)"/>): the form a condition crosses from ExBoard's Script Core in
+    /// (ADR-0370 section 1). <paramref name="what"/> names what holds the tuples, for a defect.
+    /// </summary>
+    internal static LinkCondition ConditionOf(string input, IReadOnlyList<DataShapeColumn> columns, JsonElement values, string what)
+    {
+        // The values as rows of the condition's columns, read back as a Board Input reads its rows.
         var rows = new System.Buffers.ArrayBufferWriter<byte>();
         using (var writer = new Utf8JsonWriter(rows))
         {
             writer.WriteStartArray();
-            foreach (var tuple in root.GetProperty("values").EnumerateArray())
+            foreach (var tuple in values.EnumerateArray())
             {
-                if (tuple.GetArrayLength() != on.Length)
-                    throw new InvalidOperationException($"Internal: output '{name}' holds a tuple of {tuple.GetArrayLength()} values on {on.Length} columns.");
+                if (tuple.GetArrayLength() != columns.Count)
+                    throw new InvalidOperationException($"Internal: {what} holds a tuple of {tuple.GetArrayLength()} values on {columns.Count} columns.");
                 writer.WriteStartObject();
                 var c = 0;
                 foreach (var value in tuple.EnumerateArray())
                 {
-                    writer.WritePropertyName(on[c++]);
+                    writer.WritePropertyName(columns[c++].Name);
                     value.WriteTo(writer);
                 }
                 writer.WriteEndObject();
@@ -76,7 +118,7 @@ public sealed class BoardOutput
         var read = new BoardInput(input, columns).FromJson(System.Text.Encoding.UTF8.GetString(rows.WrittenSpan));
         var held = columns.Select(column => read[column.Name]).ToArray();
         var tuples = read.Rows.Select(row => (IReadOnlyList<object?>)[.. held.Select(column => read.ValueAt(row, column))]);
-        return new BoardOutput(name, input, takenFrom, new LinkCondition(on, tuples), [.. columns.Select(column => column.Kind)]);
+        return new LinkCondition([.. columns.Select(column => column.Name)], tuples);
     }
 
     private static string Text(JsonElement json) => json.GetString() ?? throw new InvalidOperationException("Internal: an output names nothing where it names a text.");
@@ -104,7 +146,7 @@ public sealed class BoardOutput
     public Snapshot Take(Snapshot data)
     {
         ArgumentNullException.ThrowIfNull(data);
-        if (!ReferenceEquals(data, _takenFrom))
+        if (_takenFrom is null || !ReferenceEquals(data, _takenFrom))
         {
             if (data.Version != SourceVersion)
             {
@@ -166,7 +208,7 @@ public sealed class BoardOutput
         return System.Text.Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    private static void Write(Utf8JsonWriter json, object? value)
+    internal static void Write(Utf8JsonWriter json, object? value)
     {
         switch (value)
         {

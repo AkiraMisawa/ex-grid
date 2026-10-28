@@ -42,3 +42,28 @@ test('ADR-0370 section 1, ADR-0065: a Board drawn from Snapshots sent as Arrow h
     await expect(grid(page, 'blotter').locator('[role=row]:has([role=gridcell])').first()).toContainText('(42,000)');
     await expect(page.locator('.ex-board-dropped')).toHaveCount(0);
 });
+
+test('ADR-0343, ADR-0370 section 1: a Board over a source held in .NET fetches through it, narrows it, thins its chart there and hands on what was chosen', async ({ page }) => {
+    // /board-server?script=1: 50,000 trades held by the Consumer's C# source, which the browser asks through .NET for
+    // a page, a narrowed page and a chart's thinned points; the confirm crosses back with no Snapshot, read as the
+    // input declares it. What the Board does over a source is the Script Core's, held by board-server.spec on Razor.
+    const line = async () => { await circuitQuiet(); return view(page, 'curve').locator('g.ex-chart-series[data-series="pnl"] path').first().getAttribute('d'); };
+    const desks = async () => {
+        await circuitQuiet();
+        await settled(grid(page, 'desk'));
+        return [...new Set((await grid(page, 'desk').locator('[role=gridcell]').allTextContents()).filter(t => /^(Commodities|Credit|Equities|FX|Rates)$/.test(t)))].sort();
+    };
+    await page.goto('/board-server?script=1');
+    await expect(cell(page, 'blotter', 'T-00001')).toBeVisible({ timeout: 30_000 });
+    await settled(grid(page, 'blotter'));
+    await expect.poll(async () => [...((await line()) ?? '').matchAll(/[ML]/g)].length).toBeGreaterThan(250);
+    const whole = await line();
+
+    await cell(page, 'blotter', 'T-00002').click({ force: true });
+    await expect.poll(desks).toEqual(['FX']);
+    await expect.poll(line).not.toBe(whole);
+
+    await view(page, 'blotter').getByRole('button', { name: 'Send to review' }).click();
+    await expect(page.locator('#raised')).toHaveText('{"output":"review","input":"trades","version":1,"on":["id"],"values":[["T-00002"]]}');
+    await expect(page.locator('.ex-board-dropped')).toHaveCount(0);
+});

@@ -291,6 +291,8 @@ ExBoard.Script.ExBoard.OnDiff.get -> Microsoft.AspNetCore.Components.EventCallba
 ExBoard.Script.ExBoard.OnDiff.set -> void
 ExBoard.Script.ExBoard.OnOutput.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardOutput!>
 ExBoard.Script.ExBoard.OnOutput.set -> void
+ExBoard.Script.ExBoard.Sources.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardSource!>?
+ExBoard.Script.ExBoard.Sources.set -> void
 ExBoard.Script.ExBoard.Width.get -> double
 ExBoard.Script.ExBoard.Width.set -> void
 override ExBoard.BoardCell.Equals(object? obj) -> bool

@@ -89,6 +89,7 @@ function attachJson(overrides: Partial<WireAttach> = {}): string {
         board: boardJson,
         data: { trades: 1 },
         sent: [1],
+        sources: {},
         diff: null,
         diffsSent: 0,
         ...overrides,
@@ -182,8 +183,8 @@ describe('Blazor ExBoard seen from the browser (ADR-0370 section 1, ADR-0065)', 
 
         expect(drawn.last.diff?.sameAs(BoardDiff.empty)).toBe(true);
         expect(dotnet.of('Heard')).toEqual([
-            ['output', { output: '{"output":"chosen","input":"trades","version":1,"on":["desk"],"values":[["FX"]]}', snapshot: 1 }],
-            ['diff', { diff: BoardDiff.empty.toJson(), diffsSent: 4 }],
+            ['output', { output: '{"output":"chosen","input":"trades","version":1,"on":["desk"],"values":[["FX"]]}', snapshot: 1, source: null }, null],
+            ['diff', { diff: BoardDiff.empty.toJson(), diffsSent: 4 }, null],
         ]);
     });
 

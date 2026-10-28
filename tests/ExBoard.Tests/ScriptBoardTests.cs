@@ -1,8 +1,12 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Bunit;
+using ExChart.Engine;
+using ExGrid;
 using ExGrid.Testing;
 using ExGrid.Data;
+using ExGrid.Data.Arrow;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using ScriptBoard = ExBoard.Script.ExBoard;
@@ -25,6 +29,29 @@ public sealed class ScriptBoardTests : BunitContext
         """);
 
     private static Snapshot Trades(string rows) => Board.Input("trades")!.FromJson(rows);
+
+    /// <summary>A Board whose input carries every kind a link's condition writes, for the questions to its source.</summary>
+    private static readonly BoardReading Held = BoardSpec.Read("""
+        {"version": 1, "inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "day", "type": "date"}, {"name": "pnl", "type": "decimal"}, {"name": "count", "type": "integer"}]}},
+         "views": [{"id": "blotter", "grid": {"data": "trades", "columns": [{"column": "desk"}, {"column": "pnl", "format": "#,##0.00"}]}}],
+         "layout": [{"views": ["blotter"]}],
+         "outputs": {"chosen": {"from": "blotter", "on": ["desk", "day"], "confirm": "Use these"}}}
+        """);
+
+    private static BoardSource SourceOf(Func<BoardQuery, CancellationToken, ValueTask<ShapedPage>>? fetch = null,
+        Func<BoardChartQuery, CancellationToken, ValueTask<ChartSourceAnswer>>? thin = null)
+        => new(_ => ValueTask.FromResult(Held.Input("trades")!.Shape), fetch ?? ((_, _) => throw new InvalidOperationException("Not asked here."))) { Thin = thin };
+
+    private IRenderedComponent<ScriptBoard> DrawHeld(IReadOnlyDictionary<string, BoardSource> sources, Action<ComponentParameterCollectionBuilder<ScriptBoard>>? more = null)
+        => Render<ScriptBoard>(ps =>
+        {
+            ps.Add(p => p.Board, Held);
+            ps.Add(p => p.Data, new Dictionary<string, Snapshot>());
+            ps.Add(p => p.Sources, sources);
+            more?.Invoke(ps);
+        });
+
+    private static string SourcesSent(object? json) => Parsed(json).GetProperty("sources").GetRawText();
 
     private readonly BunitJSModuleInterop _module;
     private readonly BunitJSModuleInterop _view;
@@ -96,8 +123,9 @@ public sealed class ScriptBoardTests : BunitContext
         {
             output = """{"output":"chosen","input":"trades","version":0,"on":["desk","day"],"values":[["FX","2026-10-20T09:30:00"]]}""",
             snapshot = 1,
+            source = (int?)null,
         }));
-        await cut.InvokeAsync(() => Bridge().Value.Heard("output", payload));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("output", payload, null));
 
         Assert.NotNull(taken);
         Assert.Equal(("chosen", "trades", 0L), (taken.Name, taken.Input, taken.SourceVersion));
@@ -116,7 +144,7 @@ public sealed class ScriptBoardTests : BunitContext
         Assert.Equal(JsonValueKind.Null, Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("diff").ValueKind);
 
         var payload = Parsed(JsonSerializer.Serialize(new { diff = BoardDiff.Empty.ToJson(), diffsSent = 1 }));
-        await cut.InvokeAsync(() => Bridge().Value.Heard("diff", payload));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("diff", payload, null));
         Assert.NotNull(raised);
         cut.Render(ps => ps.Add(p => p.Diff, raised));
         Assert.Empty(_view.Invocations["update"]);
@@ -141,5 +169,206 @@ public sealed class ScriptBoardTests : BunitContext
         Assert.Matches("^[0-9a-f]{64}$", shared);
         Assert.Contains($"from\"../ExGrid/ex-grid-script.min.js?v={shared[..12]}\"", shipped, StringComparison.Ordinal);
         Assert.Contains($"\"{shared}\"", shipped, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0343, ADR-0370 section 1: a source stays in .NET and crosses as a number, the same while a message names it for its input, and a new one once dropped
+    public async Task ADR0343_a_source_crosses_as_a_number_and_is_let_go_when_the_browser_says()
+    {
+        var first = SourceOf();
+        var second = SourceOf(thin: (_, _) => throw new InvalidOperationException("Not asked here."));
+        var cut = DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = first });
+        Assert.Equal("""{"trades":{"number":1,"thin":false}}""", SourcesSent(Assert.Single(_module.Invocations["attach"]).Arguments[2]));
+
+        cut.Render(ps => ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = first }));
+        cut.Render(ps => ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = second }));
+        await cut.InvokeAsync(() => Bridge().Value.ReleaseSources([1]));
+        // Dropped by the message before, it is numbered anew, so a number the browser let go is never named again.
+        cut.Render(ps => ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = first }));
+
+        Assert.Equal(["""{"trades":{"number":1,"thin":false}}""", """{"trades":{"number":2,"thin":true}}""", """{"trades":{"number":3,"thin":false}}"""],
+            _view.Invocations["update"].Select(update => SourcesSent(update.Arguments[0])));
+        // A number the browser let go is never asked again: one asked is the bridge's defect, said.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Bridge().Value.Shape(1, 1));
+    }
+
+    [Fact] // ADR-0341, ADR-0343: the browser asks the source its shape, answered as a Board declares its columns
+    public async Task ADR0341_a_sources_shape_is_answered_as_a_declaration()
+    {
+        DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = SourceOf() });
+
+        Assert.Equal("""{"columns":[{"name":"desk","type":"text"},{"name":"day","type":"date"},{"name":"pnl","type":"decimal"},{"name":"count","type":"integer"}]}""",
+            await Bridge().Value.Shape(1, 1));
+    }
+
+    [Fact] // ADR-0343, ADR-0065: a fetch reaches the source with the grid's query and the links' conditions, each value of its column's kind, and its page crosses back as Arrow
+    public async Task ADR0343_a_fetch_reaches_the_source_with_its_narrowing_and_its_page_crosses_as_Arrow()
+    {
+        BoardQuery? asked = null;
+        var rows = Held.Input("trades")!.FromJson("""[{"desk": "FX", "day": "2026-10-16", "pnl": 12.50, "count": 3}]""");
+        var source = SourceOf((query, _) =>
+        {
+            asked = query;
+            return ValueTask.FromResult(new ShapedPage(rows, 4, 9));
+        });
+        DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = source });
+
+        var question = """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""")
+            + ""","narrowing":[{"on":["day","pnl","count"],"values":[["2026-10-16T09:30:00",12345678901234567890.25,9007199254740993]]}]}""";
+        var page = await Bridge().Value.Fetch(1, 7, question, null);
+
+        Assert.NotNull(asked);
+        Assert.Equal(("blotter", 0, 50), (asked.View, asked.Grid.Range.Start, asked.Grid.Range.Count));
+        var condition = Assert.Single(asked.Narrowing);
+        Assert.Equal(["day", "pnl", "count"], condition.On);
+        Assert.Equal([new object?[] { new DateTime(2026, 10, 16, 9, 30, 0), 12345678901234567890.25m, 9007199254740993L }], condition.Values.Select(v => v.ToArray()));
+        Assert.Equal((4, 9), (page.Start, page.TotalCount));
+        var crossed = await SnapshotArrow.ReadAsync(new MemoryStream(page.Rows), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal((1, 12.50m), (crossed.RowCount, crossed.ValueAt(crossed.Rows[0], crossed["pnl"])));
+    }
+
+    [Fact] // ADR-0370 section 1: a question too long for one message of a Blazor Server circuit crosses as a stream, read whole
+    public async Task ADR0370_a_question_too_long_for_one_message_crosses_as_a_stream()
+    {
+        BoardQuery? asked = null;
+        var rows = Held.Input("trades")!.FromJson("[]");
+        DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = SourceOf((query, _) => { asked = query; return ValueTask.FromResult(new ShapedPage(rows, 0, 0)); }) });
+
+        var desks = string.Join(",", Enumerable.Range(0, 3000).Select(i => $"""["Desk {i}"]"""));
+        var question = """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""")
+            + ""","narrowing":[{"on":["desk"],"values":[""" + desks + "]}]}";
+        await Bridge().Value.Fetch(1, 8, null, new TextStream(question));
+
+        Assert.NotNull(asked);
+        Assert.Equal(3000, Assert.Single(asked.Narrowing).Values.Count);
+    }
+
+    [Fact] // ADR-0343, spine rule 6: a new Board numbers each source anew, and a question under the old number is read as the Board that numbered it declares the input
+    public async Task ADR0343_a_question_is_read_as_the_Board_that_numbered_its_source_declares_the_input()
+    {
+        var asked = new List<BoardQuery>();
+        var rows = Held.Input("trades")!.FromJson("[]");
+        var source = SourceOf((query, _) => { asked.Add(query); return ValueTask.FromResult(new ShapedPage(rows, 0, 0)); });
+        var cut = DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = source });
+
+        // The same source under a Board that declares 'count' as a decimal.
+        var redeclared = BoardSpec.Read(BoardSpec.Write(Held).Replace("""{"name":"count","type":"integer"}""", """{"name":"count","type":"decimal"}""", StringComparison.Ordinal));
+        cut.Render(ps => ps.Add(p => p.Board, redeclared));
+        Assert.Equal("""{"trades":{"number":2,"thin":false}}""", SourcesSent(Assert.Single(_view.Invocations["update"]).Arguments[0]));
+
+        var question = """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""")
+            + ""","narrowing":[{"on":["count"],"values":[[3]]}]}""";
+        await Bridge().Value.Fetch(1, 10, question, null);
+        await Bridge().Value.Fetch(2, 11, question, null);
+
+        Assert.Equal([3L, 3m], asked.Select(query => Assert.Single(Assert.Single(query.Narrowing).Values)[0]));
+    }
+
+    // A text the browser sends as a stream, as Blazor hands .NET one.
+    private sealed class TextStream(string text) : IJSStreamReference
+    {
+        private readonly byte[] _bytes = Encoding.UTF8.GetBytes(text);
+
+        public long Length => _bytes.Length;
+
+        public ValueTask<Stream> OpenReadStreamAsync(long maxAllowedSize = 512000, CancellationToken cancellationToken = default)
+            => ValueTask.FromResult<Stream>(new MemoryStream(_bytes));
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    [Fact] // ADR-0344: a chart's points cross as rows of its columns, each value exact, with what each thinned pixel held
+    public async Task ADR0344_a_charts_points_cross_exact()
+    {
+        BoardChartQuery? asked = null;
+        var source = SourceOf(thin: (query, _) =>
+        {
+            asked = query;
+            return ValueTask.FromResult(new ChartSourceAnswer(12, ChartData.Of(("day", new List<DateTime> { new(2026, 10, 16) }), ("pnl", new List<decimal> { 12345678901234567890.25m })),
+                [new PixelSummary(3, 4, 1.5, 2, 6)]));
+        });
+        DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = source });
+
+        var answer = await Bridge().Value.Thin(1, 1, """{"view":"daily","chart":{"data":"trades","x":"day","y":"pnl","values":"dates","from":null,"to":20000,"pixels":300},"narrowing":[]}""", null);
+
+        Assert.NotNull(asked);
+        Assert.Equal(new ChartSourceQuery("trades", "day", "pnl", AxisValues.Dates, null, 20000, 300), asked.Chart);
+        Assert.Equal("""{"version":"12","points":"[{\u0022day\u0022:\u00222026-10-16\u0022,\u0022pnl\u0022:12345678901234567890.25}]","thinned":[[3,4,1.5,2,6]]}""", answer);
+    }
+
+    [Fact] // ADR-0370 section 1: a question the browser no longer waits for is cancelled at the source
+    public async Task ADR0370_a_question_the_browser_gave_up_is_cancelled_at_the_source()
+    {
+        var cancelled = new TaskCompletionSource();
+        var source = SourceOf(async (_, token) =>
+        {
+            token.Register(() => cancelled.SetResult());
+            await Task.Delay(Timeout.Infinite, token);
+            throw new InvalidOperationException("Never answered.");
+        });
+        DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = source });
+
+        var fetching = Bridge().Value.Fetch(1, 9, """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""") + ""","narrowing":[]}""", null);
+        Bridge().Value.Cancel(9);
+
+        await cancelled.Task;
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fetching);
+    }
+
+    [Fact] // ADR-0340 Q6, ADR-0343: an output taken from rows a source held crosses with no Snapshot, is read as the input declares its columns, and vouches for its values by the version the source answered them at
+    public async Task ADR0343_an_output_taken_from_a_sources_rows_is_read_as_declared_and_held_to_its_version()
+    {
+        BoardOutput? taken = null;
+        var cut = DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = SourceOf() }, ps => ps.Add(p => p.OnOutput, (BoardOutput output) => taken = output));
+
+        var payload = Parsed(JsonSerializer.Serialize(new
+        {
+            output = """{"output":"chosen","input":"trades","version":7,"on":["desk","day"],"values":[["FX","2026-10-20"]]}""",
+            snapshot = (int?)null,
+            source = 1,
+        }));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("output", payload, null));
+
+        Assert.NotNull(taken);
+        Assert.Equal(("chosen", "trades", 7L), (taken.Name, taken.Input, taken.SourceVersion));
+        Assert.Equal([new object?[] { "FX", new DateTime(2026, 10, 20) }], taken.Condition.Values.Select(v => v.ToArray()));
+        Assert.Equal(1, taken.Take(HeldAt(7)).RowCount);
+        // No Snapshot of .NET's vouches for it: data at another version is refused, as for an output taken from a fetched page.
+        Assert.Throws<BoardRefusedException>(() => taken.Take(HeldAt(8)));
+    }
+
+    // The source's data at a version, as a server holds it.
+    private static Snapshot HeldAt(long version)
+    {
+        var builder = new SnapshotColumnsBuilder { Version = version };
+        var desk = builder.Text("desk");
+        var day = builder.Date("day");
+        var pnl = builder.Decimal("pnl");
+        var count = builder.Integer("count");
+        foreach (var (d, n) in new[] { ("Rates", 19), ("FX", 20) })
+        {
+            desk.Append(d);
+            day.Append(new DateOnly(2026, 10, n));
+            pnl.Append(1m);
+            count.Append(1);
+        }
+        return builder.Build();
+    }
+
+    [Fact] // ADR-0370 sections 1 and 3: a pivot over a source is refused by name until the adapter carries it, never left out quietly
+    public void ADR0370_a_pivot_over_a_source_is_refused_by_name()
+    {
+        var board = BoardSpec.Read("""
+            {"version": 1, "inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "pnl", "type": "decimal"}]}},
+             "views": [{"id": "byDesk", "pivot": {"data": "trades", "layout": {"version": 1, "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum"}]}}}],
+             "layout": [{"views": ["byDesk"]}]}
+            """);
+
+        var refused = Assert.Throws<NotSupportedException>(() => Render<ScriptBoard>(ps =>
+        {
+            ps.Add(p => p.Board, board);
+            ps.Add(p => p.Data, new Dictionary<string, Snapshot>());
+            ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = SourceOf() });
+        }));
+        Assert.StartsWith("Pivot 'byDesk' is over input 'trades', held on a server", refused.Message, StringComparison.Ordinal);
     }
 }

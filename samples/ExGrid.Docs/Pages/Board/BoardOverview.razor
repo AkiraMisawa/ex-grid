@@ -268,11 +268,20 @@ const output = bound.confirm('chosen');                         // the values ch
             <code>OnDiff</code>. The Board crosses as its JSON. Each Snapshot crosses once, as the Arrow stream
             <code>ExGrid.Data.Arrow</code> writes; a new <code>Data</code> holding the same Snapshot sends nothing again. An
             output comes back to .NET read against the very Snapshot it was taken from, so <code>Take</code> holds it to
-            that data's version, and a Diff the Board raised and you hand back binds nothing again. Not carried yet:
-            <code>Sources</code>, the Board over a server, and the Chromes; use the Board above for those until they
-            arrive. The script it runs is bundled into the package, at an address that changes with its content.
+            that data's version, and a Diff the Board raised and you hand back binds nothing again. The script it runs is
+            bundled into the package, at an address that changes with its content.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreBoard)" Files="@(["Examples/Board/DeskBoard.cs"])" />
+        <p>
+            It takes <code>Sources</code> too, the same <code>BoardSource</code> objects as the Board above. Each stays in
+            .NET: the browser asks it through .NET for the input's shape, for each page a grid fetches with its query and
+            the links' narrowing, and for a chart's thinned points, and a question the Board gives up is cancelled through
+            the token your source is handed. A page crosses back as its Arrow stream and a chart's points with every value
+            exact. An output taken from rows the server held comes back with the version the server answered them at, and
+            <code>Take</code> holds it to that version. Not carried yet: a pivot over a source, which is refused by name
+            when the component is drawn, and the Chromes; use the Board above for those until they arrive.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreServerBoard)" Files="@(["Examples/Board/ServerBoard.cs"])" />
     </DocsSection>
 
     <DocsSection Title="The package">

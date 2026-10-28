@@ -10,7 +10,10 @@
    fetched a page at a time. The blotter's selected rows narrow the desk grid and the pivot by desk; the
    server is handed the condition and they are asked again. A selection reaching rows not fetched is said
    under the blotter, and narrows nothing. The chart's 50,000 points are thinned on the server (ADR-0344),
-   and a desk selected in the pivot narrows it, the server answering the desks under the cells (ADR-0345). *@
+   and a desk selected in the pivot narrows it, the server answering the desks under the cells (ADR-0345).
+   `?script=1` draws the Board with ExBoard.Script.ExBoard, Blazor's adapter over ExBoard's Script Core
+   (ADR-0370 section 1), the source staying in .NET and asked through it; the adapter carries no pivot over a
+   source yet, so that Board has none, and the blotter narrows the chart instead. *@
 <DemoChromeAssets>
     <Head>
         <ExPivotStylesheet />
@@ -18,33 +21,65 @@
 </DemoChromeAssets>
 
 <h1>A Board over a server</h1>
-<ExBoard Board="Reading" Data="NoData" Sources="_sources" Width="1000" OnOutput="Raised" />
+@if (Script)
+{
+    <ExBoard.Script.ExBoard Board="ScriptReading" Data="NoData" Sources="_scriptSources" Width="1000" OnOutput="Raised" />
+}
+else
+{
+    <ExBoard Board="Reading" Data="NoData" Sources="_sources" Width="1000" OnOutput="Raised" />
+}
 <pre id="raised" role="log">@_raised</pre>
 
 @code {
+    [SupplyParameterFromQuery(Name = "script")] private string? ScriptQuery { get; set; }
+
+    private bool Script => ScriptQuery is not null;
+
     private string? _raised;
     private readonly IReadOnlyDictionary<string, BoardSource> _sources = new Dictionary<string, BoardSource> { ["trades"] = DemoBoardServer.Source(Reading) };
+    private readonly IReadOnlyDictionary<string, BoardSource> _scriptSources = new Dictionary<string, BoardSource> { ["trades"] = DemoBoardServer.Source(ScriptReading) };
 
     private void Raised(BoardOutput output) => _raised = output.ToJson();
 
     private static readonly IReadOnlyDictionary<string, Snapshot> NoData = new Dictionary<string, Snapshot>();
 
-    private static readonly BoardReading Reading = BoardSpec.Read("""
-        {"version": 1, "title": "All trades",
-         "inputs": {"trades": {"columns": [{"name": "id", "type": "text"}, {"name": "desk", "type": "text"},
-                                           {"name": "day", "type": "date"}, {"name": "seq", "type": "integer"}, {"name": "pnl", "type": "decimal"}]}},
-         "views": [
-           {"id": "blotter", "title": "Trades", "grid": {"data": "trades",
-             "columns": [{"column": "id", "header": "Trade"}, {"column": "desk", "header": "Desk"},
-                         {"column": "day", "header": "Day", "format": "yyyy-mm-dd"}, {"column": "pnl", "header": "P&L", "format": "#,##0;(#,##0)"}]}},
-           {"id": "desk", "title": "The desk's trades", "grid": {"data": "trades",
-             "columns": [{"column": "id", "header": "Trade"}, {"column": "desk", "header": "Desk"}]}},
+    private const string Inputs = """
+        "inputs": {"trades": {"columns": [{"name": "id", "type": "text"}, {"name": "desk", "type": "text"},
+                                          {"name": "day", "type": "date"}, {"name": "seq", "type": "integer"}, {"name": "pnl", "type": "decimal"}]}}
+        """;
+
+    private const string Views = """
+        {"id": "blotter", "title": "Trades", "grid": {"data": "trades",
+          "columns": [{"column": "id", "header": "Trade"}, {"column": "desk", "header": "Desk"},
+                      {"column": "day", "header": "Day", "format": "yyyy-mm-dd"}, {"column": "pnl", "header": "P&L", "format": "#,##0;(#,##0)"}]}},
+        {"id": "desk", "title": "The desk's trades", "grid": {"data": "trades",
+          "columns": [{"column": "id", "header": "Trade"}, {"column": "desk", "header": "Desk"}]}},
+        {"id": "curve", "title": "P&L by trade", "chart": {"version": 1, "axis": {"values": "numbers"},
+          "series": [{"id": "pnl", "name": "P&L", "kind": "level", "data": "trades", "x": "seq", "y": "pnl", "fromZero": false}]}}
+        """;
+
+    private const string Outputs = """
+        "outputs": {"review": {"from": "blotter", "on": ["id"], "confirm": "Send to review"}}
+        """;
+
+    private static readonly BoardReading Reading = BoardSpec.Read($$$$"""
+        {"version": 1, "title": "All trades", {{{{Inputs}}}},
+         "views": [{{{{Views}}}},
            {"id": "byDesk", "title": "By desk", "pivot": {"data": "trades", "layout": {"version": 1,
-             "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}},
-           {"id": "curve", "title": "P&L by trade", "chart": {"version": 1, "axis": {"values": "numbers"},
-             "series": [{"id": "pnl", "name": "P&L", "kind": "level", "data": "trades", "x": "seq", "y": "pnl", "fromZero": false}]}}],
+             "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}}],
          "layout": [{"views": ["blotter", "desk", "byDesk"], "widths": [2, 1, 1], "height": 300}, {"views": ["curve"], "height": 260}],
          "links": [{"from": "blotter", "to": ["desk", "byDesk"], "on": ["desk"]}, {"from": "byDesk", "to": ["curve"], "on": ["desk"]}],
-         "outputs": {"review": {"from": "blotter", "on": ["id"], "confirm": "Send to review"}}}
+         {{{{Outputs}}}}}
+        """);
+
+    // The same Board with no pivot, which the Script adapter does not carry over a source yet: the blotter narrows the
+    // chart itself.
+    private static readonly BoardReading ScriptReading = BoardSpec.Read($$$$"""
+        {"version": 1, "title": "All trades", {{{{Inputs}}}},
+         "views": [{{{{Views}}}}],
+         "layout": [{"views": ["blotter", "desk"], "widths": [2, 1], "height": 300}, {"views": ["curve"], "height": 260}],
+         "links": [{"from": "blotter", "to": ["desk", "curve"], "on": ["desk"]}],
+         {{{{Outputs}}}}}
         """);
 }
