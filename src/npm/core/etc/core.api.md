@@ -40,6 +40,9 @@ export function answerMenuKey(context: GridMenuSlotContext, event: MenuItemKeyEv
 export function answerValueListKey(context: GridFilterPanelSlotContext, event: ValueListKeyEvent): void;
 
 // @public
+export function applyQuery<Row>(rows: readonly Row[], columns: readonly QueryColumn<Row>[], filter: GridFilter | undefined, sorts: readonly SortSpec[] | undefined): Row[];
+
+// @public
 export function assembleCopy(plan: CopyPlan, values: CopyValues): CopyFlavours;
 
 // @public
@@ -296,6 +299,9 @@ export interface DensityText {
 
 // @public
 export function densityText(density: GridDensity): DensityText;
+
+// @public
+export function displayText(value: unknown): string;
 
 // @public
 export type DistinctValues = {
@@ -621,6 +627,9 @@ export interface FindPanelView {
 
 // @public
 export type FindRefusalReason = 'unavailable' | 'notFound' | 'orderChanged' | 'sourceChanged' | 'replaceUnavailable' | 'replaceRefused';
+
+// @public
+export function findStep<Row>(rows: readonly Row[], request: GridFindRequest, textOf: (column: string) => ((row: Row) => string) | undefined): GridFindResult;
 
 // @public
 export interface FixedColumnWidth {
@@ -1087,6 +1096,43 @@ export interface GridMenuSlotContext {
     readonly takeFocus: (control: HTMLElement, options?: {
         readonly preventScroll?: boolean;
     }) => void;
+}
+
+// @public
+export class GridMetrics {
+    readonly actionBorderPx: number;
+    get actionButtonChromePx(): number;
+    readonly actionGapPx: number;
+    readonly actionPaddingXPx: number;
+    readonly cellMetrics: CellTextMetrics;
+    get cellPaddingXPx(): number;
+    readonly columnGuideWidthPx: number;
+    get digitWidthPx(): number;
+    equals(other: GridMetrics): boolean;
+    get fillHandleSizePx(): number;
+    readonly fontSizePx: number;
+    get formulaBarHeightPx(): number;
+    readonly headerGroupToggleWidthPx: number;
+    readonly headerHeightPx: number;
+    headerRequiredPx(header: HeaderOptions): number;
+    static largestRowHeightFor(totalRowCount: number, headerHeightPx: number): number;
+    get menuButtonBandPx(): number;
+    readonly menuButtonInsetPx: number;
+    readonly menuButtonWidthPx: number;
+    get nameBoxWidthPx(): number;
+    readonly resizeGripWidthPx: number;
+    static resolve(options: GridMetricsOptions): GridMetrics;
+    readonly rowHeightPx: number;
+    readonly sortMarkWidthPx: number;
+}
+
+// @public
+export interface GridMetricsOptions {
+    readonly cellMetrics?: CellTextMetrics;
+    readonly defaults?: GridPresentationDefaults;
+    readonly density: GridDensity;
+    readonly headerHeightPx?: number;
+    readonly rowHeightPx?: number;
 }
 
 // @public
@@ -1603,6 +1649,13 @@ export interface HeaderGroupToggle {
 }
 
 // @public
+export interface HeaderOptions {
+    readonly label: string;
+    readonly menuButton: boolean;
+    readonly sortable: boolean;
+}
+
+// @public
 export interface HiddenMark {
     readonly reason: string;
     readonly state: Exclude<CellState, 'normal'>;
@@ -2029,6 +2082,9 @@ export interface TemporalLike {
         from(text: string): unknown;
     };
 }
+
+// @public
+export function textOf<Row>(column: Pick<QueryColumn<Row>, 'name' | 'value' | 'format'>, row: Row): string;
 
 // @public
 export interface ValueListKeyEvent extends MenuItemKeyEvent {

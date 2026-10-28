@@ -69,7 +69,7 @@ export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';
 export { foldCase } from './query/text-casing';
 export type { CellAlign, CellState, CellTone } from './paint/cell-classes';
-export type { GridDensity } from './grid-metrics';
+export { GridMetrics, type GridDensity, type GridMetricsOptions, type HeaderOptions } from './grid-metrics';
 export {
     CellTextMetrics, type CellTextMetricsOptions, type CellWidthsEveryClass, type CellWidthsFourClasses, type CellWidthsThreeClasses, type CellWidthsUniform,
     type CellWidthsWithBold,
@@ -81,7 +81,9 @@ export type { DensityText } from './density-text';
 export { gridHeaderRequiredPx, gridTextGeometry } from './text-geometry';
 export type { GridTextGeometry } from './text-geometry';
 export type { DistinctValues, GridSourceState } from './source/grid-source';
-export { findMatches, type GridFindRequest, type GridFindResult } from './finding/find';
+export { findMatches, findStep, type GridFindRequest, type GridFindResult } from './finding/find';
+export { displayText, textOf } from './cells/display-text';
+export { applyQuery } from './query/query-engine';
 export { answeredSummary, declinedSummary, GridSummaryCells, summaryOf, type GridSummaryRequest, type GridSummaryResult } from './summary/grid-summary';
 export type { SelectionSummary, SelectionSummaryStatus, SummaryFigureShown } from './dom/selection-summary';
 export { summaryLabelIds } from './chrome/summary-words';

@@ -51,6 +51,8 @@
             server — giving what <code>GridSummary.Of</code> gives over the same rows, or declining with a reason;
             without it, no figure is shown. Subscribe to
             <code>FetchFailed</code> to show a failure yourself; unobserved, it is rethrown.
+            Under React the server's reference is <code>applyQuery(rows, columns, filter, sorts)</code>, and
+            <code>GridSource.fetch(fetch, { distinctValues, find, summarize })</code> takes the same answers.
         </p>
         <DocsExample Title="100,000 trades from a slow server" Builtin="typeof(FetchGrid)" Mud="typeof(FetchGridMud)"
                      Files="@(["Examples/Grid/TradeServer.cs", "Examples/Data/Trade.cs"])">
