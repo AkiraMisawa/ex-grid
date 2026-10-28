@@ -370,21 +370,23 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        // Declaring what the document already declares changes nothing; a page that opens a
-        // document without it declares it here.
-        if (_sheet is not null) await _sheet.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
-        else if (_script is not null) await _script.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
-        else return;
+        // Taken before the first await: the page may be left while the Script Sheet is told, and its Sheet with it.
+        var closing = _closing.Token;
         try
         {
+            // Declaring what the document already declares changes nothing; a page that opens a
+            // document without it declares it here.
+            if (_sheet is not null) await _sheet.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
+            else if (_script is not null) await _script.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
+            else return;
             // Long enough to see #GETTING_DATA: the data is "on its way".
-            await Task.Delay(TimeSpan.FromSeconds(1.5), _closing.Token);
+            await Task.Delay(TimeSpan.FromSeconds(1.5), closing);
+            await PushAsync();
         }
-        catch (OperationCanceledException)
+        catch (Exception) when (closing.IsCancellationRequested)
         {
-            return;
+            // The page was left, and its Sheet disposed: there is nothing left to tell.
         }
-        await PushAsync();
     }
 
     private async Task RevalueAsync()

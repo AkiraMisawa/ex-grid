@@ -1,4 +1,5 @@
 @page "/sheets"
+@implements IDisposable
 @using System.Globalization
 @* global::, for the reasons SheetPage.razor gives, and ExSheet.Components not imported, for the same. *@
 @using global::ExSheet
@@ -178,12 +179,24 @@
             if (sheet is not null)
                 await sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
         }
-        foreach (var sheet in new[] { _leftScript, _rightScript })
+        try
         {
-            if (sheet is not null)
-                await sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
+            foreach (var sheet in new[] { _leftScript, _rightScript })
+            {
+                if (sheet is not null)
+                    await sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
+            }
+        }
+        catch (Exception) when (_gone)
+        {
+            // The page was left while a Script Sheet was told, and the Sheets went with it: nothing is left to tell.
         }
     }
+
+    // Whether the page has been left: a Script Sheet's call still on its way then finds the Sheet gone.
+    private bool _gone;
+
+    public void Dispose() => _gone = true;
 
     // A position as the table's row, in the declared column order: what the page pushes, and what
     // each Scope reads a pressed row's key from.
