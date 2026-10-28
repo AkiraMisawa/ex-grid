@@ -5,7 +5,7 @@
 | ExGrid | 94.4% | 88% |
 | ExSheet | 95.2% | 87.5% |
 | ExPivot | 93.5% | 85.6% |
-| ExChart | 91.8% | 86.2% |
+| ExChart | 91.8% | 86.4% |
 | ExBoard | 93.8% | 86.9% |
 | Data | 94.5% | 90% |
 
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/27/2026 - 23:59:43 |
+| Generated on: | 10/28/2026 - 00:49:12 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1226 |
 | Files: | 620 |
-| **Line coverage:** | 94.2% (85116 of 90283) |
-| Covered lines: | 85116 |
-| Uncovered lines: | 5167 |
-| Coverable lines: | 90283 |
-| Total lines: | 144229 |
-| **Branch coverage:** | 87.4% (51283 of 58648) |
-| Covered branches: | 51283 |
-| Total branches: | 58648 |
+| **Line coverage:** | 94.2% (85118 of 90291) |
+| Covered lines: | 85118 |
+| Uncovered lines: | 5173 |
+| Coverable lines: | 90291 |
+| Total lines: | 144238 |
+| **Branch coverage:** | 87.4% (51311 of 58666) |
+| Covered branches: | 51311 |
+| Total branches: | 58666 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -123,11 +123,11 @@
 |ExChart.SnapshotChartData|100%|100%|
 
 </details>
-<details><summary>ExChart.Engine - 97.5%</summary>
+<details><summary>ExChart.Engine - 97.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**97.5%**|**91.4%**|
+|**ExChart.Engine**|**97.4%**|**91.6%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -148,12 +148,12 @@
 |ExChart.Engine.ChartRefusedException|100%||
 |ExChart.Engine.ChartScene|98.9%|90.5%|
 |ExChart.Engine.ChartSeries|100%|100%|
-|ExChart.Engine.ChartSource|91.4%|73.9%|
-|ExChart.Engine.ChartSource.InMemory|100%||
+|ExChart.Engine.ChartSource|90.8%|84.2%|
+|ExChart.Engine.ChartSource.InMemory|0%||
 |ExChart.Engine.ChartSourceAnswer|100%||
 |ExChart.Engine.ChartSourceQuery|100%||
 |ExChart.Engine.ChartSourceReading|100%||
-|ExChart.Engine.ChartSpec|98.1%|94.2%|
+|ExChart.Engine.ChartSpec|97.8%|93.9%|
 |ExChart.Engine.ChartSpec.Reader|98.9%|94.4%|
 |ExChart.Engine.ChartSpecAnswer|100%||
 |ExChart.Engine.ChartSpecReading|91.3%|75%|
@@ -1000,7 +1000,7 @@
 |ExPivot.Engine.PivotReportUpdate|100%||
 |ExPivot.Engine.PivotReportVersion|100%||
 |ExPivot.Engine.PivotReportWindow|100%||
-|ExPivot.Engine.PivotRowKey|100%|85.2%|
+|ExPivot.Engine.PivotRowKey|98%|82.3%|
 |ExPivot.Engine.PivotRowLabel|100%||
 |ExPivot.Engine.PivotServerChangeBatch|100%|83.3%|
 |ExPivot.Engine.PivotSlicing|100%|60%|
