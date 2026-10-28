@@ -34,6 +34,8 @@
       "@ex-grid/sheet-engine": ["../../src/npm/sheet-engine/src/index.ts"],
       "@ex-grid/sheet": ["../../src/npm/sheet/src/index.ts"],
       "@ex-grid/sheet-react": ["../../src/npm/sheet-react/src/index.ts"],
+      "@ex-grid/data-xlsx": ["../../src/npm/data-xlsx/src/index.ts"],
+      "@ex-grid/sheet-xlsx": ["../../src/npm/sheet-xlsx/src/index.ts"],
       "@ex-grid/board": ["../../src/npm/board/src/index.ts"],
       "@ex-grid/board-react": ["../../src/npm/board-react/src/index.ts"]
     }

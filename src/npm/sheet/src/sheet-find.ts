@@ -40,6 +40,59 @@ export function sheetFindStep(sheet: Sheet, request: GridFindRequest): GridFindR
     return found;
 }
 
+/** Where a step over the Workbook found its match: the Sheet, the row and the column's place among the request's
+ * columns. */
+export interface SheetWorkbookMatch {
+    readonly sheet: Sheet;
+    readonly row: number;
+    readonly position: number;
+}
+
+/**
+ * One step over every Sheet of `sheets` (ADR-0331 §8, ADR-0332 §5), as Excel's Within: Workbook steps, C#'s
+ * StepWorkbook: from the cell after the Focus to the end of `shown` (before it to its start, backward), then each
+ * other Sheet whole in tab order (the reverse, backward), wrapping past the last, and then `shown` again up to the
+ * Focus, which is considered last. Each Sheet is walked by rows across the request's columns, as a step over one is.
+ * The Selection is no scope here. Answers `undefined` when nothing matches anywhere.
+ */
+export function sheetFindStepWorkbook(sheets: readonly Sheet[], shown: Sheet, request: GridFindRequest): SheetWorkbookMatch | undefined {
+    if (request.text === '' || request.columns.length === 0) return undefined;
+    const positions = positionsOf(request.columns);
+    const columnCount = request.columns.length;
+    const total = Sheet.rowCount * columnCount;
+    const { backward, from } = request;
+    const start = from !== undefined && from.row >= 0 && from.row < Sheet.rowCount && from.column >= 0 && from.column < columnCount
+        ? (from.row * columnCount) + from.column
+        : backward ? total : -1;
+    const nearest = (sheet: Sheet, admit: (ordinal: number) => boolean): SheetWorkbookMatch | undefined => {
+        let best = backward ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+        let found: SheetWorkbookMatch | undefined;
+        for (const address of sheet.entryAddresses) {
+            const position = positions.get(address.column);
+            if (position === undefined) continue;
+            const ordinal = (address.row * columnCount) + position;
+            if ((backward ? ordinal <= best : ordinal >= best) || !admit(ordinal) || !sheetCellMatches(sheet, address, request)) continue;
+            best = ordinal;
+            found = { sheet, row: address.row, position };
+        }
+        return found;
+    };
+    // The Sheet shown, past the Focus.
+    const here = nearest(shown, ordinal => backward ? ordinal < start : ordinal > start);
+    if (here !== undefined) return here;
+    // Every other Sheet whole, in tab order from the one shown, wrapping.
+    const at = sheets.indexOf(shown);
+    if (at < 0) throw new Error('Internal: the Sheet shown is not one of the Workbook\'s.');
+    for (let k = 1; k < sheets.length; k++) {
+        const sheet = sheets[(((at + (backward ? -k : k)) % sheets.length) + sheets.length) % sheets.length];
+        if (sheet === undefined) throw new Error('Internal: a Sheet index fell outside the Workbook.');
+        const there = nearest(sheet, () => true);
+        if (there !== undefined) return there;
+    }
+    // The Sheet shown again, up to the Focus, which is considered last.
+    return nearest(shown, ordinal => backward ? ordinal >= start : ordinal <= start);
+}
+
 /** Whether the cell at `address` matches `pattern` as a step finds it: a cell that holds an Entry, whose shown text
  * matches by the core's rule. The Match Mark judges the painted cells by it (ADR-0332 §4), handing the text the row
  * already holds as `shown`. */
@@ -89,6 +142,44 @@ export function planSheetReplace(
         const reason = judge(address, text);
         if (reason === undefined) writes.push({ address, text });
         else refused.push({ address, position, reason });
+    }
+    return { writes, refused };
+}
+
+/** One cell a Replace All over the Workbook writes, or refuses, on the Sheet it lies on. */
+export interface SheetWorkbookReplaceCell {
+    readonly sheet: Sheet;
+    readonly address: CellAddress;
+    readonly text: string;
+}
+
+/** What a Replace All over the Workbook writes, or the cells that refuse it all, with the reason each gives. */
+export interface SheetWorkbookReplacePlan {
+    readonly writes: readonly SheetWorkbookReplaceCell[];
+    readonly refused: readonly (SheetWorkbookReplaceCell & { readonly reason: string })[];
+}
+
+/**
+ * What a Replace All over every Sheet of `sheets` writes (ADR-0332 §5), C#'s PlanReplace over the Workbook: every
+ * cell of every column whose Entry matches `pattern`, with the match replaced, in the order of the Sheets and then
+ * by rows. A replaced text that is a Formula the engine cannot read is refused with the reason `judge` gives: then
+ * nothing may be written, and every such cell is named.
+ */
+export function planWorkbookReplace(
+    sheets: readonly Sheet[], pattern: GridFindPattern, replacement: string, judge: (sheet: Sheet, address: CellAddress, text: string) => string | undefined,
+): SheetWorkbookReplacePlan {
+    const writes: SheetWorkbookReplaceCell[] = [];
+    const refused: (SheetWorkbookReplaceCell & { readonly reason: string })[] = [];
+    if (pattern.text === '') return { writes, refused };
+    for (const sheet of sheets) {
+        // In row-major order, as the engine gives them.
+        for (const address of sheet.entryAddresses) {
+            const text = replacedEntry(sheet.getEntryText(address), pattern, replacement);
+            if (text === undefined) continue;
+            const reason = judge(sheet, address, text);
+            if (reason === undefined) writes.push({ sheet, address, text });
+            else refused.push({ sheet, address, text, reason });
+        }
     }
     return { writes, refused };
 }

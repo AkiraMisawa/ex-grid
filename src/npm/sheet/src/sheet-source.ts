@@ -24,10 +24,15 @@ export class SheetSource implements GridSource<SheetRow> {
 
     // The Sheet's words as they stand, which say why a Selection Summary is declined over a refused cell.
     readonly #words: () => SheetWords;
+    // One step's answer over the Sheet the step was asked of: the Sheet's own walk unless one is given, as a Sheet
+    // searching Within the Workbook gives (ADR-0332 §5).
+    readonly #step: (sheet: Sheet, request: GridFindRequest) => Promise<GridFindResult>;
 
-    constructor(sheet: Sheet, words: () => SheetWords) {
+    constructor(sheet: Sheet, words: () => SheetWords,
+        step: (sheet: Sheet, request: GridFindRequest) => Promise<GridFindResult> = (over, request) => Promise.resolve(sheetFindStep(over, request))) {
         this.#sheet = sheet;
         this.#words = words;
+        this.#step = step;
         this.#state = SheetSource.#stateOf([], 0, 0);
     }
 
@@ -92,7 +97,7 @@ export class SheetSource implements GridSource<SheetRow> {
         const sheet = request.rowSequenceVersion === this.#version ? this.#sheet
             : request.rowSequenceVersion === before?.version ? before.sheet : undefined;
         if (sheet === undefined) return Promise.reject(new DOMException('The step was asked of a Sheet shown before the last one.', 'AbortError'));
-        return Promise.resolve(sheetFindStep(sheet, request));
+        return this.#step(sheet, request);
     }
 
     /** A Selection Summary over the Sheet its Row Sequence Version names (ADR-0130), as C#'s `SheetSummary` answers

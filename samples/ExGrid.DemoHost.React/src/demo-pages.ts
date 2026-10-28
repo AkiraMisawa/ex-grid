@@ -144,7 +144,23 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
     },
     {
         route: 'sheet', title: 'Sheet', group: 'ExSheet',
-        description: 'ExSheet drawn by ExGrid: Formulas, editing, paste, Delete, the fill keys and undo, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0370).',
+        description: 'ExSheet drawn by ExGrid beside a grid of the positions it reads as a Linked Table: Formulas, editing, paste, the formatting keys, the Sheet Toolbar, Format Cells and Pointing, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0049, ADR-0058, ADR-0370).',
+    },
+    {
+        route: 'sheets', title: 'Two sheets', group: 'ExSheet',
+        description: 'Two ExSheets on one page, each with its own Sheet, undo stack, Formula Bar and Pointing Scope (ADR-0018, ADR-0048, ADR-0058).',
+    },
+    {
+        route: 'workbook', title: 'Workbook', group: 'ExSheet',
+        description: 'One ExSheet holding a Workbook of two Sheets behind Sheet Tabs, each keeping its own Selection and scroll position (ADR-0331).',
+    },
+    {
+        route: 'pointing', title: 'Pointing', group: 'ExSheet',
+        description: 'The arrow keys pointing inside the positions grid while a Formula is typed in the Sheet beside it (ADR-0058).',
+    },
+    {
+        route: 'xlsx', title: 'Open and save .xlsx', group: 'ExSheet',
+        description: 'One ExSheet opening a workbook from an .xlsx and saving it to one through @ex-grid/sheet-xlsx, each at its place in the Input Order (ADR-0330).',
     },
     {
         route: 'chart-showcase/exposure', title: 'Exposure profile showcase', group: 'ExChart',

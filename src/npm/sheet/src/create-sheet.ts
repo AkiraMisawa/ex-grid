@@ -10,14 +10,14 @@
 import {
     createGrid, formulaBarHeight, gridChromeSlotNames, refusedCells, summaryFigureOrder, replacedCells, type CellPosition, type GridChrome, type GridDirection,
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
-    type GridReplaceRequest, type GridReplaceResult,
+    type GridReplaceRequest, type GridReplaceResult, type GridFindRequest, type GridFindResult, type GridFindPanelSlotContext, type FindOutcome, type FindPanelRefusedCell, type GridDeclaredKeyPress, findOutcomeText,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
-    type ViewportSize, type GridEditorReference, type ReferenceKeyColour, type GridPointArrow, type GridPointState, type EditorCompletion,
+    type ViewportSize, type GridCommand, type GridContextMenuContext, type GridEditorReference, type ReferenceKeyColour, type GridPointArrow, type GridPointState, type EditorCompletion,
     type SelectionSummary, type SummaryFigure,
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
-    Sheet, SheetRefusal, WorkbookDocument, type LinkedTable, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookStep,
+    Sheet, SheetRefusal, WorkbookDocument, referenceText, type LinkedTable, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { elementAt, unreachable } from './must';
 import { browserTimeZone, checkTimeZone, dayOf, momentIn, sameDay, untilTheDayIsReadAgainMs, untilTheMinuteTurnsMs } from './sheet-moment';
@@ -26,11 +26,12 @@ import { rangeOf, sheetCopyAnswer, type SheetOwnCopy } from './sheet-copy';
 import { appearanceLookup, charactersOfColumn, SheetColumns, sheetCellPaint } from './sheet-columns';
 import { SheetHistory, type SheetOperationStepped } from './sheet-history';
 import { SheetRow } from './sheet-row';
-import { planSheetReplace, positionsOf, sheetCellMatches } from './sheet-find';
+import { planSheetReplace, planWorkbookReplace, positionsOf, sheetCellMatches, sheetFindStep, sheetFindStepWorkbook } from './sheet-find';
+import { sheetFindPanelSlot, type SheetFindWithin } from './sheet-find-panel';
 import { SheetSource } from './sheet-source';
 import { readNameBoxPlace } from './name-box-text';
 import { SheetEdges } from './sheet-edges';
-import { SheetWords, type SheetLabel, type SheetToolbarBorder, type SheetToolbarCommand } from './sheet-words';
+import { SheetWords, type SheetLabel, type SheetTabCommand, type SheetToolbarBorder, type SheetToolbarCommand } from './sheet-words';
 import { SheetTabs } from './sheet-tabs';
 import { SheetToolbar, type SheetToolbarIcon, type SheetToolbarItem, type SheetToolbarPaint } from './sheet-toolbar';
 import type { SheetToolbarContent, SheetToolbarItemSlot } from './sheet-toolbar-slot';
@@ -41,8 +42,9 @@ import {
     defaultCodeOf, recogniseNumberFormat,
 } from './number-format-codes';
 import { sheetTabKeys, sheetTabStepOf } from './sheet-tab-keys';
-import { sheetFormatChangeFor, sheetFormatKeyOf, type SheetFormatKey } from './sheet-format-keys';
-import { sheetStructureEditFor, sheetStructureKeyOf, type SheetStructureKey } from './sheet-structure-keys';
+import { sheetFormatChangeFor, sheetFormatKeyOf, sheetFormatKeysDeclared, type SheetFormatKey } from './sheet-format-keys';
+import { sheetContextCommands, sheetCommandWord } from './sheet-context-commands';
+import { sheetStructureEditFor, sheetStructureKeyOf, sheetStructureKeysDeclared, type SheetStructureKey } from './sheet-structure-keys';
 import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes } from './sheet-widening';
 import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
@@ -536,7 +538,7 @@ class SheetView {
     // The Selection a toolbar list a Chrome draws stands over: one moved from it ends the list.
     #chromeListsOver: GridSelection | undefined;
     // The grid's slots made from the chrome last given.
-    #gridChromeOf: { readonly given: SheetChrome; readonly made: GridChrome<SheetRow> } | undefined;
+    #gridChromeOf: { readonly given: SheetChrome | undefined; readonly made: GridChrome<SheetRow> } | undefined;
     // A Toolbar Item's list while it stands in the grid's popover frame, and the Selection it was opened over.
     #choices: { readonly panel: SheetChoicesPanel; readonly selection: GridSelection; readonly keyTipRow: number | undefined } | undefined;
     // The Alt key went down alone where the toolbar's keys are heard, and its release has not been heard: the release
@@ -576,10 +578,11 @@ class SheetView {
         this.#element = element;
         this.#options = SheetView.#checked(options);
         this.#words = new SheetWords({ japanese: this.#options.japanese, label: this.#options.label });
+        this.#commandLabel = SheetView.#commandLabelOf(this.#words, this.#options.commandLabel);
         this.#document = this.#options.document;
         this.#chosenSeed = chooseSeed();
         this.#workbook = this.#open(this.#options);
-        this.#source = new SheetSource(this.#workbook.shown, () => this.#words);
+        this.#source = new SheetSource(this.#workbook.shown, () => this.#words, this.#findStepOf);
         this.#columns = new SheetColumns(this.#options.density ?? 'compact', error => this.#words.formulaUnreadable(error)); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
         this.#columns.read(this.#workbook.shown);
         this.#appearance = appearanceLookup(this.#reading);
@@ -593,7 +596,32 @@ class SheetView {
         this.#notice = document.createElement('div');
         this.#notice.className = 'ex-sheet-notice';
         this.#notice.setAttribute('role', 'status');
-        this.#tabs = new SheetTabs(document, { pressed: this.#onTabPressed, added: this.#onTabAdded, listKey: this.#onTabListKey });
+        this.#tabs = new SheetTabs(document, {
+            pressed: this.#onTabPressed, added: this.#onTabAdded, listKey: this.#onTabListKey,
+            renameAsked: sheet => { this.#beginRename(sheet, false); },
+            renameInput: text => {
+                if (text === this.#renameText) return;
+                this.#renameText = text;
+                this.#tabs.markRenameRefused(false);
+            },
+            renameKey: key => {
+                if (key === 'Enter') this.#commitRename(this.#renameFromTab ? 'tab' : 'grid');
+                else this.#endRename(this.#renameFromTab ? 'tab' : 'grid');
+            },
+            renameLeft: session => {
+                if (session !== this.#renameSession || this.#tabs.renaming === undefined) return;
+                if (!this.#commitRename('nowhere')) this.#endRename('nowhere');
+            },
+            menuAsked: sheet => { this.#openTabMenu(sheet, false); },
+            menuKey: this.#onTabMenuKey,
+            menuCommand: command => { this.#tabCommand(command); },
+            menuLeft: session => {
+                if (session !== this.#menuSession || this.#menuSheet === undefined) return;
+                this.#menuSheet = undefined;
+                this.#tabs.closeMenu();
+            },
+            dropped: (sheet, target) => { this.#moveByDrag(sheet, target); },
+        });
         this.#toolbar = new SheetToolbar(document, {
             giveBack: () => { this.#grid?.focus(); },
             // A choice of a list the Chrome draws, made as the built-in list's is.
@@ -649,6 +677,7 @@ class SheetView {
         }
         const wordsMoved = next.label !== this.#options.label || next.japanese !== this.#options.japanese;
         if (wordsMoved) this.#words = new SheetWords({ japanese: next.japanese, label: next.label });
+        if (wordsMoved || next.commandLabel !== this.#options.commandLabel) this.#commandLabel = SheetView.#commandLabelOf(this.#words, next.commandLabel);
         const seedBefore = this.#options.seed;
         const previous = this.#options;
         this.#options = next;
@@ -958,11 +987,15 @@ class SheetView {
             hideHeader: this.#options.showColumnHeadings === false,
             showFormulaBar: this.#options.showFormulaBar !== false,
             nameBoxLabel,
+            nameBoxSizeLabel,
             onNameBoxEntered: this.#onNameBoxEntered,
             dataEdge: this.#dataEdge,
             hideColumnMenu: true,
             hideCopyWithHeaders: this.#options.allowCopyWithHeaders !== true,
-            ...(this.#options.commandLabel === undefined ? {} : { commandLabel: this.#options.commandLabel }),
+            declaredKeys: sheetDeclaredKeys,
+            onDeclaredKey: this.#onDeclaredKey,
+            contextCommands: this.#contextCommands,
+            commandLabel: this.#commandLabel,
             // The Selection Summary is the Sheet Source's (ADR-0130); the Sheet holds the figures chosen in its menu.
             ...(this.#options.showSelectionSummary === undefined ? {} : { showSelectionSummary: this.#options.showSelectionSummary }),
             ...this.#summaryFiguresShown(),
@@ -1019,13 +1052,14 @@ class SheetView {
 
     // The grid's slots of the Sheet's chrome, handed to its grid as they were given: the same object while the chrome
     // is, so the grid keeps the parts it has drawn (ADR-0390).
-    #gridChrome(): { readonly chrome?: GridChrome<SheetRow> } {
+    // The find panel is the Sheet's own, with Within (ADR-0332 §5), where the chrome draws none: a Chrome's panel is
+    // the grid's, and searches the Sheet shown.
+    #gridChrome(): { readonly chrome: GridChrome<SheetRow> } {
         const chrome = this.#options.chrome;
-        if (chrome === undefined) return {};
-        if (this.#gridChromeOf?.given !== chrome) {
-            const slots: Record<string, unknown> = {};
+        if (this.#gridChromeOf === undefined || this.#gridChromeOf.given !== chrome) {
+            const slots: Record<string, unknown> = { findPanel: this.#findPanel };
             for (const name of gridChromeSlotNames) {
-                const slot = chrome[name];
+                const slot = chrome?.[name];
                 if (slot !== undefined) slots[name] = slot;
             }
             // The grid's slots, each checked a function by #checked.
@@ -1189,6 +1223,7 @@ class SheetView {
      * would be, which widens the columns a number no longer fits, and the count.
      */
     readonly #onReplace = (request: GridReplaceRequest): GridReplaceResult => {
+        this.#findMoved();
         const version = this.#source.snapshot().rowSequenceVersion;
         // A Sheet's rows are places, so a request on another version names nothing here (ADR-0046): answered under the
         // version shown, which the grid refuses as the order having moved, and nothing is written.
@@ -1478,6 +1513,7 @@ class SheetView {
         }
         if (tabs) {
             if (!this.#tabs.area.isConnected) this.#gridElement.after(this.#tabs.area);
+            this.#forgetTabGesturesGone();
             this.#tabs.paint({
                 sheets: this.#workbook.sheets, shown: this.#source.sheet, heightPx: this.#tabsHeightPx,
                 listName: this.#words.sheetTabsName, addName: this.#words.newSheetName,
@@ -1750,10 +1786,13 @@ class SheetView {
         else this.#formatFromFocus(act, widensAsAHomeTabButtonDoes);
     }
 
-    // A press on a tab shows its Sheet; the keyboard stays in the grid, where the next key acts on it.
+    // A press on a tab shows its Sheet; the keyboard stays in the grid, where the next key acts on it. A name being
+    // edited on another tab is committed first, and a menu closes.
     readonly #onTabPressed = (sheet: Sheet): void => {
         if (!this.#workbook.sheets.includes(sheet) || this.#refusedSwitch()) return;
-        this.#clearNotice();
+        if (this.#tabs.renaming === sheet) return;
+        this.#leaveTabGestures('grid');
+        this.#sayLeftOrClear();
         if (sheet !== this.#source.sheet) {
             this.#showSheet(sheet);
             this.#raiseDocument();
@@ -1768,6 +1807,12 @@ class SheetView {
     // The keys on the tab list, where Tab put the keyboard: ← and → select the tab before or after, Home and End the
     // first and the last, the keyboard staying on the tab selected; Escape or Enter gives it back to the grid.
     readonly #onTabListKey = (event: KeyboardEvent): boolean => {
+        // Shift+F10 and the menu key open the tab's menu, the keyboard coming back to the tab when it closes; taken
+        // on the key, so the browser raises no context menu of its own after it.
+        if ((event.key === 'F10' && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) || (event.key === 'ContextMenu' && !event.shiftKey)) {
+            this.#openTabMenu(this.#source.sheet, true);
+            return true;
+        }
         if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return false;
         const sheets = this.#workbook.sheets;
         const at = sheets.indexOf(this.#source.sheet);
@@ -1879,9 +1924,10 @@ class SheetView {
         return target instanceof Element && this.#gridElement.contains(target) && target.closest('.ex-popover, .ex-name-box') === null;
     }
 
-    // Excel's formatting keys and its insert and delete keys, on the Selection as the grid holds it at the key (ADR-0071,
-    // "Keys"; ADR-0050 item 14), where the grid takes keys: not in the Name Box or a panel the grid opened, whose
-    // fields keep their own. Ctrl+1 waits on Format Cells.
+    // Excel's formatting keys and its insert and delete keys on the Sheet Toolbar's band (ADR-0071, "Keys"; ADR-0100),
+    // whose tooltips name them. Where the grid takes keys they are its declared keys, taken by the grid in their place
+    // in the Input Order and heard by #onDeclaredKey (ADR-0050 item 14); the Name Box and a panel the grid opened keep
+    // their own. Ctrl+1 waits on Format Cells.
     #onCellKey(event: KeyboardEvent, key: string): void {
         if (key === toolbarToggleKey) {
             this.#toolbarToggleKey(event);
@@ -1896,14 +1942,26 @@ class SheetView {
             event.preventDefault();
             return;
         }
-        // On the toolbar's band too: its tooltips name these keys, and the band leaves Ctrl's keys to the Sheet.
-        const onToolbar = target === this.#toolbar.band;
-        if (!onToolbar && !this.#takesGridKeys(target)) return;
+        // The band leaves Ctrl's keys to the Sheet.
+        if (target !== this.#toolbar.band) return;
         event.preventDefault();
         event.stopPropagation();
         if (format !== undefined) this.#formatKey(format);
         else if (structure !== undefined) this.#structureKey(structure);
     }
+
+    // A formatting key or an insert or delete key, taken by the grid where it holds the keyboard, on the Selection it
+    // held at the key (ADR-0050 item 14).
+    readonly #onDeclaredKey = (press: GridDeclaredKeyPress): void => {
+        const format = sheetFormatKeyOf(press.key);
+        if (format !== undefined) {
+            this.#formatKey(format);
+            return;
+        }
+        const structure = sheetStructureKeyOf(press.key);
+        if (structure === undefined) throw new Error(`Internal: '${press.key}' is not one of the keys the Sheet declares.`);
+        this.#structureKey(structure);
+    };
 
     // Ctrl+F1, claimed only where the Consumer hears it: the toolbar's other state is told, and the Consumer shows it.
     #toolbarToggleKey(event: KeyboardEvent): void {
@@ -2010,6 +2068,194 @@ class SheetView {
         if (this.#gridElement.contains(standing.panel.element)) this.#grid?.closePopover();
     }
 
+    // ---- Find Within (ADR-0332 §5, ADR-0331 §8) -------------------------------------------------------------------
+
+    // Where the panel searches, as it last chose: kept across a close and a reopen, as the grid keeps the text.
+    #findWithin: SheetFindWithin = 'sheet';
+    // Every answer that changes what the panel says moves this on: a step asked, the grid's Replace Request, a choice
+    // of Within. The Sheet's own Replace All's outcome is said while nothing has moved it since, and the panel has not
+    // been mounted again.
+    #findEvents = 0;
+    #ownFind: { readonly outcome: FindOutcome; readonly events: number } | undefined;
+    readonly #findListeners = new Set<() => void>();
+
+    #findMoved(): void {
+        this.#findEvents += 1;
+        if (this.#ownFind === undefined) return;
+        this.#ownFind = undefined;
+        this.#tellFind();
+    }
+
+    #tellFind(): void {
+        // A listener may stop hearing as it hears.
+        for (const listener of Array.from(this.#findListeners)) listener();
+    }
+
+    #sayOwnFind(outcome: FindOutcome): void {
+        this.#ownFind = { outcome, events: this.#findEvents };
+        this.#tellFind();
+    }
+
+    // The find panel's contents, made once with the Sheet, so the grid sees no change of Chrome.
+    readonly #findPanel = sheetFindPanelSlot({
+        within: () => this.#findWithin,
+        // A choice of Within is a click taken in its place in the Input Order (ADR-0240): a step numbered before it
+        // searches where the panel searched then, one numbered after it where it searches now.
+        chooseWithin: within => {
+            this.#findWithin = within;
+            this.#findMoved();
+        },
+        // Over the Sheet, the grid's Replace Request; over the Workbook, the Sheet's own.
+        replaceAll: context => {
+            if (this.#findWithin === 'workbook') this.#replaceAllInWorkbook(context);
+            else context.replaceAll();
+        },
+        outcome: context => {
+            const own = this.#ownFind;
+            return own !== undefined && own.events === this.#findEvents ? findOutcomeText(own.outcome, context.label) : context.view().outcome;
+        },
+        subscribe: listener => {
+            this.#findListeners.add(listener);
+            return () => { this.#findListeners.delete(listener); };
+        },
+        mounted: () => { this.#ownFind = undefined; },
+    });
+
+    /**
+     * One Find step (ADR-0055, ADR-0332 §5), over the Sheet shown or over the Workbook. A match on the Sheet the step
+     * was asked of is the answer. A match on another Sheet shows that Sheet with the cell selected and taken as the
+     * current match, handed to the grid under the Sheet's rows, and the step is given up: its answer could name only a
+     * place among the rows it was asked about. While an edit is open no other Sheet is shown, and the notice says why.
+     */
+    readonly #findStepOf = (sheet: Sheet, request: GridFindRequest): Promise<GridFindResult> => {
+        this.#findMoved();
+        // A step asked of the Sheet shown before the last one searches that Sheet alone: the Workbook is walked from
+        // the Sheet shown.
+        if (this.#findWithin === 'sheet' || sheet !== this.#source.sheet) return Promise.resolve(sheetFindStep(sheet, request));
+        const found = sheetFindStepWorkbook(this.#workbook.sheets, sheet, request);
+        if (found === undefined) return Promise.resolve({ found: false });
+        const column = request.columns[found.position];
+        if (column === undefined) throw new Error(`Internal: no column stands at ${String(found.position)} of the request.`);
+        if (found.sheet === sheet) return Promise.resolve({ found: true, row: found.row, column });
+        if (this.#refusedSwitch()) return Promise.reject(new DOMException('The match is on another Sheet, which is not shown while an edit is open.', 'AbortError'));
+        // Shown in the step's own turn, after the grid has taken the step as out, so the answer it gives up is this one.
+        return Promise.resolve().then(() => {
+            if (this.#destroyed) throw new DOMException('The Sheet was destroyed.', 'AbortError');
+            this.#clearNotice();
+            this.#showSheet(found.sheet, { row: found.row, column: found.position });
+            this.#raiseDocument();
+            throw new DOMException('The match is on another Sheet, now shown with it selected.', 'AbortError');
+        });
+    };
+
+    /**
+     * Replace All over the Workbook (ADR-0332 §5), from the panel's button in its place in the Input Order: every
+     * cell of every Sheet whose Entry matches, all or nothing, as one step on the undo stack, which shows the Sheet it
+     * was done from — refused whole when any replaced Formula cannot be read, naming each such cell by its Sheet —
+     * and the count said. With nothing matched, the panel says no match.
+     */
+    #replaceAllInWorkbook(context: GridFindPanelSlotContext): void {
+        this.#findMoved();
+        const view = context.view();
+        if (!view.replaceShown || view.replaceWaiting || view.text === '') return;
+        if (this.#editing) {
+            this.#tell(this.#words.editIsOpen);
+            return;
+        }
+        const pattern: GridFindPattern = { text: view.text, matchCase: view.matchCase, wholeCell: view.wholeCell };
+        const plan = planWorkbookReplace(this.#workbook.sheets, pattern, view.replaceText, (sheet, address, text) => {
+            const verdict = new SheetRow(sheet, address.row).judge(text, error => this.#words.formulaUnreadable(error));
+            return verdict.kind === 'reject' ? verdict.message : undefined;
+        });
+        if (plan.refused.length > 0) {
+            this.#sayOwnFind({ kind: 'replaceRefused', cells: plan.refused.map(cell => refusedCellOf(cell, cell.reason)) });
+            return;
+        }
+        if (plan.writes.length === 0) {
+            this.#sayOwnFind({ kind: 'notFound' });
+            return;
+        }
+        this.#clearNotice();
+        const from = this.#source.sheet;
+        const bySheet = new Map<Sheet, CellAddress[]>();
+        for (const write of plan.writes) {
+            const cells = bySheet.get(write.sheet);
+            if (cells === undefined) bySheet.set(write.sheet, [write.address]);
+            else cells.push(write.address);
+        }
+        const steps: WorkbookStep[] = [];
+        try {
+            // One engine step across the Sheets (one change, ADR-0180).
+            steps.push(this.#workbook.doAll([...bySheet.keys()].map(sheet => [sheet.name,
+                SheetEdit.enterMany(plan.writes.filter(write => write.sheet === sheet).map(write => [write.address, write.text] as const))] as const)));
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the engine's refusal and an unreadable Formula are answers told to the user; anything else is rethrown
+            const message = error instanceof FormulaSyntaxError ? this.#words.formulaUnreadable(error)
+                : error instanceof SheetRefusedError ? this.#words.refused(error.refusal) : undefined;
+            if (message === undefined) throw error;
+            this.#tell(message);
+            this.#sayOwnFind({ kind: 'replaceRefused', cells: plan.writes.map(write => refusedCellOf(write, message)) });
+            return;
+        }
+        // The widths a typed number widens its column to, as typing it would (ADR-0047), in the same undo step.
+        this.#resizing = undefined;
+        for (const [sheet, addresses] of bySheet) {
+            for (const [column, characters] of this.#columns.widenedBy(sheet, addresses.map(address => new CellRange(address)))) {
+                steps.push(this.#workbook.do(sheet.name, SheetEdit.setAutomaticColumnWidth(CellRange.wholeColumns(column, column), characters)));
+            }
+        }
+        this.#history.record(steps, from);
+        this.#changed(steps.map(step => step.change));
+        this.#sayOwnFind({ kind: 'replaced', count: plan.writes.length });
+    }
+
+    // ---- The Context Menu (ADR-0036) ----------------------------------------------------------------------------
+
+    // The grid's commandLabel: the Consumer's word for an id first, the empty string that silences a refusal among
+    // them, then the Sheet's word for one of its own ids, and otherwise none, so the grid words the rest. A new
+    // function only when the words or the Consumer's commandLabel change, so the grid words its menu again then and
+    // only then.
+    #commandLabel: (id: string) => string | undefined;
+
+    static #commandLabelOf(words: SheetWords, consumer: ((id: string) => string | undefined) | undefined): (id: string) => string | undefined {
+        if (consumer === undefined) return id => sheetCommandWord(words, id);
+        return id => {
+            const given: unknown = consumer(id);
+            if (given !== undefined && typeof given !== 'string') throw new TypeError(`commandLabel answers a word or undefined, not ${typeof given} (ADR-0036).`);
+            return given ?? sheetCommandWord(words, id);
+        };
+    }
+
+    // Inserting and deleting the rows or columns the Selection spans, and Format Cells (ADR-0071), after the grid's
+    // clipboard commands, as C#'s ContextCommandsFor adds them.
+    readonly #contextCommands = (context: GridContextMenuContext<SheetRow>): readonly GridCommand[] => sheetContextCommands(context.selection, {
+        structure: edit => { this.#structureCommand(edit); },
+        formatCells: () => { this.#formatCellsByUser(); },
+    });
+
+    // A structural command from the menu: one step on the undo stack; refused while an edit is open, or by the
+    // engine, it changes nothing and the notice says why (ADR-0048).
+    #structureCommand(edit: SheetEdit): void {
+        if (this.#editing) {
+            this.#tell(this.#words.editIsOpen);
+            return;
+        }
+        try {
+            this.#perform(edit);
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the engine's refusal is an answer told to the user; anything else is rethrown
+            if (!(error instanceof SheetRefusedError)) throw error;
+            this.#tell(this.#words.refused(error.refusal));
+        }
+    }
+
+    // Format Cells chosen by the user, from the menu: refused while an edit is open, and said (ADR-0071).
+    #formatCellsByUser(): void {
+        if (this.#editing) {
+            this.#tell(this.#words.editIsOpen);
+            return;
+        }
+        this.#openFormatCells();
+    }
+
     // Ctrl+Plus and Ctrl+Minus: over whole rows they insert or delete those rows, over whole columns those columns,
     // each one step; over any other Selection, and while an edit is open, nothing changes and the notice says why
     // (ADR-0050 item 14).
@@ -2045,20 +2291,353 @@ class SheetView {
     // A new, empty Sheet beside the one shown, named as Excel names it, and shown, as Excel shows the Sheet it adds:
     // one step on the undo stack, whose undo shows the Sheet it was added from (ADR-0331 §3).
     #addSheet(before: boolean): void {
-        if (this.#editing) {
-            this.#tell(this.#words.sheetOperationWhileEditing);
-            return;
-        }
+        if (this.#refusedSheetOperation()) return;
+        // A name being edited is committed first, the keyboard going back to the grid as the field goes; the keyboard
+        // on a tab itself stays on the tab list.
+        const onTabs = this.#tabs.holdsKeyboard && this.#tabs.renaming === undefined && !this.#tabs.menuOpen;
+        this.#leaveTabGestures('grid');
         const from = this.#source.sheet;
         this.#resizing = undefined;
-        const onTabs = this.#tabs.holdsKeyboard;
         const step = this.#workbook.do(from.name, SheetEdit.insertSheet(undefined, before));
         this.#history.record([step], from);
         this.#showSheet(step.sheet);
         this.#raiseDocument();
         // The tabs moved to make room lose the keyboard: one on the list goes to the new Sheet's tab, selected now.
         if (onTabs) this.#tabs.focus(step.sheet);
-        this.#tell(this.#words.sheetAdded(step.sheet.name), { outlivesMove: true });
+        this.#say(this.#words.sheetAdded(step.sheet.name), { outlivesMove: true });
+    }
+
+    // ---- What the tabs do besides showing a Sheet (ADR-0331 §4; exsheet-workbook ticket 06) ---------------------
+    //
+    // A double click edits a tab's name in place, the tab's menu — a secondary press, Shift+F10 or the menu key —
+    // deletes, moves left or right, copies and renames, and a drag moves a tab. Each is one step on the one undo stack
+    // (ADR-0331 §3), said in the notice. While an edit is open none is done, and the notice says why. Each is answered
+    // within the input that made it, so a key typed straight after it acts where it left the Sheet and the keyboard.
+
+    // The name typed on its tab, the edit's session, whether it was begun from the keyboard on the tab list (Enter and
+    // Escape give the keyboard back to the tab, where it came from), and whether it is ending.
+    #renameText = '';
+    #renameSession = 0;
+    #renameFromTab = false;
+    #renameEnding = false;
+    // The tab's menu: the Sheet it acts on, the command the keyboard is on, whether the keyboard came from that
+    // Sheet's tab, and the menu's session.
+    #menuSheet: Sheet | undefined;
+    #menuActive: SheetTabCommand = 'rename';
+    #menuFromTab = false;
+    #menuSession = 0;
+    // What ending a gesture on the tabs said — a name committed, or refused and kept — when the operation that ended
+    // it says something of its own: both are said, the first not lost under the second.
+    #saidOnLeaving: string | undefined;
+    // What committing or refusing the name last said, so leaving the edit keeps only what the edit itself said.
+    #renameSaid: string | undefined;
+
+    // Any open edit refuses a Sheet operation, and the notice says why.
+    #refusedSheetOperation(): boolean {
+        if (!this.#editing) return false;
+        this.#tell(this.#words.sheetOperationWhileEditing);
+        return true;
+    }
+
+    // Where the keyboard goes as a gesture on the tabs ends: nowhere, where the input that ends it hands it on itself;
+    // the grid; or the tab it came from.
+    #keyboardTo(to: 'nowhere' | 'grid' | 'tab', sheet: Sheet): void {
+        if (to === 'grid') this.#grid?.focus();
+        else if (to === 'tab' && this.#workbook.sheets.includes(sheet)) this.#tabs.focus(sheet);
+        else if (to === 'tab') this.#grid?.focus();
+    }
+
+    // A name being edited is committed — or, refused, kept as it was — and a menu closes, before another gesture on the
+    // tabs. What the edit's end said is kept, and said with what the operation says next.
+    #leaveTabGestures(keyboard: 'nowhere' | 'grid'): void {
+        this.#saidOnLeaving = undefined;
+        if (this.#tabs.renaming !== undefined) {
+            this.#renameSaid = undefined;
+            if (!this.#commitRename(keyboard)) this.#endRename(keyboard);
+            this.#saidOnLeaving = this.#renameSaid;
+        }
+        if (this.#menuSheet !== undefined) this.#closeTabMenu(keyboard);
+    }
+
+    // Says `sentence` after what ending a gesture on the tabs said, if it said anything.
+    #say(sentence: string, options?: { readonly outlivesMove?: boolean }): void {
+        const said = this.#saidOnLeaving;
+        this.#saidOnLeaving = undefined;
+        this.#tell(said === undefined ? sentence : `${said} ${sentence}`, options);
+    }
+
+    // For an operation that says nothing of its own: what ending a gesture on the tabs said stands, else the notice is
+    // cleared.
+    #sayLeftOrClear(): void {
+        const said = this.#saidOnLeaving;
+        this.#saidOnLeaving = undefined;
+        if (said === undefined) this.#clearNotice();
+        else this.#tell(said);
+    }
+
+    // Edits `sheet`'s name on its tab, its whole name selected and the keyboard on the field, so the keys typed straight
+    // after it are the field's.
+    #beginRename(sheet: Sheet, fromTab: boolean): void {
+        if (this.#refusedSheetOperation() || !this.#workbook.sheets.includes(sheet) || this.#tabs.renaming === sheet) return;
+        this.#leaveTabGestures('nowhere');
+        if (sheet !== this.#source.sheet) {
+            this.#sayLeftOrClear();
+            this.#showSheet(sheet);
+            this.#raiseDocument();
+        }
+        this.#renameText = sheet.name;
+        this.#renameFromTab = fromTab;
+        this.#renameSession = this.#tabs.beginRename(sheet, sheet.name, this.#words.sheetNameField);
+    }
+
+    // Commits the name typed: one step, every Formula naming the Sheet rewritten (ADR-0331 §4). A name Excel's rules
+    // refuse is refused by name, and the field stays, holding the keyboard. Answers whether the edit ended.
+    #commitRename(keyboard: 'nowhere' | 'grid' | 'tab'): boolean {
+        const sheet = this.#tabs.renaming;
+        if (sheet === undefined || this.#renameEnding) return true;
+        const name = this.#renameText;
+        if (!this.#workbook.sheets.includes(sheet) || name === sheet.name) {
+            this.#endRename(keyboard);
+            return true;
+        }
+        const reason = Sheet.whyNotAName(name);
+        if (reason !== undefined) {
+            this.#refuseRename(reason);
+            return false;
+        }
+        const from = sheet.name;
+        let step: WorkbookStep;
+        try {
+            step = this.#workbook.do(from, SheetEdit.rename(name));
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the engine's refusal is an answer told to the user; anything else is rethrown
+            if (!(error instanceof SheetRefusedError)) throw error;
+            this.#refuseRename(error.refusal.message);
+            return false;
+        }
+        this.#history.record([step], sheet);
+        this.#endRename(keyboard);
+        // A rename changes the Sheets: #changed draws the tabs again and raises the document, once.
+        this.#changed([step.change]);
+        this.#renameSaid = this.#words.sheetRenamed(from, sheet.name);
+        this.#tell(this.#renameSaid);
+        return true;
+    }
+
+    #refuseRename(reason: string): void {
+        this.#tabs.markRenameRefused(true);
+        this.#renameSaid = this.#words.sheetNotRenamed(reason);
+        this.#tell(this.#renameSaid);
+    }
+
+    // Ends the name's edit, the keyboard going `keyboard` while the field still holds it, and the tab drawn again.
+    #endRename(keyboard: 'nowhere' | 'grid' | 'tab'): void {
+        const sheet = this.#tabs.renaming;
+        if (sheet === undefined || this.#renameEnding) return;
+        this.#renameEnding = true;
+        // The edit is over before the keyboard moves, so the field's losing it ends nothing again.
+        this.#renameSession = -1;
+        // To the grid while the field still holds it; to the tab once it is drawn again in the field's place.
+        if (keyboard === 'grid') this.#keyboardTo('grid', sheet);
+        this.#tabs.endRename();
+        this.#renameEnding = false;
+        this.#renameFromTab = false;
+        if (keyboard === 'tab') this.#keyboardTo('tab', sheet);
+    }
+
+    // Opens `sheet`'s menu, showing the Sheet, with the keyboard on its first command that can be done. A menu already
+    // open for the Sheet stays as it is.
+    #openTabMenu(sheet: Sheet, fromTab: boolean): void {
+        if (this.#menuSheet === sheet || this.#refusedSheetOperation() || !this.#workbook.sheets.includes(sheet)) return;
+        this.#leaveTabGestures('nowhere');
+        if (sheet !== this.#source.sheet) {
+            this.#sayLeftOrClear();
+            this.#showSheet(sheet);
+            this.#raiseDocument();
+        }
+        this.#menuSheet = sheet;
+        this.#menuFromTab = fromTab;
+        const first = tabCommandOrder.find(command => this.#tabCommandRefusal(command, sheet) === undefined);
+        if (first === undefined) throw new Error('Internal: Rename can always be done on a Sheet of the Workbook.');
+        this.#menuActive = first;
+        this.#menuSession = this.#paintTabMenu(sheet);
+    }
+
+    // The menu's commands as they stand: which can be done on its Sheet, and which the keyboard is on.
+    #paintTabMenu(sheet: Sheet): number {
+        return this.#tabs.showMenu({
+            name: this.#words.sheetMenuName(sheet.name),
+            active: this.#menuActive,
+            items: tabCommandOrder.map(command => ({
+                command, label: this.#words.tabCommand(command), disabledReason: this.#tabCommandRefusal(command, sheet),
+            })),
+        });
+    }
+
+    // Why `command` cannot be done on `sheet` in the Workbook as it stands now, or `undefined` where it can.
+    #tabCommandRefusal(command: SheetTabCommand, sheet: Sheet): string | undefined {
+        const sheets = this.#workbook.sheets;
+        const at = sheets.indexOf(sheet);
+        if (at < 0) return this.#words.sheetGone;
+        if (command === 'delete' && sheets.length === 1) return this.#words.onlySheet;
+        if (command === 'moveLeft' && at === 0) return this.#words.firstSheet;
+        if (command === 'moveRight' && at === sheets.length - 1) return this.#words.lastSheet;
+        return undefined;
+    }
+
+    // The menu's keys: ↑ and ↓ move among the commands that can be done, round from the last to the first, Home and End
+    // to the first and the last, Enter or Space does the command, and Escape, Tab, the menu key or Shift+F10 closes the
+    // menu, the keyboard going back to the tab it came from, or to the grid.
+    readonly #onTabMenuKey = (event: KeyboardEvent): boolean => {
+        const sheet = this.#menuSheet;
+        if (sheet === undefined) return false;
+        const enabled = tabCommandOrder.filter(command => this.#tabCommandRefusal(command, sheet) === undefined);
+        const back = this.#menuFromTab ? 'tab' : 'grid';
+        switch (event.key) {
+            case 'ArrowDown':
+            case 'ArrowUp': {
+                const at = enabled.indexOf(this.#menuActive);
+                const step = event.key === 'ArrowDown' ? 1 : -1;
+                this.#menuActive = elementAt(enabled, ((((at < 0 ? 0 : at + step) % enabled.length) + enabled.length) % enabled.length));
+                this.#paintTabMenu(sheet);
+                return true;
+            }
+            case 'Home':
+            case 'End':
+                this.#menuActive = elementAt(enabled, event.key === 'Home' ? 0 : enabled.length - 1);
+                this.#paintTabMenu(sheet);
+                return true;
+            case 'Enter':
+            case ' ':
+                this.#tabCommand(this.#menuActive);
+                return true;
+            case 'Escape':
+            case 'Tab':
+            case 'ContextMenu':
+                this.#closeTabMenu(back);
+                return true;
+            case 'F10':
+                if (!event.shiftKey) return false;
+                this.#closeTabMenu(back);
+                return true;
+            default:
+                return false;
+        }
+    };
+
+    // Closes the menu, handing the keyboard on first, while the menu still holds it.
+    #closeTabMenu(keyboard: 'nowhere' | 'grid' | 'tab'): void {
+        const sheet = this.#menuSheet;
+        if (sheet === undefined) return;
+        this.#menuSheet = undefined;
+        this.#menuSession = -1;
+        if (keyboard !== 'nowhere') this.#keyboardTo(keyboard, sheet);
+        this.#tabs.closeMenu();
+    }
+
+    // The command on the menu's Sheet: each one step, said in the notice, the keyboard going back to the grid — but for
+    // Rename, which hands it to the name's field. A command that cannot be done does nothing, and the menu stays.
+    #tabCommand(command: SheetTabCommand): void {
+        const sheet = this.#menuSheet;
+        if (sheet === undefined || this.#tabCommandRefusal(command, sheet) !== undefined) return;
+        if (command === 'rename') {
+            this.#beginRename(sheet, this.#menuFromTab);
+            return;
+        }
+        this.#closeTabMenu('grid');
+        if (this.#refusedSheetOperation()) return;
+        const name = sheet.name;
+        switch (command) {
+            case 'delete':
+                if (this.#sheetOperation(sheet, SheetEdit.deleteSheet()) === undefined) return;
+                this.#tell(this.#words.sheetDeleted(name));
+                return;
+            case 'moveLeft':
+            case 'moveRight': {
+                const to = this.#workbook.sheets.indexOf(sheet) + (command === 'moveLeft' ? -1 : 1);
+                if (this.#sheetOperation(sheet, SheetEdit.moveSheet(to)) === undefined) return;
+                this.#tell(this.#words.sheetMoved(name, to + 1, this.#workbook.sheets.length));
+                return;
+            }
+            case 'copy': {
+                const copied = this.#sheetOperation(sheet, SheetEdit.copySheet(), step => step.sheet);
+                if (copied === undefined) return;
+                this.#tell(this.#words.sheetCopied(name, copied.sheet.name));
+                return;
+            }
+        }
+    }
+
+    // `edit` done on `sheet` as one step on the undo stack, showing `show`'s Sheet when asked, else the Sheet shown
+    // where it stands — the next, where the shown one was deleted. A refusal is said. Answers the step, or none.
+    #sheetOperation(sheet: Sheet, edit: SheetEdit, show?: (step: WorkbookStep) => Sheet): WorkbookStep | undefined {
+        if (!this.#workbook.sheets.includes(sheet)) return undefined;
+        this.#resizing = undefined;
+        let step: WorkbookStep;
+        try {
+            step = this.#workbook.do(sheet.name, edit);
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the engine's refusal is an answer told to the user; anything else is rethrown
+            if (!(error instanceof SheetRefusedError)) throw error;
+            this.#tell(this.#words.refused(error.refusal));
+            return undefined;
+        }
+        this.#history.record([step], sheet);
+        const shown = show?.(step);
+        const target = shown !== undefined && this.#workbook.sheets.includes(shown) ? shown : this.#workbook.shown;
+        if (target === this.#source.sheet) {
+            // A change to the Sheets: #changed draws the tabs again and raises the document, once.
+            this.#changed([step.change]);
+            return step;
+        }
+        this.#showSheet(target);
+        this.#raiseDocument();
+        this.#paintFrame();
+        return step;
+    }
+
+    // A tab dragged onto another, or past the last: it moves to that place, and its Sheet is shown.
+    #moveByDrag(sheet: Sheet, target: Sheet | undefined): void {
+        const sheets = this.#workbook.sheets;
+        if (this.#refusedSheetOperation() || !sheets.includes(sheet) || (target !== undefined && !sheets.includes(target))) return;
+        this.#leaveTabGestures('grid');
+        const to = target === undefined ? sheets.length - 1 : sheets.indexOf(target);
+        if (to === sheets.indexOf(sheet)) {
+            this.#sayLeftOrClear();
+            if (sheet !== this.#source.sheet) {
+                this.#showSheet(sheet);
+                this.#raiseDocument();
+            }
+            return;
+        }
+        const name = sheet.name;
+        // A move refused says why, after what ending a name's edit said, if it said anything.
+        if (this.#sheetOperation(sheet, SheetEdit.moveSheet(to), () => sheet) === undefined) {
+            const refused = this.#notice.textContent;
+            this.#say(refused);
+            return;
+        }
+        this.#say(this.#words.sheetMoved(name, to + 1, this.#workbook.sheets.length));
+    }
+
+    // The Sheets have changed — by a gesture, a Consumer's command, an undo or a redo: a name being edited on a tab
+    // whose Sheet is gone ends, and so does its menu, the keyboard they held going back to the grid; a menu still standing is
+    // drawn again, so what it offers follows the Sheets as they stand.
+    #forgetTabGesturesGone(): void {
+        const sheets = this.#workbook.sheets;
+        const renaming = this.#tabs.renaming;
+        // The keyboard goes to the grid only from the field or the menu that held it: one elsewhere on the page stays.
+        const keyboard = this.#tabs.gestureHoldsKeyboard ? 'grid' : 'nowhere';
+        if (renaming !== undefined && !sheets.includes(renaming)) this.#endRename(keyboard);
+        const menuSheet = this.#menuSheet;
+        if (menuSheet === undefined) return;
+        if (!sheets.includes(menuSheet)) {
+            this.#closeTabMenu(keyboard);
+            return;
+        }
+        if (this.#tabCommandRefusal(this.#menuActive, menuSheet) !== undefined) {
+            const first = tabCommandOrder.find(command => this.#tabCommandRefusal(command, menuSheet) === undefined);
+            if (first !== undefined) this.#menuActive = first;
+        }
+        this.#paintTabMenu(menuSheet);
     }
 
     // ---- Operations ------------------------------------------------------------------------------------------
@@ -2170,7 +2749,9 @@ class SheetView {
         this.#grid?.refreshSummary();
     }
 
-    #showSheet(sheet: Sheet): void {
+    // `match`, where given, is a Find step's match on `sheet` (ADR-0332 §5): selected and taken as the current match in
+    // place of the view the Sheet was left with.
+    #showSheet(sheet: Sheet, match?: CellPosition): void {
         // Format Cells read the Sheet it was opened over: another shown, or this one opened again, ends it, and so does
         // a Toolbar Item's list.
         this.#endFormatCells();
@@ -2191,8 +2772,9 @@ class SheetView {
         if (grid !== undefined && view !== undefined) grid.showViewWith(view, this.#source.snapshot().rowSequenceVersion);
         grid?.update(this.#gridOptions());
         this.#paintFrame();
+        if (match !== undefined) grid?.placeMatch(match, this.#source.snapshot().rowSequenceVersion);
         // A Sheet shown for the first time opens on A1, scrolled to it, as Excel's does.
-        if (view === undefined) this.#select(new CellRange(new CellAddress(0, 0)));
+        else if (view === undefined) this.#select(new CellRange(new CellAddress(0, 0)));
     }
 
     // The document, then a change to the Sheets where the names moved. The names are taken as heard before either
@@ -2219,7 +2801,10 @@ class SheetView {
         workbook.setSeed(options.seed ?? chosenSeed, 0);
         // The day and the clock, before any row is read: every Sheet reads them, one added later too. NOW reads the zone
         // the options name when the engine asks, once per recalculation.
-        workbook.nowSource = () => momentIn(this.#zoneOf(this.#options), new Date());
+        workbook.nowSource = () => {
+            const zone = this.#zoneOf(this.#options);
+            return zone === undefined ? undefined : momentIn(zone, new Date());
+        };
         workbook.setToday(this.#resolveDay(options));
         // The document's NOW was computed before the clock was given, and waits until it is read again.
         workbook.recalculateVolatile();
@@ -2229,13 +2814,16 @@ class SheetView {
 
     // ---- The Sheet Day and NOW (ADR-0121, ADR-0124) ---------------------------------------------------------
 
-    #zoneOf(options: SheetOptions): string {
+    // The zone the options name, else the browser's; none where the browser does not say it (ADR-0121).
+    #zoneOf(options: SheetOptions): string | undefined {
         return options.timeZone ?? this.#browserZone;
     }
 
-    // The fixed day, else the day in the zone now.
-    #resolveDay(options: SheetOptions): SheetDay {
-        return options.today ?? dayOf(momentIn(this.#zoneOf(options), new Date()));
+    // The fixed day, else the day in the zone now; none while no zone is known, when TODAY() waits.
+    #resolveDay(options: SheetOptions): SheetDay | undefined {
+        if (options.today !== undefined) return options.today;
+        const zone = this.#zoneOf(options);
+        return zone === undefined ? undefined : dayOf(momentIn(zone, new Date()));
     }
 
     // Reads the day again when it can have changed: at the next midnight in the zone, and at most an hour after this
@@ -2243,8 +2831,9 @@ class SheetView {
     #armTheDay(): void {
         clearTimeout(this.#dayTimer);
         this.#dayTimer = undefined;
-        if (this.#options.today !== undefined) return;
-        const due = untilTheDayIsReadAgainMs(momentIn(this.#zoneOf(this.#options), new Date()));
+        const zone = this.#zoneOf(this.#options);
+        if (this.#options.today !== undefined || zone === undefined) return;
+        const due = untilTheDayIsReadAgainMs(momentIn(zone, new Date()));
         this.#dayTimer = setTimeout(() => {
             this.#dayTimer = undefined;
             if (this.#destroyed) return;
@@ -2366,6 +2955,23 @@ const sheetFindMatch = (row: SheetRow, column: GridColumn<SheetRow>, pattern: Gr
     return sheetCellMatches(row.sheet, new CellAddress(row.index, at), pattern, row.at(at)?.text);
 };
 
+/** A cell a Replace All over the Workbook could not write, as the find panel names it: by its Sheet and column. */
+function refusedCellOf(cell: { readonly sheet: Sheet; readonly address: CellAddress }, reason: string): FindPanelRefusedCell {
+    return { rowNumber: cell.address.row + 1, column: sheetQualifier(cell.sheet) + CellAddress.columnName(cell.address.column), reason };
+}
+
+/** The commands of a Sheet Tab's menu, in its order (ADR-0331 §4). */
+const tabCommandOrder: readonly SheetTabCommand[] = ['rename', 'delete', 'moveLeft', 'moveRight', 'copy'];
+
+/** The keys the Sheet declares to its grid: Excel's formatting keys and its insert and delete keys (ADR-0050 item 14). */
+const sheetDeclaredKeys: readonly string[] = Object.freeze([...sheetFormatKeysDeclared(), ...sheetStructureKeysDeclared()]);
+
+/** How a Reference names `sheet` before its cell, quoted where its name needs it: `Sheet2!`, `'Q1 Sales'!`. */
+function sheetQualifier(sheet: Sheet): string {
+    const a1 = referenceText(new CellRange(new CellAddress(0, 0)), sheet.name);
+    return a1.slice(0, a1.length - 'A1'.length);
+}
+
 function unreachableColumn(position: number): never {
     throw new Error(`Internal: no column of the request stands at ${String(position)}.`);
 }
@@ -2477,6 +3083,9 @@ function refuseCollidingKeyTips(rows: readonly (SheetToolbarRowOptions | 'defaul
 
 // The Name Box names the Focus as A1 does (ADR-0051).
 const nameBoxLabel = (focus: CellPosition): string => new CellAddress(focus.row, focus.column).toString();
+// The size of a range a drag selects, in the Name Box, as Excel's shows it while the button is down (ADR-0052).
+const nameBoxSizeLabel = (range: SelectionRange): string =>
+    `${String(range.rowCount)}R x ${String(range.columnCount)}C`;
 
 // A Row Heading is Excel's row number, which is the position plus one in every culture (ADR-0050, ADR-0048).
 const rowLabel = (row: number): string => String(row + 1);

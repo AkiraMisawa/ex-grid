@@ -124,6 +124,7 @@ class GridStandIn {
                 this.placed.push({ range, focus, version });
                 return true;
             },
+            placeMatch: () => { throw new Error('The pivot places no match.'); },
             readView: () => { throw new Error('The pivot reads no view.'); },
             writePointedText: () => { throw new Error('The pivot writes no pointed text.'); },
             takeBackPointedText: () => { throw new Error('The pivot takes back no pointed text.'); },
