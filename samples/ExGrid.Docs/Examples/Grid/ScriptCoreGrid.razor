@@ -10,7 +10,7 @@
            @bind:get="Note" @bind:set="SetNote" @bind:event="oninput" @onkeydown="NoteKeyAsync" @ref="_noteField" />
 </div>
 <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
-                      OnEdit="Edit" ShowFillHandle OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" @ref="_grid" />
+                      OnEdit="Edit" ShowFillHandle ShowFormulaBar OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" @ref="_grid" />
 
 @code {
     // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.

@@ -4,7 +4,8 @@
 
 @* A double click on a cell that does not edit opens that trade's note: the grid hands the keyboard on to the
    field, and Enter there gives it back. MudGridChrome draws the column menu, the filter panel (a value list on
-   Trader, conditions elsewhere), the Context Menu, the loading bar and Book's Cell Editor with MudBlazor's
+   Trader, conditions elsewhere), the Context Menu, the loading bar, Book's Cell Editor and the Formula Bar's fields
+   with MudBlazor's
    components inside the grid the browser draws, and MudExGridPaper hands it Roboto's widths with the font, as it
    hands the Razor grid. *@
 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
@@ -14,7 +15,7 @@
 </div>
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
     <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
-                          OnEdit="Edit" ShowFillHandle OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" Chrome="MudGridChrome.Default" @ref="_grid" />
+                          OnEdit="Edit" ShowFillHandle ShowFormulaBar OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" Chrome="MudGridChrome.Default" @ref="_grid" />
 </MudExGridPaper>
 
 @code {

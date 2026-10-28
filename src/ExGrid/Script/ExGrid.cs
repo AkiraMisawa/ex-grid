@@ -141,6 +141,13 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public bool ShowFillHandle { get; set; }
 
     /// <summary>
+    /// Whether the Formula Bar stands above the header (ADR-0051): the Name Box and the Focus cell's text, which edits
+    /// the cell as its editor does. A Chrome draws its fields where it names <see cref="ScriptSlots.FormulaBarText"/>
+    /// and <see cref="ScriptSlots.NameBox"/> (ADR-0410). Off unless set.
+    /// </summary>
+    [Parameter] public bool ShowFormulaBar { get; set; }
+
+    /// <summary>
     /// Hears a fill-handle drag, released (ADR-0050, item 5): the source, the target beside it and the direction. The
     /// Consumer writes the fill, and the rows it then shows are what the cells paint. As with <see cref="OnPaste"/>, the
     /// fill is pending until the handler completes (ADR-0380): one that calls <see cref="GridFillIntent.Refuse"/> before
@@ -865,6 +872,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteBoolean("headerClickSelects", HeaderClickSelects);
         json.WriteBoolean("pasteMaySpill", PasteMaySpill);
         json.WriteBoolean("showFillHandle", ShowFillHandle);
+        json.WriteBoolean("showFormulaBar", ShowFormulaBar);
         json.WriteBoolean("findsHeaders", FindsHeaders);
         // Nothing answers a Selection Summary over a source in .NET yet (ADR-0130): none is drawn, rather than a
         // status line that never fills.

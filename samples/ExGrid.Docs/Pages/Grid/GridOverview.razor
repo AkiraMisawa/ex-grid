@@ -67,22 +67,27 @@
             Its <code>Chrome</code> takes the same <code>IGridChrome</code>, and a part your Chrome draws in Razor
             stands inside the grid the browser draws: the component renders it beside the grid, in a hidden holder,
             and the grid's script moves it into its place. <code>MudGridChrome</code> draws the column menu, the
-            filter panel, the find panel, the Context Menu, the loading bar and the Cell Editor this way, with the same
-            MudBlazor buttons, checkboxes, fields and bar and the same underlined field; switch the Example to
-            MudBlazor and open a column's ▾, press <kbd>Ctrl</kbd>+<kbd>F</kbd>, or type on a Book. The other parts are still the
+            filter panel, the find panel, the Context Menu, the loading bar, the Cell Editor and the Formula Bar's two
+            fields this way, with the same MudBlazor buttons, checkboxes, fields and bar and the same underlined field;
+            switch the Example to MudBlazor and open a column's ▾, press <kbd>Ctrl</kbd>+<kbd>F</kbd>, or type on a
+            Book, in its cell or in the Formula Bar, which <code>ShowFormulaBar</code> stands above the header. The other parts are still the
             browser's own here, until the Wrapper draws them too. A Chrome of your own names the parts it draws in
             <code>ScriptSlots</code> and answers each through the overload that takes a view:
             <code>ColumnMenu(GridMenuView)</code>, <code>ContextMenu(GridMenuView)</code>,
             <code>FilterPanel(GridFilterView)</code>, <code>FindPanel(GridFindView)</code>,
-            <code>LoadingIndicator(GridLoadingView)</code> and <code>CellEditor(GridCellEditorView)</code>. A view is
+            <code>LoadingIndicator(GridLoadingView)</code>, <code>CellEditor(GridCellEditorView)</code>,
+            <code>FormulaBarText(GridFormulaBarTextView)</code> and <code>NameBox(GridNameBoxView)</code>. A view is
             data, drawn again each time the grid changes it, so the Razor marks its controls with
             <code>ScriptSlotAttributes</code> and handles none of their keys, presses or changes: a menu's control
             for each item carries <code>MenuItem</code> and its index, a filter panel's search box
             <code>FilterSearch</code>, each value's checkbox <code>FilterValue</code> and its index, the Cell Editor's
-            one field <code>EditorField</code>, and so on. The editor's field is drawn holding the view's
-            <code>InitialText</code> and nothing bound after: the grid reads and writes its text, places its caret and
-            gives it the keyboard in the browser, so what is typed is what the Enter commits, and a field a Chrome
-            draws shows a formula's References uncoloured. The
+            one field <code>EditorField</code>, the Formula Bar's <code>FormulaBarField</code> and
+            <code>NameBoxField</code>, and so on. The editor's field is drawn holding the view's
+            <code>InitialText</code> and nothing bound after, and the Formula Bar's fields with no value at all: the
+            grid reads and writes their text, places the caret and gives them the keyboard in the browser, so what is
+            typed is what the Enter commits, and a field a Chrome draws shows a formula's References uncoloured.
+            ExSheet therefore keeps its own Cell Editor and Formula Bar text, whatever the Chrome, and takes the
+            Chrome's Name Box. The
             grid's script hands each to the grid in the browser, so nothing a user does waits on a Blazor Server
             circuit, and a key typed as a menu opens, before your Razor has arrived, waits for it and is answered
             there.

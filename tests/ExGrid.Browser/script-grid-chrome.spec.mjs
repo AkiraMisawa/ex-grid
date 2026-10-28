@@ -142,3 +142,22 @@ test('ADR-0410 / SRV-7: the Cell Editor is MudBlazor\'s field, and a text typed 
     await expect(field).toBeFocused();
     await expect(field).toHaveAttribute('aria-label', 'Trader');
 });
+
+test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and a text typed in its text field and entered at machine speed over a slow circuit is what commits', async ({ page }) => {
+    await settled(grid(page));
+    await cell(page, 3, 1).click({ force: true });
+    await settled(grid(page));
+    const text = grid(page).locator('input.mud-ex-formula-bar-text');
+    await expect(grid(page).locator('input.mud-ex-name-box')).toHaveCount(1);
+    await expect(text).not.toHaveValue('');
+    // Typed into MudBlazor's field the moment it takes the keyboard, over a round trip: the core reads the field in the
+    // browser, so the Enter commits every key (SRV-7).
+    await setRoundTrip(150);
+    await text.click();
+    await page.keyboard.press('ControlOrMeta+A');
+    await page.keyboard.type('Mira Holt');
+    await page.keyboard.press('Enter');
+    await settled(grid(page));
+    await circuitQuiet();
+    await expect(page.locator('#script-mud-edited')).toHaveText('Edited: Trader = Mira Holt');
+});

@@ -638,6 +638,8 @@ ExGrid.Script.ExGrid<TRow>.SelectionChanged.get -> Microsoft.AspNetCore.Componen
 ExGrid.Script.ExGrid<TRow>.SelectionChanged.set -> void
 ExGrid.Script.ExGrid<TRow>.ShowFillHandle.get -> bool
 ExGrid.Script.ExGrid<TRow>.ShowFillHandle.set -> void
+ExGrid.Script.ExGrid<TRow>.ShowFormulaBar.get -> bool
+ExGrid.Script.ExGrid<TRow>.ShowFormulaBar.set -> void
 ExGrid.Script.ExGrid<TRow>.Source.get -> ExGrid.IGridSource<TRow!>?
 ExGrid.Script.ExGrid<TRow>.Source.set -> void
 ExGrid.Script.ExGrid<TRow>.StripeRows.get -> bool

@@ -13,7 +13,9 @@ ExSheet.MudBlazor.MudSheetChrome.ContextMenu(ExGrid.Chrome.GridMenuView! view) -
 ExSheet.MudBlazor.MudSheetChrome.FilterPanel(ExGrid.Chrome.GridFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.FindPanel(ExGrid.Chrome.GridFindView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.FormatCells(ExSheet.SheetFormatCellsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.FormulaBarText(ExGrid.Chrome.GridFormulaBarTextView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.LoadingIndicator(ExGrid.Chrome.GridLoadingView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.NameBox(ExGrid.Chrome.GridNameBoxView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
 ExSheet.MudBlazor.MudSheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.SheetScriptSlots.get -> ExSheet.SheetScriptSlots
