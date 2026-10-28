@@ -127,6 +127,10 @@ What happens today was measured on 2026-10-11:
   ignores the query. A `?v=` never asked for before is a hit, with the plain address's age. So a new
   `?v=` meets an old body unless a deploy purges the CDN, and only the two deploys show that. Either
   way the handshake refuses what arrives, so the outcome is a notice and never a wrong grid.)*
+- *(2026-10-28: [ADR-0411](./0411-every-products-blazor-script-imports-the-core-from-one-shared-script-exgrid-ships.md).
+  A Blazor product's module imports the core from the Shared Script ExGrid ships, at its plain address with `?v=`,
+  since a module cannot know another's fingerprinted address. The handshake reaches through the import: a module
+  answers its stamp only while the Shared Script it was handed is the one it was built against.)*
 
 ## What this replaced, and why
 

@@ -16,6 +16,8 @@ import { SERVER, BASE_URL } from './hosting.mjs';
 //   changed body first, with a console error of its own the test names, and the grid says the same
 //   words as for a script that did not load. A missing script is layer 2's: a missing file is a
 //   console error of the browser's own.
+// - ADR-0411: a product's module over the Script Core refuses a Shared Script of another build the same way,
+//   though the Shared Script is another package's file, imported by the module rather than by the component.
 // - ERR-11: each of the six packages' stylesheet notice — a Wrapper's rendered for the stylesheet its
 //   Chrome brings — hidden by its own stylesheet, shown by another version's, and not shown while no
 //   stylesheet has arrived.
@@ -240,6 +242,25 @@ test.describe('ERR-10: a script that is not the one the grid was built with', ()
             expect(said.filter((s) => s.text === SCRIPT_REFUSED)).toHaveLength(grids);
         });
     });
+});
+
+test('ADR-0411 / ADR-0123: a Shared Script of another build is refused by ExPivot over the Script Core, said in place of the pivot', async ({ page }) => {
+    let served = 0;
+    await serveChanged(page, /\/_content\/ExGrid\/ex-grid-script\.min\.js\?v=[0-9a-f]{12}$/, (body) => {
+        served++;
+        const stamp = /^\/\*! ex-grid-script\.js sha256:([0-9a-f]{64}) /.exec(body)?.[1];
+        expect(stamp, 'the Shared Script opens with its stamp').toBeDefined();
+        return body.replaceAll(stamp, ANOTHER_STAMP);
+    });
+
+    await page.goto('/script-pivot');
+
+    const refusal = page.locator('[data-ex-notice="script"]');
+    await expect(refusal).toBeVisible();
+    await expect(refusal).toHaveText(SCRIPT_REFUSED);
+    // ExPivot's module took the Shared Script from ExGrid's folder, once, and nothing attached over it.
+    expect(served).toBe(1);
+    await expect(page.locator('.ex-pivot')).toHaveCount(0);
 });
 
 test.describe('ERR-11: each product\'s stylesheet notice', () => {

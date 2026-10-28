@@ -37,10 +37,11 @@
     <InternalsVisibleTo Include="ExGrid.Docs.Generator.Tests" />
   </ItemGroup>
 
-  <!-- The Script Core's module for ExGrid.Script.ExGrid (ADR-0350 section 7): the bridge and @ex-grid/core,
-       bundled from their sources in src/npm as this project builds, never committed, so a change to the core
-       is in the next build of every Blazor host with nothing to regenerate by hand. The module goes to
-       wwwroot, where the package serves it; its version and stamp (ADR-0123) are compiled in as
+  <!-- The Script Core's module for ExGrid.Script.ExGrid (ADR-0350 section 7): the bridge, bundled from its sources
+       in src/npm as this project builds, never committed, so a change to the core is in the next build of every
+       Blazor host with nothing to regenerate by hand; and the Shared Script beside it, @ex-grid/core and the data it
+       reads, which the bridge and every other product's Blazor module import by one address (ADR-0411). Both go to
+       wwwroot, where the package serves them; the bridge's version and stamp (ADR-0123) are compiled in as
        ScriptCoreAsset. The build needs Node, and src/npm's dependencies, which it installs once. -->
   <PropertyGroup>
     <ScriptCoreWorkspace>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'npm'))</ScriptCoreWorkspace>
@@ -51,7 +52,7 @@
   <ItemGroup>
     <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/**/*.ts" />
     <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
-    <Content Remove="wwwroot/ex-grid-core.min.js;wwwroot/ex-grid-core.min.js.map" />
+    <Content Remove="wwwroot/ex-grid-core.min.js;wwwroot/ex-grid-core.min.js.map;wwwroot/ex-grid-script.min.js;wwwroot/ex-grid-script.min.js.map" />
   </ItemGroup>
 
   <!-- npm ci again whenever the lock file is newer than what it installed: a pull that moves a dependency
@@ -62,8 +63,8 @@
   </Target>
 
   <Target Name="BuildScriptCore" DependsOnTargets="InstallScriptCore"
-          Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
-    <Exec Command="node ../scripts/build-blazor.mjs --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-grid-core.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+          Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(MSBuildThisFileDirectory)wwwroot/ex-grid-script.min.js;$(ScriptCoreConstants)">
+    <Exec Command="node ../scripts/build-blazor.mjs --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-grid-core.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot; --ships-shared"
           WorkingDirectory="$(ScriptCoreWorkspace)blazor" />
   </Target>
 
@@ -72,8 +73,8 @@
   <Target Name="IncludeScriptCore" DependsOnTargets="BuildScriptCore"
           BeforeTargets="BeforeBuild;CoreCompile;ResolveProjectStaticWebAssets;ResolveStaticWebAssetsConfiguration">
     <ItemGroup>
-      <Content Remove="wwwroot/ex-grid-core.min.js;wwwroot/ex-grid-core.min.js.map" />
-      <Content Include="wwwroot/ex-grid-core.min.js;wwwroot/ex-grid-core.min.js.map" />
+      <Content Remove="wwwroot/ex-grid-core.min.js;wwwroot/ex-grid-core.min.js.map;wwwroot/ex-grid-script.min.js;wwwroot/ex-grid-script.min.js.map" />
+      <Content Include="wwwroot/ex-grid-core.min.js;wwwroot/ex-grid-core.min.js.map;wwwroot/ex-grid-script.min.js;wwwroot/ex-grid-script.min.js.map" />
       <Compile Remove="$(ScriptCoreConstants)" />
       <Compile Include="$(ScriptCoreConstants)" />
     </ItemGroup>

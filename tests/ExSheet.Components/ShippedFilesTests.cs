@@ -37,7 +37,7 @@ public class ShippedFilesTests : SheetTestContext
         Assert.Equal(ShippedFiles.Stamp("ExGrid", "ex-grid.css"), Assert.Single(grids).GetAttribute("data-ex-stamp"));
     }
 
-    [Fact] // ADR-0123 / ADR-0370 s1: the bundled module ExSheet.Script.ExSheet imports answers the stamp the component is built with, at the version its address carries
+    [Fact] // ADR-0123 / ADR-0370 s1 / ADR-0411: the bundled module ExSheet.Script.ExSheet imports answers the stamp the component is built with, at the version its address carries
     public void The_script_core_module_is_the_one_the_component_was_built_with()
     {
         const string module = "ex-sheet.min.js";
@@ -47,6 +47,13 @@ public class ShippedFilesTests : SheetTestContext
         Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
         Assert.Equal(global::ExSheet.Script.ScriptCoreAsset.Version, ShippedFiles.Version("ExSheet", module));
         Assert.Contains($"sourceMappingURL={module}.map", shipped, StringComparison.Ordinal);
+        // The grid core and the data come from the Shared Script ExGrid ships, at the address its stamp names, which the
+        // module expects (ADR-0411).
+        var shared = System.Text.RegularExpressions.Regex.Match(File.ReadAllText(ShippedFiles.PathOf("ExGrid", "ex-grid-script.min.js")),
+            "^/\\*! ex-grid-script\\.js sha256:(?<stamp>[0-9a-f]{64}) ").Groups["stamp"].Value;
+        Assert.Matches("^[0-9a-f]{64}$", shared);
+        Assert.Contains($"from\"../ExGrid/ex-grid-script.min.js?v={shared[..12]}\"", shipped, StringComparison.Ordinal);
+        Assert.Contains($"\"{shared}\"", shipped, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0123 / ERR-11 / ADR-0203: the Sheet's notice is worded through its label function, as its grid's words are
