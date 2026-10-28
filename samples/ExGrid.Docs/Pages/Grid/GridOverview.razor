@@ -104,7 +104,9 @@
         <p>
             Find is the source's, as on the grid above: <kbd>Ctrl</kbd>+<kbd>F</kbd> asks its
             <code>FindAsync</code> in .NET, and is refused where the source does not search. Replace is not carried
-            yet, so <kbd>Ctrl</kbd>+<kbd>H</kbd> is refused.
+            yet, so <kbd>Ctrl</kbd>+<kbd>H</kbd> is refused. It takes <code>CellMetrics</code>, and inside
+            <code>MudExGridPaper</code> the paper's Roboto widths, Density, hover band and Row Stripes, as the grid
+            above does: a value written on the grid beats the paper's.
             Not carried yet, and refused by name when a column declares it: Template Columns, Tone and Row Marks.
             The Selection Summary is not offered yet either, and no summary is drawn. <code>PointedAt</code> takes
             the declaration a <code>PointingScope</code> made, so a Sheet over the same core points into the grid

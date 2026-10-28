@@ -21,16 +21,19 @@
     rendered in .NET beside the grid and moved into the Script Core's slots by the adapter's script, which wires
     each control in the browser. A key on a menu item, a value ticked, a condition or a search typed never waits on
     the circuit. Book filters by its values, Notional by conditions, and Ctrl+F asks the rows' source in .NET. The
-    other parts are still the Script Core's own.
+    other parts are still the Script Core's own. It stands in a striped <code>MudExGridPaper</code>, whose Roboto
+    widths, Density and Row Stripes the grid takes as the C# core's does (ADR-0030).
 </p>
 
-<ExGrid.Script.ExGrid TRow="DemoTrade"
-                     Rows="_rows"
-                     Columns="Columns"
-                     ViewportHeight="280"
-                     ViewportWidth="640"
-                     Chrome="MudGridChrome.Default"
-                     OnColumnHidden="OnColumnHidden" />
+<MudExGridPaper Striped="true">
+    <ExGrid.Script.ExGrid TRow="DemoTrade"
+                         Rows="_rows"
+                         Columns="Columns"
+                         ViewportHeight="280"
+                         ViewportWidth="640"
+                         Chrome="MudGridChrome.Default"
+                         OnColumnHidden="OnColumnHidden" />
+</MudExGridPaper>
 
 <p><span id="script-mud-hidden" role="status">Hidden: @_hidden</span></p>
 

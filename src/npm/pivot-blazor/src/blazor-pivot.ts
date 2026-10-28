@@ -6,7 +6,7 @@
 
 import { builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
-import { crossingCalls, HeldMessages } from '@ex-grid/blazor-shared';
+import { crossingCalls, HeldMessages, WireMetrics, type WireCellMetrics, type WirePresentationDefaults } from '@ex-grid/blazor-shared';
 import { createPivot, type PivotChrome, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import { PivotJson, pivotWordIdList, readPivotLayoutJson, writePivotLayoutJson, type PivotLabel, type PivotLayout } from '@ex-grid/pivot-engine';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from './dotnet-pivot-source';
@@ -36,6 +36,10 @@ const passedOptions: readonly PassedOption[] = Object.freeze([
  * the Script Core's own default stands for the rest, so a default is written once, in the Script Core. */
 export interface WireOptions extends Partial<Pick<PivotViewOptions, PassedOption>> {
     readonly locale: string;
+    /** The component's Cell Metrics, which beat a Wrapper's widths (ADR-0016). */
+    readonly cellMetrics?: WireCellMetrics;
+    /** A Wrapper's cascaded defaults (ADR-0030): the widths of the font it sets, its Density, hover band and Row Stripes. */
+    readonly presentationDefaults?: WirePresentationDefaults;
     readonly hears: readonly HeardKind[];
 }
 
@@ -142,7 +146,8 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
     };
     const slots = init.razorSlots === null ? undefined : new RazorPivotSlots(bridge, init.razorSlots, grids);
     const chrome = slots?.chrome();
-    const pivot: PivotHandle = createPivot(root, pivotOptions(init.options, source, layout, label, heard, chrome));
+    const metrics = new WireMetrics();
+    const pivot: PivotHandle = createPivot(root, pivotOptions(init.options, source, layout, label, heard, chrome, metrics));
     made.pivot = pivot;
     for (const hold of early.splice(0)) if (!hold.gone) hold.release = pivot.holdSettled(hold.element);
     return Object.freeze({
@@ -152,7 +157,7 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
             const nextSource = next.source === undefined ? source : sourceOf(next.source);
             const nextLayout = next.layout === undefined ? layout : readPivotLayoutJson(next.layout);
             const nextLabel = next.words === undefined ? label : labelOf(next.words);
-            pivot.update(pivotOptions(next.options, nextSource, nextLayout, nextLabel, heard, chrome));
+            pivot.update(pivotOptions(next.options, nextSource, nextLayout, nextLabel, heard, chrome, metrics));
             source = nextSource;
             layout = nextLayout;
             label = nextLabel;
@@ -280,14 +285,18 @@ function labelOf(words: WireWords): PivotLabel | undefined {
 
 function pivotOptions(
     wire: WireOptions, source: DotNetPivotSource, layout: PivotLayout | undefined, label: PivotLabel | undefined, heard: Handlers,
-    chrome: PivotChrome | undefined,
+    chrome: PivotChrome | undefined, metrics: WireMetrics,
 ): PivotViewOptions {
     const hears = new Set(wire.hears);
+    const cellMetrics = metrics.cellMetrics(wire.cellMetrics);
+    const presentationDefaults = metrics.presentationDefaults(wire.presentationDefaults);
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
     return {
         ...(passed as Partial<Pick<PivotViewOptions, PassedOption>>),
         source,
         locale: wire.locale,
+        ...(cellMetrics === undefined ? {} : { cellMetrics }),
+        ...(presentationDefaults === undefined ? {} : { presentationDefaults }),
         ...(layout === undefined ? {} : { layout }),
         ...(label === undefined ? {} : { label }),
         ...(chrome === undefined ? {} : { chrome }),

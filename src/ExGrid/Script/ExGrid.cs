@@ -81,6 +81,16 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>Whether the row under the pointer is tinted (ADR-0029).</summary>
     [Parameter] public bool HighlightHoverRow { get; set; }
 
+    /// <summary>The widths the grid charges each glyph (ADR-0016), beating a Wrapper's and the Density's: a Consumer
+    /// that sets the font the cells are drawn in hands that font's widths, so <c>####</c> and an Auto width are judged
+    /// by the face on screen. The Density's unless set.</summary>
+    [Parameter] public CellTextMetrics? CellMetrics { get; set; }
+
+    /// <summary>What a Wrapper hands down (ADR-0030): the widths of the font its Theme sets, and the Density, hover band
+    /// and Row Stripes its words map onto. Read only where the corresponding parameter was not written: an explicit
+    /// parameter still wins, per value (ADR-0028), as on the C# core.</summary>
+    [CascadingParameter] public GridPresentationDefaults? Presentation { get; set; }
+
     /// <summary>Whether the header's ▾ column menu is hidden (ADR-0044).</summary>
     [Parameter] public bool HideColumnMenu { get; set; }
 
@@ -311,13 +321,26 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private bool _stateScheduled;
     private bool _hearing;
     private bool _renderOwed = true;
+    private bool _hoverSupplied;
+    private bool _stripesSupplied;
     // The declaration of a Pointing Scope this grid took as it was made, which it keeps (ADR-0430).
     private GridPointedInBrowser<TRow>? _pointedAt;
     private bool _parametersSet;
 
     /// <inheritdoc />
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        // A Wrapper's hover band and Row Stripes stand where these were never written (ADR-0030).
+        _hoverSupplied |= parameters.TryGetValue<bool>(nameof(HighlightHoverRow), out _);
+        _stripesSupplied |= parameters.TryGetValue<bool>(nameof(StripeRows), out _);
+        return base.SetParametersAsync(parameters);
+    }
+
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        if (CellMetrics is { DigitWidthPx: <= 0 } empty)
+            throw new ArgumentOutOfRangeException(nameof(CellMetrics), empty, "default(CellTextMetrics) is not valid; construct it with real metrics.");
         if ((Source is null) == (Rows is null))
             throw new InvalidOperationException("ExGrid takes its rows from exactly one of Source and Rows (ADR-0350 section 16).");
         if (OnFindError is not null && Rows is not null)
@@ -827,9 +850,16 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             WriteSize(json, "viewportWidth", width);
         json.WriteNumber("pinnedColumnCount", PinnedColumnCount);
         json.WriteBoolean("virtualiseColumns", VirtualiseColumns);
-        json.WriteBoolean("stripeRows", StripeRows);
+        // Written only where the Consumer wrote them, so a Wrapper's stand where it did not (ADR-0030).
+        if (_stripesSupplied)
+            json.WriteBoolean("stripeRows", StripeRows);
         json.WriteBoolean("highlightFocusRow", HighlightFocusRow);
-        json.WriteBoolean("highlightHoverRow", HighlightHoverRow);
+        if (_hoverSupplied)
+            json.WriteBoolean("highlightHoverRow", HighlightHoverRow);
+        if (CellMetrics is { } metrics)
+            ScriptMetricsJson.WriteCellMetrics(json, "cellMetrics", metrics);
+        if (Presentation is { } presentation)
+            ScriptMetricsJson.WritePresentationDefaults(json, "presentationDefaults", presentation);
         json.WriteBoolean("hideColumnMenu", HideColumnMenu);
         json.WriteBoolean("hideCopyWithHeaders", HideCopyWithHeaders);
         json.WriteBoolean("headerClickSelects", HeaderClickSelects);

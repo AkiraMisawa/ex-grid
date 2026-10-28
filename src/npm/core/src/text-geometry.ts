@@ -3,7 +3,9 @@
 // geometry its label widths are estimated under, as the Razor component tells it the grid's Cell Metrics
 // (ADR-0151). Nothing here reads a browser's layout (ADR-0021).
 
+import type { CellTextMetrics } from './columns/cell-text-metrics';
 import { GridMetrics, type GridDensity } from './grid-metrics';
+import type { GridPresentationDefaults } from './grid-presentation-defaults';
 
 /** The widths a grid charges each character class, its cells' padding, and single glyphs, in pixels. */
 export interface GridTextGeometry {
@@ -23,26 +25,61 @@ export interface GridTextGeometry {
     readonly glyphWidths: Readonly<Record<number, number>>;
 }
 
-// Each Density's metrics and geometry, made once: resolving builds the glyph table.
-const resolved = new Map<GridDensity, GridMetrics>();
-const geometries = new Map<GridDensity, GridTextGeometry>();
+/** What a grid's text is charged by, as `createGrid` takes it (ADR-0028): its Density, its Cell Metrics, and a
+ * Wrapper's defaults, each beating the next. */
+export interface GridTextOptions {
+    /** The preset, beating a Wrapper's; compact where neither gives one. */
+    readonly density?: GridDensity;
+    /** The Cell Metrics, beating a Wrapper's widths and the preset's. */
+    readonly cellMetrics?: CellTextMetrics;
+    /** A Wrapper's widths and Density (ADR-0030). */
+    readonly presentationDefaults?: GridPresentationDefaults;
+}
 
-function metricsAt(density: GridDensity): GridMetrics {
-    let metrics = resolved.get(density);
+// Each grid's metrics and geometry, made once: resolving builds the glyph table. Metrics and defaults given are
+// told apart by identity, as a grid tells a Wrapper's defaults apart.
+const presets = new Map<GridDensity, GridMetrics>();
+const given = new WeakMap<object, Map<GridDensity, GridMetrics>>();
+const geometries = new WeakMap<GridMetrics, GridTextGeometry>();
+
+function metricsAt(options: GridTextOptions): GridMetrics {
+    const { cellMetrics, presentationDefaults: defaults } = options;
+    // oxlint-disable-next-line ex-grid/no-stand-in-default -- ADR-0028: an untouched grid is compact, as createGrid's is
+    const density = options.density ?? defaults?.density ?? 'compact';
+    const keyed = cellMetrics ?? defaults;
+    if (keyed === undefined) {
+        let metrics = presets.get(density);
+        if (metrics === undefined) {
+            metrics = GridMetrics.resolve({ density });
+            presets.set(density, metrics);
+        }
+        return metrics;
+    }
+    let byDensity = given.get(keyed);
+    if (byDensity === undefined) {
+        byDensity = new Map();
+        given.set(keyed, byDensity);
+    }
+    // Metrics given beat the defaults' widths, so the defaults count only for their Density, which the key names.
+    let metrics = byDensity.get(density);
     if (metrics === undefined) {
-        metrics = GridMetrics.resolve({ density });
-        resolved.set(density, metrics);
+        metrics = GridMetrics.resolve({
+            density,
+            ...(cellMetrics === undefined ? {} : { cellMetrics }),
+            ...(defaults === undefined ? {} : { defaults }),
+        });
+        byDensity.set(density, metrics);
     }
     return metrics;
 }
 
-/** The text geometry of a grid drawn at `density`, as `createGrid` resolves it: plain data, which crosses to a
+/** The text geometry of a grid drawn with `options`, as `createGrid` resolves it: plain data, which crosses to a
  * Worker as it is. A row height does not move it. */
-export function gridTextGeometry(options: { readonly density?: GridDensity } = {}): GridTextGeometry {
-    const { density = 'compact' } = options;
-    const held = geometries.get(density);
+export function gridTextGeometry(options: GridTextOptions = {}): GridTextGeometry {
+    const resolved = metricsAt(options);
+    const held = geometries.get(resolved);
     if (held !== undefined) return held;
-    const metrics = metricsAt(density).cellMetrics;
+    const metrics = resolved.cellMetrics;
     const geometry: GridTextGeometry = Object.freeze({
         wideWidthPx: metrics.wideWidthPx,
         digitWidthPx: metrics.digitWidthPx,
@@ -52,14 +89,14 @@ export function gridTextGeometry(options: { readonly density?: GridDensity } = {
         cellHorizontalPaddingPx: metrics.cellHorizontalPaddingPx,
         glyphWidths: metrics.exportGlyphWidths(),
     });
-    geometries.set(density, geometry);
+    geometries.set(resolved, geometry);
     return geometry;
 }
 
-/** The cell width a header needs in a grid drawn at `density`, as an Auto width charges it (ADR-0016): its label,
+/** The cell width a header needs in a grid drawn with `options`, as an Auto width charges it (ADR-0016): its label,
  * an em of slack, the column-menu button's band when `menuButton`, and the sort mark's box when `sortable`. A
  * Consumer that fixes a column's width beside the grid's own charges its header alike. */
-export function gridHeaderRequiredPx(label: string, options: { readonly density?: GridDensity; readonly menuButton: boolean; readonly sortable: boolean }): number {
-    const { density = 'compact', menuButton, sortable } = options;
-    return metricsAt(density).headerRequiredPx({ label, menuButton, sortable });
+export function gridHeaderRequiredPx(label: string, options: GridTextOptions & { readonly menuButton: boolean; readonly sortable: boolean }): number {
+    const { menuButton, sortable } = options;
+    return metricsAt(options).headerRequiredPx({ label, menuButton, sortable });
 }

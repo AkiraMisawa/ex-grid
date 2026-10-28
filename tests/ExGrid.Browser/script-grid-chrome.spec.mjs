@@ -20,6 +20,18 @@ function grid(page) {
 
 const cell = (page, row, column) => grid(page).locator(`[id$='r${row}c${column}']`);
 
+test('ADR-0030: in MudExGridPaper the Script grid takes the paper\'s cascaded defaults, its Density and Row Stripes, under its Roboto', async ({ page }) => {
+    await settled(grid(page));
+    // The paper's cascaded defaults crossed to the browser and the core took them: Standard's 32 px rows, every second
+    // one striped. Roboto's widths come in the same value; what the core charges by them is layer 1's
+    // (src/npm/blazor/test/wire-metrics.test.ts, tests/ExGrid.Components/ScriptGridCellMetricsTests.cs).
+    const rows = grid(page).locator('.ex-viewport .ex-row');
+    await expect(rows.first()).toHaveCSS('height', '32px');
+    await expect(rows.nth(0)).not.toHaveClass(/\bex-row-stripe\b/);
+    await expect(rows.nth(1)).toHaveClass(/\bex-row-stripe\b/);
+    expect(await cell(page, 0, 0).evaluate(e => getComputedStyle(e).fontFamily)).toContain('Roboto');
+});
+
 test('ADR-0410: the column menu is MudBlazor\'s, and keys typed as it opens are the menu\'s before its Razor arrives', async ({ page }) => {
     await settled(grid(page));
     await cell(page, 0, 0).click({ force: true });

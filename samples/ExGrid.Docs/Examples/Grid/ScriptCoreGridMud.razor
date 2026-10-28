@@ -5,14 +5,16 @@
 @* A double click on a cell that does not edit opens that trade's note: the grid hands the keyboard on to the
    field, and Enter there gives it back. MudGridChrome draws the column menu, the filter panel (a value list on
    Trader, conditions elsewhere), the Context Menu and the loading bar with MudBlazor's components inside the grid
-   the browser draws. *@
+   the browser draws, and MudExGridPaper hands it Roboto's widths with the font, as it hands the Razor grid. *@
 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
     <label for="trade-note">@(_noteFor is null ? "Double-click a Trader for its note" : $"Note for trade {_noteFor.Id}")</label>
     <input id="trade-note" placeholder="Enter to go back to the grid" style="flex: 1"
            @bind:get="Note" @bind:set="SetNote" @bind:event="oninput" @onkeydown="NoteKeyAsync" @ref="_noteField" />
 </div>
-<ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
-                      OnEdit="Edit" ShowFillHandle OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" Chrome="MudGridChrome.Default" @ref="_grid" />
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
+                          OnEdit="Edit" ShowFillHandle OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" Chrome="MudGridChrome.Default" @ref="_grid" />
+</MudExGridPaper>
 
 @code {
     // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.

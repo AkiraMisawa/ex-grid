@@ -31,3 +31,4 @@ export {
     drawnVersionAttribute, RazorSlotHost, type HostedSlotKind, type RazorSlotData, type RazorSlotHostOptions, type RazorSlotKind,
 } from './razor-slot-host';
 export { gridRazorSlotKinds, isGridRazorSlotName, type GridRazorSlotName } from './grid-razor-slot-kinds';
+export { WireMetrics, type WireCellMetrics, type WireGlyphWidths, type WirePresentationDefaults } from './wire-metrics';

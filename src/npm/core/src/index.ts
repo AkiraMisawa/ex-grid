@@ -79,7 +79,7 @@ export { GridPresentationDefaults, type GridPresentationDefaultsOptions } from '
 export { densityText } from './density-text';
 export type { DensityText } from './density-text';
 export { gridHeaderRequiredPx, gridTextGeometry } from './text-geometry';
-export type { GridTextGeometry } from './text-geometry';
+export type { GridTextGeometry, GridTextOptions } from './text-geometry';
 export type { DistinctValues, GridSourceState } from './source/grid-source';
 export { findMatches, findStep, type GridFindRequest, type GridFindResult } from './finding/find';
 export { displayText, textOf } from './cells/display-text';

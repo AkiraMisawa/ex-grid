@@ -71,6 +71,24 @@ public class ScriptPivotTests : BunitContext
         Assert.Equal([("row-labels", "行ラベル")], words.EnumerateObject().Select(word => (word.Name, word.Value.GetString())));
     }
 
+    [Fact] // ADR-0016, ADR-0030: the report's Cell Metrics and a Wrapper's cascaded widths cross to the browser, where its grids and label columns are sized by them
+    public void ADR0016_cell_metrics_and_a_wrappers_widths_cross_to_the_pivot()
+    {
+        var metrics = new global::ExGrid.Columns.CellTextMetrics(9, 7, 3, 8);
+        var defaults = new global::ExGrid.GridPresentationDefaults(10.4, 8.0, 4.95, 14, global::ExGrid.GridDensity.Standard);
+        Render<CascadingValue<global::ExGrid.GridPresentationDefaults>>(ps => ps
+            .Add(c => c.Value, defaults)
+            .AddChildContent<global::ExPivot.Script.ExPivot>(pivot => pivot
+                .Add(p => p.Source, PivotTestContext.Bundled())
+                .Add(p => p.CellMetrics, metrics)));
+
+        var options = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("options");
+        Assert.Equal(7, options.GetProperty("cellMetrics").GetProperty("digitWidthPx").GetDouble());
+        Assert.Equal(8, options.GetProperty("cellMetrics").GetProperty("cellHorizontalPaddingPx").GetDouble());
+        Assert.Equal("standard", options.GetProperty("presentationDefaults").GetProperty("density").GetString());
+        Assert.Equal(14, options.GetProperty("presentationDefaults").GetProperty("fontSizePx").GetDouble());
+    }
+
     [Fact] // ADR-0060, ADR-0370 section 10: a label whose answers change crosses again though its delegate is the same, and one whose answers stay the same does not
     public void ADR0370_words_cross_again_only_when_the_answers_changed()
     {

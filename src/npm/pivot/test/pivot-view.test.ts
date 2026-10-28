@@ -3,7 +3,7 @@
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { systemClock } from '@ex-grid/core';
+import { CellTextMetrics, GridPresentationDefaults, systemClock } from '@ex-grid/core';
 import type {
     CellPosition, CopyPlan, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, GridSummaryResult, SelectionRange, SummaryFigure,
 } from '@ex-grid/core';
@@ -516,6 +516,44 @@ describe('ExPivot\'s report', () => {
         view.update({ ...options, layout: createPivotLayout({ rows: ['Region'], values: ['Amount'] }) });
         await settled();
         expect(grid.current.columns[0]).toBe(label);
+    });
+
+    it('ADR-0016, ADR-0030: the Cell Metrics given reach the report\'s grid and its records\' grids and charge its label columns, and equal widths handed again in a new object change nothing', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion };
+        const { view, grid } = mount(options);
+        await settled();
+        const widthOf = (): number => {
+            const width = grid.current.columns[0]?.width;
+            if (width === undefined || typeof width === 'number' || 'auto' in width) throw new Error('A label column is handed a width of its own.');
+            return width.px;
+        };
+        const before = widthOf();
+        const wide = { digitWidthPx: 20, cellHorizontalPaddingPx: 6 };
+        const metrics = new CellTextMetrics(wide);
+        view.update({ ...options, cellMetrics: metrics });
+        await settled();
+        expect(grid.current.cellMetrics).toBe(metrics);
+        expect(widthOf()).toBeGreaterThan(before);
+        const label = grid.current.columns[0];
+        const drawn = grid.current;
+
+        view.update({ ...options, cellMetrics: new CellTextMetrics(wide) });
+        await settled();
+        expect(grid.current.columns[0]).toBe(label);
+        expect(grid.current).toBe(drawn);
+
+        // A Wrapper's widths stand where none are given, and its Density with them.
+        const defaults = new GridPresentationDefaults({ wideWidthPx: 20, digitWidthPx: 20, narrowWidthPx: 20, fontSizePx: 20, density: 'standard' });
+        view.update({ ...options, presentationDefaults: defaults });
+        await settled();
+        expect(grid.current.presentationDefaults).toBe(defaults);
+        expect(grid.current.cellMetrics).toBeUndefined();
+        await doubleClick(grid, 1, 1);
+        expect(defined(grid.detailsShown[0], 'a details grid').options.presentationDefaults).toBe(defaults);
+    });
+
+    it('ADR-0016: Cell Metrics that are not CellTextMetrics are refused by name', () => {
+        expect(() => mount({ source: local(), cellMetrics: { digitWidthPx: 7 } as unknown as CellTextMetrics })).toThrow(/cellMetrics is a CellTextMetrics/u);
     });
 });
 
