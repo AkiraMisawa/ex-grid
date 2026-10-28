@@ -80,8 +80,10 @@ internal sealed class ScriptRows<TRow>
 
     /// <summary>Writes <paramref name="row"/> into the message being written (<see cref="Sending{T}"/>): its id,
     /// its Row Key where the source has one, each column's value, each formatted column's text of it, and each
-    /// cell's state where <paramref name="cellState"/> answers one other than Normal for any of them (ADR-0006).</summary>
-    internal void Write(Utf8JsonWriter json, TRow row, IReadOnlyList<GridColumn<TRow>> columns, Func<TRow, object>? rowKey, CellStateOf<TRow>? cellState)
+    /// cell's state where <paramref name="cellState"/> answers one other than Normal for any of them (ADR-0006), and,
+    /// for a grid of a Pointing Scope, the row read as the table's row by <paramref name="tableRow"/> (ADR-0430).</summary>
+    internal void Write(
+        Utf8JsonWriter json, TRow row, IReadOnlyList<GridColumn<TRow>> columns, Func<TRow, object>? rowKey, CellStateOf<TRow>? cellState, Func<TRow, string>? tableRow)
     {
         ArgumentNullException.ThrowIfNull(row);
         var message = _writing ?? throw new InvalidOperationException("Internal: a row written outside a message.");
@@ -115,6 +117,11 @@ internal sealed class ScriptRows<TRow>
         }
         if (cellState is not null)
             WriteStates(json, row, columns, cellState);
+        if (tableRow is not null)
+        {
+            json.WritePropertyName("p");
+            json.WriteRawValue(tableRow(row));
+        }
         json.WriteEndObject();
     }
 

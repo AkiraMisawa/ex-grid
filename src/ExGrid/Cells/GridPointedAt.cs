@@ -38,6 +38,13 @@ public sealed class GridPointedAt<TRow>
     }
 
     /// <summary>
+    /// Where this declaration stands in a Pointing Scope held in the browser, for a declaration a Scope made
+    /// (ADR-0430); null — the default — for one a Consumer made. Blazor's ExGrid over the Script Core takes only a
+    /// declaration that has one, and joins that Scope in the page; the Razor ExGrid tells it it took it.
+    /// </summary>
+    public GridPointedInBrowser<TRow>? InBrowser { get; init; }
+
+    /// <summary>
     /// Receives each primary press the grid hands over while it is pointed at: once for the press,
     /// and once more, with <see cref="GridPointedPressKind.SeveralCells"/> or
     /// <see cref="GridPointedPressKind.SeveralColumns"/> and <see cref="GridPointedPress{TRow}.Dragged"/>,

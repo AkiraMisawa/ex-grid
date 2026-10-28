@@ -96,7 +96,10 @@
             <code>FindAsync</code> in .NET, and is refused where the source does not search. Replace is not carried
             yet, so <kbd>Ctrl</kbd>+<kbd>H</kbd> is refused.
             Not carried yet, and refused by name when a column declares it: Template Columns, Tone and Row Marks.
-            The Selection Summary is not offered yet either, and no summary is drawn. Use the grid above for those
+            The Selection Summary is not offered yet either, and no summary is drawn. <code>PointedAt</code> takes
+            the declaration a <code>PointingScope</code> made, so a Sheet over the same core points into the grid
+            (<a href="exsheet/linked-tables">Linked Tables</a>); a declaration of your own, whose
+            <code>OnPress</code> is a .NET function, is refused by name, and <code>OutlinedColumns</code> is not offered yet. Use the grid above for those
             until they arrive. The browser is sent the rows around the ones in view, a few
             screens either side, and asks for more as it scrolls, so a source that holds a million rows sends a
             few hundred. The script it runs is bundled into the package, at an address that changes with its

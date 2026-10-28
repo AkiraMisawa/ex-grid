@@ -7,9 +7,11 @@ import {
     builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary, type SummaryFigure,
     type ViewportSize,
 } from '@ex-grid/core';
-import { crossingCalls, HeldMessages, type WireHeld } from '@ex-grid/blazor-shared';
+import { crossingCalls, HeldMessages, holdPointingScope, type PagePointingScope, type WireHeld } from '@ex-grid/blazor-shared';
 import { decimalText } from '@ex-grid/data';
-import { createSheet, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId } from '@ex-grid/sheet';
+import {
+    createSheet, PointingScope, type GridPointedAt, type PointingRefusal, type SheetHandle, type SheetLabel, type SheetOptions, type SheetWordId, type TableRow,
+} from '@ex-grid/sheet';
 import {
     CellAddress, columnCount, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
     WorkbookDocument, writeCellFormat, writeLinkedRows, writeRepeatedKey, type SheetDay, type SheetMoment, type SheetRefusal, type Value,
@@ -20,7 +22,7 @@ import {
  * always heard, since the component answers `IsEditing`. */
 export type HeardKind =
     | 'workbookChanged' | 'documentChanged' | 'sheetsChanged' | 'showToolbarChanged' | 'summaryFiguresChanged' | 'selectionChanged'
-    | 'selectionSummaryChanged' | 'formatKeyRefused';
+    | 'selectionSummaryChanged' | 'formatKeyRefused' | 'pointingRefused';
 
 /** ExSheet's command ids as the Razor component names them (`SheetCommandIds`), each with the id the Script Core
  * words it by, so a Consumer's `CommandLabel` words both components alike. */
@@ -71,6 +73,8 @@ export interface WireOptions {
     readonly timeZone?: string;
     /** The Sheet Seed, an unsigned 64-bit integer written in decimal: JSON's numbers cannot hold one. */
     readonly seed?: string;
+    /** The Pointing Scope's name in the page, where the Sheet joins it (ADR-0430). */
+    readonly pointingScope?: string;
     readonly hears: readonly HeardKind[];
 }
 
@@ -240,8 +244,18 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
     // What .NET listens to, as the parameters last said.
     let hears: ReadonlySet<HeardKind> = new Set(init.options.hears);
     const heard = handlers(send, kind => hears.has(kind), raised => { document = raised; }, () => documentsSent, () => made);
+    // The Pointing Scope the parameters name, held in the page while this Sheet stands in it (ADR-0430).
+    let inScope: { readonly id: string; readonly scope: SheetPageScope; readonly release: () => void } | undefined;
+    const scopeNamed = (id: string | undefined): PointingScope | undefined => {
+        if (inScope?.id !== id) {
+            const before = inScope;
+            inScope = id === undefined ? undefined : { id, ...sheetPageScope(id) };
+            before?.release();
+        }
+        return inScope?.scope.pointing;
+    };
     // The Sheet raises nothing while it is made, so `made` stands before a handler reads it.
-    const made = createSheet(root, sheetOptions(init.options, document, words, heard));
+    const made = createSheet(root, sheetOptions(init.options, document, words, heard, scopeNamed(init.options.pointingScope)));
     return Object.freeze({
         update: (text: string) => {
             const next = parsed<WireUpdate>(text);
@@ -252,7 +266,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
             const nextWords = next.words === undefined ? words : wordsOf(next.words);
             // Heard as the parameters now say, events the update itself raises included.
             hears = new Set(next.options.hears);
-            made.update(sheetOptions(next.options, nextDocument, nextWords, heard));
+            made.update(sheetOptions(next.options, nextDocument, nextWords, heard, scopeNamed(next.options.pointingScope)));
             document = nextDocument;
             words = nextWords;
         },
@@ -292,6 +306,8 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
             stopped = true;
             held.clear();
             made.destroy();
+            // Left once the Sheet has left it: its last member gone, the page lets the Scope go.
+            scopeNamed(undefined);
         },
     });
 }
@@ -407,7 +423,7 @@ function sheetDocumentOf(sheet: SheetHandle): string | null {
 
 type Handlers = Required<Pick<SheetOptions,
     'onWorkbookChanged' | 'onSheetsChanged' | 'onShowToolbarChanged' | 'onSummaryFiguresChanged' | 'onSelectionChanged' | 'onEditingChanged'
-    | 'onSelectionSummaryChanged' | 'onFormatKeyRefused'>>;
+    | 'onSelectionSummaryChanged' | 'onFormatKeyRefused' | 'onPointingRefused'>>;
 
 // One function per event, made once, so the Sheet sees the same handler on every update.
 function handlers(
@@ -431,7 +447,51 @@ function handlers(
         onSelectionSummaryChanged: summary => { send('selectionSummaryChanged', wireSummary(summary)); },
         onEditingChanged: open => { send('editingChanged', open); },
         onFormatKeyRefused: refusal => { send('formatKeyRefused', wireRefusal(refusal)); },
+        onPointingRefused: (refusal: PointingRefusal) => { send('pointingRefused', { reason: refusal.reason, message: refusal.message }); },
     });
+}
+
+/**
+ * A Pointing Scope of the page as ExSheet's Blazor module makes it (ADR-0430): the Script Core's Scope, which this
+ * module's Sheets are given, and the grids ExGrid's module registers in it, each declaration once. A grid's row is read
+ * as the table's row from the Values .NET sent with it, once per row the grid holds.
+ */
+class SheetPageScope implements PagePointingScope {
+    /** The Script Core's Scope. */
+    readonly pointing = new PointingScope();
+    readonly #declared = new Map<string, unknown>();
+    readonly #read = new WeakMap<readonly unknown[], TableRow>();
+
+    registerGrid<TRow>(
+        declaration: string, table: string, tableColumns: Readonly<Record<string, string>>, tableRow: (row: TRow) => readonly unknown[],
+    ): GridPointedAt<TRow> {
+        const known = this.#declared.get(declaration);
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- registered below by ExGrid's module, whose rows are of one type
+        if (known !== undefined) return known as GridPointedAt<TRow>;
+        const made = this.pointing.registerGrid<TRow>(table, row => this.#tableRow(tableRow(row)), tableColumns);
+        this.#declared.set(declaration, made);
+        return made;
+    }
+
+    // Read once per row object: the Scope asks for the rows the grid paints while a cell is dashed.
+    #tableRow(written: readonly unknown[]): TableRow {
+        const known = this.#read.get(written);
+        if (known !== undefined) return known;
+        const [row] = readLinkedRows(JSON.stringify([written]));
+        if (row === undefined) throw new Error('Internal: a table\'s row read as no row.');
+        this.#read.set(written, row);
+        return row;
+    }
+}
+
+// The page's Scope named `id`, held by a Sheet: the one standing, or one this module makes.
+function sheetPageScope(id: string): { readonly scope: SheetPageScope; readonly release: () => void } {
+    const held = holdPointingScope(id, () => new SheetPageScope());
+    if (!(held.scope instanceof SheetPageScope)) {
+        held.release();
+        throw new Error('Internal: the page holds a Pointing Scope that ExSheet\'s module did not make.');
+    }
+    return { scope: held.scope, release: held.release };
 }
 
 /** A Selection as .NET reads it back (`GridSelection.Reported`): its ranges, its Focus, and which range holds the
@@ -509,7 +569,7 @@ export function wordsOf(words: WireWords): Words {
     };
 }
 
-function sheetOptions(wire: WireOptions, document: WorkbookDocument | undefined, words: Words, heard: Handlers): SheetOptions {
+function sheetOptions(wire: WireOptions, document: WorkbookDocument | undefined, words: Words, heard: Handlers, pointingScope: PointingScope | undefined): SheetOptions {
     const hears = new Set(wire.hears);
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
     return {
@@ -528,6 +588,8 @@ function sheetOptions(wire: WireOptions, document: WorkbookDocument | undefined,
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('selectionSummaryChanged') ? { onSelectionSummaryChanged: heard.onSelectionSummaryChanged } : {}),
         ...(hears.has('formatKeyRefused') ? { onFormatKeyRefused: heard.onFormatKeyRefused } : {}),
+        ...(pointingScope === undefined ? {} : { pointingScope }),
+        ...(hears.has('pointingRefused') ? { onPointingRefused: heard.onPointingRefused } : {}),
         onEditingChanged: heard.onEditingChanged,
     };
 }
