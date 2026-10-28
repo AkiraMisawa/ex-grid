@@ -114,7 +114,10 @@ const completionKind: RazorSlotKind<GridEditorCompletionSlotContext, string> = {
         const json = completionJson(completion);
         return { json, drawn: json, memo: undefined };
     },
-    wire: (contents, completion, _answered, drawn) => wireEditorCompletion(contents, completion, () => drawn() === completionJson(completion)),
+    wire: (contents, completion, _answered, drawn) => {
+        const json = completionJson(completion);
+        return wireEditorCompletion(contents, completion, () => drawn() === json);
+    },
 };
 
 /** What the completion's contents show: the labels and the hint, nothing a choice or an accept needs. */

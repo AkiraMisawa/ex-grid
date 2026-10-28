@@ -1250,11 +1250,10 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         }), Answers: true, SendsState: false));
     }
 
-    /// <summary>A cell's message, asked as the browser's popover would open (ADR-0034), in its turn among the
-    /// events: null where the Consumer has nothing to say, or no longer asks.</summary>
     /// <summary>The Consumer's completion for the editor's <paramref name="text"/> and <paramref name="caret"/>
     /// (ADR-0051), asked in its turn among the events and written as the browser reads it; null where it answers
-    /// nothing, or was taken away since the browser asked.</summary>
+    /// nothing, or was taken away since the browser asked. The browser asks one at a time, and only its latest
+    /// question once one is on its way, so typing does not queue a question per key ahead of the edit.</summary>
     internal Task<string?> CompleteAsync(string text, int caret)
         => InTurnAsync(new Heard(async () =>
         {
@@ -1263,6 +1262,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             return ScriptJson.Completion(answer);
         }, Answers: true, SendsState: false));
 
+    /// <summary>A cell's message, asked as the browser's popover would open (ADR-0034), in its turn among the
+    /// events: null where the Consumer has nothing to say, or no longer asks.</summary>
     internal Task<string?> MessageAsync(long row, string column)
     {
         var asked = _rows.RowOf(row);

@@ -439,12 +439,15 @@ export function wireEditorCompletion(contents: HTMLElement, context: GridEditorC
         list.id = context.listId;
         list.setAttribute('role', 'listbox');
     }
+    // Contents still showing an earlier answer name no candidate of this one: none is marked chosen, and none carries the
+    // id the editor names, so neither the eye nor a screen reader is told of a choice Tab would not take.
     const shown = current();
     for (const option of contents.querySelectorAll<HTMLElement>(`[${completionAttributes.candidate}]`)) {
         const index = candidateIndex(option, shown ? context.candidates.length : undefined);
-        option.id = context.optionId(index);
+        if (shown) option.id = context.optionId(index);
+        else option.removeAttribute('id');
         option.setAttribute('role', 'option');
-        option.setAttribute('aria-selected', index === context.selected ? 'true' : 'false');
+        option.setAttribute('aria-selected', shown && index === context.selected ? 'true' : 'false');
     }
     const click = (event: MouseEvent): void => {
         if (event.button !== 0 || !(event.target instanceof Element)) return;

@@ -5,7 +5,7 @@
 // .NET has not sent it again, and that what the grid tells its source and its Consumer reaches .NET in order.
 import { afterEach, describe, expect, it } from 'vitest';
 import { GridPointedAt } from '@ex-grid/core';
-import { attach, type BlazorGrid, type WireAttach, type WireOptions } from '../src/blazor-grid';
+import { attach, latestOnly, type BlazorGrid, type WireAttach, type WireOptions } from '../src/blazor-grid';
 import { DotNetSource, type DotNetHandle, type WireState } from '../src/dotnet-source';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type WireColumn, type WireRow } from '../src/wire-rows';
 import { awaitPointingScope, holdPointingScope, type PagePointingScope } from '../src/pointing-scopes';
@@ -802,5 +802,22 @@ describe('completion .NET answers (ADR-0051)', () => {
         type('=SU');
         await turns();
         expect(dotnet.calls.filter(call => call.method === 'Complete')).toEqual([]);
+    });
+});
+
+describe('completion asked of .NET at machine speed (ADR-0051)', () => {
+    it('ADR-0051: while a question is on its way only the latest crosses after it, and the one replaced answers nothing', async () => {
+        let first: (() => void) | undefined;
+        const asked: unknown[] = [];
+        const completeEditorText = latestOnly((text, caret) => {
+            asked.push([text, caret]);
+            return asked.length === 1 ? new Promise(resolve => { first = () => { resolve(undefined); }; }) : Promise.resolve(undefined);
+        });
+        const answers = [completeEditorText('=', 1), completeEditorText('=S', 2), completeEditorText('=SU', 3)];
+        expect(asked).toEqual([['=', 1]]);
+        if (first === undefined) throw new Error('The first question crossed.');
+        first();
+        await Promise.all(answers);
+        expect(asked).toEqual([['=', 1], ['=SU', 3]]);
     });
 });

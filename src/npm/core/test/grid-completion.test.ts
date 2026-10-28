@@ -457,9 +457,11 @@ describe('wireEditorCompletion: the completion slot\'s marked contents (ADR-0410
         expect([editor(root).value, document.activeElement]).toEqual(['=SUMIF(', editor(root)]);
     });
 
-    it('Spine rule 6: a click on contents still showing an earlier answer accepts nothing', async () => {
+    it('Spine rule 6: contents still showing an earlier answer mark no choice and name no option, and a click on them accepts nothing', async () => {
         const { root } = await grid({ chrome: marked(() => false) });
         await typeFormula(root, 'SU');
+        const items = [...root.querySelectorAll('.ex-completion li')];
+        expect(items.map(item => [item.id, item.getAttribute('aria-selected')])).toEqual([['', 'false'], ['', 'false']]);
         defined(root.querySelectorAll('.ex-completion li')[1], 'SUMIF').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
         await painted();
         expect(editor(root).value).toBe('=SU');

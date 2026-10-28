@@ -215,7 +215,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
         });
     const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
     // Asked of .NET for the text and caret the core hands; the core drops an answer for text it no longer holds.
-    const completeEditorText: CompleteEditorTextOf = async (text, caret) => completionOf(await dotnet.invokeMethodAsync('Complete', text, caret));
+    const completeEditorText = latestOnly(async (text, caret) => completionOf(await dotnet.invokeMethodAsync('Complete', text, caret)));
     const menus = contextMenus(dotnet, () => ({ generation: source.generation, columnsVersion: columns.version }));
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
     const made: { grid?: GridHandle<BlazorRow> } = {};
@@ -349,6 +349,35 @@ function verdictOf(answer: unknown, column: string): EditVerdict {
 type FindErrorOf = (request: GridErrorStepRequest, signal: AbortSignal) => Promise<GridFindResult>;
 
 type CompleteEditorTextOf = (text: string, caret: number) => Promise<EditorCompletion | undefined>;
+
+/**
+ * `ask`, one question at a time: a question asked while another is on its way waits for it, and one asked after it
+ * takes its place, answering it nothing. Typing at machine speed then crosses to .NET as the question on its way and
+ * the latest, never one per key ahead of the edit, each awaiting the Consumer in its turn. The core asks again at each
+ * key and drops an answer to any question but its last, so the list it shows is the one for the text it holds,
+ * whichever question crossed.
+ */
+export function latestOnly(ask: CompleteEditorTextOf): CompleteEditorTextOf {
+    let asking = false;
+    let waiting: { readonly text: string; readonly caret: number; readonly answer: (to: Promise<EditorCompletion | undefined> | undefined) => void } | undefined;
+    const crossing = async (text: string, caret: number): Promise<EditorCompletion | undefined> => {
+        asking = true;
+        try {
+            return await ask(text, caret);
+        } finally {
+            asking = false;
+            const next = waiting;
+            waiting = undefined;
+            if (next !== undefined) next.answer(crossing(next.text, next.caret));
+        }
+    };
+    return (text, caret) => {
+        if (!asking) return crossing(text, caret);
+        // Replaced: the core asked again since, and drops any answer to this one.
+        waiting?.answer(undefined);
+        return new Promise(answer => { waiting = { text, caret, answer }; });
+    };
+}
 
 /** .NET's completion, as `ScriptJson.Completion` writes it, or nothing where it answered none. */
 function completionOf(answer: unknown): EditorCompletion | undefined {
