@@ -601,6 +601,8 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
 
     private void OnSourceChanged(int generation, PivotSourceChanged change)
     {
+        if (_refreshes.Out(generation))
+            return;
         var text = PivotJson.Write(change);
         // A source may say it changed from any thread: its notices cross from the component's context, in the order
         // it said them.
@@ -829,8 +831,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     {
         if (_disposed || !_sources.TryGetValue(generation, out var source))
             throw new OperationCanceledException("The Pivot Source asked was replaced, and the browser has heard so.");
-        await source.RefreshAsync();
+        await _refreshes.RefreshAsync(generation, source);
     }
+
+    private readonly global::ExGrid.Script.PivotRefreshes _refreshes = new();
 
     // The browser let go of the source of `generation`: it asks it nothing more.
     internal void Release(int generation)

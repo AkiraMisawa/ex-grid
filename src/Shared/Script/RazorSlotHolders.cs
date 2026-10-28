@@ -51,7 +51,7 @@ internal sealed class RazorSlotHolders(Func<string, string, object> viewOf)
 
     /// <summary>Each slot's holder beside the root, never inside it: hidden, and holding only the element the fragment is
     /// drawn in, which the script moves into the slot and back (ADR-0410 section 1). Sequence numbers from
-    /// <paramref name="sequence"/> to six after it are used.</summary>
+    /// <paramref name="sequence"/> to seven after it are used.</summary>
     public void Render(RenderTreeBuilder builder, int sequence, Func<string, object, RenderFragment?> fragment)
     {
         foreach (var slot in _slots.Values)
@@ -61,10 +61,12 @@ internal sealed class RazorSlotHolders(Func<string, string, object> viewOf)
             builder.AddAttribute(sequence + 1, "hidden", true);
             builder.OpenElement(sequence + 2, "div");
             builder.AddAttribute(sequence + 3, "class", "ex-razor-slot");
+            // It draws no box of its own: the contents lay themselves out in the slot as a React Chrome's do.
+            builder.AddAttribute(sequence + 4, "style", "display: contents");
             // The data the contents are drawn from, by the script's number: a press on them is read against these.
-            builder.AddAttribute(sequence + 4, DrawnVersionAttribute, slot.Version);
-            builder.AddElementReferenceCapture(sequence + 5, element => slot.Contents = element);
-            builder.AddContent(sequence + 6, fragment(slot.Name, slot.View));
+            builder.AddAttribute(sequence + 5, DrawnVersionAttribute, slot.Version);
+            builder.AddElementReferenceCapture(sequence + 6, element => slot.Contents = element);
+            builder.AddContent(sequence + 7, fragment(slot.Name, slot.View));
             builder.CloseElement();
             builder.CloseElement();
         }
@@ -74,7 +76,9 @@ internal sealed class RazorSlotHolders(Func<string, string, object> viewOf)
     /// for the context it now holds; nothing once <paramref name="gone"/> says the component is gone.</summary>
     public async Task ReportAsync(IJSObjectReference? handle, Func<bool> gone)
     {
-        foreach (var slot in _slots.Values.Where(slot => slot.Owed).ToArray())
+        // A slot mounted after the render this report follows has no element yet: it is reported after the render
+        // its mount asked for, which draws it.
+        foreach (var slot in _slots.Values.Where(slot => slot.Owed && slot.Contents.Id is not null).ToArray())
         {
             // Disposed while an earlier slot was handed over: the component is gone, and nothing is handed to it.
             if (handle is null || gone())

@@ -85,6 +85,11 @@ export class PartElements {
         return this.#anchors.get(name)?.isConnected === true;
     }
 
+    /** Whether the control named `name` is `node` or holds it. */
+    controlContains(name: string, node: Node): boolean {
+        return this.#controls.get(name)?.contains(node) === true;
+    }
+
     /** Whether the control named `name` holds the keyboard. */
     holds(name: string): boolean {
         const control = this.#controls.get(name);

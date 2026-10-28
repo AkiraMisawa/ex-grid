@@ -825,6 +825,8 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
 
         void Hear(PivotSourceChanged change)
         {
+            if (_pivotRefreshes.Out(pivot))
+                return;
             var text = PivotJson.Write(change);
             // A source may say it changed from any thread: its notices cross from the component's context.
             _ = InvokeAsync(async () =>
@@ -866,7 +868,9 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         }
     }
 
-    internal async Task PivotRefreshAsync(int pivot) => await PivotAsked(pivot).Pivot.RefreshAsync();
+    internal async Task PivotRefreshAsync(int pivot) => await _pivotRefreshes.RefreshAsync(pivot, PivotAsked(pivot).Pivot);
+
+    private readonly PivotRefreshes _pivotRefreshes = new();
 
     private HeldPivot PivotAsked(int pivot)
     {

@@ -32,6 +32,7 @@ class FakeDotNet implements DotNetHandle {
     readonly calls: { readonly method: string; readonly args: readonly unknown[] }[] = [];
     inner = new RecordPivotSource(trades, fields);
     hold: Promise<void> | undefined;
+    failing: string | undefined;
     refreshed: (() => void) | undefined;
     refreshFailed: ((error: Error) => void) | undefined;
 
@@ -40,6 +41,8 @@ class FakeDotNet implements DotNetHandle {
         switch (method) {
             case 'Aggregate': {
                 if (this.hold !== undefined) await this.hold;
+                // PivotSourceCrossing.Failed: the source's own words, in place of an answer.
+                if (this.failing !== undefined) return JSON.stringify({ failed: this.failing });
                 return PivotJson.writeAnswer(this.inner.aggregateNow(PivotJson.readQuery(String(args[2]))));
             }
             case 'Refresh':
@@ -97,6 +100,13 @@ describe('a C# Pivot Source seen from the browser (ADR-0370 sections 1 and 3)', 
         expect(asked?.args[0]).toBe(1);
         expect(PivotJson.readQuery(String(asked?.args[2]))).toEqual(byRegion);
         expect(PivotJson.writeAnswer(answer)).toBe(PivotJson.writeAnswer(dotnet.inner.aggregateNow(byRegion)));
+    });
+
+    it('fails a question the C# source failed, in the source\'s own words', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.failing = 'The page cut the server off.';
+        const source = new DotNetPivotSource(dotnet, wire);
+        await expect(source.aggregate(byRegion)).rejects.toThrow('The page cut the server off.');
     });
 
     it('cancels in .NET a question the pivot abandoned', async () => {

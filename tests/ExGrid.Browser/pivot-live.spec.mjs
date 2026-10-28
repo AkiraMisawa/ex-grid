@@ -6,7 +6,7 @@ import { blend, contrast, onDeviceGrid, painted, wholePixelCentres } from './pix
 // /pivot-live (ADR-0067/0068/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // live data both ways. In the page's own process, a timer the page owns folds Change Batches into
 // the bundled source; on the demo API server, live updates keep changing the trades, and the hub's
-// notices reach the server's source through NotifyChanged. What only a browser can say: that the
+// notices reach the server's Pivot Source through NotifyChanged. What only a browser can say: that the
 // values the data changed are marked in both reports, and that a layout change marks nothing
 // (PV-36); that a server cut off leaves a Stale Report whose numbers are painted muted, and still
 // readable, until Retry brings the newest back (PV-37, ADR-0067's decision of 2026-10-09); that the
@@ -41,9 +41,10 @@ test.afterEach(async () => {
     await post('/api/live', { on: false });
 });
 
-async function open(page, chrome, scheme = 'light') {
+/** Opens /pivot-live; `query` such as `&report=windows` puts the server side on the Razor component's report Windows. */
+async function open(page, chrome, scheme = 'light', query = '') {
     await post('/api/reset');
-    await page.goto(`/pivot-live?chrome=${chrome}${scheme === 'dark' ? '&scheme=dark' : ''}`);
+    await page.goto(`/pivot-live?chrome=${chrome}${scheme === 'dark' ? '&scheme=dark' : ''}${query}`);
     await expect(rows(page, 'local').first()).toBeVisible({ timeout: 60_000 });
     await expect(rows(page, 'server').first()).toBeVisible({ timeout: 60_000 });
     await expect.poll(() => pivot(page, 'local').evaluate((p) => getComputedStyle(p).display)).toBe('flex');
@@ -312,12 +313,13 @@ test('ADR-0069/0067: the code the page shows is the code it runs: a Change Batch
     const code = await expectCodeIsSource(page);
     expect(code['DemoPivotData.cs#fields']).toContain('.Key("Id", t => t.Id)');
     expect(code['PivotLivePage.razor#batch']).toContain('_local.Apply(DemoPivotData.Fields.Batch(changed: amended))');
-    expect(code['PivotLivePage.razor#server']).toContain('server.NotifyChanged(version)');
+    expect(code['PivotLivePage.razor#server']).toContain('_server?.NotifyChanged(version)');
     expect(code['PivotLivePage.razor#pivots']).toContain('RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"');
 });
 
 // LV-27 through the remote source: the demo server's Window gate spoils the digest of Window
 // Changes, or refuses Window questions with 503, on request (PivotWindowGate). A count, never a time.
+// Report Windows are the Razor component's, shown with ?report=windows until it goes (ADR-0412 section 4).
 test.describe('a recovery the server refuses', () => {
     // On WebAssembly the browser asks the server, and writes the 503 it refuses the recovery with;
     // on the Server host the host asks it, and the browser hears nothing of it.
@@ -326,7 +328,7 @@ test.describe('a recovery the server refuses', () => {
     test('LV-27 / ADR-0152: Window Changes whose digest does not match are refused, and a complete Window is asked for and shown; a recovery that fails leaves the report stale with Retry', async ({ page }) => {
         const gate = (body) => post('/api/pivot/window-gate', body);
         const state = () => api('/api/pivot/window-gate');
-        await open(page, 'builtin');
+        await open(page, 'builtin', 'light', '&report=windows');
         const shell = pivot(page, 'server').locator('.ex-pivot-report');
         const notice = pivot(page, 'server').locator('.ex-pivot-stale[role=status]');
         // Window Changes are arriving: a question names a Baseline Window, and values are marked.
@@ -346,12 +348,9 @@ test.describe('a recovery the server refuses', () => {
         await gate({ spoil: 1000, fail: 1000 });
         await expect(notice).toContainText('Showing the data as of', { timeout: 30_000 });
         await expect(shell).toHaveClass(/ex-pivot-report-stale/);
+        await expect(notice.getByRole('button', { name: 'Retry' })).toBeVisible();
         expect((await state()).failed).toBeGreaterThan(0);
-
-        // Retry, with the server answering truly again: the newest is shown.
-        await gate({ spoil: 0, fail: 0 });
-        await notice.getByRole('button', { name: 'Retry' }).click();
-        await expect(shell).not.toHaveClass(/ex-pivot-report-stale/);
-        await expect(notice).toHaveText('');
+        // What Retry brings back is PV-37's, above. Pressed here, it raced the live notices, any of
+        // which brings the newest back once the gate opens, and took the button away under the press.
     });
 });

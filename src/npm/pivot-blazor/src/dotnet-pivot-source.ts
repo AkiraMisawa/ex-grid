@@ -75,6 +75,13 @@ interface HeldKey {
     readonly key: WireOrderKey;
 }
 
+// The message of a failure the source answered in place of an answer, in its own words.
+function failedMessage(text: string): string {
+    const failed: unknown = (JSON.parse(text) as { readonly failed?: unknown }).failed; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the line PivotSourceCrossing.Failed writes, whose message is checked here
+    if (typeof failed !== 'string') throw new TypeError('Internal: .NET answered a failure with no message.');
+    return failed;
+}
+
 // An answer, and the line of keys before it where .NET wrote one: neither holds a line break of its own.
 function split(text: string): { readonly keys: KeysLine | undefined; readonly answer: string } {
     const at = text.indexOf('\n');
@@ -175,6 +182,8 @@ export class DotNetPivotSource extends FetchingPivotSource {
             try {
                 const answer = await dotnet.invokeMethodAsync(method, generation, call, json);
                 if (typeof answer !== 'string') throw new TypeError(`Internal: .NET answered ${method} with something other than JSON text.`);
+                // The source failed, in its own words (PivotSourceCrossing.Failed): the question fails with them.
+                if (answer.startsWith('{"failed":')) throw new Error(failedMessage(answer));
                 return answer;
             } finally {
                 signal?.removeEventListener('abort', cancel);
@@ -215,8 +224,8 @@ export class DotNetPivotSource extends FetchingPivotSource {
         this.#link.notify?.(changed.sourceVersion === undefined ? { kind: 'changed' } : { kind: 'changed', sourceVersion: changed.sourceVersion });
     }
 
-    /** Excel's Refresh: lets go of the answer held, and asks .NET to refresh its source, which says it changed once
-     * it has. The next question waits for it. */
+    /** Excel's Refresh: lets go of the answer held, and asks .NET to refresh its source. The next question waits for
+     * it, and answers the change the Refresh made: .NET does not pass on the notice its source says meanwhile. */
     override refresh(): void {
         super.refresh();
         if (!this.features.canRefresh) return;

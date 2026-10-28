@@ -4,7 +4,7 @@
 // the context's callback in the browser, a control and an anchor are handed in by name as a React ref hands them, and
 // a request for the keyboard is answered on the control it names. Nothing a key means waits on the circuit.
 
-import { gridRazorSlotKinds, isGridRazorSlotName, RazorSlotHost, type GridRazorSlotName, type HostedSlotKind, type RazorSlotHostOptions, type RazorSlotKind } from '@ex-grid/blazor-shared';
+import { drawnVersionAttribute, gridRazorSlotKinds, isGridRazorSlotName, RazorSlotHost, type GridRazorSlotName, type HostedSlotKind, type RazorSlotHostOptions, type RazorSlotKind } from '@ex-grid/blazor-shared';
 import type { GridChrome, GridHandle } from '@ex-grid/core';
 import type {
     PivotChoice, PivotChrome, PivotFieldSettingsSlotContext, PivotFieldSettingsView, PivotItemFilterSlotContext, PivotItemFilterView, PivotMenuSlotContext,
@@ -102,7 +102,7 @@ const toolbarKind: RazorSlotKind<PivotToolbarSlotContext, PivotToolbarView> = {
         };
     },
     subscribe: (toolbar, again) => toolbar.subscribe(again),
-    wire: (contents, toolbar) => wireStanding(contents, {
+    wire: (contents, toolbar, _answered, _drawn, later) => wireStanding(contents, later, {
         layout: toolbar.toggleLayoutMenu, refresh: toolbar.refresh, 'field-list': toolbar.toggleFieldList,
     }, name => toolbar.control(namedOf(name, ['layout', 'refresh', 'field-list'], 'toolbar')),
     name => toolbar.anchor(namedOf(name, ['layout', 'report-filters'], 'toolbar'))),
@@ -116,7 +116,7 @@ const staleReportKind: RazorSlotKind<PivotStaleReportSlotContext, PivotStaleRepo
         return { json: JSON.stringify({ message: view.message, asOfText: view.asOfText, reason: view.reason, retry: view.retry }), drawn: view, memo: undefined };
     },
     subscribe: (notice, again) => notice.subscribe(again),
-    wire: (contents, notice) => wireStanding(contents, { retry: notice.retry }, name => notice.control(namedOf(name, ['retry'], 'staleReport'))),
+    wire: (contents, notice, _answered, _drawn, later) => wireStanding(contents, later, { retry: notice.retry }, name => notice.control(namedOf(name, ['retry'], 'staleReport'))),
 };
 
 /** The report filter band's kind: its filters as data, each button pressed in the browser and handed in, with the
@@ -128,9 +128,9 @@ const reportFiltersKind: RazorSlotKind<PivotReportFiltersSlotContext, PivotRepor
         return { json: JSON.stringify({ name: view.name, filters: view.filters }), drawn: view, memo: undefined };
     },
     subscribe: (band, again) => band.subscribe(again),
-    wire: (contents, band, _answered, drawn) => {
+    wire: (contents, band, _answered, drawn, later) => {
         const fields = drawn().filters.map(filter => filter.field);
-        return wireStanding(contents, Object.fromEntries(fields.map(field => [field, () => { band.toggle(field); }])),
+        return wireStanding(contents, later, Object.fromEntries(fields.map(field => [field, () => { band.toggle(field); }])),
             name => band.control(namedOf(name, fields, 'report filter band')), name => band.anchor(namedOf(name, fields, 'report filter band')));
     },
 };
@@ -154,7 +154,7 @@ const fieldSettingsKind: RazorSlotKind<PivotFieldSettingsSlotContext, PivotField
         };
     },
     subscribe: (panel, again) => panel.subscribe(again),
-    wire: (contents, panel, answered, drawn) => wirePanel(contents, panel, answered, {
+    wire: (contents, panel, answered, drawn, later) => wirePanel(contents, panel, answered, later, {
         choice: (name, value) => {
             if (name === 'subtotals') panel.setSubtotals(namedOf(value, ['automatic', 'none'], 'subtotals\' radio button') === 'automatic');
             else if (name === 'sort') panel.setSort(indexOf(value, drawn().sorts.length, 'order'));
@@ -186,7 +186,7 @@ const valueFieldSettingsKind: RazorSlotKind<PivotValueFieldSettingsSlotContext, 
         };
     },
     subscribe: (panel, again) => panel.subscribe(again),
-    wire: (contents, panel, answered, drawn) => wirePanel(contents, panel, answered, {
+    wire: (contents, panel, answered, drawn, later) => wirePanel(contents, panel, answered, later, {
         text: (name, value) => {
             if (name === 'caption') panel.setCaption(value);
             else if (name === 'number-format') panel.setNumberFormat(value);
@@ -224,7 +224,7 @@ const itemFilterKind: RazorSlotKind<PivotItemFilterSlotContext, PivotItemFilterV
         };
     },
     subscribe: (panel, again) => panel.subscribe(again),
-    wire: (contents, panel, answered, drawn) => wirePanel(contents, panel, answered, {
+    wire: (contents, panel, answered, drawn, later) => wirePanel(contents, panel, answered, later, {
         text: (name, value) => {
             if (name === 'search') panel.setSearch(value);
             else throw new RangeError(`Filter… has no text field '${name}'.`);
@@ -273,7 +273,7 @@ const fieldListKind: RazorSlotKind<PivotFieldListSlotContext, PivotFieldListView
         };
     },
     subscribe: (list, again) => list.subscribe(again),
-    wire: (contents, list, _answered, drawn) => wireFieldList(contents, list, drawn),
+    wire: (contents, list, _answered, drawn, later) => wireFieldList(contents, list, drawn, later),
 };
 
 /** The sheet tabs' kind: the tabs as data, a tab and its close pressed in the browser, each tab handed in by its key. The
@@ -295,12 +295,12 @@ const detailsTabsKind: RazorSlotKind<PivotDetailsTabsSlotContext, PivotDetailsTa
         };
     },
     subscribe: (tabs, again) => tabs.subscribe(again),
-    wire: (contents, tabs, _answered, drawn) => {
+    wire: (contents, tabs, _answered, drawn, later) => {
         const keys = drawn().tabs.map(tab => tab.key);
         const closes = drawn().tabs.filter(tab => tab.closeLabel !== undefined).map(tab => tab.key);
-        const unstanding = wireStanding(contents, {}, key => tabs.control(namedOf(key, keys, 'sheet tabs')));
-        const unselect = wirePresses(contents, pivotSlotAttributes.tab, key => { tabs.select(namedOf(key, keys, 'sheet tabs')); });
-        const unclose = wirePresses(contents, pivotSlotAttributes.closeTab, key => { tabs.close(namedOf(key, closes, 'sheet tabs\' closes')); });
+        const unstanding = wireStanding(contents, later, {}, key => tabs.control(namedOf(key, keys, 'sheet tabs')));
+        const unselect = wirePresses(contents, later, pivotSlotAttributes.tab, key => { tabs.select(namedOf(key, keys, 'sheet tabs')); });
+        const unclose = wirePresses(contents, later, pivotSlotAttributes.closeTab, key => { tabs.close(namedOf(key, closes, 'sheet tabs\' closes')); });
         return () => { unclose(); unselect(); unstanding(); };
     },
 };
@@ -316,7 +316,7 @@ const detailsDialogKind: RazorSlotKind<PivotDetailsDialogSlotContext, PivotDetai
     subscribe: (dialog, again) => dialog.subscribe(again),
     // Close takes the keyboard the frame held while the contents were on their way as it is handed in, and the keys
     // typed meanwhile, held in the pivot's order, are taken there.
-    wire: (contents, dialog) => wireStanding(contents, { close: dialog.close }, name => dialog.control(namedOf(name, ['close'], 'Show Details dialog')),
+    wire: (contents, dialog, _answered, _drawn, later) => wireStanding(contents, later, { close: dialog.close }, name => dialog.control(namedOf(name, ['close'], 'Show Details dialog')),
         name => dialog.anchor(namedOf(name, ['records'], 'Show Details dialog'))),
 };
 
@@ -339,10 +339,12 @@ export const pivotRazorSlotKinds: ReadonlyMap<string, HostedSlotKind> = new Map(
 export function pivotSlotHostOptions(grids: PivotGrids): RazorSlotHostOptions {
     return {
         hold: slot => grids.holdSettled(slot),
-        order: (until, slot) => {
+        order: (handling, slot) => {
             // With no grid there is nothing to hold the inputs in: an empty report's Layout menu, whose keys typed
             // before its Razor arrives are not ordered (ADR-0410 section 5's note of 2026-10-28).
-            void grids.gridAround(slot)?.inOrder(() => until);
+            const grid = grids.gridAround(slot);
+            if (grid === undefined) void handling();
+            else void grid.inOrder(handling);
         },
         keyboardBack: slot => { grids.gridAround(slot)?.focus(); },
     };
@@ -449,13 +451,13 @@ function marked(contents: HTMLElement, attribute: string): (readonly [HTMLElemen
  * named, in the pivot's Input Order (ADR-0240); each control and anchor is handed in by its name, and handed back as the
  * wiring comes off, so contents moved out leave nothing of theirs for the pivot to place a popup in.
  */
-function wireStanding(contents: HTMLElement, presses: Readonly<Record<string, () => void>>,
-    control: (name: string) => PivotPartRef, anchor?: (name: string) => PivotPartRef): () => void {
-    const unwire: (() => void)[] = [wirePresses(contents, pivotSlotAttributes.press, name => {
+function wireStanding(contents: HTMLElement, later: Later, presses: Readonly<Record<string, () => void>>,
+    control: (name: string) => PivotPartRef, anchor?: (name: string) => PivotPartRef, madeOn?: () => string): () => void {
+    const unwire: (() => void)[] = [wirePresses(contents, later, pivotSlotAttributes.press, name => {
         const press = presses[name];
         if (press === undefined) throw new RangeError(`A button is marked ${pivotSlotAttributes.press}="${name}": the part presses ${Object.keys(presses).join(', ')}.`);
         press();
-    })];
+    }, madeOn)];
     for (const [element, name] of marked(contents, pivotSlotAttributes.control)) {
         const ref = control(name);
         // A component library may write the mark on a wrapper around the control.
@@ -471,17 +473,49 @@ function wireStanding(contents: HTMLElement, presses: Readonly<Record<string, ()
     return () => { for (const each of unwire) each(); };
 }
 
+/** How the host takes an input made on contents .NET patched after their wiring: in its turn, once they are wired. */
+type Later = (take: () => void) => void;
+
+/** The event a press made ahead of its wiring is made again with, once the contents are wired, naming the mark it was
+ * made on: no grid holds it. */
+const pressAgainEvent = 'ex-pivot-press-again';
+
 /** Wires each button `attribute` marks: a press runs `press` with the mark's value, in the pivot's Input Order. A mark no
- * part has is refused by `press` as the button is pressed. */
-function wirePresses(contents: HTMLElement, attribute: string, press: (value: string) => void): () => void {
-    const unwire: (() => void)[] = [];
-    for (const [button, value] of marked(contents, attribute)) {
-        button.setAttribute('data-ex-claims', 'click');
-        const click = (): void => { press(value); };
-        button.addEventListener('click', click);
-        unwire.push(() => { button.removeEventListener('click', click); });
-    }
-    return () => { for (const each of unwire) each(); };
+ * part has is refused by `press` as the button is pressed. The contents hear the press, not each button: a button .NET
+ * patched in stands a round trip before its wiring does (the render, then .NET's word that it rendered), and claims no
+ * press until then. A press on contents newer than this wiring is taken `later`, by the wiring of what they show, once
+ * it stands: their controls and anchors are handed in only then. Where `madeOn` says what a mark stands for, as an entry
+ * named by its place, a press taken later is refused once that has changed (spine rule 6). A press inside an anchor is
+ * the placed part's. */
+function wirePresses(contents: HTMLElement, later: Later, attribute: string, press: (value: string) => void, madeOn?: () => string): () => void {
+    for (const [button] of marked(contents, attribute)) button.setAttribute('data-ex-claims', 'click');
+    const wiredFor = contents.getAttribute(drawnVersionAttribute);
+    const heard = (event: Event): void => {
+        if (event instanceof CustomEvent && event.detail !== attribute) return;
+        const { target } = event;
+        if (!(target instanceof Element)) return;
+        const button = target.closest<HTMLElement>(`[${attribute}]`);
+        if (button === null || !contents.contains(button)) return;
+        const placed = button.parentElement?.closest(`[${pivotSlotAttributes.anchor}]`);
+        if (placed !== null && placed !== undefined && contents.contains(placed)) return;
+        const value = button.getAttribute(attribute);
+        if (value === null) throw new Error(`Internal: an element found by ${attribute} carries none.`);
+        // Made again, the press is on the contents this wiring stands for.
+        if (event instanceof CustomEvent || contents.getAttribute(drawnVersionAttribute) === wiredFor) {
+            press(value);
+            return;
+        }
+        const made = madeOn?.();
+        later(() => {
+            if (contents.contains(button) && madeOn?.() === made) button.dispatchEvent(new CustomEvent(pressAgainEvent, { bubbles: true, detail: attribute }));
+        });
+    };
+    contents.addEventListener('click', heard);
+    contents.addEventListener(pressAgainEvent, heard);
+    return () => {
+        contents.removeEventListener('click', heard);
+        contents.removeEventListener(pressAgainEvent, heard);
+    };
 }
 
 /** An entry of the Field List as the contents drew it, with the Area it stands in. */
@@ -502,7 +536,7 @@ function entriesOf(view: PivotFieldListView): string {
  * is named by its place, and a gesture on a place a newer layout gave another field does nothing (spine rule 6). An
  * entry is draggable while no menu or panel of its stands under it, as the pane is now.
  */
-function wireFieldList(contents: HTMLElement, list: PivotFieldListSlotContext, drawn: () => PivotFieldListView): () => void {
+function wireFieldList(contents: HTMLElement, list: PivotFieldListSlotContext, drawn: () => PivotFieldListView, later: Later): () => void {
     // Each gesture reads the view the contents show as it is taken, never the one they showed when wired: a render
     // .NET has patched in stands before its wiring does.
     // An Area the Razor names, as one the pane was drawn with, and the index past its entries.
@@ -526,7 +560,9 @@ function wireFieldList(contents: HTMLElement, list: PivotFieldListSlotContext, d
             presses[key] = () => { if (asDrawn()) list.openMenu(entryAt(key).entry.entry); };
         }
     }
-    const unstanding = wireStanding(contents, presses, key => list.control(key), key => list.anchor(key));
+    // An entry is named by its place: a press taken later is taken only while the Areas show what they showed as it was
+    // made.
+    const unstanding = wireStanding(contents, later, presses, key => list.control(key), key => list.anchor(key), () => entriesOf(drawn()));
     const unwire: (() => void)[] = [unstanding];
     for (const [element, name] of marked(contents, pivotSlotAttributes.area)) {
         const ref = list.area(areaAt(name)[0]);
@@ -725,7 +761,7 @@ interface PanelHandlers {
  * cancel in the pivot's Input Order. The first control takes the keyboard at the request the context carries, unless
  * `answered`.
  */
-function wirePanel(contents: HTMLElement, panel: PivotPanelSlotContext, answered: boolean, handlers: PanelHandlers): () => void {
+function wirePanel(contents: HTMLElement, panel: PivotPanelSlotContext, answered: boolean, later: Later, handlers: PanelHandlers): () => void {
     for (const attribute of [pivotSlotAttributes.text, pivotSlotAttributes.choice, pivotSlotAttributes.item, pivotSlotAttributes.all]) {
         for (const [element] of marked(contents, attribute)) element.setAttribute('data-ex-claims', '');
     }
@@ -764,7 +800,7 @@ function wirePanel(contents: HTMLElement, panel: PivotPanelSlotContext, answered
     };
     contents.addEventListener('input', input);
     contents.addEventListener('change', change);
-    const unpress = wireStanding(contents, { ok: panel.apply, cancel: panel.cancel }, name => {
+    const unpress = wireStanding(contents, later, { ok: panel.apply, cancel: panel.cancel }, name => {
         throw new RangeError(`A panel's control is marked ${pivotSlotAttributes.control}="${name}": a panel hands in no control by name.`);
     });
     const texts = handlers.texts;
