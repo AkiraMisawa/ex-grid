@@ -25,6 +25,16 @@ export const gridCommandIds = Object.freeze({
 } as const);
 
 /**
+ * The ids of the words of the notices a page holding another version's files calls for (ADR-0123), as the C# core's
+ * `ReloadNoticeLabelIds` names them: each product resolves its stylesheet's notice by the same id.
+ */
+export const reloadNoticeLabelIds = Object.freeze({
+    /** The stylesheet the page holds is not the one a product was built with: shown at the top of that product's
+     * root, by the stylesheet's own rules (ERR-11). */
+    stylesheet: 'reload-notice-stylesheet',
+} as const);
+
+/**
  * The ids of the names the core gives its own fields (ADR-0051, ADR-0203), for assistive technology: a Consumer's
  * `commandLabel` answers them in its own words, as it answers a command's.
  */

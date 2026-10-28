@@ -574,6 +574,22 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             json.WriteNumber("sliceBudgetMs", slicing.Budget.TotalMilliseconds);
             json.WriteEndObject();
         }
+        // The stylesheets the Chrome brings, whose notices the pivot's root renders beside its own (ADR-0123, ERR-11):
+        // the Pivot Chrome's, and its report grid's Chrome's, which the Razor component's report grid renders and
+        // the browser's grid does not.
+        var stylesheets = (_renderedChrome?.Stylesheets ?? []).Concat(_gridChrome?.Stylesheets ?? []).DistinctBy(sheet => sheet.Name).ToList();
+        if (stylesheets.Count > 0)
+        {
+            json.WriteStartArray("stylesheets");
+            foreach (var stylesheet in stylesheets)
+            {
+                json.WriteStartObject();
+                json.WriteString("name", stylesheet.Name);
+                json.WriteString("stamp", stylesheet.Stamp);
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        }
         json.WriteStartArray("hears");
         if (ShowFieldListChanged.HasDelegate)
             json.WriteStringValue("showFieldListChanged");

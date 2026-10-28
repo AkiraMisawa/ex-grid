@@ -22,7 +22,7 @@ import { summaryLabelIds } from '../chrome/summary-words';
 import { markLabelIds } from '../chrome/mark-words';
 import { selectionLabelIds } from '../chrome/selection-words';
 import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
-import { gridCommandIds, gridLabelIds } from '../chrome/command-ids';
+import { gridCommandIds, gridLabelIds, reloadNoticeLabelIds } from '../chrome/command-ids';
 import { filledWords } from '../chrome/filled-words';
 import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
 import { canApply } from '../chrome/filter-panel-choices';
@@ -753,9 +753,6 @@ const modifierKeys: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'M
 /** Home and End where Command is the primary key, which the browser binds to a scroll in a text field (ticket 32). */
 const appleCaretKeys: ReadonlySet<string> = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
 
-/** The built-in Chrome's words for a stylesheet of another version (ADR-0123, ADR-0203). */
-const stylesheetNoticeWords = 'This page holds another version\'s stylesheet. Reload the page.';
-
 /** The shortest and longest waits the Change Highlight timer is armed for (ADR-0068). */
 const shortestHighlightWaitMs = 1;
 const longestHighlightWaitMs = 24 * 60 * 60 * 1000;
@@ -1407,6 +1404,8 @@ export class GridView<Row> {
     readonly #header: HTMLElement;
     readonly #viewport: HTMLElement;
     readonly #stamp: HTMLElement;
+    // The stylesheet's notice (ADR-0123), worded through `commandLabel`.
+    readonly #stylesheetNotice: HTMLElement;
     readonly #announce: HTMLElement;
     readonly #shadeLayer: HTMLElement;
     readonly #pinnedLayer: HTMLElement;
@@ -1928,7 +1927,7 @@ export class GridView<Row> {
         const notice = element('div', {
             'data-ex-notice': 'stylesheet', 'data-ex-stylesheet': stylesheetName, 'data-ex-stamp': stylesheetStamp, style: 'display: none',
         });
-        notice.textContent = stylesheetNoticeWords;
+        this.#stylesheetNotice = notice;
         // One scroll container for both axes, the header and the Pinned Columns held by `position: sticky`
         // inside it; tabindex -1 keeps it out of the tab sequence (A11Y-4).
         this.#scroller = element('div', { class: 'ex-scroller', tabindex: '-1', role: 'presentation' });
@@ -2025,6 +2024,7 @@ export class GridView<Row> {
         let drawn = false;
         try {
             this.#commit(taken);
+            this.#wordNotice();
             const onScroll = (): void => {
                 this.#onScroll();
             };
@@ -2125,7 +2125,15 @@ export class GridView<Row> {
         const taken = this.#take(options);
         this.#prepare(taken, this.#ownSource);
         this.#commit(taken);
+        this.#wordNotice();
         this.#invalidate();
+    }
+
+    // The stylesheet's notice says the Consumer's words where `commandLabel` has some, as the C# core's does. Called
+    // after `#commit`, which takes the `commandLabel` it asks.
+    #wordNotice(): void {
+        const words = this.#labelOf(reloadNoticeLabelIds.stylesheet);
+        if (this.#stylesheetNotice.textContent !== words) this.#stylesheetNotice.textContent = words;
     }
 
     /**

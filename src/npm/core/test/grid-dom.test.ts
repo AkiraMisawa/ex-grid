@@ -11,7 +11,16 @@ import { GridSource } from '../src/source/grid-source';
 import type { GridPage, GridQuery } from '../src/source/fetching-source';
 import { columns, mount, painted, q, rowsOf, scrollTo, Told, trades, type Trade } from './grid-harness';
 
+const noticeWords = (root: HTMLElement): string | null => q(root, '[data-ex-notice="stylesheet"]').textContent;
+
 describe('createGrid', () => {
+    it('ADR-0123: the stylesheet\'s notice is worded by commandLabel, at creation and on an update that changes it', () => {
+        const { root, view } = mount({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480, commandLabel: id => (id === 'reload-notice-stylesheet' ? 'Reload.' : undefined) });
+        expect(noticeWords(root)).toBe('Reload.');
+        view.update({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480 });
+        expect(noticeWords(root)).toBe('This page holds another version\'s stylesheet. Reload the page.');
+    });
+
     it('ADR-0350: the root, the scroller, the header and the rows are the C# core\'s DOM contract', async () => {
         const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480 });
         await painted();

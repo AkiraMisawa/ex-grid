@@ -7,7 +7,7 @@
 import { builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
 import { crossingCalls, HeldMessages, WireMetrics, type WireCellMetrics, type WirePresentationDefaults } from '@ex-grid/blazor-shared';
-import { createPivot, type PivotChrome, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
+import { createPivot, type PivotChrome, type PivotChromeStylesheet, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import { PivotJson, pivotWordIdList, readPivotLayoutJson, writePivotLayoutJson, type PivotLabel, type PivotLayout } from '@ex-grid/pivot-engine';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from './dotnet-pivot-source';
 import { RazorPivotSlots, type PivotGrids, type WireRazorSlots } from './razor-pivot-slots';
@@ -41,6 +41,8 @@ export interface WireOptions extends Partial<Pick<PivotViewOptions, PassedOption
     /** A Wrapper's cascaded defaults (ADR-0030): the widths of the font it sets, its Density, hover band and Row Stripes. */
     readonly presentationDefaults?: WirePresentationDefaults;
     readonly hears: readonly HeardKind[];
+    /** The stylesheets the Consumer's Chrome brings (ADR-0123), whose notices the pivot's root renders: none where absent. */
+    readonly stylesheets?: readonly PivotChromeStylesheet[];
 }
 
 /** The Consumer's word for each of {@link labelIds} it answers, or `null` to keep the English. */
@@ -145,9 +147,9 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
         },
     };
     const slots = init.razorSlots === null ? undefined : new RazorPivotSlots(bridge, init.razorSlots, grids);
-    const chrome = slots?.chrome();
+    const chrome = dressedChrome(slots?.chrome());
     const metrics = new WireMetrics();
-    const pivot: PivotHandle = createPivot(root, pivotOptions(init.options, source, layout, label, heard, chrome, metrics));
+    const pivot: PivotHandle = createPivot(root, pivotOptions(init.options, source, layout, label, heard, chrome(init.options), metrics));
     made.pivot = pivot;
     for (const hold of early.splice(0)) if (!hold.gone) hold.release = pivot.holdSettled(hold.element);
     return Object.freeze({
@@ -157,7 +159,7 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
             const nextSource = next.source === undefined ? source : sourceOf(next.source);
             const nextLayout = next.layout === undefined ? layout : readPivotLayoutJson(next.layout);
             const nextLabel = next.words === undefined ? label : labelOf(next.words);
-            pivot.update(pivotOptions(next.options, nextSource, nextLayout, nextLabel, heard, chrome, metrics));
+            pivot.update(pivotOptions(next.options, nextSource, nextLayout, nextLabel, heard, chrome(next.options), metrics));
             source = nextSource;
             layout = nextLayout;
             label = nextLabel;
@@ -281,6 +283,20 @@ function labelOf(words: WireWords): PivotLabel | undefined {
     if (words === null) return undefined;
     const held: ReadonlyMap<string, string> = new Map(Object.entries(words));
     return id => held.get(id);
+}
+
+/** The Chrome the pivot is handed for the options .NET sent: the slots .NET fills, and the stylesheets the Consumer's
+ * Chrome brings, the same object while neither changes. */
+export function dressedChrome(slots: PivotChrome | undefined): (wire: WireOptions) => PivotChrome | undefined {
+    let dressed: { readonly key: string; readonly chrome: PivotChrome | undefined } | undefined;
+    return wire => {
+        const { stylesheets } = wire;
+        const key = stylesheets === undefined ? '' : JSON.stringify(stylesheets);
+        if (dressed?.key === key) return dressed.chrome;
+        const chrome = stylesheets === undefined ? slots : { ...slots, stylesheets };
+        dressed = { key, chrome };
+        return chrome;
+    };
 }
 
 function pivotOptions(

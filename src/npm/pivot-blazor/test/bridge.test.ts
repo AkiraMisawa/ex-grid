@@ -9,7 +9,7 @@ import {
     LocalPivotReportSource, PivotJson, PivotSourceFeatures, RecordPivotSource, createPivotLayout, pivotQuery, pivotRecordField, pivotWordIdList,
     type PivotSourceChanged,
 } from '@ex-grid/pivot-engine';
-import { labelIds, wireSelection } from '../src/blazor-pivot';
+import { dressedChrome, labelIds, wireSelection, type WireOptions } from '../src/blazor-pivot';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from '../src/dotnet-pivot-source';
 
 interface Trade {
@@ -174,6 +174,24 @@ describe('the words .NET answers for the pivot (ADR-0370 section 10)', () => {
         const ids = labelIds();
         expect(ids).toEqual(expect.arrayContaining([...pivotWordIdList(), gridCommandIds.copy, gridCommandIds.sortAscending]));
         expect(new Set(ids).size).toBe(ids.length);
+    });
+});
+
+const wireOptions = (stylesheets?: WireOptions['stylesheets']): WireOptions => ({ locale: 'en-US', hears: [], ...(stylesheets === undefined ? {} : { stylesheets }) });
+
+describe('the Chrome the pivot is handed (ADR-0123, ERR-11)', () => {
+    const mud = { name: 'mud-ex-pivot.css', stamp: 'a'.repeat(64) };
+
+    it('ERR-11: carries the stylesheets the Consumer\'s Chrome brings beside the slots .NET fills, the same object while neither changes', () => {
+        const slots = { toolbar: () => () => undefined };
+        const chrome = dressedChrome(slots);
+        expect(chrome(wireOptions())).toBe(slots);
+        const dressed = chrome(wireOptions([mud]));
+        expect(dressed).toEqual({ toolbar: slots.toolbar, stylesheets: [mud] });
+        expect(chrome(wireOptions([{ ...mud }]))).toBe(dressed);
+        expect(chrome(wireOptions())).toBe(slots);
+        // With no slot filled with Razor, a Chrome that brings a stylesheet is one still.
+        expect(dressedChrome(undefined)(wireOptions([mud]))).toEqual({ stylesheets: [mud] });
     });
 });
 

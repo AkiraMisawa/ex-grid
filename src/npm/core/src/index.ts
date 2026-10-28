@@ -27,7 +27,7 @@ export type { BorderStyle, CellAppearance, CellBorder, CellTextMeasure, EdgeBord
 export type { ActionRefusalReason, FindRefusalReason, GridRefusal, PlacementRefusalReason } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
-export { builtInLabelIds } from './chrome/command-labels';
+export { builtInCommandLabel, builtInLabelIds } from './chrome/command-labels';
 export type {
     CellEditorView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome, GridChromeSlot,
     GridColumnMenuSlotContext, GridContextMenuSlotContext, GridEditorCompletionSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext,
@@ -43,7 +43,7 @@ export type {
 } from './chrome/filter-panel-model';
 export type { SelectAllState } from './chrome/filter-panel-choices';
 export type { MenuKey, MenuKeyKind } from './chrome/menu-keys';
-export { gridCommandIds, gridLabelIds } from './chrome/command-ids';
+export { gridCommandIds, gridLabelIds, reloadNoticeLabelIds } from './chrome/command-ids';
 export { markLabelIds } from './chrome/mark-words';
 export { selectionLabelIds } from './chrome/selection-words';
 export { filterPanelLabelIds, operatorLabelId } from './chrome/filter-panel-words';

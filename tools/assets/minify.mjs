@@ -168,48 +168,39 @@ for (const [pkg, kinds] of shipped) {
     console.log(`-> ${path.relative(repo, file)}`);
 }
 
-// The Script Core's own record of the stylesheet it draws against (ADR-0350 section 4): ExGrid's
-// stylesheet is shared, so the core renders the same notice with the same stamp the C# core does.
-// src/npm/core/test/shipped-stylesheet.test.ts checks it against the source.
-{
-    const grid = shipped.get('ExGrid').Stylesheet;
-    const file = path.join(repo, 'src/npm/core/src/dom/shipped-stylesheet.ts');
-    fs.writeFileSync(file, [
-        '// Written by tools/assets/minify.mjs (ADR-0123): do not edit. Edit src/ExGrid/Assets/ and run it',
+// A Script Core's record of the stylesheet it draws against (ADR-0350 section 4, ADR-0370 section 1): the name and
+// stamp its notice is rendered with, as the C# component renders it, and whatever else that package reads of the
+// stylesheet. Each package's test/shipped-stylesheet.test.ts checks it against the source.
+function writeStylesheetRecord(product, file, drawer, extra = []) {
+    const { name, stamp } = shipped.get(product).Stylesheet;
+    const target = path.join(repo, file);
+    fs.writeFileSync(target, [
+        `// Written by tools/assets/minify.mjs (ADR-0123): do not edit. Edit src/${product}/Assets/ and run it`,
         '// again, and commit what it writes. test/shipped-stylesheet.test.ts checks it against the source.',
         '',
-        '/** The name of the stylesheet the grid draws against, by which its notice rules find the notice. */',
-        `export const stylesheetName = '${grid.name}';`,
+        `/** The name of the stylesheet the ${drawer} draws against, by which its notice rules find the notice. */`,
+        `export const stylesheetName = '${name}';`,
         '',
         '/** The SHA-256 of that stylesheet\'s source: the stamp its own notice rule hides the notice for. */',
-        `export const stylesheetStamp = '${grid.stamp}';`,
+        `export const stylesheetStamp = '${stamp}';`,
         '',
+        ...extra,
     ].join('\n'));
-    console.log(`-> ${path.relative(repo, file)}`);
+    console.log(`-> ${path.relative(repo, target)}`);
 }
 
-// ExChart's Script Core's record of its stylesheet (ADR-0370 section 1): the name and stamp its notice
-// is rendered with, and the minified text a saved SVG carries inside it, since a file has no page to take
-// it from (ADR-0282). src/npm/chart/test/shipped-stylesheet.test.ts checks it against the source.
+// ExGrid's stylesheet is shared, so the core renders the same notice with the same stamp the C# core does.
+writeStylesheetRecord('ExGrid', 'src/npm/core/src/dom/shipped-stylesheet.ts', 'grid');
+writeStylesheetRecord('ExPivot', 'src/npm/pivot/src/shipped-stylesheet.ts', 'pivot');
+// ExChart's also carries the minified text a saved SVG holds inside it, since a file has no page to take it from
+// (ADR-0282).
 {
-    const chart = shipped.get('ExChart').Stylesheet;
     const minified = fs.readFileSync(path.join(repo, 'src/ExChart/wwwroot/ex-chart.min.css'), 'utf8');
     const comment = minified.lastIndexOf('/*# sourceMappingURL=');
     const text = (comment < 0 ? minified : minified.slice(0, comment)).trimEnd();
-    const file = path.join(repo, 'src/npm/chart/src/dom/shipped-stylesheet.ts');
-    fs.writeFileSync(file, [
-        '// Written by tools/assets/minify.mjs (ADR-0123): do not edit. Edit src/ExChart/Assets/ and run it',
-        '// again, and commit what it writes. test/shipped-stylesheet.test.ts checks it against the source.',
-        '',
-        '/** The name of the stylesheet the chart draws against, by which its notice rules find the notice. */',
-        `export const stylesheetName = '${chart.name}';`,
-        '',
-        '/** The SHA-256 of that stylesheet\'s source: the stamp its own notice rule hides the notice for. */',
-        `export const stylesheetStamp = '${chart.stamp}';`,
-        '',
+    writeStylesheetRecord('ExChart', 'src/npm/chart/src/dom/shipped-stylesheet.ts', 'chart', [
         '/** The stylesheet as it ships, minified, without its source map comment: what a saved SVG carries. */',
         `export const stylesheetText = ${JSON.stringify(text)};`,
         '',
-    ].join('\n'));
-    console.log(`-> ${path.relative(repo, file)}`);
+    ]);
 }

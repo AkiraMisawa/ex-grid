@@ -21,6 +21,7 @@ import type {
 } from '../src/chrome';
 import type { PivotShowDetailsEvent } from '../src/details';
 import { PartElements } from '../src/parts';
+import { stylesheetStamp } from '../src/shipped-stylesheet';
 import { PivotView, type PivotFailedEvent, type PivotSelectionChangedEvent, type PivotViewOptions } from '../src/pivot-view';
 
 interface Trade {
@@ -578,6 +579,34 @@ function across(columns: number): CopyPlan {
         segments: [{ topRow: 0, leftColumn: 1, rowCount: 1, columnCount: columns }], orientation: 'vertical', totalRows: 1, totalColumns: columns,
     });
 }
+
+/** The root's stylesheet notices: each one's stylesheet, stamp, inline display and words. */
+function notices(root: HTMLElement): readonly (readonly [string | null, string | null, string, string])[] {
+    return [...root.querySelectorAll<HTMLElement>(':scope > [data-ex-notice="stylesheet"]')]
+        .map(notice => [notice.getAttribute('data-ex-stylesheet'), notice.getAttribute('data-ex-stamp'), notice.style.display, notice.textContent] as const);
+}
+
+describe('ExPivot\'s stylesheet notices (ADR-0123, ERR-11)', () => {
+    const mud = { name: 'mud-ex-pivot.css', stamp: 'a'.repeat(64) };
+
+    it('ExPivot\'s own stands at the top of the root, and one for each stylesheet the Chrome brings beside it, each hidden until a stylesheet\'s rules decide', () => {
+        const { view, root } = mount({ source: local(), chrome: { stylesheets: [mud] } });
+        const words = 'This page holds another version\'s stylesheet. Reload the page.';
+        expect(notices(root)).toEqual([['ex-pivot.css', stylesheetStamp, 'none', words], ['mud-ex-pivot.css', mud.stamp, 'none', words]]);
+        expect(root.firstElementChild?.getAttribute('data-ex-stylesheet')).toBe('ex-pivot.css');
+
+        // Another Chrome brings none, and a label words them.
+        view.update({ source: local(), slicing: inTurn, label: id => (id === 'reload-notice-stylesheet' ? 'Reload.' : undefined) });
+        expect(notices(root)).toEqual([['ex-pivot.css', stylesheetStamp, 'none', 'Reload.']]);
+    });
+
+    it('a Chrome\'s stylesheet without a name or a stamp is refused by name', () => {
+        expect(() => mount({ source: local(), chrome: { stylesheets: [{ name: '', stamp: stylesheetStamp }] } }))
+            .toThrow('Each of an ExPivot\'s chrome.stylesheets is { name, stamp }');
+        expect(() => mount({ source: local(), chrome: { stylesheets: [{ name: 'mud-ex-pivot.css', stamp: '' }] } }))
+            .toThrow('Each of an ExPivot\'s chrome.stylesheets is { name, stamp }');
+    });
+});
 
 describe('ExPivot\'s copy (ADR-0152)', () => {
     it('ADR-0152, ADR-0005: a copy is the report source\'s: a number column Item\'s header as painted in the text, in full in the HTML', async () => {
