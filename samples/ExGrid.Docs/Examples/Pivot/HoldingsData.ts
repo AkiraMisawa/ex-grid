@@ -1,6 +1,6 @@
 import type { SnapshotDecimal } from '@ex-grid/data';
 import { pivotRecordField, type PivotRecordField } from '@ex-grid/pivot-engine';
-import { mulberry32 } from '../Grid/Seeded';
+import { mulberry32 } from './Seeded';
 
 /** One invented holding at a custodian: a market value in the tens of billions, to the cent. */
 export interface Holding {
