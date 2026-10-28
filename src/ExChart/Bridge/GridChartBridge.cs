@@ -21,7 +21,7 @@ public static class GridChartCommands
     /// <summary>The prefix of "Add to chart: <i>name</i>"; the target's name follows it.</summary>
     public const string AddPrefix = "exchart.add:";
 
-    /// <summary>The wording of one of this bridge's commands, for the grid's <c>CommandLabel</c>; null for any other.</summary>
+    /// <summary>The wording of one of this bridge's commands, for the grid's <c>CommandLabel</c> (<c>ContextCommandLabel</c> over the Script Core); null for any other.</summary>
     public static string? Label(string id) => id switch
     {
         GridChartCommands.Chart => "Chart",
@@ -60,6 +60,11 @@ public sealed class GridChartBridge<TRow>
 
     /// <summary>The grid whose selections are charted, set with <c>@ref</c>.</summary>
     public ExGrid<TRow>? Grid { get; set; }
+
+    /// <summary>The grid drawn by the Script Core whose selections are charted, set with <c>@ref</c> in place of
+    /// <see cref="Grid"/>: give <see cref="Commands"/> to its <c>ContextCommands</c> and
+    /// <see cref="GridChartCommands.Label"/> to its <c>ContextCommandLabel</c> (ADR-0421).</summary>
+    public global::ExGrid.Script.ExGrid<TRow>? ScriptGrid { get; set; }
 
     /// <summary>The open charts the menu offers "Add to chart" for (ADR-0258, U7), in the menu's order.</summary>
     public IReadOnlyList<ChartTarget> Targets { get; set; } = [];
@@ -158,7 +163,7 @@ public sealed class GridChartBridge<TRow>
     public async Task<bool> ShowInGridAsync(GridCell cell)
     {
         ArgumentNullException.ThrowIfNull(cell);
-        if (Grid is not { } grid || State() is not { } g) return false;
+        if (Charted() is not { Place: { } place, State: var g }) return false;
         var column = -1;
         for (var i = 0; i < g.Columns.Count; i++) if (g.Columns[i].Name == cell.Column) column = i;
         var row = -1;
@@ -169,24 +174,36 @@ public sealed class GridChartBridge<TRow>
             return false;
         }
         var at = new CellPosition(row, column);
-        return await grid.PlaceSelectionAsync(new SelectionRange(row, column, 1, 1), at, g.RowSequenceVersion);
+        return await place(new SelectionRange(row, column, 1, 1), at, g.RowSequenceVersion);
     }
 
     /// <summary>The grid as tests hand it in, in place of <see cref="Grid"/>.</summary>
     internal Func<GridState<TRow>>? StateOf { get; set; }
 
-    private GridState<TRow>? State()
+    private GridState<TRow>? State() => Charted()?.State;
+
+    /// <summary>The grid the bridge charts, as it stands, and how a cell of it is placed: the one of
+    /// <see cref="Grid"/> and <see cref="ScriptGrid"/> that is set, refusing both; none before either is set.</summary>
+    private (GridState<TRow> State, Func<SelectionRange, CellPosition, int, Task<bool>>? Place)? Charted()
     {
-        if (StateOf is { } of) return of();
+        if (StateOf is { } of) return (of(), null);
+        if (Grid is not null && ScriptGrid is not null)
+            throw new InvalidOperationException("The bridge charts one grid: set Grid or ScriptGrid, not both.");
+        if (ScriptGrid is { } script)
+        {
+            if (script.RowSource is not { } rows) return null;
+            return (new GridState<TRow>(script.Columns, script.HeaderGroups ?? [], rows.RowSequenceVersion, rows.Window, rows.WindowStart,
+                range => rows.GetRowsAsync(range, CancellationToken.None)), script.PlaceSelectionAsync);
+        }
         if (Grid is not { } grid) return null;
         var source = grid.Source;
-        return new GridState<TRow>(
+        return (new GridState<TRow>(
             grid.Columns,
             grid.HeaderGroups ?? [],
             source?.RowSequenceVersion ?? grid.RowSequenceVersion,
             source?.Window ?? grid.Window,
             source?.WindowStart ?? grid.WindowStart,
-            source is null ? null : range => source.GetRowsAsync(range, CancellationToken.None));
+            source is null ? null : range => source.GetRowsAsync(range, CancellationToken.None)), grid.PlaceSelectionAsync);
     }
 
     private async Task MakeAsync(ContextMenuContext<TRow> context, ChartOrientation? orientation, ChartTarget? target)

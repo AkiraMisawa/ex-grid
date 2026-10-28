@@ -221,7 +221,30 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// </summary>
     [Parameter] public IGridChrome? Chrome { get; set; }
 
+    /// <summary>
+    /// The Consumer's own Context Menu commands, after the Script Core's (ADR-0036, ADR-0421): handed the row the menu
+    /// opened on, the column, and the Selection as rectangles in the version they are written in, as the Razor
+    /// component's are. The menu is drawn in the browser, so it asks .NET as it opens and stands once .NET has
+    /// answered; what the user types meanwhile is held and reaches it then. A command's <c>Invoke</c> runs in its
+    /// turn among the grid's events, and every input made after the press is held until it completes, so a menu
+    /// opened next is asked of what it left. The context's <see cref="ContextMenuContext{TRow}.Commands"/> is
+    /// empty here: the core's own run in the browser.
+    /// </summary>
+    [Parameter] public Func<ContextMenuContext<TRow>, IEnumerable<GridCommand>>? ContextCommands { get; set; }
+
+    /// <summary>What the Context Menu calls each command <see cref="ContextCommands"/> answers, by its id; null for
+    /// the id itself. It words those commands only: the Script Core's own keep its words.</summary>
+    [Parameter] public Func<string, string?>? ContextCommandLabel { get; set; }
+
+    /// <summary>The source the grid reads its rows from: <see cref="Source"/>, or the one it made of
+    /// <see cref="Rows"/>, which orders and filters them as the user asks. Null until the parameters are first set.
+    /// A Consumer's command reads the rows a Selection covers from it, in the Row Sequence Version the Selection was
+    /// taken in.</summary>
+    public IGridSource<TRow>? RowSource => _source;
+
     private ElementReference _root;
+    // The commands the last Context Menu was answered with, by the number the browser asked it under (ADR-0421).
+    private (long Number, IReadOnlyList<GridCommand> Commands)? _menu;
     // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1).
     private readonly RazorSlotHolders _slots = new(RazorSlot.ViewOf);
     private IGridChrome? _renderedChrome;
@@ -812,6 +835,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cellMessages", _judgement);
         if (OnFindError is not null)
             json.WriteBoolean("findsErrors", true);
+        if (ContextCommands is not null)
+            json.WriteBoolean("contextCommands", true);
         if (Chrome?.ScriptSlots is { } slots and not ScriptSlots.None)
         {
             json.WriteStartArray("razorSlots");
@@ -1121,6 +1146,69 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             CellMessageOf is { } message && Declared(column) is { } declared ? message(asked, declared) : null),
             Answers: true, SendsState: false));
     }
+
+    /// <summary>The Consumer's commands for the Context Menu the browser numbered <paramref name="number"/>, opened on
+    /// the row it holds as <paramref name="row"/> (ADR-0421), asked in its turn among the events, and written as the
+    /// browser reads them: each command's id, whether it is enabled, and its words where
+    /// <see cref="ContextCommandLabel"/> gives some. They are kept until a command of theirs runs or the next menu is
+    /// asked, which is the only one the browser runs a command of. A menu opened under columns, a source or an order
+    /// .NET no longer holds is not handed to the Consumer, whose positions would be read against another grid: it is
+    /// answered as moved, after what .NET owes the browser, and no menu stands.</summary>
+    internal Task<string?> ContextCommandsAsync(long number, int generation, int columnsVersion, long row, string column, JsonElement selection, int rowSequenceVersion)
+    {
+        var asked = _rows.RowOf(row);
+        var ranges = ScriptJson.Ranges(selection);
+        return InTurnAsync(new Heard(async () =>
+        {
+            if (columnsVersion != _columnsVersion || SourceOf(generation) is not { } source || source.RowSequenceVersion != rowSequenceVersion)
+            {
+                _menu = null;
+                await SendStateAsync();
+                return "{\"moved\":true}";
+            }
+            var declared = Declared(column)
+                ?? throw new InvalidOperationException($"Internal: the browser opened the Context Menu on column '{column}', which the columns do not declare.");
+            var context = new ContextMenuContext<TRow>(asked, column, declared.Type, ranges, rowSequenceVersion, [], CloseMenu);
+            var commands = ContextCommands is { } answer ? answer(context).ToList() : [];
+            _menu = (number, commands);
+            return Json(json =>
+            {
+                json.WriteStartArray();
+                foreach (var command in commands)
+                {
+                    json.WriteStartObject();
+                    json.WriteString("id", command.Id);
+                    json.WriteBoolean("enabled", command.Enabled);
+                    if (ContextCommandLabel?.Invoke(command.Id) is { } words)
+                        json.WriteString("label", words);
+                    json.WriteEndObject();
+                }
+                json.WriteEndArray();
+            });
+        }, Answers: true, SendsState: false));
+    }
+
+    // The menu is the Script Core's, closed by its own keys and presses, and by a command run.
+    private static void CloseMenu() =>
+        throw new NotSupportedException("The Script Core's Context Menu closes itself as a command runs; a command does not close it (ADR-0421).");
+
+    /// <summary>Runs the command at <paramref name="index"/> of the Context Menu numbered <paramref name="number"/>,
+    /// pressed in the browser (ADR-0421), in its turn among the events. What it writes to the source crosses before
+    /// the browser hears it ran, so the input the browser held behind it is taken against what it left.</summary>
+    internal Task<string?> RunContextCommandAsync(long number, int index) => InTurnAsync(new Heard(async () =>
+    {
+        if (_menu is not { } menu || menu.Number != number)
+            throw new InvalidOperationException(FormattableString.Invariant($"Internal: the browser ran a command of the Context Menu numbered {number}, which is not the last one it asked."));
+        if (index < 0 || index >= menu.Commands.Count)
+            throw new InvalidOperationException(FormattableString.Invariant($"Internal: the browser ran command {index} of a menu of {menu.Commands.Count}."));
+        var command = menu.Commands[index];
+        if (!command.Enabled)
+            throw new InvalidOperationException($"Internal: the browser ran the command '{command.Id}', which the Consumer answered disabled.");
+        // The menu closed as the command ran: what its commands hold is let go.
+        _menu = null;
+        await command.Invoke();
+        return null;
+    }, Answers: true, SendsState: true));
 
     /// <summary>The error step the browser numbered <paramref name="number"/> (ADR-0381 section 3), asked of
     /// <see cref="OnFindError"/> in its turn among the events, and written as the core reads a Find result. A step

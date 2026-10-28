@@ -806,7 +806,7 @@ export interface GridColumnWidthChange {
 export interface GridCommand {
     readonly enabled: boolean;
     readonly id: string;
-    readonly invoke: () => void;
+    readonly invoke: () => void | PromiseLike<void>;
 }
 
 // @public
@@ -1163,7 +1163,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
     readonly completeEditorText?: CompleteEditorText;
-    readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
+    readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[] | PromiseLike<readonly GridCommand[]>;
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
     readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     readonly copyCellCap?: number;

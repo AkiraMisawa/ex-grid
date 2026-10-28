@@ -104,3 +104,31 @@ test('ADR-0410, ADR-0281: MudBlazor\'s toolbar and menu stand in the chart\'s sl
         await setRoundTrip(0);
     }
 });
+
+test('ADR-0421, ADR-0258: the Chart Dock over the Script grid opens a chart from the grid\'s menu, and the menu opened at once after it offers that chart', async ({ page }) => {
+    await page.goto('/script-chart-dock');
+    const grid = page.locator('.ex-grid').first();
+    const cell = (row, column) => grid.locator(`[id$='r${row}c${column}']`);
+    const items = grid.locator('.ex-popover [role=menuitem]');
+    const tabs = page.locator('.mud-ex-chart-dock-panel .mud-tab');
+    await expect(cell(7, 0)).toBeVisible();
+    await circuitQuiet();
+    try {
+        await setRoundTrip(150);
+        await cell(0, 1).click({ force: true });
+        await cell(3, 2).click({ modifiers: ['Shift'], force: true });
+        // The menu asks .NET for the bridge's commands as it opens, and stands with them.
+        await cell(0, 1).click({ button: 'right', force: true });
+        await items.filter({ hasText: /^Chart$/ }).click();
+        // At machine speed, while "Chart" still runs in .NET: the menu opened next is held until it has run, so it
+        // offers the tab "Chart" opened, never the menu as it stood before.
+        await cell(5, 1).click({ button: 'right', force: true });
+        await expect(items.filter({ hasText: /^Add to chart/ })).toHaveText(['Add to chart: Chart 1']);
+        await expect(tabs).toHaveText(['Chart 1']);
+        // The chart in the tab is the Script Core's, its toolbar MudBlazor's.
+        await expect(page.locator('.mud-ex-chart-dock-panel .ex-chart [data-ex-command="exchart.filters"]')).toHaveClass(/mud-button-root/);
+        await expect(page.locator('.mud-ex-chart-dock-panel .ex-chart g.ex-chart-series')).toHaveCount(4);
+    } finally {
+        await setRoundTrip(0);
+    }
+});

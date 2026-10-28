@@ -84,6 +84,16 @@
             there.
         </p>
         <p>
+            <code>ContextCommands</code> adds your own commands to the Context Menu, after Copy and Copy with
+            headers, as on the grid above, and <code>ContextCommandLabel</code> gives them their words (the grid's own commands keep its words). The menu is drawn in
+            the browser, so it asks .NET for your commands as it opens and opens once they arrive. A key typed in the
+            meantime is held and reaches the menu once it is open. A command's <code>Invoke</code> runs in .NET, and the
+            input after it waits until it completes, so the next menu is asked of what the command left. The context's
+            <code>Commands</code> is empty here, because Copy runs in the browser. Under React, the same
+            <code>contextCommands</code> may answer a promise, and a command's <code>invoke</code> may return one, with
+            the same effect. <a href="exchart/grid">Charting a selection</a> uses this.
+        </p>
+        <p>
             Two rules keep a choice from arriving after the Enter that applies it. A filter or find panel's text
             fields are drawn with no value bound to the view, which arrives a round trip behind the typing and would write an
             older text back; a value field is given the operand it opens with, and nothing after. And a choice is
