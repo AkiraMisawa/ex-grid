@@ -60,7 +60,7 @@ export type SheetToolbarBorder = 'bottom' | 'top' | 'left' | 'right' | 'none' | 
  * reason or a name in it takes the reason or the name as the union beside it spells it.
  */
 export type SheetWordId =
-    | 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen'
+    | 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'selectionMoved' | 'focusFormatChanged'
     | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened'
     | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded'
     | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing'
@@ -200,6 +200,17 @@ export class SheetWords {
     /** A change refused while a cell is being edited. */
     get editIsOpen(): string {
         return this.word('editIsOpen');
+    }
+
+    /** A change made from the Focus cell's format away from the Sheet, refused because the Selection moved before it
+     * was set (ADR-0100). */
+    get selectionMoved(): string {
+        return this.word('selectionMoved');
+    }
+
+    /** Such a change, refused because the Focus cell's format changed before it was set (ADR-0100). */
+    get focusFormatChanged(): string {
+        return this.word('focusFormatChanged');
     }
 
     /** A save refused while a cell is being edited (ADR-0330 §10): it would quietly lack what is being typed. */

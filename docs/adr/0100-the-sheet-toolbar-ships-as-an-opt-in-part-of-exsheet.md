@@ -184,6 +184,18 @@ None of these changes the decision. Each records how a part of it is held, or a 
   - *(2026-10-12, decided with the user: each Sheet Toolbar toggle widens as the key it names.)*
     *(2026-10-12, decided with the user: `SetCellFormatAsync` widens as the formatting keys do, not
     as Format Cells' OK does.)* ADR-0071, "What the seventeenth Windows run settled", holds both.
+  - *(2026-10-28, decided with the user.)* Over the Script Core (`ExSheet.Script.ExSheet`, ADR-0370
+    step 2) the Focus cell is read in the browser and the change made in .NET, so the read and the set
+    are two round trips. The user can move the Selection between them. Setting the change on the new
+    Selection would be a change made for other cells, and a toggle could go the wrong way. Answering
+    false would say nothing about why nothing happened. So the set carries the reading it was made
+    from, and is refused with `SheetRefusalReason.SelectionMoved` when the Selection, or the Sheet
+    shown, is no longer the one read. The Sheet's notice says so, because the user moved it and sees
+    nothing happen. *(Decided with the user the same day: a reason of its own.)* A Focus cell whose Cell Format changed between
+    the two is refused as `FocusFormatChanged`. The Script Core offers the same pair to any adapter,
+    `readFocusFormat` and `setCellFormatFrom`, beside `setCellFormatFromFocus`, which runs within one
+    turn and is never refused this way. A `ToolbarButton`'s `OnClick` holds the Sheet's Input Order,
+    so nothing the user does comes between the two there.
     - An item acts through public commands only, so the toggles' rule is this command's. It widens
       a column over `####` as the formatting keys do: Underline and Strikethrough widen, and Bold and
       Italic do not.

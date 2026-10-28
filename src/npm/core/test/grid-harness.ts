@@ -37,8 +37,11 @@ export class Told implements BrowserReports {
         return () => { this.#ceiling = undefined; };
     }
 
+    /** The Device Pixel ratio told once, at attach. */
+    devicePixelRatio = 1;
+
     observeDevicePixel(tell: (ratio: number) => void): () => void {
-        tell(1);
+        tell(this.devicePixelRatio);
         return () => { /* told once: the emulation's resolution never moves */ };
     }
 
@@ -169,7 +172,7 @@ export function unmountAll(): void {
 /** Mounts a grid; `browser` sets what the browser can do before the grid attaches, and `parent` is what the grid's
  * root is placed in. */
 export function mount<Row>(
-    options: GridOptions<Row>, browser: Partial<Pick<Told, 'clipboardWatched' | 'primaryIsMeta'>> = {}, parent: HTMLElement = document.body,
+    options: GridOptions<Row>, browser: Partial<Pick<Told, 'clipboardWatched' | 'primaryIsMeta' | 'devicePixelRatio'>> = {}, parent: HTMLElement = document.body,
 ): { readonly root: HTMLElement; readonly view: GridView<Row>; readonly told: Told } {
     const root = document.createElement('div');
     parent.append(root);

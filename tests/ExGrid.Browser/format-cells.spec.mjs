@@ -339,6 +339,9 @@ test.describe('on /sheet', () => {
     // Format Cells has landed, looked for frame by frame, inside the 150 ms the tab's focus is behind it.
     test('DC-60/ADR-0039: with a 150 ms round trip, a Shift+Tab typed while Format Cells opens from the menu is dropped with the keys behind it', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly hands Format Cells the keyboard in the task that draws it: nothing is typed in between');
+        // The Razor component, whose Format Cells takes the keyboard a round trip after it is drawn (CIRCUIT_SHEET's
+        // reason): over the Script Core it takes it as it is drawn, and the Shift+Tab wraps as below.
+        await openSheet(page, 'builtin', 'razor');
         const grid = sheet(page);
         const item = page.getByRole('menuitem', { name: 'Format Cells…' });
         await pressCell(grid, 'C2');

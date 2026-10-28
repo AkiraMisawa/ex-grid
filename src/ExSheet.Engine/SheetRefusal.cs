@@ -48,6 +48,20 @@ public enum SheetRefusalReason
     /// the instance before it; it names its Sheet instead.
     /// </summary>
     SheetNotNamed,
+
+    /// <summary>
+    /// A change made from the Focus cell's Cell Format away from the Sheet, set once the Selection, or the Sheet shown,
+    /// is no longer the one it was read from. Set where the Selection now stands, it would be a change made for other
+    /// cells. Only the Script Core's ExSheet, which reads the Focus cell and sets the change over two round trips,
+    /// meets it (ADR-0100, decided 2026-10-28).
+    /// </summary>
+    SelectionMoved,
+
+    /// <summary>
+    /// A change made from the Focus cell's Cell Format away from the Sheet, set once that format is no longer the one it
+    /// was made from: a toggle made from it would go the other way. Met as <see cref="SelectionMoved"/> is (ADR-0100).
+    /// </summary>
+    FocusFormatChanged,
 }
 
 /// <summary>An operation a Sheet refused, and why. Nothing was changed.</summary>

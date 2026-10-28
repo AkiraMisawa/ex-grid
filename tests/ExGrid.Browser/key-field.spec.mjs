@@ -946,7 +946,8 @@ test.describe('the Server host only', () => {
     // refused, and the live region says so, never dropped silently. The 150 ms round trip is what keeps
     // Enter unanswered as Escape is typed; on WebAssembly nothing does.
     test('KB-8 / ADR-0230: Escape and Tab typed at once behind an unanswered Enter — the Tab is refused aloud, and the next Tab leaves (150 ms)', async ({ page }) => {
-        await openSheet(page);
+        // The Razor component, whose Enter is answered across the circuit (CIRCUIT_SHEET's reason).
+        await openSheet(page, 'builtin', 'razor');
         const grid = sheet(page);
         await surround(page, '.ex-grid:has(> .ex-formula-bar)');
         await pressAt(grid, 'D10');
@@ -1012,7 +1013,9 @@ for (const chrome of ['builtin', 'mud']) {
         test.skip(!SERVER, 'a round trip exists only on a circuit');
 
         test.beforeEach(async ({ page }) => {
-            await openSheet(page, chrome);
+            // The Razor component, whose popover takes the keyboard a round trip after it opens (CIRCUIT_SHEET's
+            // reason): over the Script Core it takes it as it opens, as on WebAssembly.
+            await openSheet(page, chrome, 'razor');
         });
 
         test.afterEach(async () => {

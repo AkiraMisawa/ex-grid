@@ -1,9 +1,8 @@
 @page "/xlsx"
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Forms
-@* global::, for the reasons SheetPage.razor gives. *@
+@* global::, for the reasons SheetPage.razor gives, and ExSheet.Components not imported, for the same. *@
 @using global::ExSheet
-@using global::ExSheet.Components
 @using global::ExSheet.Engine
 @using global::ExSheet.Xlsx
 @using global::ExGrid.Chrome
@@ -12,7 +11,8 @@
 @* ?chrome=mud runs the Workbook with ExSheet.MudBlazor's Chrome on the Wrapper's paper, as /workbook does.
    ?hold=1 holds each read, once the file is chosen, until "Let the read go" is pressed: the opening is
    under way for as long as a test needs, with no clock (ADR-0220), so what is typed meanwhile, and an
-   Escape, meet it there. *@
+   Escape, meet it there. The Workbook is drawn by ExSheet.Script.ExSheet, and by the Razor component under
+   ?chrome=mud or ?component=razor, for the reasons /sheet gives (ADR-0370 step 2). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -57,7 +57,14 @@
 }
 
 <div id="xlsx">
-    @OnPaper(@<ExSheet @ref="_sheet" @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+    @if (Razor)
+    {
+        @OnPaper(@<ExSheet.Components.ExSheet @ref="_sheet" @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+    }
+    else
+    {
+        @OnPaper(@<ExSheet.Script.ExSheet @ref="_script" @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+    }
 </div>
 
 @code {
@@ -71,12 +78,21 @@
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
 
+    /// <summary><c>razor</c> draws the Workbook with the Razor component, in place of Blazor's component over the
+    /// Script Core.</summary>
+    [SupplyParameterFromQuery(Name = "component")]
+    public string? Component { get; set; }
+
+    private bool Razor => DemoChrome.DrawsRazor(Component, ChromeName);
+
     /// <summary>Holds each read until "Let the read go" is pressed (1).</summary>
     [SupplyParameterFromQuery(Name = "hold")]
     public int Hold { get; set; }
 
     private IGridChrome? _chrome;
-    private ExSheet? _sheet;
+    // The Sheet, as whichever component draws it.
+    private ExSheet.Components.ExSheet? _sheet;
+    private ExSheet.Script.ExSheet? _script;
     private bool _attached;
     private WorkbookDocument? _workbook = Before();
     private string _said = "Choose a workbook, or save this one.";
@@ -117,7 +133,7 @@
         XlsxOpenResult? result = null;
         try
         {
-            var opened = await _sheet!.OpenAsync(async token =>
+            Func<CancellationToken, Task<WorkbookDocument>> read = async token =>
             {
                 if (Hold == 1)
                 {
@@ -134,7 +150,8 @@
                 }
                 result = await XlsxWorkbookReader.ReadAsync(file.OpenReadStream(10_000_000, token), Culture, null, token);
                 return result.Document;
-            });
+            };
+            var opened = _sheet is not null ? await _sheet.OpenAsync(read) : await Drawn().OpenAsync(read);
             _said = opened ? $"Opened {file.Name}." : $"{file.Name} was not opened: the opening was cancelled.";
             _report = opened ? [.. result!.Report.NotCarried.Select(n => n.Description), .. result.Report.UnsupportedFunctions.Select(u => $"{u.Sheet}!{u.Cell}: {string.Join(", ", u.Functions)}")] : [];
         }
@@ -146,6 +163,10 @@
         }
     }
 
+    // The Script Sheet, once drawn: the buttons stand on the page before its first render.
+    private ExSheet.Script.ExSheet Drawn()
+        => _script ?? throw new InvalidOperationException("The Sheet is not drawn yet.");
+
     private void Release() => _held?.TrySetResult();
 
     private async Task SaveAsync()
@@ -153,7 +174,8 @@
         using var file = new MemoryStream();
         try
         {
-            await _sheet!.SaveAsync(workbook => XlsxWorkbookWriter.WriteAsync(workbook, file).AsTask());
+            Func<global::ExSheet.Engine.Workbook, Task> write = workbook => XlsxWorkbookWriter.WriteAsync(workbook, file).AsTask();
+            await (_sheet is not null ? _sheet.SaveAsync(write) : Drawn().SaveAsync(write));
             var link = $"data:{Xlsx};base64,{Convert.ToBase64String(file.ToArray())}";
             // The link carries the file in its address, which Chromium caps at 2 MB: refused by name, not cut short.
             _saved = link.Length <= MaxLink ? link : null;

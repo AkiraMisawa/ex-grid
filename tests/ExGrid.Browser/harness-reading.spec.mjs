@@ -12,8 +12,10 @@ import { blend, offDevicePixels, onDeviceGrid, paints, pixelsApart, stillPicture
 const sheetGrid = (page) => page.locator('.ex-grid').first();
 const nameBox = (page) => sheetGrid(page).locator('input.ex-name-box');
 
+// The Razor component: its keys are answered across the circuit, which the test needs, where ExSheet over the Script
+// Core answers them in the browser (sheet-helpers.mjs, CIRCUIT_SHEET).
 async function openSheet(page) {
-    await page.goto('/sheet');
+    await page.goto('/sheet?component=razor');
     await expect(sheetGrid(page).locator("[id$='-r0c0']")).toHaveText('Item');
     // Cells are pointer-events: none — the Viewport is the delegated target (ADR-0004).
     await sheetGrid(page).locator("[id$='-r0c5']").click({ force: true });
