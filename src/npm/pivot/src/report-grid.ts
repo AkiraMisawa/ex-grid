@@ -14,6 +14,8 @@ import {
 } from '@ex-grid/pivot-engine';
 import { elementAt } from './must';
 import { findInReport, type ReportFindGivenUp } from './report-find';
+import { summarizeReport } from './report-summary';
+import type { PivotScreenWords } from './words';
 
 /**
  * A value cell's value as the grid holds it: the report's own text is what the cell paints, and the value's
@@ -271,6 +273,8 @@ export interface ReportRowsRequest {
     readonly moved: () => void;
     /** Told when a Find step over the report cannot go on, before the step is given up (ADR-0332 §1). */
     readonly findGivenUp: (why: ReportFindGivenUp) => void;
+    /** The pivot's words as they stand when a Selection Summary is declined (ADR-0060). */
+    readonly words: () => PivotScreenWords;
 }
 
 /**
@@ -313,6 +317,8 @@ export function reportRows(request: ReportRowsRequest): FetchingGridSource<Pivot
         rowKey: reportRowKey,
         readAheadRows: 60,
         find,
+        // The Selection Summary is the report source's, over the report the selection was made on (ADR-0130).
+        summarize: (summary, _query, signal) => summarizeReport(request.source, version, summary, request.words(), signal),
         // A Window of another report is never shown beside this one's rows: the pivot asks again, and the grid
         // stands on what it holds meanwhile. Any other failure is the grid's to say (ADR-0025).
         onFetchFailed: ({ error }) => {
