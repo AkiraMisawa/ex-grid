@@ -289,7 +289,7 @@ ExChart.Script.ExChart.AxisStyle.get -> ExChart.Engine.AxisStyle?
 ExChart.Script.ExChart.AxisStyle.set -> void
 ExChart.Script.ExChart.ColourSlots.get -> int
 ExChart.Script.ExChart.ColourSlots.set -> void
-ExChart.Script.ExChart.Definition.get -> ExChart.Engine.ChartDefinition!
+ExChart.Script.ExChart.Definition.get -> ExChart.Engine.ChartDefinition?
 ExChart.Script.ExChart.Definition.set -> void
 ExChart.Script.ExChart.Density.get -> ExGrid.GridDensity
 ExChart.Script.ExChart.Density.set -> void
@@ -320,6 +320,10 @@ ExChart.Script.ExChart.Range.get -> ExChart.ChartRange?
 ExChart.Script.ExChart.Range.set -> void
 ExChart.Script.ExChart.Scale.get -> ExChart.Engine.AxisScale?
 ExChart.Script.ExChart.Scale.set -> void
+ExChart.Script.ExChart.Sources.get -> System.Func<string!, ExChart.Engine.IChartSource?>?
+ExChart.Script.ExChart.Sources.set -> void
+ExChart.Script.ExChart.Spec.get -> string?
+ExChart.Script.ExChart.Spec.set -> void
 ExChart.Script.ExChart.Title.get -> string?
 ExChart.Script.ExChart.Title.set -> void
 ExChart.Script.ExChart.Width.get -> double
