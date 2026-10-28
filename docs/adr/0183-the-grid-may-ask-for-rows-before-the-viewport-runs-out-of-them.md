@@ -70,3 +70,14 @@ Held PageDown, which moves 11 to 13 rows a press, gained little: 78 / 56% agains
 - Built by ticket 15 of `docs/specs/live-data`. Its ExPivot half needs ticket 14's read-ahead first.
 - The early ask's cost when a scroll stops within the margin was not measured. Every sample in the
   record ran past it.
+
+## The Script Core, 2026-10-27
+
+The Script Core's grid takes the margin as `rangeRequestMargin`, a whole number of rows, 0 unless given. Its grid asks
+its Grid Source rather than raising an event, so an early request is a call to the source's `needRange`, still naming
+the rows on screen, made once the rows on screen plus the margin either side, clamped into the total, are not all in
+the Window. The same rows are not asked for again until the Window moves. A total not known yet bounds nothing,
+so the margin reaches past the Window's end. The C# grid takes an unknown total as the count of rows its Window
+holds, so there the margin never reaches past the Window going down: a defect against this ADR, found in the port and
+not yet fixed. `GridSource.fetch` answers it as `GridSource.Fetch` does: its
+Window still covers the rows on screen, so it fetches nothing. Nothing new is decided here.
