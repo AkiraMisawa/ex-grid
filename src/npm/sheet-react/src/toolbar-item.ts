@@ -13,10 +13,11 @@
 import {
     useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent,
 } from 'react';
-import type { SheetToolbarItemChoice, SheetToolbarItemSlotContext, SheetToolbarItemView } from '@ex-grid/sheet';
+import {
+    toolbarChoiceMovedTo, toolbarChoiceRows, toolbarChoiceStart, type SheetToolbarItemSlotContext, type SheetToolbarItemView, type ToolbarChoiceRow,
+} from '@ex-grid/sheet';
 
-// Ten swatches to a row, as Excel's palette lays them out and as the built-in list moves among them.
-const swatchesAcross = 10;
+export type { ToolbarChoiceRow } from '@ex-grid/sheet';
 
 /** What every control of a Toolbar Item takes: no Tab, no keyboard on a press, its click claimed, and its name and
  * whether it can be pressed as the Sheet says. */
@@ -66,10 +67,6 @@ export interface ToolbarChoiceProps {
     readonly onClick: () => void;
 }
 
-/** One row of an item's list, in the Sheet's order: the index of a choice drawn on a row of its own, or the indices of
- * the swatches drawn together, ten across, as the list's keys move among them. */
-export type ToolbarChoiceRow = number | readonly number[];
-
 /** What {@link useToolbarItem} hands a Toolbar Item's contents. */
 export interface ToolbarItemHandles {
     /** The ref of the element that holds the item's controls and its list: a press outside it closes the list. */
@@ -90,58 +87,6 @@ export interface ToolbarItemHandles {
     readonly rows: readonly ToolbarChoiceRow[];
     /** What the control of the choice at `index` takes. */
     readonly choice: (index: number) => ToolbarChoiceProps;
-}
-
-/** The index the list's keys move to from `at` among `choices`, or `undefined` where they stay. */
-function movedTo(key: string, at: number, choices: readonly SheetToolbarItemChoice[]): number | undefined {
-    const can = (index: number): boolean => choices[index] !== undefined && choices[index].disabledReason === undefined;
-    const enabled = choices.map((_, index) => index).filter(can);
-    const first = enabled[0];
-    const last = enabled.at(-1);
-    if (first === undefined || last === undefined) return undefined;
-    const swatch = choices[at]?.swatch !== undefined;
-    const step = (by: number): number | undefined => {
-        for (let next = at + by; next >= 0 && next < choices.length; next += by) if (can(next)) return next;
-        return undefined;
-    };
-    switch (key) {
-        case 'Home': return first;
-        case 'End': return last;
-        case 'ArrowDown': return step(swatch ? swatchesAcross : 1) ?? step(1);
-        case 'ArrowUp': return step(swatch ? -swatchesAcross : -1) ?? step(-1);
-        case 'ArrowRight': return swatch ? step(1) : undefined;
-        case 'ArrowLeft': return swatch ? step(-1) : undefined;
-        default: return undefined;
-    }
-}
-
-/** The choice the list's keyboard starts on: the one the Focus cell has, else the first that can be made. */
-function startOf(choices: readonly SheetToolbarItemChoice[]): number | undefined {
-    const selected = choices.findIndex(choice => choice.selected && choice.disabledReason === undefined);
-    if (selected >= 0) return selected;
-    const first = choices.findIndex(choice => choice.disabledReason === undefined);
-    return first >= 0 ? first : undefined;
-}
-
-/** The list's rows: a run of swatches is cut ten across, and every other choice stands on a row of its own. */
-function rowsOf(choices: readonly SheetToolbarItemChoice[]): readonly ToolbarChoiceRow[] {
-    const rows: ToolbarChoiceRow[] = [];
-    let swatches: number[] = [];
-    choices.forEach((choice, index) => {
-        if (choice.swatch !== undefined) {
-            swatches.push(index);
-            if (swatches.length === swatchesAcross) {
-                rows.push(swatches);
-                swatches = [];
-            }
-            return;
-        }
-        if (swatches.length > 0) rows.push(swatches);
-        swatches = [];
-        rows.push(index);
-    });
-    if (swatches.length > 0) rows.push(swatches);
-    return rows;
 }
 
 /** Keeps the keyboard where it is on a pointer press. */
@@ -188,7 +133,7 @@ export function useToolbarItem(context: SheetToolbarItemSlotContext): ToolbarIte
     // The list takes the keyboard as it is drawn.
     const listRef = useCallback((element: HTMLElement | null) => {
         listElement.current = element;
-        if (element !== null) focusAt(startOf(shown.current.choices));
+        if (element !== null) focusAt(toolbarChoiceStart(shown.current.choices));
     }, []);
     const choose = (index: number): void => {
         context.choicesClosed(index, false);
@@ -231,7 +176,7 @@ export function useToolbarItem(context: SheetToolbarItemSlotContext): ToolbarIte
             setOpen(false);
         } else if (event.key === 'Enter' || event.key === ' ') {
             if (at >= 0 && view.choices[at]?.disabledReason === undefined) choose(at);
-        } else focusAt(movedTo(event.key, at < 0 ? -1 : at, view.choices));
+        } else focusAt(toolbarChoiceMovedTo(event.key, at < 0 ? -1 : at, view.choices));
     };
     return {
         item, view, hasList, open,
@@ -244,7 +189,7 @@ export function useToolbarItem(context: SheetToolbarItemSlotContext): ToolbarIte
             else if (enabled && view.choices.length > 0) setOpen(true);
         },
         list: { ref: listRef, role: 'menu', 'aria-label': view.name, onKeyDown },
-        rows: rowsOf(view.choices),
+        rows: toolbarChoiceRows(view.choices),
         choice: index => {
             const choice = view.choices[index];
             if (choice === undefined) throw new RangeError(`The list of ${view.name} has no choice ${String(index)} (ADR-0100).`);

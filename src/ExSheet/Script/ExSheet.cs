@@ -27,8 +27,8 @@ namespace ExSheet.Script;
 /// <para>Its parameters are the Razor component's (<see cref="Components.ExSheet"/>), under the same names and with the
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
-/// <para>Not carried yet, and so not offered: the Sheet's own slots of an <see cref="ISheetChrome"/> (its Toolbar Items,
-/// Format Cells, the Sheet Tabs' faces and its find panel), <c>ToolbarContent</c>,
+/// <para>Not carried yet, and so not offered: Format Cells, the Sheet Tabs' menu and the find panel of an
+/// <see cref="ISheetChrome"/>, <c>ToolbarContent</c>,
 /// <c>OnLinkedColumnColoursChanged</c> (ADR-0430 section 3) and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
 /// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>
 /// </remarks>
@@ -164,11 +164,12 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback<PointingRefusal> OnPointingRefused { get; set; }
 
     /// <summary>
-    /// The Chrome that fills the slots of the Sheet's grid with Razor (ADR-0410): each slot its
-    /// <see cref="IGridChrome.ScriptSlots"/> names, such as the Context Menu, is drawn by its view overload, rendered
-    /// beside the Sheet's root and moved into the slot by the script, which wires its controls. The find panel stays the
-    /// Sheet's own, with Within (ADR-0332 section 5), as it does under the Razor component. Null — the default — leaves
-    /// every part the Script Core's own.
+    /// The Chrome that fills slots of the Sheet with Razor (ADR-0410): each slot of the grid's its
+    /// <see cref="IGridChrome.ScriptSlots"/> names, such as the Context Menu, and, for an <see cref="ISheetChrome"/>, each
+    /// of the Sheet's own its <see cref="ISheetChrome.SheetScriptSlots"/> names, such as the Toolbar Items, is drawn by
+    /// its view overload, rendered beside the Sheet's root and moved into the slot by the script, which wires its
+    /// controls. The find panel stays the Sheet's own, with Within (ADR-0332 section 5), as it does under the Razor
+    /// component. Null — the default — leaves every part the Script Core's own.
     /// </summary>
     [Parameter] public IGridChrome? Chrome { get; set; }
 
@@ -236,7 +237,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private bool _renderOwed = true;
     // The slots the script mounted for the Chrome, by the number it gave each (ADR-0410 section 1), and the Chrome they
     // were last drawn by.
-    private readonly RazorSlotHolders _slots = new(RazorSlot.ViewOf);
+    private readonly RazorSlotHolders _slots = new(SheetRazorSlot.ViewOf);
     private IGridChrome? _renderedChrome;
 
     /// <inheritdoc />
@@ -330,7 +331,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
-        _slots.Render(builder, 6, (name, view) => RazorSlot.Fragment(Chrome, name, view));
+        _slots.Render(builder, 6, (name, view) => SheetRazorSlot.Fragment(Chrome, name, view));
     }
 
     /// <inheritdoc />
@@ -570,11 +571,14 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         // The Scope by its name in the page, where the browser holds it (ADR-0430).
         if (PointingScope is { } scope)
             json.WriteString("pointingScope", scope.Id);
-        // The slots the Chrome fills with Razor, but the find panel: a Sheet's is its own (ADR-0332 section 5).
-        if (Chrome?.ScriptSlots is { } slots && (slots & ~ScriptSlots.FindPanel) is var filled and not ScriptSlots.None)
+        // The slots the Chrome fills with Razor: the grid's, but the find panel, a Sheet's being its own (ADR-0332
+        // section 5), and the Sheet's.
+        var gridSlots = Chrome is { } chrome ? chrome.ScriptSlots & ~ScriptSlots.FindPanel : ScriptSlots.None;
+        var sheetSlots = Chrome is ISheetChrome sheetChrome ? sheetChrome.SheetScriptSlots : SheetScriptSlots.None;
+        if (gridSlots != ScriptSlots.None || sheetSlots != SheetScriptSlots.None)
         {
             json.WriteStartArray("razorSlots");
-            foreach (var name in RazorSlot.NamesOf(filled))
+            foreach (var name in RazorSlot.NamesOf(gridSlots).Concat(SheetRazorSlot.NamesOf(sheetSlots)))
                 json.WriteStringValue(name);
             json.WriteEndArray();
         }

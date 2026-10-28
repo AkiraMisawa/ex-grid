@@ -62,7 +62,7 @@
         case ToolbarItemKind.Toggle:
             <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
                 <MudToggleIconButton Toggled="Context.Pressed" ToggledChanged="OnToggledAsync"
-                                     Icon="@IconOf(Context.Icon)" ToggledIcon="@IconOf(Context.Icon)"
+                                     Icon="@MudToolbarIcons.IconOf(Context.Icon)" ToggledIcon="@MudToolbarIcons.IconOf(Context.Icon)"
                                      ToggledColor="Color.Primary" Size="Size.Small" Disabled="!Context.Enabled"
                                      tabindex="-1" aria-label="@Context.Name" aria-pressed="@(Context.Pressed ? "true" : "false")"
                                      data-ex-claims="click" />
@@ -80,7 +80,7 @@
         case ToolbarItemKind.Split:
             <span class="mud-ex-sheet-toolbar-split" role="group" aria-label="@Context.Name">
                 <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
-                    <MudIconButton Icon="@IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled"
+                    <MudIconButton Icon="@MudToolbarIcons.IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled"
                                    tabindex="-1" aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click"
                                    Style="@SwatchStyle" Class="mud-ex-sheet-toolbar-face" />
                 </MudTooltip>
@@ -98,14 +98,14 @@
                     <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
                                aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click">@content</MudButton>
                 }
-                else if (Context.Icon == ToolbarIcon.None || IconOf(Context.Icon) is null)
+                else if (Context.Icon == ToolbarIcon.None || MudToolbarIcons.IconOf(Context.Icon) is null)
                 {
                     <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
-                               aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click">@(Context.Text ?? TextOf(Context.Icon) ?? Context.Name)</MudButton>
+                               aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click">@(Context.Text ?? MudToolbarIcons.TextOf(Context.Icon) ?? Context.Name)</MudButton>
                 }
                 else
                 {
-                    <MudIconButton Icon="@IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
+                    <MudIconButton Icon="@MudToolbarIcons.IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
                                    aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click" />
                 }
             </MudTooltip>
@@ -526,25 +526,6 @@
         }
     }
 
-    private static string? IconOf(ToolbarIcon icon) => icon switch
-    {
-        ToolbarIcon.Bold => Icons.Material.Filled.FormatBold,
-        ToolbarIcon.Italic => Icons.Material.Filled.FormatItalic,
-        ToolbarIcon.Underline => Icons.Material.Filled.FormatUnderlined,
-        ToolbarIcon.Strikethrough => Icons.Material.Filled.StrikethroughS,
-        ToolbarIcon.FontColour => Icons.Material.Filled.FormatColorText,
-        ToolbarIcon.Fill => Icons.Material.Filled.FormatColorFill,
-        ToolbarIcon.Borders => Icons.Material.Filled.BorderBottom,
-        ToolbarIcon.AlignLeft => Icons.Material.Filled.FormatAlignLeft,
-        ToolbarIcon.AlignCenter => Icons.Material.Filled.FormatAlignCenter,
-        ToolbarIcon.AlignRight => Icons.Material.Filled.FormatAlignRight,
-        ToolbarIcon.Percent => Icons.Material.Filled.Percent,
-        ToolbarIcon.FormatCells => Icons.Material.Outlined.TableChart,
-        _ => null,
-    };
-
-    // Material has no picture for the comma style; it shows Excel's.
-    private static string? TextOf(ToolbarIcon icon) => icon == ToolbarIcon.Comma ? "," : null;
 
     // The list's frame inside MudBlazor's popover, which its provider draws in a render of its own:
     // its first OnAfterRender is the moment the browser has the choices on the page. It claims the

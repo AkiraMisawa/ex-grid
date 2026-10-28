@@ -613,4 +613,84 @@ public class ScriptSheetTests : BunitContext
         await cut.InvokeAsync(() => Bridge().Value.UnmountSlot(1));
         Assert.Empty(cut.FindAll(".ex-razor-slot"));
     }
+
+    /// <summary>A Sheet Chrome that draws the Toolbar Items and the Sheet Tabs' faces from the views the script sends.</summary>
+    private sealed class ToolbarChrome : ISheetChrome
+    {
+        public SheetScriptSlots SheetScriptSlots => SheetScriptSlots.ToolbarItem | SheetScriptSlots.SheetTab | SheetScriptSlots.SheetTabAdd;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? ToolbarItem(SheetToolbarItemView view) => builder =>
+        {
+            builder.OpenElement(0, "button");
+            builder.AddAttribute(1, SheetScriptSlotAttributes.Press, "list");
+            builder.AddContent(2, $"{view.Name} ({view.Kind}, {view.Icon}, {view.Swatch ?? "no swatch"}, {view.Rows.Count} rows)");
+            builder.CloseElement();
+            builder.OpenElement(3, "div");
+            builder.AddAttribute(4, SheetScriptSlotAttributes.List, "");
+            for (var i = 0; i < view.Choices.Count; i++)
+            {
+                builder.OpenElement(5, "button");
+                builder.AddAttribute(6, SheetScriptSlotAttributes.Choice, i);
+                builder.AddContent(7, $"{view.Choices[i].Label}{(view.Choices[i].Selected ? " (selected)" : "")}");
+                builder.CloseElement();
+            }
+            builder.CloseElement();
+        };
+
+        public RenderFragment? SheetTab(SheetTabContext context) => builder => builder.AddContent(0, $"[{context.Name}{(context.Selected ? "*" : "")}]");
+
+        public RenderFragment? SheetTabAdd() => static builder => builder.AddContent(0, "add");
+    }
+
+    [Fact] // ADR-0410 sections 1 and 3: an ISheetChrome fills the Sheet's own slots too, each drawn from the view the script sends
+    public async Task ADR0410_a_sheet_chrome_fills_the_toolbar_items_and_the_tabs_faces()
+    {
+        _sheet.SetupVoid("slotRendered", _ => true).SetVoidResult();
+        var cut = Sheet(ps => ps.Add(p => p.Chrome, new ToolbarChrome()));
+        Assert.Equal("""["toolbarItem","sheetTab","sheetTabAdd"]""", Attach().GetProperty("options").GetProperty("razorSlots").GetRawText());
+
+        await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "toolbarItem",
+            """{"id":"fill","kind":"split","name":"Fill Colour","tooltip":"Fill Colour","icon":"fill","text":null,"swatch":"#FFFF00","moreName":"Fill Colour, more","pressed":false,"disabledReason":null,"choices":[{"label":"No Fill","swatch":null,"selected":true,"disabledReason":null},{"label":"Red","swatch":"#FF0000","selected":false,"disabledReason":null}],"rows":[[0],[1]]}"""));
+        await cut.InvokeAsync(() => Bridge().Value.MountSlot(2, 1, "sheetTab", """{"name":"Sheet1","selected":true}"""));
+        await cut.InvokeAsync(() => Bridge().Value.MountSlot(3, 1, "sheetTabAdd", "{}"));
+        var slots = cut.FindAll("div[hidden] > .ex-razor-slot");
+        Assert.Equal(["Fill Colour (Split, Fill, #FFFF00, 2 rows)", "No Fill (selected)", "Red"],
+            slots[0].QuerySelectorAll("button").Select(button => button.TextContent));
+        Assert.Equal(["[Sheet1*]", "add"], slots.Skip(1).Select(slot => slot.TextContent));
+    }
+
+    /// <summary>A Sheet Chrome that names the Toolbar Items and draws nothing for them.</summary>
+    private sealed class BlankToolbarChrome : ISheetChrome
+    {
+        public SheetScriptSlots SheetScriptSlots => SheetScriptSlots.ToolbarItem;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+    }
+
+    [Fact] // ADR-0410, the spine's first rule: a slot the Chrome names and draws nothing for is refused, never left empty
+    public async Task ADR0410_a_sheet_chrome_that_names_a_slot_and_draws_nothing_is_refused()
+    {
+        _sheet.SetupVoid("slotRendered", _ => true).SetVoidResult();
+        var cut = Sheet(ps => ps.Add(p => p.Chrome, new BlankToolbarChrome()));
+        await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "toolbarItem",
+            """{"id":"bold","kind":"toggle","name":"Bold","tooltip":"Bold (Ctrl+B)","icon":"bold","text":null,"swatch":null,"moreName":null,"pressed":false,"disabledReason":null,"choices":[],"rows":[]}"""));
+        // The slot is drawn as it is mounted, so the refusal has been made by the time the mount returns.
+        Assert.True(Renderer.UnhandledException.IsCompleted);
+        var refused = Assert.IsType<InvalidOperationException>(await Renderer.UnhandledException);
+        Assert.Contains("BlankToolbarChrome names ToolbarItem", refused.Message);
+    }
 }
