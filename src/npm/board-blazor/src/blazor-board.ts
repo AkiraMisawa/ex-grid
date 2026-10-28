@@ -9,16 +9,23 @@
 // lives (ADR-0343) stays in .NET and is asked through it; it crosses as a number the same way. A call too large for a
 // message of Blazor Server's circuit, an output, a Diff or a question with a long narrowing, is held for .NET to take as
 // a stream in its turn, as every product's are (the Shared Script's crossingCalls, ADR-0005).
+//
+// The Chrome slots the Consumer's Chromes fill with Razor (ADR-0410) are filled for every view of the Board, as ExGrid's
+// and ExPivot's adapters fill their own, through one Shared Script RazorSlotHost (razor-board-slots.ts).
 
-import { BoardDiff, createBoard, readBoard, type BoardHandle, type BoardOptions, type BoardReading, type BoardSource } from '@ex-grid/board';
+import {
+    BoardDiff, createBoardWith, familyMounts, readBoard, type BoardChrome, type BoardHandle, type BoardMounts, type BoardOptions, type BoardReading, type BoardSource,
+} from '@ex-grid/board';
 import { crossingCalls, HeldMessages, HeldSnapshots, type DotNetStream } from '@ex-grid/blazor-shared';
 import type { TemporalLike } from '@ex-grid/core';
 import type { BoardInput, Snapshot } from '@ex-grid/data';
 import type { DotNetPivotSource } from '@ex-grid/pivot-blazor';
 import { dotNetBoardSource, type PivotMaking, type WireSource } from './dotnet-board-source';
+import { RazorBoardSlots, type WireRazorSlots } from './razor-board-slots';
 
 export type { DotNetStream } from '@ex-grid/blazor-shared';
 export type { WireSource } from './dotnet-board-source';
+export type { WireRazorSlots } from './razor-board-slots';
 
 /** What the bridge asks of the .NET object a Blazor ExBoard hands it: Blazor's `DotNetObjectReference`. */
 export interface DotNetHandle {
@@ -53,6 +60,8 @@ export interface WireAttach {
     readonly diff: string | null;
     /** How many of the Consumer's Diffs .NET has sent, this one included. */
     readonly diffsSent: number;
+    /** The slots the Consumer's Chromes fill with Razor (ADR-0410), for the Board's life, or `null` for none. */
+    readonly razorSlots: WireRazorSlots | null;
 }
 
 /** What `update` is handed: the parameters again, whole, and whatever else changed since. */
@@ -78,13 +87,15 @@ export interface BlazorBoard {
     pivotChanged(pivot: number, json: string): void;
     /** The arguments of the call .NET was handed `held` in place of, as the stream it reads them from. Taken once. */
     take(held: number): Promise<Uint8Array<ArrayBuffer>>;
+    /** .NET rendered the contents of Razor slot `id` for the data numbered `version` in `contents` (ADR-0410). */
+    slotRendered(id: number, version: number, contents: HTMLElement | null): void;
     /** Stops the Board and empties its element. */
     dispose(): void;
 }
 
 /** The calls .NET's `Held` makes: each one that can carry what the Board or the Consumer made, an output, a Diff or a
- * link's narrowing of thousands of values. */
-const heldBoardCalls: ReadonlySet<string> = new Set(['Heard', 'Fetch', 'Thin', 'Under', 'MakePivot', 'PivotAggregate', 'PivotItems', 'PivotDetails']);
+ * link's narrowing of thousands of values, and the slot calls, whose view can list thousands of a pivot's items. */
+const heldBoardCalls: ReadonlySet<string> = new Set(['Heard', 'Fetch', 'Thin', 'Under', 'MakePivot', 'PivotAggregate', 'PivotItems', 'PivotDetails', 'MountSlot', 'UpdateSlot']);
 
 /** What tells .NET that the browser let a Pivot Source made over a source go. */
 export interface PivotCollector {
@@ -97,8 +108,11 @@ export function browserCollector(collected: (pivot: number) => void): PivotColle
     return { register: (source, pivot) => { registry.register(source, pivot); } };
 }
 
-/** How the Board is drawn: ExBoard's Script Core, unless a test hands its own. */
-export type DrawBoard = (element: HTMLElement, options: BoardOptions) => BoardHandle;
+/** How the Board is drawn: ExBoard's Script Core, each view with the mounts `withViews` makes of the family's, which
+ * keep each view's handle for the Razor slots that stand in it, unless a test hands its own. */
+export type DrawBoard = (element: HTMLElement, options: BoardOptions, withViews: (family: BoardMounts) => BoardMounts) => BoardHandle;
+
+const drawBoard: DrawBoard = (element, options, withViews) => createBoardWith(element, options, withViews(familyMounts));
 
 /**
  * Mounts ExBoard's Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
@@ -106,7 +120,7 @@ export type DrawBoard = (element: HTMLElement, options: BoardOptions) => BoardHa
  * Snapshots are read, is the component's handle on the Board.
  */
 export async function attach(
-    root: HTMLElement, dotnet: DotNetHandle, json: string, streams: readonly DotNetStream[], draw: DrawBoard = createBoard, makeCollector = browserCollector,
+    root: HTMLElement, dotnet: DotNetHandle, json: string, streams: readonly DotNetStream[], draw: DrawBoard = drawBoard, makeCollector = browserCollector,
 ): Promise<BlazorBoard> {
     const init = parsed<WireAttach>(json);
     let stopped = false;
@@ -187,8 +201,11 @@ export async function attach(
         if (!options.hears.includes('diff')) return;
         send('Heard', 'diff', { diff: raised.toJson(), diffsSent });
     };
-    const optionsOf = (): BoardOptions => boardOptions(options, board, data, sources, diff, onOutput, onDiff);
-    const handle = draw(root, optionsOf());
+    // The Chromes' slots, the same Chrome for the Board's life: a standing part is not drawn again for an update.
+    const slots = init.razorSlots === null ? undefined : new RazorBoardSlots(bridge, init.razorSlots);
+    const chrome = slots?.chrome();
+    const optionsOf = (): BoardOptions => boardOptions(options, board, data, sources, diff, chrome, onOutput, onDiff);
+    const handle = draw(root, optionsOf(), family => (slots === undefined ? family : slots.mounts(family)));
     release(held, numbers, send);
     releaseSources(asked, sourceNumbers, send);
     // One update at a time, in the order .NET sent them, each once its Snapshots are read; their reading starts at once,
@@ -229,8 +246,11 @@ export async function attach(
             if (!stopped) pivotsMade.get(pivot)?.deref()?.hear(text);
         },
         take: (number: number) => messages.take(number),
+        slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots?.rendered(id, version, contents); },
         dispose: () => {
             stopped = true;
+            // The slots' contents go back to their holders first, so the views that go take nothing of .NET's with them.
+            slots?.dispose();
             handle.destroy();
             held.clear();
             messages.clear();
@@ -261,7 +281,7 @@ function releaseSources(asked: Map<number, BoardSource>, named: Readonly<Record<
 
 function boardOptions(
     wire: WireOptions, board: BoardReading, data: Readonly<Record<string, Snapshot>>, sources: Readonly<Record<string, BoardSource>> | undefined, diff: BoardDiff | undefined,
-    onOutput: NonNullable<BoardOptions['onOutput']>, onDiff: NonNullable<BoardOptions['onDiff']>,
+    chrome: BoardChrome | undefined, onOutput: NonNullable<BoardOptions['onOutput']>, onDiff: NonNullable<BoardOptions['onDiff']>,
 ): BoardOptions {
     // The browser's Temporal, where it has one, for a grid's date filter; without it such a grid is refused by name.
     const temporal: unknown = Reflect.get(globalThis, 'Temporal');
@@ -272,6 +292,7 @@ function boardOptions(
         diff,
         locale: wire.locale,
         width: wire.width,
+        ...(chrome === undefined ? {} : { chrome }),
         ...(temporal === undefined ? {} : { temporal: temporal as TemporalLike }), // oxlint-disable-line typescript/no-unsafe-type-assertion -- the core checks it is a Temporal namespace as it takes it
         onOutput,
         onDiff,

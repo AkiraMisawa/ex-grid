@@ -736,3 +736,40 @@ describe('a Find step .NET\'s source answers (ADR-0055)', () => {
         expect(focusHeard(dotnet)).toEqual({ row: 1, column: 0 });
     });
 });
+
+describe('the Context Menu\'s commands .NET answers (ADR-0421)', () => {
+    it('ADR-0421: the menu asks .NET by number as it opens, stands with what .NET answered in its words, and runs a command there', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'ContextCommands' ? '[{"id":"exchart.chart","enabled":true,"label":"Chart"},{"id":"audit","enabled":false}]' : null);
+        const { root } = mount({ options: options({ rowHeight: 24, contextCommands: true }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        key('F10', { shiftKey: true });
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'ContextCommands').map(call => call.args)).toEqual([
+            [1, 1, 1, 1, 'Book', [{ topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }], 0],
+        ]);
+        // A command the Consumer gave no words is shown as its id, as the built-in menu shows any it does not know.
+        expect([...root.querySelectorAll('.ex-popover [role=menuitem]')].map(item => item.textContent)).toEqual(['Copy', 'Copy with headers', 'Chart', 'audit']);
+        key('ArrowDown');
+        key('ArrowDown');
+        key('Enter');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'RunContextCommand').map(call => call.args)).toEqual([[1, 0]]);
+        expect(root.querySelector('.ex-popover')).toBeNull();
+    });
+
+    it('ADR-0421: a menu .NET answers as moved, or a component gone answers nothing for, does not stand, and says nothing more', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({ options: options({ rowHeight: 24, contextCommands: true }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        for (const answer of ['{"moved":true}', null]) {
+            dotnet.answer = method => (method === 'ContextCommands' ? answer : null);
+            key('F10', { shiftKey: true });
+            await turns();
+            expect(root.querySelector('.ex-popover')).toBeNull();
+        }
+        expect(dotnet.calls.filter(call => call.method === 'ContextCommands')).toHaveLength(2);
+    });
+});

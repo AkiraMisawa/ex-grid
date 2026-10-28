@@ -1,0 +1,22 @@
+@using ExChart
+@using ExChart.MudBlazor
+@using ExGrid.Chrome
+
+@* The Chart Dock over the grid and the charts the Script Core draws: the grid's Context Menu asks .NET for the
+   bridge's commands as it opens, and each chart opens as a tab beside the grid. *@
+<MudChartDock TRow="CurveHistory.Row" Bridge="_bridge" ChartWidth="480" ChartHeight="260" ScriptCore="true">
+    <MudExGridPaper Elevation="0" Outlined="true">
+        <ExGrid.Script.ExGrid @ref="_bridge.ScriptGrid" TRow="CurveHistory.Row" Rows="CurveHistory.Rows"
+                              Columns="CurveHistory.Columns" ContextCommands="_commands" ContextCommandLabel="Label"
+                              PinnedColumnCount="1" ViewportHeight="240" Chrome="MudChartChrome.GridChrome" />
+    </MudExGridPaper>
+</MudChartDock>
+
+@code {
+    // Held in fields, never rebuilt per render: a new delegate is a changed parameter.
+    private static readonly Func<string, string?> Label = GridChartCommands.Label;
+    private readonly GridChartBridge<CurveHistory.Row> _bridge = new(CurveHistory.Declarations());
+    private Func<ContextMenuContext<CurveHistory.Row>, IEnumerable<GridCommand>> _commands = null!;
+
+    protected override void OnInitialized() => _commands = _bridge.Commands;
+}
