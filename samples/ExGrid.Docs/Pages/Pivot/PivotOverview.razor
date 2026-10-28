@@ -68,8 +68,10 @@
             happen, and a press or a drop made against Areas that have changed since they were drawn is refused, not
             applied to the entry now in its place. A Chrome of your
             own names its parts in <code>IPivotChrome.ScriptSlots</code> and marks its controls with
-            <code>PivotScriptSlotAttributes</code>. Not carried yet:
-            <code>OrderKeyPolicies</code>, <code>Clock</code>, <code>CellMetrics</code> and <code>ReportSource</code>;
+            <code>PivotScriptSlotAttributes</code>. Its <code>CellMetrics</code>, and inside
+            <code>MudExGridPaper</code> the paper's Roboto widths and Density, size the report's grids and its label
+            columns as on the pivot above. Not carried yet:
+            <code>OrderKeyPolicies</code>, <code>Clock</code> and <code>ReportSource</code>;
             use the pivot above for those until they arrive. A field with an
             <code>OrderKey</code>, a .NET function the browser cannot call, is refused by name; declare its order with
             <code>ItemOrder</code> instead. The script it runs is bundled into the package, at an address that changes
@@ -185,6 +187,13 @@
             <code>key</code> and pressed with <code>select</code> or <code>close</code>, and the dialog hands in
             Close and the element its records stand in (<code>context.anchor('records')</code>). The records' grid,
             the backdrop and Escape stay the pivot's.
+        </p>
+        <p>
+            Whoever sets the font the report is drawn in owes its widths, as for the grid: <code>cellMetrics</code>, a
+            <code>CellTextMetrics</code>, and <code>presentationDefaults</code>, a design-system Wrapper's
+            <code>GridPresentationDefaults</code>, reach the report's grid and Show Details' grids, and its label
+            columns are sized by the same widths. Handed again with the same widths in a new object, they ask the
+            report nothing again.
         </p>
         <p>
             <strong>For a Mantine application</strong>, <code>@@ex-grid/pivot-mantine</code> draws every one of those

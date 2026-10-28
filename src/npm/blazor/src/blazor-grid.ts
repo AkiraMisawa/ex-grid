@@ -8,7 +8,10 @@ import {
     createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridCommand, type GridContextMenuContext, type GridErrorStepRequest,
     type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
-import { awaitPointingScope, crossingCalls, HeldMessages, isGridRazorSlotName, slotHostOptionsOf, type GridRazorSlotName } from '@ex-grid/blazor-shared';
+import {
+    awaitPointingScope, crossingCalls, HeldMessages, isGridRazorSlotName, slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type WireCellMetrics,
+    type WirePresentationDefaults,
+} from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
 import { RazorSlots } from './razor-slots';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
@@ -28,6 +31,10 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     /** The columns' number, which .NET moves each time it declares other ones. */
     readonly columnsVersion: number;
     readonly locale: string;
+    /** The component's Cell Metrics, which beat a Wrapper's widths (ADR-0016). */
+    readonly cellMetrics?: WireCellMetrics;
+    /** A Wrapper's cascaded defaults (ADR-0030): the widths of the font it sets, its Density, hover band and Row Stripes. */
+    readonly presentationDefaults?: WirePresentationDefaults;
     readonly hears: readonly HeardKind[];
     /** Whether the Consumer answers Cell States, which come with each row (ADR-0006). */
     readonly cellStates?: true;
@@ -162,7 +169,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
     let wired = init.options;
     let pointedAt: GridPointedAt<BlazorRow> | undefined;
     const optionsNow = (): GridOptions<BlazorRow> => {
-        const options = gridOptions(wired, columns, source, heard, paint, findError, slots, menus);
+        const options = gridOptions(wired, columns, source, heard, paint, findError, slots, menus, metrics);
         return pointedAt === undefined ? options : { ...options, pointedAt };
     };
 
@@ -208,6 +215,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
     const menus = contextMenus(dotnet, () => ({ generation: source.generation, columnsVersion: columns.version }));
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
     const made: { grid?: GridHandle<BlazorRow> } = {};
+    const metrics = new WireMetrics();
     const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'));
     const grid: GridHandle<BlazorRow> = createGrid(root, optionsNow());
     made.grid = grid;
@@ -434,7 +442,10 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
 
 function gridOptions(
     wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf, slots: RazorSlots, menus: ContextMenus,
+    metrics: WireMetrics,
 ): GridOptions<BlazorRow> {
+    const cellMetrics = metrics.cellMetrics(wire.cellMetrics);
+    const presentationDefaults = metrics.presentationDefaults(wire.presentationDefaults);
     const hears = new Set(wire.hears);
     const razorSlots = wire.razorSlots;
     for (const name of razorSlots === undefined ? [] : razorSlots) {
@@ -447,6 +458,8 @@ function gridOptions(
         columns: columns.columns,
         source,
         locale: wire.locale,
+        ...(cellMetrics === undefined ? {} : { cellMetrics }),
+        ...(presentationDefaults === undefined ? {} : { presentationDefaults }),
         // A C# Consumer cannot hand the grid a JavaScript namespace, so Blazor's ExGrid hands it the browser's. Every
         // browser the family serves ships one (ADR-0017); where one does not, the core refuses a filterable Date column
         // by name, as it refuses one given none.

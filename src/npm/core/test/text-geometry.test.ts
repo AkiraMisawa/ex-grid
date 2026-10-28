@@ -1,7 +1,9 @@
 // The text geometry handed to a Consumer is the one the grid charges with (ADR-0016): a Pivot Report's label
 // widths, estimated by its report source under it, fit the cells the grid paints them in.
 import { describe, expect, it } from 'vitest';
+import { CellTextMetrics } from '../src/columns/cell-text-metrics';
 import { GridMetrics } from '../src/grid-metrics';
+import { GridPresentationDefaults } from '../src/grid-presentation-defaults';
 import { gridHeaderRequiredPx, gridTextGeometry } from '../src/text-geometry';
 
 describe('gridTextGeometry', () => {
@@ -23,6 +25,23 @@ describe('gridTextGeometry', () => {
         expect(Object.isFrozen(geometry)).toBe(true);
         expect(structuredClone(geometry)).toEqual(geometry);
         expect(geometry).toEqual(gridTextGeometry({ density: 'compact' }));
+    });
+
+    it('ADR-0016, ADR-0028, ADR-0030: charges by the Cell Metrics given, then a Wrapper\'s widths and Density, as createGrid resolves them', () => {
+        const cellMetrics = new CellTextMetrics({ digitWidthPx: 11, cellHorizontalPaddingPx: 5 });
+        const defaults = new GridPresentationDefaults({ wideWidthPx: 13, digitWidthPx: 9, narrowWidthPx: 4, fontSizePx: 16, density: 'standard' });
+
+        const given = gridTextGeometry({ cellMetrics });
+        expect(given.digitWidthPx).toBe(GridMetrics.resolve({ density: 'compact', cellMetrics }).cellMetrics.digitWidthPx);
+        expect(given.cellHorizontalPaddingPx).toBe(5);
+        const wrapped = gridTextGeometry({ presentationDefaults: defaults });
+        const resolved = GridMetrics.resolve({ density: 'standard', defaults }).cellMetrics;
+        expect(wrapped.wideWidthPx).toBe(resolved.wideWidthPx);
+        expect(wrapped.cellHorizontalPaddingPx).toBe(resolved.cellHorizontalPaddingPx);
+        // The Cell Metrics beat the Wrapper's widths; the Density given beats the Wrapper's.
+        expect(gridTextGeometry({ cellMetrics, presentationDefaults: defaults }).digitWidthPx).toBe(11);
+        expect(gridHeaderRequiredPx('Region', { presentationDefaults: defaults, density: 'compact', menuButton: false, sortable: false }))
+            .toBe(GridMetrics.resolve({ density: 'compact', defaults }).headerRequiredPx({ label: 'Region', menuButton: false, sortable: false }));
     });
 });
 

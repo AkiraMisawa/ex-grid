@@ -502,6 +502,8 @@ ExGrid.InMemoryGridSource<TRow>.Replace(ExGrid.Finding.GridReplaceRequest! reque
 ExGrid.Script.ExGrid<TRow>
 ExGrid.Script.ExGrid<TRow>.CellMessageOf.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, string?>?
 ExGrid.Script.ExGrid<TRow>.CellMessageOf.set -> void
+ExGrid.Script.ExGrid<TRow>.CellMetrics.get -> ExGrid.Columns.CellTextMetrics?
+ExGrid.Script.ExGrid<TRow>.CellMetrics.set -> void
 ExGrid.Script.ExGrid<TRow>.CellState.get -> ExGrid.Cells.CellStateOf<TRow!>?
 ExGrid.Script.ExGrid<TRow>.CellState.set -> void
 ExGrid.Script.ExGrid<TRow>.Chrome.get -> ExGrid.Chrome.IGridChrome?
@@ -584,6 +586,8 @@ ExGrid.Script.ExGrid<TRow>.PinnedColumnCount.set -> void
 ExGrid.Script.ExGrid<TRow>.PlaceSelectionAsync(ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus, int rowSequenceVersion) -> System.Threading.Tasks.Task<bool>!
 ExGrid.Script.ExGrid<TRow>.PointedAt.get -> ExGrid.Cells.GridPointedAt<TRow!>?
 ExGrid.Script.ExGrid<TRow>.PointedAt.set -> void
+ExGrid.Script.ExGrid<TRow>.Presentation.get -> ExGrid.GridPresentationDefaults?
+ExGrid.Script.ExGrid<TRow>.Presentation.set -> void
 ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync() -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync(Microsoft.AspNetCore.Components.ElementReference from) -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.RowHeight.get -> double?
@@ -783,6 +787,7 @@ override ExGrid.Finding.GridReplaceWrite<TRow>.GetHashCode() -> int
 override ExGrid.GridViewSpecReading.Equals(object? obj) -> bool
 override ExGrid.GridViewSpecReading.GetHashCode() -> int
 override ExGrid.GridViewSpecReading.ToString() -> string!
+override ExGrid.Script.ExGrid<TRow>.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView parameters) -> System.Threading.Tasks.Task!
 override ExGrid.Script.GridRefusal<TRow>.Action.Equals(object? obj) -> bool
 override ExGrid.Script.GridRefusal<TRow>.Action.GetHashCode() -> int
 override ExGrid.Script.GridRefusal<TRow>.Action.ToString() -> string!

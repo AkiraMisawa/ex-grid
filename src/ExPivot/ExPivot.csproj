@@ -73,6 +73,7 @@
     <!-- Chrome slots filled with Razor (ADR-0410): the holders every adapter renders, and the report grid's slots,
          read and drawn as ExGrid's own adapter reads and draws them. -->
     <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
+    <Compile Include="..\Shared\Script\ScriptMetricsJson.cs" Link="Script\ScriptMetricsJson.cs" />
     <Compile Include="..\ExGrid\Script\RazorSlot.cs" Link="Script\RazorSlot.cs" />
     <Compile Include="..\ExGrid\Script\ScriptJson.cs" Link="Script\ScriptJson.cs" />
   </ItemGroup>

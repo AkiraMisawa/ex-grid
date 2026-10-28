@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using ExGrid;
 using ExGrid.Chrome;
+using ExGrid.Columns;
 using ExGrid.Selection;
 using ExGrid.Script;
 using ExGrid.Summarizing;
@@ -74,8 +75,17 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     /// <summary>The report's row height in CSS pixels; the density's unless set.</summary>
     [Parameter] public double? RowHeight { get; set; }
 
-    /// <summary>The report's density preset (ADR-0028); the grid's unless set.</summary>
+    /// <summary>The report's density preset (ADR-0028); a Wrapper's, or the grid's, unless set.</summary>
     [Parameter] public GridDensity? Density { get; set; }
+
+    /// <summary>The widths the report's grids charge each glyph (ADR-0016), beating a Wrapper's and the Density's: a
+    /// Consumer that sets the font the cells are drawn in hands that font's widths, so <c>####</c> and the label columns'
+    /// widths are judged by the face on screen. The Density's unless set.</summary>
+    [Parameter] public CellTextMetrics? CellMetrics { get; set; }
+
+    /// <summary>What a Wrapper cascades (ADR-0030): the widths of the font its Theme sets and its Density, which the
+    /// report's grids and its label columns are sized by where the pivot is given none.</summary>
+    [CascadingParameter] public GridPresentationDefaults? Presentation { get; set; }
 
     /// <summary>The culture numbers, dates and counts are written in and text Items ordered by; the component's
     /// <see cref="CultureInfo.CurrentCulture"/> unless set (ADR-0370 section 10). It changes no word.</summary>
@@ -209,6 +219,8 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     {
         if (Source is null)
             throw new InvalidOperationException("ExPivot takes its data from a Source (ADR-0066).");
+        if (CellMetrics is { DigitWidthPx: <= 0 } empty)
+            throw new ArgumentOutOfRangeException(nameof(CellMetrics), empty, "default(CellTextMetrics) is not valid; construct it with real metrics.");
         if (!_slicingRead)
         {
             _attachedSlicing = Slicing is { } slicing ? Carried(slicing) : null;
@@ -528,6 +540,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             json.WriteNumber("rowHeight", rowHeight);
         if (Density is { } density)
             json.WriteString("density", Camel(density));
+        if (CellMetrics is { } metrics)
+            ScriptMetricsJson.WriteCellMetrics(json, "cellMetrics", metrics);
+        if (Presentation is { } presentation)
+            ScriptMetricsJson.WritePresentationDefaults(json, "presentationDefaults", presentation);
         if (Caps is { } caps)
         {
             json.WriteNumber("maxLeaves", caps.MaxLeaves);

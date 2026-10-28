@@ -4,7 +4,7 @@
 // DOM and the memory grow with the rows on screen, not with the report (ADR-0151, ADR-0027 P1).
 
 import {
-    GridSource, findMatches, gridHeaderRequiredPx, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridDensity, type GridHeaderGroup,
+    GridSource, findMatches, gridHeaderRequiredPx, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridHeaderGroup, type GridTextOptions,
     type GridFindPattern, type GridFindRequest, type GridFindResult, type GridPage, type GridQuery, type GridSelection, type GridTemplate,
 } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
@@ -181,12 +181,12 @@ function fixedWidth(px: number): GridColumnWidth {
  */
 export class ReportColumns {
     readonly #painter: LabelPainter;
-    readonly #density: GridDensity | undefined;
+    readonly #text: GridTextOptions;
     readonly #made = new Map<string, GridColumn<PivotDisplayRow>>();
 
-    constructor(painter: LabelPainter, density: GridDensity | undefined) {
+    constructor(painter: LabelPainter, text: GridTextOptions) {
         this.#painter = painter;
-        this.#density = density;
+        this.#text = text;
     }
 
     /**
@@ -225,7 +225,7 @@ export class ReportColumns {
     }
 
     #labelWidth(header: string, label: number | undefined): number {
-        const headerPx = gridHeaderRequiredPx(header, { ...(this.#density === undefined ? {} : { density: this.#density }), menuButton: false, sortable: false });
+        const headerPx = gridHeaderRequiredPx(header, { ...this.#text, menuButton: false, sortable: false });
         // A report answered without label geometry has no estimate, and its header alone sizes it.
         const widest = label === undefined ? headerPx : Math.max(headerPx, label);
         return Math.min(maxLabelWidthPx, Math.max(minLabelWidthPx, Math.ceil(widest)));

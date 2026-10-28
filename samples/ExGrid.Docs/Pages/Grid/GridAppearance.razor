@@ -92,7 +92,8 @@
             The font family is the exception. The grid decides whether a number fits — or becomes <code>####</code> —
             from the width of its glyphs, so <code>--ex-font-family</code> is a metric as much as a look: whoever
             changes it also passes matching <code>CellMetrics</code>. <code>MudExGridPaper</code> does this for
-            Roboto. In ExGrid for React the grid takes the same two: <code>cellMetrics</code>, a
+            Roboto, for the grid drawn by the Script Core (<code>ExGrid.Script.ExGrid</code>) as for the Razor one.
+            In ExGrid for React the grid takes the same two: <code>cellMetrics</code>, a
             <code>CellTextMetrics</code> of the widths, and <code>presentationDefaults</code>, a
             <code>GridPresentationDefaults</code> a design-system Wrapper hands every grid inside it with its font's
             widths and the Density, hover band and Row Stripes its own words map onto. A value given to the grid beats
