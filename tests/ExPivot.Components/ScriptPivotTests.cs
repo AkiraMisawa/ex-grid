@@ -201,6 +201,32 @@ public class ScriptPivotTests : BunitContext
         return (Parsed(text[..at]), text[(at + 1)..]);
     }
 
+    [Fact] // ADR-0370 section 1, ADR-0067: a question the source fails crosses in the source's own words, which the browser shows as the reason
+    public async Task ADR0370_a_question_the_source_fails_crosses_in_its_own_words()
+    {
+        var source = new LiveSource { Fails = new InvalidOperationException("The warehouse is out of reach.") };
+        Pivot(source);
+
+        var answer = await Bridge().Value.Aggregate(1, 1, PivotJson.Write(new PivotQuery(rows: [new PivotQueryField("Region")])));
+
+        Assert.Equal("The warehouse is out of reach.", Parsed(answer).GetProperty("failed").GetString());
+    }
+
+    [Fact] // ADR-0067, ADR-0370 section 1: the change a Refresh the browser asked says is the browser's own, which asks again once it is done; one said after it crosses
+    public async Task ADR0067_the_change_a_refresh_says_is_not_passed_on()
+    {
+        _pivot.SetupVoid("changed", _ => true).SetVoidResult();
+        var source = new LiveSource(canRefresh: true);
+        var cut = Pivot(source);
+
+        await Bridge().Value.Refresh(1);
+
+        Assert.Equal(1, source.Refreshes);
+        Assert.Empty(_pivot.Invocations["changed"]);
+        source.Notify("v2");
+        cut.WaitForAssertion(() => Assert.Single(_pivot.Invocations["changed"]));
+    }
+
     [Fact] // ADR-0412: an answer that names no Item of a field with an Order Key crosses as it is
     public async Task ADR0412_an_answer_naming_no_keyed_field_crosses_as_it_is()
     {

@@ -601,7 +601,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
 
     private void OnSourceChanged(int generation, PivotSourceChanged change)
     {
-        if (_refreshing.ContainsKey(generation))
+        if (_refreshes.Out(generation))
             return;
         var text = PivotJson.Write(change);
         // A source may say it changed from any thread: its notices cross from the component's context, in the order
@@ -787,12 +787,6 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         {
             return await global::ExGrid.Script.PivotSourceCrossing.AnswerAsync(source, kind, query, cancellation.Token);
         }
-        catch (Exception failed) when (failed is not OperationCanceledException and not OutOfMemoryException)
-        {
-            // The source's own words, which the browser shows as the reason the report could not be asked, as the
-            // Razor pivot shows them: Blazor Server would cross a .NET exception to the browser without its message.
-            return global::ExGrid.Script.PivotSourceCrossing.Failed(failed.Message);
-        }
         finally
         {
             _asked.TryRemove(call, out _);
@@ -837,22 +831,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     {
         if (_disposed || !_sources.TryGetValue(generation, out var source))
             throw new OperationCanceledException("The Pivot Source asked was replaced, and the browser has heard so.");
-        // The change a Refresh raises is the browser's own: it asks again once the Refresh is done, so the notice is
-        // not passed on, and the report is asked once, as the Razor pivot asks it.
-        _refreshing.TryAdd(generation, 0);
-        try
-        {
-            await source.RefreshAsync();
-        }
-        finally
-        {
-            _refreshing.TryRemove(generation, out _);
-        }
+        await _refreshes.RefreshAsync(generation, source);
     }
 
-    // The generations whose Refresh the browser asked and .NET is running: read on whatever thread a source says it
-    // changed on.
-    private readonly ConcurrentDictionary<int, byte> _refreshing = new();
+    private readonly global::ExGrid.Script.PivotRefreshes _refreshes = new();
 
     // The browser let go of the source of `generation`: it asks it nothing more.
     internal void Release(int generation)

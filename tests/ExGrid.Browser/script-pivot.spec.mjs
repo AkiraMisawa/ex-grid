@@ -4,7 +4,10 @@ import { test, expect, circuitQuiet, settled, setRoundTrip } from './fixtures.mj
 // no other layer sees whole. The report is built in the browser from the Leaf Aggregates the C# source answers in
 // .NET, so every question crosses the bridge as PivotJson and comes back, a layout the user makes crosses to the
 // Consumer's handler, and a layout or a source of the Consumer's crosses back. The engines' answers are the shared
-// cases' (tests/cases/pivot), and the Script Core's behaviour is its own specs' on the React host.
+// cases' (tests/cases/pivot), and the Script Core's behaviour is its own specs' on the React host. What MudPivotChrome
+// draws over it is pivot.spec.mjs's, whose /pivot draws Script ExPivot (ADR-0370 section 6, step 2); what stays here
+// is what /pivot does not cross: the Consumer's handlers in .NET, Space on MudBlazor's checkbox, the native select of
+// Value Field Settings, and a key typed as a Razor tab or dialog opens.
 
 test.use({ viewport: { width: 1400, height: 1100 } });
 
@@ -30,7 +33,7 @@ async function figures(page) {
 }
 
 test('ADR-0370 section 1: the report built in the browser from .NET\'s Leaf Aggregates is the Razor component\'s, and a new source is asked again', async ({ page }) => {
-    await open(page, '/pivot?chrome=builtin');
+    await open(page, '/pivot?chrome=builtin&component=razor');
     const razor = await figures(page);
 
     await open(page, '/script-pivot');
@@ -75,62 +78,21 @@ test('ADR-0060, ADR-0063, ADR-0130, ADR-0201, ADR-0370 section 10: the Consumer\
     await expect(report(page).locator('.ex-summary')).toContainText(await page.locator('#script-pivot-summary').innerText());
 });
 
-test('ADR-0410: MudPivotChrome draws the Script pivot\'s toolbar and Layout menu, and Enter typed as the menu opens over a slow circuit runs its first enabled choice', async ({ page }) => {
-    await open(page, '/script-pivot?chrome=mud');
-    const toolbar = pivot(page).locator('.mud-ex-pivot-toolbar');
-    const layout = toolbar.getByRole('button', { name: 'Layout' });
-    await expect(layout).toHaveClass(/mud-button-root/);
-
-    // Pressed and answered at once, a round trip before the menu's Razor stands in its frame on Server: the Enter
-    // waits in the pivot's order until the first enabled choice holds the keyboard, and presses it.
-    await setRoundTrip(150);
-    try {
-        await layout.click();
-        await page.keyboard.press('Enter');
-        await settled(report(page));
-        await circuitQuiet();
-    } finally {
-        await setRoundTrip(0);
-    }
-    await expect(pivot(page).getByRole('menu')).toHaveCount(0);
-    await expect(layout).toBeFocused();
-
-    // Opened again once it stands: MudBlazor's buttons in the pivot's frame, the choice Enter made marked.
-    await layout.click();
-    await settled(report(page));
-    const choice = pivot(page).getByRole('menuitemradio', { name: 'Do Not Show Subtotals' });
-    await expect(choice).toHaveClass(/mud-ex-pivot-menu-item/);
-    await expect(choice).toHaveAttribute('aria-checked', 'true');
-    await page.keyboard.press('Escape');
-    await expect(pivot(page).getByRole('menu')).toHaveCount(0);
-});
-
-test('ADR-0410: MudPivotChrome draws the Script pivot\'s report filter and its Filter…: letters typed as it opens over a slow circuit stay in its search, and an Item unticked with Space and OK reach the pivot', async ({ page }) => {
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s report filter and its Filter…, where an Item unticked with Space on MudBlazor\'s checkbox and OK reach the pivot', async ({ page }) => {
     await open(page, '/script-pivot?chrome=mud');
     const button = pivot(page).getByRole('button', { name: 'Filter Currency', exact: true });
     await expect(button).toHaveClass(/mud-button-root/);
     const before = await grandTotal(page).textContent();
+    await button.click();
     const panel = pivot(page).locator('.mud-ex-pivot-item-filter');
-    await setRoundTrip(150);
-    try {
-        await button.click();
-        // Typed a round trip before the panel's Razor stands on Server: the letters wait in the pivot's order until
-        // the search holds the keyboard, and no render after writes an older text back (SRV-7).
-        await page.keyboard.type('US');
-        const search = panel.locator('input').first();
-        await expect(search).toHaveValue('US');
-        // Space on MudBlazor's checkbox is the browser's own, which the pivot hears; MudBlazor's would untick it in
-        // .NET alone.
-        const usd = panel.getByRole('checkbox', { name: 'USD', exact: true });
-        await usd.focus();
-        await page.keyboard.press('Space');
-        await expect(usd).not.toBeChecked();
-        await panel.getByRole('button', { name: 'OK' }).click();
-        await settled(report(page));
-        await circuitQuiet();
-    } finally {
-        await setRoundTrip(0);
-    }
+    // Space on MudBlazor's checkbox is the browser's own, which the pivot hears; MudBlazor's would untick it in .NET
+    // alone.
+    const usd = panel.getByRole('checkbox', { name: 'USD', exact: true });
+    await usd.focus();
+    await page.keyboard.press('Space');
+    await expect(usd).not.toBeChecked();
+    await panel.getByRole('button', { name: 'OK' }).click();
+    await settled(report(page));
     await expect(panel).toHaveCount(0);
     await expect(grandTotal(page)).not.toHaveText(before);
 });
@@ -148,24 +110,9 @@ test('ADR-0410: MudPivotChrome draws the Script pivot\'s Value Field Settings…
     await expect(pane(page).getByRole('button', { name: 'Options for Count of P&L', exact: true })).toBeVisible();
 });
 
-test('ADR-0410: MudPivotChrome draws the Script pivot\'s Fields pane, where a field ticked and an entry dragged to another Area reach the pivot', async ({ page }) => {
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s sheet tabs, and Show Details opens one that takes a key typed as it opens over a slow circuit', async ({ page }) => {
     await open(page, '/script-pivot?chrome=mud');
-    const book = pane(page).getByRole('checkbox', { name: 'Book', exact: true });
-    await expect(book).toHaveClass(/mud-checkbox-input/);
-    await book.check();
-    await expect(page.locator('#script-pivot-layout')).toHaveText('Rows: Region, Desk, Book');
-
-    // Dropped on the Columns Area past its entries: the browser's own drag, read in the browser.
-    await pane(page).getByRole('button', { name: 'Options for Desk', exact: true })
-        .dragTo(pane(page).getByRole('list', { name: 'Columns', exact: true }).locator('xpath=..'), { targetPosition: { x: 12, y: 8 } });
-    await expect(page.locator('#script-pivot-layout')).toHaveText('Rows: Region, Book');
-    await expect(pane(page).getByRole('list', { name: 'Columns', exact: true }).getByRole('button', { name: 'Options for Desk', exact: true })).toBeVisible();
-});
-
-test('ADR-0410: MudPivotChrome draws the Script pivot\'s sheet tabs: Show Details opens one that takes a key typed as it opens over a slow circuit, the report\'s tab brings the report back, and its close takes it away', async ({ page }) => {
-    await open(page, '/script-pivot?chrome=mud');
-    const tabs = pivot(page).getByRole('tablist');
-    const details = tabs.getByRole('tab', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
+    const details = pivot(page).getByRole('tablist').getByRole('tab', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
     await setRoundTrip(150);
     try {
         await firstValue(page).dblclick({ force: true });
@@ -181,12 +128,6 @@ test('ADR-0410: MudPivotChrome draws the Script pivot\'s sheet tabs: Show Detail
     await expect(details).toHaveClass(/mud-button-root/);
     await expect(details).toBeFocused();
     await expect(page.locator('#script-pivot-selection')).toHaveText('Focus: row 1, column 1; 1 range(s)');
-
-    await tabs.getByRole('tab', { name: 'PivotTable', exact: true }).click();
-    await expect(details).toHaveAttribute('aria-selected', 'false');
-    await expect(rows(page).first()).toBeVisible();
-    await tabs.getByRole('button', { name: /^Close Details: Americas/ }).click();
-    await expect(pivot(page).getByRole('tablist')).toHaveCount(0);
 });
 
 test('ADR-0410: MudPivotChrome draws the Script pivot\'s Show Details dialog, and Enter typed as it opens over a slow circuit presses its Close', async ({ page }) => {

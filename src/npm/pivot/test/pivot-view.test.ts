@@ -17,7 +17,7 @@ import { findInReport } from '../src/report-find';
 import { browserPivotLocale } from '../src/browser-locale';
 import { defined, elementAt } from '../src/must';
 import type {
-    PivotDetailsDialogSlotContext, PivotMenuSlotContext, PivotReportFiltersSlotContext, PivotStaleReportSlotContext, PivotStaleReportView, PivotToolbarSlotContext, PivotValueFieldSettingsSlotContext,
+    PivotDetailsDialogSlotContext, PivotFieldListSlotContext, PivotMenuSlotContext, PivotReportFiltersSlotContext, PivotStaleReportSlotContext, PivotStaleReportView, PivotToolbarSlotContext, PivotValueFieldSettingsSlotContext,
 } from '../src/chrome';
 import type { PivotShowDetailsEvent } from '../src/details';
 import { PartElements } from '../src/parts';
@@ -2516,6 +2516,26 @@ function chromeDialog(slot: HTMLElement, context: PivotDetailsDialogSlotContext)
     return () => undefined;
 }
 
+// A Field List drawn as a design system draws a menu's opener: the anchor is the button's sibling, not its parent.
+// Each entry is kept from one drawing to the next, as a framework keeps a keyed element.
+function sideAnchoredList(slot: HTMLElement, context: PivotFieldListSlotContext): () => void {
+    const kept = new Map<string, HTMLElement>();
+    const draw = (): void => {
+        slot.replaceChildren(...context.view().areas.flatMap(placed => placed.entries.map(each => {
+            const standing = kept.get(each.key);
+            if (standing !== undefined) return standing;
+            const at = document.createElement('div');
+            const anchor = document.createElement('span');
+            at.append(chromeButton(each.caption, context.control(each.key), () => { context.openMenu(each.entry); }), anchor);
+            context.anchor(each.key)(anchor);
+            kept.set(each.key, at);
+            return at;
+        })));
+    };
+    draw();
+    return context.subscribe(draw);
+}
+
 // A Chrome's toolbar that hands in Layout ▾ and no anchor around it.
 function unanchoredToolbar(slot: HTMLElement, context: PivotToolbarSlotContext): () => void {
     slot.append(chromeButton('Layout', context.control('layout'), context.toggleLayoutMenu));
@@ -2789,6 +2809,34 @@ describe('ExPivot\'s Chrome slots (ADR-0390)', () => {
         // The request answered, a focus the contents ask for later leaves the keyboard where the user put it.
         held.takeFocus(caption);
         expect(document.activeElement).toBe(outside);
+    });
+
+    it('ADR-0061: a Chrome\'s entry button that stands beside its anchor is inside its open menu: focus on it keeps the menu, a press closes it', async () => {
+        const elsewhere = document.createElement('button');
+        const { root } = mount({ source: local(), layout: byRegion, chrome: { fieldList: sideAnchoredList } });
+        await settled();
+        root.append(elsewhere);
+        // Drawn again at each change, so the button is found again each time.
+        const region = (): HTMLButtonElement => {
+            const found = [...root.querySelectorAll<HTMLButtonElement>('[data-ex-pivot-slot=fieldList] button')].find(button => button.textContent === 'Region');
+            if (found === undefined) throw new Error('The Field List drew no entry for Region.');
+            return found;
+        };
+        const menuShown = (): boolean => root.querySelector('.ex-pivot-popup[role=menu]') !== null;
+        region().click();
+        expect(menuShown()).toBe(true);
+        // The keyboard handed back to the opener, as a design system's menu does, leaves the menu open.
+        region().focus();
+        expect(document.activeElement).toBe(region());
+        region().dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        expect(menuShown()).toBe(true);
+        // The press on it closes the menu standing under it, as the built-in entry's does.
+        region().click();
+        expect(menuShown()).toBe(false);
+        region().click();
+        expect(menuShown()).toBe(true);
+        elsewhere.focus();
+        expect(menuShown()).toBe(false);
     });
 });
 

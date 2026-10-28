@@ -733,8 +733,7 @@ export class PivotView {
         const outside = (event: Event): void => {
             const open = this.#open;
             if (open?.kind !== 'entry') return;
-            const item = open.popup.element.parentNode;
-            if (event.target instanceof Node && item !== null && item.contains(event.target)) return;
+            if (event.target instanceof Node && this.#within(open, event.target)) return;
             this.#close('stay');
         };
         root.addEventListener('mousedown', outside, listening);
@@ -1893,9 +1892,18 @@ export class PivotView {
             const open = this.#open;
             // A popup of a Chrome's contents may stand outside the frame, and take the keyboard while it is open.
             if (open?.popup.element !== frame || !(to instanceof Node) || open.popup.innerPopupOpen?.() === true) return;
-            const bounds = open.kind === 'entry' ? frame.parentNode : frame;
-            if (bounds !== null && !bounds.contains(to)) this.#close('stay');
+            if (!this.#within(open, to)) this.#close('stay');
         });
+    }
+
+    // Whether `node` is inside what is open. A field menu's bounds are its entry: the anchor around the frame, and the
+    // entry's button, which a Chrome may draw beside the anchor rather than in it, as a design system draws a menu's
+    // opener.
+    #within(open: OpenSurface, node: Node): boolean {
+        const frame = open.popup.element;
+        if (open.kind !== 'entry') return frame.contains(node);
+        const anchor = frame.parentNode;
+        return (anchor !== null && anchor.contains(node)) || this.#parts.controlContains(entryKey(open.entry), node);
     }
 
     // A report filter's button opens Filter… under it, over the report, and closes the one standing under it.

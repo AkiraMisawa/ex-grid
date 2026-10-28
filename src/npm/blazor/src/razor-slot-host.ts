@@ -149,7 +149,8 @@ export class RazorSlotHost {
         if (standing === undefined || this.#disposed) return;
         // Blazor finds the element by searching the document: contents already moved into a slot the core has not put
         // in the page (a report filter band with no filters) are not found, and are the contents standing there.
-        const contents = drawnIn ?? standing.contents;
+        // Contents in the page that Blazor did not find are not those it drew.
+        const contents = drawnIn ?? (standing.contents?.isConnected === false ? standing.contents : undefined);
         if (contents === undefined) throw new Error(`Internal: .NET rendered no element for the slot ${String(id)}.`);
         if (standing.contents !== contents) {
             const holder = contents.parentElement;

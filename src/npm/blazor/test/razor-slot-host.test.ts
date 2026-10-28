@@ -82,12 +82,18 @@ describe('a Razor slot host without a Settled Mark or an Input Order', () => {
         expect(toolbar.invoked).toEqual(['export']);
     });
 
-    it('ADR-0410 section 1: a slot .NET drew no element for, which has no contents standing, is refused by name', () => {
+    it('ADR-0410 section 1: a slot .NET drew no element for, which has no contents standing, or whose contents stand in the page, is refused by name', () => {
         const host = new RazorSlotHost(new FakeDotNet(), new Map([['toolbar', toolbarKind]]));
         const mount = host.mounts(['toolbar'])['toolbar'];
         if (mount === undefined) throw new Error('No mount for the toolbar.');
-        mount(document.createElement('div'), { name: 'Sales', invoked: [] });
+        const slot = document.createElement('div');
+        mount(slot, { name: 'Sales', invoked: [] });
         expect(() => { host.rendered(1, 1, null); }).toThrow('.NET rendered no element for the slot 1.');
+        // Contents in the page are found wherever they stand: not found, they are not the ones .NET drew.
+        document.body.append(slot);
+        host.rendered(1, 1, rendered('<button data-ex-command="export">Export</button>', 1));
+        expect(() => { host.rendered(1, 2, null); }).toThrow('.NET rendered no element for the slot 1.');
+        slot.remove();
     });
 
     it('ADR-0410 section 1: a slot of no kind the product registered is refused by name', () => {
