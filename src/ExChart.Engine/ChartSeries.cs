@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ExChart.Engine;
 
 /// <summary>
@@ -117,8 +119,35 @@ public sealed record ChartSeries
     /// </summary>
     public Func<object, string>? Format { get; init; }
 
-    /// <summary>Writes <paramref name="value"/> through <see cref="Format"/>.</summary>
-    public string Write(ChartValue value) => Format is { } f ? f(value.Value) : value.ToInvariantString();
+    /// <summary>
+    /// An Excel number format code in the invariant spelling that writes every value (ADR-0420): the ones
+    /// handed in and the ones the chart computes, a candle's change and a merged candle's volume, written
+    /// invariantly. It stands where a <see cref="Format"/> would, and is what a chart drawn in the browser
+    /// takes, where no .NET function can be called. A code the reader does not read, a date code, and one
+    /// beside a <see cref="Format"/> are refused as the definition is checked.
+    /// </summary>
+    public string? FormatCode
+    {
+        get => _formatCode;
+        init => (_formatCode, _code, CodeRefusal) = ChartCodes.Read(value);
+    }
+
+    private readonly string? _formatCode;
+    private readonly ExGrid.Data.FormatCode? _code;
+
+    // Why FormatCode cannot be read, a phrase completing "the format code …"; null when it can or there is none.
+    internal string? CodeRefusal { get; private init; }
+
+    // The code, refused by name where it cannot be read, so that no value is written another way (spine rule 1).
+    private ExGrid.Data.FormatCode? ReadCode =>
+        (CodeRefusal, _formatCode) is ({ } refusal, { } code) ? throw new ChartRefusedException(ChartCodes.SeriesRefusal(Name, code, refusal)) : _code;
+
+    // Whether FormatCode writes dates, which a series' values are not.
+    internal bool CodeWritesDates => ReadCode is { IsDate: true };
+
+    /// <summary>Writes <paramref name="value"/> through <see cref="Format"/> or <see cref="FormatCode"/>.</summary>
+    public string Write(ChartValue value) => Format is { } f ? f(value.Value)
+        : ReadCode is { } code ? code.Format(value.Value, CultureInfo.InvariantCulture) : value.ToInvariantString();
 
     /// <summary>The keys its look is chosen by, its <see cref="Id"/> standing for a colour key it does not set.</summary>
     public AppearanceKeys EffectiveKeys => Keys ?? new AppearanceKeys(Id);

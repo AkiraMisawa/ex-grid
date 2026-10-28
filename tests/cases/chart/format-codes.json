@@ -1,0 +1,509 @@
+{
+  "about": "An axis', a series' Excel format code (ADR-0420): read by the family's FormatCode (ADR-0342, tests/cases/shaped), it writes every tick, the position under the pointer, every value held and every value the chart computes, invariantly; a code it cannot write with is refused by name.",
+  "kind": "chart",
+  "definitions": {
+    "numbers": {
+      "axis": {
+        "values": "numbers",
+        "formatCode": "0.00\"y\""
+      },
+      "series": [
+        {
+          "id": "a",
+          "name": "EPE",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1234567.891
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "formatCode": "#,##0.00"
+        }
+      ]
+    },
+    "dates": {
+      "axis": {
+        "values": "dates",
+        "formatCode": "d/m/yyyy"
+      },
+      "series": [
+        {
+          "id": "a",
+          "name": "EPE",
+          "kind": "level",
+          "points": [
+            [
+              {
+                "date": "2026-10-19"
+              },
+              1
+            ],
+            [
+              {
+                "date": "2026-10-20"
+              },
+              2
+            ]
+          ]
+        }
+      ]
+    },
+    "candles": {
+      "axis": {
+        "values": "dates"
+      },
+      "series": [
+        {
+          "id": "idx",
+          "name": "Index",
+          "kind": "priceRange",
+          "formatCode": "#,##0.00",
+          "bars": [
+            [
+              {
+                "date": "2026-10-13"
+              },
+              39000,
+              39200,
+              38900,
+              39100,
+              5
+            ],
+            [
+              {
+                "date": "2026-10-14"
+              },
+              39120,
+              39480,
+              38950,
+              39310,
+              7
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0420: an axis' format code writes every tick",
+      "definition": "numbers",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "1.00y"
+        },
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "2.00y"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code writes a Dates axis' calendar ticks",
+      "definition": "dates",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "19/10/2026"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code that tells months apart steps no finer than a month, so no two ticks read alike",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "formatCode": "mmm yy"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "EPE",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-10-19"
+                },
+                1
+              ],
+              [
+                {
+                  "date": "2026-11-20"
+                },
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "Nov 26"
+        },
+        {
+          "at": "xTicks",
+          "map": "2",
+          "lacks": "Oct 26"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: an axis' format code writes the position under the pointer, and a series' code the value held",
+      "definition": "numbers",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 0,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "0.00y"
+        },
+        {
+          "at": "lines.[id=a].value",
+          "is": "1,234,567.89"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code on a Dates axis writes the day",
+      "definition": "dates",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-19"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "19/10/2026"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a candle's code writes the values the chart computes, its change and its volume, as it writes the ones held",
+      "definition": "candles",
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-14"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "O 39,120.00 H 39,480.00 L 38,950.00 C 39,310.00"
+        },
+        {
+          "at": "lines.0.note",
+          "has": "Chg +210.00"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a code the reader does not read is refused, naming the axis and why",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "formatCode": "[Red]0.00"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis' format code \"[Red]0.00\""
+      ]
+    },
+    {
+      "name": "ADR-0420: a series' code the reader does not read is refused, naming the series",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "formatCode": "0.00\"x"
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "'A''s format code \"0.00\"x\""
+      ]
+    },
+    {
+      "name": "ADR-0420: a series with both a Format and a code is refused: it would write one value two ways",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "format": {
+              "prefix": "$"
+            },
+            "formatCode": "0.00"
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "'A' has both a Format and the format code \"0.00\": it would write one value two ways."
+      ]
+    },
+    {
+      "name": "ADR-0420: a number code on a Dates axis is refused",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "formatCode": "0.00"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-10-19"
+                },
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis' format code \"0.00\" writes numbers, and the axis places dates."
+      ]
+    },
+    {
+      "name": "ADR-0420: a code of the time alone tells no dates apart, and a Dates axis refuses it",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "formatCode": "hh:mm"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-10-19"
+                },
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis' format code \"hh:mm\" writes no day, month or year, and the axis places dates."
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code on a Numbers axis is refused",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "formatCode": "yyyy-mm-dd"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis' format code \"yyyy-mm-dd\" writes dates, and the axis places numbers."
+      ]
+    },
+    {
+      "name": "ADR-0420: a code on a Labels axis has nothing to write",
+      "definition": {
+        "axis": {
+          "values": "labels",
+          "labels": [
+            "A",
+            "B"
+          ],
+          "formatCode": "0.00"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis places labels, which it writes as they are: the format code \"0.00\" has nothing to write."
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code on a series is refused: its values are numbers",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "formatCode": "yyyy"
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "'A''s format code \"yyyy\" writes dates, and its values are numbers."
+      ]
+    }
+  ]
+}

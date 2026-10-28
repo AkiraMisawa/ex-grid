@@ -240,6 +240,21 @@ public class ScriptChartTests : BunitContext
         Assert.Equal(JsonValueKind.Null, Parsed(json).GetProperty("series")[0].GetProperty("texts").ValueKind);
     }
 
+    [Fact] // ADR-0420: a format code crosses as itself, for the Script Core's reader to write every value by, so a candle's change is written by it too
+    public void A_format_code_crosses_as_itself_in_place_of_texts()
+    {
+        var candles = ChartSeries.Candles("ix", "Index", [new PriceBar(20000, 3.30m, 3.50m, 3.10m, 3.30m, 100m)]) with { FormatCode = "#,##0.00" };
+        var (json, _) = ChartWire.Definition(new ChartDefinition(ChartAxis.Dates() with { FormatCode = "dd/mm/yyyy" }, [candles]));
+        var parsed = Parsed(json);
+        Assert.Equal("dd/mm/yyyy", parsed.GetProperty("axis").GetProperty("formatCode").GetString());
+        var series = parsed.GetProperty("series")[0];
+        Assert.Equal("#,##0.00", series.GetProperty("formatCode").GetString());
+        Assert.Equal(JsonValueKind.Null, series.GetProperty("texts").ValueKind);
+
+        var plain = ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Of("a", "A", SeriesKind.Level, [P(0, 1)])])).Json;
+        Assert.Equal(JsonValueKind.Null, Parsed(plain).GetProperty("axis").GetProperty("formatCode").ValueKind);
+    }
+
     // ---- Read through Chart Sources (ADR-0322, ADR-0344) ----
 
     private const string TicksSpec = """

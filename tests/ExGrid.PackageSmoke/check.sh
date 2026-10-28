@@ -152,8 +152,11 @@ muddeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.
 [ "$muddeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExPivot\" version=\"[$version]\"" "$mudblazor" | sort)" ] \
   || fail "ExPivot.MudBlazor's dependencies are not exactly ExPivot and ExGrid.MudBlazor $version and MudBlazor [9.6.0, 10.0.0): $muddeps"
 
-# ExChart's engine depends on nothing at all, ExGrid included: a chart without a grid (ADR-0250, CH-13).
-if grep -q '<dependency ' <<<"$(nuspec ExChart.Engine)"; then fail "ExChart.Engine declares a dependency"; fi
+# ExChart's engine depends on the family's data alone, which holds the format-code reader, and on no grid:
+# a chart without a grid (ADR-0250, ADR-0420, CH-13).
+enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExChart.Engine)" | sort)
+[ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
+  || fail "ExChart.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
 # ExChart depends on exactly the core and the engine it was built with, and on nothing else (CH-13).
 chartdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExChart)" | sort)
 [ "$chartdeps" = "$(printf '%s\n' "<dependency id=\"ExChart.Engine\" version=\"[$version]\"" "<dependency id=\"ExGrid\" version=\"[$version]\"" | sort)" ] \

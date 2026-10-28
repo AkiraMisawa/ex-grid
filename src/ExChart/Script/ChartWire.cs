@@ -30,8 +30,8 @@ internal static class ChartWire
         if (definition.Axis.Format is not null)
         {
             throw new NotSupportedException(
-                "The chart's axis has a Format, a .NET function the chart in the browser would ask to write every tick, which it cannot call "
-                + "(ADR-0370 section 1). Draw it with ExChart.Components.ExChart, or leave the axis to write its positions itself.");
+                "The chart's axis has a Format, a .NET function the chart in the browser would ask to write the position under the pointer and "
+                + "a range's ends, which it cannot call (ADR-0420). Give the axis a FormatCode in its place, or draw it with ExChart.Components.ExChart.");
         }
         var rows = new RowKeys();
         var json = Json(w =>
@@ -167,6 +167,7 @@ internal static class ChartWire
         w.WriteEndArray();
         w.WriteNumber("daysPerYear", axis.DaysPerYear);
         w.WriteBoolean("packed", axis.Packed);
+        WriteOptional(w, "formatCode", axis.FormatCode);
         w.WriteEndObject();
     }
 
@@ -182,7 +183,7 @@ internal static class ChartWire
         {
             throw new NotSupportedException(
                 $"'{s.Name}' has a Format, a .NET function the chart in the browser would ask to write a candle's change and a merged candle's volume, "
-                + "values it does not hold, and cannot call (ADR-0370 section 1). Draw it with ExChart.Components.ExChart, or leave its values to be written as they were handed in.");
+                + "values it does not hold, and cannot call (ADR-0420). Give the series a FormatCode in its place, or draw it with ExChart.Components.ExChart.");
         }
         w.WriteStartObject();
         w.WriteString("id", s.Id);
@@ -191,6 +192,7 @@ internal static class ChartWire
         w.WriteString("step", Camel(s.Step));
         w.WriteString("axis", Camel(s.Axis));
         w.WriteString("panel", s.Panel);
+        WriteOptional(w, "formatCode", s.FormatCode);
         if (s.Keys is { } keys)
         {
             w.WriteStartObject("keys");
@@ -348,8 +350,9 @@ internal static class ChartWire
         }
         w.WriteEndArray();
         // A Price Range's change and a merged candle's volume are values the chart computes, which a text of a held value
-        // equal to them would write: its values are written as the Script Core writes numbers (ADR-0370 section 1).
-        WriteTexts(w, "texts", bars ? null : Texts(Held(s), s.Write, () => $"'{s.Name}'"));
+        // equal to them would write: its values are written as the Script Core writes numbers, or by its code
+        // (ADR-0370 section 1). A code is written by the Script Core's own reader, so it needs no texts either (ADR-0420).
+        WriteTexts(w, "texts", bars || s.FormatCode is not null ? null : Texts(Held(s), s.Write, () => $"'{s.Name}'"));
         w.WriteEndObject();
     }
 

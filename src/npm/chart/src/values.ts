@@ -1,5 +1,6 @@
+import { FormatCode } from '@ex-grid/core';
 import { roundTrip } from './invariant-text';
-import type { ChartAxis, ChartSeries, ChartValue, SeriesKind } from './model';
+import type { AxisValues, ChartAxis, ChartSeries, ChartValue, SeriesKind } from './model';
 import { dateOf, isoDate, wholeDay } from './day-numbers';
 import { elementAt, unreachable } from './must';
 
@@ -22,9 +23,55 @@ export function invariantText(value: ChartValue): string {
     return typeof value === 'bigint' ? value.toString() : roundTrip(value);
 }
 
-/** A series' value written through its format, or invariantly. */
+/** A series' value written through its format or its format code (ADR-0420), or invariantly. */
 export function writeValue(series: ChartSeries, value: ChartValue): string {
-    return series.format === undefined ? invariantText(value) : series.format(value);
+    if (series.format !== undefined) {
+        return series.format(value);
+    }
+    return series.formatCode === undefined ? invariantText(value) : codeOf(series.formatCode).format(value, 'invariant');
+}
+
+/**
+ * An axis' or a series' Excel format code, read by the family's reader both cores write a code with (ADR-0420,
+ * ADR-0342): the reader, or why it cannot be read, a phrase completing "the format code …".
+ */
+export function readCode(code: string): FormatCode | string {
+    const reading = FormatCode.tryParse(code);
+    return 'format' in reading ? reading.format : reading.reason;
+}
+
+// Each code read once, as C# reads it once as the definition is made: a writer is asked at every tick and pointer move.
+const readings = new Map<string, FormatCode | string>();
+
+// A code the definition checked: one it could not read never reaches a writer.
+function codeOf(code: string): FormatCode {
+    let reading = readings.get(code);
+    if (reading === undefined) {
+        reading = readCode(code);
+        readings.set(code, reading);
+    }
+    if (typeof reading === 'string') {
+        throw new Error(`Internal: the format code "${code}" was written with, which the definition refuses: it ${reading}.`);
+    }
+    return reading;
+}
+
+/** Whether the axis' format or format code writes its positions, in place of its own writing. */
+export function axisWrites(axis: ChartAxis): boolean {
+    return axis.format !== undefined || axis.formatCode !== undefined;
+}
+
+const ticksPerDay = 864_000_000_000;
+
+// A position through a code: a Dates axis' day number as the date and time it is, as .NET ticks; a Numbers axis'
+// as the number. A fraction of a day's ticks is rounded half away from zero, as C# rounds them.
+function writeCodePosition(code: FormatCode, values: AxisValues, position: number): string {
+    if (values !== 'dates') {
+        return code.format(position, 'invariant');
+    }
+    const day = Math.floor(position);
+    const ticks = BigInt(day) * BigInt(ticksPerDay) + BigInt(Math.round((position - day) * ticksPerDay));
+    return code.format(ticks, 'invariant');
 }
 
 /** A Row Key, a node's name or a surface's value written as C# writes an object into a sentence. */
@@ -54,6 +101,9 @@ export function writeObject(value: unknown): string {
 export function writePosition(axis: ChartAxis, position: number): string {
     if (axis.format !== undefined) {
         return axis.format(position);
+    }
+    if (axis.formatCode !== undefined) {
+        return writeCodePosition(codeOf(axis.formatCode), axis.values, position);
     }
     switch (axis.values) {
         case 'dates':

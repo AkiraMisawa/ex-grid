@@ -457,7 +457,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     private static ChartAxis Axis(JsonElement e)
     {
-        Allow(e, "an axis", "values", "title", "scale", "labels", "named", "daysPerYear", "packed");
+        Allow(e, "an axis", "values", "title", "scale", "labels", "named", "daysPerYear", "packed", "formatCode");
         var axis = new ChartAxis { Values = Enum<AxisValues>(e.GetProperty("values")) };
         if (e.TryGetProperty("title", out var title)) axis = axis with { Title = title.GetString()! };
         if (e.TryGetProperty("scale", out var scale)) axis = axis with { Scale = Enum<AxisScale>(scale) };
@@ -465,6 +465,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
         if (e.TryGetProperty("named", out var named)) axis = axis with { Named = named.EnumerateArray().Select(n => (Position(n[0]), n[1].GetString()!)).ToList() };
         if (e.TryGetProperty("daysPerYear", out var days)) axis = axis with { DaysPerYear = Number(days) };
         if (e.TryGetProperty("packed", out var packed)) axis = axis with { Packed = packed.GetBoolean() };
+        if (e.TryGetProperty("formatCode", out var code)) axis = axis with { FormatCode = code.GetString()! };
         return axis;
     }
 
@@ -484,7 +485,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             return Fitted(fitted).Series(e.GetProperty("id").GetString()!, e.GetProperty("name").GetString()!);
         }
         Allow(e, "a series", "id", "name", "kind", "step", "axis", "panel", "keys", "fromZero", "interpolated", "segments", "points", "colourBy", "sizeBy",
-            "details", "edges", "bars", "mergeTo", "interval", "xInterval", "thinned", "sampler", "format");
+            "details", "edges", "bars", "mergeTo", "interval", "xInterval", "thinned", "sampler", "format", "formatCode");
         var id = e.GetProperty("id").GetString()!;
         // A series that leaves out its kind declares none, which the definition refuses (ADR-0253).
         var s = new ChartSeries { Id = id, Name = e.GetProperty("name").GetString()!, Kind = e.TryGetProperty("kind", out var kind) ? Enum<SeriesKind>(kind) : SeriesKind.Undeclared };
@@ -546,6 +547,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             var suffix = Text(format, "suffix") ?? "";
             s = s with { Format = v => prefix + Convert.ToString(v, CultureInfo.InvariantCulture) + suffix };
         }
+        if (e.TryGetProperty("formatCode", out var code)) s = s with { FormatCode = code.GetString()! };
         return s;
     }
 

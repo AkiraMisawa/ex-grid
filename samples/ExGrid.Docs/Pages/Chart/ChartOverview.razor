@@ -113,20 +113,24 @@
         <p>
             A .NET function cannot run in the browser. A series' or a surface's <code>Format</code> crosses as the
             text it writes each value the definition holds, so a value reads as your Format writes it; a decimal
-            written <code>3.30</code> stays <code>3.30</code> in the tooltip and the table. Where the chart would ask
-            a function for a value the definition does not hold, it refuses the definition with a
+            written <code>3.30</code> stays <code>3.30</code> in the tooltip and the table. A
+            <code>FormatCode</code> on an axis or a series crosses as itself, and the browser writes every value by
+            it with the same reader as .NET's, ticks and a candle's change included. Where the chart would ask a
+            function for a value the definition does not hold, it refuses the definition with a
             <code>NotSupportedException</code> that names what to change, rather than write that value some other
-            way: an axis <code>Format</code>, which writes every tick; a series made by
-            <code>ChartSeries.Sampled</code>, which is asked a value at every pixel; a <code>Format</code> on
-            candles, which writes their change and a merged candle's volume; a <code>Format</code> on a surface axis
-            placed by value or on a mesh's axis, which writes the ticks between its values, unless it writes them as
-            plainly as a sampled surface's axis does; and a <code>ZFormat</code> on a mesh, whose slice reads values
-            between its nodes. Two Row Keys, or two values of a surface axis, that would reach the browser as one
-            value, such as <code>1</code> and <code>1.0m</code>, are refused too. A Chrome and the grid's Chart menu
-            are not carried yet: use <code>ExChart.Components.ExChart</code> for those. A candle's
-            values, and every value in its CSV, are written as numbers, <code>3.3</code>, where the Razor
-            component keeps a decimal's <code>3.30</code>.
+            way: an axis <code>Format</code>, which writes the position under the pointer, and a <code>Format</code>
+            on candles, which writes their change and a merged candle's volume, each of which a
+            <code>FormatCode</code> replaces; a series made by <code>ChartSeries.Sampled</code>, which is asked a
+            value at every pixel; a <code>Format</code> on a surface axis placed by value or on a mesh's axis,
+            which writes the ticks between its values, unless it writes them as plainly as a sampled surface's
+            axis does; and a <code>ZFormat</code> on a mesh, whose slice reads values between its nodes. Two Row
+            Keys, or two values of a surface axis, that would reach the browser as one value, such as
+            <code>1</code> and <code>1.0m</code>, are refused too. A Chrome and the grid's Chart menu are not
+            carried yet: use <code>ExChart.Components.ExChart</code> for those. A candle's values are written by its
+            code, or else as numbers, <code>3.3</code>, and so is every value in its CSV, where the Razor component
+            keeps a decimal's <code>3.30</code>.
         </p>
+        <DocsExample Builtin="typeof(ScriptCoreFormatCodes)" Files="@(["Examples/Chart/ChartData.cs"])" />
     </DocsSection>
 
     <DocsSection Title="WebAssembly, and AOT">

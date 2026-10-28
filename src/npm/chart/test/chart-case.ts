@@ -573,7 +573,7 @@ export class ChartCase {
         }
         const e = allow(given, 'a series', [
             'id', 'name', 'kind', 'step', 'axis', 'panel', 'keys', 'fromZero', 'interpolated', 'segments', 'points', 'colourBy', 'sizeBy',
-            'details', 'edges', 'bars', 'mergeTo', 'interval', 'xInterval', 'thinned', 'sampler', 'format',
+            'details', 'edges', 'bars', 'mergeTo', 'interval', 'xInterval', 'thinned', 'sampler', 'format', 'formatCode',
         ]);
         const id = string(e['id'], 'a series\' id');
         const kind = optional(e, 'kind', v => oneOf(v, ['level', 'rateOverInterval', 'amountPerPeriod', 'observation', 'priceRange'], 'SeriesKind'));
@@ -610,6 +610,7 @@ export class ChartCase {
             ...optionalPart('thinned', optional(e, 'thinned', summaries)),
             ...optionalPart('sampler', optional(e, 'sampler', v => this.#sampler(id, v))),
             ...optionalPart('format', optional(e, 'format', seriesFormat)),
+            ...optionalPart('formatCode', optional(e, 'formatCode', v => string(v, 'formatCode'))),
         };
     }
 
@@ -975,7 +976,7 @@ function run(given: Json | undefined, what: string): number[] {
 }
 
 function axis(given: Json | undefined): ChartAxisOptions {
-    const e = allow(given, 'an axis', ['values', 'title', 'scale', 'labels', 'named', 'daysPerYear', 'packed']);
+    const e = allow(given, 'an axis', ['values', 'title', 'scale', 'labels', 'named', 'daysPerYear', 'packed', 'formatCode']);
     return {
         values: oneOf(e['values'], ['dates', 'numbers', 'labels'], 'AxisValues'),
         ...optionalPart('title', optional(e, 'title', v => string(v, 'title'))),
@@ -987,6 +988,7 @@ function axis(given: Json | undefined): ChartAxisOptions {
         }))),
         ...optionalPart('daysPerYear', optional(e, 'daysPerYear', number)),
         ...optionalPart('packed', optional(e, 'packed', v => boolean(v, 'packed'))),
+        ...optionalPart('formatCode', optional(e, 'formatCode', v => string(v, 'formatCode'))),
     };
 }
 

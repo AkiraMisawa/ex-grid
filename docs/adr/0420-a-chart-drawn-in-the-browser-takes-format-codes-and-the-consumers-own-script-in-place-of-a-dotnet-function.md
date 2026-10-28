@@ -60,10 +60,20 @@ picture on Server and on WebAssembly, and at the same moment as the data arrives
   is refused as the definition is checked, naming the code and what it does not read. When a Consumer needs
   more of Excel's language, the subset grows in both cores at once, held by the same cases; this ADR does
   not grow it.
-- **It writes everything its Func would have written**: an axis' ticks, the position under the pointer and
-  a range's ends; a series' values, a candle's change and a merged candle's volume; a surface's ticks and the
-  values between its nodes. Every value, held or computed, is written by the one code, so a computed value
-  never reads differently from a held one.
+- **It writes every value the chart shows**: an axis' ticks, the position under the pointer and a range's
+  ends; a series' values, a candle's change and a merged candle's volume; a surface's ticks and the values
+  between its nodes. Every value, held or computed, is written by the one code, so a computed value never
+  reads differently from a held one. On a chart's axis that is more than a `Format` writes: a `Format`,
+  written for the values a column holds, writes a logarithmic axis' ticks but leaves its stepped and calendar
+  ticks to the axis' own labels, which a code, written for the axis, does not. A code writes a numbers
+  axis' ticks at its steps (a Named position keeps its name) and a Dates axis' calendar ticks while
+  `AxisStyle.Label` is `Auto`; a Label the Consumer chose still writes its dates. A Dates axis written by a
+  code steps no finer than the code tells dates apart (`mmm yy` ticks months, never days that would all read
+  alike), found by writing days a day, a month and a year apart with it, and a code that tells none apart,
+  one of the time alone, is refused there.
+- **A code is of one kind, and the axis or the values must be of it**: a date code on a Dates axis, a
+  number code on a numbers axis and on a series' values. A Categories axis writes its labels as they are,
+  so a code there has nothing to write and is refused.
 - **A Func and a code on the same member are refused**: the chart would have two writings of one value.
 - **ExChart's engine takes its first reference, `ExGrid.Data`**, where the C# reader moves, made public.
   [ADR-0250](./0250-exchart-is-a-chart-of-the-familys-data-in-three-packages-drawn-as-its-own-svg.md)'s
@@ -145,7 +155,9 @@ the points in.
   grid; the package smoke check names `ExGrid.Data` as the engine's one dependency. In TypeScript it stays in
   `@ex-grid/core`, which `@ex-grid/chart` already depends on.
 - A value of the other kind (a number under a date code) is refused with an `ArgumentException`, as the
-  TypeScript reader throws a `TypeError`, rather than shown as its own text.
+  TypeScript reader throws a `TypeError`, rather than shown as its own text. Every .NET number type is a
+  number. Two readers of one code are equal, so a chart's records compare as before. The reader's refusals
+  no longer name a grid: a part it does not read is one "which the reader does not take".
 - The wire carries a code as a string and a `ScriptFunction` as `{module, export}`; the adapter's browser
   half imports each module once per chart and refuses before attaching when one fails.
 - `Interpolant1D` and `Interpolant2D` gain the points they were made from; `ChartSeries` and

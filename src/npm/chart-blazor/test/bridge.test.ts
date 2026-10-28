@@ -20,7 +20,7 @@ class FakeDotNet implements DotNetHandle {
 
 function series(overrides: Partial<WireSeries> = {}): WireSeries {
     return {
-        id: 'bonds', name: 'Bonds', kind: 'observation', step: 'following', axis: 'left', panel: '', keys: null, fromZero: null, interpolated: false,
+        id: 'bonds', name: 'Bonds', kind: 'observation', step: 'following', axis: 'left', panel: '', formatCode: null, keys: null, fromZero: null, interpolated: false,
         segments: [], x: [0, 10, 5], y: [0, 10, 2], names: ['A', 'B', 'C'], rows: ['a', 7, true], colourBy: null, sizeBy: null, details: [],
         edges: [], bars: null, mergeTo: null, interval: null, xInterval: null, thinned: [], texts: null,
         ...overrides,
@@ -29,7 +29,7 @@ function series(overrides: Partial<WireSeries> = {}): WireSeries {
 
 function definition(s: WireSeries = series()): WireDefinition {
     return {
-        axis: { values: 'numbers', title: '', scale: null, labels: [], named: [], daysPerYear: 365, packed: false },
+        axis: { values: 'numbers', title: '', scale: null, labels: [], named: [], daysPerYear: 365, packed: false, formatCode: null },
         series: [s],
         notes: [],
     };
@@ -70,6 +70,14 @@ describe('a definition .NET wrote', () => {
         expect(bonds?.format?.(10)).toBe('10');
         expect(bonds?.format?.(0.1 + 0.2)).toBe('0.30000000000000004');
         expect(readDefinition(definition()).series[0]?.format).toBeUndefined();
+    });
+
+    it('ADR-0420: an axis\' and a series\' format codes cross as themselves, for the Script Core\'s reader to write by', () => {
+        const wire = definition(series({ formatCode: '#,##0.00' }));
+        const read = readDefinition({ ...wire, axis: { ...wire.axis, formatCode: '0.0"y"' } });
+        expect(read.axis.formatCode).toBe('0.0"y"');
+        expect(read.series[0]?.formatCode).toBe('#,##0.00');
+        expect(readDefinition(definition()).axis.formatCode).toBeUndefined();
     });
 
     it('ADR-0370: a number JSON cannot hold crosses by its name', () => {

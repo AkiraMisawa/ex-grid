@@ -1,4 +1,5 @@
 using System.Globalization;
+using Code = ExGrid.Data.FormatCode;
 
 namespace ExChart.Engine;
 
@@ -43,8 +44,40 @@ public sealed record ChartAxis
     /// </summary>
     public Func<double, string>? Format { get; init; }
 
-    /// <summary>Writes <paramref name="position"/> through <see cref="Format"/>.</summary>
-    public string Write(double position) => Format is { } f ? f(position) : Values switch
+    /// <summary>
+    /// An Excel number format code in the invariant spelling that writes every position (ADR-0420): each
+    /// tick, the position under the pointer and a range's ends, a date code on a Dates axis and a number code
+    /// on a Numbers axis, written invariantly. It stands where a <see cref="Format"/> would, and is what a
+    /// chart drawn in the browser takes, where no .NET function can be called. A code the reader does not
+    /// read, one beside a <see cref="Format"/>, and one on a Labels axis are refused as the definition is checked.
+    /// </summary>
+    public string? FormatCode
+    {
+        get => _formatCode;
+        init => (_formatCode, _code, CodeRefusal) = ChartCodes.Read(value);
+    }
+
+    private readonly string? _formatCode;
+    private readonly Code? _code;
+
+    // Why FormatCode cannot be read, a phrase completing "the format code …"; null when it can or there is none.
+    internal string? CodeRefusal { get; private init; }
+
+    // The code, refused by name where it cannot be read, so that no writing falls back to the axis' own (spine rule 1).
+    private Code? ReadCode => (CodeRefusal, _formatCode) is ({ } refusal, { } code) ? throw new ChartRefusedException(ChartCodes.AxisRefusal(code, refusal)) : _code;
+
+    /// <summary>Whether <see cref="Format"/> or <see cref="FormatCode"/> writes the positions, in place of the axis' own writing.</summary>
+    internal bool Writes => Format is not null || ReadCode is not null;
+
+    // Whether FormatCode writes the ticks, which a Format, written for the values a column holds, leaves to the
+    // axis' own labels (ADR-0420).
+    internal bool CodeWritesTicks => ReadCode is not null;
+
+    // Whether FormatCode writes dates; null when there is none.
+    internal bool? CodeWritesDates => ReadCode?.IsDate;
+
+    /// <summary>Writes <paramref name="position"/> through <see cref="Format"/> or <see cref="FormatCode"/>.</summary>
+    public string Write(double position) => Format is { } f ? f(position) : ReadCode is { } code ? ChartCodes.WritePosition(code, Values, position) : Values switch
     {
         AxisValues.Dates => DateOnly.FromDayNumber((int)position).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         AxisValues.Labels => position >= 0 && position < Labels.Count && position == Math.Floor(position) ? Labels[(int)position] : position.ToString("R", CultureInfo.InvariantCulture),

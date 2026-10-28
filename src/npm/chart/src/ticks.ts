@@ -5,6 +5,7 @@ import { upToPlaces } from './invariant-text';
 import type { ChartAxis } from './model';
 import { elementAt, unreachable } from './must';
 import { roundHalfToEven, roundToDigits } from './numbers';
+import { axisWrites, writePosition } from './values';
 
 /** Where a horizontal axis puts its ticks. */
 export type TickPlacement =
@@ -150,7 +151,7 @@ export function horizontalTicks(axis: ChartAxis, style: AxisStyle, from: number,
     const ticks: (readonly [number, string])[] = [];
     if (axis.effectiveScale === 'logarithmic' && from > 0) {
         for (const x of logSteps(from, to)) {
-            ticks.push([x, axis.format === undefined ? upToPlaces(x, 4) : axis.format(x)]);
+            ticks.push([x, axisWrites(axis) ? writePosition(axis, x) : upToPlaces(x, 4)]);
         }
     } else if (axis.values === 'labels') {
         axis.labels.forEach((text, i) => ticks.push([i, text]));
@@ -173,7 +174,7 @@ export function horizontalTicks(axis: ChartAxis, style: AxisStyle, from: number,
             }
         }
     } else if (axis.values === 'dates') {
-        const unit = calendarUnit(from, to, map, textWidth, gap);
+        const unit = calendarUnit(from, to, map, textWidth, gap, axis.formatCode !== undefined && label === 'auto' ? axis : undefined);
         for (const x of calendarTicks(from, to, unit)) {
             ticks.push([x, labelOf(axis, label, x, from, unit.kind)]);
         }
@@ -181,7 +182,7 @@ export function horizontalTicks(axis: ChartAxis, style: AxisStyle, from: number,
         const n = nice(from, to, 6);
         for (const x of steps(n.min, n.max, n.step)) {
             if (x >= from - 1e-9 && x <= to + 1e-9) {
-                ticks.push([x, upToPlaces(x, 4)]);
+                ticks.push([x, axis.formatCode === undefined ? upToPlaces(x, 4) : writePosition(axis, x)]);
             }
         }
     }
@@ -215,7 +216,7 @@ export function fitLabels(ticks: readonly (readonly [position: number, label: st
     return Object.freeze({ ticks: Object.freeze(result), depth, labelled });
 }
 
-type Unit = 'day' | 'month' | 'quarter' | 'year';
+export type Unit = 'day' | 'month' | 'quarter' | 'year';
 
 interface CalendarStep {
     readonly kind: Unit;
@@ -228,12 +229,43 @@ const calendarSteps: readonly CalendarStep[] = [
     { kind: 'year', every: 50 },
 ];
 
-// The finest step whose labels, at their usual width, fit side by side across the plot.
-function calendarUnit(from: number, to: number, map: (position: number) => number, textWidth: (text: string) => number, gap: number): CalendarStep {
+const unitOrder: readonly Unit[] = ['day', 'month', 'quarter', 'year'];
+
+// A day whose names are the longest a code writes: a Wednesday in September.
+const widestDay = dayNumber(2026, 9, 30);
+
+/**
+ * The finest calendar step a date code tells apart, found by writing days a day, a month and a year apart with
+ * it; `undefined` for a code that writes none of them apart, such as one of the time alone (ADR-0420).
+ */
+export function codeResolution(write: (position: number) => string): Unit | undefined {
+    const text = write(dayNumber(2001, 2, 3));
+    if (write(dayNumber(2001, 2, 4)) !== text) {
+        return 'day';
+    }
+    if (write(dayNumber(2001, 3, 3)) !== text) {
+        return 'month';
+    }
+    return write(dayNumber(2002, 2, 3)) === text ? undefined : 'year';
+}
+
+// The finest step whose labels, at their usual width, fit side by side across the plot. Where the axis' code
+// writes the ticks, no step finer than the code tells apart, so no two ticks read alike, and its labels are as
+// wide as the code writes a long date (ADR-0420).
+function calendarUnit(from: number, to: number, map: (position: number) => number, textWidth: (text: string) => number, gap: number,
+    coded: ChartAxis | undefined): CalendarStep {
     const plot = Math.abs(map(to) - map(from));
+    const finest = coded === undefined ? 'day' : codeResolution(x => writePosition(coded, x));
+    if (finest === undefined) {
+        throw new Error('Internal: a code that tells no dates apart was not refused.');
+    }
+    const codedWidth = coded === undefined ? 0 : textWidth(writePosition(coded, widestDay));
     for (const s of calendarSteps) {
+        if (unitOrder.indexOf(s.kind) < unitOrder.indexOf(finest)) {
+            continue;
+        }
         const count = Math.max(1, calendarTicks(from, to, s).length);
-        const label = textWidth(s.kind === 'year' ? '2026' : s.kind === 'day' ? '2026-10-19' : '2026-10');
+        const label = coded === undefined ? textWidth(s.kind === 'year' ? '2026' : s.kind === 'day' ? '2026-10-19' : '2026-10') : codedWidth;
         if (plot / count >= label + gap) {
             return s;
         }
@@ -278,7 +310,15 @@ function calendarTicks(from: number, to: number, step: CalendarStep): number[] {
 function labelOf(axis: ChartAxis, style: DateLabel, x: number, first: number, unit: Unit): string {
     if (axis.values === 'numbers') {
         const named = axis.named.find(n => n[0] === x);
-        return named === undefined ? upToPlaces(x, 4) : named[1];
+        if (named !== undefined) {
+            return named[1];
+        }
+        return axis.formatCode === undefined ? upToPlaces(x, 4) : writePosition(axis, x);
+    }
+    // A code writes a date tick, unless the axis' style names how date ticks are labelled (ADR-0420); a Format,
+    // written for the values a column holds, leaves the ticks to the axis' own labels.
+    if (axis.formatCode !== undefined && style === 'auto') {
+        return writePosition(axis, x);
     }
     const d = dateOf(wholeDay(x));
     const label = style === 'auto' ? unit === 'year' ? 'year' : unit === 'day' ? 'date' : 'yearMonth' : style;

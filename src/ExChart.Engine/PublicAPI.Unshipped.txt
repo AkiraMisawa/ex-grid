@@ -1544,3 +1544,7 @@ static ExChart.Engine.PointDetail.operator ==(ExChart.Engine.PointDetail? left, 
 ~override ExChart.Engine.ChartEdgeMark.ToString() -> string
 ExChart.Engine.ChartSpecReading.Surface.get -> ExChart.Engine.SurfaceDefinition?
 static ExChart.Engine.ChartScene.LegendMembers(ExChart.Engine.ChartDefinition! definition, string! key) -> System.Collections.Generic.IReadOnlyList<string!>!
+ExChart.Engine.ChartAxis.FormatCode.get -> string?
+ExChart.Engine.ChartAxis.FormatCode.init -> void
+ExChart.Engine.ChartSeries.FormatCode.get -> string?
+ExChart.Engine.ChartSeries.FormatCode.init -> void

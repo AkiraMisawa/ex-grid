@@ -60,10 +60,12 @@ public sealed record ChartDefinition
         var logarithmic = Axis.EffectiveScale == AxisScale.Logarithmic;
         if (logarithmic && Axis.Values != AxisValues.Numbers)
             throw new ChartRefusedException("Only a number axis can be logarithmic.");
+        ChartCodes.CheckAxis(Axis);
         foreach (var s in Series)
         {
             if (!ids.Add(s.Id))
                 throw new ChartRefusedException($"Two series are named '{s.Id}'; each series needs an identity of its own.");
+            ChartCodes.CheckSeries(s);
             if (s.Kind == SeriesKind.Undeclared)
                 throw new ChartRefusedException($"'{s.Name}' declares no Series Kind: say whether it is a Level, a Rate over an interval or an Amount per period.");
             if (s.Kind == SeriesKind.AmountPerPeriod && s.FromZero == false)

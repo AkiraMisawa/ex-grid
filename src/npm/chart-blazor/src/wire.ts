@@ -8,7 +8,7 @@
 // holds through it once and sends the texts that differ from the Script Core's own writing (`texts`), and the chart
 // writes each value by them. .NET refuses, by name, a function the chart would ask of a value it does not hold, such
 // as a tick between the data's positions, rather than send a writer that would answer some values its own way
-// (spine rule 1). A Row Key crosses as the JSON value .NET chose for it, which the click hands back.
+// (spine rule 1); an Excel format code crosses as itself in its place, read by the Script Core's own reader (ADR-0420). A Row Key crosses as the JSON value .NET chose for it, which the click hands back.
 
 import { ChartDefinition, SurfaceAxis, SurfaceDefinition } from '@ex-grid/chart';
 import type {
@@ -38,6 +38,8 @@ export interface WireAxis {
     readonly named: readonly (readonly [position: WireNumber, label: string])[];
     readonly daysPerYear: number;
     readonly packed: boolean;
+    /** The Excel format code its positions are written by, which the Script Core reads as C# does (ADR-0420). */
+    readonly formatCode: string | null;
 }
 
 /** An Interval's bounds, each `[x, lower, upper]`. */
@@ -55,6 +57,8 @@ export interface WireSeries {
     readonly step: StepSide;
     readonly axis: AxisSide;
     readonly panel: string;
+    /** The Excel format code its values are written by (ADR-0420); it then carries no `texts`. */
+    readonly formatCode: string | null;
     readonly keys: { readonly colour: string; readonly lineStyle: string | null; readonly marker: string | null } | null;
     readonly fromZero: boolean | null;
     readonly interpolated: boolean;
@@ -243,6 +247,7 @@ function series(s: WireSeries): ChartSeriesOptions {
         step: s.step,
         axis: s.axis,
         panel: s.panel,
+        ...(s.formatCode === null ? {} : { formatCode: s.formatCode }),
         ...(appearance === undefined ? {} : { keys: appearance }),
         ...(s.fromZero === null ? {} : { fromZero: s.fromZero }),
         interpolated: s.interpolated,
@@ -281,6 +286,7 @@ export function readDefinition(wire: WireDefinition): ChartDefinition {
             named,
             daysPerYear: wire.axis.daysPerYear,
             packed: wire.axis.packed,
+            ...(wire.axis.formatCode === null ? {} : { formatCode: wire.axis.formatCode }),
         },
         series: wire.series.map(series),
         notes: wire.notes,

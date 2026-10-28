@@ -63,6 +63,7 @@ export interface ChartAxis {
     readonly daysPerYear: number;
     readonly effectiveScale: AxisScale;
     readonly format?: (position: number) => string;
+    readonly formatCode?: string;
     readonly labels: readonly string[];
     readonly named: readonly NamedPosition[];
     readonly packed: boolean;
@@ -75,6 +76,7 @@ export interface ChartAxis {
 export interface ChartAxisOptions {
     readonly daysPerYear?: number;
     readonly format?: (position: number) => string;
+    readonly formatCode?: string;
     readonly labels?: readonly string[];
     readonly named?: readonly NamedPosition[];
     readonly packed?: boolean;
@@ -290,6 +292,7 @@ export interface ChartSeries {
     readonly edges: readonly ChartEdge[];
     readonly effectiveKeys: AppearanceKeys;
     readonly format?: (value: ChartValue) => string;
+    readonly formatCode?: string;
     readonly fromZero?: boolean;
     readonly id: string;
     readonly interpolated: boolean;
@@ -317,6 +320,7 @@ export interface ChartSeriesOptions {
     readonly details?: readonly PointDetail[];
     readonly edges?: readonly ChartEdge[];
     readonly format?: (value: ChartValue) => string;
+    readonly formatCode?: string;
     readonly fromZero?: boolean;
     readonly id: string;
     readonly interpolated?: boolean;
