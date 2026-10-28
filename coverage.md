@@ -6,7 +6,7 @@
 | ExSheet | 94.8% | 87.3% |
 | ExPivot | 88.5% | 82.9% |
 | ExChart | 90% | 84.9% |
-| ExBoard | 82.8% | 77.7% |
+| ExBoard | 72.2% | 66.7% |
 | Data | 94.5% | 89.9% |
 
 # Summary
@@ -14,29 +14,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 12:22:56 |
+| Generated on: | 10/28/2026 - 12:40:26 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1345 |
+| Classes: | 1350 |
 | Files: | 666 |
-| **Line coverage:** | 92.3% (91537 of 99099) |
-| Covered lines: | 91537 |
-| Uncovered lines: | 7562 |
-| Coverable lines: | 99099 |
-| Total lines: | 154397 |
-| **Branch coverage:** | 86.3% (53572 of 62069) |
-| Covered branches: | 53572 |
-| Total branches: | 62069 |
+| **Line coverage:** | 91.7% (91601 of 99845) |
+| Covered lines: | 91601 |
+| Uncovered lines: | 8244 |
+| Coverable lines: | 99845 |
+| Total lines: | 154424 |
+| **Branch coverage:** | 85.7% (53589 of 62474) |
+| Covered branches: | 53589 |
+| Total branches: | 62474 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 82.8%</summary>
+<details><summary>ExBoard - 72.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**82.8%**|**77.7%**|
+|**ExBoard**|**72.2%**|**66.7%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|100%|
@@ -74,14 +74,19 @@
 |ExBoard.LinkCondition|90.3%|77.7%|
 |ExBoard.LinkCondition.TupleComparer|86.3%|72.7%|
 |ExBoard.Narrowing|82.1%|65.9%|
-|ExBoard.Script.ExBoard|78.7%|72%|
+|ExBoard.Script.ExBoard|79.1%|72%|
+|ExBoard.Script.ExBoard.BoardSlots|100%||
 |ExBoard.Script.ExBoard.HeldPivot|100%||
-|ExBoard.Script.ExBoard<T>|78.7%|72%|
+|ExBoard.Script.ExBoard<T>|79.1%|72%|
 |ExBoard.Script.ScriptBridge|67.2%|33.3%|
 |ExBoard.Script.SourceCrossing|96.2%|77.2%|
 |ExBoard.Script.SourceCrossing.Held|100%||
 |ExBoard.Script.SourceCrossing.HeldKey|100%|50%|
 |ExBoard.Script.SourcePage|100%||
+|ExChart.Script.ChartRazorSlot|58.2%|50%|
+|ExChart.Script.ChartWire|0%|0%|
+|ExChart.Script.RowKeys|0%|0%|
+|ExChart.Script.SurfaceValues|0%||
 |ExGrid.Script.CrossedText|52%|38.8%|
 |ExGrid.Script.HeldCalls|79.3%|62.5%|
 |ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
@@ -710,7 +715,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
