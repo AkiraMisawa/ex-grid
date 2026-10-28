@@ -5,7 +5,8 @@ namespace ExBoard.Script;
 
 /// <summary>
 /// What the bridge in the browser calls in .NET (ADR-0370 section 1): every event the Board raised, the Snapshots and
-/// sources it let go, and each question it asks a source held where the data lives (ADR-0343), each handed to the
+/// sources it let go, each question it asks a source held where the data lives (ADR-0343), and the Chromes' slots its
+/// views mounted (ADR-0410), each handed to the
 /// component it was made for. Its own object, so the component's public surface carries no
 /// <see cref="JSInvokableAttribute"/> member a Consumer could call. Each call is made in the order the browser made it,
 /// a call too large for a message of its own among them (<see cref="Held"/>).
@@ -56,6 +57,15 @@ internal sealed class ScriptBridge(ExBoard board)
     [JSInvokable]
     public Task ReleasePivot(int pivot) => Calls.InOrder(() => board.ReleasePivot(pivot));
 
+    [JSInvokable]
+    public Task MountSlot(long id, int version, string name, string context) => Calls.InOrder(() => board.MountSlot(id, version, name, context));
+
+    [JSInvokable]
+    public Task UpdateSlot(long id, int version, string context) => Calls.InOrder(() => board.UpdateSlot(id, version, context));
+
+    [JSInvokable]
+    public Task UnmountSlot(long id) => Calls.InOrder(() => board.UnmountSlot(id));
+
     // A pivot's questions are numbered apart from the sources' own, and cancelled as theirs are.
     [JSInvokable]
     public Task PivotCancel(long call) => board.TryCancelPivot(call) ? Task.CompletedTask : Calls.InOrder(() => board.TryCancelPivot(call));
@@ -66,8 +76,8 @@ internal sealed class ScriptBridge(ExBoard board)
 
     /// <summary>A call the browser held, too large for a message of its own: <paramref name="method"/>, with the
     /// arguments taken from the browser by <paramref name="crossed"/>'s number, made in its turn. Only a call that can
-    /// carry what the Board or the Consumer made, an event, or a question narrowed by a link's values or naming a layout's
-    /// Items, is held.</summary>
+    /// carry what the Board or the Consumer made, an event, a question narrowed by a link's values or naming a layout's
+    /// Items, or a slot's view, is held.</summary>
     [JSInvokable]
     public Task<object?> Held(string method, JsonElement crossed) => Calls.Held(crossed, async arguments =>
     {
@@ -93,6 +103,12 @@ internal sealed class ScriptBridge(ExBoard board)
                 return await board.PivotAskAsync("items", At(0).GetInt32(), At(1).GetInt64(), Text(2));
             case nameof(PivotDetails):
                 return await board.PivotAskAsync("details", At(0).GetInt32(), At(1).GetInt64(), Text(2));
+            case nameof(MountSlot):
+                board.MountSlot(At(0).GetInt64(), At(1).GetInt32(), Text(2), Text(3));
+                return null;
+            case nameof(UpdateSlot):
+                board.UpdateSlot(At(0).GetInt64(), At(1).GetInt32(), Text(2));
+                return null;
             default:
                 throw new InvalidOperationException($"Internal: the browser held a call to {method}, which carries nothing that large.");
         }

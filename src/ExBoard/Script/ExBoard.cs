@@ -10,7 +10,10 @@ using ExGrid.Chrome;
 using ExGrid.Data;
 using ExGrid.Data.Arrow;
 using ExGrid.Script;
+using ExPivot;
+using ExPivot.Chrome;
 using ExPivot.Engine;
+using ExPivot.Script;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.JSInterop;
@@ -35,7 +38,13 @@ namespace ExBoard.Script;
 /// through .NET, as ExPivot's adapter reads one: the engine in the browser builds the report and its totals from the
 /// Leaf Aggregates the source answers (ADR-0370 section 3).</para>
 /// <para>It stands beside <see cref="Components.ExBoard"/>, the Razor component, until ExBoard's Blazor step holds
-/// (ADR-0370 section 11). What it does not carry yet is refused by name, never left out quietly: Chromes.</para>
+/// (ADR-0370 section 11). What it does not carry yet it has no parameter for, never one left out quietly: the charts'
+/// Chrome.</para>
+/// <para>Its views are dressed by the Chromes it is handed as the Razor component's are: <see cref="Chrome"/> draws the
+/// grids and the pivots' report grids, <see cref="PivotChrome"/> the pivots, and its grid Chrome the report grids where
+/// no <see cref="Chrome"/> is given. Each slot a Chrome names in its <c>ScriptSlots</c> is filled with Razor (ADR-0410),
+/// rendered beside the Board's root and moved into the slot the Script Core made; the rest are the Script Core's
+/// own.</para>
 /// </remarks>
 public sealed class ExBoard : ComponentBase, IAsyncDisposable
 {
@@ -78,6 +87,17 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     /// <summary>Raised when the user changes a view, with the whole Board Diff. The Board is never rewritten; the host
     /// keeps this (<see cref="BoardDiff.ToJson"/>) and hands it back as <see cref="Diff"/> next time.</summary>
     [Parameter] public EventCallback<BoardDiff> OnDiff { get; set; }
+
+    /// <summary>The grid Chrome the grids and the pivots' report grids are drawn with; the Script Core's own markup by
+    /// default. Each slot its <see cref="IGridChrome.ScriptSlots"/> names is drawn by its view overload (ADR-0410). Which
+    /// slots are filled is read as the Board attaches; another Chrome naming other slots needs a new ExBoard.</summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
+    /// <summary>The pivot Chrome the pivots are drawn with; the Script Core's own markup by default. Each slot its
+    /// <see cref="IPivotChrome.ScriptSlots"/> names is drawn by its view overload, and its grid Chrome
+    /// (<see cref="IPivotChrome.GridChrome"/>) draws the report grids where no <see cref="Chrome"/> is given, as the Razor
+    /// component has it (ADR-0410). Which slots are filled is read as the Board attaches.</summary>
+    [Parameter] public IPivotChrome? PivotChrome { get; set; }
 
     private readonly SnapshotCrossing _crossing = new();
     private readonly SourceCrossing _sourceCrossing = new();
@@ -129,6 +149,17 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     private bool _disposed;
     private bool _renderOwed = true;
 
+    // The slots the script mounted for the Chromes, by the number it gave each (ADR-0410 section 1): a pivot's by
+    // ExPivot's reading, a grid's by ExGrid's.
+    private readonly RazorSlotHolders _slots = new(PivotRazorSlot.ViewOf);
+    private bool _chromesRead;
+    private IGridChrome? _renderedChrome;
+    private IPivotChrome? _renderedPivotChrome;
+    // The pivot Chrome's grid Chrome, asked once per pivot Chrome, as the Razor ExPivot asks it.
+    private IGridChrome? _pivotGridChrome;
+    // The slots the Board attached with: other Chromes must name the same.
+    private (ScriptSlots Grid, PivotScriptSlots Pivot, ScriptSlots PivotGrid)? _attachedSlots;
+
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
@@ -165,6 +196,8 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             _data = Data;
             _dataOwed = true;
         }
+        if (!_chromesRead || !ReferenceEquals(Chrome, _renderedChrome) || !ReferenceEquals(PivotChrome, _renderedPivotChrome))
+            ReadChromes();
         if (!_diffRead || !ReferenceEquals(Diff, _diffParameter))
         {
             _diffRead = true;
@@ -174,6 +207,39 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
                 _diffOwed = true;
         }
     }
+
+    // Other Chromes draw the slots standing, and the script wires what they drew; Chromes naming other slots than the
+    // Board attached with are refused, as ExPivot's are.
+    private void ReadChromes()
+    {
+        var pivotGridChrome = _chromesRead && ReferenceEquals(PivotChrome, _renderedPivotChrome)
+            ? _pivotGridChrome
+            : PivotChrome?.GridChrome(PivotCommandLabel);
+        var slots = SlotsOf(Chrome, PivotChrome, pivotGridChrome);
+        if (_attachedSlots is { } attached && attached != slots)
+        {
+            throw new NotSupportedException(
+                "ExBoard's Chromes fill the slots they named as the Board attached (ADR-0410): Chromes naming other slots need a new ExBoard.");
+        }
+        _chromesRead = true;
+        _renderedChrome = Chrome;
+        _renderedPivotChrome = PivotChrome;
+        _pivotGridChrome = pivotGridChrome;
+        _slots.Redrawn();
+        _renderOwed |= _slots.Any;
+    }
+
+    // ExPivot's word for a command of its Context Menu, as the Razor ExBoard's pivots answer it with no Label: ExPivot's
+    // English, null for an id that is not ExPivot's (IPivotChrome.GridChrome).
+    private static string? PivotCommandLabel(string id) => PivotCommandIds.CaptionOfRemove(id) is { } caption
+        ? PivotWords.Fill(PivotWords.EnglishFor(PivotCommandIds.RemoveNamedField)
+            ?? throw new InvalidOperationException("Internal: ExPivot has no English for removing a named field."), caption)
+        : PivotWords.EnglishFor(id);
+
+    // The slots the Chromes fill with Razor: the grids', the pivots', and the report grids', which the grid Chrome
+    // draws where one is given and the pivot Chrome's grid Chrome otherwise.
+    private static (ScriptSlots Grid, PivotScriptSlots Pivot, ScriptSlots PivotGrid) SlotsOf(IGridChrome? chrome, IPivotChrome? pivotChrome, IGridChrome? pivotGridChrome)
+        => (chrome?.ScriptSlots ?? ScriptSlots.None, pivotChrome?.ScriptSlots ?? PivotScriptSlots.None, (chrome ?? pivotGridChrome)?.ScriptSlots ?? ScriptSlots.None);
 
     // What the browser's Board cannot be handed yet, refused here, by name, before anything crosses.
     private static void RefuseWhatIsNotCarried(BoardReading board, IReadOnlyDictionary<string, BoardSource>? sources)
@@ -213,13 +279,19 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
+        // A grid's slot is drawn by the Chrome its grid has: the grid Chrome where one is given, which then draws the
+        // report grids too, and the pivot Chrome's grid Chrome otherwise, when only report grids have slots.
+        _slots.Render(builder, 6, (name, view) => PivotRazorSlot.Fragment(_renderedPivotChrome, _renderedChrome ?? _pivotGridChrome, name, view));
     }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
+        {
+            await ReportSlotsAsync();
             return;
+        }
         // The script this build was made with, by an address that changes with its content (ADR-0123), and refused
         // when the browser holds another version's: nothing is attached, and the root says so.
         var address = "./" + AddressOf(Assets, ScriptPath, ScriptCoreAsset.Version);
@@ -272,6 +344,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             naming.Write(json);
             _sourceCrossing.Write(json, Sources, Board);
             WriteDiff(json);
+            WriteSlots(json);
             json.WriteEndObject();
         });
         _sentOptions = options;
@@ -315,6 +388,8 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         _view = view;
         _attached = true;
         Calls.Attached(view);
+        // A slot a view mounted as the Board attached may have been drawn already, before there was a Board to hand it to.
+        await ReportSlotsAsync();
         // Each in its turn, taken off before it is sent: one said meanwhile waits behind those still owed.
         while (_noticesOwed.Count > 0)
         {
@@ -387,6 +462,65 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         json.WriteNumber("diffsSent", ++_diffsSent);
         _diffOwed = false;
     }
+
+    // The slots the Chromes fill with Razor, for the Board's life (ADR-0410), or null for none.
+    private void WriteSlots(Utf8JsonWriter json)
+    {
+        var slots = SlotsOf(_renderedChrome, _renderedPivotChrome, _pivotGridChrome);
+        _attachedSlots = slots;
+        if (slots == (ScriptSlots.None, PivotScriptSlots.None, ScriptSlots.None))
+        {
+            json.WriteNull("razorSlots");
+            return;
+        }
+        json.WriteStartObject("razorSlots");
+        WriteNames(json, "grid", RazorSlot.NamesOf(slots.Grid));
+        WriteNames(json, "pivot", PivotRazorSlot.NamesOf(slots.Pivot));
+        WriteNames(json, "pivotGrid", RazorSlot.NamesOf(slots.PivotGrid));
+        json.WriteEndObject();
+    }
+
+    private static void WriteNames(Utf8JsonWriter json, string property, IEnumerable<string> names)
+    {
+        json.WriteStartArray(property);
+        foreach (var name in names)
+            json.WriteStringValue(name);
+        json.WriteEndArray();
+    }
+
+    /// <summary>The script mounted slot <paramref name="id"/> for a Chrome, with its context as data (ADR-0410).</summary>
+    internal void MountSlot(long id, int version, string name, string context)
+    {
+        if (_disposed)
+            return;
+        _slots.Mount(id, version, name, context);
+        RenderSlots();
+    }
+
+    /// <summary>The slot <paramref name="id"/> was mounted again in place, or its context changed.</summary>
+    internal void UpdateSlot(long id, int version, string context)
+    {
+        if (_disposed || !_slots.Update(id, version, context))
+            return;
+        RenderSlots();
+    }
+
+    /// <summary>A view took the slot <paramref name="id"/> away; the script has moved its contents back.</summary>
+    internal void UnmountSlot(long id)
+    {
+        if (_disposed || !_slots.Unmount(id))
+            return;
+        RenderSlots();
+    }
+
+    private void RenderSlots()
+    {
+        _renderOwed = true;
+        StateHasChanged();
+    }
+
+    // Each slot drawn again is handed to the script, which moves it in, or wires it for the context it now holds.
+    private Task ReportSlotsAsync() => _slots.ReportAsync(_view, () => _disposed);
 
     private string OptionsJson() => Json(json =>
     {
