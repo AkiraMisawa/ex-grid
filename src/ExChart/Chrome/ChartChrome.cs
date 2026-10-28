@@ -19,6 +19,19 @@ public interface IChartChrome
     /// <summary>The context menu's content: exactly the context's commands, in its order. The frame
     /// around it, where it opens and what closes it are ExChart's.</summary>
     RenderFragment? Menu(ChartMenuContext context) => null;
+
+    /// <summary>The slots this Chrome fills with Razor when the Script Core draws the chart (ADR-0410): each is asked
+    /// for through its view overload, and the Script Core draws its own part for every slot not named.</summary>
+    ChartScriptSlots ScriptSlots => ChartScriptSlots.None;
+
+    /// <summary>The toolbar over the Script Core: the view's commands, in its order, then, while Chart Filters is open,
+    /// its fields and the axis switch, each control marked with a <see cref="ChartScriptSlotAttributes"/> attribute;
+    /// or null for the Script Core's own toolbar.</summary>
+    RenderFragment? Toolbar(ChartToolbarView view) => null;
+
+    /// <summary>The context menu's content over the Script Core: exactly the view's commands, in its order, each marked
+    /// <see cref="ChartScriptSlotAttributes.Command"/>; or null for the Script Core's own items.</summary>
+    RenderFragment? Menu(ChartMenuView view) => null;
 }
 
 /// <summary>The ids of ExChart's own commands, for a Chrome's icons and a Consumer's words.</summary>

@@ -4,15 +4,18 @@
 // the legend, Chart Filters and what each gesture means are the Script Core's; the data is the Consumer's, in .NET.
 
 import {
-    createChart, createSurface, type AxisScale, type AxisStyle, type ChartDefinition, type ChartFileFormat, type ChartHandle, type ChartOptions,
+    createChart, createSurface, type AxisScale, type AxisStyle, type ChartChrome, type ChartDefinition, type ChartFileFormat, type ChartHandle, type ChartOptions,
     type ChartPointClick, type ChartRange, type LegendPlacement, type SeriesVisibility, type SurfaceDefinition, type SurfaceHandle, type SurfaceOptions,
     type SurfaceSlice, type SurfaceView,
 } from '@ex-grid/chart';
 import type { GridDensity } from '@ex-grid/core';
+import { crossingCalls, HeldMessages } from '@ex-grid/blazor-shared';
+import { chartRazorChrome, chartRazorSlots } from './razor-slots';
 import { ScriptFunctionError, ScriptModules, type ScriptCalls, type WireScript } from './scripts';
 import { readDefinition, readSurface, scriptsOf, surfaceScriptsOf, type WireDefinition, type WireSurface } from './wire';
 
-/** What .NET calls in the browser: `Heard` with each event the chart raised. */
+/** What the browser calls in .NET: `Heard` with each event the chart raised, and the Razor Chrome's slots
+ * (`MountSlot`, `UpdateSlot`, `UnmountSlot`, ADR-0410), a call too large for a message of its own as `Held`. */
 export interface DotNetHandle {
     invokeMethodAsync(method: string, ...args: readonly unknown[]): Promise<unknown>;
 }
@@ -38,10 +41,15 @@ export interface WireChartOptions {
     readonly yScale: AxisScale | null;
     readonly fileName: string | null;
     readonly hears: readonly ChartHeard[];
+    /** The slots the Consumer's Chrome fills with Razor (ADR-0410), as the chart names them; `null` for none. */
+    readonly razorSlots: readonly string[] | null;
 }
 
 /** What `attachChart` and `update` are handed: the parameters, and the definition when the Consumer handed another. */
 export interface WireChart {
+    /** Whether the chart is across Blazor Server's circuit, whose hub closes on a message larger than it takes: read at
+     * the attach. */
+    readonly circuit: boolean;
     readonly options: WireChartOptions;
     /** The definition, sent with the attach and again only when the Consumer hands another. */
     readonly definition?: WireDefinition;
@@ -56,9 +64,17 @@ export interface BlazorChart {
     update(json: string): Promise<void>;
     /** Saves the chart as a file, as the user sees it (`ChartHandle.download`); false while the chart is refused. */
     download(format: ChartFileFormat): Promise<boolean>;
+    /** .NET rendered the contents of the Razor slot `id` for the data numbered `version` in `contents` (ADR-0410). */
+    slotRendered(id: number, version: number, contents: HTMLElement | null): void;
+    /** The call held as `held`, too large for a message of its own, as .NET takes it. */
+    take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the chart and empties its element. */
     dispose(): void;
 }
+
+/** The calls that can carry more than a message holds, and that .NET's `Held` makes: a toolbar's data carry every
+ * category of a category axis. */
+const heldChartCalls: ReadonlySet<string> = new Set(['MountSlot', 'UpdateSlot']);
 
 /**
  * Mounts ExChart's Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
@@ -69,8 +85,11 @@ export async function attachChart(root: HTMLElement, dotnet: DotNetHandle, json:
     const init = parsed<WireChart>(json);
     if (init.definition === undefined) throw new Error('Internal: .NET attached a chart without its definition.');
     let generation = generationOf(init);
-    const send = heard(dotnet);
+    const holding = new HeldMessages(init.circuit);
+    const crossing = crossingCalls(dotnet, holding, heldChartCalls);
+    const send = heard(crossing);
     const handlers = chartHandlers(send, () => generation);
+    const slots = chartRazorSlots(crossing);
     const place = new Place<ChartHandle, ChartOptions>(root, (options: ChartOptions) => createChart(root, options));
     // The definition drawn, or none while the chart is refused in its place. It and its generation move only once the
     // chart has drawn it: until then a click is on the definition still drawn (spine rule 6).
@@ -95,7 +114,8 @@ export async function attachChart(root: HTMLElement, dotnet: DotNetHandle, json:
             return;
         }
         const ready = drawing;
-        if (place.draw(() => chartOptions(next.options, ready, handlers), size)) {
+        const chrome = next.options.razorSlots === null ? undefined : chartRazorChrome(slots, next.options.razorSlots);
+        if (place.draw(() => chartOptions(next.options, ready, handlers, chrome), size)) {
             definition = ready;
             generation = drawn;
         } else {
@@ -109,9 +129,15 @@ export async function attachChart(root: HTMLElement, dotnet: DotNetHandle, json:
             const checked = fileFormat(format);
             return place.drawing === undefined ? Promise.resolve(false) : place.drawing.download(checked);
         },
+        slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots.rendered(id, version, contents); },
+        take: (held: number) => holding.take(held),
         dispose: () => {
             send.stop();
+            // The contents go back to their holders before the chart takes its slots away, so the chart's cleanup finds
+            // nothing to ask .NET of.
+            slots.dispose();
             place.destroy();
+            holding.clear();
         },
     });
 }
@@ -388,10 +414,11 @@ function chartHandlers(send: Send, generation: () => number): ChartHandlers {
     });
 }
 
-function chartOptions(wire: WireChartOptions, definition: ChartDefinition, handlers: ChartHandlers): ChartOptions {
+function chartOptions(wire: WireChartOptions, definition: ChartDefinition, handlers: ChartHandlers, chrome: ChartChrome | undefined): ChartOptions {
     const hears = new Set(wire.hears);
     return {
         definition,
+        ...(chrome === undefined ? {} : { chrome }),
         width: wire.width,
         height: wire.height,
         density: wire.density,

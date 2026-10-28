@@ -120,6 +120,11 @@ both cores; what a code cannot say is a function exported from the Consumer's ow
 never evaluated; the family's interpolants and fits cross as what they were made from; any other .NET function
 the chart would call at a position the browser chooses is refused by name.)*
 
+*(2026-10-28, decided with the user, [ADR-0430](./0430-over-the-script-core-a-pointing-scope-is-held-in-the-browser-and-its-csharp-object-only-names-it.md): the
+Consumer keeps ExSheet's C# `PointingScope` for Blazor's ExSheet and ExGrid adapters. For them the Scope
+is the Script Core's, held in the page, and the C# object only names it; a registered grid sends each row
+read as the table's row, and a Scope of Razor and Script components together is refused by name.)*
+
 ### 2. The engines move to TypeScript, re-proved against what Excel already answered
 
 ExSheet.Engine with ExSheet.Xlsx, ExPivot.Engine, ExChart.Engine, ExGrid.Data with ExGrid.Data.Xlsx,

@@ -164,6 +164,16 @@ or unticks the box it draws with no `change` the script hears, which left the bo
 draft (found in review). Filter…'s (Select All) is judged on the draft as it stands, not on the box as
 drawn, so two presses come to the same Items however many renders arrive between them (spine rule 6).
 
+*Note of 2026-10-28, as the PivotTable Fields pane and Show Details were built:* every part of the pivot
+now has a slot (`FieldList`, `DetailsTabs`, `DetailsDialog` beside the seven above). An entry of an Area
+is named by its place (`Entry`, `area:index`), so a press, a drag or a drop is judged against the Areas
+as they were drawn and refused when they have changed since, rather than applied to the entry that now
+stands in that place (spine rule 6); whether an entry can be dragged is set from the pivot's view as it
+stands, not from the drawn one. A field's box, the Defer Layout Update box and a drag between Areas are
+the browser's own events, heard where they happen, and an event inside an anchor is the part placed
+there. The sheet tabs are buttons in a `tablist`, not a tabs component, because the pivot owns which
+sheet is shown and a component that keeps its own active tab would disagree with it for a round trip.
+
 ### 5. A slot's contents arrive a render later, and the grid is settled only once they stand
 
 On the Server host the contents arrive a round trip after the slot. Meanwhile the core already owes the
@@ -195,6 +205,15 @@ empty report's Layout menu's contents arrive is not held, and the Settled Mark h
 the report's next grid. A part a grid mounts before placing it, as a grid's first paint mounts its loading
 indicator, stands in no Input Root yet: its hold takes every grid's mark, and the mark of the grid it comes
 to stand in once that grid is made. This gap stays until the pivot keeps an order of its own beside its grids.
+
+*Note of 2026-10-28, as Show Details' tabs and dialog were built:* the focus the pivot owes to a control
+not yet drawn was let go by the first focus, press or key anywhere in the document, so a key typed as
+Show Details opened, held in the pivot's order until the new tab or the dialog's Close stood, let that
+focus go before the control arrived: the key was then taken on the report the records cover, or on the
+page (Server-host tests of a key at a 150 ms round trip caught both). A key no longer lets owed focus go,
+since a key that moves the keyboard moves focus, and one typed meanwhile is held to be taken where the
+owed control stands. The dialog's frame also takes the keyboard as it opens, when the keyboard was the
+pivot's, so the report it covers, made inert, does not drop it on the page while Close is on its way.
 
 ### 6. Template cells use the same mechanism, and ExGrid takes it first
 

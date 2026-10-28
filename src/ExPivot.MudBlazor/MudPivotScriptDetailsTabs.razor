@@ -1,0 +1,38 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* Show Details' sheet tabs when the Script Core draws the pivot (ADR-0410): at the report's foot under a rule, as
+   MudPivotDetailsTabs stands, a text MudButton per tab in a tab list and a close MudIconButton beside each that closes,
+   each marked with the tab's key for the adapter's script, which selects and closes in the pivot, in the browser.
+   Which sheet is selected and which tab takes the keyboard are the pivot's. Not MudTabs: MudTabs moves its active tab
+   in .NET, a round trip after the press, and by its own rules. *@
+<div class="mud-ex-pivot-tabs mud-ex-pivot-script-tabs" role="tablist" aria-label="@View.Name">
+    @foreach (var tab in View.Tabs)
+    {
+        <span @key="tab.Key" class="mud-ex-pivot-tab-wrapper">
+            <MudButton Variant="Variant.Text" Size="Size.Small" Color="@(tab.Selected ? Color.Primary : Color.Default)"
+                       Class="@(tab.Selected ? "mud-ex-pivot-tab mud-ex-pivot-tab-selected" : "mud-ex-pivot-tab")"
+                       UserAttributes="@(PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Tab, tab.Key, PivotScriptSlotAttributes.Control, tab.Key)
+                           .With("role", "tab").With("aria-selected", tab.Selected ? "true" : "false").With("aria-controls", tab.PanelId))">
+                <span class="mud-ex-pivot-tab-title" title="@tab.Title">@tab.Title</span>
+            </MudButton>
+            @if (tab.CloseLabel is { } close)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mud-ex-pivot-tab-close"
+                               UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.CloseTab, tab.Key).With("aria-label", close).With("title", close)" />
+            }
+        </span>
+    }
+</div>
+
+@code {
+    /// <summary>The sheet tabs' view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotDetailsTabsView View { get; set; } = default!;
+}

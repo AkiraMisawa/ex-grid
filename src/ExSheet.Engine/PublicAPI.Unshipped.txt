@@ -71,6 +71,7 @@ static ExSheet.Engine.SheetWire.ReadRepeatedKey(string! json) -> ExSheet.Engine.
 static ExSheet.Engine.SheetWire.ReadRows(string! json) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>!
 static ExSheet.Engine.SheetWire.Write(ExSheet.Engine.CellFormatChange! change) -> string!
 static ExSheet.Engine.SheetWire.Write(ExSheet.Engine.SheetEdit! edit) -> string!
+static ExSheet.Engine.SheetWire.WriteRow(System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>! row) -> string!
 static ExSheet.Engine.SheetWire.WriteRows(System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> string!
 static ExSheet.Engine.Workbook.Open(ExSheet.Engine.SheetDocument! document) -> ExSheet.Engine.Workbook!
 static ExSheet.Engine.Workbook.Open(ExSheet.Engine.WorkbookDocument! document) -> ExSheet.Engine.Workbook!

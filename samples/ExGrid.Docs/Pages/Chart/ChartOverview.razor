@@ -104,7 +104,21 @@
             <code>Sources</code> in .NET, where they are, as the Razor component reads it: each series is asked for its
             pixels, asked again when the range narrows, and what it answers crosses to the browser as a definition.
         </p>
-        <DocsExample Builtin="typeof(ScriptCoreChart)" Files="@(["Examples/Chart/ChartData.cs"])" />
+        <DocsExample Builtin="typeof(ScriptCoreChart)" Mud="typeof(ScriptCoreChartMud)" Files="@(["Examples/Chart/ChartData.cs"])" />
+        <p>
+            Its <code>Chrome</code> draws the toolbar and the context menu in Razor, as the Razor component's does.
+            <code>MudChartChrome.Default</code> fills both: MudBlazor's components render in your page's tree, under
+            your theme, and the chart places them in the toolbar and in its menu's frame. What a control does runs in
+            the browser, so a command, a range typed in Chart Filters and applied, and the axis switch never wait on
+            the circuit, and a file is saved inside the click that asked for it. The downloads are a button group
+            beside the other commands, and Chart Filters' ends are typed in the axis' own writing, a date as
+            <code>yyyy-MM-dd</code>, or chosen from a list of the categories on a category axis; what the chart cannot
+            read is said under them. A Chrome of your own implements <code>ScriptSlots</code> and the
+            <code>Toolbar(ChartToolbarView)</code> and <code>Menu(ChartMenuView)</code> overloads beside the Razor
+            component's, and marks each control with a <code>ChartScriptSlotAttributes</code> attribute: a command's id,
+            the range's two ends, Apply and the axis switch. It writes no handler for them, and binds no value to the
+            ends: the chart writes the range it holds into them, and reads them as Apply is pressed.
+        </p>
         <p>
             Read through a Chart Source, the chart is Busy until the first answer, keeps what it drew while a narrowed
             range is asked for, and says in its place a spec its sources cannot answer.
@@ -126,7 +140,7 @@
             axis does; and a <code>ZFormat</code> on a mesh, whose slice reads values between its nodes, each of
             which a <code>FormatCode</code> or <code>ZFormatCode</code> replaces. Two Row
             Keys, or two values of a surface axis, that would reach the browser as one value, such as
-            <code>1</code> and <code>1.0m</code>, are refused too. A Chrome and the grid's Chart menu are not
+            <code>1</code> and <code>1.0m</code>, are refused too. The grid's Chart menu and the Chart Dock are not
             carried yet: use <code>ExChart.Components.ExChart</code> for those. A candle's values are written by its
             code, or else as numbers, <code>3.3</code>, and so is every value in its CSV, where the Razor component
             keeps a decimal's <code>3.30</code>.

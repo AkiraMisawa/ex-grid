@@ -5,9 +5,9 @@
 // Sheet raised and handed back opens nothing, that a refusal crosses as data, and that the Consumer's words reach the
 // grid and the Sheet by the Razor component's ids.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { gridCommandIds } from '@ex-grid/core';
+import { createGrid, gridCommandIds, type GridHandle, type GridPointedAt } from '@ex-grid/core';
 import { CellAddress, Culture, SheetDocument, SheetEdit, Workbook, WorkbookDocument } from '@ex-grid/sheet-engine';
-import { inlineBytes, type WireHeld } from '@ex-grid/blazor-shared';
+import { awaitPointingScope, inlineBytes, type WireHeld } from '@ex-grid/blazor-shared';
 import {
     attach, labelIds, wordsOf, type BlazorSheet, type DotNetHandle, type WireAttach, type WireDocuments, type WireOptions, type WireSaved,
 } from '../src/blazor-sheet';
@@ -113,6 +113,16 @@ function press(element: HTMLElement, row: number, column: number): void {
         viewport.dispatchEvent(event);
         if (type === 'mousedown' && !event.defaultPrevented) element.querySelector<HTMLElement>('.ex-scroller')?.focus();
     }
+}
+
+/** A press on a cell of a grid of 100-pixel columns and 24-pixel rows, with no Row Headings. */
+function pressGrid(element: HTMLElement, row: number, column: number, init: MouseEventInit = {}): void {
+    const viewport = element.querySelector<HTMLElement>('.ex-viewport');
+    if (viewport === null) throw new Error('The grid has no viewport.');
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, buttons: 1, ...init });
+    Object.defineProperty(event, 'offsetX', { value: (column * 100) + 10 });
+    Object.defineProperty(event, 'offsetY', { value: (row * 24) + 5 });
+    viewport.dispatchEvent(event);
 }
 
 /** The text a test expects there. */
@@ -457,6 +467,77 @@ describe('messages too large for a circuit (Blazor Server\'s hub limit, ADR-0005
         expect(sheet.undo()).toEqual({ done: true });
         const wasm = mount({ document: workbookJson(['Long', entries]), documentsSent: 1 });
         expect(wasm.sheet.documents()).toHaveProperty('workbook');
+    });
+});
+
+describe('a Pointing Scope named by .NET (ADR-0430)', () => {
+    /** A row of a registered grid as .NET's ExGrid sends it: its own values, and the table's row .NET read of it. */
+    interface Position { readonly id: string; readonly pv: number; readonly table: readonly unknown[] }
+    const positions: readonly Position[] = [
+        { id: 'R-1', pv: 110, table: ['R-1', 110] }, { id: 'R-2', pv: 250, table: ['R-2', 250] }, { id: 'R-3', pv: 75, table: ['R-3', 75] },
+    ];
+    const grids: GridHandle<Position>[] = [];
+    // A member a failed test leaves would stand in the page's next Scope of its name.
+    const leaving: (() => void)[] = [];
+    afterEach(() => {
+        for (const grid of grids.splice(0)) grid.destroy();
+        for (const leave of leaving.splice(0)) leave();
+    });
+
+    it('joins a grid waiting for the Scope to the Sheet that brings it, which writes the key .NET read and tells .NET a refusal', async () => {
+        // The grid's module waits for the Scope before any Sheet of it stands, as a page may render them.
+        const gridElement = document.createElement('div');
+        document.body.append(gridElement);
+        let pointedAt: GridPointedAt<Position> | undefined;
+        leaving.push(awaitPointingScope('scope-1', scope => {
+            pointedAt = scope.registerGrid<Position>('scope-1-1', 'Positions', {}, row => row.table);
+        }));
+        expect(pointedAt).toBeUndefined();
+
+        const { element, sheet, dotnet } = mount({ options: options({ pointingScope: 'scope-1', hears: ['pointingRefused'] }) });
+        if (pointedAt === undefined) throw new Error('The Sheet brought no Scope.');
+        grids.push(createGrid<Position>(gridElement, {
+            columns: [
+                { name: 'Id', type: 'text', value: row => row.id, width: 100 },
+                { name: 'PV', type: 'number', value: row => row.pv, width: 100 },
+            ],
+            rows: positions, rowHeight: 24, viewportHeight: 200, pointedAt,
+        }));
+        expect(sheet.declareLinkedTable('Positions', ['Id', 'PV'], ['Id'])).toEqual({ done: null });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBeNull(); });
+        await vi.waitFor(() => { expect(gridElement.querySelector('[role="row"] [role="gridcell"]')).not.toBeNull(); });
+
+        press(element, 0, 0);
+        key('=');
+        await vi.waitFor(() => { expect(gridElement.classList.contains('ex-pointed-at')).toBe(true); });
+        pressGrid(gridElement, 1, 1);
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        await vi.waitFor(() => { expect(editor?.value).toBe('=XLOOKUP("R-2", Positions[Id], Positions[PV])'); });
+
+        pressGrid(gridElement, 0, 1, { shiftKey: true });
+        await vi.waitFor(() => { expect(dotnet.of('pointingRefused')).toMatchObject([{ reason: 'severalCells' }]); });
+        expect(dotnet.of('pointingRefused')[0]).toHaveProperty('message');
+
+        // The same declaration asked again is the one registered: a grid attached again stands in the Scope once.
+        let again: GridPointedAt<Position> | undefined;
+        leaving.push(awaitPointingScope('scope-1', scope => { again = scope.registerGrid<Position>('scope-1-1', 'Positions', {}, row => row.table); }));
+        expect(again).toBe(pointedAt);
+    });
+
+    it('lets the page\'s Scope go with its last member', () => {
+        let first: GridPointedAt<Position> | undefined;
+        const { sheet } = mount({ options: options({ pointingScope: 'scope-2' }) });
+        const leave = awaitPointingScope('scope-2', scope => { first = scope.registerGrid<Position>('scope-2-1', 'Positions', {}, row => row.table); });
+        leave();
+        sheet.dispose();
+        attached.splice(attached.indexOf(sheet), 1);
+
+        // Every member gone, the name is a new Scope: the declaration is registered afresh in it.
+        mount({ options: options({ pointingScope: 'scope-2' }) });
+        let second: GridPointedAt<Position> | undefined;
+        leaving.push(awaitPointingScope('scope-2', scope => { second = scope.registerGrid<Position>('scope-2-1', 'Positions', {}, row => row.table); }));
+        expect(second).toBeDefined();
+        expect(second).not.toBe(first);
     });
 });
 

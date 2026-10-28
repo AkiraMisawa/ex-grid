@@ -1,3 +1,4 @@
+using System.Globalization;
 using ExGrid.Cells;
 using ExGrid.Selection;
 using ExSheet.Engine;
@@ -38,11 +39,23 @@ namespace ExSheet;
 /// <para>The key column is the table's own: the Scope reads it, and the table's column names, from
 /// the declaration of the Sheet that points (<c>DeclareLinkedTableAsync</c>). A Scope belongs to one
 /// page, on one renderer: it is not shared between users.</para>
+///
+/// <para>The same Scope serves Blazor's components over the Script Core (<c>ExSheet.Script.ExSheet</c>
+/// and <c>ExGrid.Script.ExGrid</c>), given the same way. For them the Scope is held in the browser,
+/// which decides all of the above there, and this object only names it; the function that reads a
+/// row as the table's row is asked as each row crosses to the browser. A Scope holds one kind of
+/// component, the Razor ones or those, and refuses the other kind by name as it joins (ADR-0430).</para>
 /// </summary>
 public sealed class PointingScope
 {
     private readonly List<IPointingSheet> _sheets = [];
     private readonly List<GridMember> _grids = [];
+
+    // The Scope's name in the page, which its members drawn by the Script Core name, and which kind of members it
+    // holds: none yet, the Razor components, which it decides for in C#, or the Script Core's, which the page's Scope
+    // decides for (ADR-0430).
+    private int _declarations;
+    private bool? _inBrowser;
 
     // The Sheet that points now, and the one that pointed last, which hears of a press that
     // arrived after it stopped.
@@ -83,8 +96,9 @@ public sealed class PointingScope
     /// order the columns are declared — what the Consumer pushes for the row
     /// (<c>PushLinkedTableAsync</c>). A pressed cell's key is read from it, so the key written is
     /// the one the table holds. Null is a blank. Asked for a pressed cell's row and, while that
-    /// cell is dashed, for the rows the grid paints, to find the one with its key: it must be cheap
-    /// and must not throw.</param>
+    /// cell is dashed, for the rows the grid paints, to find the one with its key; for a grid drawn by
+    /// the Script Core (ADR-0430), for every row as it crosses to the browser, those read for a copy or
+    /// a find included: it must be cheap and must not throw.</param>
     /// <param name="tableColumns">Which of the table's columns each grid column is, by the grid
     /// column's name (<c>GridColumn.Name</c>), for the grid columns named otherwise than their table
     /// column. A grid column with the same name as its table column needs no entry — named exactly as
@@ -113,18 +127,38 @@ public sealed class PointingScope
                 columns[gridColumn] = tableColumn;
             }
         }
-        var grid = new GridMember<TRow>(this, table, tableRow, columns);
+        _declarations += 1;
+        var grid = new GridMember<TRow>(this, table, tableRow, columns, $"{Id}-{_declarations.ToString(CultureInfo.InvariantCulture)}");
         _grids.Add(grid);
         grid.DeclarePointedAt(_pointing);
         grid.Outline(_linkedColumns);
         return grid.Declaration;
     }
 
-    /// <summary>A Sheet given this Scope joins it.</summary>
+    /// <summary>A Razor Sheet given this Scope joins it.</summary>
+    /// <exception cref="InvalidOperationException">The Scope holds members drawn by the Script Core (ADR-0430).</exception>
     internal void Join(IPointingSheet sheet)
     {
+        Claim(inBrowser: false, "a Razor ExSheet");
         if (!_sheets.Contains(sheet))
             _sheets.Add(sheet);
+    }
+
+    /// <summary>The Scope's name in the page, which every member drawn by the Script Core names (ADR-0430).</summary>
+    internal string Id { get; } = Guid.NewGuid().ToString("N");
+
+    /// <summary>A member of the kind <paramref name="inBrowser"/> says joins: the Scope takes the kind of its first,
+    /// and refuses one of the other kind by name (ADR-0430).</summary>
+    /// <exception cref="InvalidOperationException">The Scope holds members of the other kind.</exception>
+    internal void Claim(bool inBrowser, string member)
+    {
+        if (_inBrowser is { } held && held != inBrowser)
+        {
+            throw new InvalidOperationException(
+                $"This Pointing Scope holds {(held ? "components drawn by the Script Core, whose Scope is held in the browser" : "Razor components, whose Scope decides in C#")}, "
+                + $"and {member} cannot join it: give each kind a Scope of its own, or move every member of the Scope to the same kind (ADR-0430).");
+        }
+        _inBrowser = inBrowser;
     }
 
     /// <summary>A Sheet no longer given this Scope, or disposed, leaves it; if it pointed, no grid is
@@ -549,7 +583,7 @@ public sealed class PointingScope
     {
         private readonly Func<TRow, IReadOnlyList<Value?>> _tableRow;
 
-        public GridMember(PointingScope scope, string table, Func<TRow, IReadOnlyList<Value?>> tableRow, IReadOnlyDictionary<string, string> tableColumns)
+        public GridMember(PointingScope scope, string table, Func<TRow, IReadOnlyList<Value?>> tableRow, IReadOnlyDictionary<string, string> tableColumns, string declaration)
             : base(table, tableColumns)
         {
             _tableRow = tableRow;
@@ -558,7 +592,13 @@ public sealed class PointingScope
                 press.Kind,
                 press.Row is { } row ? () => tableRow(row) : null,
                 press.Column,
-                press.Dragged));
+                press.Dragged))
+            {
+                // A grid drawn by the Script Core joins the Scope in the page, and is sent each row as the table's row.
+                InBrowser = new GridPointedInBrowser<TRow>(
+                    scope.Id, declaration, table, tableColumns, row => SheetWire.WriteRow(tableRow(row)),
+                    inBrowser => scope.Claim(inBrowser, inBrowser ? "a grid drawn by the Script Core" : "a Razor ExGrid")),
+            };
         }
 
         /// <summary>The declaration passed to the grid.</summary>

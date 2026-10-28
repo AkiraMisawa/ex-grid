@@ -1,0 +1,48 @@
+@* Written in each file, not in an _Imports.razor, whose class Razor makes public (ADR-0201); and
+   with global::, as this project's root namespace nests inside ExChart (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExChart.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudChartChrome draws this part, and no Consumer places it. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The chart's context menu under MudBlazor when the Script Core draws the chart (ADR-0281,
+   ADR-0410): MudChartMenu's items, drawn from the view, each run in the browser by the command its
+   attribute names, which closes the menu. The chart's frame around them is the menu. *@
+<div class="mud-ex-chart-menu" role="none">
+    @foreach (var command in View.Commands)
+    {
+        <MudButton Variant="Variant.Text" Size="Size.Small" FullWidth="true" Class="mud-ex-chart-menu-item"
+                   StartIcon="@Chrome.IconFor(command.Id)" Disabled="@(!command.Enabled)" title="@command.Title"
+                   role="menuitem" data-ex-command="@command.Id">@command.Label</MudButton>
+    }
+</div>
+
+@code {
+    private ChartMenuView? _last;
+    private MudChartChrome? _lastChrome;
+    private bool _skip;
+
+    /// <summary>What the Script Core hands the menu.</summary>
+    [Parameter, EditorRequired] public ChartMenuView View { get; set; } = null!;
+
+    /// <summary>The Chrome, for its icons.</summary>
+    [Parameter, EditorRequired] public MudChartChrome Chrome { get; set; } = null!;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        // Another Chrome draws other icons: only the same view under the same Chrome draws the same menu.
+        _skip = Equals(_last, View) && ReferenceEquals(_lastChrome, Chrome);
+        (_last, _lastChrome) = (View, Chrome);
+    }
+
+    // A view equal to the last draws the same menu (ADR-0252).
+    /// <inheritdoc />
+    protected override bool ShouldRender()
+    {
+        var skip = _skip;
+        _skip = false;
+        return !skip;
+    }
+}

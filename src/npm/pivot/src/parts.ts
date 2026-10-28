@@ -22,15 +22,17 @@ export class PartElements {
     readonly #placed = new Map<string, HTMLElement>();
     // What hears an element placed land in its anchor, the first time it does.
     readonly #landing = new Map<HTMLElement, () => void>();
-    // The control the keyboard is owed to, given once it is handed in; any focus moving, press or key meanwhile ends
-    // it, since a press on nothing focusable moves the keyboard to the page without a focus event.
+    // The control the keyboard is owed to, given once it is handed in; any focus moving or press meanwhile ends it,
+    // since a press on nothing focusable moves the keyboard to the page without a focus event. A key does not: one
+    // that moves the keyboard moves focus, and one typed while the control is on its way is held in the pivot's Input
+    // Order on an adapter that holds (ADR-0410 section 5), to be taken where the control stands once it does.
     #owed: string | undefined;
     readonly #listening = new AbortController();
 
     constructor(root: HTMLElement) {
         this.#root = root;
         const settled = (): void => { this.#owed = undefined; };
-        for (const type of ['focusin', 'pointerdown', 'keydown']) {
+        for (const type of ['focusin', 'pointerdown']) {
             root.ownerDocument.addEventListener(type, settled, { capture: true, signal: this.#listening.signal });
         }
     }

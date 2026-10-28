@@ -110,6 +110,23 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
             registration made apart from its Scope stays in it when React makes a memo twice and drops one. Switch the
             Example above to React to run it.
         </p>
+        <p>
+            Blazor's components over the TypeScript core, <code>ExSheet.Script.ExSheet</code> and
+            <code>ExGrid.Script.ExGrid</code>, take the same <code>PointingScope</code>, under the same names: pass the
+            Scope to the Sheet's <code>PointingScope</code> and what <code>RegisterGrid</code> returned to the grid's
+            <code>PointedAt</code>. The Scope is then held in the browser, where both run, so a press is written in
+            the turn it is made, on Blazor Server too, and your function that makes a row the table's row is asked in
+            .NET as each row crosses to the browser. Register each grid once, as the page is made: the grid takes its
+            declaration as it is made, and refuses another later, or one you made yourself with a .NET
+            <code>OnPress</code>. A Scope holds one kind of component, the Razor ones or these, and refuses the other
+            kind by name as it joins. <code>OnLinkedColumnColoursChanged</code> is not carried yet, so outline a grid
+            outside any Scope with the Razor components for now.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCorePointing)"
+                     Files="@(["Examples/Sheet/CostCentre.cs", "Examples/Sheet/CostReport.cs"])">
+            The grid and the sheet of the Example above, drawn by the TypeScript core and put in one
+            <code>PointingScope</code>.
+        </DocsExample>
     </DocsSection>
 
     <DocsSection Title="API">
