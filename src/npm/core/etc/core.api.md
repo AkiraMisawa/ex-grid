@@ -1011,9 +1011,14 @@ export interface GridHandle<Row> {
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
     placeMatch(cell: CellPosition, rowSequenceVersion: number): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
+    readEditText(): string | undefined;
     readView(): GridViewRead;
     refreshSummary(): void;
     returnKeyboard(from?: Element): void;
+    showNewView(rowSequenceVersion: number, place?: {
+        readonly range: SelectionRange;
+        readonly focus: CellPosition;
+    }): void;
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
     takeBackPointedText(): boolean;
     update(options: GridOptions<Row>): void;
