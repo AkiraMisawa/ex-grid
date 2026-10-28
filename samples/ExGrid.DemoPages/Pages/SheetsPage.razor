@@ -1,8 +1,8 @@
 @page "/sheets"
+@implements IDisposable
 @using System.Globalization
-@* global::, for the reasons SheetPage.razor gives. *@
+@* global::, for the reasons SheetPage.razor gives, and ExSheet.Components not imported, for the same. *@
 @using global::ExSheet
-@using global::ExSheet.Components
 @using global::ExSheet.Engine
 @using global::ExGrid.Chrome
 @using global::ExGrid.MudBlazor
@@ -11,7 +11,9 @@
    stylesheet maps the grid's Visual Tokens onto MudBlazor's palette (ADR-0030) — so the browser
    tests that look at a Sheet's paint run under both Chromes (ED-27; DemoChrome). The Chrome is
    ExSheet.MudBlazor's, so each Sheet's Format Cells is a MudDialog of its own (ADR-0071). Without
-   the parameter each Sheet stands on the page as it always did. *@
+   the parameter each Sheet stands on the page as it always did. Each Sheet is drawn by ExSheet.Script.ExSheet and
+   its grid by ExGrid.Script.ExGrid, and both by the Razor components under ?chrome=mud or ?component=razor, for the
+   reasons /sheet gives (ADR-0370 step 2). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -34,20 +36,44 @@
 
 <div class="demo-side-by-side">
     <div id="sheet-left">
-        @OnPaper(@<ExSheet @ref="_leftSheet" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
-                           PointingScope="_leftScope" OnPointingRefused="RefusedLeft" />)
-        <div id="sheet-left-positions">
-            <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
-                    ViewportHeight="200" ViewportWidth="330" PointedAt="_leftPointedAt" />
-        </div>
+        @if (Razor)
+        {
+            @OnPaper(@<ExSheet.Components.ExSheet @ref="_leftSheet" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+                                                  PointingScope="_leftScope" OnPointingRefused="RefusedLeft" />)
+            <div id="sheet-left-positions">
+                <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                        ViewportHeight="200" ViewportWidth="330" PointedAt="_leftPointedAt" />
+            </div>
+        }
+        else
+        {
+            @OnPaper(@<ExSheet.Script.ExSheet @ref="_leftScript" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+                                              PointingScope="_leftScope" OnPointingRefused="RefusedLeft" />)
+            <div id="sheet-left-positions">
+                <ExGrid.Script.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
+                                      ViewportHeight="200" ViewportWidth="330" PointedAt="_leftPointedAt" />
+            </div>
+        }
     </div>
     <div id="sheet-right">
-        @OnPaper(@<ExSheet @ref="_rightSheet" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
-                           PointingScope="_rightScope" OnPointingRefused="RefusedRight" />)
-        <div id="sheet-right-positions">
-            <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
-                    ViewportHeight="200" ViewportWidth="330" PointedAt="_rightPointedAt" />
-        </div>
+        @if (Razor)
+        {
+            @OnPaper(@<ExSheet.Components.ExSheet @ref="_rightSheet" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+                                                  PointingScope="_rightScope" OnPointingRefused="RefusedRight" />)
+            <div id="sheet-right-positions">
+                <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                        ViewportHeight="200" ViewportWidth="330" PointedAt="_rightPointedAt" />
+            </div>
+        }
+        else
+        {
+            @OnPaper(@<ExSheet.Script.ExSheet @ref="_rightScript" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+                                              PointingScope="_rightScope" OnPointingRefused="RefusedRight" />)
+            <div id="sheet-right-positions">
+                <ExGrid.Script.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
+                                      ViewportHeight="200" ViewportWidth="330" PointedAt="_rightPointedAt" />
+            </div>
+        }
     </div>
 </div>
 
@@ -61,6 +87,13 @@
 </p>
 
 @code {
+    /// <summary><c>razor</c> draws the Sheets and their grids with the Razor components, in place of Blazor's
+    /// components over the Script Core.</summary>
+    [SupplyParameterFromQuery(Name = "component")]
+    public string? Component { get; set; }
+
+    private bool Razor => DemoChrome.DrawsRazor(Component, ChromeName);
+
     /// <summary>Which Chrome the Sheets run with (<see cref="DemoChrome"/>); under the Wrapper's,
     /// each stands on a <see cref="MudExGridPaper"/>.</summary>
     [SupplyParameterFromQuery(Name = "chrome")]
@@ -103,8 +136,11 @@
 
     private SheetDocument? _left = Opening("Left", 10);
     private SheetDocument? _right = Opening("Right", 20);
-    private ExSheet? _leftSheet;
-    private ExSheet? _rightSheet;
+    // Each Sheet, as whichever component draws it.
+    private ExSheet.Components.ExSheet? _leftSheet;
+    private ExSheet.Components.ExSheet? _rightSheet;
+    private ExSheet.Script.ExSheet? _leftScript;
+    private ExSheet.Script.ExSheet? _rightScript;
     private string _status = "";
     // One Pointing Scope per side (ADR-0058): a Sheet points only at the grid beneath it, and outlines
     // the columns its Formula reads only there, nothing from the other (ADR-0018).
@@ -143,7 +179,24 @@
             if (sheet is not null)
                 await sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
         }
+        try
+        {
+            foreach (var sheet in new[] { _leftScript, _rightScript })
+            {
+                if (sheet is not null)
+                    await sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
+            }
+        }
+        catch (Exception) when (_gone)
+        {
+            // The page was left while a Script Sheet was told, and the Sheets went with it: nothing is left to tell.
+        }
     }
+
+    // Whether the page has been left: a Script Sheet's call still on its way then finds the Sheet gone.
+    private bool _gone;
+
+    public void Dispose() => _gone = true;
 
     // A position as the table's row, in the declared column order: what the page pushes, and what
     // each Scope reads a pressed row's key from.

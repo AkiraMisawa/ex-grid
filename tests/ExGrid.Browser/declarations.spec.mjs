@@ -994,7 +994,8 @@ const cellEditorPainted = (grid) => grid.evaluate((root) => new Promise((resolve
 for (const chrome of ['builtin', 'mud']) {
     test(`ADR-0021: an edit's request for the Cell Editor, landing after a press into the Formula Bar, leaves the keyboard in the bar, on a 150 ms circuit (${chrome} Chrome)`, async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly has no round trip: the request lands before a press can follow it');
-        await underChrome(page, chrome);
+        // The Razor component, whose edit's request crosses the circuit (CIRCUIT_SHEET's reason).
+        await openSheet(page, chrome, 'razor');
         const grid = sheet(page);
         await pressCell(grid, 'F2');
         await expect(bar(grid)).toHaveValue('');

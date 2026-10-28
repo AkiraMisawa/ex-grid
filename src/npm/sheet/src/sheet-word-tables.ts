@@ -21,6 +21,10 @@ export const englishSheetWordTable: Readonly<Record<SheetWordId, string>> = Obje
     'sheetNotNamed':
         "Nothing was changed: the Workbook holds {0} Sheets, and the command names none. Name the Sheet it acts on.",
     'editIsOpen': `Nothing was changed: a cell is being edited. ${editOpenThenTryAgain}`,
+    'selectionMoved':
+        "Nothing was changed: the selection moved while the change was being made from its active cell. Try again on the selection as it is now.",
+    'focusFormatChanged':
+        "Nothing was changed: the active cell's format changed while the change was being made from it. Try again on the format as it is now.",
     'saveWhileEditing':
         "Nothing was saved: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then save again.",
     'opening': "Opening a file. Press Escape in the Sheet to cancel.",
@@ -308,6 +312,10 @@ export const japaneseSheetWordTable: Readonly<Record<SheetWordId, string>> = Obj
     'sheetNotNamed':
         "何も変更されませんでした: ブックには {0} 枚のシートがあり、コマンドはどのシートも指定していません。対象のシートを指定してください。",
     'editIsOpen': `何も変更されませんでした: セルを編集中です。${japaneseEditOpenThenTryAgain}`,
+    'selectionMoved':
+        "何も変更されませんでした: アクティブ セルから変更を作っている間に選択範囲が移動しました。今の選択範囲でもう一度実行してください。",
+    'focusFormatChanged':
+        "何も変更されませんでした: アクティブ セルから変更を作っている間に、その書式が変わりました。今の書式でもう一度実行してください。",
     'saveWhileEditing':
         "何も保存されませんでした: セルを編集中です。Enter キーで編集を確定するか Esc キーで取り消してから、もう一度保存してください。",
     'opening': "ファイルを開いています。取り消すには、シートで Esc キーを押してください。",

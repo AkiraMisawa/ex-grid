@@ -348,9 +348,11 @@ test('DC-59: with a pinned tint on screen and the page a third of a pixel across
     // The twelfth key answered, and nothing else on its way, before F3's place is read. The last keys'
     // answers each scroll the Sheet a little to keep A14 in view, so on the Server host a place read
     // while they were still landing was a row off by the time of the press, which took F4 (found
-    // here, 3 runs of 6; principle 6).
+    // here, 3 runs of 6; principle 6). Under React the answers are the browser's, but the scroll that
+    // keeps A14 in view is written and repainted after the answer: a place read before then was a row
+    // off there too (CI, 2026-10-28, 1 run). The settled mark waits for both (ADR-0220).
     await expectSpans(grid, '.ex-selection-pinned > .ex-range-single', 0, 'A2', 'A14');
-    await circuitQuiet();
+    await settled(grid);
     await clickCell(grid, 'F3', { modifiers: ['ControlOrMeta'] });
     await expectFocusAt(grid, 'F3');
     await expect(grid.locator('.ex-range-single')).toHaveCount(0);

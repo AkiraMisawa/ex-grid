@@ -13,7 +13,7 @@ import {
 } from '@ex-grid/blazor-shared';
 import { decimalText } from '@ex-grid/data';
 import {
-    createSheet, PointingScope, sheetWords, type GridPointedAt, type PointingRefusal, type SheetChrome, type SheetHandle, type SheetLabel, type SheetOptions,
+    createSheet, PointingScope, sheetWords, type FocusFormatReading, type GridPointedAt, type PointingRefusal, type SheetChrome, type SheetHandle, type SheetLabel, type SheetOptions,
     type SheetToolbarCommand, type SheetToolbarContent, type SheetWordId, type TableRow,
 } from '@ex-grid/sheet';
 import {
@@ -194,6 +194,14 @@ export interface WireDocuments {
     readonly sheet: string | null;
 }
 
+/** The Focus cell's Cell Format, as a {@link BlazorSheet.readFocusFormat} read it. */
+export interface WireFocusFormat {
+    /** The number the set that follows names it by. */
+    readonly reading: number;
+    /** The Cell Format, as `writeCellFormat` writes it. */
+    readonly format: string;
+}
+
 /** An answer as it crosses to .NET: itself, or held (`WireHeld`) when it is too large for a message of its own. */
 export type Crossing<T> = T | WireHeld;
 
@@ -210,6 +218,14 @@ export interface BlazorSheet {
     setCellFormat(change: string): Crossing<WireAnswer>;
     /** A cell's Cell Format as it shows, as `writeCellFormat` writes it. */
     cellFormatAt(sheet: string | null, address: string): Crossing<WireAnswer<string>>;
+    /** The Focus cell's Cell Format as it shows, as `writeCellFormat` writes it, read for a change .NET makes from it,
+     * and numbered for the set that follows; null when nothing is selected (ADR-0100). */
+    readFocusFormat(): Crossing<WireAnswer<WireFocusFormat | null>>;
+    /** Sets a change .NET made from the reading numbered `reading`, which it takes, as `SheetHandle.setCellFormatFrom`
+     * does: refused once what it was read from no longer stands. */
+    setCellFormatFrom(reading: number, change: string): Crossing<WireAnswer>;
+    /** Lets go of the reading numbered `reading`, whose change .NET did not make. */
+    forgetFocusFormat(reading: number): void;
     /** The Linked Tables declared, in the order they were declared. */
     linkedTables(): Crossing<WireLinkedTable[]>;
     declareLinkedTable(name: string, columns: readonly string[], key: readonly string[]): Crossing<WireAnswer<null>>;
@@ -267,6 +283,9 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
     // A command's answer as it crosses: itself, or held when it is too large for a message of its own; .NET takes it
     // before it reads the answer.
     const answer = <T>(value: T): T | WireHeld => held.crossing(value) ?? value;
+    // The Focus readings .NET is making a change from, by number, until it sets the change or lets the reading go.
+    const readings = new Map<number, FocusFormatReading>();
+    let readingNumber = 0;
     // The document the Sheet is handed on every update: the Consumer's, read once, or the one the Sheet raised last,
     // the same object, so handing it back opens nothing.
     let document = init.document === null ? undefined : WorkbookDocument.fromJson(init.document);
@@ -374,6 +393,20 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
             const at = CellAddress.parse(address);
             return writeCellFormat(sheet === null ? made.cellFormatAt(at) : made.cellFormatAt(sheet, at));
         })),
+        readFocusFormat: () => answer(answered(() => {
+            const reading = made.readFocusFormat();
+            if (reading === undefined) return null;
+            readingNumber += 1;
+            readings.set(readingNumber, reading);
+            return { reading: readingNumber, format: writeCellFormat(reading.format) };
+        })),
+        setCellFormatFrom: (reading: number, change: string) => answer(answered(() => {
+            const read = readings.get(reading);
+            if (read === undefined) throw new Error(`Internal: .NET named the Focus reading ${String(reading)}, which the Sheet does not hold.`);
+            readings.delete(reading);
+            return made.setCellFormatFrom(read, readCellFormatChange(change));
+        })),
+        forgetFocusFormat: (reading: number) => { readings.delete(reading); },
         linkedTables: () => answer(made.workbook.linkedTables.map(table => ({
             name: table.name, columns: table.columns, keyColumns: table.keyColumns, isWaiting: table.isWaiting, rowCount: table.rowCount,
         }))),

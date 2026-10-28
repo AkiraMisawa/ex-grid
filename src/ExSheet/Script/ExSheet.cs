@@ -29,8 +29,10 @@ namespace ExSheet.Script;
 /// step holds (ADR-0370 section 11).</para>
 /// <para>Not carried yet, and so not offered: the Sheet Tabs' menu and the find panel of an
 /// <see cref="ISheetChrome"/>,
-/// <c>OnLinkedColumnColoursChanged</c> (ADR-0430 section 3) and <c>SetCellFormatFromFocusAsync</c>. What the Razor component answers at once is asked of the browser here, so
-/// it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>.</para>
+/// and <c>OnLinkedColumnColoursChanged</c> (ADR-0430 section 3). What the Razor component answers at once is asked of
+/// the browser here, so it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>;
+/// and <see cref="SetCellFormatFromFocusAsync"/>, which reads the Focus cell in one round trip and sets its change in
+/// another, refuses a change whose Selection moved between them.</para>
 /// </remarks>
 public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
 {
@@ -1029,11 +1031,81 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     public async Task<bool> SetCellFormatAsync(CellFormatChange change)
     {
-        ArgumentNullException.ThrowIfNull(change);
-        if (change.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
-        if (change.Alignment is { } alignment && !Enum.IsDefined(alignment))
-            throw new ArgumentOutOfRangeException(nameof(change), alignment, "Not an alignment.");
+        Check(change, nameof(change));
         return (await AnswerAsync("setCellFormat", SheetWire.Write(change))).GetBoolean();
+    }
+
+    /// <summary>
+    /// Sets on the Selection a change made from the Focus cell's Cell Format as it shows when the command runs, as a
+    /// toggle key reads it (ADR-0071, ADR-0100): Bold on over a Focus cell that is not bold, off over one that is. It
+    /// widens as Excel's Home tab buttons do, as the Razor component's <c>SetCellFormatFromFocusAsync</c> does. Answers
+    /// false when nothing is selected, and then <paramref name="change"/> is not called.
+    /// </summary>
+    /// <remarks>
+    /// The Focus cell is read from the browser, the change made here, and set in the browser: two round trips, between
+    /// which the user can move the Selection or change the Focus cell's format. The change is then refused, and the
+    /// Sheet's notice says so: set where the Selection now stands, or over a format it was not made from, it would look
+    /// right and be wrong — a toggle would go the other way (ADR-0100, decided 2026-10-28). Inside a
+    /// <see cref="ToolbarButton"/>'s <c>OnClick</c>, which holds the Sheet's Input Order, nothing the user does comes
+    /// between them.
+    /// </remarks>
+    /// <param name="change">The change, made from the Focus cell's Cell Format.</param>
+    /// <exception cref="ArgumentException">The change it makes sets no part of a Cell Format.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The change's alignment is not one.</exception>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="SheetRefusalReason.EditIsOpen"/>), and then
+    /// <paramref name="change"/> is not called; the
+    /// Selection or the Sheet shown moved (<see cref="SheetRefusalReason.SelectionMoved"/>), or the Focus cell's Cell
+    /// Format changed (<see cref="SheetRefusalReason.FocusFormatChanged"/>) after it was read; nothing changed.</exception>
+    public async Task<bool> SetCellFormatFromFocusAsync(Func<CellFormat, CellFormatChange> change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        var read = await AnswerAsync("readFocusFormat");
+        if (read.ValueKind == JsonValueKind.Null)
+            return false;
+        var reading = read.GetProperty("reading").GetInt32();
+        CellFormatChange made;
+        try
+        {
+            made = change(SheetWire.ReadCellFormat(Text(read.GetProperty("format"))));
+            Check(made, nameof(change));
+        }
+        catch
+        {
+            // The reading is let go, and what the change threw is the caller's, as it was thrown.
+            await LetGoOfReadingAsync(reading);
+            throw;
+        }
+        return (await AnswerAsync("setCellFormatFrom", reading, SheetWire.Write(made))).GetBoolean();
+    }
+
+    // A reading whose change was never made, let go of in the browser. Never thrown over what the change threw: once the
+    // component or the circuit is gone, so is the browser's Sheet, and every reading it held with it.
+    private async Task LetGoOfReadingAsync(int reading)
+    {
+        if (_disposed)
+            return;
+        try
+        {
+            var sheet = await ReadyAsync();
+            await sheet.InvokeVoidAsync("forgetFocusFormat", reading);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the Sheet that held the reading with it.
+        }
+        catch (ObjectDisposedException) when (_disposed)
+        {
+            // Disposed while it was let go of: the Sheet let go of every reading as it stopped.
+        }
+    }
+
+    // What both commands that set a change refuse in it, before anything crosses.
+    private static void Check(CellFormatChange change, string parameter)
+    {
+        ArgumentNullException.ThrowIfNull(change, parameter);
+        if (change.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", parameter);
+        if (change.Alignment is { } alignment && !Enum.IsDefined(alignment))
+            throw new ArgumentOutOfRangeException(parameter, alignment, "Not an alignment.");
     }
 
     /// <summary>

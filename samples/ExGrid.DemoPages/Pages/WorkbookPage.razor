@@ -1,13 +1,14 @@
 @page "/workbook"
 @using System.Globalization
-@* global::, for the reasons SheetPage.razor gives. *@
+@* global::, for the reasons SheetPage.razor gives, and ExSheet.Components not imported, for the same. *@
 @using global::ExSheet
-@using global::ExSheet.Components
 @using global::ExSheet.Engine
 @using global::ExGrid.Chrome
 @using global::ExGrid.MudBlazor
 
-@* ?chrome=mud runs the Workbook with ExSheet.MudBlazor's Chrome on the Wrapper's paper, as /sheet does. *@
+@* ?chrome=mud runs the Workbook with ExSheet.MudBlazor's Chrome on the Wrapper's paper, as /sheet does. The
+   Workbook is drawn by ExSheet.Script.ExSheet, and by the Razor component under ?chrome=mud or ?component=razor,
+   for the reasons /sheet gives (ADR-0370 step 2). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -22,12 +23,26 @@
 </p>
 
 <div id="workbook">
-    @OnPaper(@<ExSheet @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+    @if (Razor)
+    {
+        @OnPaper(@<ExSheet.Components.ExSheet @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+    }
+    else
+    {
+        @OnPaper(@<ExSheet.Script.ExSheet @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+    }
 </div>
 
 <p>Shown: <span id="workbook-shown">@_workbook?.Shown</span></p>
 
 @code {
+    /// <summary><c>razor</c> draws the Workbook with the Razor component, in place of Blazor's component over the
+    /// Script Core.</summary>
+    [SupplyParameterFromQuery(Name = "component")]
+    public string? Component { get; set; }
+
+    private bool Razor => DemoChrome.DrawsRazor(Component, ChromeName);
+
     /// <summary>Which Chrome the Workbook runs with (<see cref="DemoChrome"/>).</summary>
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }

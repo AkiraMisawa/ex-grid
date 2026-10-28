@@ -462,6 +462,8 @@ test.describe('/sheet', () => {
     // now wait out (expectPointedAtFor). Here each way is made on purpose, with a round trip.
     test('ADR-0058/DC-54: with a 150 ms round trip, a press on the positions grid still painted pointed at after the text stopped pointing writes nothing, says why, and the keys after it go on', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly paints the end of pointing before a press can land');
+        // The Razor components, whose pointing is painted a round trip after the key (CIRCUIT_SHEET's reason).
+        await openSheet(page, 'builtin', 'razor');
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -487,6 +489,8 @@ test.describe('/sheet', () => {
 
     test('ADR-0058/SH-35: with a 150 ms round trip, a press on the positions grid still painted otherwise after the text began to point is an ordinary press, and the edit stands', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly paints the start of pointing before a press can land');
+        // The Razor components, whose pointing is painted a round trip after the key (CIRCUIT_SHEET's reason).
+        await openSheet(page, 'builtin', 'razor');
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -662,6 +666,8 @@ test.describe('/sheet', () => {
     // press, and the edit stands. On WebAssembly there is no round trip to press within.
     test('ADR-0058/SH-35: with a 150 ms round trip, a press within the round trip after = is an ordinary press, and the edit stands', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly has no round trip: the grid is pointed at before any press can land');
+        // The Razor components, whose pointing is painted a round trip after the key (CIRCUIT_SHEET's reason).
+        await openSheet(page, 'builtin', 'razor');
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
