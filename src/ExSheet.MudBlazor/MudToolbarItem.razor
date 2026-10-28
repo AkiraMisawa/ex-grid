@@ -526,25 +526,9 @@
         }
     }
 
-    private static string? IconOf(ToolbarIcon icon) => icon switch
-    {
-        ToolbarIcon.Bold => Icons.Material.Filled.FormatBold,
-        ToolbarIcon.Italic => Icons.Material.Filled.FormatItalic,
-        ToolbarIcon.Underline => Icons.Material.Filled.FormatUnderlined,
-        ToolbarIcon.Strikethrough => Icons.Material.Filled.StrikethroughS,
-        ToolbarIcon.FontColour => Icons.Material.Filled.FormatColorText,
-        ToolbarIcon.Fill => Icons.Material.Filled.FormatColorFill,
-        ToolbarIcon.Borders => Icons.Material.Filled.BorderBottom,
-        ToolbarIcon.AlignLeft => Icons.Material.Filled.FormatAlignLeft,
-        ToolbarIcon.AlignCenter => Icons.Material.Filled.FormatAlignCenter,
-        ToolbarIcon.AlignRight => Icons.Material.Filled.FormatAlignRight,
-        ToolbarIcon.Percent => Icons.Material.Filled.Percent,
-        ToolbarIcon.FormatCells => Icons.Material.Outlined.TableChart,
-        _ => null,
-    };
+    private static string? IconOf(ToolbarIcon icon) => MudToolbarIcons.IconOf(icon);
 
-    // Material has no picture for the comma style; it shows Excel's.
-    private static string? TextOf(ToolbarIcon icon) => icon == ToolbarIcon.Comma ? "," : null;
+    private static string? TextOf(ToolbarIcon icon) => MudToolbarIcons.TextOf(icon);
 
     // The list's frame inside MudBlazor's popover, which its provider draws in a render of its own:
     // its first OnAfterRender is the moment the browser has the choices on the page. It claims the

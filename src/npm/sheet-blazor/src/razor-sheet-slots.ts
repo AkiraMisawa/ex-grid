@@ -1,0 +1,342 @@
+// ExSheet's own Chrome slots filled with Razor (ADR-0410): the kind of each of the Sheet's slots over the Shared
+// Script's RazorSlotHost, beside the grid's kinds, which the Sheet's grid's slots take. Each kind says what the slot's
+// context crosses to .NET as, and wires the controls the Razor drew from the attributes they carry (section 2): a press
+// runs the context's call in the browser, and a Toolbar Item's list opens, moves and closes here, on the toolbar's
+// requests, as the React hook's does. Nothing a key means waits on the circuit.
+
+import { gridRazorSlotKinds, type HostedSlotKind, type RazorSlotKind } from '@ex-grid/blazor-shared';
+import {
+    toolbarChoiceMovedTo, toolbarChoiceStart, type SheetTabSlotContext, type SheetToolbarItemSlotContext, type SheetToolbarItemView,
+} from '@ex-grid/sheet';
+
+/** The attributes the Razor of a Sheet slot writes on its controls (ADR-0410 section 2), as `SheetScriptSlotAttributes`
+ * names them in .NET. */
+export const sheetSlotAttributes = Object.freeze({
+    /** On a Toolbar Item's button: what a press on it does, `invoke` (a toggle, a button, a split control's face, a
+     * menu's face) or `list` (a menu's face, a split control's arrow, which opens the item's list). */
+    press: 'data-ex-sheet-press',
+    /** On the element that holds a Toolbar Item's choices, drawn whatever the list's state: shown while it is open. */
+    list: 'data-ex-sheet-list',
+    /** On a choice's control: the choice's index in the view's choices, once for every choice. */
+    choice: 'data-ex-sheet-choice',
+});
+
+/** The Sheet's slots a Razor Chrome fills, as the Sheet names them. */
+export type SheetRazorSlotName = 'toolbarItem' | 'sheetTab' | 'sheetTabAdd';
+
+/** What a Toolbar Item's list holds across the renders .NET makes of its contents: whether it is open, the toolbar's
+ * requests answered, and what a press elsewhere closes. */
+interface ItemList {
+    open: boolean;
+    seenOpen: number;
+    seenClose: number;
+    /** The contents as last wired, and what they show. */
+    contents: HTMLElement | undefined;
+    drawn: (() => SheetToolbarItemView) | undefined;
+    /** Stops hearing presses outside the item, while the list is open. */
+    outside: (() => void) | undefined;
+}
+
+const itemLists = new WeakMap<SheetToolbarItemSlotContext, ItemList>();
+
+function listOf(item: SheetToolbarItemSlotContext): ItemList {
+    const known = itemLists.get(item);
+    if (known !== undefined) return known;
+    const made: ItemList = { open: false, seenOpen: 0, seenClose: 0, contents: undefined, drawn: undefined, outside: undefined };
+    itemLists.set(item, made);
+    return made;
+}
+
+/** A Toolbar Item's kind: its view as data, less what the band keeps (the active mark) and what the script answers
+ * (the toolbar's requests); its buttons pressed in the browser, and its list opened, moved and closed there. The
+ * contents take the keyboard, since the list does, so every input waits until they stand. */
+const toolbarItemKind: RazorSlotKind<SheetToolbarItemSlotContext, SheetToolbarItemView> = {
+    takesKeyboard: true,
+    data: item => {
+        const view = item.view();
+        return {
+            json: JSON.stringify({
+                id: item.id, kind: item.kind, name: view.name, tooltip: view.tooltip, icon: crossed(view.icon), text: crossed(view.text),
+                swatch: crossed(view.swatch), moreName: crossed(view.moreName), pressed: view.pressed, disabledReason: crossed(view.disabledReason),
+                choices: view.choices.map(choice => ({
+                    label: choice.label, swatch: crossed(choice.swatch), selected: choice.selected, disabledReason: crossed(choice.disabledReason),
+                })),
+            }),
+            drawn: view,
+            memo: undefined,
+        };
+    },
+    subscribe: (item, again) => {
+        const list = listOf(item);
+        const stop = item.subscribe(() => {
+            answerRequests(item, list);
+            again();
+        });
+        return () => {
+            stop();
+            list.outside?.();
+            list.outside = undefined;
+            list.contents = undefined;
+        };
+    },
+    wire: (contents, item, _answered, drawn) => wireToolbarItem(contents, item, drawn),
+};
+
+/** A Sheet Tab's face: the Sheet's name and whether it is shown, drawn; it takes no keyboard and hears nothing, so
+ * nothing is wired. The Sheet mounts it again whenever either changes. */
+const sheetTabKind: RazorSlotKind<SheetTabSlotContext> = {
+    takesKeyboard: false,
+    data: tab => ({ json: JSON.stringify({ name: tab.name, selected: tab.selected }), drawn: undefined, memo: undefined }),
+    wire: () => () => undefined,
+};
+
+/** The face of the button that adds a Sheet: nothing to send, and nothing to wire. */
+const sheetTabAddKind: RazorSlotKind<undefined> = {
+    takesKeyboard: false,
+    data: () => ({ json: '{}', drawn: undefined, memo: undefined }),
+    wire: () => () => undefined,
+};
+
+// Every slot a Razor Chrome fills has its kind: a name added to SheetRazorSlotName without one does not compile.
+const sheetKindsByName = {
+    toolbarItem: toolbarItemKind, sheetTab: sheetTabKind, sheetTabAdd: sheetTabAddKind,
+} satisfies Record<SheetRazorSlotName, HostedSlotKind>;
+
+/** The kinds of the slots a Razor Chrome fills on a Sheet, by the core's slot names: the Sheet's own, and its grid's. */
+export const sheetRazorSlotKinds: ReadonlyMap<string, HostedSlotKind> = new Map([...gridRazorSlotKinds, ...Object.entries(sheetKindsByName)]);
+
+/** Whether `name` is one of the Sheet's own slots a Razor Chrome fills. */
+export function isSheetRazorSlotName(name: unknown): name is SheetRazorSlotName {
+    return typeof name === 'string' && Object.hasOwn(sheetKindsByName, name);
+}
+
+/** A part of the view as JSON carries it: JSON has no undefined, and .NET reads null as none. */
+function crossed<T>(value: T | undefined): T | null {
+    return value === undefined ? null : value;
+}
+
+/** The elements of the contents marked `attribute`, each with its value. */
+function marked(contents: HTMLElement, attribute: string): [HTMLElement, string][] {
+    const found: [HTMLElement, string][] = [];
+    for (const element of contents.querySelectorAll<HTMLElement>(`[${attribute}]`)) {
+        const value = element.getAttribute(attribute);
+        if (value === null) throw new Error(`Internal: an element found by ${attribute} does not carry it.`);
+        found.push([element, value]);
+    }
+    return found;
+}
+
+/** The list the contents drew, and their choices by index. */
+function listParts(contents: HTMLElement, view: SheetToolbarItemView): { readonly list: HTMLElement | undefined; readonly choices: ReadonlyMap<number, HTMLElement> } {
+    const lists = marked(contents, sheetSlotAttributes.list);
+    if (lists.length > 1) throw new Error(`A Toolbar Item draws ${String(lists.length)} lists: mark the one element holding its choices with ${sheetSlotAttributes.list}.`);
+    const choices = new Map<number, HTMLElement>();
+    for (const [control, value] of marked(contents, sheetSlotAttributes.choice)) {
+        const index = Number(value);
+        if (value === '' || !Number.isSafeInteger(index) || index < 0 || index >= view.choices.length || choices.has(index)) {
+            throw new RangeError(`A Toolbar Item's choice is marked ${sheetSlotAttributes.choice}="${value}": each of its ${String(view.choices.length)} choices is marked once, by its index.`);
+        }
+        choices.set(index, control);
+    }
+    const list = lists[0]?.[0];
+    if (choices.size !== view.choices.length) {
+        throw new Error(`The Toolbar Item ${view.name} draws ${String(choices.size)} of its ${String(view.choices.length)} choices: mark the control of every choice with ${sheetSlotAttributes.choice}.`);
+    }
+    if (choices.size > 0 && list === undefined) throw new Error(`The Toolbar Item ${view.name} draws its choices in no element marked ${sheetSlotAttributes.list}.`);
+    return { list, choices };
+}
+
+/** Keeps the keyboard where it is on a pointer press: on the Sheet, as Excel's ribbon leaves it in the cell. */
+function keepKeyboard(event: Event): void {
+    event.preventDefault();
+}
+
+/** Wires a Toolbar Item's contents as .NET drew them: each button's press, the list's keys and its choices. */
+function wireToolbarItem(contents: HTMLElement, item: SheetToolbarItemSlotContext, drawn: () => SheetToolbarItemView): () => void {
+    const list = listOf(item);
+    list.contents = contents;
+    list.drawn = drawn;
+    const view = drawn();
+    const unwire: (() => void)[] = [];
+    const listen = (element: HTMLElement, type: string, handler: (event: Event) => void): void => {
+        element.addEventListener(type, handler);
+        unwire.push(() => { element.removeEventListener(type, handler); });
+    };
+    for (const [button, value] of marked(contents, sheetSlotAttributes.press)) {
+        if (value !== 'invoke' && value !== 'list') throw new RangeError(`A Toolbar Item's button is marked ${sheetSlotAttributes.press}="${value}": it says invoke or list.`);
+        if (value === 'list' && item.kind !== 'menu' && item.kind !== 'split') throw new Error(`The Toolbar Item ${view.name} has no list for its button marked ${sheetSlotAttributes.press}="list" to open.`);
+        // Out of the Tab order, the toolbar being one Tab stop, and its press taken in the Sheet's order (ADR-0240).
+        button.tabIndex = -1;
+        button.setAttribute('data-ex-claims', 'click');
+        listen(button, 'mousedown', keepKeyboard);
+        listen(button, 'click', value === 'invoke' ? () => { item.invoke(); } : () => {
+            if (list.open) dismiss(item, list);
+            else openList(item, list);
+        });
+    }
+    const { list: holder, choices } = listParts(contents, view);
+    if (holder !== undefined) {
+        holder.setAttribute('role', 'menu');
+        holder.setAttribute('aria-label', view.name);
+        holder.hidden = !list.open;
+        if (list.open) place(contents, holder);
+        listen(holder, 'mousedown', keepKeyboard);
+        listen(holder, 'keydown', event => { if (event instanceof KeyboardEvent) listKey(item, list, event); });
+    }
+    for (const [index, control] of choices) {
+        const choice = view.choices[index];
+        if (choice === undefined) throw new Error(`Internal: the Toolbar Item's choice ${String(index)} has no view.`);
+        control.setAttribute('role', 'menuitemradio');
+        control.setAttribute('aria-checked', String(choice.selected));
+        control.tabIndex = -1;
+        if (choice.disabledReason === undefined) {
+            control.removeAttribute('aria-disabled');
+            // Its click and keys wait their turn behind a commit or an opening (ADR-0240): a disabled one hears no click,
+            // and claims none, which would hold every input behind it.
+            control.setAttribute('data-ex-claims', 'click keydown');
+        } else {
+            control.setAttribute('aria-disabled', 'true');
+            control.removeAttribute('data-ex-claims');
+        }
+        listen(control, 'click', () => {
+            if (drawn().choices[index]?.disabledReason === undefined) choose(item, list, index);
+        });
+    }
+    // A request made before the contents stood is answered on them.
+    answerRequests(item, list);
+    return () => { for (const each of unwire) each(); };
+}
+
+/** The toolbar's requests: one to close reaches the list asked for, or any opened by a press; one to open opens it,
+ * or, where it cannot open, is closed at once choosing nothing. Answered once the contents stand. */
+function answerRequests(item: SheetToolbarItemSlotContext, list: ItemList): void {
+    if (list.contents === undefined) return;
+    const view = item.view();
+    if (view.closeRequest !== list.seenClose) {
+        list.seenOpen = view.openRequest;
+        list.seenClose = view.closeRequest;
+        closeList(list);
+        return;
+    }
+    if (view.openRequest === list.seenOpen) return;
+    list.seenOpen = view.openRequest;
+    openList(item, list);
+}
+
+/** Opens the list, the keyboard on the choice the Focus cell has; an item that cannot open it says so at once. */
+function openList(item: SheetToolbarItemSlotContext, list: ItemList): void {
+    const view = list.drawn?.();
+    const contents = list.contents;
+    if (view === undefined || contents === undefined || item.view().disabledReason !== undefined || view.choices.length === 0) {
+        item.choicesClosed(undefined, false);
+        return;
+    }
+    const { list: holder, choices } = listParts(contents, view);
+    if (holder === undefined) throw new Error('Internal: a Toolbar Item with choices stands with no list.');
+    list.open = true;
+    holder.hidden = false;
+    place(contents, holder);
+    const start = toolbarChoiceStart(view.choices);
+    if (start !== undefined) choices.get(start)?.focus({ preventScroll: true });
+    // A press outside the item closes its list, heard from the opening, so a press made at once after it is heard too;
+    // the page scrolled or resized moves it with its item.
+    if (list.outside === undefined) {
+        const doc = contents.ownerDocument;
+        const win = doc.defaultView;
+        const outside = (event: Event): void => {
+            if (!(event.target instanceof Node) || list.contents?.contains(event.target) !== true) dismiss(item, list);
+        };
+        const moved = (event: Event): void => {
+            const standing = list.contents;
+            const shown = standing === undefined ? undefined : shownList(list);
+            if (standing === undefined || shown === undefined || (event.target instanceof Node && shown.contains(event.target))) return;
+            place(standing, shown);
+        };
+        doc.addEventListener('mousedown', outside, true);
+        doc.addEventListener('touchstart', outside, true);
+        doc.addEventListener('scroll', moved, true);
+        win?.addEventListener('resize', moved);
+        list.outside = () => {
+            doc.removeEventListener('mousedown', outside, true);
+            doc.removeEventListener('touchstart', outside, true);
+            doc.removeEventListener('scroll', moved, true);
+            win?.removeEventListener('resize', moved);
+        };
+    }
+}
+
+/** The list the contents now draw, while it is open. */
+function shownList(list: ItemList): HTMLElement | undefined {
+    const contents = list.contents;
+    const view = list.drawn?.();
+    if (!list.open || contents === undefined || view === undefined) return undefined;
+    return listParts(contents, view).list;
+}
+
+/**
+ * Places the list at its item's foot, fixed, so that the band, which clips what its rows hold, does not cut it, as a
+ * React Wrapper's floating list stands. Read as the list opens, and as the page scrolls or is resized while it is open:
+ * the item's place is the browser's to tell, and nothing on the grid's way to a paint waits for it. An ancestor that
+ * makes itself the frame fixed elements stand in, by a transform, moves the list by its own offset, which is taken off.
+ */
+function place(contents: HTMLElement, holder: HTMLElement): void {
+    const item = contents.getBoundingClientRect();
+    holder.style.position = 'fixed';
+    holder.style.left = `${String(item.left)}px`;
+    holder.style.top = `${String(item.bottom)}px`;
+    const stood = holder.getBoundingClientRect();
+    if (stood.left === item.left && stood.top === item.bottom) return;
+    holder.style.left = `${String((2 * item.left) - stood.left)}px`;
+    holder.style.top = `${String((2 * item.bottom) - stood.top)}px`;
+}
+
+/** Hides the list, telling nothing. */
+function closeList(list: ItemList): void {
+    list.open = false;
+    list.outside?.();
+    list.outside = undefined;
+    const contents = list.contents;
+    const view = list.drawn?.();
+    if (contents === undefined || view === undefined) return;
+    const { list: holder } = listParts(contents, view);
+    if (holder !== undefined) holder.hidden = true;
+}
+
+/** A press elsewhere closes the list; the Sheet hears it only while the list holds the keyboard, which then goes back
+ * to it, and a control pressed outside keeps the keyboard it took. */
+function dismiss(item: SheetToolbarItemSlotContext, list: ItemList): void {
+    const contents = list.contents;
+    const view = list.drawn?.();
+    const holder = contents === undefined || view === undefined ? undefined : listParts(contents, view).list;
+    const held = holder?.contains(holder.ownerDocument.activeElement) === true;
+    if (held) item.choicesClosed(undefined, false);
+    closeList(list);
+}
+
+/** A choice made: handed back while the keyboard is still in the list, which the Sheet takes on, and the list closes. */
+function choose(item: SheetToolbarItemSlotContext, list: ItemList, index: number): void {
+    item.choicesClosed(index, false);
+    closeList(list);
+}
+
+/** The list's keys, the built-in list's: none of them reaches the Sheet. */
+function listKey(item: SheetToolbarItemSlotContext, list: ItemList, event: KeyboardEvent): void {
+    const contents = list.contents;
+    const view = list.drawn?.();
+    if (contents === undefined || view === undefined) return;
+    const { choices } = listParts(contents, view);
+    const active = contents.ownerDocument.activeElement;
+    let at = -1;
+    for (const [index, control] of choices) if (control === active) at = index;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.key === 'Escape') {
+        item.choicesClosed(undefined, true);
+        closeList(list);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+        if (at >= 0 && view.choices[at]?.disabledReason === undefined) choose(item, list, at);
+    } else {
+        const to = toolbarChoiceMovedTo(event.key, at, view.choices);
+        if (to !== undefined) choices.get(to)?.focus({ preventScroll: true });
+    }
+}

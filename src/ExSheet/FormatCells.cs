@@ -275,6 +275,19 @@ public interface ISheetChrome : IGridChrome
     /// ask. Null draws ExSheet's built-in panel.
     /// </summary>
     RenderFragment? SheetFindPanel(SheetFindContext context) => null;
+
+    /// <summary>The Sheet's own slots this Chrome fills with Razor when the Script Core draws the Sheet
+    /// (<c>ExSheet.Script.ExSheet</c>, ADR-0410): each is asked for through its view overload, or through the overload
+    /// above where that one takes data alone. <see cref="SheetScriptSlots.None"/>, the default, leaves every part the
+    /// Script Core's own. The grid's slots are this Chrome's <see cref="IGridChrome.ScriptSlots"/>. Read as the
+    /// Sheet's options are sent: answer the same each time.</summary>
+    SheetScriptSlots SheetScriptSlots => SheetScriptSlots.None;
+
+    /// <summary>A Toolbar Item when the Script Core draws the Sheet (ADR-0410), for a Chrome that names
+    /// <see cref="SheetScriptSlots.ToolbarItem"/>: its buttons and its list marked with
+    /// <see cref="SheetScriptSlotAttributes"/>, and no handler of its own. The list is drawn whatever its state: the
+    /// script shows it while it is open, moves among its choices and closes it.</summary>
+    RenderFragment? ToolbarItem(SheetToolbarItemView view) => null;
 }
 
 /// <summary>

@@ -170,10 +170,17 @@
             (<a href="exsheet/linked-tables">Linked Tables</a> says how). Its <code>Chrome</code> fills the slots of
             the Sheet's grid as <a href="exgrid#a-grid-drawn-in-the-browser">ExGrid's</a> does: a part drawn in Razor,
             such as <code>MudSheetChrome</code>'s Context Menu, is rendered beside the Sheet and moved into its place
-            by the script, so the MudBlazor switch above shows the Sheet in MudBlazor's menu. The find panel stays the
-            Sheet's own, with Within, as it does above under a Chrome that draws none. Not carried yet: the Sheet's
-            own slots of an <code>ISheetChrome</code> (its Toolbar Items, Format Cells, the Sheet Tabs' faces and its
-            find panel), <code>ToolbarContent</code>, <code>OnLinkedColumnColoursChanged</code>
+            by the script, so the MudBlazor switch above shows the Sheet in MudBlazor's menu. An
+            <code>ISheetChrome</code> fills the Sheet's own slots too, each its <code>SheetScriptSlots</code> names: the
+            Toolbar Items, drawn from a <code>SheetToolbarItemView</code> and marked with
+            <code>SheetScriptSlotAttributes</code>, and the Sheet Tabs' faces and the + button's, drawn by the
+            overloads the Sheet above asks. A Toolbar Item's list is drawn whatever its state; the script shows it
+            when its arrow is pressed or the toolbar's keys ask for it, moves among its choices with the arrows,
+            swatches ten across, and makes or drops the choice, all in the browser, so the MudBlazor switch shows
+            MudBlazor's toolbar answering its keys at once on Blazor Server too. The find panel stays the Sheet's
+            own, with Within, as it does above under a Chrome that draws none. Not carried yet: Format Cells, the
+            Sheet Tabs' menu and the find panel of an <code>ISheetChrome</code>, which the Sheet draws itself,
+            <code>ToolbarContent</code>, <code>OnLinkedColumnColoursChanged</code>
             and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
             for those until they arrive. Its engine holds the data of
             five cultures, en-US, en-GB, de-DE, ja-JP and fr-FR, and the invariant culture: a Sheet under another is

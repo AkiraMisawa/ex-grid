@@ -694,6 +694,21 @@ export type ThemeColourName = 'background1' | 'text1' | 'background2' | 'text2' 
 export const timeTypes: readonly string[];
 
 // @public
+export function toolbarChoiceMovedTo(key: string, at: number, choices: readonly SheetToolbarItemChoice[]): number | undefined;
+
+// @public
+export type ToolbarChoiceRow = number | readonly number[];
+
+// @public
+export function toolbarChoiceRows(choices: readonly SheetToolbarItemChoice[]): readonly ToolbarChoiceRow[];
+
+// @public
+export function toolbarChoiceStart(choices: readonly SheetToolbarItemChoice[]): number | undefined;
+
+// @public
+export const toolbarSwatchesAcross = 10;
+
+// @public
 export function widensAsAHomeTabButtonDoes(change: CellFormatChange): boolean;
 
 // @public

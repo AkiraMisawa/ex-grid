@@ -3,8 +3,9 @@
 @using ExGrid.Data
 @using ExGrid.Summarizing
 
-@* MudSheetChrome draws the Context Menu with MudBlazor's components inside the grid the browser draws: a right click
-   on a cell opens it. The find panel stays the Sheet's own, with Within. *@
+@* MudSheetChrome draws the Sheet Toolbar's items, the Sheet Tabs' faces and the Context Menu with MudBlazor's
+   components inside the Sheet the browser draws: a right click on a cell opens the menu, and the toolbar's lists open
+   from its arrows or its keys. The find panel stays the Sheet's own, with Within. *@
 <MudStack Row Spacing="1" Class="mb-2">
     <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="UndoAsync">Undo</MudButton>
     <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ThreeMoreTaxisAsync">Three more taxis</MudButton>
@@ -14,7 +15,7 @@
 </MudStack>
 
 <ExSheet.Script.ExSheet @ref="_sheet" @bind-Document="_document" OnSelectionSummaryChanged="Summarised"
-                        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" Chrome="MudSheetChrome.Default" />
+                        ViewportHeight="330" ViewportWidth="ViewportSize.Stretch" ShowToolbar="true" Chrome="MudSheetChrome.Default" />
 
 @* Never empty, so the line is there before the first answer and the Sheet does not move under the pointer. *@
 <MudText Class="mt-3" role="status">The document holds @_document.Cells.Count cells.@_selected @_undone</MudText>
