@@ -137,22 +137,28 @@ describe('the keys that toggle a control in a Razor slot', () => {
 });
 
 describe('the options over a product being made', () => {
-    it('ADR-0410 section 5: a hold taken while the product is made holds it once it stands, before the task ends; ordering or handing the keyboard back then is a defect', async () => {
+    it('ADR-0410 section 5: a hold or an order taken while the product is made holds it once it stands, before the task ends; handing the keyboard back then is a defect', async () => {
         const made: { product: SlotHostProduct | undefined } = { product: undefined };
         const options = slotHostOptionsOf(() => made.product, 'grid');
         const slot = document.createElement('div');
         let held = 0;
         const released: string[] = [];
+        const ordered: Promise<void>[] = [];
         const release = options.hold?.(slot);
-        expect(() => { options.order?.(Promise.resolve(), slot); }).toThrow('Internal: a Razor slot that takes the keyboard was mounted while the grid was being made.');
+        const until = Promise.resolve();
+        options.order?.(until, slot);
         expect(() => { options.keyboardBack?.(slot); }).toThrow('Internal: a Razor slot held the keyboard while the grid was being made.');
         made.product = {
             holdSettled: () => { held += 1; return () => { released.push('held'); }; },
-            inOrder: () => Promise.resolve(),
+            inOrder: handling => {
+                const handled = Promise.resolve(handling());
+                ordered.push(handled);
+                return handled;
+            },
             focus: () => undefined,
         };
         await Promise.resolve();
-        expect(held).toBe(1);
+        expect([held, ordered.length]).toEqual([1, 1]);
         release?.();
         expect(released).toEqual(['held']);
 

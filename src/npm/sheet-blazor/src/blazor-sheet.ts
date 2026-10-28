@@ -8,8 +8,8 @@ import {
     type ViewportSize,
 } from '@ex-grid/core';
 import {
-    crossingCalls, gridRazorSlotKinds, HeldMessages, holdPointingScope, isGridRazorSlotName, RazorSlotHost, slotHostOptionsOf, type GridRazorSlotName,
-    type PagePointingScope, type WireHeld,
+    crossingCalls, HeldMessages, holdPointingScope, isGridRazorSlotName, RazorSlotHost, slotHostOptionsOf, type GridRazorSlotName, type PagePointingScope,
+    type WireHeld,
 } from '@ex-grid/blazor-shared';
 import { decimalText } from '@ex-grid/data';
 import {
@@ -21,6 +21,7 @@ import {
     WorkbookDocument, writeCellFormat, writeLinkedRows, writeRepeatedKey, type SheetDay, type SheetMoment, type SheetRefusal, type Value,
     type Workbook,
 } from '@ex-grid/sheet-engine';
+import { isSheetRazorSlotName, sheetRazorSlotKinds, type SheetRazorSlotName } from './razor-sheet-slots';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. Whether an edit is open is
  * always heard, since the component answers `IsEditing`. */
@@ -79,9 +80,9 @@ export interface WireOptions {
     readonly seed?: string;
     /** The Pointing Scope's name in the page, where the Sheet joins it (ADR-0430). */
     readonly pointingScope?: string;
-    /** The grid's slots the Consumer's Chrome fills with Razor (ADR-0410), never the find panel, which is the Sheet's
-     * own, with Within (ADR-0332 §5). */
-    readonly razorSlots?: readonly GridRazorSlotName[];
+    /** The slots the Consumer's Chrome fills with Razor (ADR-0410): the grid's, never the find panel, which is the
+     * Sheet's own, with Within (ADR-0332 §5), and the Sheet's own. */
+    readonly razorSlots?: readonly (GridRazorSlotName | SheetRazorSlotName)[];
     readonly hears: readonly HeardKind[];
 }
 
@@ -263,16 +264,16 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
         }
         return inScope?.scope.pointing;
     };
-    // The grid's slots the Chrome fills with Razor (ADR-0410). A slot the grid mounts as the Sheet is made holds its
-    // Settled Mark once there is a Sheet to hold, before the task ends.
+    // The slots the Chrome fills with Razor (ADR-0410), the grid's and the Sheet's. A slot mounted as the Sheet is made
+    // holds its Settled Mark once there is a Sheet to hold, before the task ends.
     const making: { sheet?: SheetHandle } = {};
-    const slots = new RazorSlotHost(dotnet, gridRazorSlotKinds, slotHostOptionsOf(() => making.sheet, 'Sheet'));
+    const slots = new RazorSlotHost(dotnet, sheetRazorSlotKinds, slotHostOptionsOf(() => making.sheet, 'Sheet'));
     const chromeOf = (wire: WireOptions): SheetChrome | undefined => {
         const names = wire.razorSlots;
         if (names === undefined || names.length === 0) return undefined;
         for (const name of names) {
             // The find panel is the Sheet's own, which a grid's panel would replace (ADR-0332 §5): .NET never names it.
-            if (!isGridRazorSlotName(name) || name === 'findPanel') throw new TypeError(`Internal: .NET named '${name}' as a slot its Chrome fills.`);
+            if (!(isGridRazorSlotName(name) || isSheetRazorSlotName(name)) || name === 'findPanel') throw new TypeError(`Internal: .NET named '${name}' as a slot its Chrome fills.`);
         }
         return slots.mounts(names);
     };

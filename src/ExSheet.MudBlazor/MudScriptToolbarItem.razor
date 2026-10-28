@@ -1,0 +1,123 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExSheet.MudBlazor, so a plain "MudBlazor" here is this
+   namespace, not MudBlazor's, and every product using is written with global:: (the name
+   collisions in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using global::MudBlazor
+@using global::ExSheet
+@* Not the contract (ADR-0201): MudSheetChrome draws each Toolbar Item over the Script Core with this,
+   and no Consumer places it. It is public only because Razor makes every component public, is hidden
+   from a Consumer's editor, and may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@*
+    A Toolbar Item when the Script Core draws the Sheet (ADR-0100, ADR-0410): MudToolbarItem's controls,
+    drawn from the item's view and marked for the adapter's script (SheetScriptSlotAttributes), with no
+    handler of their own. The script presses the item, opens, moves among and closes the list, and keeps
+    the keyboard on the Sheet as a button is pressed, all in the browser, so nothing a key means waits on
+    the circuit. The list is drawn whatever its state, inside the item; the script shows it while it is
+    open, fixed at the item's foot, so that the band, which clips what its rows hold, does not cut it.
+    Tooltips are the controls' titles, which need nothing from .NET.
+*@
+<span class="mud-ex-sheet-toolbar-item mud-ex-sheet-script-toolbar-item">
+    @switch (View.Kind)
+    {
+        case ToolbarItemKind.Toggle:
+            <MudIconButton Icon="@MudToolbarIcons.IconOf(View.Icon)" Size="Size.Small" Disabled="!View.Enabled"
+                           Color="@(View.Pressed ? Color.Primary : Color.Default)" title="@Title" aria-label="@View.Name"
+                           aria-pressed="@(View.Pressed ? "true" : "false")" data-ex-sheet-press="invoke" />
+            break;
+        case ToolbarItemKind.Menu:
+            <MudButton Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowDropDown" Disabled="!View.Enabled"
+                       title="@Title" aria-label="@View.Name" aria-haspopup="menu" data-ex-sheet-press="list"
+                       Class="mud-ex-sheet-toolbar-menu">@(View.Text ?? View.Name)</MudButton>
+            @List
+            break;
+        case ToolbarItemKind.Split:
+            <span class="mud-ex-sheet-toolbar-split" role="group" aria-label="@View.Name">
+                <MudIconButton Icon="@MudToolbarIcons.IconOf(View.Icon)" Size="Size.Small" Disabled="!View.Enabled" title="@Title"
+                               aria-label="@View.Name" Style="@SwatchStyle" Class="mud-ex-sheet-toolbar-face" data-ex-sheet-press="invoke" />
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" Disabled="!View.Enabled"
+                               aria-label="@(View.MoreName ?? View.Name)" aria-haspopup="menu" Class="mud-ex-sheet-toolbar-arrow"
+                               data-ex-sheet-press="list" />
+            </span>
+            @List
+            break;
+        default:
+            @if (MudToolbarIcons.IconOf(View.Icon) is { } icon)
+            {
+                <MudIconButton Icon="@icon" Size="Size.Small" Disabled="!View.Enabled" title="@Title" aria-label="@View.Name"
+                               data-ex-sheet-press="invoke" />
+            }
+            else
+            {
+                <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!View.Enabled" title="@Title" aria-label="@View.Name"
+                           data-ex-sheet-press="invoke">@(View.Text ?? MudToolbarIcons.TextOf(View.Icon) ?? View.Name)</MudButton>
+            }
+            break;
+    }
+</span>
+
+@code {
+    /// <summary>The item, as the Script Core describes it.</summary>
+    [Parameter, EditorRequired] public SheetToolbarItemView View { get; set; } = default!;
+
+    // The tooltip, with why the item cannot be pressed while it cannot.
+    private string Title => View.DisabledReason is { } reason ? $"{View.Tooltip}: {reason}" : View.Tooltip;
+
+    // A colour control's face is underlined in the colour it applies, as Excel's is. The colour is the user's
+    // choice, document data painted as recorded (ADR-0071).
+    private string? SwatchStyle => View.Swatch is { } colour ? $"border-bottom: 3px solid {colour}; border-radius: 0" : null;
+
+    // The view drawn last: a slot's view is a new one whenever the Sheet changes what it shows, and the same one on
+    // every other render of the Sheet, which would otherwise redraw every item and every palette (ADR-0003).
+    private SheetToolbarItemView? _drawn;
+
+    protected override bool ShouldRender() => !ReferenceEquals(_drawn, View);
+
+    protected override void OnAfterRender(bool firstRender) => _drawn = View;
+
+    // The list, in the Sheet's order and in the rows its keys walk: each choice that is no colour on a row of its
+    // own, and each run of colours on one row. A lone colour stands in a run of its own.
+    private RenderFragment? List => View.Choices.Count == 0 ? null : __builder =>
+    {
+        <MudPaper Elevation="8" Class="mud-ex-sheet-script-toolbar-list" data-ex-sheet-list="">
+            @foreach (var row in View.Rows)
+            {
+                if (row is [var only] && View.Choices[only].Swatch is null)
+                {
+                    var choice = View.Choices[only];
+                    <div class="@ChoiceClass(choice)" data-ex-sheet-choice="@only" title="@ChoiceTitle(choice)">
+                        <MudText Typo="Typo.body2" Style="@(choice.Selected ? "font-weight: 600" : null)">@choice.Label</MudText>
+                        @if (choice.DisabledReason is { } reason)
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-ex-sheet-choice-reason">@reason</MudText>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="mud-ex-sheet-script-swatches" role="group">
+                        @foreach (var at in row)
+                        {
+                            var swatch = View.Choices[at];
+                            <button type="button" class="@SwatchClass(swatch)" title="@ChoiceTitle(swatch)" aria-label="@swatch.Label"
+                                    style="background-color: @swatch.Swatch" data-ex-sheet-choice="@at"></button>
+                        }
+                    </div>
+                }
+            }
+        </MudPaper>
+    };
+
+    private static string ChoiceClass(SheetToolbarChoiceView choice)
+        => choice.DisabledReason is null ? "mud-ex-sheet-script-choice" : "mud-ex-sheet-script-choice mud-ex-sheet-script-choice-disabled";
+
+    private static string SwatchClass(SheetToolbarChoiceView swatch)
+        => "mud-ex-sheet-swatch"
+           + (swatch.Selected ? " mud-ex-sheet-swatch-selected" : "")
+           + (swatch.DisabledReason is null ? "" : " mud-ex-sheet-script-swatch-disabled");
+
+    // A choice's label, with why it cannot be made while it cannot.
+    private static string ChoiceTitle(SheetToolbarChoiceView choice)
+        => choice.DisabledReason is { } why ? $"{choice.Label}: {why}" : choice.Label;
+}

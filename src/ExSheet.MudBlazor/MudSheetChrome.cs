@@ -110,6 +110,27 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <see cref="ScriptSlots"/> leaves the slot to it (ADR-0410 section 4's note of 2026-10-28).</summary>
     public RenderFragment? FindPanel(GridFindView view) => null;
 
+    /// <summary>The Sheet's own slots this Chrome fills over the Script Core (ADR-0410): the Toolbar Items, and the
+    /// Sheet Tabs' faces and the + button's, drawn as they are over the C# core.</summary>
+    public SheetScriptSlots SheetScriptSlots => SheetScriptSlots.ToolbarItem | SheetScriptSlots.SheetTab | SheetScriptSlots.SheetTabAdd;
+
+    /// <summary>
+    /// A Toolbar Item over the Script Core (ADR-0100, ADR-0410), in the MudBlazor controls <see cref="ToolbarItem(ToolbarItemContext)"/>
+    /// draws: a toggle as a <c>MudIconButton</c> in the palette's primary while it is pressed, a menu as a
+    /// <c>MudButton</c>, a split control as a <c>MudIconButton</c> beside its arrow, and a list as a <c>MudPaper</c> of
+    /// choices, colours as Excel's palette ten across. Each control is marked for the script, which wires it.
+    /// </summary>
+    public RenderFragment? ToolbarItem(SheetToolbarItemView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenComponent<MudScriptToolbarItem>(0);
+            builder.AddComponentParameter(1, nameof(MudScriptToolbarItem.View), view);
+            builder.CloseComponent();
+        };
+    }
+
     /// <summary>The Formula Bar's Name Box: <see cref="Grid"/>'s.</summary>
     public RenderFragment? NameBox(NameBoxContext context) => GridSeams.NameBox(context);
 
