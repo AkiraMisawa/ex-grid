@@ -15,7 +15,7 @@ import type { CellPosition } from '../src/selection/cell';
 import type { GridSelection } from '../src/selection/selection';
 import type { GridPage } from '../src/source/fetching-source';
 import { GridSource } from '../src/source/grid-source';
-import { mount, painted, q, trades, type Trade } from './grid-harness';
+import { mount, painted, q, scrollTo, trades, type Trade } from './grid-harness';
 
 // Book and Notional edit; the Desk does not. Notional's verdict rejects what is not a number and flags a
 // negative one, as the Features page's does.
@@ -681,6 +681,39 @@ describe('an edit under rows and columns that move', () => {
         key('Enter');
         await painted();
         expect([hasEditor(root), listener.discards, listener.edits.length]).toEqual([false, ['columnNoLongerEditable'], 0]);
+    });
+
+    /** A grid over a fetching source answered at once, scrolled far enough that its Window leaves the first rows. */
+    async function scrolledAway(open: (root: HTMLElement) => void): Promise<{ readonly root: HTMLElement; readonly listener: ReturnType<typeof heard> }> {
+        const all = trades(1000);
+        const source = GridSource.fetch<Trade>(({ range }) => Promise.resolve({ rows: all.slice(range.start, range.start + range.count), start: range.start, totalCount: 1000 }), { readAheadRows: 0 });
+        const listener = heard();
+        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        await settle();
+        press(root, book, rowY(2));
+        await painted();
+        open(root);
+        await painted();
+        await scrollTo(root, 20_000);
+        // The fling lands, the rows it landed on are asked for, and the answer comes in.
+        told.clock.advance(150);
+        await painted();
+        await settle();
+        await painted();
+        return { root, listener };
+    }
+
+    it('ST-2 (ADR-0007): an edit opened with F2 and not typed into closes when the Window leaves its row, and the keyboard comes back', async () => {
+        const { root, listener } = await scrolledAway(() => { key('F2'); });
+        expect([hasEditor(root), document.activeElement === keyField(root), listener.editing, listener.edits.length]).toEqual([false, true, [true, false], 0]);
+    });
+
+    it('ST-2 (ADR-0007): an edit with typing in it stays when the Window leaves its row (ADR-0142)', async () => {
+        const typed = await scrolledAway(() => { key('W'); });
+        expect([hasEditor(typed.root), typed.listener.editing]).toEqual([true, [true]]);
+        const added = await scrolledAway(root => { key('F2'); type(root, '9'); });
+        expect([editor(added.root).value, added.listener.editing]).toEqual(['Book-29', [true]]);
     });
 });
 

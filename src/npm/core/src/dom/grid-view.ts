@@ -1132,6 +1132,9 @@ interface OpenEdit<Row> {
     error: string | undefined;
     /** Where the text is typed: the Cell Editor over the cell, or the Formula Bar, its second surface (ADR-0051). */
     surface: 'cell' | 'bar';
+    /** The committed text it opened on, where it opened on the cell's own text, by F2, a double click or a press into
+     * the Formula Bar; none where a typed character opened it, which is never untyped (ADR-0007's note of 2026-10-11). */
+    readonly untypedText: string | undefined;
 }
 
 // A press handed over whose button is still down (ADR-0058): where it was, on a header or not, and where the pointer
@@ -4394,7 +4397,8 @@ export class GridView<Row> {
         const focus = defined(selection.focus, 'the Focus of a Selection that is not empty');
         if (!this.#isEditableCell(focus)) return false;
         this.#apply(selection);
-        this.#startEdit(focus, mode, typed ?? this.#openingTextAt(focus));
+        if (typed === undefined) this.#startEdit(focus, mode, this.#openingTextAt(focus), 'cell', true);
+        else this.#startEdit(focus, mode, typed);
         return true;
     }
 
@@ -4411,7 +4415,7 @@ export class GridView<Row> {
         return true;
     }
 
-    #startEdit(at: CellPosition, mode: OpenEdit<Row>['mode'], text: string, surface: OpenEdit<Row>['surface'] = 'cell'): void {
+    #startEdit(at: CellPosition, mode: OpenEdit<Row>['mode'], text: string, surface: OpenEdit<Row>['surface'] = 'cell', onOwnText = false): void {
         // An edit opening ends the Copied Range, as an edit ends Excel's copy mode (ADR-0170), and a flagged cell's
         // message, which the editor's own outranks from here on (ADR-0034).
         this.#copied = undefined;
@@ -4467,7 +4471,7 @@ export class GridView<Row> {
             cell: at, mode, element, slot, source: this.#source, columnNames: this.#columnNames, sequence: this.#sequence(),
             key: rowKey === undefined ? undefined : keyOf(rowKey, held.row, 'The row an edit opens on'),
             seenText: this.#paintedTextAt(at), openedOn: held.row, error: undefined,
-            awaits: this.#userWritesOver(at), rebaseOwed: false, surface,
+            awaits: this.#userWritesOver(at), rebaseOwed: false, surface, untypedText: onOwnText ? text : undefined,
         };
         this.#edit = opened;
         // The editor takes the keyboard in the task that opened it, with the caret placed by the core at the end
@@ -5449,7 +5453,28 @@ export class GridView<Row> {
                 if (focus === undefined || !sameCell(focus, edit.cell)) this.#apply(Selection.empty.click(edit.cell, this.#extent));
             }
         }
+        // An editor whose text is still the committed value it opened on holds a copy of committed data, not typing:
+        // once the Window no longer holds its row it closes as Escape closes it, its field saying it still holds that
+        // text and is not composing (ST-2, ADR-0007's note of 2026-10-11). One with typed text stays (ADR-0142).
+        if (!answering && !this.#editedRowInWindow(edit) && this.#untouched(edit)) {
+            this.#endEdit(undefined);
+            return;
+        }
         if (edit.rebaseOwed) this.#rebaseEdit(edit);
+    }
+
+    // Whether the Window holds the row the editor opened on: with a Row Key, the row under its key, wherever it stands
+    // now; without one, the row at the editor's position while the order it opened under holds (ADR-0011, ADR-0142).
+    #editedRowInWindow(edit: OpenEdit<Row>): boolean {
+        if (edit.key !== undefined) return this.#positionOfKey(edit.key, edit.cell.row) !== undefined;
+        return this.#sequence() === edit.sequence && this.#rowAt(edit.cell.row) !== undefined;
+    }
+
+    // Whether the field the edit is typed in still holds the committed text it opened on and is not composing.
+    #untouched(edit: OpenEdit<Row>): boolean {
+        if (edit.untypedText === undefined) return false;
+        const field = this.#surfaceOf(edit);
+        return field !== undefined && this.#composingIn !== field && field.value === edit.untypedText;
     }
 
     // Holds the editor (ADR-0034, ADR-0142): the typing stays, the keyboard stays in it, and the Consumer's
@@ -6637,7 +6662,7 @@ export class GridView<Row> {
         if (this.#discardedAim()) return;
         const focus = this.#held.selection.focus;
         if (focus === undefined || !this.#isEditableCell(focus) || !this.#bar.editable) return;
-        this.#startEdit(focus, 'caret', this.#openingTextAt(focus), 'bar');
+        this.#startEdit(focus, 'caret', this.#openingTextAt(focus), 'bar', true);
     };
 
     // Typed in the bar: the one uncommitted text, shown over the cell as well (ADR-0051).
@@ -8644,7 +8669,7 @@ export class GridView<Row> {
         this.#invalidate();
         if (this.#isEditableCell(at)) {
             this.#apply(this.#held.selection.click(at, this.#extent));
-            this.#startEdit(at, 'caret', this.#openingTextAt(at));
+            this.#startEdit(at, 'caret', this.#openingTextAt(at), 'cell', true);
             return;
         }
         this.#onCellDoubleClick?.(at);
