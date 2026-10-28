@@ -11,6 +11,7 @@ import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
 import { cell } from '../src/selection/cell';
 import { selectionRange } from '../src/selection/range';
+import { editorFieldAttribute, wireCellEditor } from '../src/dom/slot-wiring';
 import { mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
 
 afterEach(unmountAll);
@@ -217,5 +218,56 @@ describe('the Cell Editor\'s slot', () => {
         await painted();
         expect(() => { key('1'); }).toThrow('takeFocus is handed the field chrome.cellEditor drew, or an element holding it, inside the slot.');
         expect(root.querySelector('.ex-editor')).toBeNull();
+    });
+});
+
+/** A grid whose editor's contents are drawn by the test, as a Blazor adapter's arrive later than their slot: the editor
+ * is opened on the Book of the first row by typing `a`. */
+async function editorDrawnLater(edits: GridEditIntent<Trade>[] = []): Promise<{ readonly root: HTMLElement; readonly slot: HTMLElement; readonly context: GridCellEditorSlotContext }> {
+    let opened: { readonly slot: HTMLElement; readonly context: GridCellEditorSlotContext } | undefined;
+    const { root, view } = mount<Trade>({
+        columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, onEdit: intent => { edits.push(intent); },
+        chrome: { cellEditor: (slot, context) => { opened = { slot, context }; return () => undefined; } },
+    });
+    expect(view.placeSelection(selectionRange(0, 0, 1, 1), cell(0, 0), view.readView().rowSequenceVersion)).toBe(true);
+    root.focus();
+    await painted();
+    key('a');
+    return { root, ...defined(opened, 'the editor opened') };
+}
+
+/** Draws a field of `tag` marked for {@link wireCellEditor} in `slot`, in place of what stood there, and wires it. */
+function drawMarked<Tag extends 'input' | 'textarea'>(slot: HTMLElement, context: GridCellEditorSlotContext, tag: Tag, answered: boolean): HTMLElementTagNameMap[Tag] {
+    const marked = document.createElement(tag);
+    marked.defaultValue = context.initialText;
+    marked.setAttribute(editorFieldAttribute, '');
+    slot.replaceChildren(marked);
+    wireCellEditor(slot, context, answered);
+    return marked;
+}
+
+describe('the Cell Editor\'s contents wired from their attribute', () => {
+    it('ADR-0410 section 2: the marked field is handed to the core and takes the keyboard once; one drawn anew is handed the text and keeps it', async () => {
+        const edits: GridEditIntent<Trade>[] = [];
+        const { slot, context } = await editorDrawnLater(edits);
+        const input = drawMarked(slot, context, 'input', false);
+        expect([document.activeElement, input.value]).toEqual([input, 'a']);
+        typeInto(input, 'b');
+        // Wired again on the same field, as a render that changed only the view is: the keyboard is not asked again, so
+        // the caret stays where the user put it.
+        input.setSelectionRange(0, 0);
+        wireCellEditor(slot, context, true);
+        expect([document.activeElement, input.selectionStart]).toEqual([input, 0]);
+        const area = drawMarked(slot, context, 'textarea', true);
+        expect([document.activeElement, area.value]).toEqual([area, 'ab']);
+        key('Enter');
+        expect(edits.map(intent => intent.value)).toEqual(['ab']);
+    });
+
+    it('ADR-0410 section 2: contents with no marked field, or two, are refused by name', async () => {
+        const { slot, context } = await editorDrawnLater();
+        expect(() => wireCellEditor(slot, context)).toThrow('drew 0 fields marked data-ex-editor-field');
+        for (const _ of [0, 1]) slot.appendChild(document.createElement('input')).setAttribute(editorFieldAttribute, '');
+        expect(() => wireCellEditor(slot, context)).toThrow('drew 2 fields marked data-ex-editor-field');
     });
 });

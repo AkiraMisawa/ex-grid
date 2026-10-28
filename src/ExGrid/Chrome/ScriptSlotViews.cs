@@ -31,6 +31,11 @@ public enum ScriptSlots
     /// <summary>The find panel and its Replace, inside the core's popover and form, through
     /// <see cref="IGridChrome.FindPanel(GridFindView)"/>.</summary>
     FindPanel = 16,
+
+    /// <summary>The Cell Editor's field, inside the box the core stands over the cell, through
+    /// <see cref="IGridChrome.CellEditor(GridCellEditorView)"/>. The core's own editor colours a formula's
+    /// References (ADR-0057); a field a Chrome draws shows its text plain.</summary>
+    CellEditor = 32,
 }
 
 /// <summary>
@@ -101,6 +106,12 @@ public static class ScriptSlotAttributes
     /// press steps or writes. Enter in a field submits the core's form, which steps, backward with Shift, so no
     /// button need be a submit button.</summary>
     public const string FindStep = "data-ex-find-step";
+
+    /// <summary>On the Cell Editor's one text field, an <c>input</c> or a <c>textarea</c>: the script hands it to the
+    /// core, which reads and writes its text, places its caret and gives it the keyboard as the editor opens, in the
+    /// browser. Draw it with <see cref="GridCellEditorView.InitialText"/> as its value and nothing bound after, and
+    /// handle none of its keys: Enter, Tab, Escape, F2 and Overwrite's arrows are the core's.</summary>
+    public const string EditorField = "data-ex-editor-field";
 }
 
 /// <summary>One command of a menu, as the Script Core hands it (ADR-0010, ADR-0036).</summary>
@@ -128,6 +139,21 @@ public sealed record GridMenuView(string Column, ColumnType Type, IReadOnlyList<
 /// <param name="IsLoading">Whether rows are on their way.</param>
 /// <param name="PlaceholderRowCount">How many of the painted rows are Placeholders, which stay the core's.</param>
 public sealed record GridLoadingView(bool IsLoading, int PlaceholderRowCount);
+
+/// <summary>
+/// The Cell Editor when the Script Core draws the grid (ADR-0010, ADR-0410 section 3): data only, drawn again as the
+/// mode, the error or the pending commit changes. The Razor draws one text field marked with
+/// <see cref="ScriptSlotAttributes.EditorField"/>; the core owns the box, the keys and the text.
+/// </summary>
+/// <param name="Column">The <c>Name</c> of the column the cell is in.</param>
+/// <param name="Type">That column's type.</param>
+/// <param name="InitialText">The text the field opens holding: what was typed to open it, or the cell's text. The
+/// field's value as it is first drawn, and never after: what is typed is the core's, a round trip ahead of any view.</param>
+/// <param name="Mode">Overwrite, Caret or Point (ADR-0051).</param>
+/// <param name="Error">The sentence a Reject or a refusal holds the editor with, while one does; null otherwise. The
+/// core has marked the field <c>aria-invalid</c> and described it by the message already.</param>
+/// <param name="IsPending">Whether the commit is pending (ADR-0380 section 3): the core has made the field read only.</param>
+public sealed record GridCellEditorView(string Column, ColumnType Type, string InitialText, CellEditMode Mode, string? Error, bool IsPending);
 
 /// <summary>
 /// A column's filter panel when the Script Core draws the grid (ADR-0009, ADR-0044, ADR-0410 section 3):

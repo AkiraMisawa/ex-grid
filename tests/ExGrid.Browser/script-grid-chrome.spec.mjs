@@ -1,4 +1,5 @@
 import { test, expect, circuitQuiet, settled, setRoundTrip } from './fixtures.mjs';
+import { activeDescendant } from './keyboard.mjs';
 
 // A Chrome written in Razor over the Script Core (ADR-0410), on /script-grid-mud, on both Blazor hosts:
 // ExGrid.MudBlazor's column menu, filter panel and find panel rendered in .NET, moved into the Script Core's slots by
@@ -118,5 +119,26 @@ test('ADR-0410 / ADR-0055: Ctrl+F opens MudBlazor\'s find panel, and a text type
     await expect(field).toHaveClass(/mud-input/);
     await expect(field).toBeFocused();
     await expect(field).toHaveValue(target);
-    await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(new RegExp(`r${found}c0$`));
+    // Read where the grid keeps it: its Keyboard Field's, as Trader is editable (ADR-0080).
+    await expect.poll(() => activeDescendant(grid(page))).toMatch(new RegExp(`r${found}c0$`));
+});
+
+test('ADR-0410 / SRV-7: the Cell Editor is MudBlazor\'s field, and a text typed and entered at machine speed over a slow circuit is what commits', async ({ page }) => {
+    await settled(grid(page));
+    // Typed onto Trader as the editor opens, while its Razor is a round trip from standing on Server: the keys wait for
+    // MudBlazor's field, which the core reads in the browser, so the Enter commits every one of them.
+    await setRoundTrip(150);
+    await cell(page, 2, 1).click({ force: true });
+    await page.keyboard.type('Osei Lee');
+    await page.keyboard.press('Enter');
+    await settled(grid(page));
+    await circuitQuiet();
+    await expect(page.locator('#script-mud-edited')).toHaveText('Edited: Trader = Osei Lee');
+
+    // The field the edit was typed in is MudBlazor's, inside the core's box over the cell.
+    await page.keyboard.press('F2');
+    await settled(grid(page));
+    const field = grid(page).locator('.ex-editor input.mud-ex-editor');
+    await expect(field).toBeFocused();
+    await expect(field).toHaveAttribute('aria-label', 'Trader');
 });

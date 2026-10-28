@@ -19,6 +19,7 @@ internal static class RazorSlot
         (ScriptSlots.LoadingIndicator, "loadingIndicator"),
         (ScriptSlots.FilterPanel, "filterPanel"),
         (ScriptSlots.FindPanel, "findPanel"),
+        (ScriptSlots.CellEditor, "cellEditor"),
     ];
 
     /// <summary>The script's names of the slots <paramref name="slots"/> names, refusing one this adapter does not fill.</summary>
@@ -42,7 +43,8 @@ internal static class RazorSlot
     }
 
     /// <summary>The view the slot the script names <paramref name="slot"/> is drawn from: a <see cref="GridMenuView"/>, a
-    /// <see cref="GridLoadingView"/>, a <see cref="GridFilterView"/> or a <see cref="GridFindView"/>.</summary>
+    /// <see cref="GridLoadingView"/>, a <see cref="GridFilterView"/>, a <see cref="GridFindView"/> or a
+    /// <see cref="GridCellEditorView"/>.</summary>
     internal static object ViewOf(string slot, string context)
     {
         var name = NameOf(slot);
@@ -58,6 +60,19 @@ internal static class RazorSlot
             ScriptSlots.LoadingIndicator => new GridLoadingView(json.GetProperty("loading").GetBoolean(), json.GetProperty("placeholderRows").GetInt32()),
             ScriptSlots.FilterPanel => FilterViewOf(json),
             ScriptSlots.FindPanel => FindViewOf(json),
+            ScriptSlots.CellEditor => new GridCellEditorView(
+                ScriptJson.Text(json, "column"),
+                ScriptJson.Member<ColumnType>(json.GetProperty("columnType")),
+                ScriptJson.Text(json, "initialText"),
+                ScriptJson.Text(json, "mode") switch
+                {
+                    "overwrite" => CellEditMode.Overwrite,
+                    "caret" => CellEditMode.Caret,
+                    "point" => CellEditMode.Point,
+                    var other => throw new InvalidOperationException($"Internal: the script sent '{other}' as the editor's mode."),
+                },
+                json.GetProperty("error") is { ValueKind: JsonValueKind.String } error ? error.GetString() : null,
+                json.GetProperty("pending").GetBoolean()),
             _ => throw new InvalidOperationException($"Internal: a Razor slot named {name}."),
         };
     }
@@ -145,6 +160,7 @@ internal static class RazorSlot
             (ScriptSlots.LoadingIndicator, GridLoadingView loading) => chrome.LoadingIndicator(loading),
             (ScriptSlots.FilterPanel, GridFilterView filter) => chrome.FilterPanel(filter),
             (ScriptSlots.FindPanel, GridFindView find) => chrome.FindPanel(find),
+            (ScriptSlots.CellEditor, GridCellEditorView editor) => chrome.CellEditor(editor),
             _ => throw new InvalidOperationException($"Internal: the slot {name} holds a view of another slot's."),
         };
     }

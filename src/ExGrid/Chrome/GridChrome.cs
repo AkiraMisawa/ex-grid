@@ -734,4 +734,9 @@ public interface IGridChrome
     /// <see cref="ScriptSlots.FindPanel"/>: its controls, each marked with <see cref="ScriptSlotAttributes"/>'
     /// find attributes, and no form or handler of its own; the slot stands inside the core's form.</summary>
     RenderFragment? FindPanel(GridFindView view) => null;
+
+    /// <summary>The Cell Editor's field when the Script Core draws the grid (ADR-0410), for a Chrome that names
+    /// <see cref="ScriptSlots.CellEditor"/>: one text field marked with <see cref="ScriptSlotAttributes.EditorField"/>,
+    /// holding <see cref="GridCellEditorView.InitialText"/> as drawn first, and no handler of its own.</summary>
+    RenderFragment? CellEditor(GridCellEditorView view) => null;
 }

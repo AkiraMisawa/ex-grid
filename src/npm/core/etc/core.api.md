@@ -350,6 +350,9 @@ export class EditorCompletion {
 }
 
 // @public
+export const editorFieldAttribute = "data-ex-editor-field";
+
+// @public
 export class EditorHint {
     constructor(options: {
         readonly text: string;
@@ -2161,6 +2164,9 @@ export type ViewStateOperand = {
     readonly ticks: bigint;
     readonly offsetMinutes: number;
 };
+
+// @public
+export function wireCellEditor(contents: HTMLElement, context: GridCellEditorSlotContext, answered?: boolean): () => void;
 
 // @public
 export function wireFilterPanel(contents: HTMLElement, context: GridFilterPanelSlotContext, drawn: () => FilterPanelView, answered?: boolean): () => void;

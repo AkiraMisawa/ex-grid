@@ -5,7 +5,7 @@
 
 import type { FilterPanelView } from '../chrome/filter-panel-model';
 import type { FilterOperator } from '../query/filter';
-import type { GridFilterPanelSlotContext, GridFindPanelSlotContext, GridMenuSlotContext } from './grid-chrome';
+import type { GridCellEditorSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext, GridMenuSlotContext } from './grid-chrome';
 
 /** The attribute a menu slot's contents write on the control of each command, its index in `commands`: the control
  * {@link wireMenuItems} wires. */
@@ -337,4 +337,32 @@ export function wireFindPanel(contents: HTMLElement, context: GridFindPanelSlotC
         contents.removeEventListener('change', change);
         contents.removeEventListener('click', click);
     };
+}
+
+/** The attribute the Cell Editor slot's contents write on their one text field, an `input` or a `textarea`: the field
+ * {@link wireCellEditor} hands the core. */
+export const editorFieldAttribute = 'data-ex-editor-field';
+
+/** The field each editor's contents were last wired with, so a wiring of the same field again asks nothing. */
+const handedEditorFields = new WeakMap<GridCellEditorSlotContext, HTMLElement>();
+
+/**
+ * Wires the Cell Editor slot's contents (ADR-0410 section 2), as `useCellEditor` does React's: the one field marked with
+ * {@link editorFieldAttribute} in `contents` is handed to the core, which reads and writes it and gives it the
+ * keyboard the opening owes, unless `answered` says an earlier wiring answered that already. A field drawn anew, an
+ * `input` swapped for a `textarea` say, is handed over too, so the core reads it and it keeps the keyboard. Draw the
+ * field with the text the editor opens with and nothing bound after: the core's text outranks any render's. Answers
+ * the function that takes the wiring off again, which has nothing to take: the core hears the field itself.
+ */
+export function wireCellEditor(contents: HTMLElement, context: GridCellEditorSlotContext, answered = false): () => void {
+    const fields = contents.querySelectorAll<HTMLElement>(`[${editorFieldAttribute}]`);
+    const field = fields[0];
+    if (fields.length !== 1 || field === undefined) {
+        throw new Error(`The cell editor's contents drew ${fields.length} fields marked ${editorFieldAttribute}: mark the one text field.`);
+    }
+    if (!answered || handedEditorFields.get(context) !== field) {
+        handedEditorFields.set(context, field);
+        context.takeFocus(field);
+    }
+    return () => undefined;
 }
