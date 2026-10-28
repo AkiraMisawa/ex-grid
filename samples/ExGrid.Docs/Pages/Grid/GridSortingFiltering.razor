@@ -219,6 +219,9 @@
             If you find by the reference rule, pass it over the columns' displayed text,
             <code>(row, column, pattern) =&gt; GridFind.Matches(column.Info.TextOf(row), pattern)</code>, and hold
             the function in a field: a new one makes every row on screen judge its cells again.
+            Under React the prop is <code>findMatch</code>, and the reference rule is
+            <code>(row, column, pattern) =&gt; findMatches(textOf(column, row), pattern)</code>, made once outside the
+            component; <code>findStep</code> is the reference step, and all three come from <code>@@ex-grid/core</code>.
         </p>
         <p>
             <strong>A step you cannot answer is given up, not answered "no match".</strong> When your search cannot

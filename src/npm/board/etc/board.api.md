@@ -19,6 +19,7 @@ import type { GridQuery } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
 import { GridSource } from '@ex-grid/core';
 import { GridViewState } from '@ex-grid/core';
+import { InMemoryGridSource } from '@ex-grid/core';
 import { JsonValue } from '@ex-grid/data';
 import { PivotFieldItem } from '@ex-grid/pivot-engine';
 import { PivotLayout } from '@ex-grid/pivot-engine';
@@ -495,6 +496,19 @@ export interface ShapedColumn {
 
 // @public
 export function shapedColumns(snapshot: Snapshot, spec: GridViewSpecReading, locale?: string): readonly GridColumn<ShapedRow>[];
+
+// @public
+export interface ShapedGrid {
+    readonly columns: readonly GridColumn<ShapedRow>[];
+    readonly pinnedColumnCount: number;
+    readonly rows: readonly ShapedRow[];
+    readonly snapshot: Snapshot;
+    readonly source: InMemoryGridSource<ShapedRow>;
+    readonly spec: GridViewSpecReading;
+}
+
+// @public
+export function shapedGrid(snapshot: Snapshot, spec: GridViewSpecReading, locale?: string, path?: string): ShapedGrid;
 
 // @public
 export interface ShapedPage {
