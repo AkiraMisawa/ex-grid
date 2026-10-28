@@ -24,6 +24,11 @@ ExChart.MudBlazor   the Wrapper; depends on ExChart and ExGrid.MudBlazor
   `<ExChart>` takes a Chart Definition built by hand; the grid arrives as a dependency but is never
   rendered. The Engine's tests need no renderer (layer 1).
 - **The direction is enforced by project references**, as for every product (ADR-0017).
+
+*(2026-10-28, [ADR-0420](./0420-a-chart-drawn-in-the-browser-takes-format-codes-and-the-consumers-own-script-in-place-of-a-dotnet-function.md):
+the Engine takes one reference, `ExGrid.Data`, the family's data package, which holds the Excel format-code
+reader both cores write an axis' and a series' code with. It is neither a grid nor UI and has no dependency of
+its own, so the Engine still knows no grid and pulls in nothing outside the family.)*
 - **Analytics belong to the Consumer** (the user, 2026-10-13): a bootstrap, an interpolation of a
   curve, a hazard rate are computed outside every ExChart package and handed in as data. ExChart
   draws what it is given and the convention the Consumer declares for it.

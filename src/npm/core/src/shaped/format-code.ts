@@ -10,7 +10,7 @@ import { customDecimal, customDouble, type NumberCulture } from './custom-number
 import { formatCulture } from './format-culture';
 
 /** What reading a format code answers: the format, or the reason it cannot be read, a phrase that completes
- * "the format code …" (`is empty`, `holds '_' spacing, which a grid does not show`). */
+ * "the format code …" (`is empty`, `holds '_' spacing, which the reader does not take`). */
 export type FormatCodeReading = { readonly format: FormatCode } | { readonly reason: string };
 
 /** A value a format code writes, as a Snapshot holds it: a Decimal, a double as a `number`, an Integer as a
@@ -219,12 +219,12 @@ const letter = /^\p{L}$/u;
 
 function refusalOf(c: string): string | undefined {
     switch (c) {
-        case '[': return 'holds a part in brackets (a colour, a condition or a locale), which a grid does not show';
-        case '@': return 'holds a text placeholder \'@\', and a number column holds no text';
-        case '_': return 'holds \'_\' spacing, which a grid does not show';
-        case '*': return 'holds \'*\' fill, which a grid does not show';
-        case '?': return 'holds the placeholder \'?\', which a grid does not show';
-        case '/': return 'holds a fraction, which a grid does not show';
+        case '[': return 'holds a part in brackets (a colour, a condition or a locale), which the reader does not take';
+        case '@': return 'holds a text placeholder \'@\', which the reader does not take';
+        case '_': return 'holds \'_\' spacing, which the reader does not take';
+        case '*': return 'holds \'*\' fill, which the reader does not take';
+        case '?': return 'holds the placeholder \'?\', which the reader does not take';
+        case '/': return 'holds a fraction, which the reader does not take';
         default: return letter.test(c) ? `holds the letter '${c}' unquoted; quote text as "text"` : undefined;
     }
 }
@@ -327,7 +327,7 @@ function translateDate(section: string): Translated {
             return true;
         }
         if (c === '0' && i > 0 && (section.charAt(i - 1) === '.' || section.charAt(i - 1) === '0')) {
-            reason = 'holds fractional seconds, which a grid does not show';
+            reason = 'holds fractional seconds, which the reader does not take';
             return false;
         }
         const why = refusalOf(c);
@@ -365,7 +365,7 @@ function translateDate(section: string): Translated {
                 output += 'tt';
                 break;
             case 'm':
-                if (count > 4) return { reason: 'holds \'mmmmm\', which a grid does not show' };
+                if (count > 4) return { reason: 'holds \'mmmmm\', which the reader does not take' };
                 output += (isMinute(tokens, k) && count <= 2 ? 'm' : 'M').repeat(count);
                 break;
             default:

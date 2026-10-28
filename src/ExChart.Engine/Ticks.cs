@@ -159,7 +159,7 @@ public static class TickLayout
         var ticks = new List<(double X, string Label)>();
         if (axis.EffectiveScale == AxisScale.Logarithmic && from > 0)
         {
-            foreach (var x in LogSteps(from, to)) ticks.Add((x, axis.Format is { } f ? f(x) : x.ToString("0.####", CultureInfo.InvariantCulture)));
+            foreach (var x in LogSteps(from, to)) ticks.Add((x, axis.Writes ? axis.Write(x) : x.ToString("0.####", CultureInfo.InvariantCulture)));
         }
         else if (axis.Values == AxisValues.Labels)
         {
@@ -183,14 +183,14 @@ public static class TickLayout
         }
         else if (axis.Values == AxisValues.Dates)
         {
-            var unit = CalendarUnit(from, to, map, textWidth, gap);
+            var unit = CalendarUnit(from, to, map, textWidth, gap, axis.CodeWritesTicks && style.Label == DateLabel.Auto ? axis : null);
             foreach (var x in CalendarTicks(from, to, unit)) ticks.Add((x, LabelOf(axis, style, x, from, unit.Kind)));
         }
         else
         {
             var (lo, hi, step) = Nice(from, to, 6);
             foreach (var x in Steps(lo, hi, step).Where(x => x >= from - 1e-9 && x <= to + 1e-9))
-                ticks.Add((x, x.ToString("0.####", CultureInfo.InvariantCulture)));
+                ticks.Add((x, axis.CodeWritesTicks ? axis.Write(x) : x.ToString("0.####", CultureInfo.InvariantCulture)));
         }
         return Fit(ticks, style.Angle, map, textWidth, lineHeight, gap);
     }
@@ -228,22 +228,43 @@ public static class TickLayout
 
     internal readonly record struct CalendarStep(Unit Kind, int Every);
 
-    private static CalendarStep CalendarUnit(double from, double to, Func<double, double> map, Func<string, double> textWidth, double gap)
+    // The finest step whose labels, at their usual width, fit side by side across the plot. Where the axis' code
+    // writes the ticks, no step finer than the code tells apart, so no two ticks read alike, and its labels are
+    // as wide as the code writes a long date (ADR-0420).
+    private static CalendarStep CalendarUnit(double from, double to, Func<double, double> map, Func<string, double> textWidth, double gap, ChartAxis? coded)
     {
-        // The finest step whose labels, at their usual width, fit side by side across the plot.
         var plot = Math.Abs(map(to) - map(from));
+        var finest = coded is null ? Unit.Day : CodeResolution(coded.Write) ?? throw new InvalidOperationException("Internal: a code that tells no dates apart was not refused.");
+        var codedWidth = coded is null ? 0 : textWidth(coded.Write(WidestDay));
         CalendarStep[] steps =
         [
             new(Unit.Day, 1), new(Unit.Day, 7), new(Unit.Month, 1), new(Unit.Quarter, 1), new(Unit.Month, 6),
             new(Unit.Year, 1), new(Unit.Year, 2), new(Unit.Year, 5), new(Unit.Year, 10), new(Unit.Year, 25), new(Unit.Year, 50),
         ];
-        foreach (var s in steps)
+        foreach (var s in steps.Where(s => s.Kind >= finest))
         {
             var count = Math.Max(1, CalendarTicks(from, to, s).Count);
-            var label = textWidth(s.Kind == Unit.Year ? "2026" : s.Kind == Unit.Day ? "2026-10-19" : "2026-10");
+            var label = coded is not null ? codedWidth : textWidth(s.Kind == Unit.Year ? "2026" : s.Kind == Unit.Day ? "2026-10-19" : "2026-10");
             if (plot / count >= label + gap) return s;
         }
         return steps[^1];
+    }
+
+    // A day whose names are the longest a code writes: a Wednesday in September.
+    private static readonly double WidestDay = new DateOnly(2026, 9, 30).DayNumber;
+
+    /// <summary>
+    /// The finest calendar step a date code tells apart, found by writing days a day, a month and a year apart
+    /// with it; null for a code that writes none of them apart, such as one of the time alone.
+    /// </summary>
+    internal static Unit? CodeResolution(Func<double, string> write)
+    {
+        var day = new DateOnly(2001, 2, 3);
+        var text = write(day.DayNumber);
+        if (write(day.AddDays(1).DayNumber) != text) return Unit.Day;
+        if (write(day.AddMonths(1).DayNumber) != text) return Unit.Month;
+        if (write(day.AddYears(1).DayNumber) != text) return Unit.Year;
+        return null;
     }
 
     internal static List<double> CalendarTicks(double from, double to, CalendarStep step)
@@ -280,7 +301,10 @@ public static class TickLayout
     private static string LabelOf(ChartAxis axis, AxisStyle style, double x, double first, Unit unit)
     {
         if (axis.Values == AxisValues.Numbers)
-            return axis.Named.FirstOrDefault(n => n.Position == x).Label ?? x.ToString("0.####", CultureInfo.InvariantCulture);
+            return axis.Named.FirstOrDefault(n => n.Position == x).Label ?? (axis.CodeWritesTicks ? axis.Write(x) : x.ToString("0.####", CultureInfo.InvariantCulture));
+        // A code writes a date tick, unless the axis' style names how date ticks are labelled (ADR-0420).
+        if (axis.CodeWritesTicks && style.Label == DateLabel.Auto)
+            return axis.Write(x);
         var d = DateOnly.FromDayNumber((int)x);
         var label = style.Label == DateLabel.Auto
             ? unit switch { Unit.Year => DateLabel.Year, Unit.Day => DateLabel.Date, _ => DateLabel.YearMonth }

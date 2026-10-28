@@ -114,6 +114,12 @@ The MudBlazor Wrappers stay Razor. Each becomes a Wrapper over its product's Bla
 `ExGrid.MudBlazor` does over ExGrid's (ADR-0350 section 9), and fills the Chrome seams with MudBlazor's
 components. Each MUI Wrapper is new work beside it (section 5).
 
+*(2026-10-28, decided with the user, [ADR-0420](./0420-a-chart-drawn-in-the-browser-takes-format-codes-and-the-consumers-own-script-in-place-of-a-dotnet-function.md): Blazor's ExChart adapter never calls a .NET function from the
+browser's drawing. An axis, a series and a surface take an Excel format code the family's `FormatCode` writes in
+both cores; what a code cannot say is a function exported from the Consumer's own JavaScript module, imported,
+never evaluated; the family's interpolants and fits cross as what they were made from; any other .NET function
+the chart would call at a position the browser chooses is refused by name.)*
+
 ### 2. The engines move to TypeScript, re-proved against what Excel already answered
 
 ExSheet.Engine with ExSheet.Xlsx, ExPivot.Engine, ExChart.Engine, ExGrid.Data with ExGrid.Data.Xlsx,

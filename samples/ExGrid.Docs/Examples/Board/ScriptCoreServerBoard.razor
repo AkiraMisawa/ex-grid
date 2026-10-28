@@ -1,0 +1,31 @@
+@using ExBoard
+@using ExGrid.Data
+
+@* The server's Board drawn by ExBoard's Script Core, its source staying in .NET: the browser asks it through .NET
+   for each page, each narrowed page and the chart's thinned points. No pivot: the Script Board does not carry one over
+   a source yet, so the blotter narrows the chart itself. *@
+<ExBoard.Script.ExBoard Board="Board" Data="NoData" Sources="_sources" Width="900" OnOutput="Raised" />
+<pre role="log" style="white-space: pre-wrap; font-size: 12px">@_raised</pre>
+
+@code {
+    private static readonly BoardReading Board = BoardSpec.Read("""
+        {"version": 1, "title": "All trades",
+         "inputs": {"trades": {"columns": [{"name": "id", "type": "text"}, {"name": "desk", "type": "text"},
+                                           {"name": "day", "type": "date"}, {"name": "seq", "type": "integer"}, {"name": "pnl", "type": "decimal"}]}},
+         "views": [
+           {"id": "blotter", "title": "Trades", "grid": {"data": "trades", "columns": [{"column": "id", "header": "Trade"},
+             {"column": "desk", "header": "Desk"}, {"column": "pnl", "header": "P&L", "format": "#,##0;(#,##0)"}]}},
+           {"id": "curve", "title": "P&L by trade", "chart": {"version": 1, "axis": {"values": "numbers"},
+             "series": [{"id": "pnl", "name": "P&L", "kind": "level", "data": "trades", "x": "seq", "y": "pnl", "fromZero": false}]}}],
+         "layout": [{"views": ["blotter"], "height": 280}, {"views": ["curve"], "height": 240}],
+         "links": [{"from": "blotter", "to": ["curve"], "on": ["desk"]}],
+         "outputs": {"review": {"from": "blotter", "on": ["id"], "confirm": "Send to review"}}}
+        """);
+
+    private static readonly IReadOnlyDictionary<string, Snapshot> NoData = new Dictionary<string, Snapshot>();
+    private readonly IReadOnlyDictionary<string, BoardSource> _sources = ServerBoard.Sources();
+    private string? _raised;
+
+    // Taken from rows the server held: Take holds it to the version the server answered them at.
+    private void Raised(BoardOutput output) => _raised = output.ToJson();
+}

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ExChart.Engine;
 
 /// <summary>
@@ -7,7 +9,25 @@ namespace ExChart.Engine;
 /// <param name="From">The first position the function is asked at.</param>
 /// <param name="To">The last.</param>
 /// <param name="ValueAt">The Consumer's curve: the value at a position, or null where it has none.</param>
-public sealed record SeriesSampler(double From, double To, Func<double, ChartValue?> ValueAt);
+public sealed record SeriesSampler(double From, double To, Func<double, ChartValue?> ValueAt)
+{
+    /// <summary>The Consumer's curve. A sampler given another is no longer its <see cref="Script"/>'s.</summary>
+    public Func<double, ChartValue?> ValueAt
+    {
+        get;
+        init
+        {
+            field = value;
+            Script = null;
+        }
+    } = ValueAt;
+
+    /// <summary>
+    /// The function of the Consumer's own script it samples (ADR-0420 section 3), which a chart drawn in the browser
+    /// asks in place of <see cref="ValueAt"/>; null for a sampler of a .NET function.
+    /// </summary>
+    public ScriptFunction? Script { get; internal init; }
+}
 
 /// <summary>
 /// One series of a chart, in the data's own terms (ADR-0251): its points, or a function to sample, and
@@ -117,8 +137,43 @@ public sealed record ChartSeries
     /// </summary>
     public Func<object, string>? Format { get; init; }
 
-    /// <summary>Writes <paramref name="value"/> through <see cref="Format"/>.</summary>
-    public string Write(ChartValue value) => Format is { } f ? f(value.Value) : value.ToInvariantString();
+    /// <summary>
+    /// An Excel number format code in the invariant spelling that writes every value (ADR-0420): the ones
+    /// handed in and the ones the chart computes, a candle's change and a merged candle's volume, written
+    /// invariantly. It stands where a <see cref="Format"/> would, and is what a chart drawn in the browser
+    /// takes, where no .NET function can be called. A code the reader does not read, a date code, and one
+    /// beside a <see cref="Format"/> are refused as the definition is checked.
+    /// </summary>
+    public string? FormatCode
+    {
+        get => _formatCode;
+        init => (_formatCode, _code, CodeRefusal) = ChartCodes.Read(value);
+    }
+
+    private readonly string? _formatCode;
+    private readonly ExGrid.Data.FormatCode? _code;
+
+    /// <summary>
+    /// A function of the Consumer's own script that writes every value (ADR-0420 section 3), for what a
+    /// <see cref="FormatCode"/> cannot say: the ones handed in and the ones the chart computes or samples. Only a chart
+    /// drawn in the browser calls it; one beside a <see cref="Format"/> or a <see cref="FormatCode"/> is refused as the
+    /// definition is checked.
+    /// </summary>
+    public ScriptFunction? FormatScript { get; init; }
+
+    // Why FormatCode cannot be read, a phrase completing "the format code …"; null when it can or there is none.
+    internal string? CodeRefusal { get; private init; }
+
+    // The code, refused by name where it cannot be read, so that no value is written another way (spine rule 1).
+    private ExGrid.Data.FormatCode? ReadCode =>
+        (CodeRefusal, _formatCode) is ({ } refusal, { } code) ? throw new ChartRefusedException(ChartCodes.SeriesRefusal(Name, code, refusal)) : _code;
+
+    // Whether FormatCode writes dates, which a series' values are not.
+    internal bool CodeWritesDates => ReadCode is { IsDate: true };
+
+    /// <summary>Writes <paramref name="value"/> through <see cref="Format"/> or <see cref="FormatCode"/>.</summary>
+    public string Write(ChartValue value) => Format is { } f ? f(value.Value)
+        : ReadCode is { } code ? code.Format(value.Value, CultureInfo.InvariantCulture) : value.ToInvariantString();
 
     /// <summary>The keys its look is chosen by, its <see cref="Id"/> standing for a colour key it does not set.</summary>
     public AppearanceKeys EffectiveKeys => Keys ?? new AppearanceKeys(Id);
@@ -137,4 +192,19 @@ public sealed record ChartSeries
     /// <summary>A series sampled from the Consumer's function over a range.</summary>
     public static ChartSeries Sampled(string id, string name, SeriesKind kind, double from, double to, Func<double, ChartValue?> valueAt) =>
         new() { Id = id, Name = name, Kind = kind, Sampler = new SeriesSampler(from, to, valueAt) };
+
+    /// <summary>
+    /// A series sampled from a function of the Consumer's own script over a range (ADR-0420 section 3), asked by a
+    /// chart drawn in the browser at about one position per device pixel. Its sampler's <see cref="SeriesSampler.ValueAt"/>
+    /// cannot be called in .NET, and says so.
+    /// </summary>
+    public static ChartSeries Sampled(string id, string name, SeriesKind kind, double from, double to, ScriptFunction valueAt)
+    {
+        ArgumentNullException.ThrowIfNull(valueAt);
+        return new() { Id = id, Name = name, Kind = kind, Sampler = new SeriesSampler(from, to, ScriptOnly) { Script = valueAt } };
+    }
+
+    // One delegate for every script sampler, so two series sampled by the same script function are equal.
+    private static readonly Func<double, ChartValue?> ScriptOnly = _ => throw new NotSupportedException(
+        "The series is sampled by a script function, which only a chart drawn in the browser calls (ADR-0420).");
 }

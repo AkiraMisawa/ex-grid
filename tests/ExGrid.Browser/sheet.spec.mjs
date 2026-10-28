@@ -139,10 +139,14 @@ test('DC-3: the Row Headings stay at the left edge while the Sheet scrolls sidew
     const rootBox = await boxOf(grid);
     expect(Math.abs(before.x - rootBox.x)).toBeLessThanOrEqual(2);
 
+    const second = grid.locator('.ex-header-cell').nth(1);
     for (const left of [300, 5000, 400_000]) {
+        const shown = await second.innerText();
         await scroller.evaluate((el, x) => { el.scrollLeft = x; }, left);
-        // The scroll lands, the columns under it move, and the band does not.
-        await expect(grid.locator('.ex-header-cell').nth(1)).not.toHaveText('B');
+        // The scroll lands, the columns under it move, and the band does not. A jump this far is a fling,
+        // painted as placeholder rows until it settles (ADR-0004): the band is read once the rows have come.
+        await expect(second).not.toHaveText(shown);
+        await settled(grid);
         const after = await boxOf(heading);
         expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
         expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(1);

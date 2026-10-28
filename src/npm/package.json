@@ -26,6 +26,7 @@
     "pivot-blazor",
     "chart-blazor",
     "board-react",
+    "board-blazor",
     "sheet-engine",
     "sheet-xlsx",
     "sheet",

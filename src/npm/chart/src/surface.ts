@@ -7,7 +7,8 @@ import { roundTrip, tickText } from './invariant-text';
 import type { AxisScale, ChartAxisOptions, ChartPoint, ChartSeriesOptions, ChartValue } from './model';
 import { elementAt } from './must';
 import { greatest, least } from './numbers';
-import { ChartRefusedError, invariantText, toNumber } from './values';
+import type { FormatCode } from '@ex-grid/core';
+import { ChartRefusedError, invariantText, readCode, toNumber } from './values';
 
 /** A value of a surface's axis: a strike, a delta or a tenor, as the column holds it. */
 export type SurfaceValue = string | number;
@@ -22,6 +23,12 @@ export interface SurfaceAxisOptions {
     readonly format?: (value: SurfaceValue) => string;
     /** How the axis places its values; `categories`, evenly spaced, by default (ADR-0312). */
     readonly scale?: AxisScale;
+    /**
+     * An Excel number format code in the invariant spelling, such as `0.0%`, read by the family's `FormatCode`
+     * (ADR-0420): it writes the axis' values and its ticks between them, in place of a format. It writes numbers,
+     * so the axis' values are numbers.
+     */
+    readonly formatCode?: string;
 }
 
 /**
@@ -33,14 +40,18 @@ export class SurfaceAxis {
     readonly #values: readonly SurfaceValue[];
     readonly #format: ((value: SurfaceValue) => string) | undefined;
     readonly #scale: AxisScale;
+    readonly #formatCode: string | undefined;
+    readonly #code: FormatCode | undefined;
 
-    /** An axis of the given values, in the order the grid holds them. */
+    /** An axis of the given values, in the order the grid holds them; a code it cannot write them with is refused. */
     constructor(options: SurfaceAxisOptions) {
         const { scale = 'categories' } = options;
         this.#title = options.title;
         this.#values = Object.freeze([...options.values]);
         this.#format = options.format;
         this.#scale = scale;
+        this.#formatCode = options.formatCode;
+        this.#code = options.formatCode === undefined ? undefined : checkAxisCode(this, options.formatCode);
     }
 
     /** The axis' title. */
@@ -63,24 +74,35 @@ export class SurfaceAxis {
         return this.#scale;
     }
 
-    /** Writes the value at `index` through the format. */
+    /** The Excel format code its values and ticks are written by (ADR-0420), if any. */
+    get formatCode(): string | undefined {
+        return this.#formatCode;
+    }
+
+    /** Writes the value at `index` through the format or the code. */
     write(index: number): string {
         return this.writeValue(elementAt(this.#values, index));
     }
 
-    /** Writes `value` through the format, or invariantly. */
+    /** Writes `value` through the format or the code, or invariantly. */
     writeValue(value: SurfaceValue): string {
         if (this.#format !== undefined) {
             return this.#format(value);
         }
-        return typeof value === 'number' ? roundTrip(value) : value;
+        if (typeof value === 'string') {
+            return value;
+        }
+        return this.#code === undefined ? roundTrip(value) : this.#code.format(value, 'invariant');
     }
 
     /**
-     * Writes a position that need not be one of the values, such as a tick: through the format when the
-     * values are numbers, invariantly otherwise.
+     * Writes a position that need not be one of the values, such as a tick: through the code, through the
+     * format when the values are numbers, invariantly otherwise.
      */
     writeTick(position: number): string {
+        if (this.#code !== undefined) {
+            return this.#code.format(position, 'invariant');
+        }
         const [first] = this.#values;
         if (this.#format !== undefined && typeof first === 'number') {
             return this.#format(position);
@@ -155,8 +177,14 @@ export interface SurfaceTriangle {
     readonly c: number;
 }
 
-/** How the values are scaled and coloured, which every form of surface may say (ADR-0310, ADR-0312). */
+/** How the values are scaled, coloured and written, which every form of surface may say (ADR-0310, ADR-0312, ADR-0420). */
 export interface SurfaceScaleOptions {
+    /**
+     * An Excel number format code in the invariant spelling, such as `0.00%`, read by the family's `FormatCode`
+     * (ADR-0420): it writes the values the surface holds and the ones a slice reads between them, in place of a
+     * `zFormat`.
+     */
+    readonly zFormatCode?: string;
     /** The vertical scale: `proportional`, the default, or `logarithmic`; never `categories`. */
     readonly zScale?: AxisScale;
     /** The value the colours diverge from, such as 0 for a P&L (ADR-0310); absent colours low to high. */
@@ -207,6 +235,10 @@ export interface SurfacePointsOptions extends SurfaceScaleOptions {
     readonly xFormat?: (value: SurfaceValue) => string;
     /** Writes a y value. */
     readonly yFormat?: (value: SurfaceValue) => string;
+    /** The x axis' Excel format code, in place of `xFormat` (ADR-0420). */
+    readonly xFormatCode?: string;
+    /** The y axis' Excel format code, in place of `yFormat`. */
+    readonly yFormatCode?: string;
     /** Writes a value. */
     readonly zFormat?: (value: ChartValue) => string;
 }
@@ -227,6 +259,10 @@ export interface SurfaceTrianglesOptions extends SurfaceScaleOptions {
     readonly xFormat?: (value: SurfaceValue) => string;
     /** Writes a y position. */
     readonly yFormat?: (value: SurfaceValue) => string;
+    /** The x axis' Excel format code, in place of `xFormat` (ADR-0420). */
+    readonly xFormatCode?: string;
+    /** The y axis' Excel format code, in place of `yFormat`. */
+    readonly yFormatCode?: string;
     /** Writes a value. */
     readonly zFormat?: (value: ChartValue) => string;
     /** How x positions are placed: `proportional`, the default, or `logarithmic`. */
@@ -263,6 +299,10 @@ export interface SurfaceSampledOptions extends SurfaceScaleOptions {
     readonly xFormat?: (value: SurfaceValue) => string;
     /** Writes a y value. */
     readonly yFormat?: (value: SurfaceValue) => string;
+    /** The x axis' Excel format code, in place of `xFormat` (ADR-0420). */
+    readonly xFormatCode?: string;
+    /** The y axis' Excel format code, in place of `yFormat`. */
+    readonly yFormatCode?: string;
     /** Writes a value. */
     readonly zFormat?: (value: ChartValue) => string;
     /** How x values are sampled and placed; `categories` by default. */
@@ -290,6 +330,8 @@ interface SurfaceParts {
     readonly z: readonly (readonly (ChartValue | null)[])[];
     readonly zTitle: string;
     readonly zFormat: ((value: ChartValue) => string) | undefined;
+    readonly zFormatCode: string | undefined;
+    readonly zCode: FormatCode | undefined;
     readonly method: string | undefined;
     readonly interpolated: readonly (readonly boolean[])[] | undefined;
     readonly notes: readonly string[];
@@ -324,7 +366,7 @@ export class SurfaceDefinition {
         const interpolated = options.interpolated === undefined ? undefined : Object.freeze(options.interpolated.map(row => Object.freeze([...row])));
         validateGrid(x, y, z, method, interpolated);
         return new SurfaceDefinition(Object.freeze({
-            x, y, z, zTitle, zFormat: options.zFormat, method, interpolated, notes: Object.freeze([...notes]),
+            x, y, z, zTitle, zFormat: options.zFormat, ...zCoded(options, zTitle), method, interpolated, notes: Object.freeze([...notes]),
             nodes: undefined, triangles: undefined, ...scaled(options),
         }));
     }
@@ -339,8 +381,8 @@ export class SurfaceDefinition {
         const { points, xTitle, yTitle, zTitle = '' } = options;
         const xs = ordered(points.map(p => p.x));
         const ys = ordered(points.map(p => p.y));
-        const xAxis = new SurfaceAxis({ title: xTitle, values: xs, ...(options.xFormat === undefined ? {} : { format: options.xFormat }) });
-        const yAxis = new SurfaceAxis({ title: yTitle, values: ys, ...(options.yFormat === undefined ? {} : { format: options.yFormat }) });
+        const xAxis = new SurfaceAxis({ title: xTitle, values: xs, ...writers(options.xFormat, options.xFormatCode) });
+        const yAxis = new SurfaceAxis({ title: yTitle, values: ys, ...writers(options.yFormat, options.yFormatCode) });
         const count = (key: (p: SurfacePoint) => SurfaceValue): Map<SurfaceValue, number> => {
             const counts = new Map<SurfaceValue, number>();
             for (const p of points) {
@@ -396,16 +438,17 @@ export class SurfaceDefinition {
             }
         }
         const x = new SurfaceAxis({
-            title: xTitle, values: ordered(nodes.map(n => n.x)), scale: xScale, ...(options.xFormat === undefined ? {} : { format: options.xFormat }),
+            title: xTitle, values: ordered(nodes.map(n => n.x)), scale: xScale, ...writers(options.xFormat, options.xFormatCode),
         });
         const y = new SurfaceAxis({
-            title: yTitle, values: ordered(nodes.map(n => n.y)), scale: yScale, ...(options.yFormat === undefined ? {} : { format: options.yFormat }),
+            title: yTitle, values: ordered(nodes.map(n => n.y)), scale: yScale, ...writers(options.yFormat, options.yFormatCode),
         });
         const frozenNodes = Object.freeze(nodes.map(n => Object.freeze({ x: n.x, y: n.y, z: n.z })));
         const frozenTriangles = Object.freeze(triangles.map(t => Object.freeze({ a: t.a, b: t.b, c: t.c })));
         validateMesh(x, y, frozenNodes, frozenTriangles);
         return new SurfaceDefinition(Object.freeze({
-            x, y, z: Object.freeze([]), zTitle, zFormat: options.zFormat, method: undefined, interpolated: undefined, notes: Object.freeze([...notes]),
+            x, y, z: Object.freeze([]), zTitle, zFormat: options.zFormat, ...zCoded(options, zTitle), method: undefined, interpolated: undefined,
+            notes: Object.freeze([...notes]),
             nodes: frozenNodes, triangles: frozenTriangles, ...scaled(options),
         }));
     }
@@ -437,8 +480,8 @@ export class SurfaceDefinition {
         const ys = Array.from({ length: samples }, (_, k) => at(yFrom, yTo, yScale, k));
         const z = ys.map(v => xs.map(u => options.z(u, v)));
         return SurfaceDefinition.grid({
-            x: { title: xTitle, values: xs, format: options.xFormat === undefined ? writeNumber : options.xFormat, scale: xScale },
-            y: { title: yTitle, values: ys, format: options.yFormat === undefined ? writeNumber : options.yFormat, scale: yScale },
+            x: { title: xTitle, values: xs, ...writers(options.xFormat, options.xFormatCode, writeNumber), scale: xScale },
+            y: { title: yTitle, values: ys, ...writers(options.yFormat, options.yFormatCode, writeNumber), scale: yScale },
             z, zTitle, method,
             ...(options.zFormat === undefined ? {} : { zFormat: options.zFormat }),
             ...scaleOptions(options),
@@ -468,6 +511,11 @@ export class SurfaceDefinition {
     /** The Consumer's writer of a value, if any. */
     get zFormat(): ((value: ChartValue) => string) | undefined {
         return this.#parts.zFormat;
+    }
+
+    /** The Excel format code the values are written by (ADR-0420), if any. */
+    get zFormatCode(): string | undefined {
+        return this.#parts.zFormatCode;
     }
 
     /** The method the interpolated values were made with, if the surface claims one. */
@@ -566,10 +614,21 @@ export class SurfaceDefinition {
         return this.#parts.nodes === undefined && this.isInterpolated(index % count, Math.trunc(index / count));
     }
 
-    /** Writes a value through the format, or invariantly. */
+    /**
+     * A tick on the vertical axis or the colour bar, and the centre the colours diverge from: through the code, as
+     * the values are, or plainly; a format, written for the values a column holds, leaves them plain (ADR-0420).
+     *
+     * @internal
+     */
+    writeZTick(value: number): string {
+        const code = this.#parts.zCode;
+        return code === undefined ? tickText(value) : code.format(value, 'invariant');
+    }
+
+    /** Writes a value through the format or the code, or invariantly. */
     writeZ(value: ChartValue): string {
-        const format = this.#parts.zFormat;
-        return format === undefined ? invariantText(value) : format(value);
+        const { zFormat: format, zCode: code } = this.#parts;
+        return format !== undefined ? format(value) : code === undefined ? invariantText(value) : code.format(value, 'invariant');
     }
 
     /**
@@ -595,6 +654,7 @@ export class SurfaceDefinition {
         const along = onX ? this.y : this.x;
         const zName = nameOr(this.zTitle, 'Value');
         const format = this.zFormat;
+        const formatCode = this.zFormatCode;
         if (this.isMesh) {
             const runs = this.cut(slice);
             if (runs === undefined || runs.length === 0) {
@@ -613,6 +673,7 @@ export class SurfaceDefinition {
                 id: 'slice', name: `${zName} at ${fixedAxis.writeValue(slice.value)}`, kind: 'level', points: cut, fromZero: false, interpolated: true,
                 segments: [{ from: elementAt(cut, 0).x, to: elementAt(cut, cut.length - 1).x, method: trianglesMethod, extrapolated: false }],
                 ...(format === undefined ? {} : { format }),
+                ...(formatCode === undefined ? {} : { formatCode }),
             };
             return new ChartDefinition({ axis: numberAxis(along), series: [series] });
         }
@@ -629,6 +690,7 @@ export class SurfaceDefinition {
         const series: ChartSeriesOptions = {
             id: 'slice', name: `${zName} at ${fixedAxis.write(at)}`, kind: 'level', points, fromZero: false,
             ...(format === undefined ? {} : { format }),
+            ...(formatCode === undefined ? {} : { formatCode }),
             ...(interpolated && method !== undefined ? {
                 interpolated: true,
                 segments: [{ from: byValue ? along.number(0) : 0, to: byValue ? along.number(count - 1) : count - 1, method, extrapolated: false }],
@@ -732,7 +794,7 @@ export class SurfaceDefinition {
         }
         const centre = this.#parts.centre;
         if (centre !== undefined && !(centre > 0)) {
-            return `The vertical scale stays proportional: the colours diverge from ${tickText(centre)}, which a logarithmic scale cannot place.`;
+            return `The vertical scale stays proportional: the colours diverge from ${this.writeZTick(centre)}, which a logarithmic scale cannot place.`;
         }
         return undefined;
     }
@@ -763,14 +825,84 @@ function scaled(options: SurfaceScaleOptions): Pick<SurfaceParts, 'zScale' | 'ce
 
 function scaleOptions(options: SurfaceScaleOptions): SurfaceScaleOptions {
     return {
+        ...(options.zFormatCode === undefined ? {} : { zFormatCode: options.zFormatCode }),
         ...(options.zScale === undefined ? {} : { zScale: options.zScale }),
         ...(options.centre === undefined ? {} : { centre: options.centre }),
     };
 }
 
 function axisOptions(axis: SurfaceAxis): SurfaceAxisOptions {
-    const format = axis.format;
-    return { title: axis.title, values: axis.values, scale: axis.scale, ...(format === undefined ? {} : { format }) };
+    const { format, formatCode } = axis;
+    return {
+        title: axis.title, values: axis.values, scale: axis.scale, ...(format === undefined ? {} : { format }),
+        ...(formatCode === undefined ? {} : { formatCode }),
+    };
+}
+
+// An axis' writers a factory was handed: its format, or its code, or the factory's own writing where it has one.
+function writers(format: ((value: SurfaceValue) => string) | undefined, formatCode: string | undefined,
+    own?: (value: SurfaceValue) => string): Pick<SurfaceAxisOptions, 'format' | 'formatCode'> {
+    if (format !== undefined) {
+        return { format, ...(formatCode === undefined ? {} : { formatCode }) };
+    }
+    if (formatCode !== undefined) {
+        return { formatCode };
+    }
+    return own === undefined ? {} : { format: own };
+}
+
+// An axis' value named in a refusal, as C#'s `ChartCodes` names it.
+function describe(value: SurfaceValue): string {
+    return typeof value === 'string' ? `the text "${value}"` : `the number ${roundTrip(value)}`;
+}
+
+// A surface axis' code read, or refused by name where it cannot write the axis' values (ADR-0420), as C#'s
+// `ChartCodes.CheckSurfaceAxis`.
+function checkAxisCode(axis: SurfaceAxis, code: string): FormatCode {
+    const name = axis.title.length > 0 ? `the surface axis '${axis.title}'` : 'a surface axis';
+    const reading = readCode(code);
+    if (typeof reading === 'string') {
+        throw new ChartRefusedError(`The format code "${code}" of ${name} ${reading}.`);
+    }
+    if (axis.format !== undefined) {
+        throw new ChartRefusedError(`The format code "${code}" of ${name} stands beside its Format: it would write one value two ways.`);
+    }
+    // A surface axis here holds numbers and texts: a date code has no date to write.
+    const other = axis.values.find(v => reading.isDate || typeof v !== 'number');
+    if (other !== undefined) {
+        throw new ChartRefusedError(`The format code "${code}" of ${name} writes ${reading.isDate ? 'dates' : 'numbers'}, and the axis holds ${describe(other)}.`);
+    }
+    // A grid line, a slice and a tooltip are named by the text: two values written alike could not be told apart.
+    const written = new Map<string, number>();
+    for (const value of axis.values.filter(v => typeof v === 'number')) {
+        const text = reading.format(value, 'invariant');
+        const before = written.get(text);
+        if (before !== undefined) {
+            throw new ChartRefusedError(`The format code "${code}" of ${name} writes ${describe(before)} and ${describe(value)} alike, as "${text}".`);
+        }
+        written.set(text, value);
+    }
+    return reading;
+}
+
+// A surface's code for its values read, or refused by name (ADR-0420), as C#'s `ChartCodes.CheckZ`.
+function zCoded(options: SurfaceScaleOptions & { readonly zFormat?: (value: ChartValue) => string }, zTitle: string): Pick<SurfaceParts, 'zFormatCode' | 'zCode'> {
+    const code = options.zFormatCode;
+    if (code === undefined) {
+        return { zFormatCode: undefined, zCode: undefined };
+    }
+    const name = zTitle.length > 0 ? `the surface's '${zTitle}'` : 'the surface\'s values';
+    const reading = readCode(code);
+    if (typeof reading === 'string') {
+        throw new ChartRefusedError(`The format code "${code}" of ${name} ${reading}.`);
+    }
+    if (options.zFormat !== undefined) {
+        throw new ChartRefusedError(`The format code "${code}" of ${name} stands beside its ZFormat: it would write one value two ways.`);
+    }
+    if (reading.isDate) {
+        throw new ChartRefusedError(`The format code "${code}" of ${name} writes dates, and its values are numbers.`);
+    }
+    return { zFormatCode: code, zCode: reading };
 }
 
 function numberAxis(along: SurfaceAxis): ChartAxisOptions {

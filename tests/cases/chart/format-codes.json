@@ -1,0 +1,1029 @@
+{
+  "about": "An axis', a series' Excel format code (ADR-0420): read by the family's FormatCode (ADR-0342, tests/cases/shaped), it writes every tick, the position under the pointer, every value held and every value the chart computes, invariantly; a code it cannot write with is refused by name.",
+  "kind": "chart",
+  "definitions": {
+    "numbers": {
+      "axis": {
+        "values": "numbers",
+        "formatCode": "0.00\"y\""
+      },
+      "series": [
+        {
+          "id": "a",
+          "name": "EPE",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1234567.891
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "formatCode": "#,##0.00"
+        }
+      ]
+    },
+    "dates": {
+      "axis": {
+        "values": "dates",
+        "formatCode": "d/m/yyyy"
+      },
+      "series": [
+        {
+          "id": "a",
+          "name": "EPE",
+          "kind": "level",
+          "points": [
+            [
+              {
+                "date": "2026-10-19"
+              },
+              1
+            ],
+            [
+              {
+                "date": "2026-10-20"
+              },
+              2
+            ]
+          ]
+        }
+      ]
+    },
+    "candles": {
+      "axis": {
+        "values": "dates"
+      },
+      "series": [
+        {
+          "id": "idx",
+          "name": "Index",
+          "kind": "priceRange",
+          "formatCode": "#,##0.00",
+          "bars": [
+            [
+              {
+                "date": "2026-10-13"
+              },
+              39000,
+              39200,
+              38900,
+              39100,
+              5
+            ],
+            [
+              {
+                "date": "2026-10-14"
+              },
+              39120,
+              39480,
+              38950,
+              39310,
+              7
+            ]
+          ]
+        }
+      ]
+    },
+    "volCoded": {
+      "x": {
+        "title": "Delta",
+        "values": [
+          0.1,
+          0.25,
+          0.5
+        ],
+        "formatCode": "0%"
+      },
+      "y": {
+        "title": "Tenor",
+        "values": [
+          "1M",
+          "1Y"
+        ]
+      },
+      "z": [
+        [
+          0.0912,
+          0.0955,
+          0.1
+        ],
+        [
+          0.104,
+          0.11,
+          0.114
+        ]
+      ],
+      "zTitle": "Volatility",
+      "zFormatCode": "0.00%"
+    },
+    "meshCoded": {
+      "nodes": [
+        [
+          0,
+          0,
+          0.1
+        ],
+        [
+          1,
+          0,
+          0.2
+        ],
+        [
+          0,
+          1,
+          0.2
+        ],
+        [
+          1,
+          1,
+          0.3
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          3
+        ],
+        [
+          0,
+          3,
+          2
+        ]
+      ],
+      "xTitle": "Strike",
+      "yTitle": "Tenor",
+      "zTitle": "Rate",
+      "xFormatCode": "0.00",
+      "zFormatCode": "0.0%"
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0420: an axis' format code writes every tick",
+      "definition": "numbers",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "1.00y"
+        },
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "2.00y"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code writes a Dates axis' calendar ticks",
+      "definition": "dates",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "19/10/2026"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code that tells months apart steps no finer than a month, so no two ticks read alike",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "formatCode": "mmm yy"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "EPE",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-10-19"
+                },
+                1
+              ],
+              [
+                {
+                  "date": "2026-11-20"
+                },
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {}
+      },
+      "expect": [
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "Nov 26"
+        },
+        {
+          "at": "xTicks",
+          "map": "2",
+          "lacks": "Oct 26"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: an axis' format code writes the position under the pointer, and a series' code the value held",
+      "definition": "numbers",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 0,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "0.00y"
+        },
+        {
+          "at": "lines.[id=a].value",
+          "is": "1,234,567.89"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code on a Dates axis writes the day",
+      "definition": "dates",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-19"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "19/10/2026"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a candle's code writes the values the chart computes, its change and its volume, as it writes the ones held",
+      "definition": "candles",
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-14"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "O 39,120.00 H 39,480.00 L 38,950.00 C 39,310.00"
+        },
+        {
+          "at": "lines.0.note",
+          "has": "Chg +210.00"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a code the reader does not read is refused, naming the axis and why",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "formatCode": "[Red]0.00"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis' format code \"[Red]0.00\""
+      ]
+    },
+    {
+      "name": "ADR-0420: a series' code the reader does not read is refused, naming the series",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "formatCode": "0.00\"x"
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "'A''s format code \"0.00\"x\""
+      ]
+    },
+    {
+      "name": "ADR-0420: a series with both a Format and a code is refused: it would write one value two ways",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "format": {
+              "prefix": "$"
+            },
+            "formatCode": "0.00"
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "'A' has both a Format and the format code \"0.00\": it would write one value two ways."
+      ]
+    },
+    {
+      "name": "ADR-0420: a number code on a Dates axis is refused",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "formatCode": "0.00"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-10-19"
+                },
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis' format code \"0.00\" writes numbers, and the axis places dates."
+      ]
+    },
+    {
+      "name": "ADR-0420: a code of the time alone tells no dates apart, and a Dates axis refuses it",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "formatCode": "hh:mm"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-10-19"
+                },
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis' format code \"hh:mm\" writes no day, month or year, and the axis places dates."
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code on a Numbers axis is refused",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "formatCode": "yyyy-mm-dd"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis' format code \"yyyy-mm-dd\" writes dates, and the axis places numbers."
+      ]
+    },
+    {
+      "name": "ADR-0420: a code on a Labels axis has nothing to write",
+      "definition": {
+        "axis": {
+          "values": "labels",
+          "labels": [
+            "A",
+            "B"
+          ],
+          "formatCode": "0.00"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The axis places labels, which it writes as they are: the format code \"0.00\" has nothing to write."
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code on a series is refused: its values are numbers",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "formatCode": "yyyy"
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "'A''s format code \"yyyy\" writes dates, and its values are numbers."
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface's codes write its axis' values and its values, in its summary as everywhere",
+      "surface": "volCoded",
+      "surfaceSummary": {},
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of Volatility over Delta from 10% to 50% and Tenor from 1M to 1Y; 3 by 2 points, from 9.12% to 11.40%."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis' code writes the lines it labels",
+      "surface": "volCoded",
+      "mesh": {},
+      "expect": [
+        {
+          "at": "xLines",
+          "map": "label",
+          "is": [
+            "10%",
+            "25%",
+            "50%"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a slice is written by the surface's code for its values",
+      "surface": "volCoded",
+      "slice": {
+        "axis": "y",
+        "value": "1Y"
+      },
+      "expect": [
+        {
+          "at": "series.0.formatCode",
+          "is": "0.00%"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a mesh's slice is named by its axis' code and written by the code for its values",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0.1
+          ],
+          [
+            1,
+            0,
+            0.2
+          ],
+          [
+            0,
+            1,
+            0.2
+          ],
+          [
+            1,
+            1,
+            0.3
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            3,
+            2
+          ]
+        ],
+        "xTitle": "Strike",
+        "yTitle": "Tenor",
+        "zTitle": "Rate",
+        "xFormatCode": "0.00",
+        "zFormatCode": "0.0%"
+      },
+      "slice": {
+        "axis": "x",
+        "value": 0.25
+      },
+      "expect": [
+        {
+          "at": "series.0.name",
+          "is": "Rate at 0.25"
+        },
+        {
+          "at": "series.0.formatCode",
+          "is": "0.0%"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis' number code is refused over an axis of texts, naming a text it holds",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "10P",
+            "ATM"
+          ],
+          "formatCode": "0%"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The format code \"0%\" of the surface axis 'Delta' writes numbers, and the axis holds the text \"10P\"."
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis' code the reader does not read is refused, naming the axis",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            1,
+            2
+          ],
+          "formatCode": "[Red]0"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The format code \"[Red]0\" of the surface axis 'Delta' holds a part in brackets"
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis with a Format and a code is refused",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            1,
+            2
+          ],
+          "format": {
+            "places": 1
+          },
+          "formatCode": "0.0"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "stands beside its Format: it would write one value two ways."
+      ]
+    },
+    {
+      "name": "ADR-0420: a date code for a surface's values is refused: they are numbers",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            1,
+            2
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "zTitle": "P&L",
+        "zFormatCode": "yyyy"
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The format code \"yyyy\" of the surface's 'P&L' writes dates, and its values are numbers."
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface with a ZFormat and a code for its values is refused",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            1,
+            2
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "zFormat": {
+          "places": 2
+        },
+        "zFormatCode": "0.00"
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "stands beside its ZFormat: it would write one value two ways."
+      ]
+    },
+    {
+      "name": "ADR-0420: a mesh's axis code writes the ticks between its nodes, and the code for its values the vertical ticks and the colour bar",
+      "surface": "meshCoded",
+      "mesh": {},
+      "expect": [
+        {
+          "at": "xLines",
+          "map": "label",
+          "has": "0.40"
+        },
+        {
+          "at": "zTicks",
+          "map": "label",
+          "has": "20.0%"
+        },
+        {
+          "at": "bar.ticks",
+          "map": "label",
+          "has": "20.0%"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a centre is written by the code for the values, as they are",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            -0.01,
+            0.02
+          ],
+          [
+            0.01,
+            0.03
+          ]
+        ],
+        "zTitle": "P&L",
+        "zFormatCode": "0.0%",
+        "centre": 0
+      },
+      "surfaceSummary": {},
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of P&L over Strike from 1 to 2 and Tenor from 1M to 1Y; 2 by 2 points, from -1.0% to 3.0%. Coloured by distance from 0.0%, below and above."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface from points and one sampled take their axes' codes",
+      "build": {
+        "points": {
+          "surface": {
+            "points": [
+              [
+                1,
+                1,
+                9.0
+              ],
+              [
+                2,
+                1,
+                9.5
+              ],
+              [
+                1,
+                2,
+                10.0
+              ],
+              [
+                2,
+                2,
+                10.5
+              ]
+            ],
+            "xTitle": "Strike",
+            "yTitle": "Tenor",
+            "xFormatCode": "0.0",
+            "yFormatCode": "0\"Y\""
+          },
+          "surfaceSummary": {}
+        },
+        "sampled": {
+          "surface": {
+            "sampled": {
+              "method": "plane",
+              "x": [
+                0,
+                1
+              ],
+              "y": [
+                0,
+                1
+              ],
+              "z": {
+                "plane": [
+                  1,
+                  2,
+                  10
+                ]
+              },
+              "samples": 3
+            },
+            "xTitle": "x",
+            "yTitle": "y",
+            "xFormatCode": "0.00"
+          },
+          "surfaceSummary": {}
+        }
+      },
+      "expect": [
+        {
+          "at": "points",
+          "is": "3D surface of Values over Strike from 1.0 to 2.0 and Tenor from 1Y to 2Y; 2 by 2 points, from 9 to 10.5."
+        },
+        {
+          "at": "sampled",
+          "is": "3D surface of Values over x from 0.00 to 1.00 and y from 0 to 1; 3 by 3 points, from 1 to 13. Interpolated by the Consumer: plane."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0420: a surface axis' code that writes two of its values alike is refused: a line and a slice are named by the text",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            0.101,
+            0.104,
+            0.25
+          ],
+          "formatCode": "0%"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "The format code \"0%\" of the surface axis 'Delta' writes the number 0.101 and the number 0.104 alike, as \"10%\"."
+      ]
+    }
+  ]
+}

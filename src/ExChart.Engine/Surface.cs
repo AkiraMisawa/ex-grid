@@ -27,6 +27,46 @@ public sealed record SurfaceAxis
     public Func<object, string>? Format { get; }
 
     /// <summary>
+    /// An Excel number format code in the invariant spelling, such as <c>0.0%</c> or <c>yyyy-mm-dd</c>, read by the
+    /// family's <see cref="ExGrid.Data.FormatCode"/> (ADR-0420): it writes the axis' values and its ticks between them.
+    /// It stands where a <see cref="Format"/> would, and is what a surface drawn in the browser takes, where no .NET
+    /// function can be called. A number code writes an axis of numbers, a date code an axis of dates.
+    /// </summary>
+    /// <exception cref="ChartRefusedException">The reader does not read the code, the axis has a <see cref="Format"/>
+    /// too, or its values are not of the kind the code writes.</exception>
+    public string? FormatCode
+    {
+        get;
+        init
+        {
+            var (code, read, refusal) = ChartCodes.Read(value);
+            if (code is not null) ChartCodes.CheckSurfaceAxis(this, code, read, refusal);
+            (field, _code) = (code, read);
+        }
+    }
+
+    private readonly ExGrid.Data.FormatCode? _code;
+
+    /// <summary>
+    /// A function of the Consumer's own script that writes the axis' values and its ticks between them (ADR-0420
+    /// section 3), for what a <see cref="FormatCode"/> cannot say. Only a surface drawn in the browser calls it.
+    /// </summary>
+    /// <exception cref="ChartRefusedException">The axis has a <see cref="Format"/> or a <see cref="FormatCode"/> too.</exception>
+    public ScriptFunction? FormatScript
+    {
+        get;
+        init
+        {
+            if (value is not null && (Format is not null || FormatCode is not null))
+            {
+                var name = Title.Length > 0 ? $"the surface axis '{Title}'" : "a surface axis";
+                throw new ChartRefusedException($"The script function {value} of {name} stands beside its {(Format is not null ? "Format" : "format code")}: it would write one value two ways.");
+            }
+            field = value;
+        }
+    }
+
+    /// <summary>
     /// How the axis places its values (ADR-0312): <see cref="AxisScale.Categories"/>, the default, spaces a
     /// grid's lines evenly, one per value, as a market quotes tenors and deltas;
     /// <see cref="AxisScale.Proportional"/> and <see cref="AxisScale.Logarithmic"/> place numbers by their
@@ -34,19 +74,22 @@ public sealed record SurfaceAxis
     /// </summary>
     public AxisScale Scale { get; init; } = AxisScale.Categories;
 
-    /// <summary>Writes the value at <paramref name="index"/> through <see cref="Format"/>.</summary>
+    /// <summary>Writes the value at <paramref name="index"/> through <see cref="Format"/> or <see cref="FormatCode"/>.</summary>
     public string Write(int index) => Write(Values[index]);
 
-    /// <summary>Writes <paramref name="value"/> through <see cref="Format"/>.</summary>
+    /// <summary>Writes <paramref name="value"/> through <see cref="Format"/> or <see cref="FormatCode"/>.</summary>
     public string Write(object value) =>
-        Format is { } f ? f(value) : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
+        Format is { } f ? f(value) : _code is { } code ? code.Format(value, CultureInfo.InvariantCulture) : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
 
     /// <summary>
-    /// Writes a position that need not be one of <see cref="Values"/>, such as a tick: through
-    /// <see cref="Format"/> when it is exactly a value of the values' own type, invariantly otherwise.
+    /// Writes a position that need not be one of <see cref="Values"/>, such as a tick: through a number
+    /// <see cref="FormatCode"/>, through <see cref="Format"/> when it is exactly a value of the values' own type,
+    /// invariantly otherwise.
     /// </summary>
     public string WriteTick(double position)
     {
+        if (_code is { IsDate: false } code)
+            return code.Format(position, CultureInfo.InvariantCulture);
         if (Format is not null && Values.Count > 0 && IsNumber(Values[0]))
         {
             try
@@ -74,8 +117,11 @@ public sealed record SurfaceAxis
     public static SurfaceAxis Of<T>(string title, IEnumerable<T> values, Func<T, string>? format = null) where T : notnull =>
         new(title, values.Select(v => (object)v).ToArray(), format is null ? null : o => format((T)o));
 
+
     internal static bool IsNumber(object? value) =>
         value is double or float or decimal or int or long or short or byte or sbyte or uint or ulong or ushort;
+
+    internal static bool IsDate(object? value) => value is DateOnly or DateTime or DateTimeOffset;
 
     internal double Number(int index) => Convert.ToDouble(Values[index], CultureInfo.InvariantCulture);
 }
@@ -138,7 +184,7 @@ public readonly record struct SurfaceTriangle(int A, int B, int C);
 /// from its neighbours. Scattered points are refused by name (<see cref="FromPoints{TX, TY}"/>).
 /// <para>
 /// Interpolation is the Consumer's (ADR-0257): a surface may be handed in as a function z(x, y), which
-/// ExChart samples (<see cref="Sampled(string, double, double, double, double, Func{double, double, ChartValue?}, string, string, string, int, Func{double, string}?, Func{double, string}?, Func{object, string}?, AxisScale, AxisScale)"/>),
+/// ExChart samples (<see cref="Sampled(string, double, double, double, double, Func{double, double, ChartValue?}, string, string, string, int, Func{double, string}?, Func{double, string}?, Func{object, string}?, AxisScale, AxisScale, string?, string?, string?)"/>),
 /// or as a grid whose interpolated values are marked; either way it names its method, which the
 /// tooltip and the Notes say. A Consumer's own triangle mesh is drawn as its triangles
 /// (<see cref="FromTriangles"/>, ADR-0311).
@@ -202,6 +248,47 @@ public sealed record SurfaceDefinition
     /// <summary>Writes a value as the cell it came from writes it; null writes it invariantly.</summary>
     public Func<object, string>? ZFormat { get; }
 
+    /// <summary>
+    /// An Excel number format code in the invariant spelling, such as <c>0.00%</c>, read by the family's
+    /// <see cref="ExGrid.Data.FormatCode"/> (ADR-0420): it writes the values the surface holds and the ones a slice
+    /// reads between them. It stands where <see cref="ZFormat"/> would, and is what a surface drawn in the browser
+    /// takes, where no .NET function can be called.
+    /// </summary>
+    /// <exception cref="ChartRefusedException">The reader does not read the code, it writes dates, or the surface has a
+    /// <see cref="ZFormat"/> too.</exception>
+    public string? ZFormatCode
+    {
+        get;
+        init
+        {
+            var (code, read, refusal) = ChartCodes.Read(value);
+            if (code is not null) ChartCodes.CheckZ(this, code, read, refusal);
+            (field, _zCode) = (code, read);
+        }
+    }
+
+    private readonly ExGrid.Data.FormatCode? _zCode;
+
+    /// <summary>
+    /// A function of the Consumer's own script that writes the values the surface holds, the ones a slice reads between
+    /// them and its vertical ticks (ADR-0420 section 3), for what a <see cref="ZFormatCode"/> cannot say. Only a surface
+    /// drawn in the browser calls it.
+    /// </summary>
+    /// <exception cref="ChartRefusedException">The surface has a <see cref="ZFormat"/> or a <see cref="ZFormatCode"/> too.</exception>
+    public ScriptFunction? ZFormatScript
+    {
+        get;
+        init
+        {
+            if (value is not null && (ZFormat is not null || ZFormatCode is not null))
+            {
+                var name = ZTitle.Length > 0 ? $"the surface's '{ZTitle}'" : "the surface's values";
+                throw new ChartRefusedException($"The script function {value} of {name} stands beside its {(ZFormat is not null ? "ZFormat" : "format code")}: it would write one value two ways.");
+            }
+            field = value;
+        }
+    }
+
     /// <summary>The method the interpolated values were made with, or null when the surface claims none.</summary>
     public string? Method { get; }
 
@@ -219,6 +306,12 @@ public sealed record SurfaceDefinition
 
     /// <summary>Whether the surface is a Consumer's triangle mesh rather than a grid (ADR-0311).</summary>
     public bool IsMesh => Triangles is not null;
+
+    /// <summary>
+    /// Every function of the Consumer's own script the surface names (ADR-0420 section 3), its axes' and its values';
+    /// empty for a surface a component drawing in .NET can draw.
+    /// </summary>
+    public IEnumerable<ScriptFunction> ScriptFunctions => new[] { X.FormatScript, Y.FormatScript, ZFormatScript }.OfType<ScriptFunction>();
 
     /// <summary>
     /// The vertical scale (ADR-0312): proportional, or logarithmic. A value at or below zero, or a
@@ -261,7 +354,7 @@ public sealed record SurfaceDefinition
             if (!(low.ToDouble() > 0))
                 return $"The vertical scale stays proportional: {Name(ZTitle, "the values")} reach {WriteZ(low)}, which a logarithmic scale cannot place.";
             if (Centre is { } c && !(c > 0))
-                return $"The vertical scale stays proportional: the colours diverge from {SurfaceMesh.Plain(c)}, which a logarithmic scale cannot place.";
+                return $"The vertical scale stays proportional: the colours diverge from {WriteZTick(c)}, which a logarithmic scale cannot place.";
             return null;
         }
     }
@@ -310,8 +403,13 @@ public sealed record SurfaceDefinition
     /// <summary>Whether the point at <paramref name="index"/> is interpolated; a mesh's nodes are its values.</summary>
     public bool IsInterpolatedNode(int index) => Nodes is null && IsInterpolated(index % X.Values.Count, index / X.Values.Count);
 
-    /// <summary>Writes a value through <see cref="ZFormat"/>.</summary>
-    public string WriteZ(ChartValue value) => ZFormat is { } f ? f(value.Value) : value.ToInvariantString();
+    // A tick on the vertical axis or the colour bar, and the centre the colours diverge from: through the code, as the
+    // values are, or plainly; a ZFormat, written for the values a column holds, leaves them plain (ADR-0420).
+    internal string WriteZTick(double value) => _zCode is { } code ? code.Format(value, CultureInfo.InvariantCulture) : SurfaceMesh.Plain(value);
+
+    /// <summary>Writes a value through <see cref="ZFormat"/> or <see cref="ZFormatCode"/>.</summary>
+    public string WriteZ(ChartValue value) =>
+        ZFormat is { } f ? f(value.Value) : _zCode is { } code ? code.Format(value.Value, CultureInfo.InvariantCulture) : value.ToInvariantString();
 
     internal IEnumerable<ChartValue> Present() =>
         Nodes is { } nodes ? nodes.Select(n => n.Z).OfType<ChartValue>() : Z.SelectMany(r => r).OfType<ChartValue>();
@@ -324,14 +422,15 @@ public sealed record SurfaceDefinition
     /// </summary>
     /// <exception cref="ChartRefusedException">The points are scattered, or two share a place.</exception>
     public static SurfaceDefinition FromPoints<TX, TY>(IEnumerable<(TX X, TY Y, ChartValue Z)> points, string xTitle, string yTitle, string zTitle = "",
-        Func<TX, string>? xFormat = null, Func<TY, string>? yFormat = null, Func<object, string>? zFormat = null)
+        Func<TX, string>? xFormat = null, Func<TY, string>? yFormat = null, Func<object, string>? zFormat = null,
+        string? xFormatCode = null, string? yFormatCode = null, string? zFormatCode = null)
         where TX : notnull where TY : notnull
     {
         var list = points.ToList();
         var xs = list.Select(p => p.X).Distinct().Order().ToList();
         var ys = list.Select(p => p.Y).Distinct().Order().ToList();
-        var xAxis = SurfaceAxis.Of(xTitle, xs, xFormat);
-        var yAxis = SurfaceAxis.Of(yTitle, ys, yFormat);
+        var xAxis = Coded(SurfaceAxis.Of(xTitle, xs, xFormat), xFormatCode);
+        var yAxis = Coded(SurfaceAxis.Of(yTitle, ys, yFormat), yFormatCode);
         foreach (var x in xs)
             if (list.Count(p => Equals(p.X, x)) < 2)
                 throw new ChartRefusedException($"{Name(xTitle, "x")} {xAxis.Write(x)} has a value at only one {Name(yTitle, "y")}: {ScatteredReason}");
@@ -349,7 +448,7 @@ public sealed record SurfaceDefinition
                 throw new ChartRefusedException($"Two points lie at {Name(xTitle, "x")} {xAxis.Write(p.X)} and {Name(yTitle, "y")} {yAxis.Write(p.Y)}; a grid point holds one value.");
             cell = p.Z;
         }
-        return new SurfaceDefinition(xAxis, yAxis, z, zTitle, zFormat);
+        return Coded(new SurfaceDefinition(xAxis, yAxis, z, zTitle, zFormat), zFormatCode);
     }
 
     private const string ScatteredReason =
@@ -366,7 +465,8 @@ public sealed record SurfaceDefinition
     /// <exception cref="ChartRefusedException">The mesh cannot be drawn as asked: a triangle names a node it does not hold, has no area, or two nodes share a place.</exception>
     public static SurfaceDefinition FromTriangles(IReadOnlyList<SurfaceNode> nodes, IReadOnlyList<SurfaceTriangle> triangles, string xTitle, string yTitle, string zTitle = "",
         Func<double, string>? xFormat = null, Func<double, string>? yFormat = null, Func<object, string>? zFormat = null,
-        AxisScale xScale = AxisScale.Proportional, AxisScale yScale = AxisScale.Proportional, IReadOnlyList<string>? notes = null)
+        AxisScale xScale = AxisScale.Proportional, AxisScale yScale = AxisScale.Proportional, IReadOnlyList<string>? notes = null,
+        string? xFormatCode = null, string? yFormatCode = null, string? zFormatCode = null)
     {
         ArgumentNullException.ThrowIfNull(nodes);
         ArgumentNullException.ThrowIfNull(triangles);
@@ -375,9 +475,9 @@ public sealed record SurfaceDefinition
         foreach (var n in nodes)
             if (!double.IsFinite(n.X) || !double.IsFinite(n.Y))
                 throw new ChartRefusedException($"A node lies at ({n.X}, {n.Y}), which is no place in the plane.");
-        var xAxis = SurfaceAxis.Of(xTitle, nodes.Select(n => n.X).Distinct().Order(), xFormat) with { Scale = xScale };
-        var yAxis = SurfaceAxis.Of(yTitle, nodes.Select(n => n.Y).Distinct().Order(), yFormat) with { Scale = yScale };
-        return new SurfaceDefinition(xAxis, yAxis, nodes.ToArray(), triangles.ToArray(), zTitle, zFormat, notes);
+        var xAxis = Coded(SurfaceAxis.Of(xTitle, nodes.Select(n => n.X).Distinct().Order(), xFormat) with { Scale = xScale }, xFormatCode);
+        var yAxis = Coded(SurfaceAxis.Of(yTitle, nodes.Select(n => n.Y).Distinct().Order(), yFormat) with { Scale = yScale }, yFormatCode);
+        return Coded(new SurfaceDefinition(xAxis, yAxis, nodes.ToArray(), triangles.ToArray(), zTitle, zFormat, notes), zFormatCode);
     }
 
     /// <summary>
@@ -390,7 +490,8 @@ public sealed record SurfaceDefinition
     /// <exception cref="ChartRefusedException">The function names no method, or has no value on the rectangle.</exception>
     public static SurfaceDefinition Sampled(string method, double xFrom, double xTo, double yFrom, double yTo, Func<double, double, ChartValue?> z,
         string xTitle, string yTitle, string zTitle = "", int samples = 25, Func<double, string>? xFormat = null, Func<double, string>? yFormat = null, Func<object, string>? zFormat = null,
-        AxisScale xScale = AxisScale.Categories, AxisScale yScale = AxisScale.Categories)
+        AxisScale xScale = AxisScale.Categories, AxisScale yScale = AxisScale.Categories, string? xFormatCode = null, string? yFormatCode = null,
+        string? zFormatCode = null)
     {
         if (string.IsNullOrWhiteSpace(method))
             throw new ChartRefusedException("A surface handed in as a function names its method, so the chart can say how its values were made (ADR-0257).");
@@ -406,15 +507,20 @@ public sealed record SurfaceDefinition
         var xs = Enumerable.Range(0, samples).Select(k => At(xFrom, xTo, xScale, k)).ToArray();
         var ys = Enumerable.Range(0, samples).Select(k => At(yFrom, yTo, yScale, k)).ToArray();
         var table = ys.Select(v => (IReadOnlyList<ChartValue?>)xs.Select(u => z(u, v)).ToArray()).ToArray();
-        return new SurfaceDefinition(SurfaceAxis.Of(xTitle, xs, xFormat ?? SurfaceMesh.Plain) with { Scale = xScale },
-            SurfaceAxis.Of(yTitle, ys, yFormat ?? SurfaceMesh.Plain) with { Scale = yScale }, table, zTitle, zFormat, method);
+        // A sampled axis is written plainly, as its ticks are, unless the Consumer gives a Format or a code.
+        return Coded(new SurfaceDefinition(
+            Coded(SurfaceAxis.Of(xTitle, xs, xFormat ?? (xFormatCode is null ? SurfaceMesh.Plain : null)) with { Scale = xScale }, xFormatCode),
+            Coded(SurfaceAxis.Of(yTitle, ys, yFormat ?? (yFormatCode is null ? SurfaceMesh.Plain : null)) with { Scale = yScale }, yFormatCode),
+            table, zTitle, zFormat, method), zFormatCode);
     }
 
     /// <summary>A surface interpolated by one of <see cref="Interpolation.Interpolate"/>'s methods, sampled across its rectangle under its method's name.</summary>
     public static SurfaceDefinition Sampled(Interpolation.Interpolant2D surface, string xTitle, string yTitle, string zTitle = "", int samples = 25,
         Func<double, string>? xFormat = null, Func<double, string>? yFormat = null, Func<object, string>? zFormat = null,
-        AxisScale xScale = AxisScale.Categories, AxisScale yScale = AxisScale.Categories) =>
-        Sampled(surface.Method, surface.XFrom, surface.XTo, surface.YFrom, surface.YTo, surface.ValueAt, xTitle, yTitle, zTitle, samples, xFormat, yFormat, zFormat, xScale, yScale);
+        AxisScale xScale = AxisScale.Categories, AxisScale yScale = AxisScale.Categories, string? xFormatCode = null, string? yFormatCode = null,
+        string? zFormatCode = null) =>
+        Sampled(surface.Method, surface.XFrom, surface.XTo, surface.YFrom, surface.YTo, surface.ValueAt, xTitle, yTitle, zTitle, samples, xFormat, yFormat, zFormat,
+            xScale, yScale, xFormatCode, yFormatCode, zFormatCode);
 
     /// <summary>
     /// The slice as a 2D chart (ADR-0274): the values along the other axis, where they are read exactly —
@@ -438,7 +544,7 @@ public sealed record SurfaceDefinition
                 cut.AddRange(run.Select(p => new ChartPoint(p.Along, p.Z)));
             }
             var meshSeries = ChartSeries.Of("slice", $"{Name(ZTitle, "Value")} at {fixedAxis.Write(Convert.ToDouble(slice.Value, CultureInfo.InvariantCulture))}", SeriesKind.Level, cut)
-                with { FromZero = false, Format = ZFormat, Interpolated = true, Segments = [new Segment(cut[0].X, cut[^1].X, TrianglesMethod)] };
+                with { FromZero = false, Format = ZFormat, FormatCode = ZFormatCode, FormatScript = ZFormatScript, Interpolated = true, Segments = [new Segment(cut[0].X, cut[^1].X, TrianglesMethod)] };
             return new ChartDefinition(NumberAxis(along), [meshSeries]);
         }
 
@@ -448,7 +554,7 @@ public sealed record SurfaceDefinition
         var points = Enumerable.Range(0, along.Values.Count)
             .Select(k => new ChartPoint(placed ? along.Number(k) : k, slice.Axis == SurfaceSliceAxis.X ? At(at, k) : At(k, at)));
         var name = $"{Name(ZTitle, "Value")} at {fixedAxis.Write(at)}";
-        var series = ChartSeries.Of("slice", name, SeriesKind.Level, points) with { FromZero = false, Format = ZFormat };
+        var series = ChartSeries.Of("slice", name, SeriesKind.Level, points) with { FromZero = false, Format = ZFormat, FormatCode = ZFormatCode, FormatScript = ZFormatScript };
         var interpolated = Enumerable.Range(0, along.Values.Count).Any(k => slice.Axis == SurfaceSliceAxis.X ? IsInterpolated(at, k) : IsInterpolated(k, at));
         if (interpolated)
             series = series with
@@ -526,6 +632,12 @@ public sealed record SurfaceDefinition
         a.IsDecimal && b.IsDecimal
             ? ChartValue.Of((decimal)a.Value + (decimal)w * ((decimal)b.Value - (decimal)a.Value))
             : ChartValue.Of(a.ToDouble() + w * (b.ToDouble() - a.ToDouble()));
+
+    // An axis, or a surface's values, given a code where the factory was handed one.
+    private static SurfaceAxis Coded(SurfaceAxis axis, string? formatCode) => formatCode is null ? axis : axis with { FormatCode = formatCode };
+
+    private static SurfaceDefinition Coded(SurfaceDefinition surface, string? zFormatCode) =>
+        zFormatCode is null ? surface : surface with { ZFormatCode = zFormatCode };
 
     private static string Name(string title, string fallback) => string.IsNullOrWhiteSpace(title) ? fallback : title;
 

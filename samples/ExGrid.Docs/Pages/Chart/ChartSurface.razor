@@ -85,6 +85,20 @@
         <DocsExample Builtin="typeof(SurfaceLog)" Mud="typeof(SurfaceLogMud)" Files="@(["Examples/Chart/SurfaceShapes.cs", "Examples/Chart/VolSurface.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Writing the values">
+        <p>
+            An axis and the values take an Excel number format code, as a chart's axes and series do:
+            <code>SurfaceAxis.FormatCode</code>, <code>ZFormatCode</code> on the surface, and
+            <code>xFormatCode</code> and <code>yFormatCode</code> on <code>FromPoints</code>,
+            <code>FromTriangles</code> and <code>Sampled</code>. A code writes an axis' values and the ticks between
+            them, and the values the surface holds and the ones a slice reads between them; the mesh above writes
+            its positions with <code>0.000</code>. A number code writes an axis of numbers and a date code an axis of
+            dates; a code of the other kind, one the reader does not take, and one beside a <code>Format</code> are
+            refused by name. A <code>Format</code> still writes what no code says, and a code is what a surface
+            drawn in the browser takes in its place.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="How it is drawn">
         <p>
             The surface is projected and drawn by the chart's own script while it is turned, because a round

@@ -15,7 +15,7 @@ import type { CellPosition } from '../src/selection/cell';
 import type { GridSelection } from '../src/selection/selection';
 import type { GridPage } from '../src/source/fetching-source';
 import { GridSource } from '../src/source/grid-source';
-import { mount, painted, q, trades, type Trade } from './grid-harness';
+import { mount, painted, q, scrollTo, trades, type Trade } from './grid-harness';
 
 // Book and Notional edit; the Desk does not. Notional's verdict rejects what is not a number and flags a
 // negative one, as the Features page's does.
@@ -234,6 +234,34 @@ describe('the Cell Editor', () => {
         await painted();
         expect(defined(listener.edits[0], 'the intent').value).toBe('Book-3');
         expect(focusOf(listener.selections)).toEqual({ row: 3, column: 1 });
+    });
+
+    it('ticket 32 / ADR-0010: in Caret, PageUp and PageDown are taken and do nothing, so no browser scrolls the grid from the field', async () => {
+        const listener = heard();
+        const root = await grid(listener);
+        press(root, book, rowY(3));
+        await painted();
+        key('F2');
+        await painted();
+        expect([key('PageUp').defaultPrevented, key('PageDown').defaultPrevented]).toEqual([true, true]);
+        await painted();
+        expect([editor(root).value, editor(root).selectionStart, listener.edits, focusOf(listener.selections)])
+            .toEqual(['Book-3', 6, [], { row: 3, column: 0 }]);
+    });
+
+    it('ticket 32 / ADR-0010: in Caret where Command is the primary key, Home and End place the caret and Shift extends, where the browser would scroll', async () => {
+        const listener = heard();
+        const { root } = mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, ...listener.options }, { primaryIsMeta: true });
+        await painted();
+        press(root, book, rowY(3));
+        await painted();
+        key('F2');
+        await painted();
+        expect(key('Home').defaultPrevented).toBe(true);
+        expect([editor(root).selectionStart, editor(root).selectionEnd]).toEqual([0, 0]);
+        expect(key('End', { shiftKey: true }).defaultPrevented).toBe(true);
+        expect([editor(root).selectionStart, editor(root).selectionEnd]).toEqual([0, 6]);
+        expect(listener.edits).toEqual([]);
     });
 
     it('ADR-0029: ex-editing joins the root while the Cell Editor stands, and goes with it', async () => {
@@ -608,6 +636,27 @@ describe('an IME composing on the Keyboard Field', () => {
     });
 });
 
+/** A grid over a fetching source answered at once, scrolled far enough that its Window leaves the first rows. */
+async function scrolledAway(open: (root: HTMLElement) => void): Promise<{ readonly root: HTMLElement; readonly listener: ReturnType<typeof heard> }> {
+    const all = trades(1000);
+    const source = GridSource.fetch<Trade>(({ range }) => Promise.resolve({ rows: all.slice(range.start, range.start + range.count), start: range.start, totalCount: 1000 }), { readAheadRows: 0 });
+    const listener = heard();
+    const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options });
+    await painted();
+    await settle();
+    press(root, book, rowY(2));
+    await painted();
+    open(root);
+    await painted();
+    await scrollTo(root, 20_000);
+    // The fling lands, the rows it landed on are asked for, and the answer comes in.
+    told.clock.advance(150);
+    await painted();
+    await settle();
+    await painted();
+    return { root, listener };
+}
+
 describe('an edit under rows and columns that move', () => {
     it('ADR-0142 LV-20: without a Row Key, a commit after the order moved is refused, and the editor stays with the typing', async () => {
         const listener = heard();
@@ -681,6 +730,18 @@ describe('an edit under rows and columns that move', () => {
         key('Enter');
         await painted();
         expect([hasEditor(root), listener.discards, listener.edits.length]).toEqual([false, ['columnNoLongerEditable'], 0]);
+    });
+
+    it('ST-2 (ADR-0007): an edit opened with F2 and not typed into closes when the Window leaves its row, and the keyboard comes back', async () => {
+        const { root, listener } = await scrolledAway(() => { key('F2'); });
+        expect([hasEditor(root), document.activeElement === keyField(root), listener.editing, listener.edits.length]).toEqual([false, true, [true, false], 0]);
+    });
+
+    it('ST-2 (ADR-0007): an edit with typing in it stays when the Window leaves its row (ADR-0142)', async () => {
+        const typed = await scrolledAway(() => { key('W'); });
+        expect([hasEditor(typed.root), typed.listener.editing]).toEqual([true, [true]]);
+        const added = await scrolledAway(root => { key('F2'); type(root, '9'); });
+        expect([editor(added.root).value, added.listener.editing]).toEqual(['Book-29', [true]]);
     });
 });
 
