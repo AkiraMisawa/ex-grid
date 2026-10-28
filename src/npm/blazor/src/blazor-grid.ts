@@ -158,13 +158,16 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
         signal.throwIfAborted();
         return verdictOf(answer, column);
     });
-    const columns = new ColumnSet(verdict);
+    // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
+    const made: { grid?: GridHandle<BlazorRow> } = {};
+    const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'));
+    const columns = new ColumnSet(verdict, (slot, cell) => slots.template(slot, cell));
     columns.take(init.options.columns, init.options.columnsVersion);
     const rows = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen); });
     const sourceOf = (traits: WireSourceTraits, state: WireState): DotNetSource => {
-        const made = new DotNetSource(dotnet, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal));
-        made.take(state);
-        return made;
+        const taken = new DotNetSource(dotnet, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal));
+        taken.take(state);
+        return taken;
     };
     let source = sourceOf(init.source, init.state);
     // The parameters as .NET last sent them, and the Scope's declaration once the page's Scope stands (ADR-0430).
@@ -217,10 +220,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
     // Asked of .NET for the text and caret the core hands; the core drops an answer for text it no longer holds.
     const completeEditorText = latestOnly(async (text, caret) => completionOf(await dotnet.invokeMethodAsync('Complete', text, caret)));
     const menus = contextMenus(dotnet, () => ({ generation: source.generation, columnsVersion: columns.version }));
-    // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
-    const made: { grid?: GridHandle<BlazorRow> } = {};
     const metrics = new WireMetrics();
-    const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'));
     const grid: GridHandle<BlazorRow> = createGrid(root, optionsNow());
     made.grid = grid;
     // The grid joins its Scope once a Sheet of it brings it to the page, and is pointed at from then on (ADR-0430).

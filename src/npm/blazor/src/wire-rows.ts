@@ -7,7 +7,7 @@
 
 import {
     actionColumn, type CellAlign, type CellState, type ColumnType, type DateType, type EditVerdict, type FilterUi, type GridAction, type GridColumn,
-    type GridColumnWidth, type RowKey,
+    type GridColumnWidth, type GridTemplate, type RowKey,
 } from '@ex-grid/core';
 import { rowKeyOf, valueKey, valueOf } from './wire-values';
 
@@ -57,6 +57,9 @@ export interface WireColumn {
      * has answered (ADR-0380 section 5). */
     readonly validates?: true;
     readonly actions?: readonly GridAction[];
+    /** Whether each cell's content is the column's Razor fragment, which .NET draws from the row (ADR-0020, ADR-0410
+     * section 6). */
+    readonly template?: true;
 }
 
 /** .NET's verdict on a commit into `column` of `row`, asked across the wire: `signal` aborts as the user cancels the
@@ -150,12 +153,15 @@ export class ColumnSet {
     #indexes = new Map<GridColumn<BlazorRow>, number>();
     #version = 0;
     readonly #verdict: VerdictOf | undefined;
+    readonly #template: GridTemplate<BlazorRow> | undefined;
     readonly #valueLists = new Map<string, TextHolding>();
     readonly #awaited: { readonly version: number; readonly reached: () => void }[] = [];
 
-    /** `verdict` asks .NET to judge a commit, for the columns it says it validates. */
-    constructor(verdict?: VerdictOf) {
+    /** `verdict` asks .NET to judge a commit, for the columns it says it validates; `template` mounts a Template cell's
+     * content, which .NET draws, for the columns it says it templates. */
+    constructor(verdict?: VerdictOf, template?: GridTemplate<BlazorRow>) {
         this.#verdict = verdict;
+        this.#template = template;
     }
 
     /** Takes .NET's declarations, numbered `version` by .NET each time they change: a column declared as before is
@@ -174,7 +180,7 @@ export class ColumnSet {
             const signature = JSON.stringify(wire);
             const kept = before.get(signature);
             if (kept !== undefined && this.#held.indexOf(kept) === index) return kept;
-            return columnOf(wire, index, signature, this.#verdict);
+            return columnOf(wire, index, signature, this.#verdict, this.#template);
         }));
         this.#indexes = new Map(this.#held.map((held, index) => [held.column, index]));
     }
@@ -257,12 +263,15 @@ export class ColumnSet {
     }
 }
 
-function columnOf(wire: WireColumn, index: number, signature: string, verdict: VerdictOf | undefined): HeldColumn {
+function columnOf(
+    wire: WireColumn, index: number, signature: string, verdict: VerdictOf | undefined, template: GridTemplate<BlazorRow> | undefined,
+): HeldColumn {
     if (wire.actions !== undefined) {
         return { signature, column: actionColumn(wire.name, wire.actions, { header: wire.header, width: wire.width }), texts: undefined };
     }
     const texts = wire.format === null ? undefined : new FormatTexts(wire.name);
     if (wire.validates === true && verdict === undefined) throw new TypeError(`.NET declared column '${wire.name}' validates, and nothing here asks it.`);
+    if (wire.template === true && template === undefined) throw new TypeError(`.NET declared column '${wire.name}' a Template, and nothing here mounts it.`);
     const { name } = wire;
     const column: GridColumn<BlazorRow> = Object.freeze({
         name: wire.name,
@@ -280,6 +289,7 @@ function columnOf(wire: WireColumn, index: number, signature: string, verdict: V
         ...(wire.validates === true && verdict !== undefined
             ? { validate: (row: BlazorRow, text: string, signal: AbortSignal) => verdict(row, name, text, signal) }
             : {}),
+        ...(wire.template === true && template !== undefined ? { template } : {}),
     });
     return { signature, column, texts };
 }

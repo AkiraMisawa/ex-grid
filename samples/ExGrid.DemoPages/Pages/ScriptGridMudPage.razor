@@ -22,13 +22,17 @@
     rendered in .NET beside the grid and moved into the Script Core's slots by the adapter's script, which wires
     each control in the browser. A key on a menu item, a value ticked, a condition, a search or a Trader typed never
     waits on the circuit. Book filters by its values, Notional by conditions, Ctrl+F asks the rows' source in .NET,
-    and Trader is editable, offering the desk's traders whose names begin with what is typed in a MudBlazor list. The
+    and Trader is editable, offering the desk's traders whose names begin with what is typed in a MudBlazor list. Note
+    is a Template Column whose field is drawn in .NET from each trade, and Space enters it. The
     other parts are still the Script Core's own. It stands in a striped <code>MudExGridPaper</code>, whose Roboto
     widths, Density and Row Stripes the grid takes as the C# core's does (ADR-0030).
 </p>
 
+@* The Note template's control takes the keyboard through this grid (ADR-0204): held once, so the cascade never
+   changes. *@
+<CascadingValue Name="TakeKeyboard" Value="TakeKeyboard" IsFixed="true">
 <MudExGridPaper Striped="true">
-    <ExGrid.Script.ExGrid TRow="DemoTrade"
+    <ExGrid.Script.ExGrid TRow="DemoTrade" @ref="_grid"
                          Rows="_rows"
                          Columns="Columns"
                          ViewportHeight="310"
@@ -40,18 +44,34 @@
                          OnNameBoxEntered="OnNameBoxEntered"
                          CompleteEditorText="CompleteTrader" />
 </MudExGridPaper>
+</CascadingValue>
 
 <p><span id="script-mud-hidden" role="status">Hidden: @_hidden</span></p>
 <p><span id="script-mud-edited" role="status">Edited: @_edited</span></p>
 <p><span id="script-mud-named" role="status">Named: @_named</span></p>
 
 @code {
+    // Held before the columns that use it: a static field is set in the order it is written.
+    private static readonly RenderFragment<TemplateCellContext<DemoTrade>> NoteTemplate = cell => @<TradeNoteInput Cell="cell" />;
+
     private static readonly GridColumn<DemoTrade>[] Columns =
     [
         new("Book", ColumnType.Text, r => r.Book, filterUi: global::ExGrid.Chrome.FilterUiMode.ValueList),
         new("Trader", ColumnType.Text, r => r.Trader, editable: true),
         new("Notional", ColumnType.Number, r => r.Notional),
+        // Each cell drawn in .NET from the trade and moved into the cell by the script (ADR-0410 section 6); the value
+        // beside it is still what sorts, filters and copies (ADR-0020).
+        GridColumn<DemoTrade>.TemplateColumn("Note", ColumnType.Text, r => r.Book, NoteTemplate,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
     ];
+
+    private global::ExGrid.Script.ExGrid<DemoTrade>? _grid;
+    private Func<ElementReference, Task>? _takeKeyboard;
+
+    // A template's control takes the keyboard through the grid, which grants it only while the keyboard is still the
+    // grid's (ADR-0204); before the grid is there, the control's own focus.
+    private Func<ElementReference, Task> TakeKeyboard => _takeKeyboard ??=
+        control => _grid is { } grid ? grid.HandKeyboardToAsync(control) : control.FocusAsync().AsTask();
 
     private readonly IReadOnlyList<DemoTrade> _rows = DemoData.Window(200, 11);
     private string _hidden = "none";

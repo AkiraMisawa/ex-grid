@@ -5,10 +5,11 @@
 import { describe, expect, it } from 'vitest';
 import {
     completionAttributes, filterPanelAttributes, findPanelAttributes, type FilterPanelView, type GridEditorCompletionSlotContext, type FindPanelView, type GridColumnMenuSlotContext, type GridFilterPanelSlotContext,
-    type GridFindPanelSlotContext, type GridLoadingIndicatorSlotContext,
+    type GridFindPanelSlotContext, type GridLoadingIndicatorSlotContext, type GridTemplateCell,
 } from '@ex-grid/core';
 import type { DotNetHandle } from '../src/dotnet-source';
 import { drawnVersionAttribute, RazorSlots } from '../src/razor-slots';
+import type { BlazorRow } from '../src/wire-rows';
 
 class FakeDotNet implements DotNetHandle {
     readonly calls: { readonly method: string; readonly args: readonly unknown[] }[] = [];
@@ -460,5 +461,33 @@ describe('a completion list filled with Razor', () => {
         slots.rendered(1, 2, again);
         again.querySelectorAll('div')[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }));
         expect(accepted).toEqual([0]);
+    });
+});
+
+const row = (id: number): BlazorRow => ({ id, key: undefined, cells: ['Alpha'], states: undefined, table: undefined });
+const cell = (of: BlazorRow, focusRequest: number): GridTemplateCell<BlazorRow> => ({ row: of, column: 'Note', focusRequest, takeKeyboard: () => undefined });
+const sent = (dotnet: FakeDotNet, at: number): unknown => JSON.parse(String(dotnet.calls[at]?.args.at(-1)));
+
+describe('a Template cell filled with Razor', () => {
+    it('ADR-0410 section 6 / ADR-0020: .NET is handed the row by its id, the column and the focus request, and draws the cell again for another object of the row', async () => {
+        const { dotnet, slots, slot } = made();
+        const first = row(7);
+        const cleanup = slots.template(slot, cell(first, 0));
+        expect(dotnet.calls[0]?.args.slice(0, 3)).toEqual([1, 1, 'templateCell']);
+        const drawn = sent(dotnet, 0) as { readonly drawing: number };
+        expect(drawn).toEqual({ row: 7, drawing: drawn.drawing, column: 'Note', focusRequest: 0 });
+        slots.rendered(1, 1, rendered('<span>Alpha</span>'));
+
+        // The core mounts the cell again for Space's request on the same row object: one drawing.
+        cleanup();
+        const again = slots.template(slot, cell(first, 3));
+        await Promise.resolve();
+        expect(sent(dotnet, 1)).toEqual({ row: 7, drawing: drawn.drawing, column: 'Note', focusRequest: 3 });
+
+        // A row whose values changed is another object, under the same id where .NET kept the row: drawn again.
+        again();
+        slots.template(slot, cell(row(7), 0));
+        await Promise.resolve();
+        expect((sent(dotnet, 2) as { readonly drawing: number }).drawing).not.toBe(drawn.drawing);
     });
 });

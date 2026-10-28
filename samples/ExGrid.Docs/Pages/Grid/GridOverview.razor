@@ -126,7 +126,11 @@
             yet, so <kbd>Ctrl</kbd>+<kbd>H</kbd> is refused. It takes <code>CellMetrics</code>, and inside
             <code>MudExGridPaper</code> the paper's Roboto widths, Density, hover band and Row Stripes, as the grid
             above does: a value written on the grid beats the paper's.
-            Not carried yet, and refused by name when a column declares it: Template Columns, Tone and Row Marks.
+            A Template Column is drawn as on the grid above: its fragment is rendered in .NET from the row and moved into
+            the cell by the grid's script, and <kbd>Space</kbd> asks its control for the keyboard, which it takes
+            through <code>HandKeyboardToAsync</code>. The Example's Confirmed column is one. A cell scrolled into view
+            shows its content a round trip later over Blazor Server.
+            Not carried yet, and refused by name when a column declares it: Tone and Row Marks.
             The Selection Summary is not offered yet either, and no summary is drawn. <code>PointedAt</code> takes
             the declaration a <code>PointingScope</code> made, so a Sheet over the same core points into the grid
             (<a href="exsheet/linked-tables">Linked Tables</a>); a declaration of your own, whose

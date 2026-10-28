@@ -222,6 +222,9 @@
                 <strong><code>GridColumn.TemplateColumn(...)</code></strong> paints its cells with your markup. It still
                 takes a value accessor, and that value — never the markup — is what sorts, filters and copies.
                 Keep the template in a static field: a new lambda per render makes the column look changed.
+                <code>ExGrid.Script.ExGrid</code> takes the same column: each cell's markup is rendered in .NET from the
+                row and moved into the cell by the grid's script, so a cell scrolled into view shows its content a round
+                trip later over Blazor Server (<a href="exgrid#a-grid-drawn-in-the-browser">a grid drawn in the browser</a>).
             </li>
             <li>
                 <strong>A template's control can take the keyboard.</strong> <kbd>Space</kbd> on the cell asks for it:
