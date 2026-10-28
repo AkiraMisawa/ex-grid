@@ -40,7 +40,7 @@
             report asks crosses to it as PivotJson, it answers with the Leaf Aggregates, and the report and its totals
             are built in the browser from them, as from a server. A source that says it changed is asked again.
         </p>
-        <DocsExample Builtin="typeof(ScriptCorePivot)" Files="@(["Examples/Pivot/Sales.cs"])" />
+        <DocsExample Builtin="typeof(ScriptCorePivot)" Mud="typeof(ScriptCorePivotMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
         <p>
             It carries <code>Layout</code>, <code>ShowFieldList</code>, the sizes, <code>Density</code>,
             <code>Culture</code>, <code>Caps</code>, <code>RedrawInterval</code>, <code>ChangeHighlightDuration</code>,
@@ -53,7 +53,19 @@
             browser, so <code>Label</code> is asked for every id the pivot and its grid have words for each time the
             parameters are set, as the Razor component asks it on each render; the words cross only when they changed,
             and it answers from the id alone. Records double clicked while a
-            removed <code>OnShowDetails</code> was still on its way to the browser open as if nobody had listened. Not carried yet: the Chromes,
+            removed <code>OnShowDetails</code> was still on its way to the browser open as if nobody had listened.
+            <code>Chrome</code> takes a Pivot Chrome, and the parts it draws in Razor stand inside the pivot the
+            browser draws: <code>MudPivotChrome</code> draws the Pivot Toolbar, the report filter band, the Layout menu, a
+            placed field's menu, Filter…, Field Settings…, Value Field Settings… and the Stale Report's notice with
+            MudBlazor's components, and dresses the report grid as
+            <code>MudGridChrome</code> dresses <code>ExGrid.Script.ExGrid</code>. A key typed as a menu opens is its
+            first item's, on Blazor Server too, where the menu's Razor arrives a round trip later; a report with no
+            values yet draws no grid to hold such a key in, and there it is not held yet. A panel's choices
+            are native selects in MudBlazor's outline and its text fields are read in the browser as they are typed,
+            so an OK pressed straight after a choice applies that choice on Blazor Server too. The PivotTable Fields
+            pane and Show Details are still drawn by the pivot itself under any Chrome. A Chrome of your
+            own names its parts in <code>IPivotChrome.ScriptSlots</code> and marks its controls with
+            <code>PivotScriptSlotAttributes</code>. Not carried yet:
             <code>OrderKeyPolicies</code>, <code>Clock</code>, <code>CellMetrics</code> and <code>ReportSource</code>;
             use the pivot above for those until they arrive. A field with an
             <code>OrderKey</code>, a .NET function the browser cannot call, is refused by name; declare its order with

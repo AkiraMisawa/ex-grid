@@ -3,12 +3,21 @@
 @using global::ExGrid.Selection
 @using global::ExGrid.Summarizing
 @using global::ExPivot
+@using global::ExPivot.Chrome
 @using global::ExPivot.Components
 @using global::ExPivot.Engine
+@using global::ExPivot.MudBlazor
 
-<DemoChromeAssets Name="builtin">
+@* ?chrome=mud hands the pivot MudPivotChrome (ADR-0410): its menus, its Pivot Toolbar and its Stale Report's notice,
+   and the report grid's menus, panels and loading bar, are MudBlazor's, drawn in .NET and moved into the Script
+   Core's slots. *@
+<DemoChromeAssets Name="@(DemoChrome.IsMud(ChromeName) ? "mud" : "builtin")">
     <Head>
         <ExPivotStylesheet />
+        @if (DemoChrome.IsMud(ChromeName))
+        {
+            <MudExPivotStylesheet />
+        }
     </Head>
 </DemoChromeAssets>
 
@@ -46,6 +55,7 @@
                         OnShowDetails="@(_takeDetails ? _showDetails : default)"
                         SelectionChanged="ShowSelection"
                         OnSelectionSummaryChanged="ShowSummary"
+                        Chrome="@(DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null)"
                         ViewportHeight="420" />
 
 @code {
@@ -60,6 +70,8 @@
     // `?details=dotnet` opens the page with the records taken in .NET, so a double click is never taken against a
     // handler on its way to the browser.
     [SupplyParameterFromQuery(Name = "details")] public string? DetailsQuery { get; set; }
+    // `?chrome=mud` dresses the pivot in MudPivotChrome; read as the pivot attaches.
+    [SupplyParameterFromQuery(Name = "chrome")] public string? ChromeName { get; set; }
     private string _details = "";
     private EventCallback<PivotDetails> _showDetails;
 

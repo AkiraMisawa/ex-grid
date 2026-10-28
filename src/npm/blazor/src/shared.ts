@@ -29,3 +29,4 @@ export { HeldSnapshots, type DotNetStream, type SnapshotsRead } from './snapshot
 export {
     drawnVersionAttribute, RazorSlotHost, type HostedSlotKind, type RazorSlotData, type RazorSlotHostOptions, type RazorSlotKind,
 } from './razor-slot-host';
+export { gridRazorSlotKinds, isGridRazorSlotName, type GridRazorSlotName } from './grid-razor-slot-kinds';

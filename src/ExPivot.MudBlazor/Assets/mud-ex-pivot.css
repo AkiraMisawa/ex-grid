@@ -213,6 +213,35 @@
     gap: 4px;
     flex-shrink: 0;
 }
+/* Over the Script Core (ADR-0410): a panel's choice is a native select, whose choice the browser hands the pivot
+   at once, in MudBlazor's outline, its label above it as a dense outlined field's caption; and OK that cannot
+   apply is marked aria-disabled, never disabled, so a press drawn a round trip late still reaches the pivot,
+   which refuses it and says why. */
+.mud-ex-pivot-native {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.mud-ex-pivot-native-label {
+    font-family: var(--mud-typography-caption-family);
+    font-size: var(--mud-typography-caption-size);
+    color: var(--mud-palette-text-secondary);
+}
+.mud-ex-pivot-native-select {
+    font: inherit;
+    color: var(--mud-palette-text-primary);
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: var(--mud-default-borderradius);
+    padding: 6px 8px;
+}
+.mud-ex-pivot-native-select:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: -1px;
+}
+.mud-ex-pivot-ok[aria-disabled="true"] {
+    opacity: 0.5;
+}
 
 /* The Stale Report's notice under the Pivot Toolbar (ADR-0067): a MudAlert whose sentence and Retry
    share a line while they fit, Retry wrapping under the sentence when they do not. */

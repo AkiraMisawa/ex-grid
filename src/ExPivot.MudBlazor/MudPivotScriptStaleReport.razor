@@ -1,0 +1,30 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The Stale Report's notice when the Script Core draws the pivot (ADR-0410): MudPivotStaleReport's
+   warning MudAlert with Retry, marked for the adapter's script, which presses it in the browser. It
+   stands inside the pivot's live region; MudAlert adds no role of its own. *@
+<MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mud-ex-pivot-stale-notice">
+    <div class="mud-ex-pivot-stale-content">
+        <span class="mud-ex-pivot-stale-message">@View.Message</span>
+        <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" Class="mud-ex-pivot-retry"
+                   StartIcon="@Chrome.IconFor(PivotCommandIds.Retry)" Disabled="@(!View.RetryEnabled)"
+                   UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Press, "retry", PivotScriptSlotAttributes.Control, "retry")">@View.RetryLabel</MudButton>
+    </div>
+</MudAlert>
+
+@code {
+    /// <summary>The notice's view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotStaleReportView View { get; set; } = default!;
+
+    /// <summary>Where the icons come from.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+}

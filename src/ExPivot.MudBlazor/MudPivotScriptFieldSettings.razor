@@ -1,0 +1,40 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* Field Settings… when the Script Core draws the pivot (ADR-0410): MudPivotFieldSettings' controls in the Script
+   Core's order, the subtotals' MudRadios first, which take the keyboard, then the order as a native select in
+   MudBlazor's outline; each is marked for the adapter's script, which hands the choice to the pivot in the browser:
+   a MudSelect would answer it in .NET, a round trip after the OK that applies it. *@
+<div class="mud-ex-pivot-panel mud-ex-pivot-field-settings">
+    <MudText Typo="Typo.subtitle2" Class="mud-ex-pivot-panel-title">@View.Caption</MudText>
+    <MudText Typo="Typo.caption" Class="mud-ex-pivot-legend">@View.SubtotalsLabel</MudText>
+    <MudRadioGroup T="bool" Value="View.Subtotals" Class="mud-ex-pivot-subtotals">
+        <MudRadio T="bool" Value="true" Dense="true" Size="Size.Small" Color="Color.Primary"
+                  UserAttributes="@(PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Choice, "subtotals", PivotScriptSlotAttributes.Value, "automatic")
+                      .With(PivotScriptSlotAttributes.First, ""))">@View.AutomaticLabel</MudRadio>
+        <MudRadio T="bool" Value="false" Dense="true" Size="Size.Small" Color="Color.Primary"
+                  UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Choice, "subtotals", PivotScriptSlotAttributes.Value, "none")">@View.NoneLabel</MudRadio>
+    </MudRadioGroup>
+    <label class="mud-ex-pivot-native">
+        <span class="mud-ex-pivot-native-label">@View.SortOrderLabel</span>
+        <select class="mud-ex-pivot-native-select mud-ex-pivot-sort" @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Choice, "sort")">
+            @for (var i = 0; i < View.Sorts.Count; i++)
+            {
+                <option value="@i" selected="@(View.Sort == i)">@View.Sorts[i]</option>
+            }
+        </select>
+    </label>
+    <MudPivotScriptActions Ok="@View.OkLabel" Cancel="@View.CancelLabel" CanApply="true" />
+</div>
+
+@code {
+    /// <summary>Field Settings…' view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotFieldSettingsView View { get; set; } = default!;
+}

@@ -7,9 +7,10 @@
 import { builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
 import { crossingCalls, HeldMessages } from '@ex-grid/blazor-shared';
-import { createPivot, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
+import { createPivot, type PivotChrome, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import { PivotJson, pivotWordIdList, readPivotLayoutJson, writePivotLayoutJson, type PivotLabel, type PivotLayout } from '@ex-grid/pivot-engine';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from './dotnet-pivot-source';
+import { RazorPivotSlots, type PivotGrids, type WireRazorSlots } from './razor-pivot-slots';
 
 /** The events .NET listens to: each one the component has a handler for, and no other. The layout is always heard,
  * since the one the pivot raised is the one it is handed back. */
@@ -53,6 +54,9 @@ export interface WireAttach {
     /** Whether .NET is across a circuit, Blazor Server's, whose hub limits the size of a message: only then is a
      * call larger than `inlineBytes` held for .NET to take as a stream (ADR-0005, as amended 2026-10-20). */
     readonly circuit: boolean;
+    /** The slots the Consumer's Chrome fills with Razor (ADR-0410), the pivot's and the report grid's, for the pivot's
+     * life; `null` for none. */
+    readonly razorSlots: WireRazorSlots | null;
 }
 
 /** What `update` is handed: the parameters again, whole; another source, if the Consumer handed one; and a layout of
@@ -76,12 +80,14 @@ export interface BlazorPivot {
     changed(generation: number, json: string): void;
     /** The call held as `held`, too large for a message of its own, as the stream .NET reads it from. Taken once. */
     take(held: number): Promise<Uint8Array<ArrayBuffer>>;
+    /** .NET rendered the contents of the Razor slot `id` for the data numbered `version` in `contents` (ADR-0410). */
+    slotRendered(id: number, version: number, contents: HTMLElement | null): void;
     /** Stops the pivot and empties its element. */
     dispose(): void;
 }
 
 /** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
-const heldPivotCalls: ReadonlySet<string> = new Set(['Heard', 'Aggregate', 'Items', 'Details', 'ItemCounts']);
+const heldPivotCalls: ReadonlySet<string> = new Set(['Heard', 'Aggregate', 'Items', 'Details', 'ItemCounts', 'MountSlot', 'UpdateSlot']);
 
 /**
  * Mounts ExPivot's Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
@@ -121,7 +127,24 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
     // them: the double click is answered as it was taken.
     const handBack = (event: PivotShowDetailsEvent): void => { pivot.openDetails(event); };
     const heard = handlers(send, raised => { layout = raised; }, () => layoutsSent, handBack);
-    const pivot: PivotHandle = createPivot(root, pivotOptions(init.options, source, layout, label, heard));
+    // The slots the Consumer's Chrome fills with Razor stand for the grid they are in: the pivot answers which, once it
+    // stands. A standing part the pivot mounts as it is made, its toolbar's, holds as soon as the pivot is handed back.
+    const made: { pivot?: PivotHandle } = {};
+    const early: EarlyHold[] = [];
+    const grids: PivotGrids = {
+        gridAround: element => made.pivot?.gridAround(element),
+        holdSettled: element => {
+            if (made.pivot !== undefined) return made.pivot.holdSettled(element);
+            const hold: EarlyHold = { element, release: undefined, gone: false };
+            early.push(hold);
+            return () => { hold.gone = true; hold.release?.(); };
+        },
+    };
+    const slots = init.razorSlots === null ? undefined : new RazorPivotSlots(bridge, init.razorSlots, grids);
+    const chrome = slots?.chrome();
+    const pivot: PivotHandle = createPivot(root, pivotOptions(init.options, source, layout, label, heard, chrome));
+    made.pivot = pivot;
+    for (const hold of early.splice(0)) if (!hold.gone) hold.release = pivot.holdSettled(hold.element);
     return Object.freeze({
         update: (text: string) => {
             const next = parsed<WireUpdate>(text);
@@ -129,7 +152,7 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
             const nextSource = next.source === undefined ? source : sourceOf(next.source);
             const nextLayout = next.layout === undefined ? layout : readPivotLayoutJson(next.layout);
             const nextLabel = next.words === undefined ? label : labelOf(next.words);
-            pivot.update(pivotOptions(next.options, nextSource, nextLayout, nextLabel, heard));
+            pivot.update(pivotOptions(next.options, nextSource, nextLayout, nextLabel, heard, chrome));
             source = nextSource;
             layout = nextLayout;
             label = nextLabel;
@@ -139,9 +162,11 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
             if (generation === source.generation) source.hear(text);
         },
         take: (number: number) => held.take(number),
+        slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots?.rendered(id, version, contents); },
         dispose: () => {
             stopped = true;
             held.clear();
+            slots?.dispose();
             pivot.destroy();
         },
     });
@@ -255,6 +280,7 @@ function labelOf(words: WireWords): PivotLabel | undefined {
 
 function pivotOptions(
     wire: WireOptions, source: DotNetPivotSource, layout: PivotLayout | undefined, label: PivotLabel | undefined, heard: Handlers,
+    chrome: PivotChrome | undefined,
 ): PivotViewOptions {
     const hears = new Set(wire.hears);
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
@@ -264,6 +290,7 @@ function pivotOptions(
         locale: wire.locale,
         ...(layout === undefined ? {} : { layout }),
         ...(label === undefined ? {} : { label }),
+        ...(chrome === undefined ? {} : { chrome }),
         // Always heard: the layout the pivot raised is the one handed back on the next update.
         onLayoutChanged: heard.onLayoutChanged,
         ...(hears.has('showFieldListChanged') ? { onShowFieldListChanged: heard.onShowFieldListChanged } : {}),
@@ -272,4 +299,11 @@ function pivotOptions(
         ...(hears.has('summaryFiguresChanged') ? { onSummaryFiguresChanged: heard.onSummaryFiguresChanged } : {}),
         ...(hears.has('selectionSummaryChanged') ? { onSelectionSummaryChanged: heard.onSelectionSummaryChanged } : {}),
     };
+}
+
+/** A Settled Mark held by a part the pivot mounted as it was made: taken once the pivot is handed back, unless let go first. */
+interface EarlyHold {
+    readonly element: Element;
+    release: (() => void) | undefined;
+    gone: boolean;
 }

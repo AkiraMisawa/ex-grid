@@ -1,7 +1,65 @@
 #nullable enable
 ExPivot.MudBlazor.MudPivotButton.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
 ExPivot.MudBlazor.MudPivotButton.InOrder.set -> void
+ExPivot.MudBlazor.MudPivotChrome.FieldSettings(ExPivot.Chrome.PivotFieldSettingsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.MudBlazor.MudPivotChrome.ItemFilter(ExPivot.Chrome.PivotItemFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.MudBlazor.MudPivotChrome.Menu(ExPivot.Chrome.PivotMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.MudBlazor.MudPivotChrome.ReportFilters(ExPivot.Chrome.PivotReportFiltersView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.MudBlazor.MudPivotChrome.ScriptSlots.get -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.MudBlazor.MudPivotChrome.StaleReport(ExPivot.Chrome.PivotStaleReportView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.MudBlazor.MudPivotChrome.Toolbar(ExPivot.Chrome.PivotToolbarView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.MudBlazor.MudPivotChrome.ValueFieldSettings(ExPivot.Chrome.PivotValueFieldSettingsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.MudBlazor.MudPivotIconButton
 ExPivot.MudBlazor.MudPivotIconButton.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
 ExPivot.MudBlazor.MudPivotIconButton.InOrder.set -> void
 ExPivot.MudBlazor.MudPivotIconButton.MudPivotIconButton() -> void
+ExPivot.MudBlazor.MudPivotScriptActions
+ExPivot.MudBlazor.MudPivotScriptActions.CanApply.get -> bool
+ExPivot.MudBlazor.MudPivotScriptActions.CanApply.set -> void
+ExPivot.MudBlazor.MudPivotScriptActions.Cancel.get -> string!
+ExPivot.MudBlazor.MudPivotScriptActions.Cancel.set -> void
+ExPivot.MudBlazor.MudPivotScriptActions.MudPivotScriptActions() -> void
+ExPivot.MudBlazor.MudPivotScriptActions.Ok.get -> string!
+ExPivot.MudBlazor.MudPivotScriptActions.Ok.set -> void
+ExPivot.MudBlazor.MudPivotScriptFieldSettings
+ExPivot.MudBlazor.MudPivotScriptFieldSettings.MudPivotScriptFieldSettings() -> void
+ExPivot.MudBlazor.MudPivotScriptFieldSettings.View.get -> ExPivot.Chrome.PivotFieldSettingsView!
+ExPivot.MudBlazor.MudPivotScriptFieldSettings.View.set -> void
+ExPivot.MudBlazor.MudPivotScriptItemFilter
+ExPivot.MudBlazor.MudPivotScriptItemFilter.MudPivotScriptItemFilter() -> void
+ExPivot.MudBlazor.MudPivotScriptItemFilter.View.get -> ExPivot.Chrome.PivotItemFilterView!
+ExPivot.MudBlazor.MudPivotScriptItemFilter.View.set -> void
+ExPivot.MudBlazor.MudPivotScriptMenu
+ExPivot.MudBlazor.MudPivotScriptMenu.Chrome.get -> ExPivot.MudBlazor.MudPivotChrome!
+ExPivot.MudBlazor.MudPivotScriptMenu.Chrome.set -> void
+ExPivot.MudBlazor.MudPivotScriptMenu.MudPivotScriptMenu() -> void
+ExPivot.MudBlazor.MudPivotScriptMenu.View.get -> ExPivot.Chrome.PivotMenuView!
+ExPivot.MudBlazor.MudPivotScriptMenu.View.set -> void
+ExPivot.MudBlazor.MudPivotScriptReportFilters
+ExPivot.MudBlazor.MudPivotScriptReportFilters.MudPivotScriptReportFilters() -> void
+ExPivot.MudBlazor.MudPivotScriptReportFilters.View.get -> ExPivot.Chrome.PivotReportFiltersView!
+ExPivot.MudBlazor.MudPivotScriptReportFilters.View.set -> void
+ExPivot.MudBlazor.MudPivotScriptStaleReport
+ExPivot.MudBlazor.MudPivotScriptStaleReport.Chrome.get -> ExPivot.MudBlazor.MudPivotChrome!
+ExPivot.MudBlazor.MudPivotScriptStaleReport.Chrome.set -> void
+ExPivot.MudBlazor.MudPivotScriptStaleReport.MudPivotScriptStaleReport() -> void
+ExPivot.MudBlazor.MudPivotScriptStaleReport.View.get -> ExPivot.Chrome.PivotStaleReportView!
+ExPivot.MudBlazor.MudPivotScriptStaleReport.View.set -> void
+ExPivot.MudBlazor.MudPivotScriptToolbar
+ExPivot.MudBlazor.MudPivotScriptToolbar.Chrome.get -> ExPivot.MudBlazor.MudPivotChrome!
+ExPivot.MudBlazor.MudPivotScriptToolbar.Chrome.set -> void
+ExPivot.MudBlazor.MudPivotScriptToolbar.MudPivotScriptToolbar() -> void
+ExPivot.MudBlazor.MudPivotScriptToolbar.View.get -> ExPivot.Chrome.PivotToolbarView!
+ExPivot.MudBlazor.MudPivotScriptToolbar.View.set -> void
+ExPivot.MudBlazor.MudPivotScriptValueFieldSettings
+ExPivot.MudBlazor.MudPivotScriptValueFieldSettings.MudPivotScriptValueFieldSettings() -> void
+ExPivot.MudBlazor.MudPivotScriptValueFieldSettings.View.get -> ExPivot.Chrome.PivotValueFieldSettingsView!
+ExPivot.MudBlazor.MudPivotScriptValueFieldSettings.View.set -> void
+~override ExPivot.MudBlazor.MudPivotScriptActions.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptFieldSettings.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptItemFilter.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptReportFilters.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptStaleReport.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptToolbar.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExPivot.MudBlazor.MudPivotScriptValueFieldSettings.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

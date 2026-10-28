@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet, settled } from './fixtures.mjs';
+import { test, expect, circuitQuiet, settled, setRoundTrip } from './fixtures.mjs';
 
 // Blazor's ExPivot over its Script Core (ADR-0370 section 1), on /script-pivot, on both Blazor hosts: the one path
 // no other layer sees whole. The report is built in the browser from the Leaf Aggregates the C# source answers in
@@ -73,4 +73,77 @@ test('ADR-0060, ADR-0063, ADR-0130, ADR-0201, ADR-0370 section 10: the Consumer\
     await page.keyboard.press('Shift+ArrowRight');
     await expect(page.locator('#script-pivot-summary')).toHaveText(/^Sum: \S+$/);
     await expect(report(page).locator('.ex-summary')).toContainText(await page.locator('#script-pivot-summary').innerText());
+});
+
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s toolbar and Layout menu, and Enter typed as the menu opens over a slow circuit runs its first enabled choice', async ({ page }) => {
+    await open(page, '/script-pivot?chrome=mud');
+    const toolbar = pivot(page).locator('.mud-ex-pivot-toolbar');
+    const layout = toolbar.getByRole('button', { name: 'Layout' });
+    await expect(layout).toHaveClass(/mud-button-root/);
+
+    // Pressed and answered at once, a round trip before the menu's Razor stands in its frame on Server: the Enter
+    // waits in the pivot's order until the first enabled choice holds the keyboard, and presses it.
+    await setRoundTrip(150);
+    try {
+        await layout.click();
+        await page.keyboard.press('Enter');
+        await settled(report(page));
+        await circuitQuiet();
+    } finally {
+        await setRoundTrip(0);
+    }
+    await expect(pivot(page).getByRole('menu')).toHaveCount(0);
+    await expect(layout).toBeFocused();
+
+    // Opened again once it stands: MudBlazor's buttons in the pivot's frame, the choice Enter made marked.
+    await layout.click();
+    await settled(report(page));
+    const choice = pivot(page).getByRole('menuitemradio', { name: 'Do Not Show Subtotals' });
+    await expect(choice).toHaveClass(/mud-ex-pivot-menu-item/);
+    await expect(choice).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Escape');
+    await expect(pivot(page).getByRole('menu')).toHaveCount(0);
+});
+
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s report filter and its Filter…: letters typed as it opens over a slow circuit stay in its search, and an Item unticked with Space and OK reach the pivot', async ({ page }) => {
+    await open(page, '/script-pivot?chrome=mud');
+    const button = pivot(page).getByRole('button', { name: 'Filter Currency', exact: true });
+    await expect(button).toHaveClass(/mud-button-root/);
+    const before = await grandTotal(page).textContent();
+    const panel = pivot(page).locator('.mud-ex-pivot-item-filter');
+    await setRoundTrip(150);
+    try {
+        await button.click();
+        // Typed a round trip before the panel's Razor stands on Server: the letters wait in the pivot's order until
+        // the search holds the keyboard, and no render after writes an older text back (SRV-7).
+        await page.keyboard.type('US');
+        const search = panel.locator('input').first();
+        await expect(search).toHaveValue('US');
+        // Space on MudBlazor's checkbox is the browser's own, which the pivot hears; MudBlazor's would untick it in
+        // .NET alone.
+        const usd = panel.getByRole('checkbox', { name: 'USD', exact: true });
+        await usd.focus();
+        await page.keyboard.press('Space');
+        await expect(usd).not.toBeChecked();
+        await panel.getByRole('button', { name: 'OK' }).click();
+        await settled(report(page));
+        await circuitQuiet();
+    } finally {
+        await setRoundTrip(0);
+    }
+    await expect(panel).toHaveCount(0);
+    await expect(grandTotal(page)).not.toHaveText(before);
+});
+
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s Value Field Settings…, whose caption follows the Aggregation chosen in its native select, and OK reaches the pivot', async ({ page }) => {
+    await open(page, '/script-pivot?chrome=mud');
+    await pane(page).getByRole('button', { name: 'Options for Sum of P&L', exact: true }).click();
+    await pivot(page).getByRole('menuitem', { name: 'Value Field Settings…' }).click();
+    const panel = pivot(page).locator('.mud-ex-pivot-value-settings');
+    await panel.locator('select.mud-ex-pivot-aggregation').selectOption('count');
+    await expect(panel.getByRole('textbox', { name: 'Custom Name' })).toHaveValue('Count of P&L');
+    await panel.getByRole('button', { name: 'OK' }).click();
+    await settled(report(page));
+    await expect(panel).toHaveCount(0);
+    await expect(pane(page).getByRole('button', { name: 'Options for Count of P&L', exact: true })).toBeVisible();
 });

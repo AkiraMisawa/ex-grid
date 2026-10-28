@@ -35,7 +35,7 @@ public interface IPivotChrome
     RenderFragment? ReportFilters(PivotReportFiltersContext context) => null;
 
     /// <summary>The Pivot Toolbar above the report (ADR-0061): the report filter band on its left —
-    /// the context hands it over, drawn by <see cref="ReportFilters"/> — and on its right, in this
+    /// the context hands it over, drawn by <see cref="ReportFilters(PivotReportFiltersContext)"/> — and on its right, in this
     /// order, Layout ▾, Refresh when the source can be refreshed, and the Field
     /// List's toggle.</summary>
     RenderFragment? Toolbar(PivotToolbarContext context) => null;
@@ -80,6 +80,47 @@ public interface IPivotChrome
     /// the built-in markup, which brings none. Read on every render of the root: answer the same list
     /// each time.</summary>
     IReadOnlyList<ChromeStylesheet> Stylesheets => [];
+
+    /// <summary>The pivot's slots this Chrome fills with Razor when the Script Core draws the pivot (ADR-0410): each
+    /// is asked for through its view overload. <see cref="PivotScriptSlots.None"/>, the default, leaves every part
+    /// the Script Core's own. The report grid's are its grid Chrome's <c>ScriptSlots</c>. Read once, as the pivot
+    /// attaches: answer the same each time.</summary>
+    PivotScriptSlots ScriptSlots => PivotScriptSlots.None;
+
+    /// <summary>A placed field's menu or the Layout menu when the Script Core draws the pivot (ADR-0410), for a
+    /// Chrome that names <see cref="PivotScriptSlots.Menu"/>: one control per item, each marked with
+    /// <see cref="PivotScriptSlotAttributes.MenuItem"/>, and no handler of its own.</summary>
+    RenderFragment? Menu(PivotMenuView view) => null;
+
+    /// <summary>The Pivot Toolbar when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.Toolbar"/>: its buttons and anchors marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? Toolbar(PivotToolbarView view) => null;
+
+    /// <summary>The Stale Report's notice when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.StaleReport"/>: the sentence and Retry, marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? StaleReport(PivotStaleReportView view) => null;
+
+    /// <summary>The report filter band when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.ReportFilters"/>: each filter's button and anchor marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? ReportFilters(PivotReportFiltersView view) => null;
+
+    /// <summary>Filter… when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.ItemFilter"/>: its controls marked with <see cref="PivotScriptSlotAttributes"/>,
+    /// and no handler of its own.</summary>
+    RenderFragment? ItemFilter(PivotItemFilterView view) => null;
+
+    /// <summary>Field Settings… when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.FieldSettings"/>: its controls marked with <see cref="PivotScriptSlotAttributes"/>,
+    /// and no handler of its own.</summary>
+    RenderFragment? FieldSettings(PivotFieldSettingsView view) => null;
+
+    /// <summary>Value Field Settings… when the Script Core draws the pivot (ADR-0410), for a Chrome that names
+    /// <see cref="PivotScriptSlots.ValueFieldSettings"/>: its controls marked with
+    /// <see cref="PivotScriptSlotAttributes"/>, and no handler of its own.</summary>
+    RenderFragment? ValueFieldSettings(PivotValueFieldSettingsView view) => null;
 }
 
 /// <summary>
@@ -592,7 +633,7 @@ public sealed record PivotReportFilterView(
 /// open under it, over the report, in ExPivot's frame, with a backdrop that closes them; the Chrome
 /// places each frame inside a positioned wrapper around the button that opened it.
 /// </summary>
-/// <param name="ReportFilters">The report filter band, drawn by <see cref="IPivotChrome.ReportFilters"/>
+/// <param name="ReportFilters">The report filter band, drawn by <see cref="IPivotChrome.ReportFilters(PivotReportFiltersContext)"/>
 /// or ExPivot's markup; null while no field stands in Filters.</param>
 /// <param name="LayoutMenu">Layout ▾, which opens Excel's Design tab choices.</param>
 /// <param name="Refresh">Refresh: asks the source again. Null when the source cannot be
@@ -603,7 +644,7 @@ public sealed record PivotReportFilterView(
 /// refused by name ("This layout needs more than 200,000 cells."), or the source's failure — or
 /// null. The report stays as it was, and this says why where the user sees it, as an alert: it
 /// answers what the user just did. Data that could not be shown is not said here but in the Stale
-/// Report's notice under the Pivot Toolbar (<see cref="IPivotChrome.StaleReport"/>).</param>
+/// Report's notice under the Pivot Toolbar (<see cref="IPivotChrome.StaleReport(PivotStaleReportContext)"/>).</param>
 /// <param name="Word">ExPivot's words, by id.</param>
 public sealed record PivotToolbarContext(
     RenderFragment? ReportFilters,

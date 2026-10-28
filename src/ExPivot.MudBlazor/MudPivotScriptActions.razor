@@ -1,0 +1,31 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* A panel's Cancel and OK when the Script Core draws the pivot (ADR-0410), as MudPivotItemFilter orders them, each
+   marked with what a press does, which the adapter's script runs in the pivot's Input Order (ADR-0240). OK that
+   cannot apply is marked aria-disabled, never disabled: drawn a round trip behind the ticks, a disabled OK would
+   drop a press the pivot would take, and the pivot refuses one it cannot, saying why (spine rule 6). *@
+<div class="mud-ex-pivot-panel-actions">
+    <MudButton Variant="Variant.Text" Size="Size.Small" Class="mud-ex-pivot-cancel"
+               UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Press, "cancel")">@Cancel</MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="mud-ex-pivot-ok"
+               UserAttributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Press, "ok").With("aria-disabled", CanApply ? null : "true")">@Ok</MudButton>
+</div>
+
+@code {
+    /// <summary>OK's words.</summary>
+    [Parameter, EditorRequired] public string Ok { get; set; } = default!;
+
+    /// <summary>Cancel's words.</summary>
+    [Parameter, EditorRequired] public string Cancel { get; set; } = default!;
+
+    /// <summary>Whether OK may be pressed.</summary>
+    [Parameter] public bool CanApply { get; set; }
+}

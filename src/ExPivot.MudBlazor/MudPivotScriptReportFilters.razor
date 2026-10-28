@@ -1,0 +1,36 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExPivot.MudBlazor, where a bare "MudBlazor" resolves to this
+   namespace and MudBlazor's Color and Typo vanish: every product using is written with global::. *@
+@using Microsoft.AspNetCore.Components
+@using global::ExPivot.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The report filter band when the Script Core draws the pivot (ADR-0410): MudPivotReportFilters' look, each
+   field's caption and an outlined MudButton saying what it shows, in the primary colour while it hides Items.
+   The button and an empty anchor beside it stand in a positioned wrapper, where the pivot opens Filter…; each is
+   marked with its field, and the adapter's script presses the button and hands both in, in the browser. *@
+<div class="mud-ex-pivot-filters" role="group" aria-label="@View.Name">
+    @foreach (var filter in View.Filters)
+    {
+        <div @key="filter.Field" class="mud-ex-pivot-filter">
+            <MudText Typo="Typo.body2" Class="mud-ex-pivot-filter-caption">@filter.Caption</MudText>
+            <span class="mud-ex-pivot-filter-anchor">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="@(filter.Filtered ? Color.Primary : Color.Default)"
+                           EndIcon="@Icons.Material.Filled.ArrowDropDown" Class="mud-ex-pivot-filter-button"
+                           UserAttributes="@(PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Press, filter.Field, PivotScriptSlotAttributes.Control, filter.Field)
+                               .With("aria-haspopup", "dialog").With("aria-expanded", filter.Open ? "true" : "false").With("aria-label", filter.ButtonLabel))">
+                    <span class="mud-ex-pivot-filter-summary">@filter.Summary</span>
+                </MudButton>
+                <span @attributes="@PivotSlotMarkup.Marked(PivotScriptSlotAttributes.Anchor, filter.Field)"></span>
+            </span>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The band's view, as the Script Core hands it (ADR-0410).</summary>
+    [Parameter, EditorRequired] public PivotReportFiltersView View { get; set; } = default!;
+}
