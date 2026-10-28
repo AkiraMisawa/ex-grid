@@ -1,8 +1,9 @@
 // The Sheets /sheet?case= opens in place of the page's own: SheetCases.cs's, the set-ups of the eleventh Windows run's
 // Part A (docs/specs/exsheet/verify-on-windows-11.md) and the cases that file lists beside them, built the same way so
 // the specs written against the Blazor hosts read the same cells here.
+import type { CellTextMetrics } from '@ex-grid/core';
 import {
-    BorderChange, BorderLine, CellAddress, CellColour, CellFill, CellFormatChange, CellRange, Culture, NumberFormat, SheetEdit, Workbook,
+    BorderChange, BorderLine, CellAddress, CellColour, CellFill, CellFormatChange, CellRange, Culture, NumberFormat, Sheet, SheetEdit, Workbook,
     type BorderLineStyle, type WorkbookDocument,
 } from '@ex-grid/sheet-engine';
 
@@ -21,17 +22,17 @@ const lineStyles: readonly (readonly [BorderLineStyle, string])[] = [
     ['mediumDashDotDot', 'MediumDashDotDot'], ['slantedDashDot', 'SlantedDashDot'],
 ];
 
-/** The names {@link sheetCase} knows, in the order the run numbers them. `bold` and `fit` are SheetCases.cs's too,
- * but set their columns from the Cell Metrics the Sheet paints with, which the Script Core does not hand a page yet,
- * so they are refused by name here rather than opened at a width that tests nothing. */
+/** The names {@link sheetCase} knows, in the order the run numbers them. */
 export const sheetCaseNames: readonly string[] = [
     '1', '2', '3b', '3c', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '16', '17', '18', 'paper', 'lines', '12-1', '12-14',
-    '14-16', '14-17', '14-18', 'fills', '18a-2', 'today', 'spill',
+    '14-16', '14-17', '14-18', 'fills', '18a-2', 'today', 'spill', 'bold', 'fit',
 ];
 
-/** Case `name`'s Workbook, in `culture`. Throws for a name that is not one of {@link sheetCaseNames}: refused by name
+/** Case `name`'s Workbook, in `culture`. `metrics` are the Cell Metrics the Sheet will paint it with, which `bold` and
+ * `fit` compute their columns' widths from, a hundredth of a pixel from where a number stops fitting (SH-41; ADR-0071,
+ * "Bold, and what fits"; ADR-0016). Throws for a name that is not one of {@link sheetCaseNames}: refused by name
  * rather than opened as the page's own Sheet, which a comparison would then be made against. */
-export function sheetCase(name: string, culture: Culture): WorkbookDocument {
+export function sheetCase(name: string, culture: Culture, metrics: CellTextMetrics): WorkbookDocument {
     const workbook = new Workbook(culture);
     const sheet = workbook.sheets[0];
     if (sheet === undefined) throw new Error('A new Workbook holds a Sheet.');
@@ -40,7 +41,39 @@ export function sheetCase(name: string, culture: Culture): WorkbookDocument {
         workbook.do(sheet.name, SheetEdit.setCellFormat([CellRange.parse(range)], change));
     };
     const borders = (parts: ConstructorParameters<typeof BorderChange>[0]): CellFormatChange => new CellFormatChange({ borders: new BorderChange(parts) });
+    // A column's width is in characters, a digit's width each, so its content box is the width asked.
+    const setContentWidth = (first: number, last: number, contentPx: number): void => {
+        workbook.do(sheet.name, SheetEdit.setColumnWidth(CellRange.wholeColumns(first, last), contentPx / metrics.digitWidthPx));
+    };
+    const shown = (address: string, width?: number): string => sheet.getDisplay(CellAddress.parse(address), width).text;
     switch (name) {
+        case 'bold': {
+            // ####, at the bold widths: shown a hundredth over the edge, and #### a hundredth under it where the regular
+            // widths still fit it (SH-41).
+            enter('A1', '0.12');
+            enter('A2', '0.12');
+            for (const column of 'BCDEFGHI') enter(`${column}2`, '0.12');
+            format(new CellFormatChange({ numberFormat: NumberFormat.parse('0%') }), 'A1:I2');
+            format(new CellFormatChange({ bold: true }), 'A2:I2');
+            const boldPx = metrics.bold.textWidthPx(shown('A2'));
+            setContentWidth(0, 0, boldPx - 0.01);
+            setContentWidth(1, 8, boldPx + 0.01);
+            break;
+        }
+        case 'fit': {
+            // Italic is judged by the regular widths (ADR-0071), and General fits a bold number to the bold ones (SH-41).
+            enter('A1', '0.12');
+            enter('A2', '0.12');
+            format(new CellFormatChange({ numberFormat: NumberFormat.parse('0%'), italic: true }), 'A1:A2');
+            format(new CellFormatChange({ alignment: 'left' }), 'A2');
+            setContentWidth(0, 0, metrics.textWidthPx(shown('A1')) + 0.01);
+            enter('B1', '123456789012345678901');
+            enter('B2', '123456789012345678901');
+            format(new CellFormatChange({ bold: true }), 'B2');
+            const whole = shown('B1', Sheet.maxColumnWidth);
+            setContentWidth(1, 1, (metrics.textWidthPx(whole) + metrics.bold.textWidthPx(whole)) / 2);
+            break;
+        }
         case 'today':
             enter('A1', '=TEXT(TODAY(),"yyyy-mm-dd")');
             enter('A2', '=TODAY()');
