@@ -157,8 +157,8 @@ ExBoard.BoardRow.Height.init -> void
 ExBoard.BoardSource
 ExBoard.BoardSource.BoardSource(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape!>>! shape, System.Func<ExBoard.BoardQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.ShapedPage!>>! fetch) -> void
 ExBoard.BoardSource.Fetch.get -> System.Func<ExBoard.BoardQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.ShapedPage!>>!
-ExBoard.BoardSource.Report.get -> System.Func<System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>!, ExPivot.Engine.PivotReportSource!>?
-ExBoard.BoardSource.Report.init -> void
+ExBoard.BoardSource.Pivot.get -> System.Func<System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>!, ExPivot.Engine.PivotSource!>?
+ExBoard.BoardSource.Pivot.init -> void
 ExBoard.BoardSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 ExBoard.BoardSource.Thin.get -> System.Func<ExBoard.BoardChartQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExChart.Engine.ChartSourceAnswer!>>?
 ExBoard.BoardSource.Thin.init -> void

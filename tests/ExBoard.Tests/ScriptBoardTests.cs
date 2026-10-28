@@ -7,6 +7,7 @@ using ExGrid;
 using ExGrid.Testing;
 using ExGrid.Data;
 using ExGrid.Data.Arrow;
+using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using ScriptBoard = ExBoard.Script.ExBoard;
@@ -177,7 +178,7 @@ public sealed class ScriptBoardTests : BunitContext
         var first = SourceOf();
         var second = SourceOf(thin: (_, _) => throw new InvalidOperationException("Not asked here."));
         var cut = DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = first });
-        Assert.Equal("""{"trades":{"number":1,"thin":false}}""", SourcesSent(Assert.Single(_module.Invocations["attach"]).Arguments[2]));
+        Assert.Equal("""{"trades":{"number":1,"thin":false,"under":false,"pivot":null}}""", SourcesSent(Assert.Single(_module.Invocations["attach"]).Arguments[2]));
 
         cut.Render(ps => ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = first }));
         cut.Render(ps => ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = second }));
@@ -185,7 +186,7 @@ public sealed class ScriptBoardTests : BunitContext
         // Dropped by the message before, it is numbered anew, so a number the browser let go is never named again.
         cut.Render(ps => ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = first }));
 
-        Assert.Equal(["""{"trades":{"number":1,"thin":false}}""", """{"trades":{"number":2,"thin":true}}""", """{"trades":{"number":3,"thin":false}}"""],
+        Assert.Equal(["""{"trades":{"number":1,"thin":false,"under":false,"pivot":null}}""", """{"trades":{"number":2,"thin":true,"under":false,"pivot":null}}""", """{"trades":{"number":3,"thin":false,"under":false,"pivot":null}}"""],
             _view.Invocations["update"].Select(update => SourcesSent(update.Arguments[0])));
         // A number the browser let go is never asked again: one asked is the bridge's defect, said.
         await Assert.ThrowsAsync<InvalidOperationException>(() => Bridge().Value.Shape(1, 1));
@@ -267,7 +268,7 @@ public sealed class ScriptBoardTests : BunitContext
         // The same source under a Board that declares 'count' as a decimal.
         var redeclared = BoardSpec.Read(BoardSpec.Write(Held).Replace("""{"name":"count","type":"integer"}""", """{"name":"count","type":"decimal"}""", StringComparison.Ordinal));
         cut.Render(ps => ps.Add(p => p.Board, redeclared));
-        Assert.Equal("""{"trades":{"number":2,"thin":false}}""", SourcesSent(Assert.Single(_view.Invocations["update"]).Arguments[0]));
+        Assert.Equal("""{"trades":{"number":2,"thin":false,"under":false,"pivot":null}}""", SourcesSent(Assert.Single(_view.Invocations["update"]).Arguments[0]));
 
         var question = """{"view":"blotter","grid":""" + JsonSerializer.Serialize("""{"version":1,"range":{"start":0,"count":50},"sorts":[]}""")
             + ""","narrowing":[{"on":["count"],"values":[[3]]}]}""";
@@ -398,21 +399,105 @@ public sealed class ScriptBoardTests : BunitContext
         return builder.Build();
     }
 
-    [Fact] // ADR-0370 sections 1 and 3: a pivot over a source is refused by name until the adapter carries it, never left out quietly
-    public void ADR0370_a_pivot_over_a_source_is_refused_by_name()
+    [Fact] // ADR-0343, ADR-0370 sections 1 and 3: a pivot over a source reads the Pivot Source it makes through .NET, the one over every row declaring its fields, and one made anew for each other narrowing
+    public async Task ADR0370_a_pivot_over_a_source_reads_the_Pivot_Source_it_makes_through_NET()
     {
         var board = BoardSpec.Read("""
             {"version": 1, "inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "pnl", "type": "decimal"}]}},
              "views": [{"id": "byDesk", "pivot": {"data": "trades", "layout": {"version": 1, "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum"}]}}}],
              "layout": [{"views": ["byDesk"]}]}
             """);
-
-        var refused = Assert.Throws<NotSupportedException>(() => Render<ScriptBoard>(ps =>
+        var rows = board.Input("trades")!.FromJson("""[{"desk": "FX", "pnl": 1}, {"desk": "Rates", "pnl": 2}]""");
+        var made = new List<IReadOnlyList<LinkCondition>>();
+        var pivots = new List<SnapshotPivotSource>();
+        var source = new BoardSource(_ => ValueTask.FromResult(board.Input("trades")!.Shape), (_, _) => throw new InvalidOperationException("Not asked here."))
+        {
+            Pivot = narrowing =>
+            {
+                made.Add(narrowing);
+                pivots.Add(PivotSource.From(Narrowing.Copy(rows, Narrowing.Positions(rows, narrowing))));
+                return pivots[^1];
+            },
+        };
+        var cut = Render<ScriptBoard>(ps =>
         {
             ps.Add(p => p.Board, board);
             ps.Add(p => p.Data, new Dictionary<string, Snapshot>());
-            ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = SourceOf() });
-        }));
-        Assert.StartsWith("Pivot 'byDesk' is over input 'trades', held on a server", refused.Message, StringComparison.Ordinal);
+            ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = source });
+        });
+        var sent = Parsed(SourcesSent(Assert.Single(_module.Invocations["attach"]).Arguments[2])).GetProperty("trades").GetProperty("pivot");
+        Assert.Equal(["desk", "pnl"], sent.GetProperty("fields").EnumerateArray().Select(field => field.GetProperty("name").GetString()));
+
+        await cut.InvokeAsync(() => Bridge().Value.MakePivot(1, 1, "[]"));
+        await cut.InvokeAsync(() => Bridge().Value.MakePivot(1, 2, """[{"on":["desk"],"values":[["FX"]]}]"""));
+        // The one over every row, made to declare the fields, is the first pivot's; the other is made for its narrowing.
+        Assert.Equal([0, 1], made.Select(narrowing => narrowing.Count));
+
+        string Items(int pivot) => PivotJson.Write(new PivotItemsQuery("desk", pivots[pivot - 1].SourceVersion));
+        var whole = PivotJson.ReadItemPage(await Bridge().Value.PivotItems(1, 1, Items(1)));
+        var fx = PivotJson.ReadItemPage(await Bridge().Value.PivotItems(2, 2, Items(2)));
+        Assert.Equal((2, 1), (whole.Total, fx.Total));
+        // A pivot the browser let go is asked nothing more.
+        await cut.InvokeAsync(() => Bridge().Value.ReleasePivot(2));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Bridge().Value.PivotItems(2, 3, Items(2)));
+    }
+
+    [Fact] // ADR-0370 section 3, spine rule 1: a Pivot Source made over a narrowing with other fields than the browser was told of is refused by name, and its pivot's questions with it
+    public async Task ADR0370_a_Pivot_Source_unlike_the_one_declared_is_refused_by_name()
+    {
+        var board = BoardSpec.Read("""
+            {"version": 1, "inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "pnl", "type": "decimal"}]}},
+             "views": [{"id": "byDesk", "pivot": {"data": "trades", "layout": {"version": 1, "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum"}]}}}],
+             "layout": [{"views": ["byDesk"]}]}
+            """);
+        var rows = board.Input("trades")!.FromJson("""[{"desk": "FX", "pnl": 1}]""");
+        var source = new BoardSource(_ => ValueTask.FromResult(board.Input("trades")!.Shape), (_, _) => throw new InvalidOperationException("Not asked here."))
+        {
+            // Over a narrowing, a source that lost its desk field.
+            Pivot = narrowing => narrowing.Count == 0 ? PivotSource.From(rows) : PivotSource.From(rows, [PivotSource.From(rows).Fields[1]]),
+        };
+        var cut = Render<ScriptBoard>(ps =>
+        {
+            ps.Add(p => p.Board, board);
+            ps.Add(p => p.Data, new Dictionary<string, Snapshot>());
+            ps.Add(p => p.Sources, new Dictionary<string, BoardSource> { ["trades"] = source });
+        });
+
+        await cut.InvokeAsync(() => Bridge().Value.MakePivot(1, 1, """[{"on":["desk"],"values":[["FX"]]}]"""));
+
+        var failed = await Renderer.UnhandledException.WaitAsync(TimeSpan.FromSeconds(10), Xunit.TestContext.Current.CancellationToken);
+        Assert.StartsWith("The source of input 'trades' made a Pivot Source over a narrowing whose fields", failed.Message, StringComparison.Ordinal);
+        var refused = await Assert.ThrowsAsync<InvalidOperationException>(() => Bridge().Value.PivotItemCounts(1, 1, null));
+        Assert.StartsWith("The source made no Pivot Source for this pivot", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0345, ADR-0370 section 1: a link from a pivot over a source asks it for the values under the cells, each path and value read exactly, and the answer crosses back as the input declares its columns
+    public async Task ADR0345_the_values_under_a_pivots_cells_are_asked_of_the_source_through_NET()
+    {
+        BoardCellsQuery? asked = null;
+        var source = SourceOf();
+        source = new BoardSource(_ => ValueTask.FromResult(Held.Input("trades")!.Shape), source.Fetch)
+        {
+            Under = (query, _) =>
+            {
+                asked = query;
+                return ValueTask.FromResult(new LinkCondition(["desk", "pnl"], [["FX", 12345678901234567890.25m], ["Rates", null]]));
+            },
+        };
+        DrawHeld(new Dictionary<string, BoardSource> { ["trades"] = source });
+        var layout = PivotLayout.Empty with { Rows = [new PivotFieldPlacement("desk") { HiddenItems = [PivotItemKey.Text("Credit")] }] };
+        var cell = PivotJson.Write(new PivotDetailsQuery("", rowItems: [new PivotFieldItem("desk", PivotItemKey.Text("FX"))], columnItems: [new PivotFieldItem("day", PivotItemKey.Date(new DateTime(2026, 10, 16)))]));
+        var question = JsonSerializer.Serialize(new { view = "byDesk", layout = PivotLayoutJson.Write(layout), cells = new[] { cell }, on = new[] { "desk", "pnl" }, narrowing = Array.Empty<object>() });
+
+        var answer = await Bridge().Value.Under(1, 4, question);
+
+        Assert.NotNull(asked);
+        Assert.Equal("byDesk", asked.View);
+        Assert.Equal(["desk", "pnl"], asked.On);
+        Assert.Equal([PivotItemKey.Text("Credit")], Assert.Single(asked.Layout.Rows).HiddenItems);
+        var items = Assert.Single(asked.Cells);
+        Assert.Equal([new PivotFieldItem("desk", PivotItemKey.Text("FX"))], items.Row);
+        Assert.Equal([new PivotFieldItem("day", PivotItemKey.Date(new DateTime(2026, 10, 16)))], items.Column);
+        Assert.Equal("""[{"desk":"FX","pnl":12345678901234567890.25},{"desk":"Rates","pnl":null}]""", answer);
     }
 }
