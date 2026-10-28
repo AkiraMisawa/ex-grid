@@ -129,6 +129,9 @@ export function ExSheet(props: ExSheetProps): ReactElement {
             else handle.do(sheetOrEdit);
         },
         setCellFormat: change => mounted(sheet.current).setCellFormat(change),
+        setCellFormatFromFocus: changeOf => mounted(sheet.current).setCellFormatFromFocus(changeOf),
+        readFocusFormat: () => mounted(sheet.current).readFocusFormat(),
+        setCellFormatFrom: (reading, change) => mounted(sheet.current).setCellFormatFrom(reading, change),
         openFormatCells: () => mounted(sheet.current).openFormatCells(),
         cellFormatAt: (sheetOrAddress: string | CellAddress, address?: CellAddress) => {
             const handle = mounted(sheet.current);

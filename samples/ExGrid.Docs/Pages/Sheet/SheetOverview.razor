@@ -191,11 +191,15 @@
             the Sheet and moved into the button, and a Chrome that draws the item marks where it goes with
             <code>SheetScriptSlotAttributes.Content</code>. A Toolbar Item of your own, derived from
             <code>ToolbarItemBase</code>, is refused there by name, as is a KeyTip on one of ExSheet's items: the
-            Script Core has neither. The find panel stays the Sheet's
+            Script Core has neither. <code>SetCellFormatFromFocusAsync</code>, which Mark reviewed above toggles
+            through, reads the Focus cell from the browser, makes your change from it in .NET, and sets it in the
+            browser: if the Selection moved, or the Focus cell's format changed, between the two, the change is
+            refused with <code>SheetRefusalReason.SelectionMoved</code> or <code>FocusFormatChanged</code>, and the
+            Sheet's notice says so, rather than set on cells, or in a direction, it was not made for. Inside a
+            <code>ToolbarButton</code>'s <code>OnClick</code> nothing the user does comes between them. The find panel stays the Sheet's
             own, with Within, as it does above under a Chrome that draws none. Not carried yet: the
-            Sheet Tabs' menu and the find panel of an <code>ISheetChrome</code>, which the Sheet draws itself,
-            <code>OnLinkedColumnColoursChanged</code>
-            and <code>SetCellFormatFromFocusAsync</code>; use the Sheet above
+            Sheet Tabs' menu and the find panel of an <code>ISheetChrome</code>, which the Sheet draws itself, and
+            <code>OnLinkedColumnColoursChanged</code>; use the Sheet above
             for those until they arrive. Its engine holds the data of
             five cultures, en-US, en-GB, de-DE, ja-JP and fr-FR, and the invariant culture: a Sheet under another is
             refused by name when it opens, where the Sheet above takes any. The script it runs is bundled

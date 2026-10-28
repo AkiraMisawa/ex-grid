@@ -121,9 +121,13 @@ export function distinctNumbers(numbers: Iterable<number>): number[] {
  * - `sheetNameTaken`: a Sheet would be given a name another Sheet of the Workbook has, without regard to case (ADR-0331).
  * - `lastSheet`: the Workbook's last Sheet would be deleted (ADR-0331).
  * - `sheetNotNamed`: a command or an address that names no Sheet, given while the Workbook holds several (ADR-0331 §6).
+ * - `selectionMoved`: a change made from the Focus cell's Cell Format away from the Sheet, set once the Selection, or the
+ *   Sheet shown, is no longer the one it was read from (ADR-0100).
+ * - `focusFormatChanged`: such a change, set once the Focus cell's Cell Format is no longer the one it was made from
+ *   (ADR-0100).
  */
 export type SheetRefusalReason = 'entriesWouldLeaveSheet' | 'blockWouldLeaveSheet' | 'waitingForData' | 'fillPatternNotSupported'
-    | 'fillShapeNotSupported' | 'editIsOpen' | 'sheetNameTaken' | 'lastSheet' | 'sheetNotNamed';
+    | 'fillShapeNotSupported' | 'editIsOpen' | 'sheetNameTaken' | 'lastSheet' | 'sheetNotNamed' | 'selectionMoved' | 'focusFormatChanged';
 
 /** An operation a Sheet refused, and why, with the refusal in words naming what caused it. Nothing was changed. */
 export class SheetRefusal {
