@@ -58,12 +58,19 @@ export interface PivotChrome {
     readonly menu?: PivotChromeSlot<PivotMenuSlotContext>;
     readonly reportFilters?: PivotChromeSlot<PivotReportFiltersSlotContext>;
     readonly staleReport?: PivotChromeSlot<PivotStaleReportSlotContext>;
+    readonly stylesheets?: readonly PivotChromeStylesheet[];
     readonly toolbar?: PivotChromeSlot<PivotToolbarSlotContext>;
     readonly valueFieldSettings?: PivotChromeSlot<PivotValueFieldSettingsSlotContext>;
 }
 
 // @public
 export type PivotChromeSlot<Context> = (slot: HTMLElement, context: Context) => () => void;
+
+// @public
+export interface PivotChromeStylesheet {
+    readonly name: string;
+    readonly stamp: string;
+}
 
 // @public
 export interface PivotDetailItem {
