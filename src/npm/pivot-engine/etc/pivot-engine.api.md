@@ -81,6 +81,9 @@ export function formatPivotCount(count: number, locale: string): string;
 export function formatPivotDetailValue(value: PivotDetailValue, format: string | undefined, locale: string): string;
 
 // @public
+export function formatPivotFigure(value: PivotNumber, format: string, locale: string): string;
+
+// @public
 export function formatPivotNumber(value: number, format: string, locale: string): string;
 
 // @public
@@ -633,7 +636,16 @@ export type PivotNumber = {
 };
 
 // @public
+export function pivotNumberAverage(sum: PivotNumber, count: number): PivotNumber;
+
+// @public
+export function pivotNumberCanonical(number: PivotNumber): PivotNumber;
+
+// @public
 export function pivotNumberFormatProblem(format: string): string | undefined;
+
+// @public
+export function pivotNumberValue(number: PivotNumber): number;
 
 // @public
 export interface PivotOptions {

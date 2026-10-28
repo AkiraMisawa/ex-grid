@@ -58,7 +58,7 @@ public static class ChartSource
     }
 
     /// <summary>Thins <paramref name="data"/> as <paramref name="query"/> asks.</summary>
-    /// <exception cref="ArgumentException">The table has no such column, or the query asks for no pixels or a labels axis.</exception>
+    /// <exception cref="ArgumentException">The table has no such column, or the query asks for no pixels, a range that is not finite or a labels axis.</exception>
     /// <exception cref="ChartSpecRefusedException">A row's position is not the axis' kind, or a value is no number.</exception>
     public static ChartSourceAnswer Thin(IChartData data, ChartSourceQuery query, long version = 0)
     {
@@ -66,6 +66,8 @@ public static class ChartSource
         ArgumentNullException.ThrowIfNull(query);
         if (query.Pixels < 1)
             throw new ArgumentException("A Chart Source is asked for one pixel or more.", nameof(query));
+        if (query.From is { } f && !double.IsFinite(f) || query.To is { } t && !double.IsFinite(t))
+            throw new ArgumentException("A Chart Source is asked for a range of finite positions.", nameof(query));
         if (query.Values == AxisValues.Labels)
             throw new ArgumentException("A labels axis needs every category, which a Chart Source does not thin.", nameof(query));
         foreach (var column in new[] { query.X, query.Y })

@@ -1,7 +1,8 @@
 // Builds the script a Blazor adapter imports (ADR-0350 sections 7 and 9, ADR-0370 section 1): the bridge and the
 // Script Core it mounts, read from their sources and bundled into one minified ES module with its source map, which
 // the product's NuGet package ships: ExGrid's `ex-grid-core`, from src/npm/blazor, ExPivot's `ex-pivot`, from
-// src/npm/pivot-blazor, and ExSheet's `ex-sheet`, from src/npm/sheet-blazor. Nothing here is published to npm.
+// src/npm/pivot-blazor, ExSheet's `ex-sheet`, from src/npm/sheet-blazor, and ExChart's `ex-chart-core`, from
+// src/npm/chart-blazor. Nothing here is published to npm.
 //
 // Each package asks for the files it was built with (ADR-0123): the module answers `stamp()`, the SHA-256 of
 // every source it was bundled from, and the component compares it with the stamp it was built with before it
@@ -39,6 +40,7 @@ const alias = {
     '@ex-grid/core': path.join(workspace, 'core/src/index.ts'),
     '@ex-grid/data': path.join(workspace, 'data/src/index.ts'),
     '@ex-grid/pivot': path.join(workspace, 'pivot/src/index.ts'),
+    '@ex-grid/chart': path.join(workspace, 'chart/src/index.ts'),
     '@ex-grid/pivot-engine': path.join(workspace, 'pivot-engine/src/index.ts'),
     '@ex-grid/sheet': path.join(workspace, 'sheet/src/index.ts'),
     '@ex-grid/sheet-engine': path.join(workspace, 'sheet-engine/src/index.ts'),

@@ -7,6 +7,7 @@ using System.Text.Json;
 using ExGrid;
 using ExGrid.Chrome;
 using ExGrid.Selection;
+using ExGrid.Summarizing;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -110,6 +111,32 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     /// Razor component's does.</summary>
     [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
 
+    /// <summary>Whether the Selection Summary is shown under the report (ADR-0130): Excel's status-bar figures over the
+    /// cells selected, summed over the whole report in the browser. On unless set off, as the Razor component has it.</summary>
+    [Parameter] public bool ShowSelectionSummary { get; set; } = true;
+
+    /// <summary>The Selection Summary's figures (ADR-0130); Excel's Average, Count and Sum unless set. The report holds the
+    /// figures menu's choice from then on; figures handed here that differ from the ones handed before replace it.</summary>
+    [Parameter] public SummaryFigures? SummaryFigures { get; set; }
+
+    /// <summary>Raised when the figures menu changes the figures shown (ADR-0130).</summary>
+    [Parameter] public EventCallback<SummaryFigures> SummaryFiguresChanged { get; set; }
+
+    /// <summary>The Selection Summary as it now stands (ADR-0130), for an application that shows the figures
+    /// elsewhere.</summary>
+    [Parameter] public EventCallback<SelectionSummary> OnSelectionSummaryChanged { get; set; }
+
+    /// <summary>How the report's work shares the browser's thread (ADR-0066, PV-40): its <see cref="PivotSlicing.Budget"/>
+    /// is the slice the Script Core works for before it yields; the Script Core's (30 ms) unless set. It is read once, when
+    /// the pivot attaches, as the Script Core reads it. The rest of a <see cref="PivotSlicing"/> is .NET's (a clock, a
+    /// yield, how often a clock is read) and cannot reach the browser, so one that sets any of it is refused by name.</summary>
+    [Parameter] public PivotSlicing? Slicing { get; set; }
+
+    // The Slicing the pivot attached with, as the parameter was first set, and as it was last set.
+    private bool _slicingRead;
+    private PivotSlicing? _attachedSlicing;
+    private PivotSlicing? _slicingGiven;
+
     private PivotSource? _source;
     private Action<PivotSourceChanged>? _hearSource;
     private int _generation;
@@ -158,6 +185,17 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     {
         if (Source is null)
             throw new InvalidOperationException("ExPivot takes its data from a Source (ADR-0066).");
+        if (!_slicingRead)
+        {
+            _attachedSlicing = Slicing is { } slicing ? Carried(slicing) : null;
+            _slicingRead = true;
+        }
+        else if (!Equals(Slicing, _slicingGiven))
+        {
+            throw new NotSupportedException(
+                "ExPivot's Slicing is read once, when the pivot attaches, as the Script Core reads it (ADR-0370 section 1): make a new ExPivot for another.");
+        }
+        _slicingGiven = Slicing;
         if (!ReferenceEquals(Source, _source))
         {
             // Checked before anything moves: a source this adapter cannot carry leaves the pivot on the one it had.
@@ -424,6 +462,24 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             json.WriteNumber("changeHighlightDuration", highlight.TotalMilliseconds);
         if (DetailsView is { } detailsView)
             json.WriteString("detailsView", Camel(detailsView));
+        json.WriteBoolean("showSelectionSummary", ShowSelectionSummary);
+        if (SummaryFigures is { } figures)
+        {
+            json.WriteStartArray("summaryFigures");
+            foreach (var figure in SummaryFigureOrder.Each)
+            {
+                if ((figures & figure) == figure)
+                    json.WriteStringValue(Camel(figure));
+            }
+            json.WriteEndArray();
+        }
+        // Read once by the Script Core, so the one it attached with is sent each time.
+        if (_attachedSlicing is { } slicing)
+        {
+            json.WriteStartObject("slicing");
+            json.WriteNumber("sliceBudgetMs", slicing.Budget.TotalMilliseconds);
+            json.WriteEndObject();
+        }
         json.WriteStartArray("hears");
         if (ShowFieldListChanged.HasDelegate)
             json.WriteStringValue("showFieldListChanged");
@@ -431,6 +487,10 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             json.WriteStringValue("showDetails");
         if (SelectionChanged.HasDelegate)
             json.WriteStringValue("selectionChanged");
+        if (SummaryFiguresChanged.HasDelegate)
+            json.WriteStringValue("summaryFiguresChanged");
+        if (OnSelectionSummaryChanged.HasDelegate)
+            json.WriteStringValue("selectionSummaryChanged");
         json.WriteEndArray();
         json.WriteEndObject();
     });
@@ -606,6 +666,16 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
                 var selection = Selection(payload);
                 return () => SelectionChanged.InvokeAsync(selection);
             }
+            case "summaryFiguresChanged":
+            {
+                var figures = FiguresOf(payload);
+                return () => SummaryFiguresChanged.InvokeAsync(figures);
+            }
+            case "selectionSummaryChanged":
+            {
+                var summary = SummaryOf(payload);
+                return () => OnSelectionSummaryChanged.InvokeAsync(summary);
+            }
             case "showDetails":
             {
                 // The handler that took them is the one handed them, whatever the parameter holds once their turn comes.
@@ -703,6 +773,87 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         if (_asked.TryGetValue(call, out var asked))
             asked.Cancel();
     }
+
+    // A Slicing whose every setting but its budget is the default's: the rest is .NET's, and refused by name.
+    private static PivotSlicing Carried(PivotSlicing slicing)
+    {
+        var standard = PivotSlicing.Default;
+        string? named = slicing.Yield is not null ? nameof(PivotSlicing.Yield)
+            : !ReferenceEquals(slicing.TimeProvider, standard.TimeProvider) ? nameof(PivotSlicing.TimeProvider)
+            : slicing.RecordsPerCheck != standard.RecordsPerCheck ? nameof(PivotSlicing.RecordsPerCheck)
+            : null;
+        if (named is not null)
+        {
+            throw new NotSupportedException(
+                $"ExPivot's Slicing sets its {named}, which is .NET's and cannot reach the pivot in the browser (ADR-0370 section 1): set its Budget alone.");
+        }
+        return slicing;
+    }
+
+    // A figure as the Script Core spells it, read back.
+    private static SummaryFigures Figure(string name)
+        => Enum.TryParse<SummaryFigures>(name, ignoreCase: true, out var figure) && SummaryFigureOrder.Each.Contains(figure)
+            ? figure
+            : throw new InvalidOperationException($"Internal: the Script Core named the figure '{name}'.");
+
+    // A Selection Summary as the browser writes it: its status, the question and the answer.
+    private static SelectionSummary SummaryOf(JsonElement json)
+    {
+        var status = Enum.Parse<SelectionSummaryStatus>(Text(json.GetProperty("status")), ignoreCase: true);
+        var request = json.GetProperty("request");
+        var result = json.GetProperty("result");
+        return new SelectionSummary(status,
+            request.ValueKind == JsonValueKind.Null ? null : SummaryRequestOf(request),
+            result.ValueKind == JsonValueKind.Null ? null : SummaryResultOf(result));
+    }
+
+    // A list of the Script Core's figure names, as the flags .NET writes them in.
+    private static ExGrid.Summarizing.SummaryFigures FiguresOf(JsonElement names)
+    {
+        var figures = ExGrid.Summarizing.SummaryFigures.None;
+        foreach (var name in names.EnumerateArray())
+            figures |= Figure(Text(name));
+        return figures;
+    }
+
+    private static GridSummaryRequest SummaryRequestOf(JsonElement json)
+    {
+        var figures = FiguresOf(json.GetProperty("figures"));
+        var focus = json.GetProperty("focus");
+        return new GridSummaryRequest
+        {
+            Ranges = [.. json.GetProperty("ranges").EnumerateArray().Select(range => new SelectionRange(
+                range.GetProperty("topRow").GetInt32(), range.GetProperty("leftColumn").GetInt32(),
+                range.GetProperty("rowCount").GetInt32(), range.GetProperty("columnCount").GetInt32()))],
+            Columns = [.. json.GetProperty("columns").EnumerateArray().Select(Text)],
+            RowSequenceVersion = json.GetProperty("rowSequenceVersion").GetInt32(),
+            Figures = figures,
+            Focus = focus.ValueKind == JsonValueKind.Null ? null : new CellPosition(focus.GetProperty("row").GetInt32(), focus.GetProperty("column").GetInt32()),
+        };
+    }
+
+    private static GridSummaryResult SummaryResultOf(JsonElement json)
+    {
+        if (json.TryGetProperty("reason", out var reason))
+            return GridSummaryResult.Declined(Text(reason));
+        var figures = new Dictionary<SummaryFigures, ExGrid.Data.AggregateResult>();
+        foreach (var figure in json.GetProperty("figures").EnumerateObject())
+            figures[Figure(figure.Name)] = AggregateOf(figure.Value);
+        var texts = new Dictionary<SummaryFigures, string>();
+        foreach (var text in json.GetProperty("texts").EnumerateObject())
+            texts[Figure(text.Name)] = Text(text.Value);
+        return GridSummaryResult.Answered(figures, texts);
+    }
+
+    // A figure's answer: nothing, an error, an exact decimal written as its digits, or a double.
+    private static ExGrid.Data.AggregateResult AggregateOf(JsonElement json) => Text(json.GetProperty("kind")) switch
+    {
+        "empty" => ExGrid.Data.AggregateResult.Empty,
+        "error" => ExGrid.Data.AggregateResult.Of(Enum.Parse<ExGrid.Data.AggregateError>(Text(json.GetProperty("error")), ignoreCase: true)),
+        "number" when json.TryGetProperty("exact", out var exact) => ExGrid.Data.AggregateResult.Of(decimal.Parse(Text(exact), NumberStyles.Number, CultureInfo.InvariantCulture)),
+        "number" => ExGrid.Data.AggregateResult.Of(json.GetProperty("number").GetDouble()),
+        var kind => throw new InvalidOperationException($"Internal: the Script Core answered a figure of the kind '{kind}'."),
+    };
 
     private static void WriteSize(Utf8JsonWriter json, string name, ViewportSize size)
     {

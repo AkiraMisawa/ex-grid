@@ -1,0 +1,25 @@
+@using ExChart
+@using ExChart.Engine
+
+<ExChart.Script.ExChart Definition="Definition"
+                        Title="Exposure profile"
+                        Width="720"
+                        Height="360"
+                        HiddenSeries="_hidden"
+                        OnSeriesVisibilityChanged="SeriesChanged" />
+
+@code {
+    // The same definition as ExChart.Components.ExChart's: it is built in .NET and drawn in the browser.
+    private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"), ChartData.Exposure().Take(2).ToList());
+
+    // The legend's click crosses back to .NET, and the page hands the hidden series in again.
+    private IReadOnlySet<string> _hidden = new HashSet<string>();
+
+    private void SeriesChanged(SeriesVisibility change)
+    {
+        var hidden = new HashSet<string>(_hidden);
+        if (change.Hidden) hidden.Add(change.Key);
+        else hidden.Remove(change.Key);
+        _hidden = hidden;
+    }
+}

@@ -126,7 +126,18 @@
             <code>answerChartSpec(text, tables, metrics)</code> answers as the tool does: the refusal with its path, or the
             chart said in words with its thinned pixels and its gaps. Both refuse and say what <code>ChartSpec.Read</code>
             and <code>ChartSpec.Answer</code> do, in the same words, since both engines run the same cases, under
-            <code>tests/cases/chart/</code>. Reading through Chart Sources is not yet in TypeScript.
+            <code>tests/cases/chart/</code>.
+        </p>
+        <p>
+            <code>readChartSpecThrough(text, sources, pixels, {from, to, signal})</code> reads a spec through Chart
+            Sources, as <code>ChartSpec.ReadAsync</code> does: each series asks its Data Handle's
+            <code>ChartSource</code> for its column at that many pixels, all at once, and the reading carries what each
+            thinned pixel held, with the version each Data Handle answered. It refuses what a thinned point cannot stand
+            for before any source is asked, and two answers of one Data Handle at different versions. A server's source
+            answers as <code>thinChartData(table, query, version)</code> does, the reference both engines run the same
+            cases against; <code>chartSourceOver(table, version)</code> thins a table the page holds. A chart handed the
+            reading's definition saves no CSV and shows no table, as above. <code>createChart</code> does not yet take a
+            spec and its sources and ask them itself: the page asks, and hands the chart the definition.
         </p>
     </DocsSection>
 </DocsPage>

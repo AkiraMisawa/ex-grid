@@ -116,7 +116,11 @@
             selected. As in Excel, a subtotal or a grand total you select is summed with the rest — select a whole
             column and the total counts its parts twice. An error value among them leaves Count and Numerical
             Count, as in Excel, and the figures wear the format of the Focus cell's Value Field.
-            <code>ShowSelectionSummary="false"</code> turns the line off.
+            <code>ShowSelectionSummary="false"</code> turns the line off. A right-click on the line chooses the
+            figures, which the pivot keeps; <code>SummaryFigures</code> sets them, <code>SummaryFiguresChanged</code>
+            hears the choice, and <code>OnSelectionSummaryChanged</code> hands the figures to a status bar of your
+            own. Under React they are <code>showSelectionSummary</code>, <code>summaryFigures</code>,
+            <code>onSummaryFiguresChanged</code> and <code>onSelectionSummaryChanged</code>.
         </p>
         <p>
             The report's header shows which columns the selection holds: each such header is shaded, its letters

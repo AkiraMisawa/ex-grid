@@ -13,7 +13,7 @@ export {
     pivotWordIds, resolveWord as pivotWord, showValuesAsNameId as pivotShowValuesAsNameId, unitedKingdomPivotWords,
 } from './words/pivot-words';
 export { pivotLocales } from './culture/culture-data';
-export { formatPivotCount, formatPivotNumber } from './text/number-text';
+export { formatPivotCount, formatPivotFigure, formatPivotNumber } from './text/number-text';
 export { formatPivotDetailValue } from './text/detail-text';
 export { PivotFormatError, PivotOrderKeyError, PivotVersionError } from './errors';
 export type {
@@ -54,7 +54,7 @@ export {
     pivotQuery, queryForLayout,
 } from './cube/query';
 export type { PivotAnswerRest, PivotAnswerWindow, PivotNumber, PivotRestSide, PivotSourceRefusal, PivotSourceRefusalKind } from './cube/answer';
-export { PivotAnswer, PivotAnswerAxis, PivotAnswerBuilder, PivotAnswerValues, PivotRefusals } from './cube/answer';
+export { PivotAnswer, PivotAnswerAxis, PivotAnswerBuilder, PivotAnswerValues, PivotRefusals, pivotNumberAverage, pivotNumberCanonical, pivotNumberValue } from './cube/answer';
 export { PivotCube } from './cube/cube';
 export type {
     PivotDetailRecord, PivotDetailValue, PivotFetchers, PivotServerChangeBatch, PivotServerChanged, PivotServerNotice, PivotSource, PivotSourceChanged,

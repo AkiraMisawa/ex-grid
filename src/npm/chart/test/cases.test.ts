@@ -54,9 +54,9 @@ for (const name of files) {
             if (typeof caseName !== 'string') {
                 throw new Error(`chart/${name} holds a case with no name.`);
             }
-            it(caseName, () => {
+            it(caseName, async () => {
                 expect.hasAssertions();
-                new ChartCase(file, entry).run();
+                await new ChartCase(file, entry).run();
             });
         }
     });

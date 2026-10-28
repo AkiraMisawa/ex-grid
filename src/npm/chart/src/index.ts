@@ -45,8 +45,10 @@ export type {
 export { surfaceBandCount, surfaceMesh, surfaceSlicePath, surfaceSummary } from './surface-mesh';
 export { chartDataOf } from './chart-data';
 export type { ChartData } from './chart-data';
-export { ChartSpecReading, ChartSpecRefusedError, chartSpecVersion, readChartSpec } from './spec';
-export type { ChartSpecReadingOptions } from './spec';
+export { ChartSpecReading, ChartSpecRefusedError, chartSpecVersion, readChartSpec, readChartSpecThrough } from './spec';
+export type { ChartSourceReading, ChartSpecReadingOptions } from './spec';
+export { chartSourceOver, thinChartData } from './chart-source';
+export type { ChartSource, ChartSourceAnswer, ChartSourceQuery } from './chart-source';
 export { answerChartSpec } from './spec-answer';
 export type { ChartSpecAnswer } from './spec-answer';
 export type { SurfaceColourBar, SurfaceFace, SurfaceMesh, SurfaceMeshNode, SurfaceMeshPoint, SurfaceTick } from './surface-mesh';

@@ -58,7 +58,8 @@
     private ChartRange? _range;
     private string _events = "";
 
-    private static ChartDefinition Exposure(int run)
+    // Shared with /script-chart, which draws the same data through the Script Core.
+    internal static ChartDefinition Exposure(int run)
     {
         var dates = Enumerable.Range(0, 121).Select(m => Start.AddMonths(m)).ToList();
         // A hump that peaks near year three, deterministic, and moved a little by each run.

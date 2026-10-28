@@ -27,10 +27,12 @@ import { decades, fitLabels, horizontalTicks, logSteps, nice, steps, tenor, type
 import { SurfaceDefinition, type SurfaceAxisOptions, type SurfaceScaleOptions, type SurfaceSlice, type SurfaceValue } from '../src/surface';
 import { surfaceMesh, surfaceSlicePath, surfaceSummary } from '../src/surface-mesh';
 import { invariantText } from '../src/values';
-import { decimalFromText } from '@ex-grid/data';
+import { decimalFromText, ticksOfTemporal } from '@ex-grid/data';
 import { Temporal } from 'temporal-polyfill';
 import { chartDataOf, type ChartData } from '../src/chart-data';
-import { ChartSpecRefusedError, readChartSpec } from '../src/spec';
+import { ChartSpecRefusedError, readChartSpec, readChartSpecThrough } from '../src/spec';
+import { thinChartData, type ChartSource, type ChartSourceAnswer, type ChartSourceQuery } from '../src/chart-source';
+import type { AxisValues } from '../src/model';
 import { answerChartSpec } from '../src/spec-answer';
 
 /** A value as JSON holds it. */
@@ -55,7 +57,7 @@ export interface ChartFile {
 const operations = [
     'scene', 'drawing', 'thin', 'through', 'tenor', 'nice', 'steps', 'decades', 'logSteps', 'fit', 'horizontal', 'candles', 'legendMembers',
     'format', 'appearance', 'mesh', 'slice', 'slicePath', 'reading', 'summary', 'csv', 'surfaceSummary', 'curve',
-    'interpolate',
+    'interpolate', 'sourceThin',
 ] as const;
 
 // What a scene is laid out with, which the tooltip and the summary read their scene by.
@@ -189,7 +191,10 @@ export class ChartCase {
         return string(this.#entry['name'], 'a case\'s name');
     }
 
-    run(): void {
+    run(): void | Promise<void> {
+        if (this.#entry['sources'] !== undefined) {
+            return this.#runThrough();
+        }
         if (this.#entry['spec'] !== undefined || this.#entry['specText'] !== undefined) {
             this.#runSpec();
             return;
@@ -238,6 +243,20 @@ export class ChartCase {
         }
     }
 
+    // A Chart Spec read through Chart Sources (ADR-0344): the reading, the questions asked and the versions held to the
+    // checks, or the refusal to its path and the questions asked before it.
+    async #runThrough(): Promise<void> {
+        const answer = await throughAnswer(this.#file, this.#entry, this.#name);
+        if (answer === undefined) {
+            return;
+        }
+        const checks = list(this.#entry['expect'], `"${this.#name}"'s expect`);
+        holds(checks.length > 0, `"${this.#name}" checks nothing.`);
+        for (const check of checks) {
+            this.#check(answer, answer, check);
+        }
+    }
+
     #build(): Json {
         const build = this.#entry['build'];
         if (build === undefined) {
@@ -273,6 +292,18 @@ export class ChartCase {
         switch (key) {
             case 'scene':
                 return laidOut(this.#definition(op['definition']), allow(args, 'scene', sceneKeys));
+            case 'sourceThin': {
+                // The reference Chart Source (ADR-0344) over one of the file's tables: what it keeps, each row by its
+                // position across and its height, and what each thinned pixel held.
+                const a = allow(args, 'sourceThin', ['table', 'query', 'version']);
+                const handle = string(a['table'], 'table');
+                const table = specTables(this.#file, {}).get(handle);
+                if (table === undefined) {
+                    throw new Error(`"${this.#name}" thins the table "${handle}", which the file does not hold.`);
+                }
+                const answer = thinChartData(table, sourceQuery(a['query']), BigInt(whole(a['version'], 'version')));
+                return answerRows(answer, sourceQuery(a['query']));
+            }
             case 'reading': {
                 // The tooltip of the scene the case lays out, at a position, over a mark or over an edge.
                 const a = allow(args, 'reading', [...sceneKeys, 'at']);
@@ -797,6 +828,9 @@ function holds(ok: boolean, message: string): void {
 function refusal(error: Error): string {
     if (error.name === 'ChartRefusedError') {
         return 'chartRefused';
+    }
+    if (error instanceof ChartSpecRefusedError) {
+        return 'chartSpecRefused';
     }
     if (error instanceof RangeError) {
         return 'outOfRange';
@@ -1693,4 +1727,117 @@ function specCell(given: Json): unknown {
         default:
             return number(value);
     }
+}
+
+// ---- The Chart Source (ADR-0322, ADR-0344) ----
+
+const throughCaseKeys = ['name', 'spec', 'tables', 'sources', 'refused', 'expect'];
+
+// A Chart Source query as a case writes it, every key given.
+function sourceQuery(given: Json | undefined): ChartSourceQuery {
+    const q = allow(given, 'query', ['data', 'x', 'y', 'values', 'from', 'to', 'pixels']);
+    const values = string(q['values'], 'values');
+    if (values !== 'dates' && values !== 'numbers' && values !== 'labels') {
+        throw new Error(`values is "${values}", not dates, numbers or labels.`);
+    }
+    const end = (key: string): number | null => {
+        const v = q[key];
+        if (v === undefined) {
+            throw new Error(`The query gives no ${key}; write null for the data's own end.`);
+        }
+        return v === null ? null : number(v);
+    };
+    return {
+        data: string(q['data'], 'data'), x: string(q['x'], 'x'), y: string(q['y'], 'y'), values: values satisfies AxisValues,
+        from: end('from'), to: end('to'), pixels: whole(q['pixels'], 'pixels'),
+    };
+}
+
+// An answer as a case reads it: its version, each kept row as its position across and its height (null for a gap),
+// and what each thinned pixel held.
+function answerRows(answer: ChartSourceAnswer, query: ChartSourceQuery): Json {
+    const rows: Json[] = [];
+    for (let r = 0; r < answer.points.rowCount; r++) {
+        const y = answer.points.value(query.y, r);
+        rows.push({ x: placed(answer.points.value(query.x, r)), y: y === null ? null : placed(y) });
+    }
+    return { version: plain(answer.version), rows, thinned: plain(answer.thinned) };
+}
+
+// A value kept as a number: a date as its day number, a whole number, a decimal or a double as a double.
+function placed(value: unknown): number {
+    if (typeof value === 'number') {
+        return value;
+    }
+    if (typeof value === 'bigint') {
+        return Number(value);
+    }
+    const ticks = typeof value === 'object' && value !== null ? ticksOfTemporal(value) : undefined;
+    if (ticks !== undefined) {
+        return Number(ticks / 864_000_000_000n);
+    }
+    if (typeof value === 'object' && value !== null && typeof Reflect.get(value, 'mantissa') === 'bigint') {
+        return Number(`${String(Reflect.get(value, 'mantissa'))}e-${String(Reflect.get(value, 'scale'))}`);
+    }
+    throw new Error(`A Chart Source kept ${text(plain(value))}, which is no position or height.`);
+}
+
+/**
+ * Reads a sources case's Chart Spec through Chart Sources over its tables (ADR-0344), each answering the versions
+ * `sources.versions` lists for its handle in turn. A refused case is held to its refusal and to how many questions
+ * were asked before it, and answers `undefined`; any other answers `{ title, definition, asked, versions }`.
+ */
+async function throughAnswer(file: ChartFile, given: JsonObject, name: string): Promise<Json | undefined> {
+    const entry = allow(given, 'the sources case', throughCaseKeys);
+    const source = JSON.stringify(entry['spec']);
+    const through = allow(entry['sources'], 'sources', ['pixels', 'from', 'to', 'versions']);
+    const tables = specTables(file, entry);
+    const versions = allow(through['versions'], 'versions', [...tables.keys()]);
+    const asked: Json[] = [];
+    const sources = new Map<string, ChartSource>();
+    for (const [handle, listed] of Object.entries(versions)) {
+        const left = [...list(listed, `the versions of "${handle}"`)].map(v => BigInt(whole(v, 'a version')));
+        const table = tables.get(handle);
+        if (table === undefined) {
+            throw new Error(`Internal: "${handle}" is not among the tables.`);
+        }
+        sources.set(handle, {
+            thin: (query: ChartSourceQuery) => {
+                asked.push(plain(query));
+                const version = left.shift();
+                if (version === undefined) {
+                    throw new Error(`"${name}": "${handle}" was asked more often than its versions say.`);
+                }
+                return Promise.resolve(thinChartData(table, query, version));
+            },
+        });
+    }
+    const options = {
+        ...(through['from'] === undefined ? {} : { from: number(through['from']) }),
+        ...(through['to'] === undefined ? {} : { to: number(through['to']) }),
+    };
+    const read = () => readChartSpecThrough(source, handle => sources.get(handle), whole(through['pixels'], 'pixels'), options);
+    const refused = entry['refused'];
+    if ((refused === undefined) === (entry['expect'] === undefined)) {
+        throw new Error(`"${name}" is either refused or expects a reading.`);
+    }
+    if (refused !== undefined) {
+        const r = allow(refused, 'refused', ['path', 'message', 'asked']);
+        let thrown: unknown;
+        try {
+            await read();
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the refusal the case expects is held to it below
+            thrown = error;
+        }
+        if (!(thrown instanceof ChartSpecRefusedError)) {
+            throw new Error(`"${name}" expected a refusal, and ${thrown === undefined ? 'nothing was thrown' : `${thrown instanceof Error ? thrown.message : 'what is no Error'} was thrown`}.`, { cause: thrown });
+        }
+        const path = string(r['path'], 'path');
+        holds(thrown.path === path, `"${name}": refused at "${thrown.path}", not "${path}": ${thrown.message}`);
+        holds(thrown.message === string(r['message'], 'message'), `"${name}": the refusal says "${thrown.message}".`);
+        holds(asked.length === whole(r['asked'], 'asked'), `"${name}": ${String(asked.length)} questions were asked before the refusal.`);
+        return undefined;
+    }
+    const { reading, versions: answered } = await read();
+    return { title: reading.title, definition: plain(reading.definition), asked, versions: plain(answered) };
 }

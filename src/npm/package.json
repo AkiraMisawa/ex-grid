@@ -24,6 +24,7 @@
     "pivot-mantine",
     "pivot-mui",
     "pivot-blazor",
+    "chart-blazor",
     "board-react",
     "sheet-engine",
     "sheet-xlsx",
