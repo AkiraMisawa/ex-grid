@@ -149,8 +149,8 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// </summary>
     [Parameter] public Func<string, string?>? CommandLabel { get; set; }
 
-    /// <summary>Whether the Context Menu offers copy with headers (ADR-0048). Off by default: a Sheet's column letters
-    /// are addresses, not headers (ADR-0050 item 13).</summary>
+    /// <summary>Whether the Context Menu offers copy with headers, and Ctrl+Shift+C copies with them (ADR-0048,
+    /// ADR-0005). Off by default: a Sheet's column letters are addresses, not headers (ADR-0050 item 13).</summary>
     [Parameter] public bool AllowCopyWithHeaders { get; set; }
 
     /// <summary>Raised when <see cref="IsEditing"/> changes (ADR-0048).</summary>

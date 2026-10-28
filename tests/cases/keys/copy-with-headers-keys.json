@@ -1,0 +1,31 @@
+{
+  "about": "Copy with headers' key (ADR-0005, decided with the user 2026-10-28): Ctrl+Shift+C, Command+Shift+C on a Mac, outside the key table, so that a grid that hides Copy with headers leaves it to the page and lets a Consumer declare it. The Script Core's alone: the C# core's grid offers Copy with headers from its Context Menu only (ADR-0350 section 5's note of 2026-10-27), so no C# runner reads this kind.",
+  "kind": "scriptCalls",
+  "subject": "GridKeys",
+  "cases": [
+    {
+      "name": "ADR-0005: Ctrl+Shift+C copies with headers, with CapsLock on, and as Command+Shift+C on a Mac",
+      "expect": [
+        {"static": "copiesWithHeaders", "args": {"key": "C", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": false}, "is": true},
+        {"static": "copiesWithHeaders", "args": {"key": "c", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": false}, "is": true},
+        {"static": "copiesWithHeaders", "args": {"key": "C", "ctrl": false, "shift": true, "alt": false, "meta": true, "metaIsPrimary": true}, "is": true},
+        {"static": "copiesWithHeaders", "args": {"key": "C", "ctrl": false, "shift": true, "alt": false, "meta": true, "metaIsPrimary": false}, "is": false},
+        {"static": "copiesWithHeaders", "args": {"key": "c", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "is": false},
+        {"static": "copiesWithHeaders", "args": {"key": "C", "ctrl": true, "shift": true, "alt": true, "meta": false, "metaIsPrimary": false}, "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0005: the key is in no table, so it is taken on no grid that hides Copy with headers",
+      "expect": [
+        {"static": "taken", "lacks": ["Control+Shift+C", "Control+Shift+c"]},
+        {"static": "resolve", "args": {"key": "C", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0005: on a grid that hides Copy with headers, a Consumer may declare the key",
+      "expect": [
+        {"static": "declare", "args": [["Control+Shift+C", "Control+Shift+c"]], "has": ["Control+Shift+C", "Control+Shift+c"]}
+      ]
+    }
+  ]
+}

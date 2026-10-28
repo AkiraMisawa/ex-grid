@@ -279,6 +279,20 @@ export function headerGroupKeyOf(press: KeyPress): 'expand' | 'collapse' | undef
     return canonical === 'Shift+Alt+ArrowDown' ? 'expand' : canonical === 'Shift+Alt+ArrowUp' ? 'collapse' : undefined;
 }
 
+/**
+ * Copy with headers' key (ADR-0005, decided with the user 2026-10-28): Ctrl+Shift+C, Command+Shift+C on a Mac, the key
+ * SQL Server Management Studio's results grid copies with headers by. Both cases, for CapsLock. Outside the table: it is
+ * the core's only on a grid that offers Copy with headers, and a grid that hides it leaves the key to the page, whose
+ * browser opens its element inspector by it, or to a Consumer that declares it. Taken, it fires no copy event, so it
+ * writes as the Context Menu's item does.
+ */
+export const copyWithHeadersKeys: readonly string[] = Object.freeze(['Control+Shift+C', 'Control+Shift+c']);
+
+/** Whether a key press is Copy with headers' key (ADR-0005). */
+export function copiesWithHeaders(press: KeyPress): boolean {
+    return copyWithHeadersKeys.includes(canonicalKey(press));
+}
+
 /** The clipboard's keys (ADR-0005, ADR-0014): answered through the browser's copy and paste events, with
  * cut and paste as plain text. Never taken, or the events would not fire. */
 export const clipboardKeys: readonly string[] = Object.freeze([

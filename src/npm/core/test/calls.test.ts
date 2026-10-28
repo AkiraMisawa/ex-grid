@@ -15,7 +15,9 @@ import { HeaderGroup, HeaderGroupLayout } from '../src/columns/header-groups';
 import { allowedBoundaries, reorderColumns } from '../src/columns/header-reorder';
 import { firstEnabled, lastEnabled, letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey, splitAtLetter } from '../src/chrome/menu-keys';
 import { editingKeysByMode } from '../src/keys/editing-keys';
-import { canonicalKey, clipboardKeys, declareKeys, headerGroupKeyOf, headerGroupKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
+import {
+    canonicalKey, clipboardKeys, copiesWithHeaders, declareKeys, headerGroupKeyOf, headerGroupKeys, keysTakenFor, resolveKey, takenOnEveryGrid,
+} from '../src/keys/grid-keys';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { GridMetrics } from '../src/grid-metrics';
 import { findMatches } from '../src/finding/find';
@@ -155,7 +157,7 @@ const subjects: Readonly<Record<string, Subject>> = {
         create: (_, via) => noFactory('GridKeys', via),
         statics: {
             resolve: resolveKey, canonical: canonicalKey, taken: takenOnEveryGrid, takenFor: keysTakenFor,
-            declare: declareKeys, clipboardKeys, headerGroupKey: headerGroupKeyOf, headerGroupKeys,
+            declare: declareKeys, clipboardKeys, headerGroupKey: headerGroupKeyOf, headerGroupKeys, copiesWithHeaders,
         },
     },
     HeaderGroup: {

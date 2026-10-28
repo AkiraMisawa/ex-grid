@@ -94,7 +94,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>Whether the header's ▾ column menu is hidden (ADR-0044).</summary>
     [Parameter] public bool HideColumnMenu { get; set; }
 
-    /// <summary>Whether the menus leave out Copy with headers (ADR-0036).</summary>
+    /// <summary>Whether the menus leave out Copy with headers, and Ctrl+Shift+C is left to the page (ADR-0036,
+    /// ADR-0005).</summary>
     [Parameter] public bool HideCopyWithHeaders { get; set; }
 
     /// <summary>Whether a click on a header selects its column (ADR-0050).</summary>

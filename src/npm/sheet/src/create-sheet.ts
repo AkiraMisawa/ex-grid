@@ -176,9 +176,9 @@ export interface SheetOptions {
     /** Hears the Selection Summary as it now stands (ADR-0130), for an application that shows the figures elsewhere. */
     readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
     /**
-     * Offers copy with headers in the Context Menu, which copies the Values with the column letters as the first row
-     * (ADR-0048). Off unless `true`: a Sheet's column letters are addresses, not headers, and Excel has no such command
-     * (ADR-0050 item 13).
+     * Offers copy with headers in the Context Menu and by Ctrl+Shift+C, which copies the Values with the column letters
+     * as the first row (ADR-0048, ADR-0005). Off unless `true`: a Sheet's column letters are addresses, not headers, and
+     * Excel has no such command (ADR-0050 item 13), so the key is left to the page.
      */
     readonly allowCopyWithHeaders?: boolean;
     /**
