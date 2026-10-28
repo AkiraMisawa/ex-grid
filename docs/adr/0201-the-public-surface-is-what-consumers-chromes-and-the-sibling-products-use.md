@@ -161,6 +161,23 @@ over the Script Core used it; this ADR's premise rules out handing ExPivot the i
   two Blazor ExPivots different types for the same event; and carrying no `SelectionChanged` until the Razor
   component goes, which leaves a Consumer moving to the Script Core without it.
 
+### What crosses to ExSheet's Script Core *(2026-10-28, decided with the user)*
+
+Blazor's ExSheet over the Script Core (ADR-0370 section 1) hands the Sheet in the browser a `SheetEdit`, a
+`CellFormatChange` and a Linked Table's rows, and reads back a Cell Format and a refused snapshot. Each edit
+subclass is internal to ExSheet.Engine, and this ADR's premise rules out handing ExSheet's adapter the
+internals, as it ruled out handing ExPivot the Selection's.
+
+- **`SheetWire` in ExSheet.Engine is public and contract.** It writes an edit, a change and rows as the JSON
+  the Script Core reads, in the vocabulary both engines' shared cases write them in, and reads a Cell Format
+  and a `RepeatedKeyException` back. It serves any adapter over the Script Core, a third party's included,
+  and both case runners send every edit through it, so the text is held on both sides.
+- **It decides nothing.** The Script Core does the edit and refuses it as the C# Sheet would; the writers
+  only say what was asked.
+- *Considered:* the writers internal and reached by `InternalsVisibleTo` from ExSheet, which this ADR
+  rejects for a package; and each edit made public with its own writer, which puts the subclasses on the
+  surface for one adapter's sake.
+
 ## Considered options
 
 - **Review every type and member, and reshape the poor ones, before `0.1.0`.** The strongest reading, but
