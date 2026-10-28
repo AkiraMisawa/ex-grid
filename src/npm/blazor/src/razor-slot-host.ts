@@ -53,6 +53,43 @@ export interface RazorSlotHostOptions {
     readonly keyboardBack?: (slot: HTMLElement) => void;
 }
 
+/** What a product answers once it is made, for the host's options: its Settled Mark, its Input Order and its keyboard,
+ * as a grid's handle and a Sheet's answer them. */
+export interface SlotHostProduct {
+    holdSettled(): () => void;
+    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
+    focus(): void;
+}
+
+/**
+ * The host's options over one product that may still be being made, `made` answering it once it is, and `named` naming
+ * it in a defect: a slot mounted as the product is made holds its Settled Mark once there is a product to hold, before
+ * the task ends. Only a part the user opened takes the keyboard, and the user opens nothing before the product stands,
+ * so ordering inputs or handing the keyboard back before then is a defect.
+ */
+export function slotHostOptionsOf(made: () => SlotHostProduct | undefined, named: string): RazorSlotHostOptions {
+    const product = (asked: string): SlotHostProduct => {
+        const standing = made();
+        if (standing === undefined) throw new Error(`Internal: a Razor slot ${asked} while the ${named} was being made.`);
+        return standing;
+    };
+    return {
+        hold: () => {
+            const standing = made();
+            if (standing !== undefined) return standing.holdSettled();
+            let release: (() => void) | undefined;
+            let gone = false;
+            queueMicrotask(() => {
+                const now = made();
+                if (!gone && now !== undefined) release = now.holdSettled();
+            });
+            return () => { gone = true; release?.(); };
+        },
+        order: until => { void product('that takes the keyboard was mounted').inOrder(() => until); },
+        keyboardBack: () => { product('held the keyboard').focus(); },
+    };
+}
+
 /** A kind as the host keeps it, whose types the host does not know: it is handed only the contexts the core mounts its
  * slot with, and only what its own `data` answered. */
 export type HostedSlotKind = RazorSlotKind<unknown, unknown, unknown>;

@@ -562,3 +562,55 @@ describe('words across the bridge (ADR-0370 section 10, ADR-0036)', () => {
         expect(wordsOf(null)).toEqual({ label: undefined, commandLabel: undefined });
     });
 });
+
+/** A secondary press on the cell at `row`, `column` of a default Sheet, as a context menu is asked for. */
+function secondary(element: HTMLElement, row: number, column: number): void {
+    const viewport = element.querySelector<HTMLElement>('.ex-viewport');
+    if (viewport === null) throw new Error('The grid has no viewport.');
+    for (const type of ['mousedown', 'contextmenu']) {
+        const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 2 });
+        Object.defineProperty(event, 'offsetX', { value: rowHeadingWidthPx(element) + (column * 99) + 20 });
+        Object.defineProperty(event, 'offsetY', { value: row * 28 + 5 });
+        viewport.dispatchEvent(event);
+    }
+}
+
+describe('the grid\'s slots filled with Razor (ADR-0410)', () => {
+
+    it('asks .NET for the Context Menu with the Sheet\'s commands as data, and moves the contents .NET drew into it', async () => {
+        const element = document.createElement('div');
+        document.body.append(element);
+        const dotnet = new FakeDotNet();
+        for (const method of ['MountSlot', 'UpdateSlot', 'UnmountSlot']) dotnet.answers.set(method, () => Promise.resolve(null));
+        const sheet = attach(element, dotnet, JSON.stringify({
+            options: options({ razorSlots: ['contextMenu'] }), document: workbookJson(['Sheet1', { A1: '1' }]), documentsSent: 1, words: null, circuit: false,
+        }));
+        attached.push(sheet);
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('1'); });
+
+        secondary(element, 0, 0);
+        const mounted = await vi.waitFor(() => {
+            const call = dotnet.called.find(each => each.method === 'MountSlot');
+            if (call === undefined) throw new Error('No slot was mounted.');
+            return call;
+        });
+        const [id, version, name, context] = mounted.args;
+        expect(name).toBe('contextMenu');
+        const commands = (JSON.parse(String(context)) as { readonly commands: readonly { readonly label: string }[] }).commands;
+        expect(commands.map(command => command.label)).toContain('Insert rows above');
+
+        // .NET's render, in a hidden holder beside the root, moved into the menu's slot.
+        const holder = document.createElement('div');
+        holder.hidden = true;
+        const contents = document.createElement('div');
+        contents.innerHTML = '<button data-ex-menu-item="0">Razor</button>';
+        holder.append(contents);
+        document.body.append(holder);
+        sheet.slotRendered(Number(id), Number(version), contents);
+        expect(element.contains(contents)).toBe(true);
+    });
+
+    it('never fills the find panel, which is the Sheet\'s own, with Within (ADR-0332 section 5)', () => {
+        expect(() => mount({ options: options({ razorSlots: ['findPanel'] }) })).toThrow(TypeError);
+    });
+});

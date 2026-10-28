@@ -8,6 +8,7 @@
       "@ex-grid/blazor-shared": ["../blazor/src/shared.ts"],
       "@ex-grid/board": ["../board/src/index.ts"],
       "@ex-grid/chart": ["../chart/src/index.ts"],
+      "@ex-grid/chart-blazor": ["../chart-blazor/src/razor-slots.ts"],
       "@ex-grid/core": ["../core/src/index.ts"],
       "@ex-grid/data": ["../data/src/index.ts"],
       "@ex-grid/pivot": ["../pivot/src/index.ts"],

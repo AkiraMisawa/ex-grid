@@ -73,6 +73,11 @@
          Script adapter, beside the Shared Script's half (src/npm/blazor/src/held-messages.ts). -->
     <Compile Include="..\Shared\Script\HeldCalls.cs" Link="Script\HeldCalls.cs" />
     <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
+    <!-- Chrome slots filled with Razor (ADR-0410): the holders every adapter renders, and the Sheet's grid's slots,
+         read and drawn as ExGrid's own adapter reads and draws them. -->
+    <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
+    <Compile Include="..\ExGrid\Script\RazorSlot.cs" Link="Script\RazorSlot.cs" />
+    <Compile Include="..\ExGrid\Script\ScriptJson.cs" Link="Script\ScriptJson.cs" />
   </ItemGroup>
 
 </Project>

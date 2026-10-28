@@ -9,7 +9,7 @@ import {
     type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
 import {
-    awaitPointingScope, crossingCalls, HeldMessages, isGridRazorSlotName, WireMetrics, type GridRazorSlotName, type WireCellMetrics,
+    awaitPointingScope, crossingCalls, HeldMessages, isGridRazorSlotName, slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type WireCellMetrics,
     type WirePresentationDefaults,
 } from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
@@ -216,20 +216,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
     const made: { grid?: GridHandle<BlazorRow> } = {};
     const metrics = new WireMetrics();
-    const slots = new RazorSlots(dotnet, () => {
-        if (made.grid !== undefined) return made.grid.holdSettled();
-        let release: (() => void) | undefined;
-        let gone = false;
-        queueMicrotask(() => { if (!gone && made.grid !== undefined) release = made.grid.holdSettled(); });
-        return () => { gone = true; release?.(); };
-    }, until => {
-        // Only a part the user opened takes the keyboard, and the user opens nothing before the grid stands.
-        if (made.grid === undefined) throw new Error('Internal: a Razor slot that takes the keyboard was mounted while the grid was being made.');
-        void made.grid.inOrder(() => until);
-    }, () => {
-        if (made.grid === undefined) throw new Error('Internal: a Razor slot held the keyboard while the grid was being made.');
-        made.grid.focus();
-    });
+    const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'));
     const grid: GridHandle<BlazorRow> = createGrid(root, optionsNow());
     made.grid = grid;
     // The grid joins its Scope once a Sheet of it brings it to the page, and is pointed at from then on (ADR-0430).
