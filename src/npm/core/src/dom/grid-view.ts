@@ -1142,8 +1142,9 @@ interface OpenEdit<Row> {
     /** The row it opened on as the grid last held it, read from the Window as another set replaced it: what its
      * commit lands on while it is away; none where that Window no longer held the row (ED-21). */
     awayRow: Row | undefined;
-    /** The row it stands on in the Window last replaced among its own rows: what `awayRow` is taken from. */
-    leavingRow: Row | undefined;
+    /** Whether it left its own rows under the order it was opened under: without a Row Key, only then does its
+     * position name its row again when they come back (ADR-0142, LV-20). */
+    leftInOrder: boolean;
 }
 
 // A press handed over whose button is still down (ADR-0058): where it was, on a header or not, and where the pointer
@@ -1810,6 +1811,8 @@ export class GridView<Row> {
     // the source hands under a new version with no view are the same set, in another order (ADR-0331 §5).
     #rowSet = 1;
     #rowSetsGiven = 1;
+    // The state the Selection was last reconciled under: the Window an edit leaving its set is read from.
+    #reconciledState: GridSourceState<Row> | undefined;
     // Whether the offsets taken from a view are still to be kept inside the rows shown, as the browser keeps them.
     #viewScrollUnclamped = false;
     // The row a new page size brings to the top of the view, once the geometry over it is made (ADR-0015).
@@ -2942,7 +2945,6 @@ export class GridView<Row> {
     readonly #onSource = (): void => {
         const previous = this.#state;
         const { window, windowStart } = previous;
-        this.#noteEditRowLeaving(previous);
         this.#state = this.#source.snapshot();
         this.#noteRowsLeft();
         this.#noteRowsForSummary(previous);
@@ -3282,6 +3284,8 @@ export class GridView<Row> {
     // Row Sequence Version for the rows, which moves on with another source too, and the columns by name,
     // in order, never the array's identity, which a Framework Adapter hands afresh on every render.
     #reconcileSelection(): void {
+        const left = this.#reconciledState;
+        this.#reconciledState = this.#state;
         const version = this.#sequence();
         const names = this.#columns.map(({ column }) => column.name);
         const columnsMoved = !sameItems(names, this.#columnNames);
@@ -3309,7 +3313,7 @@ export class GridView<Row> {
         const ahead = this.#viewAhead;
         if (ahead !== undefined && ahead.version === this.#handedVersion()) {
             this.#viewAhead = undefined;
-            this.#takeRowSet(ahead.set ?? ++this.#rowSetsGiven);
+            this.#takeRowSet(ahead.set ?? ++this.#rowSetsGiven, left);
             const extent = this.#extent;
             const fits = (range: SelectionRange): boolean => bottomRow(range) < extent.rowCount && range.leftColumn + range.columnCount <= extent.columnCount;
             // Rows never shown with no place given are left with nothing selected, as a new version leaves them.
@@ -4504,7 +4508,7 @@ export class GridView<Row> {
             key: rowKey === undefined ? undefined : keyOf(rowKey, held.row, 'The row an edit opens on'),
             seenText: this.#paintedTextAt(at), openedOn: held.row, error: undefined,
             awaits: this.#userWritesOver(at), rebaseOwed: false, surface, untypedText: onOwnText ? text : undefined,
-            set: this.#rowSet, awayRow: undefined, leavingRow: held.row,
+            set: this.#rowSet, awayRow: undefined, leftInOrder: true,
         };
         this.#edit = opened;
         // The editor takes the keyboard in the task that opened it, with the caret placed by the core at the end
@@ -4672,8 +4676,9 @@ export class GridView<Row> {
         // The commit lands over whatever the cell paints now, and the intent says what the user saw of it
         // (ADR-0142). A flag raises the intent unchanged: the mark comes back through what the cell shows.
         this.#supersedeFill();
-        // Away, the cell is not painted: what it holds now is read from the edit's own row, so a change made there while
-        // the edit was away is told as any other is (LV-11), and no cell shown is the user's write (ADR-0331 §5).
+        // Away, the cell is not painted: what it holds is read from the edit's own row as the grid last held it, so a
+        // change made to that row is told as any other is (LV-11), and no cell shown is the user's write (ADR-0331 §5).
+        // A row the Consumer replaced with another instance while away is not seen: the grid holds no Window of it.
         const away = this.#away(edit);
         const replaced = away ? textFor(column.column, column.column.value(row)) : this.#paintedTextAt(landing.cell);
         const intent = new GridEditIntent(row, name, text, edit.seenText, replaced, controller.signal);
@@ -4735,13 +4740,15 @@ export class GridView<Row> {
     // columns the Consumer handed over while it answered are the commit's own doing: accepted, the edit ends as
     // committed; refused, the editor cannot stand over rows or columns the grid no longer shows, and the edit is
     // discarded with the reason (ADR-0142). Neither raises a notice: its cell would name a position among rows or
-    // columns the grid no longer shows.
+    // columns the grid no longer shows. Nor does a commit away whose answer did not hand its own rows back, for the
+    // same reason (ADR-0331 §5).
     #editLanded(edit: OpenEdit<Row>, intent: GridEditIntent<Row>, cell: CellPosition): boolean {
         const outlived = this.#outlivedBy(edit);
         const refusal = intent.refusalMessage;
+        const amongItsRows = !this.#away(edit) || this.#viewAhead?.set === edit.set;
         if (refusal === undefined || outlived !== undefined) {
             this.#endEdit(refusal === undefined ? undefined : outlived);
-            if (refusal === undefined && outlived === undefined) {
+            if (refusal === undefined && outlived === undefined && amongItsRows) {
                 this.#raiseOverwriteNotice(cell, intent.column, intent.seenText, intent.replacedText);
             }
             return true;
@@ -5408,8 +5415,9 @@ export class GridView<Row> {
     // row, the editor keeps what it saw before, never another row's text; the commit may then tell the user's
     // own write as a change, which errs towards a notice (ADR-0142's accepted limits).
     #rebaseEdit(edit: OpenEdit<Row>): void {
-        edit.rebaseOwed = false;
+        // Away, the cell is not painted: the reading stays owed until its own rows come back (ADR-0331 §5).
         if (this.#away(edit)) return;
+        edit.rebaseOwed = false;
         const held = this.#rowAt(edit.cell.row);
         if (held === undefined) return;
         const rowKey = this.#source.rowKey;
@@ -5476,40 +5484,45 @@ export class GridView<Row> {
     // as last held, and Point's outline, which stood over the rows left, goes while what it wrote stays, for the next
     // point to replace. Back among its own set, the edit stands over its cell under the version they are shown under
     // now, as when it was opened: the Consumer vouches that a view handed back is of the same rows in the same order.
-    #takeRowSet(set: number): void {
+    //
+    // `left` is the state the grid last reconciled under, the edit's own rows: the edited row is read from its Window,
+    // the one row the grid holds beyond its Window while the edit is away (ADR-0160), by its key, or without one at
+    // its position while the order it opened under holds. A Window that no longer held it leaves none, and a commit
+    // away then has no row to land on (ED-21); an order that had moved leaves its position naming no row of its own,
+    // back among those rows too, so the commit there is refused as before (LV-20).
+    #takeRowSet(set: number, left: GridSourceState<Row> | undefined): void {
         if (set === this.#rowSet) return;
         const edit = this.#edit;
         const wasAway = edit !== undefined && this.#away(edit);
         this.#rowSet = set;
         if (edit === undefined) return;
         if (set === edit.set) {
-            edit.sequence = this.#sequence();
+            if (edit.leftInOrder) edit.sequence = this.#sequence();
             edit.awayRow = undefined;
-            edit.leavingRow = this.#rowAt(edit.cell.row)?.row;
         } else if (!wasAway) {
-            edit.awayRow = edit.leavingRow;
+            const inOrder = left !== undefined && left.rowSequenceVersion + this.#sequenceOffset === edit.sequence;
+            edit.leftInOrder = edit.key !== undefined || inOrder;
+            edit.awayRow = left === undefined ? undefined : this.#editedRowAmong(edit, left, inOrder);
         }
-        if (this.#pointer !== undefined && this.#pointingContinues(edit)) {
+        // An outline over the rows left goes, whether or not it still stood: what it wrote stays for the next point.
+        if (this.#pointer !== undefined) {
+            this.#pointAside = this.#pointingContinues(edit);
             this.#pointer = undefined;
-            this.#pointAside = true;
         }
     }
 
-    // Notes the row the open edit stands on in the Window about to be replaced, while it is still in hand (ADR-0160),
-    // for a set the replacing rows may take the edit away from (#takeRowSet): read only from a Window of the edit's own
-    // rows, under its key or the order it opened under. A Window of its order that no longer holds the row leaves
-    // none, and a commit away then has no row to land on (ED-21).
-    #noteEditRowLeaving(previous: GridSourceState<Row>): void {
-        const edit = this.#edit;
-        if (edit === undefined || this.#away(edit) || edit.source !== this.#source) return;
-        const slice = edit.cell.row - previous.windowStart;
-        const held = slice < 0 || slice >= previous.window.length ? undefined : itemAt(previous.window, slice);
+    // The row the open edit was opened on among the Window of `state`: under its key wherever it stands, met once; or,
+    // without one, at the edit's position while `inOrder`, the order it was opened under holding there.
+    #editedRowAmong(edit: OpenEdit<Row>, state: GridSourceState<Row>, inOrder: boolean): Row | undefined {
+        const { window, windowStart } = state;
         const rowKey = this.#source.rowKey;
-        if (edit.key !== undefined && rowKey !== undefined) {
-            if (held !== undefined && keyOf(rowKey, held, 'A row of the Window') === edit.key) edit.leavingRow = held;
-            return;
+        if (edit.key !== undefined) {
+            if (rowKey === undefined) return undefined;
+            const found = window.filter(row => keyOf(rowKey, row, 'A row of the Window') === edit.key);
+            return found.length === 1 ? found[0] : undefined;
         }
-        if (previous.rowSequenceVersion + this.#sequenceOffset === edit.sequence) edit.leavingRow = held;
+        const slice = edit.cell.row - windowStart;
+        return inOrder && slice >= 0 && slice < window.length ? itemAt(window, slice) : undefined;
     }
 
     // What took the open edit's rows or columns away: another source, or other columns (ADR-0011, ADR-0142).
@@ -6690,7 +6703,8 @@ export class GridView<Row> {
                 || !Number.isInteger(range.rowCount) || !Number.isInteger(range.columnCount) || range.rowCount < 1 || range.columnCount < 1) {
                 throw new RangeError('A range starts at row and column 0 or after and holds a cell at least (ADR-0050).');
             }
-            if (focus.row < range.topRow || focus.row > bottomRow(range) || focus.column < range.leftColumn || focus.column >= range.leftColumn + range.columnCount) {
+            if (!Number.isInteger(focus.row) || !Number.isInteger(focus.column)
+                || focus.row < range.topRow || focus.row > bottomRow(range) || focus.column < range.leftColumn || focus.column >= range.leftColumn + range.columnCount) {
                 throw new RangeError('The Focus is placed inside the range it belongs to (ADR-0050, ADR-0052).');
             }
         }

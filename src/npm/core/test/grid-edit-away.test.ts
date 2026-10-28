@@ -9,7 +9,7 @@ import type { GridEditIntent } from '../src/cells/edit-intent';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridPasteIntent } from '../src/clipboard/paste-intent';
 import type { GridRefusal } from '../src/dom/grid-refusal';
-import type { GridViewRead } from '../src/dom/grid-view';
+import type { GridOptions, GridViewRead } from '../src/dom/grid-view';
 import type { SelectionRange } from '../src/selection/range';
 import type { GridSelection } from '../src/selection/selection';
 import type { GridSource, GridSourceState } from '../src/source/grid-source';
@@ -84,12 +84,14 @@ class SetsSource implements GridSource<Trade> {
 }
 
 /** One grid over two sets of rows under one source, as a Workbook's two Sheets: `away` shows the other set, new to the
- * grid, with A1 selected, and `home` the first again with the view read as it was left. */
-async function twoSets(): Promise<{
+ * grid, with A1 selected, `home` the first again with the view read as it was left, and `reorder` the first set in
+ * another order, as a sort does. `answer`, where set, is what the Consumer does as it hears an edit. */
+async function twoSets(options: Partial<GridOptions<Trade>> = {}): Promise<{
     readonly root: HTMLElement; readonly view: ReturnType<typeof mount<Trade>>['view']; readonly edits: GridEditIntent<Trade>[];
     readonly refusals: GridRefusal[]; readonly selections: GridSelection[]; readonly away: () => GridViewRead; readonly home: (read: GridViewRead) => void;
+    readonly reorder: () => void; answer: (() => void) | undefined;
 }> {
-    const first = trades(20);
+    let first = trades(20);
     const other = trades(20).map(trade => ({ ...trade, book: `Other-${trade.book}` }));
     const source = new SetsSource(first);
     const edits: GridEditIntent<Trade>[] = [];
@@ -97,8 +99,13 @@ async function twoSets(): Promise<{
     const selections: GridSelection[] = [];
     const { root, view } = mount<Trade>({
         columns, source, rowHeight: 24, viewportHeight: 480, pointAt, referenceText,
-        onEdit: intent => { edits.push(intent); }, onPaste: (_intent: GridPasteIntent) => undefined,
+        onEdit: intent => {
+            edits.push(intent);
+            grid.answer?.();
+        },
+        onPaste: (_intent: GridPasteIntent) => undefined,
         onRefused: refusal => { refusals.push(refusal); }, onSelectionChanged: selection => { selections.push(selection); },
+        ...options,
     });
     await painted();
     const away = (): GridViewRead => {
@@ -111,7 +118,12 @@ async function twoSets(): Promise<{
         source.show(first);
         view.showViewWith(read, source.snapshot().rowSequenceVersion);
     };
-    return { root, view, edits, refusals, selections, away, home };
+    const reorder = (): void => {
+        first = first.toReversed();
+        source.show(first);
+    };
+    const grid = { root, view, edits, refusals, selections, away, home, reorder, answer: undefined as (() => void) | undefined };
+    return grid;
 }
 
 describe('an edit away among another set of rows (ADR-0331 §5)', () => {
@@ -164,6 +176,53 @@ describe('an edit away among another set of rows (ADR-0331 §5)', () => {
         press(grid.root, 5, 1);
         await painted();
         expect([editor(grid.root).value, defined(grid.selections.at(-1), 'the Selection').focus]).toEqual(['=B6', { row: 0, column: 0 }]);
+    });
+
+    it('ADR-0331 §5 / LV-20: without a Row Key, an order that moved before the edit went away still refuses its commit once its rows come back', async () => {
+        const grid = await twoSets();
+        press(grid.root, 2, 0);
+        await painted();
+        key('W');
+        grid.reorder();
+        await painted();
+        const read = grid.away();
+        await painted();
+        // Its position no longer named its row as it left: away, the commit has no row to land on, and back among its
+        // rows it is refused as it was before it went.
+        grid.home(read);
+        await painted();
+        key('Enter');
+        await painted();
+        expect([grid.edits.length, grid.refusals, grid.view.readEditText()])
+            .toEqual([0, [{ kind: 'commit', reason: 'orderMoved', cell: { row: 2, column: 0 }, column: 'Book' }], 'W']);
+    });
+
+    it('ADR-0331 §5 / ADR-0034: a Row Heading press that commits an edit away, whose answer shows its own rows again, keeps no meaning of its own', async () => {
+        // A band of 40 px before the columns.
+        const grid = await twoSets({ rowHeadings: row => String(row + 1), rowHeadingWidth: 40 });
+        grid.view.placeSelection({ topRow: 2, leftColumn: 0, rowCount: 1, columnCount: 1 }, { row: 2, column: 0 }, 0);
+        await painted();
+        q(grid.root, 'input.ex-key-field').focus();
+        key('W');
+        const read = grid.away();
+        await painted();
+        grid.answer = () => { grid.home(read); };
+        // A press on the Row Heading of row 6 of the rows shown, dragged to row 8 before its release.
+        const at = (name: string, row: number): void => {
+            const y = (row * 24) + 5;
+            const event = new MouseEvent(name, { bubbles: true, cancelable: true, button: 0, buttons: name === 'mouseup' ? 0 : 1, clientX: 10, clientY: y });
+            Object.defineProperty(event, 'offsetX', { value: 10 });
+            Object.defineProperty(event, 'offsetY', { value: y });
+            q(grid.root, '.ex-viewport').dispatchEvent(event);
+        };
+        at('mousedown', 5);
+        at('mousemove', 7);
+        at('mouseup', 7);
+        await painted();
+        // The edit lands on its row; the press named a row of the rows that went, and neither selects nor drags among
+        // those back: the view handed back with the version the answer moved to stands.
+        const shown = defined(grid.selections.at(-1), 'the Selection');
+        expect([defined(grid.edits[0], 'the intent').row.book, shown.focus, shown.cellCount]).toEqual(['Book-2', { row: 2, column: 0 }, 1]);
     });
 
     it('ADR-0331 §5: away, a Ctrl+Enter fill is refused as aimed under another order, and the edit stays', async () => {

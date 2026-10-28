@@ -1389,7 +1389,7 @@ class SheetView {
     // The Sheet the open edit was opened on, once another Sheet has been shown while it is typed (ADR-0331 §5): its
     // Formula is committed there, and the edit's end shows it again.
     #editHome: Sheet | undefined;
-    // While an edit is open no other Sheet is shown, so the Linked Tables offered are the shown Sheet's Workbook's.
+    // The Linked Tables offered are the Workbook's, whichever of its Sheets is shown while the Formula is typed.
     readonly #completeEditorText = (text: string, caret: number): EditorCompletion | undefined => sheetCompletion(this.#source.sheet, text, caret);
 
     // The colours the grid gave the keys of the Formula being edited, as the Linked Table columns they name
