@@ -157,8 +157,10 @@
     box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
 }
 /* A Reject stands (ADR-0034): the underline turns the palette's error colour, the
-   same colour the core's message popover speaks in. Painted, not laid out. */
-.mud-ex-grid .ex-editor .mud-ex-editor.mud-ex-editor-error {
+   same colour the core's message popover speaks in. Painted, not laid out. Under the
+   Script Core the field is the core's, which marks it aria-invalid in the browser. */
+.mud-ex-grid .ex-editor .mud-ex-editor.mud-ex-editor-error,
+.mud-ex-grid .ex-editor .mud-ex-editor[aria-invalid='true'] {
     box-shadow: inset 0 -2px 0 var(--mud-palette-error);
 }
 /* The Formula Bar's two fields (ADR-0051): bare inputs filling the boxes the core stands in

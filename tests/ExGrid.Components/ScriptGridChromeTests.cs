@@ -220,6 +220,35 @@ public class ScriptGridChromeTests : BunitContext
         Assert.Equal("'Osei' case True whole True; replace 'Lee' waiting; Next/All; said 'No match'", cut.Find(".ex-razor-slot").TextContent);
     }
 
+    private sealed class EditorChrome : IGridChrome
+    {
+        public ScriptSlots ScriptSlots => ScriptSlots.CellEditor;
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public RenderFragment? CellEditor(GridCellEditorView view) => builder => builder.AddContent(0,
+            $"{view.Column} {view.Type} '{view.InitialText}' {view.Mode} error '{view.Error}' pending {view.IsPending}");
+    }
+
+    [Fact] // ADR-0410 section 3: the Cell Editor's view crosses as data, drawn again as its mode, its error and its pending commit change
+    public async Task ADR0410_a_cell_editors_view_crosses_as_data()
+    {
+        var cut = Grid(new EditorChrome());
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "cellEditor",
+            "{\"column\":\"Book\",\"columnType\":\"text\",\"initialText\":\"a\",\"mode\":\"overwrite\",\"error\":null,\"pending\":false}"));
+        Assert.Equal("Book Text 'a' Overwrite error '' pending False", cut.Find(".ex-razor-slot").TextContent);
+
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2,
+            "{\"column\":\"Book\",\"columnType\":\"text\",\"initialText\":\"a\",\"mode\":\"point\",\"error\":\"Not a book\",\"pending\":true}"));
+        Assert.Equal("Book Text 'a' Point error 'Not a book' pending True", cut.Find(".ex-razor-slot").TextContent);
+    }
+
     [Fact] // ADR-0410: a Chrome that names a slot this adapter does not fill is refused by name, never left out quietly
     public void ADR0410_a_slot_the_adapter_does_not_fill_is_refused()
     {

@@ -91,8 +91,9 @@ public sealed class MudSheetChrome : ISheetChrome
 
     /// <summary>The slots the Grid Chrome fills over the Script Core (ADR-0410), forwarded, except the find panel:
     /// a Sheet's is its own, with Within (ADR-0332 section 5), and a grid's panel drawn in its place would search
-    /// the Sheet shown alone.</summary>
-    public ScriptSlots ScriptSlots => GridSeams.ScriptSlots & ~ScriptSlots.FindPanel;
+    /// the Sheet shown alone; and except the Cell Editor, whose own field colours a formula's References
+    /// (ADR-0057), which a field drawn in the slot would show plain.</summary>
+    public ScriptSlots ScriptSlots => GridSeams.ScriptSlots & ~(ScriptSlots.FindPanel | ScriptSlots.CellEditor);
 
     /// <summary>The Grid Chrome's column menu over the Script Core (ADR-0410), in ExSheet's words.</summary>
     public RenderFragment? ColumnMenu(GridMenuView view) => GridSeams.ColumnMenu(view);
@@ -109,6 +110,10 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <summary>No find panel over the Script Core: a Sheet's is its own, with Within (ADR-0332 section 5), and
     /// <see cref="ScriptSlots"/> leaves the slot to it (ADR-0410 section 4's note of 2026-10-28).</summary>
     public RenderFragment? FindPanel(GridFindView view) => null;
+
+    /// <summary>No Cell Editor over the Script Core: a Sheet keeps the core's own, which colours a formula's References
+    /// (ADR-0057), and <see cref="ScriptSlots"/> leaves the slot to it (ADR-0410).</summary>
+    public RenderFragment? CellEditor(GridCellEditorView view) => null;
 
     /// <summary>The Sheet's own slots this Chrome fills over the Script Core (ADR-0410): the Toolbar Items, Format Cells,
     /// and the Sheet Tabs' faces and the + button's, drawn as they are over the C# core.</summary>

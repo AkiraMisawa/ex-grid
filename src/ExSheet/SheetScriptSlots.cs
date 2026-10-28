@@ -4,7 +4,8 @@ namespace ExSheet;
 /// The Sheet's own Chrome slots an <see cref="ISheetChrome"/> fills with Razor when the Script Core draws the Sheet
 /// (<c>ExSheet.Script.ExSheet</c>, ADR-0410): each named here is asked for through its view overload, and the Script
 /// Core draws its own part for every slot not named. The grid's slots are the Chrome's
-/// <see cref="ExGrid.Chrome.IGridChrome.ScriptSlots"/>, all but the find panel, which is the Sheet's own (ADR-0332 §5).
+/// <see cref="ExGrid.Chrome.IGridChrome.ScriptSlots"/>, all but the find panel, which is the Sheet's own (ADR-0332 §5),
+/// and the Cell Editor, whose own field colours a formula's References (ADR-0057).
 /// </summary>
 /// <remarks>
 /// It stands beside the C# core's contexts until the C# core is removed (ADR-0350 section 7, ADR-0410 section 4's

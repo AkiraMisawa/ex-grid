@@ -137,10 +137,10 @@ public sealed class MudGridChrome : IGridChrome
     }
 
     /// <summary>The slots this Chrome fills when the Script Core draws the grid (ADR-0410): the column
-    /// menu, the filter panel, the find panel, the Context Menu and the loading bar so far. Every other part is the
-    /// Script Core's own there until this Wrapper fills it too.</summary>
+    /// menu, the filter panel, the find panel, the Context Menu, the loading bar and the Cell Editor so far. Every
+    /// other part is the Script Core's own there until this Wrapper fills it too.</summary>
     public ScriptSlots ScriptSlots => ScriptSlots.ColumnMenu | ScriptSlots.ContextMenu | ScriptSlots.LoadingIndicator | ScriptSlots.FilterPanel
-        | ScriptSlots.FindPanel;
+        | ScriptSlots.FindPanel | ScriptSlots.CellEditor;
 
     /// <summary>The column menu when the Script Core draws the grid (ADR-0410): the same
     /// <c>MudButton</c> items, each marked for the script that wires them.</summary>
@@ -183,6 +183,24 @@ public sealed class MudGridChrome : IGridChrome
             builder.AddComponentParameter(1, nameof(MudExGridScriptFindPanel.View), view);
             builder.AddComponentParameter(2, nameof(MudExGridScriptFindPanel.Chrome), this);
             builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The Cell Editor when the Script Core draws the grid (ADR-0410): the same bare input with Material's
+    /// underline, marked for the script, which hands it to the core. It holds the opening text as drawn and nothing
+    /// bound after, so what is typed is never written back a round trip late (SRV-7); the underline turns the error
+    /// colour by the <c>aria-invalid</c> the core sets, with no round trip.</summary>
+    public RenderFragment? CellEditor(GridCellEditorView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return builder =>
+        {
+            builder.OpenElement(0, "input");
+            builder.AddAttribute(1, "class", "mud-ex-editor");
+            builder.AddAttribute(2, ScriptSlotAttributes.EditorField, "");
+            builder.AddAttribute(3, "value", view.InitialText);
+            builder.AddAttribute(4, "aria-label", view.Column);
+            builder.CloseElement();
         };
     }
 

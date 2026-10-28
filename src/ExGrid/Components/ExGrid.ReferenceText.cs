@@ -109,7 +109,7 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// A layer as a Chrome places it: immediately before its control, inside the core's box, which
-    /// the control fills (<see cref="Chrome.IGridChrome.CellEditor"/>). The stylesheet stands it
+    /// the control fills (<see cref="Chrome.IGridChrome.CellEditor(Chrome.CellEditorContext)"/>). The stylesheet stands it
     /// over the box's content, so its text starts where the control's does. The text it was
     /// rendered for, and what its highlights cover, are written on it, where the listener reads
     /// them (ADR-0057). Its line holds the text as one run, nothing added and nothing left out.

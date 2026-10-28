@@ -35,8 +35,8 @@ export type {
 } from './dom/grid-chrome';
 export { gridChromeSlotNames } from './dom/grid-chrome';
 export {
-    answerMenuKey, answerValueListKey, filterPanelAttributes, findPanelAttributes, menuItemAttribute, takeFilterFocus, takeFindFocus, takeMenuFocus,
-    wireFilterPanel, wireFindPanel, wireMenuItems, type MenuItemKeyEvent, type ValueListKeyEvent,
+    answerMenuKey, answerValueListKey, editorFieldAttribute, filterPanelAttributes, findPanelAttributes, menuItemAttribute, takeFilterFocus, takeFindFocus,
+    takeMenuFocus, wireCellEditor, wireFilterPanel, wireFindPanel, wireMenuItems, type MenuItemKeyEvent, type ValueListKeyEvent,
 } from './dom/slot-wiring';
 export type {
     FilterPanelCondition, FilterPanelConditions, FilterPanelEntry, FilterPanelValueList, FilterPanelView,

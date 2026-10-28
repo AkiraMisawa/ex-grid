@@ -4,14 +4,15 @@
 // so every product that draws a grid fills its slots alike: ExGrid's own, and a pivot's report grid.
 
 import {
-    filterPanelLabelIds, findPanelLabelIds, operatorLabelId, wireFilterPanel, wireFindPanel, wireMenuItems, type FilterPanelCondition,
-    type FilterPanelView, type FindPanelView, type GridColumnMenuSlotContext, type GridContextMenuSlotContext, type GridFilterPanelSlotContext,
+    filterPanelLabelIds, findPanelLabelIds, operatorLabelId, wireCellEditor, wireFilterPanel, wireFindPanel, wireMenuItems, type FilterPanelCondition,
+    type FilterPanelView, type FindPanelView, type GridCellEditorSlotContext, type GridColumnMenuSlotContext, type GridContextMenuSlotContext,
+    type GridFilterPanelSlotContext,
     type GridFindPanelSlotContext, type GridLoadingIndicatorSlotContext,
 } from '@ex-grid/core';
 import type { HostedSlotKind, RazorSlotKind } from './razor-slot-host';
 
 /** The grid's slots a Razor Chrome fills, as the core names them. */
-export type GridRazorSlotName = 'columnMenu' | 'contextMenu' | 'filterPanel' | 'findPanel' | 'loadingIndicator';
+export type GridRazorSlotName = 'cellEditor' | 'columnMenu' | 'contextMenu' | 'filterPanel' | 'findPanel' | 'loadingIndicator';
 
 /** A menu's kind: the commands as data, and the keys wired on the items, which take the keyboard. */
 const menuKind: RazorSlotKind<GridColumnMenuSlotContext | GridContextMenuSlotContext<unknown>> = {
@@ -65,9 +66,29 @@ const findKind: RazorSlotKind<GridFindPanelSlotContext, undefined, FindOpens> = 
     wire: (contents, panel, answered) => wireFindPanel(contents, panel, answered),
 };
 
+/** The Cell Editor's kind: the column, the text it opens with and the view as data, drawn again as the view changes,
+ * and the field the contents mark handed to the core, which reads and writes it in the browser: what is typed is the
+ * core's at the Enter, never a round trip behind it (SRV-7). */
+const editorKind: RazorSlotKind<GridCellEditorSlotContext> = {
+    takesKeyboard: true,
+    data: editor => {
+        const view = editor.view();
+        return {
+            json: JSON.stringify({
+                column: editor.column, columnType: editor.columnType, initialText: editor.initialText,
+                mode: view.mode, error: view.error === undefined ? null : view.error, pending: view.pending,
+            }),
+            drawn: undefined,
+            memo: undefined,
+        };
+    },
+    subscribe: (editor, again) => editor.subscribe(again),
+    wire: (contents, editor, answered) => wireCellEditor(contents, editor, answered),
+};
+
 // Every slot a Razor Chrome fills has its kind: a name added to GridRazorSlotName without one does not compile.
 const gridKindsByName = {
-    columnMenu: menuKind, contextMenu: menuKind, loadingIndicator: loadingKind, filterPanel: filterKind, findPanel: findKind,
+    cellEditor: editorKind, columnMenu: menuKind, contextMenu: menuKind, loadingIndicator: loadingKind, filterPanel: filterKind, findPanel: findKind,
 } satisfies Record<GridRazorSlotName, HostedSlotKind>;
 
 /** The kinds of the grid's slots a Razor Chrome fills, by the core's slot names, for a RazorSlotHost. */
