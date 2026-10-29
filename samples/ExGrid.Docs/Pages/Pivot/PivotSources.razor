@@ -7,27 +7,16 @@
 
     <DocsSection Title="How a source is asked">
         <p>
-            ExPivot requests a report Window and the metadata describing its full extent. Local data is
-            calculated by the same engine that a server uses. A slow answer leaves the report under its loading
-            indication, and a newer question cancels the older one, unless the older one is for a Window that
-            already holds the rows now on screen. A question asked for newer data the source announced, or for a
-            Window asked early while every row on screen is held, leaves the report undimmed. Copy and Selection Summary can include rows outside the Window,
-            and name the Report Version they answer; Show Details names the Source Version the report was computed
-            from.
-        </p>
-        <p>
-            The Window asked for is the one the grid is scrolled to, with the rows the source reads ahead either
-            side: none for a local report, 60 for a server's unless you say otherwise (below). When a layout, a
-            collapse, a filter or newer data makes a report that ends before that Window does, ExPivot asks again for a Window of the same
-            height ending at the new report's last row, and shows that one, as the grid moves its own view to the
-            end of a result that shrank. The report you were reading stays on screen until it lands, and later
-            questions ask for that Window until you scroll elsewhere. A source therefore needs nothing of its own
-            for a shrinking report: it answers the Window it is asked for, with no rows when the report ends
-            before it.
+            ExPivot asks its source for the Leaf Aggregates of the layout: one group per combination of the Items the
+            Rows and Columns place, with each value field's parts. The report, its subtotals and totals, Show Values As
+            and its order are built from them where the pivot is drawn, in the browser, so a scroll, a collapse or a
+            sort by value asks the source nothing (ADR-0370). A slow answer leaves the report under its loading
+            indication, and a newer question cancels the older one. A question asked for newer data the source
+            announced leaves the report undimmed. Filter… asks a page of a field's Items, and Show Details the records
+            behind a cell, under the Source Version the report was built from.
         </p>
         <ul>
-            <li><strong><code>Source</code></strong> takes the Pivot Source: <code>PivotSource.From</code> over local records or a Snapshot, including a CSV that stays in the browser. ExPivot computes the report over it in the page, with the engine a server runs.</li>
-            <li><strong><code>ReportSource</code></strong> takes a report source instead, a <code>PivotReportSource</code>, for a report a server computes. Its <code>Fetch</code> factory uses your delegates to request the server's report Windows and operations. Hand ExPivot one of the two, never both.</li>
+            <li><strong><code>Source</code></strong> takes the Pivot Source: <code>PivotSource.From</code> over local records or a Snapshot, including a CSV that stays in the browser, or <code>PivotSource.Fetch</code> over a server. Each question crosses to it as PivotJson and its answer comes back the same way.</li>
             <li><strong>Keep the source in a field.</strong> Each report owns independent calculation state; a new Pivot Source starts a new calculation, as a refresh.</li>
         </ul>
     </DocsSection>
@@ -87,72 +76,28 @@
 
     <DocsSection Title="A server's source">
         <p>
-            <code>PivotReportSource.Fetch</code> carries your Window, Items, Copy, Summary and Details transports.
-            ExPivot ships no HTTP client or endpoint. <code>PivotReportJson</code> writes their questions and answers
-            as versioned JSON, preserving decimal and double values. Keep a <code>PivotReportSource.From(data)</code>
-            on the server. Its data can be a Snapshot, or a SQL-backed <code>PivotSource</code> that refreshes a full
-            aggregate answer; the browser still receives only report Windows.
+            <code>PivotSource.Fetch</code> carries your Aggregate, Items and Details transports: the server answers the
+            Leaf Aggregates of a question, a page of a field's Items and the records behind a cell, and ExPivot builds
+            the report from them (ADR-0370 section 3). ExPivot ships no HTTP client or endpoint. <code>PivotJson</code>
+            writes the questions and answers as versioned JSON, preserving decimal and double values, the same document
+            to the byte as <code>@@ex-grid/pivot-engine</code>'s. On the server, a <code>PivotSource.From(data)</code>
+            answers them over a Snapshot or your records, or write the answer yourself over SQL, one <code>GROUP BY</code>
+            at the leaves (below).
         </p>
         <ul>
+            <li>Culture, formats, display words and Order Keys are the page's: the report is laid out where it is drawn, so a server neither computes the report nor orders it.</li>
             <li>
-                <code>UpdateMode</code> declares incremental changes or full refresh. The bundled Snapshot source is incremental:
-                a notice that its data moved on asks for its changes. A full-refresh source, such as a SQL query that can only say
-                that something changed, is asked to recompute its whole aggregate on every notice, so its server answers with the
-                newest even when its Pivot Source cannot tell; the browser still receives only the Window and its Window Changes.
+                <strong>Find reads the report where it is built.</strong> <kbd>Ctrl+F</kbd> searches every cell the report lays
+                out, with no round trip (<a href="expivot/layout#find">Find</a>).
             </li>
-            <li>Culture, formats and display words are explicit; custom Order Keys select policies registered on the server.</li>
-            <li>
-                <strong>Find reads the report through Copy.</strong> <kbd>Ctrl+F</kbd> searches every cell the report lays
-                out, so the rows beyond the Window are asked of your <code>copy</code> transport, by the Report Version on
-                screen, a block of rows at a time, until the match (<a href="expivot/layout#find">Find</a>).
-            </li>
-            <li>The Consumer owns transport and report-state disposal. A missing baseline is recovered automatically; an unavailable older operation refuses by name.</li>
-            <li>
-                <strong>A server's report is read ahead, and asked for early.</strong> Each round trip to the server would
-                otherwise leave the rows a scroll brings in as placeholders until the answer lands. <code>Fetch</code>'s
-                <code>readAheadRows</code>, 60 unless you pass another number, asks for that many rows either side of the
-                rows on screen, clamped into the report, so ordinary scrolling and a key that moves a row are painted from
-                rows already held. ExPivot also asks for the next Window ten rows before the one it holds runs out, while
-                the rows on screen are still there, and keeps a question in flight while its Window holds them. Every row
-                read ahead is a row of every column, in each answer and in each live update, so a wide report may want
-                fewer, and a slow network more. <code>0</code> asks for exactly the rows on screen. A report computed in
-                the page, <code>PivotSource.From</code> or <code>PivotReportSource.From</code>, has no round trip to hide
-                and reads nothing ahead. A Window asked for early, while every row on screen is held, does not dim the
-                report: nothing you see is waiting for it. Only rows on screen that wait for an answer bring the loading
-                indication.
-            </li>
-            <li>
-                <strong>A server may answer fewer rows than it was asked for.</strong> One that caps its answers can send a
-                complete Window shorter than the one asked, within it, as long as it holds the rows on screen: the answer is
-                checked against those rows, not against the rows read ahead. ExPivot holds the Window it was sent, and asks
-                for that Window, and Window Changes against it, from then on. An answer that does not reach the rows on
-                screen, or lies outside the Window asked, is refused, naming the rows answered, asked and needed, and the
-                report stays as it was. A cap below the read-ahead from the start of the Window asked can never reach the
-                rows on screen: pass a smaller <code>readAheadRows</code>.
-            </li>
-            <li>
-                Once a Window is on screen, a server sends <strong>Window Changes</strong> in place of the whole Window: the rows that
-                changed since the Window ExPivot holds, the Baseline Window, with the digest of the Window they make
-                (<code>PivotReportUpdate.Changed</code>, <code>PivotReportUpdate.WindowDigest</code>). ExPivot applies them to the
-                Window it holds and compares before showing anything; Window Changes that do not match, or name no digest, are
-                discarded and the complete Window asked for instead. <code>PivotReportSource.From</code> builds complete Window
-                Changes. If you build or relay them yourself, include every row whose shown values changed (subtotals, grand totals
-                and percentages too) and compute the digest with <code>PivotReportDigest.Of</code> over your whole resulting Window,
-                never over the rows you send.
-            </li>
+            <li>The Consumer owns the transport, its authentication and its retries. A question that fails leaves the report on screen as a Stale Report, with Retry (<a href="expivot/live">Live data</a>).</li>
+            <li>A server's notice that its data moved on goes to <code>FetchingPivotSource.NotifyChanged(version)</code>, and ExPivot asks the report on screen again.</li>
         </ul>
-        <p>
-            Under React the server answers Leaf Aggregates, a page of a field's Items and the records behind a cell,
-            and the browser builds the report from them with a <code>FetchingPivotSource</code>
-            (<a href="expivot/sources#from-typescript">From TypeScript</a>, below). The React Example's server is
-            simulated the same way, in <code>SalesServer.ts</code>.
-        </p>
         <DocsExample Builtin="typeof(ServerSource)" Mud="typeof(ServerSourceMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
             The server here is simulated in the page, with half a second of latency: change the layout and watch the
             report wait under its loading indication. Tick Date in the field list for a report hundreds of rows long,
-            and scroll it: the rows read ahead come with each answer, and the next Window is asked for before you
-            reach the end of the one held. Under React the server answers the Leaf Aggregates once, and the report is
-            built whole in the browser, so a scroll asks it nothing.
+            and scroll it: the server answered the Leaf Aggregates once, and the report is built whole in the browser,
+            so a scroll asks it nothing.
         </DocsExample>
     </DocsSection>
 
@@ -236,9 +181,9 @@ return answer.Build();</code></pre>
             same parts. A <code>LocalPivotReportSource</code> over a <code>FetchingPivotSource</code> that declares
             <code>answersLevels</code> asks every question with the groups its layout shows, and a cube made from Level
             Aggregates (<code>cube.isLevels</code>) holds only those, so an expand asks the server again, one round trip,
-            where a cube of leaves already holds it; a collapse of groups it holds is laid out from it. <code>ExPivot.Engine</code>'s cube still refuses an
-            answer of cells by name, and ExPivot moves onto the TypeScript engine in 0.3.0, which is why there is no
-            Example here.
+            where a cube of leaves already holds it; a collapse of groups it holds is laid out from it. ExPivot lays its report out with the TypeScript engine
+            under both frameworks; <code>ExPivot.Engine</code>'s own cube, which leaves with it in 0.3.0, still refuses
+            an answer of cells by name.
         </p>
         <p id="level-windows">
             Collapsing does not help where one set of siblings is itself too large: a Customer field of a million Items
@@ -300,8 +245,8 @@ return answer.Build();</code></pre>
             ExPivot's engine in TypeScript: the same sources (<code>SnapshotPivotSource</code> over a Snapshot,
             <code>RecordPivotSource</code> over your objects, <code>FetchingPivotSource</code> asking a server), the same
             Leaf Aggregates with decimals summed exactly, and the same report in each form, locale and set of words. It is
-            the engine ExPivot's React and Blazor packages move onto (ADR-0370), built in this repository and published
-            with 0.3.0; until then ExPivot computes with <code>ExPivot.Engine</code>.
+            the engine ExPivot's React and Blazor packages draw with (ADR-0370), built in this repository and published
+            with 0.3.0.
         </p>
         <pre class="docs-code"><code>import { createPivotLayout, pivotCube, pivotReport, queryForLayout, SnapshotPivotSource } from '@@ex-grid/pivot-engine';
 
@@ -471,8 +416,7 @@ if (shown.refusal === undefined) {
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotSource)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.SnapshotPivotSource)" />
-        <ApiTable Type="typeof(global::ExPivot.Engine.PivotReportSource)" />
-        <ApiTable Type="typeof(global::ExPivot.Engine.FetchingPivotReportSource)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.FetchingPivotSource)" />
         <ApiTable Type="typeof(global::ExPivot.PivotCaps)" />
     </DocsSection>
 </DocsPage>

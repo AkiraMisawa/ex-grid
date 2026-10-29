@@ -135,8 +135,9 @@
 
     <DocsSection Title="A sheet drawn in the browser">
         <p>
-            Blazor's ExSheet is moving onto the same TypeScript core as React's, as ExGrid and ExPivot are.
-            <code>ExSheet.Script.ExSheet</code> is that Sheet, beside the one above while the move is under way: the
+            Blazor's ExSheet runs on the same TypeScript core as React's, as ExGrid and ExPivot do: every Example on
+            this site draws <code>ExSheet.Script.ExSheet</code>, and the Razor component
+            <code>ExSheet.Components.ExSheet</code> stays in the package only until it is removed in this release. The
             Workbook, its Formulas, the Formula Bar, the Sheet Tabs and the status-bar figures run in the browser on
             both hosting models, so on Blazor Server a key typed into a cell no longer crosses the circuit. It takes
             the parameters above under the same names and defaults, so a page moves to it by its type. The documents
@@ -282,9 +283,12 @@
             Each ExSheet has one undo stack. Ctrl+Z and Ctrl+Y work from the keyboard; <code>UndoAsync</code>
             and <code>RedoAsync</code> do the same from your buttons. A command you give —
             <code>DoAsync(SheetEdit)</code>, <code>SetCellFormatAsync</code> — goes onto the same stack in its
-            place in the order, so the user can undo it like anything they typed. Under React they are on the
-            component's ref: <code>undo()</code>, <code>redo()</code>, <code>do(edit)</code> and
-            <code>setCellFormat</code>, with <code>canUndo</code> and <code>canRedo</code>. An undo or a redo selects the
+            place in the order, so the user can undo it like anything they typed. <code>CanUndo</code> and
+            <code>CanRedo</code> say whether there is a step to take, for your own buttons: they are told before
+            the document a step made is heard, so a page that renders on <code>DocumentChanged</code> reads them as
+            they stand. Under React the commands are on the component's ref: <code>undo()</code>,
+            <code>redo()</code>, <code>do(edit)</code> and <code>setCellFormat</code>, with <code>canUndo</code> and
+            <code>canRedo</code>, and <code>onHistoryChanged</code> hears both each time either moves. An undo or a redo selects the
             range its step changed, as Excel's does — the cell typed in, not the one <kbd>Enter</kbd> moved to; the
             range pasted, filled or formatted; the whole rows or columns inserted or deleted — and scrolls its
             top-left cell into view. The grid selects one range, so a step over several selects the range they make
@@ -348,7 +352,7 @@
     </DocsSection>
 
     <DocsSection Title="API">
-        <ApiTable Type="typeof(global::ExSheet.Components.ExSheet)" />
+        <ApiTable Type="typeof(global::ExSheet.Script.ExSheet)" />
         <ApiTable Type="typeof(global::ExSheet.Engine.SheetDocument)" />
     </DocsSection>
 </DocsPage>

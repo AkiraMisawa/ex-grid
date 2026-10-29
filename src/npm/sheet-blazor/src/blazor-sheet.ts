@@ -278,7 +278,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
     const dotnet = crossingCalls(bridge, held, heldSheetCalls);
     // Once the Sheet is stopped .NET has let go of the bridge, and nothing more crosses: an event still being taken
     // then is let go with it, and only a failure while the Sheet stands is the page's to report.
-    const send = (kind: HeardKind | 'editingChanged', payload: unknown): void => {
+    const send = (kind: HeardKind | 'editingChanged' | 'historyChanged', payload: unknown): void => {
         if (stopped) return;
         void dotnet.invokeMethodAsync('Heard', kind, payload).catch((failure: unknown) => { // oxlint-disable-line ex-grid/no-catch -- rethrown while the Sheet stands; once stopped .NET has let go of what it was taking
             if (!stopped) throw failure;
@@ -573,11 +573,11 @@ function sheetDocumentOf(sheet: SheetHandle): string | null {
 
 type Handlers = Required<Pick<SheetOptions,
     'onWorkbookChanged' | 'onSheetsChanged' | 'onShowToolbarChanged' | 'onSummaryFiguresChanged' | 'onSelectionChanged' | 'onEditingChanged'
-    | 'onSelectionSummaryChanged' | 'onFormatKeyRefused' | 'onPointingRefused' | 'onLinkedColumnColoursChanged'>>;
+    | 'onHistoryChanged' | 'onSelectionSummaryChanged' | 'onFormatKeyRefused' | 'onPointingRefused' | 'onLinkedColumnColoursChanged'>>;
 
 // One function per event, made once, so the Sheet sees the same handler on every update.
 function handlers(
-    send: (kind: HeardKind | 'editingChanged', payload: unknown) => void, hearing: (kind: HeardKind) => boolean,
+    send: (kind: HeardKind | 'editingChanged' | 'historyChanged', payload: unknown) => void, hearing: (kind: HeardKind) => boolean,
     raised: (document: WorkbookDocument) => void, documentsSent: () => number, sheet: () => SheetHandle,
 ): Handlers {
     return Object.freeze({
@@ -596,6 +596,9 @@ function handlers(
         onSelectionChanged: selection => { send('selectionChanged', wireSelection(selection)); },
         onSelectionSummaryChanged: summary => { send('selectionSummaryChanged', wireSummary(summary)); },
         onEditingChanged: open => { send('editingChanged', open); },
+        // Raised as the operation that moved it ends, ahead of its document, so .NET has it when the Consumer renders on the
+        // document and before the command's answer.
+        onHistoryChanged: ({ canUndo, canRedo }) => { send('historyChanged', { canUndo, canRedo }); },
         onFormatKeyRefused: refusal => { send('formatKeyRefused', wireRefusal(refusal)); },
         onPointingRefused: (refusal: PointingRefusal) => { send('pointingRefused', { reason: refusal.reason, message: refusal.message }); },
         // Each column under the names the Consumer declared, and its colour by its place in the palette (ADR-0431).
@@ -753,5 +756,7 @@ function sheetOptions(
         ...(hears.has('pointingRefused') ? { onPointingRefused: heard.onPointingRefused } : {}),
         ...(hears.has('linkedColumnColoursChanged') ? { onLinkedColumnColoursChanged: heard.onLinkedColumnColoursChanged } : {}),
         onEditingChanged: heard.onEditingChanged,
+        // Always: .NET's CanUndo and CanRedo read it.
+        onHistoryChanged: heard.onHistoryChanged,
     };
 }

@@ -3,9 +3,10 @@ using ExPivot.Engine;
 namespace ExGrid.Docs.Examples.Pivot;
 
 /// <summary>
-/// A server report, simulated in the page: each endpoint takes a <c>PivotReportJson</c> question
-/// and answers after a network's delay. The shared engine retains computation over the server's
-/// Snapshot; only requested Windows and versioned operation results leave it.
+/// A server, simulated in the page: each endpoint takes a question written by <c>PivotJson</c> and answers, after half a
+/// second, with the Leaf Aggregates, a page of Items or the records behind a cell (ADR-0370 section 3). The pivot builds
+/// the report, its totals and its order from them in the browser. In an application each would be an HTTP endpoint over
+/// your own data, and its notices SignalR, Server-Sent Events, a WebSocket or a poll.
 /// </summary>
 public sealed class SalesServer : IAsyncDisposable
 {
@@ -13,57 +14,39 @@ public sealed class SalesServer : IAsyncDisposable
 
     private readonly Sale[] _sales = Sales.Sample();
     private readonly SnapshotPivotSource _data;
-    private readonly LocalPivotReportSource _report;
     private readonly Random _random = new(7);
     private PeriodicTimer? _trading;
 
-    /// <summary>A server, with the Order Keys it registers by name: a report computed here cannot
-    /// carry a delegate from the browser, so a field's custom order is one of these, selected by
-    /// <c>ExPivot.OrderKeyPolicies</c>.</summary>
-    public SalesServer(IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys = null)
+    /// <summary>A server over the sample's sales.</summary>
+    public SalesServer()
     {
         _data = PivotSource.From(_sales, Sales.Fields);
-        _report = PivotReportSource.From(_data, orderKeys);
         _data.Changed += change => VersionChanged?.Invoke(change.SourceVersion!);
     }
 
     /// <summary>GET /api/pivot/fields: the fields the server offers.</summary>
     public IReadOnlyList<PivotField> Fields => _data.Fields;
 
-    /// <summary>A Window request. Only requested display rows leave this calculation.</summary>
-    public async Task<string> WindowAsync(string question, CancellationToken token)
+    /// <summary>POST /api/pivot/aggregate: the Leaf Aggregates of a question.</summary>
+    public async Task<string> AggregateAsync(string question, CancellationToken token)
     {
         await Task.Delay(Latency, token);
-        return PivotReportJson.Write(await _report.WindowAsync(PivotReportJson.Read<PivotReportRequest>(question), token));
+        return PivotJson.Write(await _data.AggregateAsync(PivotJson.ReadQuery(question), token));
     }
 
-    /// <summary>Versioned, labeled Items for Filter.</summary>
+    /// <summary>POST /api/pivot/items: a page of a field's Items, for Filter.</summary>
     public async Task<string> ItemsAsync(string question, CancellationToken token)
     {
         await Task.Delay(Latency, token);
-        return PivotReportJson.Write(await _report.ItemsAsync(PivotReportJson.Read<PivotReportItemsQuery>(question), token));
+        return PivotJson.Write(await _data.ItemsAsync(PivotJson.ReadItemsQuery(question), token));
     }
 
-    /// <summary>Versioned offscreen Copy.</summary>
-    public async Task<string> CopyAsync(string question, CancellationToken token)
-    {
-        await Task.Delay(Latency, token);
-        return PivotReportJson.Write(await _report.CopyAsync(PivotReportJson.Read<PivotReportCopyQuery>(question), token));
-    }
-
-    /// <summary>Versioned Selection Summary.</summary>
-    public async Task<string> SummaryAsync(string question, CancellationToken token)
-    {
-        await Task.Delay(Latency, token);
-        return PivotReportJson.Write(await _report.SummaryAsync(PivotReportJson.Read<PivotReportSummaryQuery>(question), token));
-    }
-
-    /// <summary>The source records behind a cell, under the Source Version its report was computed
-    /// from: answered while the Snapshot source still holds that version, whatever layouts followed.</summary>
+    /// <summary>POST /api/pivot/details: the records behind a cell, for Show Details, under the Source Version its
+    /// report was built from, while the server still holds that version.</summary>
     public async Task<string> DetailsAsync(string question, CancellationToken token)
     {
         await Task.Delay(Latency, token);
-        return PivotReportJson.Write(await _report.DetailsAsync(PivotReportJson.Read<PivotDetailsQuery>(question), token));
+        return PivotJson.Write(await _data.DetailsAsync(PivotJson.ReadDetailsQuery(question), token));
     }
 
     /// <summary>What a SignalR hub would push: the Source Version the data has moved on to.</summary>
@@ -83,9 +66,39 @@ public sealed class SalesServer : IAsyncDisposable
             _data.Apply(Sales.Fields.Batch(changed: Sales.Amend(_sales, _random, count: 8)));
     }
 
-    public async ValueTask DisposeAsync()
+    /// <summary>
+    /// The page's source over the server: each fetcher writes the question as JSON, sends it, and reads the answer back.
+    /// The transport, its authentication and its retries are yours. <paramref name="fields"/> are the server's, or yours
+    /// over them; while <paramref name="reachable"/> answers false, a question fails as an unreachable server's does.
+    /// </summary>
+    public FetchingPivotSource Source(IReadOnlyList<PivotField>? fields = null, Func<bool>? reachable = null)
+    {
+        void Reach()
+        {
+            if (reachable is { } can && !can())
+                throw new HttpRequestException("The server cannot be reached.");
+        }
+        return PivotSource.Fetch(fields ?? Fields, PivotSourceFeatures.All,
+            async (query, token) =>
+            {
+                Reach();
+                return PivotJson.ReadAnswer(await AggregateAsync(PivotJson.Write(query), token));
+            },
+            async (query, token) =>
+            {
+                Reach();
+                return PivotJson.ReadItemPage(await ItemsAsync(PivotJson.Write(query), token));
+            },
+            async (query, token) =>
+            {
+                Reach();
+                return PivotJson.ReadDetailPage(await DetailsAsync(PivotJson.Write(query), token));
+            });
+    }
+
+    public ValueTask DisposeAsync()
     {
         _trading?.Dispose();
-        await _report.DisposeAsync();
+        return ValueTask.CompletedTask;
     }
 }

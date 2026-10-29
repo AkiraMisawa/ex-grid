@@ -77,12 +77,11 @@
             mark ends with the others.
         </p>
         <p>
-            <strong>What the highlight costs.</strong> To mark what changed, the report source keeps the reports the
+            <strong>What the highlight costs.</strong> To mark what changed, the pivot keeps the reports the
             highlight compares: every one published less than <code>ChangeHighlightDuration</code> before the newest,
-            and the one before them. That is at most max(versionsKept, ⌈<code>ChangeHighlightDuration</code> ÷ the time
-            between redraws⌉ + 1) reports, five at the defaults: two versions kept for Copy and the Selection Summary
-            (<code>PivotReportSource.From</code>'s <code>versionsKept</code>), a one-second highlight, and redraws at most
-            every 250 ms (<code>RedrawInterval</code>). The reports share what an update did not change, but a shorter
+            and the one before them. That is at most ⌈<code>ChangeHighlightDuration</code> ÷ the time between
+            redraws⌉ + 1 reports, five at the defaults: a one-second highlight, and redraws at most every 250 ms
+            (<code>RedrawInterval</code>). The reports share what an update did not change, but a shorter
             <code>RedrawInterval</code> or a longer <code>ChangeHighlightDuration</code> keeps more of them, in proportion.
             If memory runs out while a redraw is computed, the report on screen stays as a Stale Report and the next
             change asks again, rather than the page stopping.
@@ -92,9 +91,9 @@
     <DocsSection Title="A server whose data moves on">
         <p>
             A server's source learns of changes however your application does: SignalR, polling, a message bus. Pass
-            each notice to <code>FetchingPivotReportSource.NotifyChanged(version)</code>, and ExPivot asks the server again for
-            the current report Window, as Window Changes once one is on screen. A <em>Refresh</em> on the Pivot Toolbar does the same when the source says it can be
-            refreshed.
+            each notice to <code>FetchingPivotSource.NotifyChanged(version)</code>, and ExPivot asks the server again for
+            the Leaf Aggregates of the report on screen. A <em>Refresh</em> on the Pivot Toolbar does the same when the
+            source says it can be refreshed.
         </p>
         <p>
             When the newest data cannot be shown (it breaks a cap, the source fails, a Refresh fails, or memory runs out
@@ -114,8 +113,9 @@
         </p>
         <p>
             Under React the news reaches the pivot through the <code>subscribe</code> of the
-            <code>FetchingPivotSource</code>'s fetchers, which hands each message on as a notice
-            (<a href="expivot/sources#from-typescript">From TypeScript</a>); the Stale Report and Retry are the same.
+            <code>FetchingPivotSource</code>'s fetchers, which hands each message on as a notice, or a Change Batch the
+            engine folds in without a round trip (<a href="expivot/sources#from-typescript">From TypeScript</a>); the
+            Stale Report and Retry are the same.
         </p>
         <DocsExample Builtin="typeof(LiveServer)" Mud="typeof(LiveServerMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
             The simulated server amends eight sales a second and announces each new Source Version. Cut it off: the next

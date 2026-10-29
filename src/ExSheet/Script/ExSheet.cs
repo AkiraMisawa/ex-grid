@@ -221,6 +221,17 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// </summary>
     public bool IsEditing { get; private set; }
 
+    /// <summary>
+    /// Whether there is a step to undo, as the browser last told it (ADR-0048): told as soon as an operation, an undo or a
+    /// redo moves it, before the document it made is heard and before <see cref="UndoAsync"/> or <see cref="RedoAsync"/>
+    /// answers, and false once a document of the Consumer's has opened, which empties the undo stack. A change to it
+    /// renders nothing of its own: the Consumer reads it as it renders, as after <see cref="DocumentChanged"/>.
+    /// </summary>
+    public bool CanUndo { get; private set; }
+
+    /// <summary>Whether there is an undone step to redo, told as <see cref="CanUndo"/> is.</summary>
+    public bool CanRedo { get; private set; }
+
     // The documents the Sheet raised, by identity, each with the number of the Consumer's documents the browser had been
     // sent when it raised it. Handed back while no other document of the Consumer's has been sent since, it is the one
     // on screen and is not sent; handed back after one was, the screen has moved on, and it is sent like any other.
@@ -955,6 +966,14 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             {
                 var summary = SummaryOf(payload);
                 return () => OnSelectionSummaryChanged.InvokeAsync(summary);
+            }
+            case "historyChanged":
+            {
+                // Taken as soon as it is read, not in the handlers' turn, so a command whose answer the browser sent after
+                // it finds it taken, however long a handler ahead of it awaits.
+                CanUndo = payload.GetProperty("canUndo").GetBoolean();
+                CanRedo = payload.GetProperty("canRedo").GetBoolean();
+                return () => Task.CompletedTask;
             }
             case "editingChanged":
             {
