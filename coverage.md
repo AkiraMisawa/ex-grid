@@ -2,11 +2,11 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 93.9% | 87.7% |
+| ExGrid | 93.9% | 87.8% |
 | ExSheet | 90.6% | 86.4% |
 | ExPivot | 88.5% | 82.7% |
 | ExChart | 90% | 84.9% |
-| ExBoard | 68.3% | 61% |
+| ExBoard | 68.2% | 61% |
 | Data | 94.5% | 89.9% |
 
 # Summary
@@ -14,29 +14,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/29/2026 - 01:58:10 |
+| Generated on: | 10/29/2026 - 02:34:32 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1388 |
-| Files: | 677 |
-| **Line coverage:** | 90.2% (92790 of 102780) |
-| Covered lines: | 92790 |
-| Uncovered lines: | 9990 |
-| Coverable lines: | 102780 |
-| Total lines: | 156767 |
-| **Branch coverage:** | 85% (54149 of 63631) |
-| Covered branches: | 54149 |
-| Total branches: | 63631 |
+| Classes: | 1391 |
+| Files: | 678 |
+| **Line coverage:** | 90.2% (92903 of 102900) |
+| Covered lines: | 92903 |
+| Uncovered lines: | 9997 |
+| Coverable lines: | 102900 |
+| Total lines: | 156994 |
+| **Branch coverage:** | 85.1% (54190 of 63675) |
+| Covered branches: | 54190 |
+| Total branches: | 63675 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 68.3%</summary>
+<details><summary>ExBoard - 68.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**68.3%**|**61%**|
+|**ExBoard**|**68.2%**|**61%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|100%|
@@ -96,17 +96,18 @@
 |ExGrid.Script.RazorSlot|29.5%|24.1%|
 |ExGrid.Script.RazorSlotHolders|80%|83.3%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
+|ExGrid.Script.ScriptFunctionJson|0%||
 |ExGrid.Script.ScriptJson|22.4%|25%|
 |ExGrid.Script.SnapshotCrossing|94.8%|81.2%|
 |ExGrid.Script.SnapshotNaming|100%|100%|
 |ExPivot.Script.PivotRazorSlot|24.1%|34.1%|
 
 </details>
-<details><summary>ExChart - 84.5%</summary>
+<details><summary>ExChart - 84.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.5%**|**76.1%**|
+|**ExChart**|**84.6%**|**76.1%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -167,13 +168,14 @@
 |ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
 |ExGrid.Script.RazorSlotHolders|92.7%|94.4%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
+|ExGrid.Script.ScriptFunctionJson|100%||
 
 </details>
 <details><summary>ExChart.Engine - 97.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**97.3%**|**90.7%**|
+|**ExChart.Engine**|**97.3%**|**90.6%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -239,7 +241,6 @@
 |ExChart.Engine.PriceBar|100%||
 |ExChart.Engine.PriceRanges|96.4%|95.6%|
 |ExChart.Engine.ReadingLine|100%||
-|ExChart.Engine.ScriptFunction|93.3%|100%|
 |ExChart.Engine.Segment|100%||
 |ExChart.Engine.SeriesDrawing|98.5%|94.5%|
 |ExChart.Engine.SeriesInterval|100%||
@@ -285,11 +286,11 @@
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
 </details>
-<details><summary>ExGrid - 93.8%</summary>
+<details><summary>ExGrid - 93.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**93.8%**|**87.9%**|
+|**ExGrid**|**93.9%**|**88%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -556,8 +557,8 @@
 |ExGrid.Rows.RowMarkStep.OneKey|100%||
 |ExGrid.Script.CrossedText|92%|88.8%|
 |ExGrid.Script.ExGrid.Heard<TRow>|100%||
-|ExGrid.Script.ExGrid<TRow>|71.2%|68.3%|
-|ExGrid.Script.ExGrid<TRow>|80.7%|67.8%|
+|ExGrid.Script.ExGrid<TRow>|72%|69.4%|
+|ExGrid.Script.ExGrid<TRow>|82.7%|70.8%|
 |ExGrid.Script.FormatNames|50%||
 |ExGrid.Script.GridRefusal.Action<TRow>|0%||
 |ExGrid.Script.GridRefusal.Commit<TRow>|0%||
@@ -575,6 +576,7 @@
 |ExGrid.Script.ScriptBridge<TRow>|47.5%|25%|
 |ExGrid.Script.ScriptBridge<TRow>|83.7%||
 |ExGrid.Script.ScriptColumns|73.2%|67.8%|
+|ExGrid.Script.ScriptFunctionJson|100%||
 |ExGrid.Script.ScriptJson|100%|91.6%|
 |ExGrid.Script.ScriptMetricsJson|94%|80%|
 |ExGrid.Script.ScriptMetricsJson.Written|100%||
@@ -682,6 +684,7 @@
 |ExGrid.Data.FormatCode|94.2%|87.1%|
 |ExGrid.Data.IntegerColumn|100%||
 |ExGrid.Data.IntegerColumnBuilder|100%|100%|
+|ExGrid.Data.ScriptFunction|93.3%|100%|
 |ExGrid.Data.Snapshot|97.3%|93.1%|
 |ExGrid.Data.SnapshotBuilder<T>|100%|100%|
 |ExGrid.Data.SnapshotBuilder<T>|98.1%|96.6%|
@@ -722,7 +725,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1245,7 +1248,7 @@
 |ExSheet.PointingScope.GridMember<TRow>|100%|100%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
-|ExSheet.Script.ExSheet|84.8%|77.1%|
+|ExSheet.Script.ExSheet|84.9%|77.4%|
 |ExSheet.Script.ExSheet.Opening|100%||
 |ExSheet.Script.ExSheet.Press|100%||
 |ExSheet.Script.ExSheet.Saving|100%||
