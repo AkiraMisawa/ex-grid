@@ -496,7 +496,7 @@ public sealed record GridPopoverContext(
     /// <summary>
     /// The Input Order's seam (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the
     /// contents' handler of an input that changes the instance or moves the keyboard — an OK, a Cancel,
-    /// a choice made, a key the contents answer — calls it as it starts, with the kind of the event it
+    /// a choice made, a key the contents answer — calls it as it starts, before its first <c>await</c>, with the kind of the event it
     /// hears and its work, and is handled in its place among the grid's keys, presses and clicks. The
     /// control declares the event in its <c>data-ex-claims</c> attribute (<c>click</c>, <c>keydown</c>,
     /// <c>submit</c>, …), so the grid numbers it as it happens; a handler that declares an event calls this

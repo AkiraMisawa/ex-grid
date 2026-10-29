@@ -565,6 +565,7 @@ ExGrid.Script.ExGrid<TRow>.ChangeHighlightDuration.get -> System.TimeSpan?
 ExGrid.Script.ExGrid<TRow>.ChangeHighlightDuration.set -> void
 ExGrid.Script.ExGrid<TRow>.Chrome.get -> ExGrid.Chrome.IGridChrome?
 ExGrid.Script.ExGrid<TRow>.Chrome.set -> void
+ExGrid.Script.ExGrid<TRow>.ClosePopoverAsync() -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<TRow!>!>!
 ExGrid.Script.ExGrid<TRow>.Columns.set -> void
 ExGrid.Script.ExGrid<TRow>.CompleteEditorText.get -> System.Func<string!, int, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditorCompletion?>>?
@@ -614,6 +615,7 @@ ExGrid.Script.ExGrid<TRow>.HighlightFocusRow.get -> bool
 ExGrid.Script.ExGrid<TRow>.HighlightFocusRow.set -> void
 ExGrid.Script.ExGrid<TRow>.HighlightHoverRow.get -> bool
 ExGrid.Script.ExGrid<TRow>.HighlightHoverRow.set -> void
+ExGrid.Script.ExGrid<TRow>.InOrderAsync(ExGrid.Chrome.GridInputKind kind, System.Func<System.Threading.Tasks.Task!>! handling) -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.InOrderAsync(System.Func<System.Threading.Tasks.Task!>! handling) -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.Marks.get -> ExGrid.Rows.IRowMarks<TRow!>?
 ExGrid.Script.ExGrid<TRow>.Marks.set -> void
@@ -669,6 +671,7 @@ ExGrid.Script.ExGrid<TRow>.OnSummarize.get -> System.Func<ExGrid.Summarizing.Gri
 ExGrid.Script.ExGrid<TRow>.OnSummarize.set -> void
 ExGrid.Script.ExGrid<TRow>.OnUndo.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Script.ExGrid<TRow>.OnUndo.set -> void
+ExGrid.Script.ExGrid<TRow>.OpenPopoverAsync(Microsoft.AspNetCore.Components.RenderFragment<ExGrid.Chrome.GridPopoverContext!>! content, string! label) -> System.Threading.Tasks.Task<bool>!
 ExGrid.Script.ExGrid<TRow>.OutlinedColumns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Cells.OutlinedColumn!>?
 ExGrid.Script.ExGrid<TRow>.OutlinedColumns.set -> void
 ExGrid.Script.ExGrid<TRow>.PageSize.get -> int?

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 
 // The Wrapper verified against a Consumer (Definition of Done §23): /mud-app is an ordinary
 // MudBlazor application — MudLayout with an AppBar and a Drawer, MudTabs, a MudDialog, a
@@ -6,10 +6,9 @@ import { test, expect } from './fixtures.mjs';
 // application puts its tables. This file asserts the WR-7 clauses that need no seam the
 // Wrapper has yet to fill, and it runs on the shared fixture, so every test here also
 // holds the console rules (WR-9: CON-1/2/3/6, enforced in fixtures.mjs for every page a
-// test drives). The Inner Popup halves of WR-7 — a grid panel's MudSelect against the
-// toolbar's, and a dialog grid's Inner Popups above its popovers — have no subject while the
-// Wrapper's filter panel draws its operator as a native select (ADR-0410, note of 2026-10-28):
-// they return with a Consumer popover that holds a MudSelect (FN-21).
+// test drives). The Wrapper's filter panel draws its operator as a native select (ADR-0410, note
+// of 2026-10-28), so the Inner Popup clauses — FN-21, KB-35 and WR-7's dialog — are held by a
+// Consumer popover that holds a MudSelect, opened through OpenPopoverAsync (ADR-0441 section 4).
 
 const positions = (page) => page.locator('#positions-paper .ex-grid');
 const orders = (page) => page.locator('#orders-paper .ex-grid');
@@ -522,4 +521,89 @@ test("WR-6: Striped paints the palette's table-stripe colour in both schemes, an
     // gutter hid.
     const present = new Set(after.map((row) => row.index));
     expect(seen.filter((index) => !present.has(index)), 'rows on screen that went away').toEqual([]);
+});
+
+// The Consumer's popover on a grid, its MudSelect, and the list MudBlazor draws for it in its
+// provider, outside the grid's root: the Inner Popup (ADR-0039, ADR-0441 section 4).
+const bookPopover = (grid) => grid.locator('.ex-popover-consumer');
+const bookSelect = (grid) => bookPopover(grid).locator('.demo-book-select .mud-select').first();
+const bookList = (page) => page.locator('.mud-popover-open .mud-list-item');
+
+test("FN-21 / ADR-0441: in a Consumer popover, Escape closes its MudSelect's list first and the next Escape the popover, and the arrows are the grid's again", async ({ page }) => {
+    await open(page);
+    await clickCell(positions(page), 2, 1);
+    await page.locator('#open-book').click();
+    await expect(bookPopover(positions(page))).toHaveAttribute('aria-label', 'Choose a book');
+    await bookSelect(positions(page)).click();
+    await expect(bookList(page)).not.toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('ArrowDown');
+    await expect(bookList(page)).toHaveCount(0);
+    await expect(bookPopover(positions(page))).toHaveCount(0);
+    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
+});
+
+test('FN-21 / ADR-0441: a press on the rows while a Consumer popover\'s list is open closes both and places the Focus', async ({ page }) => {
+    await open(page);
+    await page.locator('#open-book').click();
+    await bookSelect(positions(page)).click();
+    await expect(bookList(page)).not.toHaveCount(0);
+
+    await clickCell(positions(page), 4, 2);
+    await expect(bookPopover(positions(page))).toHaveCount(0);
+    await expect(bookList(page)).toHaveCount(0);
+    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r4c2$/);
+});
+
+test("ADR-0441 / ADR-0240: an arrow typed straight after OK in a Consumer popover reaches the grid OK left, with OK's choice taken", async ({ page }) => {
+    await open(page);
+    await clickCell(positions(page), 2, 1);
+    await page.locator('#open-book').click();
+    await bookSelect(positions(page)).click();
+    const item = bookList(page).nth(1);
+    await expect(item).toBeVisible();
+    const chosen = (await item.textContent()).trim();
+    await item.click();
+    await bookPopover(positions(page)).locator('#book-ok').click();
+    await page.keyboard.press('ArrowDown');
+
+    await expect(page.locator('#book-status')).toHaveText(`Book: ${chosen}`);
+    await expect(bookPopover(positions(page))).toHaveCount(0);
+    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
+});
+
+test("KB-35 / ADR-0441: an Escape straight after a Consumer popover's MudSelect opens its list is the list's, and the popover stands, over a 150 ms round trip", async ({ page }) => {
+    await setRoundTrip(150);
+    await open(page);
+    await page.locator('#open-book').click();
+    await bookSelect(positions(page)).click();
+    await page.keyboard.press('Escape');
+
+    await circuitQuiet();
+    await expect(bookList(page)).toHaveCount(0);
+    await expect(bookPopover(positions(page))).toBeVisible();
+});
+
+test("WR-7 / ADR-0441: in a grid in a MudDialog, a Consumer popover's MudSelect draws its list above the dialog, and its choice reaches OK", async ({ page }) => {
+    await open(page);
+    await page.locator('#open-dialog').click();
+    const dialogGrid = page.locator('#dialog-paper .ex-grid');
+    await expect(dialogGrid.locator('.ex-row').first()).toBeVisible();
+    await page.locator('#dialog-book').click();
+    await bookSelect(dialogGrid).click();
+    const item = bookList(page).last();
+    await expect(item).toBeVisible();
+    // What the pointer meets at the item's centre is the item: nothing of the dialog lies over it.
+    expect(await item.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return element.contains(document.elementFromPoint(box.left + (box.width / 2), box.top + (box.height / 2)));
+    })).toBe(true);
+    const chosen = (await item.textContent()).trim();
+    await item.click();
+    await bookPopover(dialogGrid).locator('#book-ok').click();
+
+    await expect(page.locator('#book-status')).toHaveText(`Book: ${chosen}`);
+    await expect(bookPopover(dialogGrid)).toHaveCount(0);
 });

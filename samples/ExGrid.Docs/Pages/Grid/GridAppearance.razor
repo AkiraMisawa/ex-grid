@@ -347,6 +347,26 @@
             <code>HandKeyboardToAsync(control, preventScroll: true)</code>.
         </p>
         <p>
+            <strong>A popover of your own.</strong> <code>OpenPopoverAsync(content, label)</code> shows your Razor in the
+            grid's own popover frame: under the header band, inside the grid's box, closed by Escape, by a press elsewhere
+            in the grid and by the box shrinking, with Tab wrapping inside it, and the keyboard back on the grid however
+            it closes. The keys typed while it opens wait until your contents stand, and its first control then takes the
+            keyboard. Your contents are handed a <code>GridPopoverContext</code>: <code>Close</code> closes it,
+            <code>InnerPopupChanged</code> reports a popup of your own, such as a <code>MudSelect</code>'s list, so that
+            Escape closes that first, and <code>InOrder(kind, work)</code> keeps your controls in the grid's order. A
+            control whose handler changes something or moves the keyboard — an OK, a choice, a key you answer — names its
+            event in <code>data-ex-claims</code> (<code>click</code>, <code>mousedown</code>, <code>keydown</code>,
+            <code>submit</code>, …) and its handler hands its work to <code>InOrder</code> with that kind, every time it
+            hears it and before its first <code>await</code>: the keys typed after it wait until that work has run, so an
+            arrow typed straight after OK moves the Focus OK left, over any round trip. An event no handler hands work for
+            by the end of its dispatch — stopped by your own script, or by a component inside Blazor's dispatch, as
+            <code>MudSelect</code> stops its press — is let go, and nothing waits for it. A control in a Template cell
+            keeps its place the same way, through <code>InOrderAsync(kind, work)</code> on the grid.
+            <code>ClosePopoverAsync()</code> closes your popover from outside it.
+        </p>
+        <DocsExample Title="A popover of your own" Builtin="typeof(DeskPopover)" Mud="typeof(DeskPopoverMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+        <p>
             <strong>Work of your own in the grid's order.</strong> A command of yours outside the grid — a button, a
             service's call — takes a place of its own through <code>InOrderAsync(handling)</code>: after every
             input the grid has received, and the inputs made after it wait until it has finished; work placed from

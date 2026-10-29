@@ -27,6 +27,9 @@ public sealed partial class ExGrid<TRow>
         public Func<bool, Task>? CancelledTooLate { get; } = cancelledTooLate;
         public CancellationTokenSource Cancel { get; } = new();
         public Exception? Failure { get; set; }
+
+        /// <summary>Completed once the work has run, for a handler that handed it to a claim and waits on it.</summary>
+        public TaskCompletionSource? Ended { get; init; }
     }
 
     // The turn of work placed in the browser's order that this flow runs in, while it runs: work placed from there runs
@@ -83,7 +86,7 @@ public sealed partial class ExGrid<TRow>
     /// in, and the scroll offsets, read from the browser once what the Consumer's source said before the call has
     /// crossed. A Consumer that shows several sets of rows in one grid, one at a time, keeps each set's view and hands
     /// it back with <see cref="ShowViewWith(GridView)"/> when that set is shown again. Read inside work placed with
-    /// <see cref="InOrderAsync"/>, or from a handler of a key or a press of the grid's, it is the view the inputs before
+    /// <see cref="InOrderAsync(Func{Task})"/>, or from a handler of a key or a press of the grid's, it is the view the inputs before
     /// it left.
     /// </summary>
     /// <returns>The view, which brings the same set of rows when handed back to this grid.</returns>
@@ -248,7 +251,7 @@ public sealed partial class ExGrid<TRow>
     /// <summary>
     /// The Selection once the grid has answered every input it received before the call (ADR-0240 section 6,
     /// ADR-0441): for a button of the Consumer's, pressed straight after a click, that acts on what the user selected.
-    /// From a handler of the grid's events, or inside work placed with <see cref="InOrderAsync"/> or
+    /// From a handler of the grid's events, or inside work placed with <see cref="InOrderAsync(Func{Task})"/> or
     /// <see cref="CancellableInOrderAsync"/>, it is read at once, as the inputs after it are held.
     /// </summary>
     /// <returns>The Selection.</returns>
@@ -305,7 +308,7 @@ public sealed partial class ExGrid<TRow>
 
     /// <summary>
     /// Runs <paramref name="handling"/>, work that may take a while and that the user may cancel — a file being read —
-    /// in its place in the Input Order as <see cref="InOrderAsync"/> does (ADR-0240 section 12, ADR-0441). From the call
+    /// in its place in the Input Order as <see cref="InOrderAsync(Func{Task})"/> does (ADR-0240 section 12, ADR-0441). From the call
     /// until the work ends the Settled Stamp names it (<c>data-ex-work-placed</c>), and from its turn the root is busy and
     /// painted as a paste under way is. A plain Escape typed in the grid against a page whose stamp named the work
     /// cancels <paramref name="handling"/>'s token and does nothing else. The work looks at the token until the point

@@ -69,6 +69,7 @@
                 <span id="drawer-status">Drawer: @(_drawerOpen ? "open" : "closed")</span>
                 <span id="dark-status">Dark: @_dark</span>
                 <span id="currency-status">Reporting currency: @_currency</span>
+                <span id="book-status">Book: @_book</span>
             </p>
 
             @* Sized by the layout: ViewportSize.Stretch on the width, so the browser's report
@@ -80,10 +81,12 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h6" Class="mud-ex-grid-title">Positions</MudText>
                     <MudSpacer />
+                    <MudButton id="open-book" Variant="Variant.Text" Color="Color.Primary" OnClick="() => ChooseBookAsync(_positionsGrid)">Book</MudButton>
                     <MudButton id="open-dialog" Variant="Variant.Text" Color="Color.Primary" OnClick="OpenDialog">Open orders</MudButton>
                 </ToolBarContent>
                 <ChildContent>
-                    <ExGrid TRow="DemoBlotterTrade"
+                    <ExGrid @ref="_positionsGrid"
+                            TRow="DemoBlotterTrade"
                             Source="_positions"
                             Columns="_columns"
                             ViewportWidth="ViewportSize.Stretch"
@@ -156,8 +159,10 @@
         <MudText Typo="Typo.h6">Orders</MudText>
     </TitleContent>
     <DialogContent>
+        <MudButton id="dialog-book" Variant="Variant.Text" Color="Color.Primary" OnClick="() => ChooseBookAsync(_dialogGrid)">Book</MudButton>
         <MudExGridPaper id="dialog-paper" Outlined="true" Dense="true" Hover="true">
-            <ExGrid TRow="DemoBlotterTrade"
+            <ExGrid @ref="_dialogGrid"
+                    TRow="DemoBlotterTrade"
                     Source="_dialogOrders"
                     Columns="_dialogColumns"
                     ViewportWidth="560"
@@ -169,6 +174,35 @@
         <MudButton id="close-dialog" OnClick="CloseDialog">Close</MudButton>
     </DialogActions>
 </MudDialog>
+
+@* The Consumer's own popover (ADR-0050 item 16, ADR-0441 section 4): a MudSelect whose list MudBlazor draws in its
+   provider, outside the grid's root, is an Inner Popup, reported through the context as it opens and closes (FN-21,
+   KB-35, WR-7). The select's box claims the press, the click and the key that open, work and close its list, and OK
+   claims its click: each handler hands its work to the context's InOrder, so a key typed straight after waits for what
+   the select or OK did (ADR-0240 section 6). *@
+@code {
+    private RenderFragment BookPopover(GridPopoverContext context) =>
+        @<div class="demo-book-popover pa-3">
+            <div class="demo-book-select" data-ex-claims="mousedown click keydown"
+                 @onmousedown="() => InOrder(context, GridInputKind.Press)"
+                 @onclick="() => InOrder(context, GridInputKind.Click)"
+                 @onkeydown="() => InOrder(context, GridInputKind.KeyDown)">
+                <MudSelect T="string" @bind-Value="_bookDraft" Label="Book" Dense="true" Margin="Margin.Dense"
+                           Variant="Variant.Outlined" OpenChanged="context.InnerPopupChanged">
+                    @foreach (var book in _books)
+                    {
+                        <MudSelectItem Value="@book">@book</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <div class="d-flex justify-end mt-2">
+                <MudButton id="book-cancel" data-ex-claims="click" Size="Size.Small"
+                           OnClick="() => InOrder(context, GridInputKind.Click, () => { context.Close(); return Task.CompletedTask; })">Cancel</MudButton>
+                <MudButton id="book-ok" data-ex-claims="click" Size="Size.Small" Color="Color.Primary"
+                           OnClick="() => InOrder(context, GridInputKind.Click, () => ApplyBook(context))">OK</MudButton>
+            </div>
+        </div>;
+}
 
 @code {
     private static readonly string[] ReportingCurrencies = ["USD", "EUR", "GBP", "JPY"];
@@ -187,6 +221,12 @@
     private IReadOnlyList<GridColumn<DemoBlotterTrade>> _orderColumns = default!;
     private IReadOnlyList<GridColumn<DemoBlotterTrade>> _dialogColumns = default!;
 
+    private ExGrid<DemoBlotterTrade>? _positionsGrid;
+    private ExGrid<DemoBlotterTrade>? _dialogGrid;
+    private string[] _books = [];
+    private string _book = "none chosen";
+    private string _bookDraft = "";
+
     private bool _drawerOpen = true;
     private bool _dark;
     private bool _dialogOpen;
@@ -194,7 +234,10 @@
 
     protected override void OnInitialized()
     {
-        _positions = GridSource.From(DemoData.Blotter(200, seed: 11));
+        var positions = DemoData.Blotter(200, seed: 11);
+        _positions = GridSource.From(positions);
+        _books = [.. positions.Select(trade => trade.Book).Distinct().Order(StringComparer.Ordinal).Take(4)];
+        _bookDraft = _books[0];
         _orders = GridSource.From(DemoData.Blotter(40, seed: 12));
         _historyRows = DemoData.Blotter(300, seed: 13);
         _history = GridSource.From(_historyRows);
@@ -257,6 +300,23 @@
     /// the Wrapper's stylesheet paints it in the palette's error colour.</summary>
     private static CellTone Sign(object value)
         => (decimal)value < 0 ? CellTone.Negative : CellTone.None;
+
+    private Task ChooseBookAsync(ExGrid<DemoBlotterTrade>? grid)
+        => (grid ?? throw new InvalidOperationException("The grid is not rendered yet.")).OpenPopoverAsync(BookPopover, "Choose a book");
+
+    // The context's seam, which the grid's context always carries.
+    private static Task InOrder(GridPopoverContext context, GridInputKind kind, Func<Task> work)
+        => (context.InOrder ?? throw new InvalidOperationException("A popover context the grid did not make."))(kind, work);
+
+    // An input whose work is the select's own: it holds the keys after it until the select has answered it.
+    private static Task InOrder(GridPopoverContext context, GridInputKind kind) => InOrder(context, kind, static () => Task.CompletedTask);
+
+    private Task ApplyBook(GridPopoverContext context)
+    {
+        _book = _bookDraft;
+        context.Close();
+        return Task.CompletedTask;
+    }
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 

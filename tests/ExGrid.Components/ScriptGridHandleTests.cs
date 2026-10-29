@@ -4,6 +4,7 @@ using ExGrid.Chrome;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Keys;
 using ExGrid.Selection;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Xunit;
 
@@ -68,18 +69,23 @@ public class ScriptGridHandleTests : BunitContext
         var view = await cut.InvokeAsync(() => cut.Instance.ReadViewAsync());
         Assert.Equal((4, 2, 480d, 12d), (view.RowSequenceVersion, view.Selection.Focus.Row, view.ScrollTopPx, view.ScrollLeftPx));
 
+        var statesBefore = 0;
         await cut.InvokeAsync(() =>
         {
+            statesBefore = StatesSent();
             source.Push(_rows, totalCount: _rows.Length, rowSequenceVersion: 5);
             cut.Instance.ShowViewWith(view with { RowSequenceVersion = 5 });
+            // The view crossed as the call was made, and the state the source raised just before it has not.
+            Assert.Equal(statesBefore, StatesSent());
         });
 
         var shown = Parsed(Assert.Single(_grid.Invocations["showView"]).Arguments[0]);
         Assert.Equal((7, 5, JsonValueKind.Null), (shown.GetProperty("number").GetInt32(), shown.GetProperty("rowSequenceVersion").GetInt32(), shown.GetProperty("place").ValueKind));
-        // The view crossed as the call was made: the state the source raised just before it follows it.
-        var order = _grid.Invocations.Select(invocation => invocation.Identifier).ToList();
-        Assert.True(order.LastIndexOf("showView") < order.LastIndexOf("state"), string.Join(", ", order));
+        // The state follows the view, once its send comes round.
+        cut.WaitForAssertion(() => Assert.Equal(statesBefore + 1, StatesSent()));
     }
+
+    private int StatesSent() => _grid.Invocations.Count(invocation => invocation.Identifier == "state");
 
     [Fact] // ADR-0441 section 1: a view not read here is rows never shown, with one range or none at offsets of zero; a place replaces any view's Selection; a view read here comes back as read
     public async Task ADR0441_a_view_not_read_here_is_rows_never_shown_and_a_place_replaces_the_selection()
@@ -289,5 +295,161 @@ public class ScriptGridHandleTests : BunitContext
         Assert.True(Grid().Instance.CanSummarize);
         Assert.True(Grid(ps => ps.Add(g => g.Rows, _rows).Add(g => g.OnSummarize,
             (Summarizing.GridSummaryRequest _, CancellationToken _) => Task.FromResult(Summarizing.GridSummaryResult.Declined("Ask the desk.")))).Instance.CanSummarize);
+    }
+
+    private static RenderFragment<GridPopoverContext> Contents(Action<GridPopoverContext> seen) => context => builder =>
+    {
+        seen(context);
+        builder.AddMarkupContent(0, "<button data-ex-claims=\"click\">Apply the book</button>");
+    };
+
+    [Fact] // ADR-0441 section 4: the Consumer's popover opens in the browser's frame, its contents drawn in the slot the browser mounts for the opening, and its context crosses as it is used
+    public async Task ADR0441_the_consumers_popover_is_drawn_in_the_slot_the_browser_mounts()
+    {
+        var cut = Grid();
+        var opened = _grid.Setup<bool>("openPopover", _ => true);
+        _grid.SetupVoid("slotRendered", _ => true).SetVoidResult();
+        _grid.SetupVoid("closePopoverOf", _ => true).SetVoidResult();
+        _grid.SetupVoid("innerPopupChanged", _ => true).SetVoidResult();
+        GridPopoverContext? context = null;
+        var opening = cut.InvokeAsync(() => cut.Instance.OpenPopoverAsync(Contents(seen => context = seen), "Book"));
+        Assert.Equal([1, "Book"], Assert.Single(_grid.Invocations["openPopover"]).Arguments);
+
+        // The browser mounts the slot as it opens the frame, inside the call.
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "consumerPopover", """{"opening":1}"""));
+        opened.SetResult(true);
+        Assert.True(await opening);
+        Assert.Contains("Apply the book", cut.Markup);
+        var standing = context ?? throw new InvalidOperationException("The contents were drawn with no context.");
+        Assert.NotNull(standing.InOrder);
+        Assert.NotNull(standing.TakeFocus);
+        await cut.InvokeAsync(() =>
+        {
+            standing.InnerPopupChanged(true);
+            standing.Close();
+        });
+        Assert.Equal([1, true], Assert.Single(_grid.Invocations["innerPopupChanged"]).Arguments);
+        Assert.Equal([1], Assert.Single(_grid.Invocations["closePopoverOf"]).Arguments);
+
+        // Closed in the browser, the opening is gone: its context speaks for nothing, and its slot draws nothing.
+        await cut.InvokeAsync(() => Bridge().PopoverClosed(1));
+        await cut.InvokeAsync(() => standing.Close());
+        Assert.Single(_grid.Invocations["closePopoverOf"]);
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2, """{"opening":1}"""));
+        Assert.DoesNotContain("Apply the book", cut.Markup);
+    }
+
+    [Fact] // ADR-0441 section 4: a popover the browser refuses to open leaves none standing, and an empty label is refused by name
+    public async Task ADR0441_a_popover_refused_leaves_none_and_an_empty_label_is_refused()
+    {
+        var cut = Grid();
+        _grid.Setup<bool>("openPopover", _ => true).SetResult(false);
+        Assert.False(await cut.InvokeAsync(() => cut.Instance.OpenPopoverAsync(Contents(_ => { }), "Book")));
+        await Assert.ThrowsAsync<ArgumentException>(() => cut.Instance.OpenPopoverAsync(Contents(_ => { }), " "));
+        // Nothing stands for ClosePopoverAsync to close.
+        await cut.InvokeAsync(() => cut.Instance.ClosePopoverAsync());
+        Assert.DoesNotContain(_grid.Invocations, invocation => invocation.Identifier == "closePopover");
+    }
+
+    private static RenderFragment<GridPopoverContext> Showing(Func<string> text) => _ => builder => builder.AddContent(0, text());
+
+    [Fact] // ADR-0441 section 4: a later opening refused leaves the popover the browser shows drawn, never one it closed meanwhile; the contents are drawn again with the page
+    public async Task ADR0441_a_refused_opening_leaves_the_popover_shown_and_the_contents_follow_the_page()
+    {
+        var cut = Grid();
+        _grid.SetupVoid("slotRendered", _ => true).SetVoidResult();
+        _grid.Setup<bool>("openPopover", invocation => invocation.Arguments[0] is 1).SetResult(true);
+        var book = "Credit";
+        Assert.True(await cut.InvokeAsync(() => cut.Instance.OpenPopoverAsync(Showing(() => $"First: {book}"), "Book")));
+        await cut.InvokeAsync(() => Bridge().MountSlot(1, 1, "consumerPopover", """{"opening":1}"""));
+        Assert.Contains("First: Credit", cut.Markup);
+
+        // The page renders with a new book: the contents read it, drawn again on their own.
+        book = "Rates";
+        cut.Render(_ => { });
+        Assert.Contains("First: Rates", cut.Markup);
+
+        // A second opening refused: the first, still shown, is drawn again.
+        _grid.Setup<bool>("openPopover", invocation => invocation.Arguments[0] is 2).SetResult(false);
+        Assert.False(await cut.InvokeAsync(() => cut.Instance.OpenPopoverAsync(Showing(() => "Second"), "Book")));
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 2, """{"opening":1}"""));
+        Assert.Contains("First: Rates", cut.Markup);
+
+        // A third refused while the first closed meanwhile: nothing comes back.
+        var third = _grid.Setup<bool>("openPopover", invocation => invocation.Arguments[0] is 3);
+        var refused = cut.InvokeAsync(() => cut.Instance.OpenPopoverAsync(Showing(() => "Third"), "Book"));
+        await cut.InvokeAsync(() => Bridge().PopoverClosed(1));
+        third.SetResult(false);
+        Assert.False(await refused);
+        await cut.InvokeAsync(() => Bridge().UpdateSlot(1, 3, """{"opening":1}"""));
+        Assert.DoesNotContain("First", cut.Markup);
+        await cut.InvokeAsync(() => cut.Instance.ClosePopoverAsync());
+        Assert.DoesNotContain(_grid.Invocations, invocation => invocation.Identifier == "closePopover");
+    }
+
+    [Fact] // ADR-0240 section 6 / ADR-0441 section 4: a claimed event's handler hands its work, which runs in the turn the browser reached for the claim's number
+    public async Task ADR0441_a_claimed_events_work_runs_in_the_turn_of_its_number()
+    {
+        var cut = Grid();
+        var ran = false;
+        await cut.InvokeAsync(() => Bridge().ClaimTold("click", -1));
+        Task? handled = null;
+        await cut.InvokeAsync(() => { handled = cut.Instance.InOrderAsync(GridInputKind.Click, () => { ran = true; return Task.CompletedTask; }); });
+        Assert.False(ran);
+        // Its dispatch over, a telling a handler took stands.
+        await cut.InvokeAsync(() => Bridge().ClaimPassed(-1));
+
+        Assert.Equal("landed", await cut.InvokeAsync(() => Bridge().RunClaim(-1)));
+        Assert.True(ran);
+        await (handled ?? throw new InvalidOperationException("Nothing was handed."));
+        Assert.DoesNotContain(_grid.Invocations, invocation => invocation.Identifier == "inOrder");
+    }
+
+    [Fact] // ADR-0441 section 4: a telling no handler takes ends its turn void: its dispatch passed, voided by the next, or of another kind than the handler hears
+    public async Task ADR0441_a_telling_no_handler_takes_ends_its_turn_void()
+    {
+        var cut = Grid();
+        var placed = _grid.Setup<bool>("inOrder", _ => true);
+        await cut.InvokeAsync(() => Bridge().ClaimTold("click", -1));
+        await cut.InvokeAsync(() => Bridge().ClaimPassed(-1));
+        Assert.Equal("void", await cut.InvokeAsync(() => Bridge().RunClaim(-1)));
+
+        await cut.InvokeAsync(() => Bridge().ClaimTold("click", -2));
+        await cut.InvokeAsync(() => Bridge().ClaimTold("keydown", -3));
+        Assert.Equal("void", await cut.InvokeAsync(() => Bridge().RunClaim(-2)));
+
+        // The handler hears a click where a key was told: the key's number is no one's, and the work takes a place of its own.
+        Task? handled = null;
+        await cut.InvokeAsync(() => { handled = cut.Instance.InOrderAsync(GridInputKind.Click, () => Task.CompletedTask); });
+        Assert.Equal("void", await cut.InvokeAsync(() => Bridge().RunClaim(-3)));
+        Assert.Single(_grid.Invocations["inOrder"]);
+        Assert.Equal("landed", await cut.InvokeAsync(() => Bridge().RunWork(1)));
+        placed.SetResult(true);
+        await (handled ?? throw new InvalidOperationException("Nothing was handed."));
+
+        // A crossing of the keyboard is told by no Input Root around this grid: its handling does not run.
+        var crossed = false;
+        await cut.InvokeAsync(() => cut.Instance.InOrderAsync(GridInputKind.KeyboardIn, () => { crossed = true; return Task.CompletedTask; }));
+        Assert.False(crossed);
+    }
+
+    [Fact] // ADR-0441 section 4: a claimed handler's failure is thrown from its call as it was thrown; disposing of the grid ends a handed work not yet run with nothing done
+    public async Task ADR0441_a_claimed_failure_is_thrown_and_disposal_ends_handed_work()
+    {
+        var cut = Grid();
+        _grid.SetupVoid("dispose", _ => true).SetVoidResult();
+        await cut.InvokeAsync(() => Bridge().ClaimTold("keydown", -1));
+        Task? failing = null;
+        await cut.InvokeAsync(() => { failing = cut.Instance.InOrderAsync(GridInputKind.KeyDown, () => throw new FormatException("Not a book.")); });
+        Assert.Equal("failed", await cut.InvokeAsync(() => Bridge().RunClaim(-1)));
+        Assert.Equal("Not a book.", (await Assert.ThrowsAsync<FormatException>(() => failing ?? Task.CompletedTask)).Message);
+
+        var ran = false;
+        await cut.InvokeAsync(() => Bridge().ClaimTold("click", -2));
+        Task? handed = null;
+        await cut.InvokeAsync(() => { handed = cut.Instance.InOrderAsync(GridInputKind.Click, () => { ran = true; return Task.CompletedTask; }); });
+        await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
+        await (handed ?? throw new InvalidOperationException("Nothing was handed."));
+        Assert.False(ran);
     }
 }

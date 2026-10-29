@@ -1320,3 +1320,109 @@ describe('what the Consumer calls on the grid (ADR-0441)', () => {
         expect(dotnet.calls.filter(call => call.method === 'WorkCancelledTooLate').map(call => call.args)).toEqual([[1, false]]);
     });
 });
+
+// The contents .NET draws for the popover's slot, in a holder beside the root as Blazor renders them.
+const drawn = (dotnet: FakeDotNet, html: string): { readonly id: number; readonly version: number; readonly contents: HTMLElement } => {
+    const mounted = dotnet.calls.find(call => call.method === 'MountSlot' && call.args[2] === 'consumerPopover');
+    if (mounted === undefined) throw new Error('No popover slot was mounted.');
+    const [id, version] = mounted.args;
+    if (typeof id !== 'number' || typeof version !== 'number') throw new Error(`A slot mounted as ${JSON.stringify(mounted.args)}.`);
+    const holder = document.createElement('div');
+    const contents = document.createElement('div');
+    contents.setAttribute('data-ex-version', String(version));
+    contents.innerHTML = html;
+    holder.append(contents);
+    document.body.append(holder);
+    return { id, version, contents };
+};
+const told = (dotnet: FakeDotNet, method: string): readonly (readonly unknown[])[] => dotnet.calls.filter(call => call.method === method).map(call => call.args);
+const click = (target: Element): void => { target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); };
+
+describe('the Consumer\'s popover and its controls (ADR-0441 section 4)', () => {
+    it('ADR-0441 section 4: the contents are a Razor slot moved into the core\'s frame, whose first control takes the keyboard once they stand, and .NET hears the popover close', async () => {
+        const dotnet = new FakeDotNet();
+        const { root, grid } = mount({ options: options({ rowHeight: 24 }) }, dotnet);
+        await turns();
+        expect(grid.openPopover(1, 'Choose a book')).toBe(true);
+        const frame = root.querySelector('.ex-popover-consumer');
+        expect(frame?.getAttribute('aria-label')).toBe('Choose a book');
+        const { id, version, contents } = drawn(dotnet, '<button>OK</button><button>Cancel</button>');
+        expect(JSON.parse(String(dotnet.calls.find(call => call.method === 'MountSlot' && call.args[0] === id)?.args[3]))).toEqual({ opening: 1 });
+        grid.slotRendered(id, version, contents);
+        expect(frame?.contains(contents)).toBe(true);
+        expect(document.activeElement?.textContent).toBe('OK');
+
+        grid.closePopoverOf(1);
+        expect(root.querySelector('.ex-popover-consumer')).toBeNull();
+        await turns();
+        expect([told(dotnet, 'PopoverClosed'), told(dotnet, 'UnmountSlot')]).toEqual([[[1]], [[id]]]);
+    });
+
+    it('ADR-0441 section 4: a click on a control that claims it is told ahead of Blazor, and the keys after it wait for the work its handler hands .NET', async () => {
+        const dotnet = new FakeDotNet();
+        let ended: ((ended: string) => void) | undefined;
+        dotnet.answer = method => (method === 'RunClaim' ? new Promise(resolve => { ended = resolve; }) : null);
+        const { root, grid } = mount({ options: options({ rowHeight: 24 }) }, dotnet);
+        await turns();
+        grid.openPopover(1, 'Choose a book');
+        const { id, version, contents } = drawn(dotnet, '<button data-ex-claims="click">OK</button>');
+        grid.slotRendered(id, version, contents);
+        // The inputs made while the contents were owed are let go.
+        await turns();
+        const ok = contents.querySelector('button');
+        if (ok === null) throw new Error('The contents hold no OK.');
+
+        click(ok);
+        expect([told(dotnet, 'ClaimTold'), told(dotnet, 'RunClaim')]).toEqual([[['click', -1]], [[-1]]]);
+        // An Escape typed straight after waits behind the OK's work, and then closes the popover.
+        key('Escape');
+        expect(root.querySelector('.ex-popover-consumer')).not.toBeNull();
+        ended?.('landed');
+        await turns();
+        expect(root.querySelector('.ex-popover-consumer')).toBeNull();
+        // Its dispatch over, the click is said passed, which voids it in .NET only where no handler took it.
+        expect(told(dotnet, 'ClaimPassed')).toEqual([[-1]]);
+    });
+
+    it('ADR-0441 section 4: a claimed event is said passed once its dispatch is over, stopped on its way to Blazor or not', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'RunClaim' ? Promise.resolve('void') : null);
+        const { grid } = mount({ options: options({ rowHeight: 24 }) }, dotnet);
+        await turns();
+        grid.openPopover(1, 'Choose a book');
+        const { id, version, contents } = drawn(dotnet, '<button data-ex-claims="click">OK</button><button>Cancel</button>');
+        grid.slotRendered(id, version, contents);
+        const [ok, cancel] = contents.querySelectorAll('button');
+        if (ok === undefined || cancel === undefined) throw new Error('The contents hold no OK or Cancel.');
+        ok.addEventListener('click', event => { event.stopPropagation(); });
+
+        click(ok);
+        // A control that claims nothing is not told.
+        click(cancel);
+        // Said after the dispatch, never during it: a handler that heard it has handed its work by then.
+        expect(told(dotnet, 'ClaimPassed')).toEqual([]);
+        await turns();
+        expect([told(dotnet, 'ClaimTold'), told(dotnet, 'ClaimPassed')]).toEqual([[['click', -1]], [[-1]]]);
+    });
+
+    it('ADR-0441 section 4: a claimed focus is heard in the window once, and work that failed in .NET ends its turn there, the keys after it going on', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'RunClaim' ? Promise.resolve('failed') : null);
+        const { root, grid } = mount({ options: options({ rowHeight: 24 }) }, dotnet);
+        await turns();
+        grid.openPopover(1, 'Choose a book');
+        const { id, version, contents } = drawn(dotnet, '<button>OK</button><input data-ex-claims="focus">');
+        grid.slotRendered(id, version, contents);
+        await turns();
+        const field = contents.querySelector('input');
+        if (field === null) throw new Error('The contents hold no field.');
+
+        field.focus();
+        expect(told(dotnet, 'ClaimTold')).toEqual([['focus', -1]]);
+        await turns();
+        // The failure is .NET's to throw, from the handler's call: here the turn ends, and the Escape after it closes.
+        key('Escape');
+        await turns();
+        expect(root.querySelector('.ex-popover-consumer')).toBeNull();
+    });
+});

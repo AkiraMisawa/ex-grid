@@ -9,12 +9,13 @@ import {
     type GridChromeStylesheet, type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorStepRequest, type GridEditorReference,
     type GridEditorRewrite, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
     type GridSelection, type GridSummaryRequest, type GridSummaryResult, type RowKind, type RowMarkCounts, type RowMarkIntent, type RowMarks, type SelectionRange, type SelectionSummary,
-    type SummaryFigure, type TemporalLike, type GridTurn, type GridViewRead, type ViewPlace, findMatches, textOf,
+    type SummaryFigure, type TemporalLike, type GridPopoverContext, type GridTurn, type GridViewRead, type ViewPlace, findMatches, textOf,
 } from '@ex-grid/core';
 import {
     awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
     slotHostOptionsOf, WireMetrics, type DotNetCalls, type WireHeld, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
 } from '@ex-grid/blazor-shared';
+import { ConsumerClaims } from './consumer-claims';
 import { InputNumbers, LostCall } from './input-numbers';
 import { DotNetSource, type DotNetHandle, type SummarizeOf, type WireSourceTraits, type WireState } from './dotnet-source';
 import { RazorSlots } from './razor-slots';
@@ -170,6 +171,15 @@ export interface BlazorGrid {
     writePointedText(text: string): boolean;
     /** Takes back what `writePointedText` wrote last (ADR-0058). */
     takeBackPointedText(): boolean;
+    /** Opens the Consumer's popover of the opening .NET numbered, its contents a Razor slot .NET draws (ADR-0441
+     * section 4): false where the core refuses it, an edit being open. .NET hears it close (`PopoverClosed`). */
+    openPopover(opening: number, label: string): boolean;
+    /** Closes the Consumer's popover where one stands. */
+    closePopover(): void;
+    /** The contents of the opening `opening` close their popover, while it stands. */
+    closePopoverOf(opening: number): void;
+    /** The contents of the opening `opening` report a popup of their own opening or closing, while it stands. */
+    innerPopupChanged(opening: number, open: boolean): void;
     /** Stops the grid and empties its element. */
     dispose(): void;
 }
@@ -256,6 +266,13 @@ const numberedGridCalls: ReadonlySet<string> = new Set(['Find', 'FindError', 'Co
 
 /** What a call lost on the way to .NET is to a step that would otherwise wait on it: given up, as the core reads an
  * `AbortError`, and said by {@link InputNumbers}' owner instead (ADR-0240 section 11). */
+/** The work a control of the Consumer's handed failed in .NET, which throws the failure from the handler's call. */
+class ClaimFailed extends Error {
+    constructor(number: number) {
+        super(`The work handed to the claim ${String(number)} failed in .NET.`);
+    }
+}
+
 function givenUp(answer: unknown): void {
     if (answer instanceof LostCall) throw new DOMException('The call never reached .NET: the connection was lost.', 'AbortError');
 }
@@ -298,7 +315,45 @@ export function attach(
     });
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
     const made: { grid?: GridHandle<BlazorRow> } = {};
-    const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'));
+    // Once .NET has let go of the bridge, nothing is told to it.
+    let stopped = false;
+    // The turns of .NET's work while it runs, by its number: work .NET places from inside it runs there. A claim's
+    // number is below zero, apart from the work .NET numbers.
+    const turns = new Map<number, GridTurn>();
+    // A control of the Consumer's that claims an event takes a turn as the event happens, and .NET runs the work its
+    // handler hands in that turn (ADR-0441 section 4).
+    let claimsTold = 0;
+    const page = root.ownerDocument.defaultView;
+    if (page === null) throw new Error('Internal: a grid was mounted outside a window.');
+    const claims = new ConsumerClaims(page, {
+        claim: kind => {
+            const grid = made.grid;
+            if (grid === undefined) throw new Error('Internal: a control of the Consumer\'s claimed an event before the grid was made.');
+            claimsTold += 1;
+            const number = -claimsTold;
+            if (stopped) return number;
+            void dotnet.invokeMethodAsync('ClaimTold', kind, number);
+            grid.inOrder(async turn => {
+                turns.set(number, turn);
+                try {
+                    const ended = await dotnet.invokeMethodAsync('RunClaim', number);
+                    // A failure's own exception stays in .NET, which throws it from the handler's call.
+                    if (ended === 'failed') throw new ClaimFailed(number);
+                    if (ended !== 'landed' && ended !== 'void') throw new TypeError(`Internal: .NET ended the claim ${String(number)} as ${JSON.stringify(ended)}.`);
+                } finally {
+                    turns.delete(number);
+                }
+            }).catch((error: unknown) => { // oxlint-disable-line ex-grid/no-catch -- a handed work's failure is thrown in .NET from the handler's call, and any other rejection is rethrown
+                // A failure .NET threw from the handler's call, or a call .NET let go of with the bridge, is answered
+                // there; anything else is a fault of the bridge's, and reaches the page.
+                if (error instanceof ClaimFailed || stopped) return;
+                throw error;
+            });
+            return number;
+        },
+        passed: number => { if (!stopped) void dotnet.invokeMethodAsync('ClaimPassed', number); },
+    });
+    const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'), claims);
     const columns = new ColumnSet(verdict, (slot, cell) => slots.template(slot, cell));
     columns.take(init.options.columns, init.options.columnsVersion);
     const rows = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen); });
@@ -398,14 +453,10 @@ export function attach(
         throw error;
     }
     made.grid = grid;
-    // Once .NET has let go of the bridge, nothing is told to it.
-    let stopped = false;
     // The views .NET read, by the number each crossed under: the core knows a view by the object it handed out
     // (ADR-0441 section 1).
     const views = new Map<number, GridViewRead>();
     let viewsRead = 0;
-    // The turns of .NET's work while it runs, by its number: work .NET places from inside it runs there.
-    const turns = new Map<number, GridTurn>();
     const placeOf = (within: number | null): Pick<GridHandle<BlazorRow>, 'inOrder' | 'cancellableInOrder'> => {
         if (within === null) return grid;
         const turn = turns.get(within);
@@ -428,6 +479,9 @@ export function attach(
     // Escape can, and .NET lets the work go.
     const workForgotten = new FinalizationRegistry<number>(work => { if (!stopped) void dotnet.invokeMethodAsync('ForgetWork', work); });
     const answer = <T>(value: T): T | WireHeld => holding.crossing(value) ?? value;
+    // The Consumer's popovers standing, by the opening .NET numbered: the core's context for their contents, and what
+    // takes their slot away.
+    const popovers = new Map<number, { readonly context: GridPopoverContext; readonly unmount: () => void }>();
     // The grid joins its Scope once a Sheet of it brings it to the page, and is pointed at from then on (ADR-0430).
     const declared = init.options.pointedAt;
     const leaveScope = declared === undefined ? undefined : awaitPointingScope(declared.scope, scope => {
@@ -524,6 +578,25 @@ export function attach(
             gate.flush();
             return grid.takeBackPointedText();
         },
+        openPopover: (opening: number, label: string) => {
+            gate.flush();
+            return grid.openPopover(context => {
+                const slot = root.ownerDocument.createElement('div');
+                popovers.set(opening, { context, unmount: slots.popover(slot, opening) });
+                return slot;
+            }, label, () => {
+                const standing = popovers.get(opening);
+                popovers.delete(opening);
+                standing?.unmount();
+                if (!stopped) void dotnet.invokeMethodAsync('PopoverClosed', opening);
+            });
+        },
+        closePopover: () => {
+            gate.flush();
+            grid.closePopover();
+        },
+        closePopoverOf: (opening: number) => { popovers.get(opening)?.context.close(); },
+        innerPopupChanged: (opening: number, open: boolean) => { popovers.get(opening)?.context.innerPopupChanged(open); },
         inputsLost: (first: number, last: number, words: string) => {
             if (!Number.isInteger(first) || !Number.isInteger(last) || first > last || typeof words !== 'string') {
                 throw new TypeError(`Internal: .NET named the inputs ${String(first)} to ${String(last)} lost, in ${JSON.stringify(words)}.`);
@@ -539,6 +612,7 @@ export function attach(
             gate.stop();
             rows.stop();
             slots.dispose();
+            claims.dispose();
             holding.clear();
             leaveScope?.();
             grid.destroy();
