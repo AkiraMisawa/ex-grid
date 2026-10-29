@@ -411,8 +411,10 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private GridPointedInBrowser<TRow>? _pointedAt;
     private bool _parametersSet;
     // The Consumer's functions the grid was made with, whose modules the browser loaded before it mounted the grid, and
-    // why it refused them, said in the grid's place (ADR-0431).
+    // why it refused them, said in the grid's place (ADR-0431). They are taken as they stand when the browser is asked to
+    // load them, so a parameter set that comes before the first render may still give or take one away.
     private readonly HashSet<ScriptFunction> _scripts = [];
+    private bool _scriptsAsked;
     private string? _scriptRefusal;
 
     /// <inheritdoc />
@@ -525,14 +527,15 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             throw new InvalidOperationException("PointAt needs ReferenceText: pointing writes the Consumer's Reference text for the pointed range, "
                 + "and the grid has no names of its own for cells (ADR-0051).");
         }
+        if (!_scriptsAsked)
+            return;
         foreach (var script in Scripts())
         {
-            if (_parametersSet && !_scripts.Contains(script))
+            if (!_scripts.Contains(script))
             {
                 throw new NotSupportedException($"The script function {script} is given after the grid was made. Its module loads before the grid is "
                     + "mounted, so that no key is decided without it: set it as the grid is made (ADR-0431).");
             }
-            _scripts.Add(script);
         }
     }
 
@@ -652,6 +655,9 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             StateHasChanged();
             return;
         }
+        // The functions given by now are the ones the grid is made with; one first given after is refused.
+        _scripts.UnionWith(Scripts());
+        _scriptsAsked = true;
         if (_scripts.Count > 0)
         {
             // The Consumer's functions, loaded before the grid is mounted, so no key is decided without them (ADR-0431).
@@ -1131,10 +1137,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     {
         if (script is null)
             return;
-        json.WriteStartObject(name);
-        json.WriteString("module", script.Module);
-        json.WriteString("export", script.Export);
-        json.WriteEndObject();
+        json.WritePropertyName(name);
+        ScriptFunctionJson.Write(json, script);
     }
 
     // The functions the browser loads before it mounts the grid (ADR-0431).
@@ -1142,12 +1146,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     {
         json.WriteStartArray();
         foreach (var script in _scripts)
-        {
-            json.WriteStartObject();
-            json.WriteString("module", script.Module);
-            json.WriteString("export", script.Export);
-            json.WriteEndObject();
-        }
+            ScriptFunctionJson.Write(json, script);
         json.WriteEndArray();
     });
 

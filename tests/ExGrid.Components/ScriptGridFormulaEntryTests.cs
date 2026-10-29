@@ -21,24 +21,32 @@ public class ScriptGridFormulaEntryTests : BunitContext
     private static readonly ScriptFunction ReferencesIn = ScriptFunction.Of("./js/formula.js", "referencesIn");
 
     private readonly BunitJSModuleInterop _module;
+    private readonly JSRuntimeInvocationHandler<string?> _stamp;
     private readonly List<string> _calls = [];
 
     public ScriptGridFormulaEntryTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _stamp = _module.Setup<string?>("stamp");
         var grid = _module.SetupModule("attach", _ => { _calls.Add("attach"); return true; });
         grid.SetupVoid("update", _ => true).SetVoidResult();
         grid.SetupVoid("state", _ => true).SetVoidResult();
     }
 
     private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(
-        Action<ComponentParameterCollectionBuilder<global::ExGrid.Script.ExGrid<TestRow>>>? extra = null)
-        => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps =>
+        Action<ComponentParameterCollectionBuilder<global::ExGrid.Script.ExGrid<TestRow>>>? extra = null, bool stamped = true)
+    {
+        if (stamped)
+            Stamp();
+        return Render<global::ExGrid.Script.ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Rows, TestRows.Many(3)).Add(g => g.Columns, TestRows.Columns());
             extra?.Invoke(ps);
         });
+    }
+
+    // The script's stamp, answered: until it is, the grid has not asked the browser to load the Consumer's functions.
+    private void Stamp() => _stamp.SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
 
     private void Loads(string? refusal = null)
         => _module.Setup<string?>("loadScripts", _ => { _calls.Add("loadScripts"); return true; }).SetResult(refusal);
@@ -95,6 +103,21 @@ public class ScriptGridFormulaEntryTests : BunitContext
         var thrown = Assert.Throws<NotSupportedException>(() => cut.Render(ps => ps.Add(g => g.PointAt, PointAt).Add(g => g.ReferenceText, ReferenceText)));
 
         Assert.Contains("\"pointAt\" of \"./js/formula.js\" is given after the grid was made", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0431 section 1: the grid is made when the browser is asked to load them, so one given before is loaded with the rest
+    public void ADR0431_a_function_given_before_the_browser_is_asked_to_load_them_is_loaded()
+    {
+        Loads();
+        var cut = Grid(ps => ps.Add(g => g.ReferencesIn, ReferencesIn), stamped: false);
+
+        cut.Render(ps => ps.Add(g => g.PointAt, PointAt).Add(g => g.ReferenceText, ReferenceText));
+        cut.InvokeAsync(Stamp);
+
+        cut.WaitForAssertion(() => Assert.Equal(["loadScripts", "attach"], _calls));
+        using var loaded = JsonDocument.Parse(Assert.IsType<string>(Assert.Single(_module.Invocations["loadScripts"]).Arguments[0]));
+        Assert.Equal(["pointAt", "referenceText", "referencesIn"],
+            loaded.RootElement.EnumerateArray().Select(script => script.GetProperty("export").GetString()).Order(StringComparer.Ordinal));
     }
 
     [Fact] // ADR-0431 section 1: one the grid was made with is loaded already, so it may be taken away and given again

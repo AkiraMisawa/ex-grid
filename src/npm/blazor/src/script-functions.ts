@@ -66,6 +66,9 @@ export class ScriptModules {
     }
 
     #module(script: WireScript): Promise<Readonly<Record<string, unknown>>> {
+        if (!URL.canParse(script.module, document.baseURI)) {
+            return Promise.reject(new ScriptFunctionError(`The module "${script.module}" is no address a page can import a module from.`));
+        }
         const address = new URL(script.module, document.baseURI);
         if (address.protocol !== 'http:' && address.protocol !== 'https:') {
             return Promise.reject(new ScriptFunctionError(

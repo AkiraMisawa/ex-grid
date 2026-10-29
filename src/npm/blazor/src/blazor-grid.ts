@@ -6,7 +6,8 @@
 
 import {
     createGrid, EditorCompletion, EditorHint, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict, type GridColumn, type GridCommand, type GridContextMenuContext, type GridErrorStepRequest,
-    type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
+    type GridEditorReference, type GridEditorRewrite, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection,
+    type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
 import {
     awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
@@ -608,10 +609,15 @@ class ScriptHooks {
                 f(text, caret), (a): a is boolean => typeof a === 'boolean', 'true or false')) }),
             ...(referenceText === undefined ? {} : { referenceText: this.#hook('referenceText', referenceText, f => (range: SelectionRange) => checkedAnswer(referenceText,
                 'referenceText', f(range), (a): a is string => typeof a === 'string', 'text')) }),
+            // Nothing is null, as .NET writes it; undefined is a function that answered nothing, and is refused, since
+            // taken as nothing it would quietly leave the text, or outline nothing. What the core takes beyond the shape,
+            // a span inside the text, is the core's to check.
             ...(cycleReference === undefined ? {} : { cycleReference: this.#hook('cycleReference', cycleReference, f => (text: string, start: number, end: number) =>
-                nothingAsUndefined(f(text, start, end)) as ReturnType<NonNullable<ScriptOptions['cycleReference']>>) }), // oxlint-disable-line typescript/no-unsafe-type-assertion -- the core checks the rewrite as it takes it
+                nothingAsUndefined(checkedAnswer(cycleReference, 'cycleReference', f(text, start, end), (a): a is GridEditorRewrite | null => a === null || isRewrite(a),
+                    'a rewrite { text, selectionStart, selectionEnd }, or null for none'))) }),
             ...(referencesIn === undefined ? {} : { referencesIn: this.#hook('referencesIn', referencesIn, f => (text: string) =>
-                nothingAsUndefined(f(text)) as ReturnType<NonNullable<ScriptOptions['referencesIn']>>) }), // oxlint-disable-line typescript/no-unsafe-type-assertion -- the core checks each Reference as it takes it
+                nothingAsUndefined(checkedAnswer(referencesIn, 'referencesIn', f(text), (a): a is readonly GridEditorReference[] | null => a === null || (Array.isArray(a) && a.every(isReference)),
+                    'a list of References { start, length, range or key }, or null for none'))) }),
         };
     }
 
@@ -640,8 +646,23 @@ function checkedAnswer<T>(script: WireScript, option: string, answer: unknown, i
 }
 
 /** A script's null, which C#'s Consumer writes for nothing, as the core's undefined. */
-function nothingAsUndefined(answer: unknown): unknown {
+function nothingAsUndefined<T>(answer: T | null): T | undefined {
     return answer === null ? undefined : answer;
+}
+
+const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> => typeof value === 'object' && value !== null;
+
+/** Whether an answer is shaped as a rewrite of the editor's text. */
+function isRewrite(value: unknown): value is GridEditorRewrite {
+    return isRecord(value) && typeof value['text'] === 'string' && typeof value['selectionStart'] === 'number' && typeof value['selectionEnd'] === 'number';
+}
+
+/** Whether an answer is shaped as a Reference: a span, and the cells it names or a key. */
+function isReference(value: unknown): value is GridEditorReference {
+    if (!isRecord(value) || typeof value['start'] !== 'number' || typeof value['length'] !== 'number') return false;
+    const { range, key } = value;
+    const isRange = isRecord(range) && ['topRow', 'leftColumn', 'rowCount', 'columnCount'].every(part => typeof range[part] === 'number');
+    return (range === undefined || isRange) && (key === undefined || typeof key === 'string');
 }
 
 /** A Selection as .NET reads it back: its ranges, its Focus, and which range holds the Focus. */
