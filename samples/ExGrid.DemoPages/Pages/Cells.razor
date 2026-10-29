@@ -49,7 +49,7 @@
    cascade never changes. *@
 <CascadingValue Name="TakeKeyboard" Value="TakeKeyboard" IsFixed="true">
     <ExGrid TRow="DemoPosition" @ref="_grid"
-            Window="DemoData.Positions"
+            Source="_positions"
             Columns="_columns"
             CellState="_cellState"
             RowKind="RowKindOf"
@@ -87,7 +87,7 @@
     <h2>A second grid</h2>
     <div id="second-grid">
         <ExGrid TRow="DemoPosition"
-                Window="DemoData.Positions"
+                Source="_secondPositions"
                 Columns="SecondColumns"
                 RowHeight="28"
                 ViewportHeight="200"
@@ -129,6 +129,10 @@
 
     private IGridChrome? _chrome;
     private IReadOnlyList<GridColumn<DemoPosition>> _columns = Columns;
+    // Pushed, as the page pushed a Window to the C# core's grid: a source that cannot find, so Ctrl+F opens
+    // nothing here (FD-2, ADR-0055). One each, since a source is told one grid's columns.
+    private readonly PushedSource<DemoPosition> _positions = new(DemoData.Positions);
+    private readonly PushedSource<DemoPosition> _secondPositions = new(DemoData.Positions);
     private ExGrid<DemoPosition>? _grid;
     private Func<ElementReference, Task>? _takeKeyboard;
 

@@ -5,8 +5,9 @@ namespace ExGrid;
 /// the declared type, and the value accessor. Every column carries an accessor —
 /// even a Template Column (ADR-0020) — because Filter and Sort read values through it.
 ///
-/// <para><paramref name="IsQueryable"/> is false only for an Action Column, which has no
-/// value at all: the engine then refuses to sort or filter on it by name rather than
+/// <para><paramref name="IsQueryable"/> is false for an Action or Mark Column, which has no
+/// value at all, and for a column the Consumer declares not queryable because its source cannot
+/// order or filter by it: the engine then refuses to sort or filter on it by name rather than
 /// ordering every row by nothing (ADR-0020).</para>
 ///
 /// <para><paramref name="Format"/> is the column's display format, null for the value's own text:

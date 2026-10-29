@@ -11,6 +11,7 @@ using ExGrid.Selection;
 using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 namespace ExGrid.Script;
@@ -40,6 +41,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private const string ScriptPath = "_content/ExGrid/ex-grid-core.min.js";
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private ILoggerFactory LoggerFactory { get; set; } = default!;
+    private ILogger Logger => _logger ??= LoggerFactory.CreateLogger("ExGrid.Script.ExGrid");
+    private ILogger? _logger;
 
     /// <summary>Where the rows come from (ADR-0001): the grid neither holds nor executes, and tells the source the
     /// columns, the Sort and the Filter. Exactly one of this and <see cref="Rows"/>.</summary>
@@ -367,6 +371,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private readonly Dictionary<long, CancellationTokenSource> _asked = [];
     private readonly Queue<Heard> _heard = new();
     private readonly Dictionary<long, CancellationTokenSource> _answers = [];
+    // The highest answer registered yet, and the answers cancelled before their call was taken in: a held call's
+    // arguments are still crossing, and the cancel that followed it is heard on arrival (ADR-0240 section 12).
+    private long _answersRegistered;
+    private readonly HashSet<long> _cancelledAhead = [];
+    // The last numbered input that reached the grid, or that the browser said it had sent (ADR-0240 section 11).
+    private long _inputsReached;
     private CellStateOf<TRow>? _sentCellState;
     private Func<TRow, GridColumn<TRow>, string?>? _sentCellMessage;
     // Moves when the Consumer hands another judgement, so the browser asks a message it shows again (ADR-0034).
@@ -380,6 +390,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private InMemoryGridSource<TRow>? _ownSource;
     private IReadOnlyList<TRow>? _ownRows;
     private int _generation;
+    // The last Sort or Filter the browser asked of the source numbered _generation, by the browser's count.
+    private long _queryAsked;
     private IReadOnlyList<GridColumn<TRow>>? _toldColumns;
 
     /// <summary>The rows sent before the grid has asked for any: about five screens at the Compact density.</summary>
@@ -492,6 +504,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
             _source = source;
             _generation += 1;
+            _queryAsked = 0;
             _toldColumns = null;
             source.StateChanged += OnSourceChanged;
         }
@@ -596,11 +609,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         builder.AddElementReferenceCapture(1, element => _root = element);
         if (_refused)
         {
-            // The core never attached: the root is Blazor's to say why, in the built-in words (ADR-0123).
+            // The core never attached: the root is Blazor's to say why, in the Consumer's words where it gives some
+            // (ADR-0123).
             builder.OpenElement(2, "div");
             builder.AddAttribute(3, "role", "alert");
             builder.AddAttribute(4, "data-ex-notice", "script");
-            builder.AddContent(5, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
+            builder.AddContent(5, CommandLabel?.Invoke(ReloadNoticeLabelIds.Script) ?? BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
             builder.CloseElement();
         }
         else if (_scriptRefusal is { } refusal)
@@ -993,6 +1007,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             for (var at = from; at < to; at++)
                 _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, Paint, _pointedAt?.TableRow);
             json.WriteEndArray();
+            WriteBeyond(json, source, window, from, to);
             json.WriteNumber("windowStart", to > from ? from : source.WindowStart);
             if (source.TotalCount is { } total)
                 json.WriteNumber("totalCount", total);
@@ -1001,6 +1016,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteBoolean("loading", source.IsLoading);
             json.WriteNumber("rowSequenceVersion", source.RowSequenceVersion);
             json.WriteString("query", GridViewStateJson.WriteQuery(new GridQuery(new RowRange(0, 1), source.Sorts, source.Filter)));
+            json.WriteNumber("asked", _queryAsked);
             WriteSurfaceState(json);
             json.WriteEndObject();
         }));
@@ -1128,6 +1144,19 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 json.WriteStringValue(name);
             json.WriteEndArray();
         }
+        // The stylesheets the Chrome brings, whose notices the grid's root renders beside its own (ADR-0123, ERR-11).
+        if (Chrome?.Stylesheets is { Count: > 0 } stylesheets)
+        {
+            json.WriteStartArray("stylesheets");
+            foreach (var stylesheet in stylesheets)
+            {
+                json.WriteStartObject();
+                json.WriteString("name", stylesheet.Name);
+                json.WriteString("stamp", stylesheet.Stamp);
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        }
         json.WriteStartArray("hears");
         foreach (var (kind, heard) in Hears())
         {
@@ -1174,6 +1203,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         yield return ("editDiscarded", OnEditDiscarded.HasDelegate);
         yield return ("cellDoubleClick", OnCellDoubleClick.HasDelegate);
         yield return ("leave", OnLeave.HasDelegate);
+        yield return ("parentWithoutHeight", ViewportHeight is { IsStretch: true });
         yield return ("overwriteNotice", OnOverwriteNotice.HasDelegate);
         yield return ("action", OnAction.HasDelegate);
         yield return ("nameBoxEntered", OnNameBoxEntered.HasDelegate);
@@ -1216,14 +1246,111 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// what the browser asked of a source it no longer reads is not acted on.</summary>
     private IGridSource<TRow>? SourceOf(int generation) => generation == _generation && !_disposed ? _source : null;
 
+    // The Row Key of the row an open edit follows, of the source numbered _heldGeneration, or null while none is held
+    // (ADR-0440 section 5).
+    private object? _heldKey;
+    private int _heldGeneration;
+
+    /// <summary>The browser names the row an open edit follows by its Row Key, or none (ADR-0440 section 5): while one
+    /// is held, the state names that row past the rows sent wherever the source's Window holds it.</summary>
+    internal Task HoldRowAsync(int generation, long? row)
+    {
+        if (SourceOf(generation) is not { } source)
+            return Task.CompletedTask;
+        var rowKey = source.RowKey ?? throw new InvalidOperationException("Internal: the browser held a row of a source with no Row Key.");
+        _heldKey = row is { } id ? rowKey(_rows.RowOf(id)) : null;
+        _heldGeneration = generation;
+        // A state sent before the browser named the row may already have moved it past the rows sent, without it: the
+        // state goes again, so the edit follows its row whichever of the two crossed first (the spine's sixth rule).
+        if (!_attached || _heldKey is null || HeldPosition(source) is not { } at || InSlice(source, at))
+            return Task.CompletedTask;
+        _stateOwed = true;
+        return SendStateAsync();
+    }
+
+    // Where the source's Window holds the held key, once, or null: a key held twice names no one row (ADR-0140). The rows
+    // sent are looked at first, where the held row stands until an order move takes it.
+    private int? HeldPosition(IGridSource<TRow> source)
+    {
+        if (_heldKey is not { } held || _heldGeneration != _generation || source.RowKey is not { } rowKey)
+            return null;
+        var window = source.Window;
+        var (from, to) = SentSlice(source);
+        int? found = null;
+        foreach (var i in Enumerable.Range(from - source.WindowStart, to - from).Concat(Enumerable.Range(0, from - source.WindowStart))
+                     .Concat(Enumerable.Range(to - source.WindowStart, source.WindowStart + window.Count - to)))
+        {
+            if (!Equals(rowKey(window[i]), held))
+                continue;
+            if (found is not null)
+                return null;
+            found = source.WindowStart + i;
+        }
+        return found;
+    }
+
+    private (int From, int To) SentSlice(IGridSource<TRow> source)
+    {
+        var from = Math.Max(source.WindowStart, _shown.Start);
+        var to = Math.Min(source.WindowStart + source.Window.Count, _shown.Start + _shown.Count);
+        return to > from ? (from, to) : (source.WindowStart, source.WindowStart);
+    }
+
+    private bool InSlice(IGridSource<TRow> source, int at)
+    {
+        var (from, to) = SentSlice(source);
+        return at >= from && at < to;
+    }
+
+    // The held row, where the source's Window holds it once and outside the rows sent: the browser follows the edit's
+    // row there, and the commit lands on it (ADR-0440 section 5, LV-20). A key the Window holds twice, or not at all,
+    // sends nothing, and the browser refuses the commit as RowLeftTheWindow.
+    private void WriteBeyond(Utf8JsonWriter json, IGridSource<TRow> source, IReadOnlyList<TRow> window, int from, int to)
+    {
+        if (HeldPosition(source) is not { } at || (at >= from && at < to))
+            return;
+        json.WriteStartArray("beyond");
+        json.WriteStartObject();
+        json.WriteNumber("at", at);
+        json.WritePropertyName("row");
+        _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, Paint, _pointedAt?.TableRow);
+        json.WriteEndObject();
+        json.WriteEndArray();
+    }
+
     // What the grid tells its source is the Consumer's code running: what it throws fails the component as a
     // handler of Blazor's own does, so the error UI or an error boundary says so, rather than a promise the
     // browser was left with.
-    internal Task SetSortsAsync(int generation, string query)
-        => Telling(() => SourceOf(generation)?.OnSortChanged(GridViewStateJson.ReadQuery(query).Sorts));
+    internal Task SetSortsAsync(int generation, string query, long asked)
+        => TellingQueryAsync(generation, asked, source => source.OnSortChanged(GridViewStateJson.ReadQuery(query).Sorts));
 
-    internal Task SetFilterAsync(int generation, string query)
-        => Telling(() => SourceOf(generation)?.OnFilterChanged(GridViewStateJson.ReadQuery(query).Filter));
+    internal Task SetFilterAsync(int generation, string query, long asked)
+        => TellingQueryAsync(generation, asked, source => source.OnFilterChanged(GridViewStateJson.ReadQuery(query).Filter));
+
+    // The browser holds the Sort or Filter it asked for until a state taken after .NET told the source arrives, so a
+    // panel opened at once reads what was asked, never the query before it (the spine's sixth rule). The state goes
+    // even where the source took the query as no change: the request it answers is in it.
+    private async Task TellingQueryAsync(int generation, long asked, Action<IGridSource<TRow>> tell)
+    {
+        if (SourceOf(generation) is not { } source)
+            return;
+        await Telling(() => tell(source));
+        // A source the Consumer replaced meanwhile was asked nothing by the browser yet.
+        if (generation != _generation)
+            return;
+        // Requests are told in their turn, but one whose Consumer threw may resume after the next: the count never goes back.
+        _queryAsked = Math.Max(_queryAsked, asked);
+        _stateOwed = true;
+        try
+        {
+            if (_attached)
+                await SendStateAsync();
+        }
+        catch (Exception ex) when (ex is not JSDisconnectedException)
+        {
+            await DispatchExceptionAsync(ex);
+        }
+    }
 
     internal async Task NeedRangeAsync(int generation, int start, int count)
     {
@@ -1373,8 +1500,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     internal void Release(long[] ids, long seen) => _rows.Release(ids, seen);
 
-    /// <summary>One thing the browser handed .NET, in its turn: an event, or a question it waits on the answer to.</summary>
-    private sealed record Heard(Func<Task<string?>> Hand, bool Answers, bool SendsState)
+    /// <summary>One thing the browser handed .NET, in its turn: an event, or a question it waits on the answer to. A
+    /// question <paramref name="Aside"/> is asked in its turn and answered out of it: nothing after it waits on it.</summary>
+    private sealed record Heard(Func<Task<string?>> Hand, bool Answers, bool SendsState, bool Aside = false)
     {
         public TaskCompletionSource<string?> Done { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
@@ -1619,12 +1747,66 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         });
     }
 
-    /// <summary>The user cancelled the commit numbered <paramref name="number"/> with Escape (ADR-0380 section 3).
-    /// One already answered is not held any more, and nothing is left to call off.</summary>
+    /// <summary>The user cancelled the commit numbered <paramref name="number"/> with Escape (ADR-0380 section 3), heard
+    /// as it arrives and not in its turn, so a call whose arguments are still crossing is never asked of the Consumer
+    /// (ADR-0240 section 12). One already answered is not held any more, and nothing is left to call off.</summary>
     internal void CancelAnswer(long number)
     {
         if (_answers.TryGetValue(number, out var answering))
             answering.Cancel();
+        else if (number > _answersRegistered)
+            _cancelledAhead.Add(number);
+    }
+
+    /// <summary>The browser's input numbered <paramref name="input"/> reached the grid, in its turn (ADR-0240 section
+    /// 11). Every number the browser sent before it arrives first, over the one connection, so a number between the last
+    /// that arrived and this one was sent while the Server circuit was down, and never will.</summary>
+    internal void Reached(long input)
+    {
+        if (input <= _inputsReached)
+            throw new InvalidOperationException(FormattableString.Invariant($"Internal: the browser's input {input} arrived after its input {_inputsReached}."));
+        var first = _inputsReached + 1;
+        _inputsReached = input;
+        if (first < input)
+            InputsLost(first, input - 1);
+    }
+
+    /// <summary>The browser had sent every numbered input up to <paramref name="input"/> as the user made another behind
+    /// one still unanswered (ADR-0240 section 11): a number that has not arrived by now never will.</summary>
+    internal void InputsSent(long input)
+    {
+        if (input <= _inputsReached)
+            return;
+        var first = _inputsReached + 1;
+        _inputsReached = input;
+        InputsLost(first, input);
+    }
+
+    // The inputs numbered first to last never reached the grid: void, never replayed against whatever stands now. The
+    // browser ends what waits on them and tells the user, in the grid's words (KeyRefusalLabelIds.LostOnTheWay).
+    private void InputsLost(long first, long last)
+    {
+        var words = CommandLabel?.Invoke(KeyRefusalLabelIds.LostOnTheWay) ?? BuiltInCommandLabels.For(KeyRefusalLabelIds.LostOnTheWay);
+        _ = TellInputsLostAsync(first, last, words);
+    }
+
+    private async Task TellInputsLostAsync(long first, long last, string words)
+    {
+        if (_grid is not { } grid || _disposed)
+            return;
+        try
+        {
+            await grid.InvokeVoidAsync("inputsLost", first, last, words);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            // The grid or the circuit is gone: nothing waits on the lost inputs any more.
+        }
+        catch (Exception ex)
+        {
+            // The browser refused the numbers: the two sides disagree on what crossed, which the error UI says.
+            await DispatchExceptionAsync(ex);
+        }
     }
 
     private static Func<Task<string?>> Unanswered(Func<Task> hand) => async () =>
@@ -1645,6 +1827,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             answering.Dispose();
             throw new InvalidOperationException(FormattableString.Invariant($"Internal: the browser numbered two answers {number}."));
         }
+        _answersRegistered = Math.Max(_answersRegistered, number);
+        if (_cancelledAhead.Remove(number))
+            answering.Cancel();
+        // Answers register in the order the browser numbered them: a cancel ahead of a number below this one names a
+        // call that never registered, lost on the way or answered without an answer, and none will.
+        _cancelledAhead.RemoveWhere(ahead => ahead < number);
         return async () =>
         {
             try
@@ -1677,6 +1865,11 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             {
                 while (_heard.TryDequeue(out var next))
                 {
+                    if (next.Aside && !_disposed)
+                    {
+                        _ = AnswerAsideAsync(next);
+                        continue;
+                    }
                     try
                     {
                         if (_disposed)
@@ -1708,6 +1901,31 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
         });
         return await heard.Done.Task;
+    }
+
+    // A question asked in its turn, whose answer the turns after it do not wait for: a Consumer slow to answer, or one
+    // that keeps answering a question the user replaced, holds no event and no later question behind it (ADR-0130).
+    // Asked before this returns, so the questions and events after it are asked after it.
+    private async Task AnswerAsideAsync(Heard heard)
+    {
+        try
+        {
+            heard.Done.TrySetResult(await heard.Hand());
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the browser that asked with it: nobody is left to answer.
+        }
+        catch (Exception ex)
+        {
+            await DispatchExceptionAsync(ex);
+            if (heard.Answers)
+                heard.Done.TrySetException(ex);
+        }
+        finally
+        {
+            heard.Done.TrySetResult(null);
+        }
     }
 
     // Each intent carries the token the user's cancel cancels (ADR-0380 section 3): a handler that has not written
@@ -1758,6 +1976,18 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             await OnFill.InvokeAsync(intent);
             return intent.IsRefused ? "" : null;
         });
+    }
+
+    // A Stretch-height grid whose parent gives it no height, as the core heard it: once, until a real height arrives
+    // (ADR-0028, "A parent with no height is named"). Named through the host's logger, never thrown, because a layout
+    // can pass through this state.
+    private Task NameAParentWithoutHeight()
+    {
+        Logger.LogWarning(
+            "ExGrid: ViewportHeight is Stretch, but the grid's parent gives it no height, so it is only as tall as its header " +
+            "and no row can be painted. Give the parent a definite height: pixels, a percentage of something definite, " +
+            "a grid track, or a flex item with min-height: 0 (ADR-0028).");
+        return Task.CompletedTask;
     }
 
     private Func<Task> Prepare(string kind, JsonElement payload)
@@ -1826,6 +2056,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
             case "leave":
                 return () => OnLeave.InvokeAsync();
+            case "parentWithoutHeight":
+                return NameAParentWithoutHeight;
             case "overwriteNotice":
             {
                 var notice = new GridOverwriteNotice(

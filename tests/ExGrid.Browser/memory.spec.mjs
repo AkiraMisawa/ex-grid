@@ -123,9 +123,11 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
 
 test('disposal takes the module\'s listeners off the root, and the count comes back (MEM-4)', async ({ page }) => {
     const grid = await lifecycle(page);
-    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.[\\w-]+)*\\.js(\\?v=[0-9a-f]{12})?$`));
+    // The module is the Script Core's bundle (ex-grid-script) and the Blazor adapter over it (ex-grid-core).
+    const moduleScript = /@ex-grid(-[\w]+)?(\.[\w-]+)*\.js(\?v=[0-9a-f]{12})?$/;
+    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} ${moduleScript.source}`));
     const moduleOnDocument = async () => (await grid.listenersOn('document')).map(key)
-        .filter((k) => /@ex-grid(\.[\w-]+)*\.js(\?v=[0-9a-f]{12})?$/.test(k));
+        .filter((k) => moduleScript.test(k));
     // Blazor's own delegated listeners land here (MEM-2 checks which). Mounted until it
     // listens, and read once the module has let go, so the baseline is not taken while an
     // attach or a dispose is still on the wire (a Server circuit's round trip).
@@ -137,25 +139,25 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await grid.mount();
     await page.evaluate(() => { window.__disposedRoot = document.querySelector('.ex-grid'); });
     const attached = (await grid.listenersOn('window.__disposedRoot')).map(key).sort();
-    // The per-instance handle's twenty on the instance root (ADR-0018): the capture-phase
-    // keys, the capture-phase press and release that keep a press on the rows among held
-    // keys (ADR-0021/0010), the editor's input report (ADR-0051), the pointer report, the
-    // two clipboard events, and copy, cut and paste again in the capture phase, which take
-    // the event a clipboard key fires while a hold stands into its place among the held keys
-    // (ADR-0010's note of 2026-10-02), the press another grid hands on while this one points
-    // through a Pointing Scope (ADR-0058, DC-54), and the Keyboard Field's composition, focus
-    // and keyup (ADR-0080, ADR-0021's seventh entry), on every root, with a field or not, and the
-    // capture-phase click, double click and context menu that number a click on a control that
-    // claims it (ADR-0240, ADR-0021's eleventh entry).
-    expect(attached).toEqual([
-        'click (capture)', 'compositionend (capture)', 'compositionstart (capture)', 'contextmenu (capture)',
-        'copy (capture)', 'copy', 'cut (capture)', 'dblclick (capture)', 'ex-press-handed-on', 'focus (capture)', 'focusout (capture)', 'input (capture)', 'keydown (capture)',
-        'keyup (capture)', 'mousedown (capture)', 'mouseleave', 'mousemove', 'mouseup (capture)', 'paste (capture)', 'paste',
-    ].map(fromModule));
-    // And one on the document, the only place `selectionchange` fires: it acts only while
-    // DOM focus is in this instance's editor surface (ADR-0051), and it goes with the
-    // instance.
-    expect(await moduleOnDocument()).toEqual([fromModule('selectionchange')]);
+    // What the Script grid attaches to its root, each taken off by its dispose:
+    // - every input the Input Root holds while a commit is pending, in the capture phase, ahead of
+    //   the grid's own listeners (ADR-0380 section 3, ADR-0240): seventeen types;
+    // - the grid's own capture-phase keys, press, release, focus and keyup (ADR-0018/0010, ADR-0080),
+    //   the focus leaving it, the two clipboard events (ADR-0005), and the hover band's mousemove
+    //   and mouseleave (ADR-0029);
+    // - and the Blazor adapter's capture-phase key and press, which tell .NET how many of the
+    //   numbered calls it was sent before the grid hears the input (ADR-0240 section 11).
+    const held = ['auxclick', 'beforeinput', 'click', 'compositionend', 'compositionstart', 'compositionupdate',
+        'contextmenu', 'copy', 'cut', 'dblclick', 'input', 'keydown', 'keyup', 'mousedown', 'mousemove', 'mouseup', 'paste']
+        .map((t) => `${t} (capture)`);
+    const own = ['keydown (capture)', 'mousedown (capture)', 'mouseup (capture)', 'focus (capture)', 'keyup (capture)',
+        'focusout', 'copy', 'paste', 'mousemove', 'mouseleave'];
+    const adapter = ['keydown (capture)', 'mousedown (capture)'];
+    // Sorted as `attached` is, with the script after each type.
+    expect(attached).toEqual([...held, ...own, ...adapter].map((t) => `${t} @`).sort().map((t) => fromModule(t.slice(0, -2))));
+    // And none on the document: the Script grid follows the editor's caret on the editor itself
+    // (its keyup and mouseup), where the C# grid heard `selectionchange` on the document (ADR-0051).
+    expect(await moduleOnDocument()).toEqual([]);
 
     await grid.dispose();
     // Held on purpose, so what is still attached to it can be read after disposal.

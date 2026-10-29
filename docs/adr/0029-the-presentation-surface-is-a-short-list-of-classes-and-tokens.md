@@ -515,3 +515,17 @@ Wrapper's stylesheet sets, and nothing a Wrapper renders.
   `@ex-grid/mantine`; Material's chevrons for `@ex-grid/mui` and `ExGrid.MudBlazor`) and the toggle's
   colour from their theme's variables. Under forced colours the icons are painted in `ButtonText` and
   the mark keeps its shape in `Highlight`, so neither disappears.
+
+## Added by ADR-0410 and ADR-0240 *(2026-10-29)*
+
+Two classes UX-4's walk can meet under the root of Blazor's Script grid, both **internal**.
+
+`ex-pasting` is the root's while a paste, or a fill, waits for the Consumer's answer: the sign ADR-0240 section 12
+gave a paste read over a circuit, painted from its Visual Tokens (`--ex-pasting-bar`, `--ex-pasting-bar-height`,
+`--ex-pasting-cursor`), which are what a Consumer styles.
+
+`ex-razor-slot` is **internal**: the element a Blazor Chrome's Razor fragment is drawn in, which the
+script moves into the Chrome slot it fills and back
+([ADR-0410](./0410-a-blazor-adapter-fills-a-slot-by-moving-its-razor-into-it-and-the-script-wires-the-controls.md) section 1). It
+draws no box of its own (`display: contents`), so there is nothing on it to style; UX-4's walk met it
+under the root once the DemoHost's pages moved onto Blazor's Script grid.

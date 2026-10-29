@@ -611,8 +611,7 @@ for (const rtt of [0, 150]) {
         // Outside an edit a press on the rows and an arrow change no mode, and start no hold
         // (ADR-0010: plain navigation is never paced to one round trip). What the grid holds never
         // reaches the page, so the page's own listener tells: a key the grid leaves to the browser
-        // (Shift) typed straight after them arrives at once, and while an edit is open, behind a
-        // press on the rows, it does not.
+        // (Shift) typed straight after them arrives at once.
         test('ADR-0010/ED-22: outside an edit, a press on the rows and an arrow hold nothing', async ({ page }) => {
             await page.goto('/features');
             const grid = page.locator('.ex-grid').first();
@@ -637,9 +636,11 @@ for (const rtt of [0, 150]) {
             await expect.poll(heard).toEqual(['Shift']);
             await expectActiveDescendant(grid, /-r1c0$/);
 
-            // What the listener would see of a hold: behind a press that commits an edit, the
-            // Shift is held, and a modifier alone is dropped when the hold is handed on. Only a
-            // round trip makes that window wide enough to type into on purpose.
+            // Behind a press that commits an edit the Shift keeps its place too: the Script grid
+            // commits in the browser and holds input only while it waits on a verdict (ADR-0380
+            // section 3), handing on what it held in order, so a key it leaves to the browser still
+            // reaches the page, after the commit and the press. Only a round trip makes that window
+            // wide enough to type into on purpose.
             if (rtt > 0) {
                 await page.evaluate(() => { window.__editStandsHeard.length = 0; });
                 await pressAt(at(0, 1));           // Trader, editable
@@ -650,7 +651,7 @@ for (const rtt of [0, 150]) {
                 await page.keyboard.press('Shift');
                 await expect(page.locator('#edit-status')).toContainText('Trader=9');
                 await expectActiveDescendant(grid, /-r2c1$/);
-                expect(await heard()).toEqual([]);
+                await expect.poll(heard).toEqual(['Shift']);
             }
         });
 
@@ -663,6 +664,20 @@ for (const rtt of [0, 150]) {
             const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
             const field = grid.locator('input.ex-editor');
             await expect(at(2, 1)).toBeVisible();
+            // The page's status lines above the grid grow when the first press commits, and where a
+            // line wraps the grid moves down under the pointer before the second press, which then
+            // lands on another row, as it would under a hand. Rows 0 to 2 all read Ishikawa, so only
+            // the Focus would tell. Held still, so the double click is made where it was aimed.
+            await alterPage(page, () => {
+                const status = document.querySelector('.demo-status');
+                const before = status.getAttribute('style');
+                status.style.height = `${status.getBoundingClientRect().height}px`;
+                status.style.overflow = 'hidden';
+                return () => {
+                    if (before === null) status.removeAttribute('style');
+                    else status.setAttribute('style', before);
+                };
+            });
             const trader = (await at(2, 1).textContent()).trim();
             await pressAt(at(0, 1));                // Trader, editable
             await expectActiveDescendant(grid, /-r0c1$/);

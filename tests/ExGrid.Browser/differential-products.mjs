@@ -10,6 +10,10 @@ import { pick } from './differential.mjs';
 
 // ---- Grids: ExGrid's editable grid on /features, and the Sheet on /sheet -----------------------------
 
+/** The steps of gridSteps that may commit an open edit. */
+const MAY_COMMIT = ['press', 'Enter', 'Shift+Enter', 'Tab', 'Shift+Tab', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight',
+    'Shift+ArrowDown', 'Shift+ArrowUp', 'Shift+ArrowLeft', 'Shift+ArrowRight'];
+
 /**
  * The steps for a grid of `rows` × `columns` in view: a press on `first`, so the run starts from a known
  * Focus, then a mix of presses, typed text and keys.
@@ -33,7 +37,7 @@ function gridSteps(next, { rows: ROWS, columns: COLUMNS, first, texts, count = 2
                 rows = [row, row];
                 columns = [column, column];
             }
-            previous = null;
+            previous = 'press';
             continue;
         }
         if (roll < 0.4) {
@@ -41,7 +45,12 @@ function gridSteps(next, { rows: ROWS, columns: COLUMNS, first, texts, count = 2
             previous = null;
             continue;
         }
-        const keys = ['Escape', 'F2', 'Delete', 'Backspace', 'Home', 'ControlOrMeta+z'];
+        // An Escape straight after a step that may commit an open edit is not drawn: while the commit
+        // waits for its verdict, an Escape cancels it, the one kind of input that acts ahead of its turn
+        // and is decided by when it is typed (ADR-0240 section 12, ADR-0380 section 3). On Blazor every
+        // verdict is an answer from .NET, so every commit waits for one.
+        const keys = MAY_COMMIT.includes(previous) ? [] : ['Escape'];
+        keys.push('F2', 'Delete', 'Backspace', 'Home', 'ControlOrMeta+z');
         if (rows[1] < ROWS - 1) keys.push('ArrowDown', 'Shift+ArrowDown', 'Enter');
         if (rows[0] > 0) keys.push('ArrowUp', 'Shift+ArrowUp', 'Shift+Enter');
         if (columns[1] < COLUMNS - 1 && previous !== 'Escape') keys.push('ArrowRight', 'Shift+ArrowRight', 'Tab');

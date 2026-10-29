@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Text.Json;
 using Bunit;
 using ExGrid.Cells;
+using ExGrid.Chrome;
 using ExGrid.Clipboard;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Data;
@@ -106,6 +108,37 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.Equal(1, state.GetProperty("markCounts").GetProperty("markedInResult").GetInt32());
     }
 
+    [Fact] // ADR-0036 / ADR-0440 section 4: the grid's own words cross as a table, asked once per function, placeholders never asked
+    public void ADR0440_command_label_crosses_as_a_table_of_the_ids_it_answers()
+    {
+        var asked = new List<string>();
+        Func<string, string?> words = id =>
+        {
+            asked.Add(id);
+            return id switch
+            {
+                RefusalLabelIds.CopyTooLarge => "Too many cells.",
+                GridCommandIds.Copy => "Duplicate",
+                _ => null,
+            };
+        };
+        var cut = Grid(ps => ps.Add(g => g.CommandLabel, words));
+
+        var table = Attached().GetProperty("options").GetProperty("commandLabels");
+        Assert.Equal("Too many cells.", table.GetProperty(RefusalLabelIds.CopyTooLarge).GetString());
+        Assert.Equal("Duplicate", table.GetProperty(GridCommandIds.Copy).GetString());
+        Assert.Equal(2, table.EnumerateObject().Count());
+        Assert.DoesNotContain(asked, id => id.StartsWith('{'));
+        var once = asked.Count;
+
+        cut.Render(ps => ps.Add(g => g.ViewportHeight, 300));
+        Assert.Equal(once, asked.Count);
+
+        cut.Render(ps => ps.Add(g => g.CommandLabel, id => id == GridCommandIds.Copy ? "Copy cells" : null));
+        var updated = Parsed(_grid.Invocations["update"][^1].Arguments[0]).GetProperty("options").GetProperty("commandLabels");
+        Assert.Equal("Copy cells", Assert.Single(updated.EnumerateObject()).Value.GetString());
+    }
+
     [Fact] // ADR-0043 / ADR-0440: a source that keeps marks sends none for a grid with no Mark Column
     public void ADR0440_rows_cross_without_marks_where_no_mark_column_shows_them()
     {
@@ -149,6 +182,53 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.False(attached.GetProperty("source").GetProperty("summarizes").GetBoolean());
     }
 
+    [Fact] // ADR-0440 section 5 / LV-20: the row an open edit follows crosses past the rows sent, at its place in the Window
+    public async Task ADR0440_the_row_an_edit_holds_crosses_beyond_the_rows_sent_wherever_the_window_holds_it()
+    {
+        var source = GridSource.From(TestRows.Many(1000), r => r.Book);
+        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, TestRows.Columns()));
+        var generation = Attached().GetProperty("source").GetProperty("generation").GetInt32();
+        var first = Window()[0].GetProperty("i").GetInt64();
+
+        await cut.InvokeAsync(() => Bridge().HoldRow(generation, first));
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Amount", SortDirection.Descending)]));
+        await cut.InvokeAsync(() => Bridge().NeedRange(generation, 0, 20));
+
+        var sent = Parsed(_grid.Invocations["state"][^1].Arguments[0]);
+        var beyond = Assert.Single(sent.GetProperty("beyond").EnumerateArray());
+        Assert.Equal(999, beyond.GetProperty("at").GetInt32());
+        Assert.Equal("Row 000000", beyond.GetProperty("row").GetProperty("k").GetString());
+        Assert.True(sent.GetProperty("window").GetArrayLength() < 1000);
+
+        await cut.InvokeAsync(() => Bridge().HoldRow(generation, null));
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Amount", SortDirection.Ascending)]));
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Amount", SortDirection.Descending)]));
+        await cut.InvokeAsync(() => Bridge().NeedRange(generation, 0, 20));
+
+        Assert.False(Parsed(_grid.Invocations["state"][^1].Arguments[0]).TryGetProperty("beyond", out _));
+    }
+
+    [Fact] // ADR-0130 / ADR-0440: a figure takes the Focus column's .NET format before it crosses, which the browser cannot run
+    public async Task ADR0440_a_figure_crosses_in_the_focus_columns_format()
+    {
+        GridColumn<TestRow>[] columns =
+        [
+            new("Book", ColumnType.Text, r => r.Book),
+            new("Amount", ColumnType.Number, r => r.Amount, format: v => ((decimal)v).ToString("0.00", CultureInfo.InvariantCulture)),
+            new("AsOf", ColumnType.Date, r => r.AsOf),
+            new("Active", ColumnType.Boolean, r => r.Active),
+        ];
+        var cut = Grid(columns: columns);
+        var request = Payload("""{"ranges":[{"topRow":0,"leftColumn":1,"rowCount":2,"columnCount":1}],"columns":["Book","Amount","AsOf","Active"],"rowSequenceVersion":0,"figures":["count","sum"],"focus":{"row":0,"column":1}}""");
+        var generation = Attached().GetProperty("source").GetProperty("generation").GetInt32();
+
+        var answered = Parsed(await cut.InvokeAsync(() => Bridge().Summarize(1, generation, request)));
+
+        var texts = answered.GetProperty("texts");
+        Assert.Equal("93.50", texts.GetProperty("sum").GetString());
+        Assert.False(texts.TryGetProperty("count", out _));
+    }
+
     [Fact] // ADR-0130 / ADR-0440: a figure past a double's range crosses by its name, never as another number
     public async Task ADR0440_an_infinite_figure_crosses_by_its_name()
     {
@@ -162,6 +242,31 @@ public class ScriptGridSurfaceTests : BunitContext
         var answered = Parsed(await cut.InvokeAsync(() => Bridge().Summarize(1, null, request)));
 
         Assert.Equal("Infinity", answered.GetProperty("figures").GetProperty("sum").GetProperty("number").GetString());
+    }
+
+    [Fact] // ADR-0130 / SM-11: a question the user replaced, which the Consumer keeps answering, holds the next one nowhere
+    public async Task ADR0130_a_summary_the_consumer_holds_does_not_hold_the_next_one()
+    {
+        var held = new TaskCompletionSource<GridSummaryResult>();
+        var asked = 0;
+        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, GridSource.Fetch<TestRow>((_, _) => ValueTask.FromResult(new GridPage<TestRow>([], 0, 0))))
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.OnSummarize, (GridSummaryRequest _, CancellationToken _) => ++asked == 1 ? held.Task : Task.FromResult(GridSummaryResult.Answered(
+                new Dictionary<SummaryFigures, AggregateResult> { [SummaryFigures.Sum] = AggregateResult.Of(3d) }))));
+        var request = Payload("""{"ranges":[{"topRow":0,"leftColumn":1,"rowCount":2,"columnCount":1}],"columns":["Book","Amount","AsOf","Active"],"rowSequenceVersion":0,"figures":["sum"]}""");
+
+        Task<string?> first = null!;
+        await cut.InvokeAsync(() => { first = Bridge().Summarize(1, null, request); });
+        await cut.InvokeAsync(() => Bridge().CancelAnswer(1));
+        var second = Parsed(await cut.InvokeAsync(() => Bridge().Summarize(2, null, request)));
+
+        Assert.Equal(2, asked);
+        Assert.True(second.GetProperty("figures").TryGetProperty("sum", out _));
+        Assert.False(first.IsCompleted);
+        held.SetResult(GridSummaryResult.Answered(new Dictionary<SummaryFigures, AggregateResult> { [SummaryFigures.Sum] = AggregateResult.Of(2d) }));
+        // Answered once the Consumer answers it: the browser, which cancelled it, reads none of it.
+        Assert.NotNull(await cut.InvokeAsync(() => first));
     }
 
     [Fact] // ADR-0050 item 9 / ADR-0440: a copy is answered by the browser's number, in the Consumer's flavours or its sentence
@@ -233,5 +338,47 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.Equal(93.50m, sum?.Exact);
         Assert.Equal((byte?)2, sum?.Exact?.Scale);
         Assert.Equal("93.50", heard?.Result?.TextOf(SummaryFigures.Sum));
+    }
+
+    [Fact] // ADR-0332 section 4 / ADR-0440 section 3: GridSource.From finds by the reference rule, so the browser marks by it
+    public void ADR0332_the_reference_rule_marks_matches_only_over_GridSource_From()
+    {
+        Grid();
+        Assert.True(Attached().GetProperty("options").GetProperty("referenceMarks").GetBoolean());
+    }
+
+    [Fact] // ADR-0332 section 4 / ADR-0440 section 3: a source that finds by a rule of its own is marked only through FindMatch
+    public void ADR0332_another_source_marks_nothing_without_FindMatch()
+    {
+        Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, GridSource.Fetch<TestRow>((_, _) => ValueTask.FromResult(new GridPage<TestRow>([], 0, 0))))
+            .Add(g => g.Columns, TestRows.Columns()));
+        Assert.False(Attached().GetProperty("options").TryGetProperty("referenceMarks", out _));
+    }
+
+    [Fact] // ADR-0123 / ERR-11: the stylesheets the Chrome brings cross with the options, for the browser's root to render their notices
+    public void ERR11_the_stylesheets_the_chrome_brings_cross_with_the_options()
+    {
+        Grid(ps => ps.Add(g => g.Chrome, new BringsOne()));
+
+        var stylesheets = Attached().GetProperty("options").GetProperty("stylesheets");
+        Assert.Equal("acme-grid.css", Assert.Single(stylesheets.EnumerateArray()).GetProperty("name").GetString());
+        Assert.Equal(BringsOne.Stamp, stylesheets[0].GetProperty("stamp").GetString());
+    }
+
+    /// <summary>A Wrapper's Chrome that draws nothing of its own and brings a stylesheet.</summary>
+    private sealed class BringsOne : IGridChrome
+    {
+        internal const string Stamp = "5e1f0c7a2b9d4e6f8a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f";
+
+        public IReadOnlyList<ChromeStylesheet> Stylesheets { get; } = [new("acme-grid.css", Stamp)];
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
     }
 }

@@ -102,7 +102,7 @@ function made(): Made {
 }
 
 const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'editorCompletion' | 'filterPanel' | 'findPanel' | 'loadingIndicator') => {
-    const mount = slots.chrome([name])[name];
+    const mount = slots.chrome([name], undefined)[name];
     if (mount === undefined) throw new Error(`No mount for ${name}.`);
     return mount as (slot: HTMLElement, context: unknown) => () => void;
 };
@@ -203,8 +203,8 @@ describe('a slot filled with Razor', () => {
 
     it('ADR-0390: the Chrome is the same object while its slots are, so a standing part is not drawn again for an update', () => {
         const { slots } = made();
-        expect(slots.chrome(['columnMenu', 'loadingIndicator'])).toBe(slots.chrome(['columnMenu', 'loadingIndicator']));
-        expect(slots.chrome(['columnMenu'])).not.toBe(slots.chrome(['columnMenu', 'loadingIndicator']));
+        expect(slots.chrome(['columnMenu', 'loadingIndicator'], undefined)).toBe(slots.chrome(['columnMenu', 'loadingIndicator'], undefined));
+        expect(slots.chrome(['columnMenu'], undefined)).not.toBe(slots.chrome(['columnMenu', 'loadingIndicator'], undefined));
     });
 });
 

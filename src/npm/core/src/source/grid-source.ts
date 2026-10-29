@@ -11,7 +11,7 @@ import { FetchingGridSource, type FetchingSourceOptions, type GridPage, type Gri
 import type { GridFindRequest, GridFindResult } from '../finding/find';
 import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
 import type { RowMarks } from '../rows/row-marks';
-import type { RowKeyOf } from './row-key';
+import type { RowKey, RowKeyOf } from './row-key';
 import type { RowRange } from '../viewport/row-range';
 
 /** What a Grid Source holds at one moment, frozen. A new object whenever any of it changes, and the same
@@ -32,6 +32,19 @@ export interface GridSourceState<Row> {
     readonly sorts: readonly SortSpec[];
     /** The Filter in force, or `undefined` for none. */
     readonly filter: GridFilter | undefined;
+    /** Rows the source's Window holds beyond the rows it hands over, each at its place in the result: a source that
+     * hands over a slice of a Window it holds names here the row of the key the grid holds (`holdKey`), so an open
+     * edit follows its row there (ADR-0440 section 5, LV-20). The grid reads them only to find a key and the row at
+     * a position, and never paints them. Left out by a source that hands over its whole Window. */
+    readonly beyond?: readonly BeyondRow<Row>[];
+}
+
+/** A row the source's Window holds beyond the rows it hands over, at its place in the result (ADR-0440 section 5). */
+export interface BeyondRow<Row> {
+    /** Where the row stands in the result. */
+    readonly position: number;
+    /** The row. */
+    readonly row: Row;
 }
 
 /** The distinct values a column holds under every Filter but its own (ADR-0009), in order of first
@@ -77,6 +90,9 @@ export interface GridSource<Row> {
     summarize?(request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult>;
     /** The Consumer's half of Row Marks, where this source keeps them (ADR-0043). */
     readonly marks?: RowMarks<Row> | undefined;
+    /** Told the key an open edit follows, and `undefined` once none does (ADR-0440 section 5): a source that hands over
+     * a slice of its Window names that key's row in `beyond` wherever its Window holds it outside the slice. */
+    holdKey?(key: RowKey | undefined): void;
 }
 
 /** Makes Grid Sources. */

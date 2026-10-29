@@ -20,17 +20,14 @@
 </p>
 
 <ExGrid TRow="SizingRow"
-        Window="Rows"
-        TotalCount="Rows.Length"
+        Source="_source"
         Columns="_columns"
-        Sorts="_sorts"
         RowKind="KindOf"
         RowHeight="24"
         ViewportHeight="300"
         ViewportWidth="ViewportSize.Stretch"
         PinnedColumnCount="_pinned"
         OnColumnWidthChanged="OnWidthChanged"
-        OnSortChanged="OnSortChanged"
         OnPinnedCountChanged="OnPinnedChanged"
         SelectionChanged="OnSelectionChanged" />
 
@@ -57,7 +54,10 @@
     private static readonly Func<SizingRow, RowKind> KindOf = row => row.Kind;
 
     private IReadOnlyList<GridColumn<SizingRow>> _columns = BuildColumns();
-    private IReadOnlyList<SortSpec> _sorts = [new SortSpec("Notional", SortDirection.Ascending)];
+    private PushedSource<SizingRow> _source = default!;
+
+    protected override void OnInitialized()
+        => _source = new PushedSource<SizingRow>(Rows, [new SortSpec("Notional", SortDirection.Ascending)]) { SortChanged = OnSortChanged };
     private int _pinned = 2;
     private string _widthStatus = "";
     private string _sortStatus = "Notional ascending";
@@ -126,9 +126,9 @@
     private void OnSortChanged(IReadOnlyList<SortSpec> sorts)
     {
         // The page does not reorder its rows: this grid only has to show that a click
-        // asked for a sort, and that a Shift+click did not.
-        _sorts = sorts;
+        // asked for a sort, and that a Shift+click did not. The source holds the sort; the page shows it.
         _sortStatus = sorts.Count == 0 ? "none" : string.Join(",", sorts.Select(s => $"{s.Column} {s.Direction}".ToLowerInvariant()));
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private void OnPinnedChanged(int count) => _pinned = count;

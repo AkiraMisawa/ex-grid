@@ -1,14 +1,13 @@
 @using ExGrid.Docs.Examples.Data
+@implements IDisposable
 
 <label style="display: inline-flex; gap: 6px; align-items: center; margin-bottom: 12px; font-size: 14px">
     <input type="checkbox" @bind="_early" @bind:after="_trades.ResetCounts" />
     Ask @ReadAheadTrades.Margin rows before the Window runs out
 </label>
 
-<ExGrid TRow="Trade" Window="_trades.Window" WindowStart="_trades.WindowStart" TotalCount="MillionTrades.Count"
-        IsLoading="_trades.IsLoading" OnRangeNeeded="_trades.RangeNeededAsync"
+<ExGrid TRow="Trade" Source="_trades" Columns="MillionTrades.Columns"
         RangeRequestMargin="@(_early ? ReadAheadTrades.Margin : 0)"
-        Columns="Columns" RowKey="TradeId" VouchesDistinctRows="true"
         ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
 
 <p style="margin: 12px 0 0; font-size: 14px">
@@ -23,15 +22,10 @@
     // Off at first: the grid asks once the rows on screen are not all held, as by default.
     private bool _early;
 
-    private static readonly GridColumn<Trade>[] Columns =
-    [
-        new("Id", ColumnType.Number, t => t.Id),
-        new("Book", ColumnType.Text, t => t.Book),
-        new("Trader", ColumnType.Text, t => t.Trader),
-        new("Instrument", ColumnType.Text, t => t.Instrument),
-        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
-        new("Price", ColumnType.Number, t => t.Price),
-    ];
+    // The counts under the grid follow the source as it is asked.
+    protected override void OnInitialized() => _trades.StateChanged += OnSourceChanged;
 
-    private static readonly Func<Trade, object> TradeId = static t => t.Id;
+    private void OnSourceChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => _trades.StateChanged -= OnSourceChanged;
 }

@@ -7,7 +7,7 @@
     <label><input type="checkbox" checked="@_log" @onchange="e => SetLog(e.Value is true)" /> Spread on a logarithmic axis</label>
 </p>
 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start">
-    <ExGrid @ref="_bridge.Grid" TRow="CreditNames.Name" Window="CreditNames.All" RowKey="KeyOf" Columns="Columns"
+    <ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="CreditNames.Name" Window="CreditNames.All" RowKey="KeyOf" Columns="Columns"
             ViewportHeight="360" ViewportWidth="300" />
     <ExChart Definition="Definition" Title="CDS spread vs leverage" Width="560" Height="360" YScale="_yScale"
              Range="_range" OnRangeChanged="r => _range = r" OnPointClick="_clicked" />

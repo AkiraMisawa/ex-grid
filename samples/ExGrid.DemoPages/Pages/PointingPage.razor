@@ -37,7 +37,7 @@
         <ExSheet.Components.ExSheet @ref="_sheet" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
                                     PointingScope="_scope" OnPointingRefused="ShowRefusal" EditingChanged="_editingChanged" />
         <div id="pointing-positions">
-            <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+            <ExGrid.Components.ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
                     ViewportHeight="280" ViewportWidth="PositionsWidth" PointedAt="_positionsPointedAt" />
         </div>
     }

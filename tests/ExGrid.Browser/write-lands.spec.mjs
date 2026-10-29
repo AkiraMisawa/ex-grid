@@ -1,5 +1,5 @@
 import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
-import { REACT, SERVER } from './hosting.mjs';
+import { SERVER } from './hosting.mjs';
 import { expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
 // A write lands as the user entered it, on the row the user aimed it at (ADR-0142, rewritten
@@ -23,9 +23,9 @@ function grid(page) {
 const NOTIONAL = 2;
 const ACT = 3;
 
-// The text a Notional written as `typed` is painted with. C#'s decimal keeps the places it was typed with; the
-// Script Core's number keeps none, so the React page writes every Notional with two (ADR-0350's values).
-const written = (typed) => (REACT ? Number(typed).toFixed(2) : typed);
+// The text a Notional written as `typed` is painted with. The Script Core's number keeps no places of its own, so
+// the page writes every Notional with two, on React and Blazor alike (ADR-0350's values).
+const written = (typed) => Number(typed).toFixed(2);
 
 function cell(page, row, column) {
     return grid(page).locator(`[id$='r${row}c${column}']`);
@@ -120,11 +120,14 @@ test('LV-11: Escape over a cell that changed under the editor writes nothing, an
     const notional = cell(page, 0, NOTIONAL);
     await clickCell(page, 0, NOTIONAL);
     await expectActiveDescendant(grid(page), /r0c2$/);
+    const before = (await notional.textContent()).trim();
     await setRoundTrip(150);
 
     await page.keyboard.type('42');
     await page.keyboard.press('F9');
     await expect(page.locator('#upstream-status')).toContainText('(×1)');
+    // The status is the page's render and the moved row the grid's state, which cross apart: read the row once it is here.
+    await expect(notional).not.toHaveText(before);
     const moved = (await notional.textContent()).trim();
 
     await page.keyboard.press('Escape');

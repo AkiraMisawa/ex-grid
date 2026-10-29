@@ -136,6 +136,9 @@ export class FilterPanelModel {
     readonly #startedOn: FilterOperator;
     #fetch: AbortController | undefined;
     #view: FilterPanelView | undefined;
+    // The condition form was written in while the list was on its way: it stands once the list arrives, so what the
+    // user typed there is never swept away by an answer's timing (the spine's sixth rule).
+    #keptConditions = false;
     // The listed values with their text, made once as the list arrives: a keystroke in the search reformats nothing.
     #listed: readonly { readonly value: unknown; readonly text: string }[] = [];
     #textOfListed = new Map<unknown, string>();
@@ -209,6 +212,12 @@ export class FilterPanelModel {
         return this.#working.values !== undefined;
     }
 
+    /** Whether the condition form was written in while the value list was on its way, and so stands, the list's
+     * arrival notwithstanding, for this opening: what the user typed there is kept whenever the list comes. */
+    get keptConditions(): boolean {
+        return this.#keptConditions;
+    }
+
     /** Whether the value list is still on its way: the grid stands unsettled meanwhile (ADR-0220). */
     get fetching(): boolean {
         return this.#fetch !== undefined && !this.#fetch.signal.aborted && this.#working.values === undefined;
@@ -261,12 +270,14 @@ export class FilterPanelModel {
 
     /** The first condition's operator: one the core offers the column (FN-18). */
     setOperator(operator: FilterOperator): void {
+        this.#keep();
         this.#working.operator = this.#offered(operator);
         this.#changed();
     }
 
     /** The text typed for the first condition's value. */
     setOperand(text: string): void {
+        this.#keep();
         this.#working.operand = text;
         this.#changed();
     }
@@ -275,18 +286,22 @@ export class FilterPanelModel {
     setCombinator(combinator: FilterCombinator): void {
         const given: unknown = combinator;
         if (given !== 'and' && given !== 'or') throw new RangeError(`A combinator is 'and' or 'or', not '${String(given)}'.`);
+        this.#keep();
         this.#working.combinator = combinator;
         this.#changed();
     }
 
     /** The second condition's operator, or `undefined` for none. */
     setSecond(operator: FilterOperator | undefined): void {
-        this.#working.second = operator === undefined ? undefined : this.#offered(operator);
+        const second = operator === undefined ? undefined : this.#offered(operator);
+        this.#keep();
+        this.#working.second = second;
         this.#changed();
     }
 
     /** The text typed for the second condition's value. */
     setSecondOperand(text: string): void {
+        this.#keep();
         this.#working.secondOperand = text;
         this.#changed();
     }
@@ -334,7 +349,13 @@ export class FilterPanelModel {
         return operator;
     }
 
+    // A choice made on the condition form while the list is on its way keeps the form (#keptConditions).
+    #keep(): void {
+        if (this.fetching) this.#keptConditions = true;
+    }
+
     #list(): { readonly domain: DistinctValues; readonly chosen: ChosenValues } | undefined {
+        if (this.#keptConditions) return undefined;
         const { values, chosen } = this.#working;
         return values?.kind === 'values' && chosen !== undefined ? { domain: values, chosen } : undefined;
     }

@@ -13,13 +13,28 @@ import { awaitPointingScope, holdPointingScope, type PagePointingScope } from '.
 import { operandOf } from '../src/wire-query';
 import { valueKey, valueOf } from '../src/wire-values';
 import { WriteGate, type Sent } from '../src/write-gate';
+import { InputNumbers } from '../src/input-numbers';
 
 /** .NET, as the bridge calls it: every call recorded, and answered by `answer` where the test gives one. */
 class FakeDotNet implements DotNetHandle {
     readonly calls: { readonly method: string; readonly args: readonly unknown[] }[] = [];
     answer: (method: string, args: readonly unknown[]) => unknown = () => null;
 
+    /** The numbers the numbered calls crossed under, in the order they crossed (ADR-0240 section 11). */
+    readonly numbers: number[] = [];
+
+    /** Whether the connection is down: a call is sent and never ends, as Blazor's does not (ADR-0240 section 11). */
+    down = false;
+
     invokeMethodAsync(method: string, ...args: readonly unknown[]): Promise<unknown> {
+        if (this.down) return new Promise(() => undefined);
+        // A numbered call is recorded as the call it carries, which .NET makes in its turn.
+        if (method === 'Call') {
+            const [number, carried, carriedArgs] = args;
+            if (typeof number !== 'number' || typeof carried !== 'string' || !Array.isArray(carriedArgs)) throw new Error(`A numbered call as ${JSON.stringify(args)}.`);
+            this.numbers.push(number);
+            return this.invokeMethodAsync(carried, ...(carriedArgs as readonly unknown[]));
+        }
         this.calls.push({ method, args });
         return Promise.resolve(this.answer(method, args));
     }
@@ -73,7 +88,7 @@ const options = (overrides: Partial<WireOptions> = {}): WireOptions => ({
 const query = '{"version":1,"sorts":[],"range":{"start":0,"count":1}}';
 
 const state = (seq: number, window: readonly WireRow[], overrides: Partial<WireState> = {}): WireState => ({
-    seq, cv: 1, window, windowStart: 0, totalCount: window.length, loading: false, rowSequenceVersion: 0, query, ...overrides,
+    seq, cv: 1, window, windowStart: 0, totalCount: window.length, loading: false, rowSequenceVersion: 0, query, asked: 0, ...overrides,
 });
 
 const rates: WireRow = { i: 1, c: ['Rates', 1500], t: [null, '1,500.00'] };
@@ -218,6 +233,21 @@ describe('rows let go', () => {
         expect(columns.columns[1]?.format?.(1500)).toBe('1,500');
     });
 
+    it('ADR-0440 section 5: the key an edit holds is told to .NET by its row, and the row sent past the slice stands at its place', () => {
+        const dotnet = new FakeDotNet();
+        const columns = new ColumnSet();
+        columns.take([book, notional], 1);
+        const source = new DotNetSource(dotnet, new RowSet(new FakeCollector().make, () => { /* collected rows are not this test's */ }), columns,
+            { generation: 1, rowKey: true, vouchesDistinctRows: false, finds: false }, noFind);
+        source.take(state(1, [{ ...rates, k: 'R' }], { totalCount: 50, beyond: [{ at: 40, row: { ...credit, k: 'C' } }] }));
+
+        const beyond = source.snapshot().beyond;
+        expect(beyond?.map(held => [held.position, held.row.cells])).toEqual([[40, ['Credit', 2500]]]);
+        source.holdKey('C');
+        source.holdKey(undefined);
+        expect(dotnet.calls.filter(call => call.method === 'HoldRow').map(call => call.args)).toEqual([[1, 2], [1, null]]);
+    });
+
     it('the spine\'s sixth rule: rows read by columns .NET has since replaced are asked for again', async () => {
         const dotnet = new FakeDotNet();
         const columns = new ColumnSet();
@@ -267,15 +297,14 @@ describe('texts', () => {
     });
 });
 
-function gate(): { readonly gate: WriteGate<string, number>; readonly taken: Sent<string, number>[]; readonly discarded: number[] } {
+function gate(): { readonly gate: WriteGate<string, number>; readonly taken: Sent<string, number>[] } {
     const taken: Sent<string, number>[] = [];
-    const discarded: number[] = [];
-    return { gate: new WriteGate<string, number>(message => { taken.push(message); }, given => { discarded.push(given); }), taken, discarded };
+    return { gate: new WriteGate<string, number>(message => { taken.push(message); }), taken };
 }
 
 describe('writes of the user\'s own', () => {
-    it('ADR-0142 D1: what .NET sends while it handles a write is taken in once it is handled, the last state of a run alone', async () => {
-        const { gate: held, taken, discarded } = gate();
+    it('ADR-0142 D1 / ADR-0240: what .NET sends while it handles a write is taken in once it is handled, every state in its order', async () => {
+        const { gate: held, taken } = gate();
         const settle: (() => void)[] = [];
         const handling = held.handling(new Promise<void>(resolve => { settle.push(resolve); }));
         held.receive({ state: 1 });
@@ -286,8 +315,8 @@ describe('writes of the user\'s own', () => {
         expect(taken).toEqual([]);
         settle[0]?.();
         await handling;
-        expect(taken).toEqual([{ state: 2 }, { update: 'columns' }, { state: 4 }]);
-        expect(discarded).toEqual([1, 3]);
+        // A Window replaced by the next is still one the source held: a row command whose row it lacked lost it.
+        expect(taken).toEqual([{ state: 1 }, { state: 2 }, { update: 'columns' }, { state: 3 }, { state: 4 }]);
         held.receive({ state: 5 });
         expect(taken.at(-1)).toEqual({ state: 5 });
     });
@@ -399,6 +428,63 @@ describe('the grid', () => {
             ['SetFilter', 1, '{"version":1,"range":{"start":0,"count":1},"sorts":[],"filter":{"columns":{"Book":{"combinator":"And","clauses":'
                 + '[{"operator":"Equals","value":{"type":"String","value":"Rates"}}]}}}}'],
         ]);
+    });
+
+    it('ADR-0001: a sort and a filter asked for are the source\'s at once, loading, until .NET sends a state taken after them', () => {
+        const source = sourceOf(new FakeDotNet());
+        source.take(state(1, [rates, credit]));
+        let told = 0;
+        source.subscribe(() => { told += 1; });
+        const sorts = [{ column: 'Book', direction: 'descending' }] as const;
+        const filter = { columns: { Book: { clauses: [{ operator: 'equals', value: 'Rates' }] } } } as const;
+        source.setSorts(sorts);
+        source.setFilter(filter);
+        expect(told).toBe(2);
+        expect(source.snapshot()).toMatchObject({ sorts, filter, loading: true, window: [{ id: 1 }, { id: 2 }] });
+        // A state .NET sent once it took the sort in, and before the filter, is .NET's sort and the filter asked for.
+        const sorted = '{"version":1,"sorts":[{"column":"Book","direction":"Descending"}],"range":{"start":0,"count":1}}';
+        source.take(state(2, [credit], { asked: 1, query: sorted }));
+        expect(source.snapshot()).toMatchObject({ sorts, filter, loading: true, window: [{ id: 2 }] });
+        // Once it took both, the state is .NET's own, whatever its source made of them.
+        source.take(state(3, [rates], { asked: 2 }));
+        expect(source.snapshot()).toMatchObject({ sorts: [], filter: undefined, loading: false, window: [{ id: 1 }] });
+        expect(() => { source.take(state(4, [rates], { asked: 3 })); }).toThrow('Internal: .NET took in query 3, and the grid asked for 2.');
+    });
+
+    it('ADR-0001: a sort .NET answers before the call returns, as WebAssembly does, is taken in as answered', () => {
+        const dotnet = new FakeDotNet();
+        const source = sourceOf(dotnet);
+        source.take(state(1, [rates, credit]));
+        dotnet.answer = method => {
+            if (method === 'SetSorts') source.take(state(2, [credit, rates], { asked: 1, query: '{"version":1,"sorts":[{"column":"Book","direction":"Ascending"}],"range":{"start":0,"count":1}}' }));
+            return null;
+        };
+        source.setSorts([{ column: 'Book', direction: 'ascending' }]);
+        expect(source.snapshot()).toMatchObject({ sorts: [{ column: 'Book', direction: 'ascending' }], loading: false, window: [{ id: 2 }, { id: 1 }] });
+    });
+
+    it('ADR-0240: a filter lost on the way lets go of the query asked for, and the state is .NET\'s again', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.down = true;
+        const numbers = new InputNumbers(dotnet);
+        const columns = new ColumnSet();
+        columns.take([book, notional], 1);
+        const source = new DotNetSource(numbers.calls(new Set(['SetSorts', 'SetFilter']), dotnet), new RowSet(new FakeCollector().make, () => { throw new Error('Nothing is collected here.'); }),
+            columns, { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false }, noFind);
+        source.take(state(1, [rates]));
+        const sorts = [{ column: 'Book', direction: 'descending' }] as const;
+        source.setSorts(sorts);
+        source.setFilter({ columns: { Book: { clauses: [{ operator: 'equals', value: 'Credit' }] } } });
+        expect(source.snapshot().loading).toBe(true);
+        // The filter is lost; the sort, which may have arrived, still stands as asked until .NET says.
+        numbers.lose([2], 'Lost.');
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(source.snapshot()).toMatchObject({ sorts, filter: undefined, loading: true });
+        numbers.lose([1], 'Lost.');
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(source.snapshot()).toMatchObject({ sorts: [], filter: undefined, loading: false });
     });
 
     it('ADR-0005: rows asked for past the Window are .NET\'s answer, and a question given up is called off there', async () => {
@@ -668,6 +754,54 @@ describe('answers .NET gives later (ADR-0380 section 5)', () => {
     });
 });
 
+describe('input lost while the circuit is down (ADR-0240 section 11)', () => {
+    const lostWords = 'Input made while the connection to the server was lost was not carried out. Make it again.';
+
+    it('ADR-0240: what .NET carries out crosses numbered, and what the browser did and .NET only hears crosses as it is', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({ options: options({ rowHeight: 24, hears: ['edit', 'selectionChanged', 'undo'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('Delta');
+        key('Enter');
+        await turns();
+        key('z', { ctrlKey: true });
+        await turns();
+        expect(dotnet.heard('selectionChanged').length).toBeGreaterThan(0);
+        expect([dotnet.heard('edit').length, dotnet.heard('undo').length, dotnet.numbers]).toEqual([1, 1, [1, 2]]);
+    });
+
+    it('ADR-0240: an edit lost on the way is refused in its editor, which keeps the text, in the grid\'s words, said once', async () => {
+        const dotnet = new FakeDotNet();
+        const { root, grid } = mount({ options: options({ rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('Delta');
+        dotnet.down = true;
+        key('Enter');
+        await turns();
+        expect(editorOf(root)?.readOnly).toBe(true);
+        dotnet.down = false;
+        grid.inputsLost(1, 1, lostWords);
+        await turns();
+        expect([editorOf(root)?.value, editorOf(root)?.readOnly, root.querySelector('.ex-announce')?.textContent]).toEqual(['Delta', false, lostWords]);
+    });
+
+    it('ADR-0240: a lost call nothing refuses itself, an undo, is said aloud as lost', async () => {
+        const dotnet = new FakeDotNet();
+        const { root, grid } = mount({ options: options({ rowHeight: 24, hears: ['undo'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        dotnet.down = true;
+        key('z', { ctrlKey: true });
+        await turns();
+        dotnet.down = false;
+        grid.inputsLost(1, 1, lostWords);
+        await turns();
+        expect(root.querySelector('.ex-announce')?.textContent).toBe(lostWords);
+    });
+});
+
 const focusHeard = (dotnet: FakeDotNet): unknown => Reflect.get(dotnet.heard('selectionChanged').at(-1) as object, 'focus');
 
 describe('the error step .NET answers (ADR-0381 section 3)', () => {
@@ -779,6 +913,19 @@ describe('the Context Menu\'s commands .NET answers (ADR-0421)', () => {
             expect(root.querySelector('.ex-popover')).toBeNull();
         }
         expect(dotnet.calls.filter(call => call.method === 'ContextCommands')).toHaveLength(2);
+    });
+});
+
+describe('the grid\'s own words .NET sends (ADR-0440 section 4)', () => {
+    it('ADR-0440: the table words the grid\'s commands, and a command the Consumer answered keeps its own words', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'ContextCommands' ? '[{"id":"audit","enabled":true,"label":"Audit"}]' : null);
+        const { root } = mount({ options: options({ rowHeight: 24, contextCommands: true, commandLabels: { copy: 'Duplicate', audit: 'Not this' } }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        key('F10', { shiftKey: true });
+        await turns();
+        expect([...root.querySelectorAll('.ex-popover [role=menuitem]')].map(item => item.textContent)).toEqual(['Duplicate', 'Copy with headers', 'Audit']);
     });
 });
 

@@ -38,6 +38,7 @@ const ExGrid.Chrome.ScriptSlotAttributes.FindStep = "data-ex-find-step" -> strin
 const ExGrid.Chrome.ScriptSlotAttributes.FormulaBarField = "data-ex-formula-bar-field" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.MenuItem = "data-ex-menu-item" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.NameBoxField = "data-ex-name-box-field" -> string!
+ExGrid.Cells.CommitRefusalReason.Cancelled = 2 -> ExGrid.Cells.CommitRefusalReason
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
 ExGrid.Cells.GridPointedAt<TRow>.InBrowser.get -> ExGrid.Cells.GridPointedInBrowser<TRow!>?
@@ -408,6 +409,7 @@ ExGrid.Components.GridScriptFocus.DisposeAsync() -> System.Threading.Tasks.Value
 ExGrid.Components.GridScriptFocus.FocusBoxAsync(Microsoft.AspNetCore.Components.ElementReference box) -> System.Threading.Tasks.Task<bool>!
 ExGrid.Components.GridScriptFocus.GridScriptFocus(Microsoft.JSInterop.IJSRuntime! js, Microsoft.AspNetCore.Components.ResourceAssetCollection! assets) -> void
 ExGrid.Components.GridScriptFocus.LoadAsync() -> System.Threading.Tasks.Task<bool>!
+ExGrid.GridColumn<TRow>.IsQueryable.init -> void
 ExGrid.GridColumn<TRow>.ValidateAsync.get -> System.Func<TRow, string!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditVerdict>>?
 ExGrid.GridColumn<TRow>.ValidateAsync.init -> void
 ExGrid.Rows.MarkRefusalReason.RowLeftTheWindow = 2 -> ExGrid.Rows.MarkRefusalReason
@@ -565,6 +567,8 @@ ExGrid.Script.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyLi
 ExGrid.Script.ExGrid<TRow>.Columns.set -> void
 ExGrid.Script.ExGrid<TRow>.CompleteEditorText.get -> System.Func<string!, int, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditorCompletion?>>?
 ExGrid.Script.ExGrid<TRow>.CompleteEditorText.set -> void
+ExGrid.Script.ExGrid<TRow>.CommandLabel.get -> System.Func<string!, string?>?
+ExGrid.Script.ExGrid<TRow>.CommandLabel.set -> void
 ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.get -> System.Func<string!, string?>?
 ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.set -> void
 ExGrid.Script.ExGrid<TRow>.ContextCommands.get -> System.Func<ExGrid.Chrome.ContextMenuContext<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Chrome.GridCommand!>!>?

@@ -92,7 +92,7 @@
         "pivot" => @<ExPivot Source="_source" Layout="_pivotLayout" LayoutChanged="PivotChanged" ShowFieldList="false"
                              PivotChrome="@(DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null)"
                              ViewportWidth="ViewportSize.Stretch" ViewportHeight="280" />,
-        _ => @<ExGrid TRow="PreciseRow" Window="Rows" Columns="Columns" PinnedColumnCount="@(_pin ? 2 : 0)"
+        _ => @<ExGrid.Components.ExGrid TRow="PreciseRow" Window="Rows" Columns="Columns" PinnedColumnCount="@(_pin ? 2 : 0)"
                        Chrome="@(DemoChrome.IsMud(ChromeName) ? _gridChrome : null)" RowHeight="24"
                        ViewportWidth="ViewportSize.Stretch" ViewportHeight="280"
                        OnColumnWidthChanged="WidthChanged" OnColumnOrderChanged="OrderChanged" OnPinnedCountChanged="PinnedChanged" />,

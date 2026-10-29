@@ -21,6 +21,23 @@ describe('createGrid', () => {
         expect(noticeWords(root)).toBe('This page holds another version\'s stylesheet. Reload the page.');
     });
 
+    it('ADR-0123 ERR-11: a Chrome\'s stylesheets each have a notice beside the grid\'s own, drawn again when the list changes', () => {
+        const stamp = 'a'.repeat(64);
+        const chrome = { stylesheets: [{ name: 'mud-ex-grid.css', stamp }] };
+        const { root, view } = mount({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480, chrome });
+        const notices = (): (string | null)[][] => [...root.querySelectorAll(':scope > [data-ex-notice="stylesheet"]')]
+            .map(notice => [notice.getAttribute('data-ex-stylesheet'), notice.getAttribute('data-ex-stamp'), notice.textContent]);
+        const words = 'This page holds another version\'s stylesheet. Reload the page.';
+        expect(notices()).toEqual([['ex-grid.css', expect.any(String), words], ['mud-ex-grid.css', stamp, words]]);
+        view.update({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480, chrome });
+        expect(notices()).toHaveLength(2);
+        view.update({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480 });
+        expect(notices().map(([name]) => name)).toEqual(['ex-grid.css']);
+        const unstamped: unknown = { name: 'x.css' };
+        expect(() => mount({ columns, rows: trades(1), rowHeight: 24, viewportHeight: 480, chrome: { stylesheets: [unstamped as never] } }))
+            .toThrow(/Each of chrome.stylesheets is \{ name, stamp \}/);
+    });
+
     it('ADR-0350: the root, the scroller, the header and the rows are the C# core\'s DOM contract', async () => {
         const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480 });
         await painted();
@@ -159,6 +176,27 @@ describe('createGrid', () => {
         told.viewport({ gutterHeightPx: 30, contentHeightPx: 450 });
         await painted();
         expect(rowsOf(root)).toHaveLength(19);
+    });
+
+    it('ADR-0028 (VZ-12b): a stretched height as tall as its header band is heard once, until a real height arrives', async () => {
+        let heard = 0;
+        const { root, told } = mount({
+            columns, rows: trades(100), rowHeight: 24, headerHeight: 32, viewportHeight: 'stretch',
+            onParentWithoutHeight: () => { heard++; },
+        });
+        await painted();
+        told.viewport({ contentHeightPx: 0 });
+        expect(heard).toBe(0);
+        told.viewport({ contentHeightPx: 32 });
+        told.viewport({ contentHeightPx: 32, contentWidthPx: 700 });
+        await painted();
+        expect(heard).toBe(1);
+        expect(rowsOf(root)).toHaveLength(0);
+        told.viewport({ contentHeightPx: 320 });
+        await painted();
+        expect(rowsOf(root).length).toBeGreaterThan(0);
+        told.viewport({ contentHeightPx: 32 });
+        expect(heard).toBe(2);
     });
 
     it('ADR-0016: an Auto column grows to its widest painted value, and a number too wide for a Fixed one is ####', async () => {

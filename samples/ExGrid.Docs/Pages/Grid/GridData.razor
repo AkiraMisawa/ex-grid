@@ -8,15 +8,16 @@
         <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
             <thead><tr><th style="width: 28%">You have</th><th style="width: 30%">Use</th><th>Who sorts, filters and finds</th></tr></thead>
             <tbody>
-                <tr><td>Every row, in memory</td><td><code>Source="GridSource.From(rows)"</code></td><td>The source, by the reference rules.</td></tr>
+                <tr><td>Every row, in memory</td><td><code>Rows="rows"</code>, or <code>Source="GridSource.From(rows)"</code> to change rows in it</td><td>The source, by the reference rules.</td></tr>
                 <tr><td>Rows on a server, a page at a time</td><td><code>Source="GridSource.Fetch(fetch)"</code></td><td>Your server, asked through <code>fetch</code>.</td></tr>
-                <tr><td>Your own loading and state</td><td><code>Window</code>, <code>WindowStart</code>, <code>TotalCount</code> and <code>OnRangeNeeded</code></td><td>You, answering the grid's notifications.</td></tr>
+                <tr><td>Your own loading and state</td><td>A source of your own, <code>IGridSource&lt;TRow&gt;</code></td><td>You, as the grid tells your source.</td></tr>
             </tbody>
         </MudSimpleTable>
         <p>
-            A Source is a convenience over the third form, not a different grid: it drives the same parameters, and
-            the grid behaves the same either way. Pass a <code>Source</code> or a <code>Window</code>, never both —
-            the grid refuses the pair rather than pick one.
+            The first two are sources like the third, not different grids: the grid asks every source the same
+            things and behaves the same over each. <code>Rows</code> is <code>GridSource.From</code> made for you, and a
+            new list is a new source. Pass a <code>Source</code> or <code>Rows</code>, never both — the grid refuses
+            the pair rather than pick one.
         </p>
         <p>
             Two rules hold whatever you choose. <strong>A row repaints when its instance changes</strong>: replace
@@ -72,20 +73,27 @@
         </p>
     </DocsSection>
 
-    <DocsSection Title="Pushing a Window: a million rows">
+    <DocsSection Title="A source of your own: a million rows">
         <p>
-            When you hold the loading yourself, hand the grid the rows you have as <code>Window</code>, where they
-            start in the result as <code>WindowStart</code>, and how many rows the result has as
-            <code>TotalCount</code>. The scrollbar spans every row. When the Viewport moves past the Window, the grid
-            raises <code>OnRangeNeeded</code> and paints placeholders until you answer with a new Window.
+            When you hold the loading yourself, write a source of your own, an <code>IGridSource&lt;TRow&gt;</code>. Its
+            <code>Window</code> holds the rows you have, <code>WindowStart</code> where they start in the result, and
+            <code>TotalCount</code> how many rows the result has. The scrollbar spans every row. When the Viewport moves
+            past the Window, the grid calls <code>OnRangeNeededAsync</code> with the rows on screen and paints
+            placeholders until your source raises <code>StateChanged</code> with a new Window.
         </p>
         <ul>
             <li><strong>Read-ahead is yours</strong>: answer with more rows than were asked for.</li>
             <li><strong>Discard stale answers</strong>: a request that a newer one overtook should not land.</li>
-            <li><strong>Set <code>IsLoading</code></strong> while an answer is on its way, or the grid shows a stale Window as if it were current.</li>
-            <li><strong>Load the first page yourself.</strong> The grid never asks for rows in a result it has been told is empty.</li>
-            <li><strong>Bump <code>RowSequenceVersion</code></strong> when the order of the rows changes, so a selection that would now cover other rows is dropped.</li>
+            <li><strong>Say <code>IsLoading</code></strong> while an answer is on its way, or the grid shows a stale Window as if it were current.</li>
+            <li><strong>Load the first page yourself.</strong> The grid never asks for rows in a result your source says is empty.</li>
+            <li><strong>Move <code>RowSequenceVersion</code></strong> when the order of the rows changes, so a selection that would now cover other rows is dropped.</li>
+            <li><strong>Answer <code>GetRowsAsync</code></strong> for rows past the Window, which a copy that reaches beyond it asks for, and <code>GetDistinctValuesAsync</code> for the filter panel's value lists.</li>
         </ul>
+        <p>
+            <code>GridSource.Fetch</code> is such a source for a server that answers a page at a time, and the million
+            rows below come through it, with the Row Key as <code>rowKey</code> and the read-ahead as
+            <code>readAheadRows</code>; the next section's Example is a source of its own.
+        </p>
         <p>
             <strong>Showing one set of rows after another in one grid</strong> — the Sheets of a workbook behind their
             tabs, the books of a blotter behind a picker — keep each set's view. <code>ReadView()</code> gives the
@@ -101,7 +109,7 @@
             hand it with them: <code>ShowViewWith(view, range, focus)</code> places <code>range</code> with the
             Focus on <code>focus</code> under the same version, and scrolls the Focus into view from the view's
             offsets, as <code>PlaceSelectionAsync</code> does among the rows already shown. ExSheet's Name Box takes
-            <code>Sheet2!B5</code> this way. A find step your <code>OnFind</code> answers by showing other rows —
+            <code>Sheet2!B5</code> this way. A find step your source's <code>FindAsync</code> answers by showing other rows —
             ExSheet's Find within the Workbook, finding the next match on another Sheet — hands the match with them:
             <code>ShowViewWithMatch(view, match)</code> places the one cell as <code>ShowViewWith</code> places a
             range, and if the find panel is open when the version is taken, that cell is the current match, marked
@@ -120,24 +128,25 @@
         </p>
         <p>
             <strong>Name your rows by a Row Key</strong> when you make them afresh — fetched again, or rebuilt from a
-            feed. <code>RowKey</code> is a function from a row to what tells it from every other row, such as a
-            trade's id, kept in a field like the columns. A row that comes back as a new instance under the same key
-            keeps its row component, and only the text that changed is written; without a key, a new instance is a
-            new row. The grid refuses a Window in which a key repeats, naming the key and its rows, and to find one
-            it reads every row's key in every new Window. When your Windows cannot repeat a key — cut, as here, from
-            a list whose ids are unique — say so with <code>VouchesDistinctRows="true"</code>. The grid then reads
-            only the keys of the rows it paints, on every render, which matters when you push a large Window at a
-            time. A repeat that breaks the promise is still refused the moment it reaches the screen.
+            feed. A source's <code>RowKey</code> is a function from a row to what tells it from every other row, such
+            as a trade's id. A row that comes back as a new instance under the same key keeps its row, and only the
+            text that changed is written; without a key, a new instance is a new row. The grid refuses a Window in
+            which a key repeats, naming the key and its rows, and to find one it reads every row's key in every new
+            Window. When your Windows cannot repeat a key — cut, as here, from a list whose ids are unique — the
+            source says so with <code>VouchesDistinctRows</code>, as <code>GridSource.Fetch</code> does when it is
+            given a key. The grid then reads only the keys of the rows it paints, which matters for a large Window. A
+            repeat that breaks the promise is still refused the moment it reaches the screen.
         </p>
         <p>
             The DOM does not grow with the row count — a million rows paint the same few dozen elements as a hundred.
         </p>
         <p>
-            ExGrid for React takes its rows from a source, so there the same million come through
-            <code>GridSource.fetch</code>, whose fetch answers a page of rows and the result's count, with the Row Key as
-            <code>rowKey</code> and the read-ahead as <code>readAheadRows</code>. The source itself drops an answer a newer
-            request overtook, and aborts the <code>AbortSignal</code> it handed that fetch so the call can stop early. This Example's server neither
-            sorts nor filters, so its columns say <code>queryable: false</code>, and the grid offers neither.
+            The source itself drops an answer a newer request overtook, and cancels the <code>CancellationToken</code>
+            it handed that fetch so the call can stop early. This Example's server neither sorts nor filters, so its
+            columns say <code>IsQueryable = false</code>: a header click sorts nothing, and a column's menu offers its
+            commands only. Its fetch still refuses a sort or a filter rather than answer one it ignored. ExGrid for React takes the same million through
+            <code>GridSource.fetch</code>, aborts the <code>AbortSignal</code> it handed a fetch it no longer needs, and
+            lets a column say <code>queryable: false</code>.
         </p>
         <DocsExample Title="A million rows, made on demand" Builtin="typeof(MillionRows)" Mud="typeof(MillionRowsMud)"
                      Files="@(["Examples/Grid/MillionTrades.cs", "Examples/Data/Trade.cs"])">
@@ -150,7 +159,7 @@
             However far you read ahead, the grid says it needs rows only once a row on screen is not in the Window,
             and that row stays a placeholder until your answer arrives. Over a network that is one round trip of
             placeholders each time the read-ahead runs out. <code>RangeRequestMargin</code> asks earlier: at
-            <em>M</em> rows, the grid raises <code>OnRangeNeeded</code> as soon as the rows on screen and
+            <em>M</em> rows, the grid calls your source's <code>OnRangeNeededAsync</code> as soon as the rows on screen and
             <em>M</em> rows either side are not all in the Window, while every row on screen may still be held.
             Scrolled steadily, the next Window lands before the Viewport reaches it.
         </p>
@@ -172,7 +181,7 @@
                 question only when its rows do not cover the rows on screen.
             </li>
             <li>
-                <strong>Pass <code>IsLoading</code> only while rows on screen wait.</strong> An early request finds every
+                <strong>Say <code>IsLoading</code> only while rows on screen wait.</strong> An early request finds every
                 row on screen held, and the grid dims under <code>IsLoading</code>: raised for each early question, it
                 would dim at every Window's edge with nothing missing. Raise it when you ask for rows that are not held,
                 or when the rows on screen leave the rows held while your question is out.
@@ -185,10 +194,10 @@
             without a margin.
         </p>
         <p>
-            ExGrid for React takes the margin as <code>rangeRequestMargin</code>. Its grid asks its source rather than
-            raising an event: an early request is a call to the source's <code>needRange</code>, naming the rows on screen,
-            so the Example's server is a <code>GridSource</code> of the page's own whose <code>needRange</code> reads
-            ahead, keeps a covering question, and says <code>loading</code> only while rows on screen wait.
+            The Example's server is a source of the page's own whose <code>OnRangeNeededAsync</code> reads ahead,
+            keeps a covering question, and says <code>IsLoading</code> only while rows on screen wait. ExGrid for React
+            takes the margin as <code>rangeRequestMargin</code>, and an early request is a call to the source's
+            <code>needRange</code>, naming the rows on screen.
             <code>GridSource.fetch</code> does not act on an early request there either.
         </p>
         <DocsExample Title="Asked ten rows early" Builtin="typeof(AskEarly)" Mud="typeof(AskEarlyMud)"
@@ -213,8 +222,9 @@
             away itself. The mark belongs to the row and column, not to the element, so it stays with its row as you scroll.
         </p>
         <p>
-            Keep the delegate in a field. It is asked once per painted cell, so it should be a dictionary lookup. A
-            replaced row is asked again; to change answers for rows that were not replaced, hand over a new delegate.
+            Keep the delegate in a field. It is asked of each cell of a row as the row is sent to the browser, so it
+            should be a dictionary lookup. A replaced row is asked again; to change answers for rows that were not
+            replaced, hand over a new delegate, and the rows the browser shows are sent again.
         </p>
         <p>
             ExGrid drawn by the Script Core (<code>createGrid</code> from <code>@@ex-grid/core</code>) takes the same

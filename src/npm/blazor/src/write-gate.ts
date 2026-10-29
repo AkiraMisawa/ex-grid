@@ -10,16 +10,14 @@ export type Sent<Update, State> = { readonly update: Update } | { readonly state
 /** Holds what .NET sends while any write of the user's own is being handled there. */
 export class WriteGate<Update, State> {
     readonly #take: (message: Sent<Update, State>) => void;
-    readonly #discard: (state: State) => void;
     readonly #held: Sent<Update, State>[] = [];
     readonly #idle: (() => void)[] = [];
     #handling = 0;
     #stopped = false;
 
-    /** `take` takes a message in; `discard` gives up a state another state after it replaces. */
-    constructor(take: (message: Sent<Update, State>) => void, discard: (state: State) => void) {
+    /** `take` takes a message in. */
+    constructor(take: (message: Sent<Update, State>) => void) {
         this.#take = take;
-        this.#discard = discard;
     }
 
     /** Takes in `message`, or holds it while a write is being handled. */
@@ -65,15 +63,12 @@ export class WriteGate<Update, State> {
         for (const resolve of this.#idle.splice(0)) resolve();
     }
 
-    // In the order .NET sent them; of states one after another only the last, which holds all the ones before it
-    // did, since a state is the source's whole Window. A state before an update is taken in before it.
+    // Every one, in the order .NET sent them. A state is the source's whole Window, but one replaced by the next is
+    // still a Window the source held: a row command held behind the write whose row left it has lost its row for good,
+    // even when the next Window brings the row back (ADR-0240's note of 2026-10-19), as on React, where each Window is
+    // taken in as the source says it. Keeping only the last would make that depend on how quickly the two came.
     #release(): void {
         if (this.#stopped) return;
-        const held = this.#held.splice(0);
-        held.forEach((message, i) => {
-            const after = held[i + 1];
-            if ('state' in message && after !== undefined && 'state' in after) this.#discard(message.state);
-            else this.#take(message);
-        });
+        for (const message of this.#held.splice(0)) this.#take(message);
     }
 }

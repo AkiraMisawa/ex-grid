@@ -31,7 +31,7 @@
 
 <div class="demo-toolbar">
     <button id="toggle-dark" @onclick="() => _dark = !_dark">Toggle dark mode</button>
-    <button id="toggle-loading" @onclick="() => _loading = !_loading">Toggle loading</button>
+    <button id="toggle-loading" @onclick="ToggleLoading">Toggle loading</button>
     <button id="toggle-square" @onclick="() => _square = !_square">Toggle square</button>
     <button id="toggle-dense" @onclick="() => _dense = !_dense">Toggle dense</button>
 </div>
@@ -61,9 +61,7 @@
 
 <MudExGridPaper Outlined="true" Hover="true" Class="demo-paper-b">
     <ExGrid TRow="DemoTrade"
-            Window="_secondWindow"
-            TotalCount="_secondWindow.Count"
-            IsLoading="_loading"
+            Source="_second"
             Columns="_secondColumns"
             ViewportHeight="160"
             ViewportWidth="400"
@@ -74,11 +72,18 @@
     private static readonly MudGridChrome _chrome = new() { LoadingProgressColor = Color.Primary };
 
     private InMemoryGridSource<DemoTrade> _source = default!;
-    private IReadOnlyList<DemoTrade> _secondWindow = default!;
+    // The second grid's rows, which the page says are loading or not (ADR-0030).
+    private PushedSource<DemoTrade> _second = default!;
     private IReadOnlyList<GridColumn<DemoTrade>> _columns = default!;
     private IReadOnlyList<GridColumn<DemoTrade>> _secondColumns = default!;
     private bool _dark;
     private bool _loading;
+
+    private void ToggleLoading()
+    {
+        _loading = !_loading;
+        _second.Loading(_loading);
+    }
     private bool _square;
     private bool _dense = true;
     private string _editStatus = "—";
@@ -102,7 +107,7 @@
         }
 
         _source = GridSource.From(rows);
-        _secondWindow = rows.Take(12).ToArray();
+        _second = new PushedSource<DemoTrade>(rows.Take(12).ToArray());
         _columns =
         [
             new("Book", ColumnType.Text, t => t.Book,

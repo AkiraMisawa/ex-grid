@@ -5,7 +5,7 @@
 @using ExGrid.Selection
 
 <ExGrid TRow="Position" Source="_source" Columns="_columns" PinnedColumnCount="1" CopyCellCap="2_000"
-        OnPaste="OnPaste" OnCopyRefused="OnCopyRefused" OnPasteRefused="OnPasteRefused" CommandLabel="Words"
+        OnPaste="OnPaste" OnRefused="OnRefused" CommandLabel="Words"
         ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
 
 <p role="status" style="margin: 12px 0 0; font-size: 14px">@_message</p>
@@ -40,9 +40,14 @@
     private string _refused = "";
 
     // The events still name the rule, said or not: here, to show which one.
-    private void OnCopyRefused(CopyRefusalReason reason) => _refused = $"Copy refused: {reason}.";
+    // The grid names every gesture it refused, a copy or a paste here, and the words are yours.
+    private void OnRefused(GridRefusal<Position> refusal) => _refused = refusal switch
+    {
+        GridRefusal<Position>.Copy copy => $"Copy refused: {copy.Reason}.",
+        GridRefusal<Position>.Paste paste => $"Paste refused: {paste.Reason}.",
+        _ => _refused,
+    };
 
-    private void OnPasteRefused(PasteRefusalReason reason) => _refused = $"Paste refused: {reason}.";
 
     // One intent for the whole paste. Each cell is resolved to its row before any row is replaced.
     private void OnPaste(GridPasteIntent paste)

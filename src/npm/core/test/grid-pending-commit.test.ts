@@ -5,7 +5,7 @@
 // each answer" are the two orders spine rule 6 says must end the same.
 import { afterEach, describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
-import { selectionOf } from '../src/dom/pending-commit';
+import { elementDefault, selectionOf } from '../src/dom/pending-commit';
 import type { EditVerdict, GridEditIntent } from '../src/cells/edit-intent';
 import type { GridPasteIntent } from '../src/clipboard/paste-intent';
 import type { GridColumn } from '../src/dom/grid-column';
@@ -412,6 +412,22 @@ describe('Escape on a Pending Commit', () => {
         expect(defined(editor(root), 'the editor kept').value).toBe('15007');
     });
 
+    it('ED-34 / ADR-0380: text put in with no key while held, a drop or an automation\'s fill, is put in again at its turn', async () => {
+        const asked: Asked<EditVerdict>[] = [];
+        const { root } = grid({}, asked);
+        await painted();
+        press(root, notional, rowY(0));
+        keys('1500');
+        key('Enter');
+        const field = defined(editor(root), 'the editor pending');
+        const put = new InputEvent('beforeinput', { bubbles: true, cancelable: true, data: '7', inputType: 'insertText' });
+        field.dispatchEvent(put);
+        expect(put.defaultPrevented).toBe(true);
+        key('Escape');
+        await settled();
+        expect(defined(editor(root), 'the editor kept').value).toBe('15007');
+    });
+
     it('ED-34 / ADR-0380: an Escape that sees no stamp is an ordinary key, and cancels the edit', async () => {
         const asked: Asked<EditVerdict>[] = [];
         const { root, heard } = grid({}, asked);
@@ -459,5 +475,30 @@ describe('an onPaste answered later', () => {
         expect(() => { intent.refuse(); }).toThrow(/cancelled/);
         expect(heard.refusals).toEqual([{ kind: 'paste', reason: 'cancelled' }]);
         expect(q(root, '.ex-announce').textContent).toBe('Nothing was pasted: the paste was cancelled.');
+    });
+});
+
+describe('a held key done again on a control', () => {
+    it('ADR-0055 / ED-22: a Shift+Enter held for a field submits its form, which reads the Shift, as the browser\'s Enter does', () => {
+        const form = document.createElement('form');
+        const field = document.createElement('input');
+        form.append(field);
+        document.body.append(form);
+        const heard: boolean[] = [];
+        let shift = false;
+        field.addEventListener('keydown', event => { shift = event.shiftKey; });
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            heard.push(shift);
+        });
+        const enter = new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true });
+        field.dispatchEvent(enter);
+        expect(elementDefault(field, enter)).toBe('done');
+        expect(heard).toEqual([true]);
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        form.append(box);
+        expect(elementDefault(box, enter)).toBe('none');
+        form.remove();
     });
 });

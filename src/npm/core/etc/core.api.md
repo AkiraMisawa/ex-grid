@@ -53,6 +53,12 @@ export interface AutoColumnWidth {
 }
 
 // @public
+export interface BeyondRow<Row> {
+    readonly position: number;
+    readonly row: Row;
+}
+
+// @public
 export type BorderStyle = 'none' | 'hair' | 'thin' | 'medium' | 'thick' | 'double' | 'dotted' | 'dashed' | 'dashDot' | 'dashDotDot' | 'mediumDashed' | 'mediumDashDot' | 'mediumDashDotDot' | 'slantedDashDot';
 
 // @public
@@ -766,13 +772,20 @@ export interface GridChrome<Row> {
     readonly loadingIndicator?: GridChromeSlot<GridLoadingIndicatorSlotContext>;
     readonly nameBox?: GridChromeSlot<GridNameBoxSlotContext>;
     readonly selectionSummary?: GridChromeSlot<GridSelectionSummarySlotContext>;
+    readonly stylesheets?: readonly GridChromeStylesheet[];
 }
 
 // @public
 export type GridChromeSlot<Context> = (slot: HTMLElement, context: Context) => () => void;
 
 // @public
-export const gridChromeSlotNames: readonly (keyof GridChrome<unknown>)[];
+export const gridChromeSlotNames: readonly Exclude<keyof GridChrome<unknown>, 'stylesheets'>[];
+
+// @public
+export interface GridChromeStylesheet {
+    readonly name: string;
+    readonly stamp: string;
+}
 
 // @public
 export class GridClearIntent {
@@ -1052,6 +1065,7 @@ export interface GridFormulaBarTextSlotContext {
 
 // @public
 export interface GridHandle<Row> {
+    announce(sentence: string): void;
     cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean>;
     readonly canSummarize: boolean;
     closePopover(): void;
@@ -1096,6 +1110,9 @@ export function gridHeaderRequiredPx(label: string, options: GridTextOptions & {
     readonly menuButton: boolean;
     readonly sortable: boolean;
 }): number;
+
+// @public
+export function gridInputRoot(root: HTMLElement): HTMLElement;
 
 // @public
 export const gridLabelIds: Readonly<{
@@ -1215,6 +1232,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onHeaderGroupToggled?: (toggle: HeaderGroupToggle) => void;
     readonly onLeave?: () => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
+    readonly onParentWithoutHeight?: () => void;
     readonly onPaste?: (intent: GridPasteIntent) => void | PromiseLike<void>;
     readonly onPinnedCountChanged?: (count: number) => void;
     readonly onPointArrowFromOutside?: (arrow: GridPointArrow) => void;
@@ -1543,6 +1561,7 @@ export interface GridSelectionSummarySlotContext {
 export interface GridSource<Row> {
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
     find?(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    holdKey?(key: RowKey | undefined): void;
     readonly marks?: RowMarks<Row> | undefined;
     needRange(range: RowRange): Promise<void>;
     publishGathered?(): void;
@@ -1565,6 +1584,7 @@ export const GridSource: Readonly<{
 
 // @public
 export interface GridSourceState<Row> {
+    readonly beyond?: readonly BeyondRow<Row>[];
     readonly filter: GridFilter | undefined;
     readonly loading: boolean;
     readonly rowSequenceVersion: number;

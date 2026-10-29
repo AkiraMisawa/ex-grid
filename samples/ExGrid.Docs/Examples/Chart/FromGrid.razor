@@ -2,7 +2,7 @@
 @using ExChart.Components
 @using ExGrid.Chrome
 
-<ExGrid @ref="_bridge.Grid" TRow="CurveHistory.Row" Window="CurveHistory.Rows" RowKey="CurveHistory.KeyOf"
+<ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="CurveHistory.Row" Window="CurveHistory.Rows" RowKey="CurveHistory.KeyOf"
         Columns="CurveHistory.Columns" ContextCommands="_commands" CommandLabel="Label"
         PinnedColumnCount="1" ViewportHeight="240" />
 

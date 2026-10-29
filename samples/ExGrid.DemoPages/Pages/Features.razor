@@ -33,6 +33,8 @@
     <span id="clear-status">Cleared: @_clearStatus</span>
     <span id="history-status">History: @_historyStatus</span>
     <span id="copy-status">Copy refused: @_copyStatus</span>
+    @* A refusal of a kind this page has no words of its own for, shown by name. *@
+    <span id="other-refused-status">Other refusal: @_otherRefusedStatus</span>
     @* A refusal is the grid telling the user their write did not happen. The built-in Chrome words
        it and the grid's live region announces it (ADR-0203), so this line only shows the reason by
        name, and is not a live region: one would say the refusal a second time. *@
@@ -75,18 +77,14 @@
         OnClear="OnClear"
         OnUndo="OnUndo"
         OnRedo="OnRedo"
-        OnCopyRefused="OnCopyRefused"
-        OnPasteRefused="OnPasteRefused"
+        OnRefused="OnRefused"
         OnEditDiscarded="OnEditDiscarded"
-        OnCommitRefused="OnCommitRefused"
         OnOverwriteNotice="OnOverwriteNotice"
         OnAction="OnAction"
-        OnActionRefused="OnActionRefused"
         ShowFillHandle="UpstreamOn"
         OnFill="OnFill"
         DeclaredKeys="@(RowKeyOn ? UpstreamAndResortKeys : UpstreamOn ? UpstreamKeys : null)"
         OnDeclaredKey="OnUpstreamKey"
-        OnFindRefused="OnFindRefused"
         OnReplace="OnReplace"
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
@@ -141,7 +139,7 @@
     </p>
     <div id="held-summary">
         <ExGrid TRow="DemoTrade"
-                Window="_heldRows"
+                Rows="_heldRows"
                 Columns="_heldColumns"
                 RowHeight="20"
                 ViewportHeight="140"
@@ -415,13 +413,13 @@
         // its mark. Which is which is this side's convention, not the grid's.
         new("Notional", ColumnType.Number, t => t.Notional,
             width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true,
-            validate: _rules.ValidatorFor("Notional")),
+            validate: _rules.ValidatorFor("Notional"), format: TwoPlaces),
         // Deliberately too narrow for its values: what #### looks like, and what the
         // clipboard must never receive (ADR-0016 / CP-5). The label is the full word,
         // so the header's own ellipsis is the real thing and widening the column
         // restores it along with the values.
         new("Narrow", ColumnType.Number, t => t.Notional,
-            width: new ColumnWidthSpec(ColumnWidth.Fixed(48))),
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(48)), format: TwoPlaces),
         // ISO, and the widths sum under the Viewport minus its scrollbar gutter: a
         // horizontal bar here would sit exactly where the browser suite drags into the
         // bottom edge band (SL-14/15), the CLAUDE.md gutter trap in its purest form.
@@ -430,6 +428,10 @@
         new("Confirmed", ColumnType.Boolean, t => t.Confirmed,
             width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
     ];
+
+    // A notional in two places, as a decimal's own text kept its scale on the C# core's grid: the Script grid writes
+    // an unformatted number as Excel's General does (0.3, not 0.30).
+    private static string TwoPlaces(object value) => ((decimal)value).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 
     private static string IsoDate(object value)
         => ((DateTime)value).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
@@ -444,6 +446,7 @@
     private string _pasteStatus = "—";
     private string _pasteFields = "—";
     private string _copyStatus = "—";
+    private string _otherRefusedStatus = "—";
     private string _pasteRefusedStatus = "—";
     private string _editDiscardedStatus = "—";
     private string _contextStatus = "—";
@@ -665,6 +668,33 @@
         _ => null,
     };
 
+    /// <summary>Every gesture the grid refused, worded by kind (ADR-0005).</summary>
+    private void OnRefused(GridRefusal<DemoTrade> refusal)
+    {
+        switch (refusal)
+        {
+            case GridRefusal<DemoTrade>.Copy copy:
+                OnCopyRefused(copy.Reason);
+                break;
+            case GridRefusal<DemoTrade>.Paste paste:
+                OnPasteRefused(paste.Reason);
+                break;
+            case GridRefusal<DemoTrade>.Commit commit:
+                OnCommitRefused(commit);
+                break;
+            case GridRefusal<DemoTrade>.Find find:
+                OnFindRefused(find.Reason);
+                break;
+            case GridRefusal<DemoTrade>.Action action:
+                OnActionRefused(action);
+                break;
+            default:
+                // One this page has no words for is shown by name, not guessed at (principle 1): still reported.
+                Status(refusal.GetType().Name, refusal.ToString(), s => _otherRefusedStatus = s);
+                break;
+        }
+    }
+
     private void OnCopyRefused(CopyRefusalReason reason)
         => Status(reason, reason.ToString(), s => _copyStatus = s);
 
@@ -710,14 +740,17 @@
         }, s => _pasteRefusedStatus = s);
 
     /// <summary>A commit whose row the grid could not find in the rows it holds now (ADR-0142,
-    /// LV-20). The editor still stands with the typing; Escape leaves it.</summary>
-    private void OnCommitRefused(GridCommitRefusal refusal)
+    /// LV-20), or one Escape cancelled while its answer was out (ADR-0380). The editor still stands
+    /// with the typing; Escape leaves it.</summary>
+    private void OnCommitRefused(GridRefusal<DemoTrade>.Commit refusal)
         => Status(refusal, refusal.Reason switch
         {
             CommitRefusalReason.OrderMoved =>
                 $"OrderMoved — {refusal.Column} was not written: the rows moved while you were typing; press Escape to leave it",
             CommitRefusalReason.RowLeftTheWindow =>
                 $"RowLeftTheWindow — {refusal.Column} was not written: the row is not in the rows the grid holds now; bring it back into view and commit again, or press Escape",
+            CommitRefusalReason.Cancelled =>
+                $"Cancelled — {refusal.Column} was not written: Escape was typed while the commit waited for its answer",
             // Every reason is worded above; one the page does not know is a defect to see, not a
             // sentence to guess (principle 1).
             _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal.Reason, "A commit refusal this page does not word."),
@@ -733,7 +766,7 @@
     /// <summary>An action whose row the grid could not find in the rows it holds when the press
     /// landed (ADR-0142, LV-12, LV-20): out of the Window, or named by a place the rows moving gave
     /// to another row. Nothing was done; the row's values changing never refuses one.</summary>
-    private void OnActionRefused(GridActionRefusal<DemoTrade> refusal)
+    private void OnActionRefused(GridRefusal<DemoTrade>.Action refusal)
         => Status(refusal.Reason, refusal.Reason switch
         {
             ActionRefusalReason.RowLeftTheWindow =>

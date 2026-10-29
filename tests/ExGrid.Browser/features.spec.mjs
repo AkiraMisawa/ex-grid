@@ -1,5 +1,5 @@
 import { test, expect, alterPage, setRoundTrip, circuitQuiet, settled } from './fixtures.mjs';
-import { REACT, SERVER } from './hosting.mjs';
+import { SERVER } from './hosting.mjs';
 import {
     expectKeyboardOn, keyboardIsOn, keyField, activeDescendant, expectActiveDescendant,
 } from './keyboard.mjs';
@@ -194,7 +194,7 @@ test('Escape, a press on a cell, then Tab cycles inside it (KB-8)', async ({ pag
     await expectActiveDescendant(grid(page), /r1c2$/);
 });
 
-test('with a 150 ms round trip, Escape and Tab typed at once leave the grid once every input is answered; behind an unanswered Enter the Tab is refused aloud, and a character opens an edit (KB-8, ADR-0230, ADR-0010, ADR-0080)', async ({ page }) => {
+test('with a 150 ms round trip, Escape and Tab typed at once leave the grid, behind an Enter too, and a character opens an edit (KB-8, ADR-0230, ADR-0010, ADR-0080)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly answers before the next key: nothing is held long enough to see');
     await aButtonEitherSide(page);
     await clickCell(page, 0, 1);
@@ -202,30 +202,25 @@ test('with a 150 ms round trip, Escape and Tab typed at once leave the grid once
     await settled(grid(page));
     await setRoundTrip(150);
 
-    // Every input answered, and nothing for an Escape to peel: the gate takes the release at the
-    // Escape's keydown, and the Tab typed at once leaves, as one typed after the answer does
-    // (ADR-0230 section 1). The page's next element after the grid: the header's ▾ buttons are not
+    // Nothing for an Escape to peel: the release is taken at the Escape's keydown, and the Tab
+    // typed at once leaves, as one typed after a round trip does (ADR-0230 section 1). The page's next element after the grid: the header's ▾ buttons are not
     // tab stops (ADR-0080).
     await page.keyboard.press('Escape');
     await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
 
-    // Behind an Enter not yet answered, which could have added a layer, the Escape is held, and the
-    // Tab behind it. Released then, the Tab is the browser's, which script cannot carry out
-    // (ADR-0021): it is refused aloud, the grid keeps the keyboard, and the release stands for the
-    // Tab pressed again (ADR-0230 section 1 (b)).
+    // Behind an Enter too: the Script Core decides each key in the browser as it is typed, so no
+    // answer is awaited from .NET, the Enter has moved the Focus by the time the Escape is judged,
+    // and the Tab leaves. The refusal aloud of ADR-0230 section 1 (b) was for a key held behind an
+    // answer of the Razor grid's, which nothing here waits for.
     await grid(page).focus();
     await expectKeyboardOn(grid(page));
     await settled(grid(page));
     await page.keyboard.press('Enter');
     await page.keyboard.press('Escape');
     await page.keyboard.press('Tab');
-    await expect(grid(page).locator('.ex-announce')).toContainText('Tab was pressed before Escape had let the keyboard leave the grid');
-    await circuitQuiet();
-    await expectKeyboardOn(grid(page));
-    await expectActiveDescendant(grid(page), /r1c1$/);
-    await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
+    await expectActiveDescendant(grid(page), /r1c1$/);
 
     // A character typed before the answer opens an edit in the selected cell once it lands.
     await grid(page).focus();
@@ -317,11 +312,10 @@ test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/C
     expect(clipboard['text/html']).toContain('1000000');
     // CP-4: the html flavour is the raw, locale-free value; the plain is the display.
     // Chrome normalises the fragment on read (a meta charset, a tbody); the cells are
-    // what the contract is about. The raw value is the value's own invariant text: C#'s
-    // decimal keeps the two places it was made with, and the Script Core's number keeps
-    // none, so it is the shortest text of the same number (ADR-0350's values).
-    const raw = REACT ? '1000000' : '1000000.00';
-    expect(clipboard['text/html']).toContain(`<td>${raw}</td><td>${raw}</td>`);
+    // what the contract is about. The raw value is the value's own invariant text: the
+    // Script Core's number, a C# decimal included once it crossed, keeps no trailing places,
+    // so it is the shortest text of the same number (ADR-0350's values).
+    expect(clipboard['text/html']).toContain('<td>1000000</td><td>1000000</td>');
 });
 
 test('a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-3)', async ({ page }) => {
@@ -504,7 +498,7 @@ async function clipboardAfterwards(page, context) {
 
 const cellText = async (page, row, column) => (await grid(page).locator(`[id$='r${row}c${column}']`).textContent()).trim();
 
-test('CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission granted and no prompt, by the copy event on WebAssembly', async ({ page, context }) => {
+test('CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission granted and no prompt, by the copy event', async ({ page, context }) => {
     const expected = `${await cellText(page, 0, 1)}\n${await cellText(page, 1, 1)}`;
     await grantsTakenBack(page, context);
     await watchCopyRoutes(page);
@@ -512,21 +506,13 @@ test('CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission gran
     await page.keyboard.press('Shift+ArrowDown');
     await page.keyboard.press('ControlOrMeta+C');
 
-    if (SERVER) {
-        // No synchronous channel on a circuit: every copy takes the asynchronous route, and what
-        // CP-6 protects there is the missing prompt (ADR-0005, SRV-2). The grid takes the event and
-        // starts its write in it; the write settles as written, unasked.
-        await expect.poll(async () => (await copyRoutes(page)).writes, { timeout: 5000 })
-            .toEqual([{ name: 'write', state: 'written' }]);
-        expect((await copyRoutes(page)).events.map((e) => e.taken)).toEqual([true]);
-    } else {
-        // The copy event route: the grid set both flavours on the event itself, and the
-        // asynchronous Clipboard API was never called.
-        const { events, writes } = await copyRoutes(page);
-        expect(events, 'the grid took the copy event and set its data on it').toEqual([{ taken: true, plain: expect.any(String) }]);
-        expect(events[0].plain.replace(/\r\n/g, '\n').trimEnd()).toBe(expected);
-        expect(writes, 'navigator.clipboard was not called: the copy took the event route').toEqual([]);
-    }
+    // The copy event route on both hosts: the Script Core holds the Window's rows in the browser, so
+    // even on a circuit the grid set both flavours on the event itself, and the asynchronous
+    // Clipboard API was never called (ADR-0005, ADR-0350 section 7).
+    const { events, writes } = await copyRoutes(page);
+    expect(events, 'the grid took the copy event and set its data on it').toEqual([{ taken: true, plain: expect.any(String) }]);
+    expect(events[0].plain.replace(/\r\n/g, '\n').trimEnd()).toBe(expected);
+    expect(writes, 'navigator.clipboard was not called: the copy took the event route').toEqual([]);
     await circuitQuiet();
     await expect(page.locator('#copy-status')).toHaveText('Copy refused: —');
     expect(await clipboardAfterwards(page, context), 'the copy landed on the clipboard').toBe(expected);
@@ -675,21 +661,23 @@ test('CP-14 / ADR-0005: desktop Excel\'s paste, shown text with no x:num, arrive
 });
 
 // CON-8 (ADR-0005): a copy that fails in .NET is never silent. A Consumer's CopyAnswer that throws
-// (/features?copythrows=1) fails the build of the payload. On WebAssembly a Ctrl+C asks for it
-// synchronously, through the channel the probe at attach found, and the failure is said on the
-// console and not run again down the asynchronous route, as a missing channel would be: nothing is
-// written. A menu copy takes the asynchronous route on every host, and on the Server host so does
-// every copy; its failure is said too. The clipboard keeps what it held either way.
+// (/features?copythrows=1) fails the build of the payload: .NET answers that it failed, naming the
+// exception, and the grid refuses the copy and raises the failure on the page, by a Ctrl+C or the
+// menu's Copy alike. The clipboard keeps what it held either way, and the host logs the Consumer's exception: in the
+// browser's console on WebAssembly, in the host's log on Server.
 test.describe(() => {
-    test.use({ expectedErrors: [/\[ex-grid\] the grid failed to build a copy/] });
+    const logged = /the Consumer's copy answer threw, and the copy wrote nothing/;
+    test.use({
+        expectedPageErrors: [/\[ex-grid\] the grid failed to build a copy/],
+        ...(SERVER ? { expectedHostLog: [logged] } : { expectedErrors: [logged] }),
+    });
 
-    test('CON-8 / ADR-0005: a copy whose payload fails to build says so on the console on either route, and writes nothing', async ({ page }) => {
+    test('CON-8 / ADR-0005: a copy whose payload fails to build says so on the page by either gesture, and writes nothing', async ({ page }) => {
         await page.goto('/features?copythrows=1');
         await expect(grid(page).locator('.ex-row').first()).toBeVisible();
         await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
-        await watchCopyRoutes(page);
-        const said = () => page.waitForEvent('console', {
-            predicate: (m) => m.type() === 'error' && m.text().includes('[ex-grid] the grid failed to build a copy'),
+        const said = () => page.waitForEvent('pageerror', {
+            predicate: (error) => error.message.includes('[ex-grid] the grid failed to build a copy'),
             timeout: 5000,
         });
 
@@ -698,9 +686,6 @@ test.describe(() => {
         await page.keyboard.press('ControlOrMeta+C');
         await failure;
         await circuitQuiet();
-        if (!SERVER) {
-            expect((await copyRoutes(page)).writes, 'the failure was not run again down the asynchronous route').toEqual([]);
-        }
         expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('SENTINEL');
 
         failure = said();
@@ -1022,6 +1007,9 @@ test('a Reject holds the editor with real keys, and Escape is the way out (ED-15
     // The Consumer's own sentence, relayed into the root's live region (A11Y-15).
     await expect(grid(page).locator('.ex-announce')).toContainText("'abc' is not a number");
     await expect(page.locator('#edit-status')).not.toContainText('Notional=abc');
+    // Tab's verdict is in, so the Escape comes after a Reject: an Escape while a verdict is awaited
+    // calls that commit off and keeps the editor (ADR-0380 section 3).
+    await settled(grid(page));
 
     await page.keyboard.press('Escape');
     await expect(grid(page).locator('.ex-editor')).toHaveCount(0);

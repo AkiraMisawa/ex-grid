@@ -14,11 +14,9 @@
 <button id="drop-row-order" @onclick="Drop">Remove first two rows</button>
 <button id="restore-row-order" @onclick="Restore">Restore rows</button>
 <p id="row-order-trace">@string.Join(" | ", _trace)</p>
-<ExGrid TRow="CommandRow" Window="_rows" TotalCount="80" Columns="Columns" RowKey="Key"
-        RowSequenceVersion="_version" RowHeight="24" ViewportWidth="450" ViewportHeight="220"
+<ExGrid TRow="CommandRow" Source="_source" Columns="Columns" RowHeight="24" ViewportWidth="450" ViewportHeight="220"
         Chrome="@(DemoChrome.IsMud(ChromeName) ? _chrome : null)" Marks="_marks"
-        DeclaredKeys="Keys" OnDeclaredKey="HoldAsync" OnAction="Act" OnActionRefused="RefusedAction"
-        OnMarkRefused="RefusedMark" />
+        DeclaredKeys="Keys" OnDeclaredKey="HoldAsync" OnAction="Act" OnRefused="Refused" />
 
 @code {
     [SupplyParameterFromQuery(Name = "chrome")] public string? ChromeName { get; set; }
@@ -32,9 +30,8 @@
         GridColumn<CommandRow>.MarkColumn("Mark", width: new(ColumnWidth.Fixed(60))),
     ];
     private readonly MudGridChrome _chrome = new();
-    private CommandRow[] _rows = Rows();
+    private readonly PushedSource<CommandRow> _source = new(Rows(), rowKey: Key);
     private static CommandRow[] Rows() => Enumerable.Range(0, 80).Select(id => new CommandRow(id)).ToArray();
-    private int _version;
     private readonly List<string> _trace = [];
     private TaskCompletionSource? _release;
     private MarkAdapter _marks = default!;
@@ -50,11 +47,15 @@
         Record("finished");
     }
     private void Release() => _release?.TrySetResult();
-    private void Drop() { _rows = _rows.Where(row => row.Id >= 2).ToArray(); _version++; }
-    private void Restore() { _rows = Rows(); _version++; }
+    private void Drop() => _source.Push([.. _source.Window.Where(row => row.Id >= 2)], orderMoved: true);
+    private void Restore() => _source.Push(Rows(), orderMoved: true);
     private void Act(GridActionEventArgs<CommandRow> args) => Record($"action:{args.Row.Id}");
-    private void RefusedAction(GridActionRefusal<CommandRow> refusal) => Record($"action:{refusal.Reason}");
-    private void RefusedMark(MarkRefusalReason reason) => Record($"mark:{reason}");
+    private void Refused(GridRefusal<CommandRow> refusal) => Record(refusal switch
+    {
+        GridRefusal<CommandRow>.Action action => $"action:{action.Reason}",
+        GridRefusal<CommandRow>.Mark mark => $"mark:{mark.Reason}",
+        _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal, "A refusal this page does not record."),
+    });
     public void Dispose() => Release();
     private sealed class MarkAdapter(Action<int> mark) : IRowMarks<CommandRow>
     {

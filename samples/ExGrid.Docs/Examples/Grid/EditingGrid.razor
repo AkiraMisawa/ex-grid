@@ -13,7 +13,7 @@
 
 <ExGrid TRow="Position" Source="_source" Columns="_columns" PinnedColumnCount="1" ShowFillHandle="true"
         CellState="_rules.State" CellMessageOf="_rules.Message"
-        OnEdit="OnEdit" OnPaste="OnPaste" OnFill="OnFill" OnClear="OnClear" OnPasteRefused="OnPasteRefused"
+        OnEdit="OnEdit" OnPaste="OnPaste" OnFill="OnFill" OnClear="OnClear" OnRefused="OnRefused"
         OnUndo="Undo" OnRedo="Redo"
         ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
 
@@ -82,7 +82,14 @@
         => Apply(Cells(clear.Targets).Where(cell => _columns[cell.Column].Name == "Trader")
             .Select(cell => (Row(cell), "Trader", "")).ToList());
 
-    private void OnPasteRefused(PasteRefusalReason reason) => _message = reason switch
+    // The grid names every gesture it refused; this page words the pastes.
+    private void OnRefused(GridRefusal<Position> refusal)
+    {
+        if (refusal is GridRefusal<Position>.Paste paste)
+            _message = Worded(paste.Reason);
+    }
+
+    private static string Worded(PasteRefusalReason reason) => reason switch
     {
         PasteRefusalReason.TargetNotEditable => "Not pasted: the selection covers a column that cannot be edited.",
         PasteRefusalReason.SingleCellTarget => "Not pasted: select a range the same shape as what you copied.",

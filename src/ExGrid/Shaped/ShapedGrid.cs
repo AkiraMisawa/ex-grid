@@ -83,7 +83,8 @@ public sealed class ShapedGrid
             columns[i] = Column(shown, held is DateColumn { HasTime: true }, widths[shown.Column], culture, row => snapshot.ValueAt(row.At, held));
         }
         var rows = ShapedRow.Of(snapshot);
-        var source = GridSource.From<ShapedRow>(rows, row => row);
+        // Keyed by its place in the Snapshot, one per row, so a key crosses to the Script Core as a whole number (ADR-0140).
+        var source = GridSource.From<ShapedRow>(rows, row => row.Position);
         source.OnColumnsChanged([.. columns.Select(c => c.Info)]);
         source.OnSortChanged(spec.ViewState.Sorts);
         source.OnFilterChanged(spec.ViewState.Filter);

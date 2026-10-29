@@ -30,8 +30,9 @@ const SCRIPT_REFUSED = 'This page holds another version of the grid\'s script. R
 const STYLESHEET_NOTICE = 'This page holds another version\'s stylesheet. Reload the page.';
 const ANOTHER_STAMP = '0'.repeat(64);
 
-// The grid's script, as either host serves it: fingerprinted, or with ?v=. Never its source map.
-const SCRIPT = /\/_content\/ExGrid\/ex-grid\.min(\.[a-z0-9]+)?\.js(\?v=[0-9a-f]{12})?$/;
+// The grid's module over the Script Core, as either host serves it: fingerprinted, or with ?v=.
+// Never its source map, nor the Shared Script it imports (ADR-0411, the test below ERR-10's).
+const SCRIPT = /\/_content\/ExGrid\/ex-grid-core\.min(\.[a-z0-9]+)?\.js(\?v=[0-9a-f]{12})?$/;
 const stylesheetOf = (pkg, name) => new RegExp(`/_content/${pkg.replace('.', '\\.')}/${name}\\.min(\\.[a-z0-9]+)?\\.css(\\?v=[0-9a-f]{12})?$`);
 
 /** Serves what `pattern` matches changed by `change`: the host's response, its body decoded and
@@ -65,7 +66,7 @@ async function scriptIntegrityPinned(page, path) {
     const json = /<script type="importmap"[^>]*>([\s\S]*?)<\/script>/.exec(html)?.[1];
     if (!json) return false;
     const base = new URL(path, BASE_URL);
-    const FINGERPRINTED = /\/_content\/ExGrid\/ex-grid\.min\.[a-z0-9]+\.js$/;
+    const FINGERPRINTED = /\/_content\/ExGrid\/ex-grid-core\.min\.[a-z0-9]+\.js$/;
     return Object.keys(JSON.parse(json).integrity ?? {}).some((address) => {
         const url = new URL(address, base);
         return !url.search && FINGERPRINTED.test(url.pathname);
@@ -89,10 +90,12 @@ function countingAttaches(body) {
     return body.replace(statement, `${counted}export{${exports.join(',')}};`);
 }
 
-/** Another version's script: the same module answering another stamp. */
+/** Another version's script: the same module answering another stamp, the one its first line names. */
 const anotherVersion = (body) => {
-    const changed = countingAttaches(body).replace(/return"[0-9a-f]{64}"/, `return"${ANOTHER_STAMP}"`);
-    expect(changed, 'the shipped script answers a stamp to replace').not.toBe(countingAttaches(body));
+    const stamp = /^\/\*! ex-grid-core\.js sha256:([0-9a-f]{64}) /.exec(body)?.[1];
+    expect(stamp, 'the shipped script opens with its stamp').toBeDefined();
+    const changed = countingAttaches(body).replaceAll(stamp, ANOTHER_STAMP);
+    expect(changed.match(/"0{64}"/g)?.length, 'the shipped script answers the stamp it opens with').toBe(1);
     return changed;
 };
 
@@ -105,34 +108,22 @@ const olderThanTheStamp = (body) => {
     return counted.replace(statement, `export{${kept.join(',')}};`);
 };
 
-/** Records every text each grid's live region is given, from the document's start. */
-async function recordAnnouncements(page) {
-    await page.addInitScript(() => {
-        window.__exAnnounced = [];
-        new MutationObserver(() => {
-            document.querySelectorAll('.ex-announce').forEach((region, i) => {
-                const text = region.textContent;
-                if (text && region.__exLast !== text) {
-                    window.__exAnnounced.push({ grid: i, text });
-                }
-                region.__exLast = text;
-            });
-        }).observe(document, { subtree: true, childList: true, characterData: true });
-    });
-}
-
 test.describe('ERR-9: the address of each file', () => {
     test(`ERR-9 / ADR-0123: the script and the stylesheets are asked for at ${SERVER ? 'the fingerprinted address' : 'the plain path with the file\'s version'}`, async ({ page }) => {
-        // The Razor ExSheet, which still ships (ADR-0370 section 6, step 2): the Sheet over the Script
-        // Core brings its own bundle and draws no stylesheet notice yet.
-        await page.goto('/sheet?component=razor');
+        // The grid over the Script Core: its module, at the address of this host, and the Shared
+        // Script the module imports beside it by the Shared Script's own version (ADR-0411).
+        // Every request heard from the document's start: the resource timing buffer of a WebAssembly
+        // application is full of the runtime's files before the grid asks for its own.
+        const asked = [];
+        page.on('request', (request) => { asked.push(request.url()); });
+        await page.goto('/wide');
         await expect(page.locator('.ex-grid').first().locator('.ex-row').first()).toBeVisible();
 
         const links = await page.evaluate(() => [...document.querySelectorAll('head link[rel=stylesheet]')]
             .map((link) => link.getAttribute('href')).filter((href) => /_content\/Ex(Grid|Sheet)\//.test(href)));
-        const scripts = await page.evaluate(() => performance.getEntriesByType('resource')
-            .map((entry) => new URL(entry.name).pathname + new URL(entry.name).search)
-            .filter((path) => /^\/_content\/ExGrid\/ex-grid\.min[^/]*\.js(\?|$)/.test(path)));
+        const scripts = asked.map((url) => new URL(url).pathname + new URL(url).search)
+            .filter((path) => /^\/_content\/ExGrid\/ex-grid-(core|script)\.min[^/]*\.js(\?|$)/.test(path));
+        const shared = expect.stringMatching(/^\/_content\/ExGrid\/ex-grid-script\.min\.js\?v=[0-9a-f]{12}$/);
 
         if (SERVER) {
             // A Blazor Web App on MapStaticAssets: the host's fingerprinted files, served immutable.
@@ -140,14 +131,14 @@ test.describe('ERR-9: the address of each file', () => {
                 expect.stringMatching(/^_content\/ExGrid\/ex-grid\.min\.[a-z0-9]+\.css$/),
                 expect.stringMatching(/^_content\/ExSheet\/ex-sheet\.min\.[a-z0-9]+\.css$/),
             ]);
-            expect(scripts).toEqual([expect.stringMatching(/^\/_content\/ExGrid\/ex-grid\.min\.[a-z0-9]+\.js$/)]);
+            expect(scripts).toEqual([expect.stringMatching(/^\/_content\/ExGrid\/ex-grid-core\.min\.[a-z0-9]+\.js$/), shared]);
         } else {
             // A standalone application: the plain path, with the file's content hash.
             expect(links).toEqual([
                 expect.stringMatching(/^_content\/ExGrid\/ex-grid\.min\.css\?v=[0-9a-f]{12}$/),
                 expect.stringMatching(/^_content\/ExSheet\/ex-sheet\.min\.css\?v=[0-9a-f]{12}$/),
             ]);
-            expect(scripts).toEqual([expect.stringMatching(/^\/_content\/ExGrid\/ex-grid\.min\.js\?v=[0-9a-f]{12}$/)]);
+            expect(scripts).toEqual([expect.stringMatching(/^\/_content\/ExGrid\/ex-grid-core\.min\.js\?v=[0-9a-f]{12}$/), shared]);
         }
         // Whichever the address, it is the file the package ships: its stylesheet's notice is hidden.
         await expect(page.locator('.ex-grid > [data-ex-stylesheet="ex-grid.css"]').first()).toBeHidden();
@@ -170,34 +161,36 @@ test.describe('ERR-9: the address of each file', () => {
     });
 });
 
+/**
+ * The grid's refusal of its script (ERR-10): said in place of the grid by an alert, which is its live
+ * region, since no grid was made to hold one; nothing attached, so no grid stands to wait or take a
+ * key; and said once per grid, however long the page stands.
+ */
+async function expectRefused(page) {
+    const refusal = page.locator('[data-ex-notice="script"]');
+    await expect(refusal.first()).toBeVisible();
+    await expect(refusal.first()).toHaveText(SCRIPT_REFUSED);
+    await expect(refusal.first()).toHaveAttribute('role', 'alert');
+    expect(await page.evaluate(() => globalThis.__exAttaches ?? 0)).toBe(0);
+    await expect(page.locator('.ex-grid')).toHaveCount(0);
+    await expect(page.locator('.ex-row')).toHaveCount(0);
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    // spec-lint: fixed-wait: the grid's script never attached, so no Settled Mark is written, and nothing marks that no second refusal will come
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 500)));
+    // /wide holds one grid.
+    await expect(refusal).toHaveCount(1);
+}
+
 test.describe('ERR-10: a script that is not the one the grid was built with', () => {
     for (const [what, change] of [['another version\'s script', anotherVersion], ['a script older than the stamp', olderThanTheStamp]]) {
         test(`ERR-10 / ADR-0123: ${what} is refused before anything attaches, said in place of the rows and once in the live region`, async ({ page }) => {
             test.skip(await scriptIntegrityPinned(page, '/wide'),
                 'this host pins the script by integrity, so the browser refuses a changed body first: the next test');
-            await recordAnnouncements(page);
             await serveScript(page, change);
 
             await page.goto('/wide');
 
-            const grid = page.locator('.ex-grid').first();
-            const refusal = grid.locator('.ex-viewport > [data-ex-notice="script"]');
-            await expect(refusal).toBeVisible();
-            await expect(refusal).toHaveText(SCRIPT_REFUSED);
-            await expect(grid.locator('.ex-announce')).toHaveText(SCRIPT_REFUSED);
-            // Nothing attached: the module's attach never ran. The grid is not busy, since nothing it
-            // waits for will come, and takes no tab stop, since nothing would hear a key.
-            expect(await page.evaluate(() => globalThis.__exAttaches ?? 0)).toBe(0);
-            await expect(grid).not.toHaveAttribute('aria-busy');
-            await expect(grid).not.toHaveAttribute('tabindex');
-            await expect(grid).not.toHaveClass(/\bex-loading\b/);
-            await expect(grid.locator('.ex-row')).toHaveCount(0);
-            // Said once per grid, however long the page stands.
-            // spec-lint: fixed-wait: the grid's script never attached, so no Settled Mark is written, and nothing marks that no second announcement will come
-            await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 500)));
-            const said = await page.evaluate(() => window.__exAnnounced);
-            const grids = await page.locator('.ex-grid').count();
-            expect(said.filter((s) => s.text === SCRIPT_REFUSED)).toHaveLength(grids);
+            await expectRefused(page);
         });
     }
 
@@ -215,33 +208,17 @@ test.describe('ERR-10: a script that is not the one the grid was built with', ()
     });
 
     test.describe('where the host pins the script by integrity', () => {
-        test.use({ expectedErrors: [/Failed to find a valid digest in the 'integrity' attribute for resource '[^']*\/_content\/ExGrid\/ex-grid\.min[^']*\.js/] });
+        test.use({ expectedErrors: [/Failed to find a valid digest in the 'integrity' attribute for resource '[^']*\/_content\/ExGrid\/ex-grid-core\.min[^']*\.js/] });
 
         test('ERR-10 / ADR-0123: another version\'s script is blocked by the browser, and the grid says so as for a script that did not load, attaching nothing', async ({ page }) => {
             test.skip(!(await scriptIntegrityPinned(page, '/wide')),
                 'this host does not pin the script by integrity: the grid\'s own stamp refuses it, the tests above');
-            await recordAnnouncements(page);
             await serveScript(page, anotherVersion);
 
             await page.goto('/wide');
 
-            const grid = page.locator('.ex-grid').first();
-            const refusal = grid.locator('.ex-viewport > [data-ex-notice="script"]');
-            await expect(refusal).toBeVisible();
-            await expect(refusal).toHaveText(SCRIPT_REFUSED);
-            await expect(grid.locator('.ex-announce')).toHaveText(SCRIPT_REFUSED);
-            // The changed body never ran: nothing attached, and the grid neither waits nor takes a tab stop.
-            expect(await page.evaluate(() => globalThis.__exAttaches ?? 0)).toBe(0);
-            await expect(grid).not.toHaveAttribute('aria-busy');
-            await expect(grid).not.toHaveAttribute('tabindex');
-            await expect(grid).not.toHaveClass(/\bex-loading\b/);
-            await expect(grid.locator('.ex-row')).toHaveCount(0);
-            // Said once per grid, however long the page stands, as where the grid's own stamp refuses it.
-            // spec-lint: fixed-wait: the grid's script never attached, so no Settled Mark is written, and nothing marks that no second announcement will come
-            await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 500)));
-            const said = await page.evaluate(() => window.__exAnnounced);
-            const grids = await page.locator('.ex-grid').count();
-            expect(said.filter((s) => s.text === SCRIPT_REFUSED)).toHaveLength(grids);
+            // The changed body never ran: what the grid says is what it says for a script that did not load.
+            await expectRefused(page);
         });
     });
 });
@@ -313,12 +290,13 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
 
     test('ERR-11 / ADR-0123: while the stylesheet has not arrived, the notice shows nothing', async ({ page }) => {
         // A standalone application links the stylesheet once it has started, so the grid can stand,
-        // and hear keys, before its stylesheet has arrived: the cold load's unstyled moment. A Blazor
-        // Web App's prerendered page has the grid in its markup and the stylesheet in its head, where
-        // it holds back the page's scripts, so the page stays prerendered until it arrives. Either way
-        // the grid stands in the document before its stylesheet does, and the notice shows nothing.
-        // The navigation's own wait for an interactive page is therefore awaited only once the
-        // stylesheet has been let through: on the Server host it cannot end before.
+        // and hear keys, before its stylesheet has arrived: the cold load's unstyled moment, in which
+        // the notice shows nothing. A Blazor Web App's prerendered page has the stylesheet in its
+        // head, where it holds back the page's scripts, so the page stays prerendered until it
+        // arrives, and the grid over the Script Core, drawn in the browser once the page is
+        // interactive, does not stand at all: there is no notice to show. The navigation's own wait
+        // for an interactive page is therefore awaited only once the stylesheet has been let through:
+        // on the Server host it cannot end before.
         let arrive;
         const arrived = new Promise((resolve) => { arrive = resolve; });
         await page.route(stylesheetOf('ExGrid', 'ex-grid'), async (route) => {
@@ -329,11 +307,17 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
         const navigated = page.goto('/wide', { waitUntil: 'commit' });
         try {
             const grid = page.locator('.ex-grid').first();
-            await expect(grid.locator('.ex-row').first()).toBeAttached();
-            // No stylesheet yet: the grid stands unstyled (its root is not positioned), and the notice
-            // is not shown.
-            expect(await grid.evaluate((element) => getComputedStyle(element).position)).toBe('static');
-            await expect(grid.locator(':scope > [data-ex-stylesheet="ex-grid.css"]')).toBeHidden();
+            if (SERVER) {
+                // The prerendered page stands, and no grid in it.
+                await expect(page.locator('h1', { hasText: 'Wide' })).toBeAttached();
+                await expect(page.locator('.ex-grid')).toHaveCount(0);
+            } else {
+                await expect(grid.locator('.ex-row').first()).toBeAttached();
+                // No stylesheet yet: the grid stands unstyled (its root is not positioned), and the
+                // notice is not shown.
+                expect(await grid.evaluate((element) => getComputedStyle(element).position)).toBe('static');
+                await expect(grid.locator(':scope > [data-ex-stylesheet="ex-grid.css"]')).toBeHidden();
+            }
         } finally {
             arrive();
             await navigated;

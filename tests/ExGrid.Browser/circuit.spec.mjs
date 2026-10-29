@@ -106,29 +106,36 @@ test.describe('input made while the circuit is down is refused aloud, and the gr
         await expect(page.locator('#row-order-trace')).toHaveText('second | action:0');
     });
 
-    test('keys typed while the connection is lost are refused once it is back, and the next key is answered', async ({ page }) => {
+    test('an edit committed while the connection is lost is refused once it is back, and the editor keeps its text', async ({ page }) => {
         test.skip(!SERVER, 'a WebAssembly tab has no circuit to lose');
         const ownConnections = await connectionMark();
         await openFeatures(page);
         await clickCell(page, 0, 1);                  // Trader, editable
+        await page.keyboard.type('lost');
         await settled(grid(page));
 
-        // Two ↓ the script sends at once, and a letter it holds the keys behind until the editor opens:
-        // none reaches the host, and Blazor never ends the calls.
+        // The keys the browser carries out alone, arrows and typing, never wait on the host; the commit does, and
+        // its write never reaches the host, nor does Blazor ever end the call.
         await dropCircuit(true, ownConnections);
-        await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('ArrowDown');
-        await page.keyboard.press('x');
+        await page.keyboard.press('Enter');
         await dropCircuit(false);
         await circuitBack();
 
-        // The next key finds them missing: they are refused aloud, never replayed, and it is answered.
-        await page.keyboard.press('ArrowDown');
+        // The next key finds it missing: it is refused aloud, never sent again, and the key is answered. F2 commits
+        // nothing, so the editor that stands is the refused commit's.
+        await page.keyboard.press('F2');
         await settled(grid(page));
-        await expectActiveDescendant(grid(page), /r1c1$/);
-        await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
+        const editor = grid(page).locator('input.ex-editor');
+        await expect(editor).toHaveValue('lost');
         await expect(grid(page).locator('.ex-announce'))
             .toHaveText('Input made while the connection to the server was lost was not carried out. Make it again.');
+        await expect(page.locator('#edit-status')).not.toContainText('Trader=lost');
+
+        // Made again, it is carried out.
+        await page.keyboard.press('Enter');
+        await settled(grid(page));
+        await expect(page.locator('#edit-status')).toContainText('Trader=lost');
+        await expect(editor).toHaveCount(0);
     });
 });
 
@@ -402,47 +409,10 @@ test('a held Tab that script cannot perform stops the held typing there, rather 
     expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
 });
 
-for (const [what, column, open, closes] of [
-    ['the operator list', 2, async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click(), true],
-    ['the date calendar', 4, async (page) => grid(page).locator('.mud-ex-grid-filter-operand button').first().click(), false],
-]) {
-    test(`an Escape pressed straight after ${what} opens is not the grid's (KB-35, ADR-0039)`, async ({ page }) => {
-        await page.goto('/features?chrome=mud');
-        await expectTabStopTaken(grid(page));
-        await clickCell(page, 1, column);
-        await page.keyboard.press('Alt+ArrowDown');
-        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-        // Tab from the commands into the panel's operator (ADR-0044), and on to the date's
-        // field for the calendar.
-        await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
-        await page.keyboard.press('Tab');
-        await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
-        if (column === 4) {
-            await page.keyboard.press('Tab');
-        }
-        await setRoundTrip(150);
-
-        await open(page);
-        await expect(page.locator('.mud-popover-open')).not.toHaveCount(0);
-        await page.keyboard.press('Escape');
-
-        // Had the grid taken it, the panel would close a round trip later. Once the grid has
-        // settled and the circuit is quiet, nothing the Escape set going is still on its way,
-        // and the panel must still stand.
-        await settled(grid(page));
-        await circuitQuiet();
-        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-        // Whether the popup closes on it is the design system's: MudBlazor's select closes
-        // its list; its date picker ignores an Escape while DOM focus is still on the
-        // button that opened the calendar — which, a round trip in, it is.
-        if (closes) {
-            await expect(page.locator('.mud-popover-open')).toHaveCount(0);
-        }
-    });
-}
-
 // The Wrapper's filter panel, on Notional (a condition, so an operator), with the keyboard
-// moved into the operator by Tab from the commands above it (ADR-0044).
+// moved into the operator by Tab from the commands above it (ADR-0044). Over the Script Core the
+// operator is a native select in MudBlazor's outline, so that a choice reaches the core in the
+// browser (MudExGridScriptFilterPanel).
 async function openMudNotionalPanel(page) {
     await page.goto('/features?chrome=mud');
     await expectTabStopTaken(grid(page));
@@ -452,16 +422,14 @@ async function openMudNotionalPanel(page) {
     await expect(panel).toBeVisible();
     await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role=menu]'))).toBe(true);
     await page.keyboard.press('Tab');
-    await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('combobox');
+    await expect.poll(() => page.evaluate(() => document.activeElement?.matches('select[data-ex-filter-operator]'))).toBe(true);
     return panel;
 }
 
 test('a value typed and Enter pressed at once apply the condition (KB-31, SRV-5)', async ({ page }) => {
     const panel = await openMudNotionalPanel(page);
     const before = await grid(page).getAttribute('aria-rowcount');
-    await panel.getByRole('combobox', { name: 'Operator' }).click();
-    await page.locator('.mud-popover-open .mud-list-item', { hasText: /^>$/ }).click();
-    await expect(page.locator('.mud-popover-open .mud-list-item')).toHaveCount(0);
+    await panel.getByRole('combobox', { name: 'Operator' }).selectOption('greaterThan');
     await setRoundTrip(150);
 
     // Apply is unavailable until the value is given (WR-2), and the value reaches the
@@ -473,23 +441,6 @@ test('a value typed and Enter pressed at once apply the condition (KB-31, SRV-5)
 
     await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
     await expect.poll(() => grid(page).getAttribute('aria-rowcount')).not.toBe(before);
-});
-
-test('Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5)', async ({ page }) => {
-    const panel = await openMudNotionalPanel(page);
-    await panel.getByRole('combobox', { name: 'Operator' }).click();
-    await expect(page.locator('.mud-popover-open .mud-list-item').first()).toBeVisible();
-    // The report that the list is open has reached the key gate before the round trip grows.
-    await circuitQuiet();
-    await setRoundTrip(150);
-
-    // The first is the list's; the second, typed before the list's closing could be
-    // reported back, is the grid's (ADR-0039).
-    await page.keyboard.press('Escape');
-    await page.keyboard.press('Escape');
-
-    await expect(page.locator('.mud-popover-open')).toHaveCount(0);
-    await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
 });
 
 test('a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5)', async ({ page }) => {
@@ -518,17 +469,13 @@ test.describe(() => {
     // skips: this test loads its page for real (ADR-0056).
     test.use({ freshDocument: true });
 
-    test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20, ADR-0080)', async ({ page }) => {
+    test('a Prerendered page holds no grid to press or tab to until its circuit connects (A11Y-20, ADR-0080)', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
-        // The document as the server sends it, before any script has run.
+        // The document as the server sends it, before any script has run. Blazor's Script grid is drawn by its
+        // script, so the prerender holds the element it mounts on and no grid: no root, no rows to press, and no
+        // Keyboard Field, the tab stop of a grid that edits (ADR-0080; A11Y-20's note of 2026-10-29).
         const html = await (await page.request.get('/features')).text();
-        const root = html.match(/<div class="ex-grid[^"]*"[^>]*>/)?.[0] ?? '';
-
-        expect(root).toContain('ex-loading');
-        expect(root).toContain('aria-busy="true"');
-        expect(root).not.toContain('tabindex');
-        // Nor its Keyboard Field, the tab stop of a grid that edits: it stands only once the key
-        // listener is attached (ADR-0080).
+        expect(html).not.toMatch(/class="[^"]*\bex-grid\b/);
         expect(html).not.toMatch(/class="[^"]*\bex-key-field\b/);
 
         await openFeatures(page);

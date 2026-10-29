@@ -38,6 +38,15 @@ public class ActionAndTemplateColumnTests
         Assert.Equal("", column.Header);
     }
 
+    [Fact] // ADR-0020: an Action Column has no value, so declaring it queryable is refused rather than sorting by nothing
+    public void An_action_column_declared_queryable_is_refused()
+    {
+        var column = GridColumn<Trade>.ActionColumn("Actions", [Open]);
+
+        Assert.Throws<ArgumentException>(() => column with { IsQueryable = true });
+        Assert.False((column with { IsQueryable = false }).IsQueryable);
+    }
+
     [Fact] // ADR-0020: the number of actions is declared, so declaring none is a mistake, not an empty cell
     public void An_action_column_with_no_actions_is_refused()
     {

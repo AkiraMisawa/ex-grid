@@ -54,10 +54,61 @@ Consumer in its turn, what it writes crosses before the browser hears it was han
 made, refused by name as ADR-0431 section 1 has the Formula entry functions refused. `FindMatch` is handed the row's
 values by column name, since the browser holds no row of .NET's.
 
+*Note of 2026-10-29:* without a `FindMatch`, a `GridSource.From` source's painted matches are still marked, by the
+reference rule over the texts that cross with the rows: that source finds by the same rule over the same texts, so
+the marks agree with the step, as ADR-0332 section 4 has the Razor grid mark them. Over any other .NET source,
+nothing is marked without one.
+
+### 4. The grid's own words cross as a table, asked of every id
+
+`CommandLabel` words the grid's own UI (ADR-0036): its commands, its fields, its refusals, its summary, its find
+panel and its reload notice. The browser words them as it draws, synchronously, so .NET asks the function of every
+id the grid words, the public constants of the classes that name them, as the grid is made and whenever another
+function is given, and sends the answers as one table; an id answered null keeps the grid's words. A placeholder such
+as `{column}` is a mark inside the words, not an id, and is not asked. The commands `ContextCommands` answers keep
+their own words, `ContextCommandLabel`'s, which come with the menu (ADR-0421).
+
+*Added on 2026-10-29, in the same thread, when the DemoHost pages and the Docs Examples moved onto
+`ExGrid.Script.ExGrid` and an Example that replaced two refusals' words had no parameter to take them.*
+
+### 5. The row an open edit follows crosses beyond the rows shown
+
+.NET sends the browser only the rows of the source's Window the grid shows, with a margin, so that a million rows held
+in .NET never cross. The source's Window is still the Window the grid judges by (ADR-0142, LV-20): with a Row Key, an
+editor whose row an order move takes beyond the rows that crossed follows it, and its commit lands there, wherever the
+source's Window holds it. So the core tells its source the key an open edit follows (`GridSource.holdKey`, optional;
+none once the edit ends), and a source that hands over a slice of a Window it holds names that one row in its state,
+at its place in the Window (`GridSourceState.beyond`). The core reads such a row only to find a key and the row at a
+position; it never paints it. A source that hands over its whole Window, as every source of the Script Core's own does,
+leaves both out, and the key is found in the Window as before. A key the source's Window no longer holds crosses
+nothing, and the commit is refused as `RowLeftTheWindow`, as LV-20 says.
+
+*Added on 2026-10-29, in the same thread, when `write-lands.spec.mjs`'s LV-20 ran against `ExGrid.Script.ExGrid`: the
+editor stayed where it was opened, because the row it followed was in .NET's Window but not among the rows sent.*
+
+### 6. A Sort or Filter asked of .NET's source is the state's until .NET has taken it in
+
+The core reads the Sort and Filter in force from its source's state: a filter panel opened right after OK reads the
+filter it shows, and a second sort is made from the first (ADR-0009, ADR-0044). A `FetchingSource` puts what it is
+asked for in its state at once, loading, and an in-memory source sorts at once. .NET's source answers a round trip
+later on Server, so a panel reopened at machine speed read the filter before the one just applied, and offered no
+"Add current selection" (the spine's sixth rule broken by timing). So the browser's copy of .NET's source holds the
+Sort or Filter it asked for, loading, in place of .NET's, until a state arrives that .NET wrote after telling its
+source: each request is numbered, and each state names the last one .NET has told (`asked`). .NET sends a state after
+each request even where the source took it as no change. A request lost on the way (ADR-0240 section 11) lets go of
+it, and the state is .NET's again. The header shows the Sort as it is asked for, and the rows still stand in the
+order before until .NET's arrive, with the grid loading, as under a `FetchingSource`; a click before then is taken
+against the order before, and the order's change drops it (ADR-0011).
+
+*Added on 2026-10-29, in the same thread, when `popovers.spec.mjs`'s E on a checkbox failed now and then on the
+Server host.*
+
 ## Considered options
 
 - **Asking .NET as the core paints.** A round trip per row or per cell on Server, and no answer at all where the core
   paints synchronously. Rejected for painting as ADR-0420 rejected it for a chart's format.
+- **Sending the rows between the slice and the edited row**, so the Window that crosses stays one run. Rejected: a row
+  a re-sort moves to the end of a million would send the million.
 - **Asking the synchronous four of .NET later, the keys held.** Rejected as ADR-0431 rejected it for Formula entry:
   it reworks the core React shares, for a round trip per key on Server.
 
@@ -65,5 +116,6 @@ values by column name, since the browser holds no row of .NET's.
 
 - A Consumer that answered Row Headings, the Name Box's label, a Find rule or the data edge in C# writes them in a
   module once, for both hosts.
+- A grid with `CommandLabel` sends its words once per function, a few hundred short strings, not per row or key.
 - Each row crosses with what it paints, so a grid with appearances, change times or marks sends more per row; a grid
   without them sends nothing more.

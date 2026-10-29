@@ -101,6 +101,7 @@ export const japaneseGridWordTable: ReadonlyMap<string, string> = new Map([
     ['edit-commit-cancelled', '何も変更されませんでした: 確認中に編集が取り消されました。'],
     ['replace-cell-changed', '何も置換されませんでした: 確認中にセルが変更されました。'],
     ['pending-input-lost', '編集の確認中の入力を受け付けられませんでした。もう一度入力してください。'],
+    ['paste-under-way', '貼り付けています。Esc キーで取り消せます。'],
     ['error-step-none', '表示中の行と列にエラーはありません。'],
     ['error-step-moved', '次のエラーを探す間に行が移動したため、移動を取りやめました。もう一度 F8 キーを押してください。'],
 

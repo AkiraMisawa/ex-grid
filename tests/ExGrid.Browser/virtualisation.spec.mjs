@@ -357,88 +357,85 @@ test('Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next 
 });
 
 /**
- * Counts every crossing between the grid's module and .NET, in both directions, by a
- * conditional breakpoint that never pauses: on the first statement of each method of
- * the per-instance handle (.NET calling JavaScript), and on each call into .NET the
- * module makes. Located in the source the module was written as, so a moved line cannot
- * silently stop being counted — a site that cannot be placed fails the test. The module is
- * shipped minified (ADR-0123), possibly under a fingerprinted name: the sites are found in the
- * source its source map carries, and each is placed where the map says it was served.
+ * Counts every crossing between the grid and .NET, in both directions, by a conditional breakpoint
+ * that never pauses: on the first statement of each method of the handle Blazor's ExGrid holds on
+ * the Script Core (.NET calling JavaScript), and on the one door every call into .NET passes, the
+ * Shared Script's `crossingCalls` (ADR-0350 section 7, ADR-0411). The handle is located in the
+ * source the module was written as, so a moved line cannot silently stop being counted — a site
+ * that cannot be placed fails the test. The modules are shipped minified (ADR-0123), possibly under
+ * a fingerprinted name: the handle's methods are found in the source its source map carries, and
+ * each is placed where the map says it was served. The door is found in the Shared Script as
+ * served, since its condition reads the method's name from the served function's own parameter.
  */
 async function countGridInterop(page) {
     const client = await page.context().newCDPSession(page);
-    let module;
+    const scripts = {};
     client.on('Debugger.scriptParsed', (e) => {
-        if (/\/_content\/ExGrid\/ex-grid(\.[\w-]+)*\.js(\?v=[0-9a-f]{12})?$/.test(e.url)) {
-            module = e;
-        }
+        const name = /\/_content\/ExGrid\/(ex-grid-core|ex-grid-script)(\.[\w-]+)*\.js(\?v=[0-9a-f]{12})?$/.exec(e.url)?.[1];
+        if (name) scripts[name] = e;
     });
     await client.send('Debugger.enable');
-    await expect.poll(() => module, { message: 'ex-grid.js is loaded' }).toBeTruthy();
+    await expect.poll(() => scripts['ex-grid-core'] && scripts['ex-grid-script'], { message: 'the grid\'s modules are loaded' }).toBeTruthy();
 
-    const { scriptSource: served } = await client.send('Debugger.getScriptSource', { scriptId: module.scriptId });
-    let scriptSource = served;
-    let toServed = (line, column) => ({ lineNumber: line, columnNumber: column });
-    if (module.sourceMapURL) {
-        const response = await page.request.get(new URL(module.sourceMapURL, module.url).href);
-        expect(response.ok(), 'the source map is served').toBe(true);
-        const map = await response.json();
-        scriptSource = map.sourcesContent[0];
-        const segments = decodeMappings(map.mappings);
-        toServed = (line, column) => {
-            // The first mapped place at or after the written one, on its line or a later one.
-            let best;
-            for (const m of segments) {
-                if (m.sourceLine < line || (m.sourceLine === line && m.sourceColumn < column)) continue;
-                if (!best || m.sourceLine < best.sourceLine || (m.sourceLine === best.sourceLine && m.sourceColumn < best.sourceColumn)) best = m;
-            }
-            expect(best, `a served place for ${line}:${column}`).toBeTruthy();
-            return { lineNumber: best.line, columnNumber: best.column };
-        };
-    }
-    const at = (index) => {
-        const before = scriptSource.slice(0, index).split('\n');
-        return { scriptId: module.scriptId, ...toServed(before.length - 1, before.at(-1).length) };
-    };
-    const sites = [];
-    // The handle is the object `attach` returns. Since ADR-0080 it is named first
-    // (`const handle = {`), because the Keyboard Field's composition end grants the editor's
-    // waiting request through it, and returned after; before, it was returned as written.
-    const named = scriptSource.lastIndexOf('\n    const handle = {');
-    const handle = named >= 0 ? named : scriptSource.lastIndexOf('\n    return {');
-    for (const m of scriptSource.slice(handle).matchAll(/^ {8}(\w+): (?:async )?\([^)]*\) =>\s*/gm)) {
-        sites.push({ name: `.NET→JS ${m[1]}`, index: handle + m.index + m[0].length });
-    }
-    for (const m of scriptSource.matchAll(/core\.invokeMethod(?:Async)?\(\s*'(\w+)'/g)) {
-        sites.push({ name: `JS→.NET ${m[1]}`, index: m.index });
-    }
-    // Every member of the handle and every call into .NET, not only the ones shaped the
-    // way the patterns above expect: one written another way would go uncounted.
-    const members = [...scriptSource.slice(handle).matchAll(/^ {8}(\w+):/gm)].map((m) => `.NET→JS ${m[1]}`);
-    const calls = [...scriptSource.matchAll(/core\.invokeMethod/g)].length;
-    expect(sites.filter((s) => s.name.startsWith('.NET')).map((s) => s.name), 'every handle member placed')
-        .toEqual(members);
-    expect(sites.filter((s) => s.name.startsWith('JS')).length, 'every call into .NET placed').toBe(calls);
-    expect(members, 'the handle was found').toContain('.NET→JS getScrollOffset');
-
-    for (const site of sites) {
+    const placed = async (script, line, column, counter) => {
         const { locations } = await client.send('Debugger.getPossibleBreakpoints', {
-            start: at(site.index),
+            start: { scriptId: script.scriptId, lineNumber: line, columnNumber: column },
             restrictToFunction: true,
         });
-        expect(locations.length, `a breakpoint for ${site.name}`).toBeGreaterThan(0);
-        const name = JSON.stringify(site.name);
+        expect(locations.length, `a breakpoint for ${counter}`).toBeGreaterThan(0);
         await client.send('Debugger.setBreakpoint', {
             location: locations[0],
-            condition: `(globalThis.__exInterop[${name}] = (globalThis.__exInterop[${name}] ?? 0) + 1, false)`,
+            condition: `(globalThis.__exInterop[${counter}] = (globalThis.__exInterop[${counter}] ?? 0) + 1, false)`,
         });
+    };
+
+    // .NET→JS: each method of the object `attach` answers, in blazor-grid.ts.
+    const core = scripts['ex-grid-core'];
+    expect(core.sourceMapURL, 'the module is served with its source map').toBeTruthy();
+    const response = await page.request.get(new URL(core.sourceMapURL, core.url).href);
+    expect(response.ok(), 'the source map is served').toBe(true);
+    const map = await response.json();
+    const source = map.sources.findIndex((path) => path.endsWith('blazor/src/blazor-grid.ts'));
+    expect(source, 'the module carries blazor-grid.ts').toBeGreaterThanOrEqual(0);
+    const written = map.sourcesContent[source];
+    const segments = decodeMappings(map.mappings).filter((m) => m.source === source);
+    const attach = written.indexOf('\nexport function attach(');
+    const handle = written.indexOf('\n    return Object.freeze({', attach);
+    const handleEnd = written.indexOf('\n    });', handle);
+    expect(attach >= 0 && handle > attach && handleEnd > handle, 'the handle was found').toBe(true);
+    const body = written.slice(handle, handleEnd);
+    const members = [...body.matchAll(/^ {8}(\w+):/gm)].map((m) => m[1]);
+    const sites = [...body.matchAll(/^ {8}(\w+): (?:async )?\((?:[^()]|\([^()]*\))*\)(?:: [^=]+)? =>\s*/gm)];
+    expect(sites.map((m) => m[1]), 'every handle member placed').toEqual(members);
+    expect(members, 'the handle was found').toContain('update');
+    for (const m of sites) {
+        const before = written.slice(0, handle + m.index + m[0].length).split('\n');
+        const line = before.length - 1;
+        const column = before.at(-1).length;
+        // The first mapped place at or after the written one, on its line or a later one.
+        let best;
+        for (const s of segments) {
+            if (s.sourceLine < line || (s.sourceLine === line && s.sourceColumn < column)) continue;
+            if (!best || s.sourceLine < best.sourceLine || (s.sourceLine === best.sourceLine && s.sourceColumn < best.sourceColumn)) best = s;
+        }
+        expect(best, `a served place for ${m[1]}`).toBeTruthy();
+        await placed(core, best.line, best.column, JSON.stringify(`.NET→JS ${m[1]}`));
     }
+
+    // JS→.NET: the door, once, counted by the method it calls.
+    const shared = scripts['ex-grid-script'];
+    const { scriptSource } = await client.send('Debugger.getScriptSource', { scriptId: shared.scriptId });
+    const doors = [...scriptSource.matchAll(/invokeMethodAsync:\(([\w$]+),\.\.\.[\w$]+\)=>\{/g)];
+    expect(doors.length, 'the one door every call into .NET passes').toBe(1);
+    const before = scriptSource.slice(0, doors[0].index + doors[0][0].length).split('\n');
+    await placed(shared, before.length - 1, before.at(-1).length, `"JS→.NET " + ${doors[0][1]}`);
     await page.evaluate(() => { globalThis.__exInterop = {}; });
 }
 
 /**
  * A source map's `mappings`, decoded: each segment's place in the served script (`line`,
- * `column`) and in the source it was written as (`sourceLine`, `sourceColumn`), all from 0.
+ * `column`), the source it was written in (`source`, an index into `sources`) and its place there
+ * (`sourceLine`, `sourceColumn`), all from 0.
  */
 function decodeMappings(mappings) {
     const digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -467,7 +464,7 @@ function decodeMappings(mappings) {
                 sourceLine += values[2];
                 sourceColumn += values[3];
                 if (values.length >= 5) name += values[4];
-                segments.push({ line, column, sourceLine, sourceColumn });
+                segments.push({ line, column, source, sourceLine, sourceColumn });
             }
         }
     });
@@ -514,14 +511,17 @@ test('a scroll frame makes at most one interop call, whatever is painted (PF-1)'
     for (const [motion, { frames, events, calls }] of Object.entries(motions)) {
         const total = Object.values(calls).reduce((a, b) => a + b, 0);
         const detail = `${motion}: ${frames} frames, ${events} scroll events, calls ${JSON.stringify(calls)}`;
-        // The scroll moved and was read, never twice for one event (PF-4) — fewer when a
-        // burst is coalesced into the last position (ASY-3)…
+        // The scroll moved. The Script Core reads it in the browser and paints from the rows it
+        // holds: what crosses is a request for rows it does not hold yet, and their answer —
+        // never a call per cell, per row, or per column painted.
         expect(events, detail).toBeGreaterThan(0);
-        expect(calls['.NET→JS getScrollOffset'] ?? 0, detail).toBeGreaterThan(0);
-        expect(calls['.NET→JS getScrollOffset'], detail).toBeLessThanOrEqual(events);
-        // …and by nothing else: no call per cell, per row, or per column painted.
         expect(total, detail).toBeLessThanOrEqual(frames);
     }
+    // The counters count: the fling reaches rows the browser does not hold, asks .NET for them, and
+    // is sent them.
+    const { calls } = motions['a fling, two Viewports per frame'];
+    expect(Object.keys(calls).some((name) => name.startsWith('JS→.NET ')), JSON.stringify(calls)).toBe(true);
+    expect(Object.keys(calls).some((name) => name.startsWith('.NET→JS ')), JSON.stringify(calls)).toBe(true);
 });
 
 // ---------------------------------------------------------------------------------------------

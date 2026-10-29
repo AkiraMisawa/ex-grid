@@ -56,6 +56,12 @@ export interface GridHandle<Row> {
      */
     returnKeyboard(from?: Element): void;
     /**
+     * Says `sentence` in the grid's live region, as the grid says a refusal of its own (ADR-0033): what an adapter whose
+     * Consumer runs in another runtime finds refused on the way there, such as input a lost connection never carried
+     * (ADR-0240 section 11). An empty sentence says nothing; once the grid is destroyed it does nothing.
+     */
+    announce(sentence: string): void;
+    /**
      * Hands the keyboard the grid holds on to a control of the Consumer's own, in place of the control's own
      * `focus()` (DC-61, ADR-0070): a frame's first control, a dialog's Close. A container names its first enabled
      * text field, its text selected, or else its first enabled control; one holding none throws a RangeError.
@@ -171,6 +177,7 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         readEditText: () => view.readEditText(),
         focus: () => { view.focus(); },
         returnKeyboard: (from?: Element) => { view.returnKeyboard(from); },
+        announce: (sentence: string) => { view.announce(sentence); },
         handKeyboardTo: (control: HTMLElement, how?: { readonly preventScroll?: boolean }) => { view.handKeyboardTo(control, how); },
         keyName: (event: KeyboardEvent) => view.keyName(event),
         openPopover: (content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void) => view.openPopover(content, label, closed),

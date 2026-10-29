@@ -7,7 +7,7 @@
 <MudSwitch T="bool" Value="_log" ValueChanged="SetLog" Color="Color.Primary" Label="Spread on a logarithmic axis" />
 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start">
     <MudExGridPaper Elevation="0" Outlined="true">
-        <ExGrid @ref="_bridge.Grid" TRow="CreditNames.Name" Window="CreditNames.All" RowKey="KeyOf" Columns="Columns"
+        <ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="CreditNames.Name" Window="CreditNames.All" RowKey="KeyOf" Columns="Columns"
                 ViewportHeight="360" ViewportWidth="300" Chrome="MudGridChrome.Default" />
     </MudExGridPaper>
     <MudExGridPaper Elevation="0" Outlined="true">

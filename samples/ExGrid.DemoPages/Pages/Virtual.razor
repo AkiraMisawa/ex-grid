@@ -1,4 +1,5 @@
 @page "/virtual"
+@implements IDisposable
 
 <DemoNav />
 
@@ -13,30 +14,31 @@
 </p>
 
 <p class="demo-status">
-    @if (_window.Count == 0)
+    @if (_source.TotalCount is null)
     {
         <text>Window: nothing pushed yet, of @Total rows.</text>
     }
+    else if (_source.Window.Count == 0)
+    {
+        <text>Window: no rows, of @_source.TotalCount.</text>
+    }
     else
     {
-        <text>Window: rows @_windowStart–@(_windowStart + _window.Count - 1) of @Total.</text>
+        <text>Window: rows @_source.WindowStart–@(_source.WindowStart + _source.Window.Count - 1) of @_source.TotalCount.</text>
     }
-    @if (_isLoading)
+    @if (_source.IsLoading)
     {
         <strong>Loading…</strong>
     }
 </p>
 
 <ExGrid TRow="DemoTrade"
-        Window="_window"
-        WindowStart="_windowStart"
-        TotalCount="Total"
+        Source="_source"
         Columns="DemoData.Columns"
         RowHeight="24"
         ViewportHeight="480"
-        IsLoading="_isLoading"
         ShowFormulaBar="Bar is not null"
-        OnRangeNeeded="OnRangeNeededAsync" />
+        HideColumnMenu="true" />
 
 @code {
     private const int Total = 100_000;
@@ -53,29 +55,47 @@
 
     private static readonly DemoTrade[] AllRows = DemoData.Window(Total, seed: 7);
 
-    private IReadOnlyList<DemoTrade> _window = [];
-    private int _windowStart;
-    private bool _isLoading;
-    private RowRange? _outstanding;
+    private FetchingGridSource<DemoTrade> _source = default!;
 
-    private async Task OnRangeNeededAsync(RowRange range)
+    protected override void OnInitialized()
     {
-        _outstanding = range;
-        _isLoading = true;
+        _source = GridSource.Fetch<DemoTrade>(AnswerLateAsync, readAheadRows: ReadAhead);
+        _source.StateChanged += OnSourceChanged;
+    }
 
-        // Where a server call would go. The wait is what makes the Placeholders visible
-        // long enough to watch.
-        await Task.Delay(300);
+    private static readonly ColumnInfo<DemoTrade>[] Infos = [.. DemoData.Columns.Select(column => column.Info)];
 
-        // A later request overtook this one: discarding the stale answer is the
-        // Consumer's job too.
-        if (_outstanding != range)
-            return;
+    // The last order asked for and its rows, so scrolling through one order sorts once (a header click still sorts).
+    private (GridQuery Order, IReadOnlyList<DemoTrade> Rows)? _ordered;
 
-        var start = Math.Max(0, range.Start - ReadAhead);
-        var end = Math.Min(Total, range.Start + range.Count + ReadAhead);
-        _windowStart = start;
-        _window = AllRows[start..end];
-        _isLoading = false;
+    // Where a server call would go. The wait is what makes the Placeholders visible long enough to watch; a request
+    // the grid gave up is cancelled, and its answer is never read. It answers in the order and under the filter asked.
+    private async ValueTask<GridPage<DemoTrade>> AnswerLateAsync(GridQuery query, CancellationToken cancellationToken)
+    {
+        await Task.Delay(300, cancellationToken);
+        var rows = Ordered(query);
+        var start = Math.Min(query.Range.Start, rows.Count);
+        var end = Math.Min(rows.Count, query.Range.Start + query.Range.Count);
+        return new GridPage<DemoTrade>([.. rows.Skip(start).Take(end - start)], start, rows.Count);
+    }
+
+    private IReadOnlyList<DemoTrade> Ordered(GridQuery query)
+    {
+        if (query.Sorts.Count == 0 && query.Filter is null)
+            return AllRows;
+        var order = query with { Range = new RowRange(0, 0) };
+        if (_ordered is { } held && held.Order.Equals(order))
+            return held.Rows;
+        var rows = GridQueryEngine.Apply(AllRows, Infos, query.Filter, query.Sorts);
+        _ordered = (order, rows);
+        return rows;
+    }
+
+    private void OnSourceChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        _source.StateChanged -= OnSourceChanged;
+        _source.Dispose();
     }
 }

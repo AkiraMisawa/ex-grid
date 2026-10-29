@@ -107,6 +107,9 @@ test('Escape takes the outline away and the grid keeps the keyboard; a paste lea
     await page.keyboard.press('ControlOrMeta+V');
     await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
     await expect(outlines(page)).toHaveCount(1);
+    // The paste's answer comes back as the page's status is drawn: an Escape typed before the grid has it would cancel
+    // the paste instead (ADR-0380 section 3). This Escape is the one after the paste.
+    await settled(grid(page));
 
     await page.keyboard.press('Escape');
 

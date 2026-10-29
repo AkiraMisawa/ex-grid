@@ -106,6 +106,29 @@ describe('row commands behind a declared key that answers later', () => {
         expect(trace.at(-1)).toBe('open Book-2');
     });
 
+    it('ADR-0240 / LV-12: without a Row Key, a waiting command whose row was replaced by its new version where it stood acts on that version', async () => {
+        const trace: string[] = [];
+        const rows = trades(30);
+        const source = GridSource.from(rows);
+        let release: (() => void) | undefined;
+        const { root } = mount<Trade>({
+            columns: commandColumns, source, rowHeight: 24, viewportHeight: 480, declaredKeys: ['Control+b'],
+            onDeclaredKey: () => new Promise<void>(resolve => { release = resolve; }),
+            onAction: ({ row }) => { trace.push(`open ${row.book} ${row.notional}`); },
+            onRefused: (refusal: GridRefusal<Trade>) => { trace.push(`${refusal.kind} ${'reason' in refusal ? refusal.reason : ''}`); },
+        });
+        await painted();
+        root.focus();
+        (document.activeElement ?? root).dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true }));
+        click(openOn(root, 0));
+        const first = defined(rows[0], 'the first row');
+        source.replaceRow(first, { ...first, notional: first.notional + 1 });
+        await settled();
+        defined(release, 'a key under way')();
+        await settled();
+        expect(trace).toEqual([`open ${first.book} ${first.notional + 1}`]);
+    });
+
     it('ADR-0240: a row that only scrolled out of the painted rows, and stayed in the Window, is still acted on', async () => {
         const { root, trace, release, ctrlB } = desk();
         await painted();

@@ -1,6 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Reflection;
 using System.Text.Json;
 using ExGrid.Cells;
+using ExGrid.Chrome;
 using ExGrid.Clipboard;
 using ExGrid.Finding;
 using ExGrid.Keys;
@@ -8,6 +11,7 @@ using ExGrid.Rows;
 using ExGrid.Selection;
 using ExGrid.Summarizing;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExGrid.Script;
@@ -118,8 +122,9 @@ public sealed partial class ExGrid<TRow>
     /// <summary>
     /// Whether a painted cell matches the Find panel's pattern (ADR-0055), for a source that finds by a rule of its own:
     /// the Consumer's own script (ADR-0440), called with the row's values by column name, the column's name and the
-    /// pattern <c>{ text, matchCase, wholeCell }</c>, answering true or false. Set as the grid is made. None: the marks
-    /// are drawn only over a source the grid can read cells of in the browser, which a .NET source is not, so none.
+    /// pattern <c>{ text, matchCase, wholeCell }</c>, answering true or false. Set as the grid is made. None: over
+    /// <see cref="GridSource.From{TRow}(IReadOnlyList{TRow})"/>'s source, which finds by the reference rule, the marks are
+    /// drawn by that rule over the texts the browser holds; over any other source, none.
     /// </summary>
     [Parameter] public ScriptFunction? FindMatch { get; set; }
 
@@ -129,6 +134,60 @@ public sealed partial class ExGrid<TRow>
     /// cell on that line where the data ends. Set as the grid is made. None, and Ctrl+arrow goes to the grid's edge.
     /// </summary>
     [Parameter] public ScriptFunction? DataEdge { get; set; }
+
+    /// <summary>
+    /// The grid's own words, by id (ADR-0036): null keeps the grid's, "" says nothing. It is asked of every id the grid
+    /// words, the commands' (<see cref="GridCommandIds"/>), its fields' names (<see cref="GridLabelIds"/>), its
+    /// refusals (<see cref="RefusalLabelIds"/>, <see cref="KeyRefusalLabelIds"/>), its summary
+    /// (<see cref="SummaryLabelIds"/>), its find panel's (<see cref="FindPanelLabelIds"/>) and its reload notice
+    /// (<see cref="ReloadNoticeLabelIds"/>), as the grid is made and whenever another function is set, and the browser
+    /// words the grid from what it answered (ADR-0440 section 4). Pass a method or a function held in a field: a lambda
+    /// that captures a local is another function on every render, and every id is asked again. The commands
+    /// <see cref="ContextCommands"/> answers take their words from <see cref="ContextCommandLabel"/>.
+    /// </summary>
+    [Parameter] public Func<string, string?>? CommandLabel { get; set; }
+
+    // Every id the grid words, read once from the classes that name them; a placeholder ("{column}") is a mark inside
+    // the words, not an id.
+    private static readonly string[] LabelIds =
+    [
+        .. new[]
+        {
+            IdsOf(typeof(GridCommandIds)), IdsOf(typeof(GridLabelIds)), IdsOf(typeof(RefusalLabelIds)), IdsOf(typeof(KeyRefusalLabelIds)),
+            IdsOf(typeof(SummaryLabelIds)), IdsOf(typeof(FindPanelLabelIds)), IdsOf(typeof(ReloadNoticeLabelIds)),
+        }.SelectMany(ids => ids).Where(id => !id.StartsWith('{')).Distinct(),
+    ];
+
+    private static IEnumerable<string> IdsOf([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type)
+        => type.GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)(field.GetRawConstantValue() ?? throw new InvalidOperationException($"Internal: {type.Name}.{field.Name} holds no id.")));
+
+    private Func<string, string?>? _labelled;
+    private KeyValuePair<string, string>[] _labels = [];
+
+    // Asked once per function: another function is another wording, and the same one answers as it did (ADR-0003).
+    private void WriteCommandLabels(Utf8JsonWriter json)
+    {
+        if (CommandLabel is not { } label)
+            return;
+        // Delegate equality, so a method group made again on each render is the same function.
+        if (label != _labelled)
+        {
+            var labels = new List<KeyValuePair<string, string>>();
+            foreach (var id in LabelIds)
+            {
+                if (label(id) is { } words)
+                    labels.Add(KeyValuePair.Create(id, words));
+            }
+            _labels = [.. labels];
+            _labelled = label;
+        }
+        json.WriteStartObject("commandLabels");
+        foreach (var (id, words) in _labels)
+            json.WriteString(id, words);
+        json.WriteEndObject();
+    }
 
     private RowPaint<TRow>? _paint;
     private IRowMarks<TRow>? _marks;
@@ -231,6 +290,9 @@ public sealed partial class ExGrid<TRow>
             json.WriteBoolean("copies", true);
         if (OnReplace is not null)
             json.WriteBoolean("replaces", true);
+        // GridSource.From finds by the reference rule over the texts that cross with the rows (ADR-0332 section 4).
+        if (FindMatch is null && _source is InMemoryGridSource<TRow>)
+            json.WriteBoolean("referenceMarks", true);
         if (OnSummarize is not null)
             json.WriteBoolean("summarizes", true);
         // Only what the Consumer set: a default is the core's, written once there.
@@ -261,6 +323,7 @@ public sealed partial class ExGrid<TRow>
             json.WriteNumber("rowHeadingWidth", headingWidth);
         if (HideHeader)
             json.WriteBoolean("hideHeader", true);
+        WriteCommandLabels(json);
     }
 
     private void WriteSurfaceScripts(Utf8JsonWriter json)
@@ -421,10 +484,31 @@ public sealed partial class ExGrid<TRow>
             request.GetProperty("withHeaders").GetBoolean(), request.GetProperty("rowSequenceVersion").GetInt32());
         return InTurnAsync(new Heard(Answered(number, async cancelled =>
         {
-            var answer = CopyAnswer is { } now ? now(asked)
-                : CopyAnswerAsync is { } later ? await later(asked, cancelled)
-                : throw new InvalidOperationException("Internal: the browser asked a copy's answer of a Consumer that took CopyAnswer away.");
-            ArgumentNullException.ThrowIfNull(answer);
+            Func<GridCopyRequest, CancellationToken, Task<GridCopyAnswer>> ask = CopyAnswer is { } now
+                ? (request, _) => Task.FromResult(now(request))
+                : CopyAnswerAsync ?? throw new InvalidOperationException("Internal: the browser asked a copy's answer of a Consumer that took CopyAnswer away.");
+            GridCopyAnswer answer;
+            try
+            {
+                answer = await ask(asked, cancelled);
+                ArgumentNullException.ThrowIfNull(answer);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException && cancelled.IsCancellationRequested))
+            {
+                // A copy whose answer failed is said where the copy was made, and writes nothing (CON-8, ADR-0005): the
+                // browser refuses it aloud and surfaces the failure, as the core does for a script's failed answer. The
+                // grid goes on, where handing it to the renderer would end the circuit over one copy. Only the type
+                // crosses: an exception's message is the server's, which Blazor keeps from the browser, so the whole
+                // exception is logged here, where the server keeps it.
+                Logger.LogError(ex, "ExGrid: the Consumer's copy answer threw, and the copy wrote nothing (ADR-0005).");
+                return Json(json =>
+                {
+                    json.WriteStartObject();
+                    json.WriteString("kind", "failed");
+                    json.WriteString("error", ex.GetType().FullName);
+                    json.WriteEndObject();
+                });
+            }
             return Json(json =>
             {
                 json.WriteStartObject();
@@ -446,7 +530,9 @@ public sealed partial class ExGrid<TRow>
 
     /// <summary>The Selection Summary the browser numbered <paramref name="number"/> (ADR-0130), asked of the source
     /// numbered <paramref name="generation"/>, or of <see cref="OnSummarize"/> where it is null, in its turn among the
-    /// events. One asked of a source since replaced is answered with nothing, and the browser shows no figure for it.</summary>
+    /// events, and answered aside: the events and the next question after it do not wait for its answer, so one the user
+    /// replaced, which a Consumer may go on answering, holds nothing up. One asked of a source since replaced is
+    /// answered with nothing, and the browser shows no figure for it.</summary>
     internal Task<string?> SummarizeAsync(long number, int? generation, JsonElement request)
     {
         var asked = new GridSummaryRequest
@@ -471,8 +557,8 @@ public sealed partial class ExGrid<TRow>
                 var summarize = OnSummarize ?? throw new InvalidOperationException("Internal: the browser asked OnSummarize, which the Consumer took away.");
                 result = await summarize(asked, cancelled);
             }
-            return SummaryJson(result);
-        }), Answers: true, SendsState: false));
+            return SummaryJson(result, FocusFormat(asked));
+        }), Answers: true, SendsState: false, Aside: true));
     }
 
     private static SummaryFigures FiguresOf(JsonElement json)
@@ -483,7 +569,34 @@ public sealed partial class ExGrid<TRow>
         return figures;
     }
 
-    private static string SummaryJson(GridSummaryResult result) => Json(json =>
+    // The format of the Focus's column where it is a Number column with one (ADR-0130): the figures take it, a grid's
+    // formats being its columns', as Excel's status bar takes the active cell's.
+    // The Focus's column is named by its place among the request's columns, the grid's order, which a reorder the Consumer
+    // has yet to hand back may still differ from Columns'.
+    private Func<object, string>? FocusFormat(GridSummaryRequest asked)
+        => asked.Focus is { } cell && cell.Column < asked.Columns.Count
+            && Columns.FirstOrDefault(column => column.Name == asked.Columns[cell.Column]) is { Type: ColumnType.Number, Format: { } format }
+            ? format
+            : null;
+
+    // A figure's text where the answer gave none: in the Focus column's format, written here because the format is the
+    // Consumer's .NET function, which the browser cannot run on a figure no row holds. Counts keep their own text, and
+    // a format written for the column's own type that cannot take the figure leaves the browser to write it (ADR-0130).
+    private static string? FormattedFigure(SummaryFigures figure, Data.AggregateResult value, Func<object, string>? format)
+    {
+        if (format is null || SummaryFigureOrder.IsCount(figure) || !value.IsNumber)
+            return null;
+        try
+        {
+            return format(value.Exact is { } exact ? exact : value.Number);
+        }
+        catch (InvalidCastException)
+        {
+            return null;
+        }
+    }
+
+    private static string SummaryJson(GridSummaryResult result, Func<object, string>? format) => Json(json =>
     {
         ArgumentNullException.ThrowIfNull(result);
         json.WriteStartObject();
@@ -507,7 +620,8 @@ public sealed partial class ExGrid<TRow>
             json.WriteStartObject("texts");
             foreach (var figure in SummaryFigureOrder.Each)
             {
-                if (result.Figures.HasFlag(figure) && result.TextOf(figure) is { } text)
+                if (result.Figures.HasFlag(figure)
+                    && (result.TextOf(figure) ?? FormattedFigure(figure, result[figure] ?? throw new InvalidOperationException($"Internal: a summary answered '{figure}' without its figure."), format)) is { } text)
                     json.WriteString(ScriptJson.Camel(figure), text);
             }
             json.WriteEndObject();

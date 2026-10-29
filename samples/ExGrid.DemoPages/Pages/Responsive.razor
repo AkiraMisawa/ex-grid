@@ -21,7 +21,7 @@
     <section id="@("responsive-" + layout)" style="@($"display: {layout}; grid-template-columns: auto 1fr; width: {_width}px; margin-top: 12px")">
         <aside style="width: 40px; flex: none">Box</aside>
         <MudExGridPaper Square="true" Elevation="0" Style="flex: 1 1 auto">
-            <ExGrid TRow="DemoTrade" Window="_rows" Columns="_columns" PinnedColumnCount="2"
+            <ExGrid TRow="DemoTrade" Rows="_rows" Columns="_columns" PinnedColumnCount="2"
                     ViewportWidth="ViewportSize.Stretch" ViewportHeight="160" Chrome="_chrome"
                     OnColumnWidthChanged="ChangedWidth" OnColumnOrderChanged="ChangedOrder" OnPinnedCountChanged="ChangedPinned" />
         </MudExGridPaper>
@@ -29,7 +29,7 @@
 }
 <section id="responsive-fixed" style="width: 240px; margin-top: 12px">
     <MudExGridPaper Square="true" Elevation="0">
-        <ExGrid TRow="DemoTrade" Window="_rows" Columns="_columns" ViewportWidth="600" ViewportHeight="100" />
+        <ExGrid TRow="DemoTrade" Rows="_rows" Columns="_columns" ViewportWidth="600" ViewportHeight="100" />
     </MudExGridPaper>
 </section>
 @code {

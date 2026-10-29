@@ -31,11 +31,9 @@ const PANEL = {
         selectAll: (panel) => panel.locator('.mud-ex-grid-filter-all input'),
         entry: (panel, name) => panel.getByRole('checkbox', { name, exact: true }),
         search: (panel) => panel.locator('.mud-ex-grid-filter-search input'),
-        greaterThan: async (page, panel) => {
-            await panel.getByRole('combobox', { name: 'Operator' }).click();
-            await page.locator('.mud-popover-open .mud-list-item', { hasText: /^>$/ }).click();
-            await expect(page.locator('.mud-popover-open .mud-list-item')).toHaveCount(0);
-        },
+        // A native select in MudBlazor's outline, so that the choice reaches the core in the browser
+        // (MudExGridScriptFilterPanel, spine rule 6).
+        greaterThan: (page, panel) => panel.getByRole('combobox', { name: 'Operator' }).selectOption('greaterThan'),
         operand: (panel) => panel.locator('.mud-ex-grid-filter-operand input'),
         apply: (panel) => panel.locator('.mud-ex-grid-filter-apply'),
         cancel: (panel) => panel.locator('.mud-ex-grid-filter-cancel'),
